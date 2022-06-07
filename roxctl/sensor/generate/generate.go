@@ -160,7 +160,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		SlimCollector:    pointer.BoolPtr(s.cluster.GetSlimCollector()),
 		IstioVersion:     s.istioVersion,
 	}
-	if err := s.getBundleFn(params, s.outputDir, s.timeout); err != nil {
+	if err := s.getBundleFn(s.env, params, s.outputDir, s.timeout); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 

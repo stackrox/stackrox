@@ -27,7 +27,7 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 		Use: "download-diagnostics",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cliEnvironment.Logger().InfofLn("Downloading diagnostic bundle...")
-			return retrieveDiagnosticBundle(flags.Timeout(c), outputDir,
+			return retrieveDiagnosticBundle(cliEnvironment, flags.Timeout(c), outputDir,
 				clusters, since)
 		}),
 	}
@@ -39,7 +39,7 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 	return c
 }
 
-func retrieveDiagnosticBundle(timeout time.Duration, outputDir string, clusters []string, since string) error {
+func retrieveDiagnosticBundle(env environment.Environment, timeout time.Duration, outputDir string, clusters []string, since string) error {
 	path := "/api/extensions/diagnostics"
 
 	values := url.Values{}
@@ -62,5 +62,5 @@ func retrieveDiagnosticBundle(timeout time.Duration, outputDir string, clusters 
 		BundleType: "diagnostic",
 		ExpandZip:  false,
 		OutputDir:  outputDir,
-	}, environment.CLIEnvironment().Logger())
+	}, env)
 }

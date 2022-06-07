@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	. "github.com/stackrox/rox/roxctl/common/io"
@@ -21,11 +20,6 @@ type cliEnvironmentImpl struct {
 	logger          logger.Logger
 	colorfulPrinter printer.ColorfulPrinter
 }
-
-var (
-	singleton Environment
-	once      sync.Once
-)
 
 // NewTestCLIEnvironment creates a new CLI environment with the given IO and common.RoxctlHTTPClient.
 // It should be only used within tests.
@@ -42,20 +36,17 @@ func CLIEnvironment() Environment {
 	// We have chicken and egg problem here. We need to parse flags to know if --no-color was set
 	// but at the same time we need to set printer to handle possible flags parsing errors.
 	// Instead of using native cobra flags mechanism we can just check if os.Args contains --no-color.
-	once.Do(func() {
-		var colorPrinter printer.ColorfulPrinter
-		if flags.HasNoColor(os.Args) {
-			colorPrinter = printer.NoColorPrinter()
-		} else {
-			colorPrinter = printer.DefaultColorPrinter()
-		}
-		singleton = &cliEnvironmentImpl{
-			io:              DefaultIO(),
-			colorfulPrinter: colorPrinter,
-			logger:          logger.NewLogger(DefaultIO(), colorPrinter),
-		}
-	})
-	return singleton
+	var colorPrinter printer.ColorfulPrinter
+	if flags.HasNoColor(os.Args) {
+		colorPrinter = printer.NoColorPrinter()
+	} else {
+		colorPrinter = printer.DefaultColorPrinter()
+	}
+	return &cliEnvironmentImpl{
+		io:              DefaultIO(),
+		colorfulPrinter: colorPrinter,
+		logger:          logger.NewLogger(DefaultIO(), colorPrinter),
+	}
 }
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
