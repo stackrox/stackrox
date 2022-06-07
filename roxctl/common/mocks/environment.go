@@ -10,7 +10,9 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	common "github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common"
+	commonIO "github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	grpc "google.golang.org/grpc"
 )
 
@@ -98,10 +100,10 @@ func (mr *MockEnvironmentMockRecorder) HTTPClient(timeout interface{}) *gomock.C
 }
 
 // InputOutput mocks base method.
-func (m *MockEnvironment) InputOutput() common.IO {
+func (m *MockEnvironment) InputOutput() commonIO.IO {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InputOutput")
-	ret0, _ := ret[0].(common.IO)
+	ret0, _ := ret[0].(commonIO.IO)
 	return ret0
 }
 
@@ -112,10 +114,10 @@ func (mr *MockEnvironmentMockRecorder) InputOutput() *gomock.Call {
 }
 
 // Logger mocks base method.
-func (m *MockEnvironment) Logger() common.Logger {
+func (m *MockEnvironment) Logger() logger.Logger {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Logger")
-	ret0, _ := ret[0].(common.Logger)
+	ret0, _ := ret[0].(logger.Logger)
 	return ret0
 }
 

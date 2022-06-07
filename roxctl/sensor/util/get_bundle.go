@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
 )
 
@@ -38,5 +39,5 @@ func GetBundle(params apiparams.ClusterZip, outputDir string, timeout time.Durat
 		BundleType: "sensor",
 		ExpandZip:  true,
 		OutputDir:  outputDir,
-	})
+	}, environment.CLIEnvironment().Logger())
 }

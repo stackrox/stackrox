@@ -10,19 +10,19 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 type centralWhoAmICommand struct {
 	// Properties that are injected or constructed.
-	env     common.Environment
+	env     environment.Environment
 	timeout time.Duration
 }
 
 // Command defines the central command tree
-func Command(cliEnvironment common.Environment) *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	cbr := &cobra.Command{
 		Use: "whoami",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
@@ -34,7 +34,7 @@ func Command(cliEnvironment common.Environment) *cobra.Command {
 	return cbr
 }
 
-func makeCentralWhoAmICommand(cliEnvironment common.Environment, cbr *cobra.Command) *centralWhoAmICommand {
+func makeCentralWhoAmICommand(cliEnvironment environment.Environment, cbr *cobra.Command) *centralWhoAmICommand {
 	return &centralWhoAmICommand{
 		env:     cliEnvironment,
 		timeout: flags.Timeout(cbr),

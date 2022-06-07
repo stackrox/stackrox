@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/sensor/generate"
 	"github.com/stackrox/rox/roxctl/sensor/generatecerts"
@@ -12,7 +12,7 @@ import (
 )
 
 // Command controls all of the functions being applied to a sensor
-func Command(cliEnvironment common.Environment) *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "sensor",
 	}
