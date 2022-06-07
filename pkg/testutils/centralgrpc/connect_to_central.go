@@ -1,4 +1,4 @@
-package testutils
+package centralgrpc
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -34,7 +35,7 @@ var (
 	_, inCI = os.LookupEnv("CI")
 )
 
-func mustGetEnvVarInCI(t T, envVar string) string {
+func mustGetEnvVarInCI(t testutils.T, envVar string) string {
 	value := os.Getenv(envVar)
 	if inCI {
 		require.NotEmpty(t, value, "Please set %s", envVar)
@@ -43,24 +44,24 @@ func mustGetEnvVarInCI(t T, envVar string) string {
 }
 
 // RoxUsername returns the rox basic auth username (or fails the test if not found).
-func RoxUsername(t T) string {
+func RoxUsername(t testutils.T) string {
 	return stringutils.FirstNonEmpty(mustGetEnvVarInCI(t, usernameEnvVar), defaultUsername)
 }
 
 // RoxPassword returns the rox basic auth password (or fails the test if not found).
-func RoxPassword(t T) string {
+func RoxPassword(t testutils.T) string {
 	if pw := mustGetEnvVarInCI(t, passwordEnvVar); pw != "" {
 		return pw
 	}
 
-	pwFromFileBytes, err := os.ReadFile(filepath.Join(GetTestWorkspaceDir(t), defaultPasswordPath))
+	pwFromFileBytes, err := os.ReadFile(filepath.Join(testutils.GetTestWorkspaceDir(t), defaultPasswordPath))
 	require.NoErrorf(t, err, "no password set via %s, and could not read password file")
 
 	return strings.TrimSpace(string(pwFromFileBytes))
 }
 
 // RoxAPIEndpoint returns the central API endpoint (or fails the test if not found).
-func RoxAPIEndpoint(t T) string {
+func RoxAPIEndpoint(t testutils.T) string {
 	return stringutils.FirstNonEmpty(mustGetEnvVarInCI(t, apiEndpointEnvVar), defaultAPIEndpoint)
 }
 
@@ -72,13 +73,13 @@ func UnauthenticatedGRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
 
 // GRPCConnectionToCentral returns a GRPC connection to Central, which can be used in E2E tests.
 // It fatals the test if there's an error.
-func GRPCConnectionToCentral(t T) *grpc.ClientConn {
+func GRPCConnectionToCentral(t testutils.T) *grpc.ClientConn {
 	return grpcConnectionToCentral(t, func(opts *clientconn.Options) {
 		opts.ConfigureBasicAuth(RoxUsername(t), RoxPassword(t))
 	})
 }
 
-func grpcConnectionToCentral(t T, optsModifyFunc func(options *clientconn.Options)) *grpc.ClientConn {
+func grpcConnectionToCentral(t testutils.T, optsModifyFunc func(options *clientconn.Options)) *grpc.ClientConn {
 	endpoint := RoxAPIEndpoint(t)
 	host, _, _, err := netutil.ParseEndpoint(endpoint)
 	require.NoError(t, err)
@@ -99,7 +100,7 @@ func grpcConnectionToCentral(t T, optsModifyFunc func(options *clientconn.Option
 
 // HTTPClientForCentral returns an *http.Client for talking to central in tests. Basic auth credentials and
 // the hostname and scheme part of the URL may be omitted.
-func HTTPClientForCentral(t T) *http.Client {
+func HTTPClientForCentral(t testutils.T) *http.Client {
 	baseTransport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,

@@ -9,7 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +26,7 @@ func hasEdges(graph *v1.NetworkGraph) bool {
 func TestStackroxNetworkFlows(t *testing.T) {
 	t.Parallel()
 
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	clustersService := v1.NewClustersServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)

@@ -8,7 +8,7 @@ import (
 	search "github.com/stackrox/rox/central/search"
 	"github.com/stackrox/rox/central/search/options"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,7 +16,7 @@ import (
 func TestOptions(t *testing.T) {
 	t.Parallel()
 
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewSearchServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
