@@ -10,9 +10,10 @@ import (
 	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	componentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
+	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
@@ -53,7 +54,8 @@ type Builder interface {
 	WithRoleBindingStore(store roleBindingDataStore.DataStore) Builder
 	WithClusterDataStore(store clusterDataStore.DataStore) Builder
 	WithCVEDataStore(store cveDataStore.DataStore) Builder
-	WithComponentDataStore(store componentDataStore.DataStore) Builder
+	WithImageComponentDataStore(store imageComponentDataStore.DataStore) Builder
+	WithNodeComponentDataStore(store nodeComponentDataStore.DataStore) Builder
 
 	WithAggregator(aggregation.Aggregator) Builder
 
@@ -74,7 +76,8 @@ type serviceBuilder struct {
 	bindings        roleBindingDataStore.DataStore
 	clusters        clusterDataStore.DataStore
 	cves            cveDataStore.DataStore
-	components      componentDataStore.DataStore
+	components      imageComponentDataStore.DataStore
+	nodeComponents  nodeComponentDataStore.DataStore
 
 	aggregator aggregation.Aggregator
 }
@@ -154,8 +157,13 @@ func (b *serviceBuilder) WithCVEDataStore(store cveDataStore.DataStore) Builder 
 	return b
 }
 
-func (b *serviceBuilder) WithComponentDataStore(store componentDataStore.DataStore) Builder {
+func (b *serviceBuilder) WithImageComponentDataStore(store imageComponentDataStore.DataStore) Builder {
 	b.components = store
+	return b
+}
+
+func (b *serviceBuilder) WithNodeComponentDataStore(store nodeComponentDataStore.DataStore) Builder {
+	b.nodeComponents = store
 	return b
 }
 
@@ -206,7 +214,8 @@ func NewService() Service {
 		WithAggregator(aggregation.Singleton()).
 		WithClusterDataStore(clusterDataStore.Singleton()).
 		WithCVEDataStore(imageCVEDataStore).
-		WithComponentDataStore(componentDataStore.Singleton())
+		WithImageComponentDataStore(imageComponentDataStore.Singleton()).
+		WithNodeComponentDataStore(nodeComponentDataStore.Singleton())
 
 	return builder.Build()
 }
