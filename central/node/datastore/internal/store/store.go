@@ -1,21 +1,22 @@
 package store
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store provides storage functionality for nodes.
 //go:generate mockgen-wrapper
 type Store interface {
-	GetNodes() ([]*storage.Node, error)
-	CountNodes() (int, error)
-	GetNode(id string) (*storage.Node, bool, error)
+	Count(ctx context.Context) (int, error)
+	Get(ctx context.Context, id string) (*storage.Node, bool, error)
 	// GetNodeMetadata gets the node without scan/component data.
-	GetNodeMetadata(id string) (*storage.Node, bool, error)
-	GetNodesBatch(ids []string) ([]*storage.Node, []int, error)
+	GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
 
-	Exists(id string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Upsert(node *storage.Node) error
-	Delete(id string) error
+	Upsert(ctx context.Context, node *storage.Node) error
+	Delete(ctx context.Context, id string) error
 }

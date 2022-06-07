@@ -59,6 +59,7 @@
                 "CLUSTERS",
                 "NAMESPACES",
                 "NODES",
+                "NODE_COMPONENTS",
                 "NODE_VULN_EDGE",
                 "NODE_COMPONENT_EDGE",
                 "NODE_COMPONENT_CVE_EDGE",
@@ -138,6 +139,7 @@
                 "CLUSTERS",
                 "NAMESPACES",
                 "NODES",
+                "NODE_COMPONENTS",
                 "NODE_VULN_EDGE",
                 "NODE_COMPONENT_EDGE",
                 "NODE_COMPONENT_CVE_EDGE",
@@ -211,6 +213,7 @@
                 "CLUSTERS",
                 "NAMESPACES",
                 "NODES",
+                "NODE_COMPONENTS",
                 "NODE_VULN_EDGE",
                 "NODE_COMPONENT_EDGE",
                 "NODE_COMPONENT_CVE_EDGE",
@@ -333,6 +336,7 @@
         "CLUSTERS",
         "NAMESPACES",
         "NODES",
+        "NODE_COMPONENTS",
         "NODE_VULN_EDGE",
         "NODE_COMPONENT_EDGE",
         "NODE_COMPONENT_CVE_EDGE",
@@ -356,7 +360,7 @@
         "VULN_REQUEST"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 38"
+      "title": "Next available tag: 39"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

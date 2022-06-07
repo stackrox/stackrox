@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type NodeComponentCveEdgesStoreSuite struct {
+type NodeComponentsCvesEdgesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestNodeComponentCveEdgesStore(t *testing.T) {
-	suite.Run(t, new(NodeComponentCveEdgesStoreSuite))
+func TestNodeComponentsCvesEdgesStore(t *testing.T) {
+	suite.Run(t, new(NodeComponentsCvesEdgesStoreSuite))
 }
 
-func (s *NodeComponentCveEdgesStoreSuite) SetupSuite() {
+func (s *NodeComponentsCvesEdgesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,21 +54,21 @@ func (s *NodeComponentCveEdgesStoreSuite) SetupSuite() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *NodeComponentCveEdgesStoreSuite) SetupTest() {
+func (s *NodeComponentsCvesEdgesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE node_component_cve_edges CASCADE")
-	s.T().Log("node_component_cve_edges", tag)
+	tag, err := s.pool.Exec(ctx, "TRUNCATE node_components_cves_edges CASCADE")
+	s.T().Log("node_components_cves_edges", tag)
 	s.NoError(err)
 }
 
-func (s *NodeComponentCveEdgesStoreSuite) TearDownSuite() {
+func (s *NodeComponentsCvesEdgesStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *NodeComponentCveEdgesStoreSuite) TestStore() {
+func (s *NodeComponentsCvesEdgesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
@@ -76,7 +76,7 @@ func (s *NodeComponentCveEdgesStoreSuite) TestStore() {
 	nodeComponentCVEEdge := &storage.NodeComponentCVEEdge{}
 	s.NoError(testutils.FullInit(nodeComponentCVEEdge, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundNodeComponentCVEEdge, exists, err := store.Get(ctx, nodeComponentCVEEdge.GetId(), nodeComponentCVEEdge.GetComponentId(), nodeComponentCVEEdge.GetCveId())
+	foundNodeComponentCVEEdge, exists, err := store.Get(ctx, nodeComponentCVEEdge.GetId(), nodeComponentCVEEdge.GetNodeComponentId(), nodeComponentCVEEdge.GetNodeCveId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNodeComponentCVEEdge)

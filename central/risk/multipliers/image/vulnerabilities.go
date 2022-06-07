@@ -31,7 +31,7 @@ func (c *vulnerabilitiesMultiplier) Score(_ context.Context, image *storage.Imag
 	imgComponents := image.GetScan().GetComponents()
 	components := make([]scancomponent.ScanComponent, 0, len(imgComponents))
 	for _, imgComponent := range imgComponents {
-		components = append(components, imgComponent)
+		components = append(components, scancomponent.NewFromImageComponent(imgComponent))
 	}
 	min, max, sum, num := vulns.ProcessComponents(components)
 	if num == 0 {

@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	baseTable = "node_component_cve_edges"
+	baseTable = "node_components_cves_edges"
 
 	batchAfter = 100
 
@@ -36,13 +36,13 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.NodeComponentCveEdgesSchema
+	schema = pkgSchema.NodeComponentsCvesEdgesSchema
 )
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, componentId string, cveId string) (bool, error)
-	Get(ctx context.Context, id string, componentId string, cveId string) (*storage.NodeComponentCVEEdge, bool, error)
+	Exists(ctx context.Context, id string, nodeComponentId string, nodeCveId string) (bool, error)
+	Get(ctx context.Context, id string, nodeComponentId string, nodeCveId string) (*storage.NodeComponentCVEEdge, bool, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.NodeComponentCVEEdge, []int, error)
 
@@ -74,7 +74,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string, componentId string, cveId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string, nodeComponentId string, nodeCveId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NodeComponentCVEEdge")
 
 	var sacQueryFilter *v1.Query
@@ -82,8 +82,8 @@ func (s *storeImpl) Exists(ctx context.Context, id string, componentId string, c
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Component ID"), componentId).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("CVE ID"), cveId).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Component ID"), nodeComponentId).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("CVE ID"), nodeCveId).ProtoQuery(),
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
@@ -91,7 +91,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string, componentId string, c
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string, componentId string, cveId string) (*storage.NodeComponentCVEEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string, nodeComponentId string, nodeCveId string) (*storage.NodeComponentCVEEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeComponentCVEEdge")
 
 	var sacQueryFilter *v1.Query
@@ -99,8 +99,8 @@ func (s *storeImpl) Get(ctx context.Context, id string, componentId string, cveI
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Component ID"), componentId).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("CVE ID"), cveId).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Component ID"), nodeComponentId).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("CVE ID"), nodeCveId).ProtoQuery(),
 	)
 
 	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
@@ -211,13 +211,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NodeComponent
 
 //// Used for testing
 
-func dropTableNodeComponentCveEdges(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS node_component_cve_edges CASCADE")
+func dropTableNodeComponentsCvesEdges(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS node_components_cves_edges CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableNodeComponentCveEdges(ctx, db)
+	dropTableNodeComponentsCvesEdges(ctx, db)
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing
