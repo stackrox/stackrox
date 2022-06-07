@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb/metrics"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -103,21 +104,18 @@ func GetPostgresConfig() (map[string]string, *pgxpool.Config, error) {
 	centralConfig := config.GetConfig()
 	password, err := os.ReadFile(dbPasswordFile)
 	if err != nil {
-		log.Fatalf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
-		return nil, nil, err
+		return nil, nil, errors.Wrapf(err, "pgsql: could not load password file %q", dbPasswordFile)
 	}
 	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
 
 	config, err := pgxpool.ParseConfig(source)
 	if err != nil {
-		log.Fatalf("Could not parse postgres config: %v", err)
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "Could not parse postgres config")
 	}
 
 	sourceMap, err := ParseSource(source)
 	if err != nil {
-		log.Fatalf("Could not parse postgres config: %v", err)
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "Could not parse postgres source")
 	}
 
 	return sourceMap, config, nil
@@ -134,11 +132,9 @@ func ParseSource(source string) (map[string]string, error) {
 	for _, pair := range sourceSlice {
 		// Due to the possibility that the password could potentially have an = we
 		// need to ensure that we get the entire password
-		configSetting := strings.SplitN(pair, "=", 2)
-		if len(configSetting[0]) < 2 || len(strings.TrimSpace(configSetting[1])) < 1 {
-			return nil, errors.Errorf("field %s has no value", configSetting[0])
-		}
-		sourceMap[configSetting[0]] = strings.TrimSpace(configSetting[1])
+		key, value := stringutils.Split2(pair, "=")
+
+		sourceMap[key] = strings.TrimSpace(value)
 	}
 
 	return sourceMap, nil

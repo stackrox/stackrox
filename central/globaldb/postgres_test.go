@@ -79,12 +79,6 @@ func (s *PostgresUtilitySuite) TestSourceParser() {
 			},
 			err: nil,
 		},
-		{
-			name:        "Case 5",
-			source:      "host=testHost port=5432 database=testDB user=testUser sensitiveField= sslmode=disable statement_timeout=600000",
-			expectedMap: nil,
-			err:         errors.New("field sensitiveField has no value"),
-		},
 	}
 
 	for _, c := range cases {
