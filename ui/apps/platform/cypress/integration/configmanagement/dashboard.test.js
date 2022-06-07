@@ -228,9 +228,7 @@ describe('Config Management Dashboard Page', () => {
     });
 
     it('clicking a specific user in the "Users with most Cluster Admin Roles" widget should take you to a single subject page', () => {
-        cy.intercept('POST', api.graphql('usersWithClusterAdminRoles'), {
-            fixture: 'subjects/subjects.json',
-        }).as('dashboard');
+        cy.intercept('POST', api.graphql('usersWithClusterAdminRoles')).as('dashboard');
         cy.intercept('POST', api.graphqlSingularEntity('subject')).as('entity');
 
         cy.visit(url.dashboard);
@@ -239,8 +237,8 @@ describe('Config Management Dashboard Page', () => {
             .find(selectors.horizontalBars)
             .eq(0)
             .click();
-        cy.wait('@entity'); // fails because it needs a fixture
-        cy.location('pathname').should('contain', url.single.subject); // TODO matches subjects/id
+        cy.wait('@entity');
+        cy.location('pathname').should('contain', url.list.subjects); // subjects/id
     });
 
     it('clicking the "Secrets Most Used Across Deployments" widget\'s "View All" button should take you to the secrets list', () => {
@@ -360,7 +358,7 @@ describe('Config Management Dashboard Page', () => {
             .eq(0)
             .click();
         cy.wait('@entity');
-        cy.location('pathname').should('contain', url.single.secret); // TODO match secrets/id
+        cy.location('pathname').should('contain', url.list.secrets); // secrets/id
     });
 
     it('switching clusters in the "CIS Standard Across Clusters" widget\'s should change the data', () => {
