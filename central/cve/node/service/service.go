@@ -4,7 +4,6 @@ import (
 	"context"
 
 	cveDataStore "github.com/stackrox/rox/central/cve/node/datastore"
-	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -19,9 +18,8 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(cveDataStore cveDataStore.DataStore, vulnReqMgr vulnReqMgr.Manager) Service {
+func New(cveDataStore cveDataStore.DataStore) Service {
 	return &serviceImpl{
-		cves:       cveDataStore,
-		vulnReqMgr: vulnReqMgr,
+		cves: cveDataStore,
 	}
 }

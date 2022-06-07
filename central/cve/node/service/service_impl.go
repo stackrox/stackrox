@@ -7,7 +7,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cve/node/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -33,8 +32,7 @@ var (
 
 // serviceImpl provides APIs for CVEs.
 type serviceImpl struct {
-	cves       datastore.DataStore
-	vulnReqMgr vulnReqMgr.Manager
+	cves datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
