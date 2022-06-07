@@ -74,7 +74,7 @@ func run() error {
 		var gormDB *gorm.DB
 		gormDB, err = postgreshelper.Load(conf)
 		if err != nil {
-			return errors.Wrapf(err, "failed to connect to postgres DB")
+			return errors.Wrap(err, "failed to connect to postgres DB")
 		}
 		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
 	}
