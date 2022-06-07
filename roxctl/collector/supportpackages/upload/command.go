@@ -3,7 +3,7 @@ package upload
 import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
 type collectorSPUploadCommand struct {
@@ -12,11 +12,11 @@ type collectorSPUploadCommand struct {
 	packageFile string
 
 	// Properties that are injected or constructed.
-	env environment.Environment
+	env common.Environment
 }
 
 // Command defines the command. See usage strings for details.
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 
 	collectorSPUploadCmd := &collectorSPUploadCommand{env: cliEnvironment}
 	c := &cobra.Command{

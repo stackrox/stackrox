@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	env "github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
@@ -81,8 +81,8 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: false},
 		)
 	}
-	testIO, _, _, _ := environment.TestIO()
-	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	testIO, _, _, _ := env.TestIO()
+	env := env.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
 	for _, tt := range tests {
 		tt := tt
@@ -124,8 +124,8 @@ func (s *HelmChartTestSuite) TestHelmLint() {
 func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor string) {
 	outputDir := t.TempDir()
 
-	testIO, _, _, _ := environment.TestIO()
-	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	testIO, _, _, _ := env.TestIO()
+	env := env.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
 	err := executeHelpOutputCommand(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, env)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
@@ -137,7 +137,7 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 	}
 }
 
-func executeHelpOutputCommand(chartName, outputDir string, removeOutputDir bool, imageFlavor string, flavorProvided, rhacs bool, env environment.Environment) error {
+func executeHelpOutputCommand(chartName, outputDir string, removeOutputDir bool, imageFlavor string, flavorProvided, rhacs bool, env env.Environment) error {
 	cmd := helmOutputCommand{
 		outputDir:       outputDir,
 		removeOutputDir: removeOutputDir,

@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/ioutils"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
@@ -35,13 +35,13 @@ type centralDbRestoreCommand struct {
 	interrupt bool
 
 	// Properties that are injected or constructed.
-	env     environment.Environment
+	env     common.Environment
 	timeout time.Duration
 	confirm func() error
 }
 
 // V2Command defines the new db restore command
-func V2Command(cliEnvironment environment.Environment) *cobra.Command {
+func V2Command(cliEnvironment common.Environment) *cobra.Command {
 	centralDbRestoreCmd := &centralDbRestoreCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use: "restore <file>",

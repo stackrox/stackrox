@@ -15,8 +15,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/mocks"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/summaries/policy"
 	"github.com/stretchr/testify/suite"
@@ -221,7 +221,7 @@ func (suite *imageCheckTestSuite) createGRPCServerWithDetectionService(alerts []
 	return conn, closeF
 }
 
-func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
+func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) (common.Environment, *bytes.Buffer, *bytes.Buffer) {
 	return mocks.NewEnvWithConn(conn, suite.T())
 }
 
@@ -413,8 +413,8 @@ func (suite *imageCheckTestSuite) TestValidate() {
 			imgCheckCmd.json = c.json
 			imgCheckCmd.failViolationsWithJSON = c.failViolations
 			imgCheckCmd.objectPrinter = c.printer
-			testIO, _, _, errOut := environment.TestIO()
-			imgCheckCmd.env = environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+			testIO, _, _, errOut := common.TestIO()
+			imgCheckCmd.env = common.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 			suite.Assert().NoError(imgCheckCmd.Validate())
 			suite.Assert().Equal(c.expectedWarning, errOut.String())
 		})
@@ -423,7 +423,7 @@ func (suite *imageCheckTestSuite) TestValidate() {
 
 func (suite *imageCheckTestSuite) TestLegacyPrint_Error() {
 	imgCheckCmd := suite.imageCheckCommand
-	env := environment.NewCLIEnvironment(environment.DiscardIO(), printer.DefaultColorPrinter())
+	env := common.NewCLIEnvironment(common.DiscardIO(), printer.DefaultColorPrinter())
 	imgCheckCmd.env = env
 	jsonPrinter, _ := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
 
@@ -501,8 +501,8 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
 
 	for name, c := range cases {
 		suite.Run(name, func() {
-			testIO, _, out, _ := environment.TestIO()
-			imgCheckCmd.env = environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+			testIO, _, out, _ := common.TestIO()
+			imgCheckCmd.env = common.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 			imgCheckCmd.json = c.json
 			imgCheckCmd.printAllViolations = c.printAllViolations
 			// Errors will be tested within TestLegacyPrint_Error
