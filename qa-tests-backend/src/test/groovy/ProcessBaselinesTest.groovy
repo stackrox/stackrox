@@ -247,7 +247,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         log.info "Locked Process Baseline after pwd: ${lockProcessBaselines}"
 
         // Give the reprocessing some time.
-        sleep 30000
+//         sleep 30000
 
         // check for process baseline violation
         assert waitForViolation(containerName, "Unauthorized Process Execution", 240)
