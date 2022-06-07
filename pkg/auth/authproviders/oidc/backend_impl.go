@@ -34,6 +34,7 @@ const (
 	clientSecretConfigKey        = "client_secret"
 	dontUseClientSecretConfigKey = "do_not_use_client_secret"
 	modeConfigKey                = "mode"
+	disableOfflineAccessKey      = "disable_offline_access"
 
 	userInfoExpiration = 5 * time.Minute
 
@@ -305,7 +306,14 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 
 	b.idTokenVerifier = provider.Verifier(&oidc.Config{ClientID: clientID})
 
-	b.baseOauthConfig, err = createBaseOAuthConfig(clientID, clientSecret, provider.Endpoint(), issuerHelper, provider.SupportsScope(oidc.ScopeOfflineAccess))
+	disableOfflineAccess := config[disableOfflineAccessKey] == "true"
+	b.baseOauthConfig, err = createBaseOAuthConfig(
+		clientID,
+		clientSecret,
+		provider.Endpoint(),
+		issuerHelper,
+		!disableOfflineAccess && provider.SupportsScope(oidc.ScopeOfflineAccess),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -315,6 +323,9 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		clientIDConfigKey:     clientID,
 		clientSecretConfigKey: clientSecret,
 		modeConfigKey:         mode,
+	}
+	if disableOfflineAccess {
+		b.config[disableOfflineAccessKey] = "true"
 	}
 
 	return b, nil

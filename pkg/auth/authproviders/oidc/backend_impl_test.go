@@ -120,9 +120,10 @@ func (c claims) serialize(nonce string) string {
 }
 
 type wantBackend struct {
-	responseMode  string
-	responseTypes []string
-	config        map[string]string
+	responseMode    string
+	responseTypes   []string
+	config          map[string]string
+	baseOauthConfig *oauth2.Config
 }
 
 type responseValueProvider interface {
@@ -702,6 +703,16 @@ func TestBackend(t *testing.T) {
 					issuerConfigKey:       "https://test-issuer",
 					modeConfigKey:         "query",
 				},
+				baseOauthConfig: &oauth2.Config{
+					ClientID:     "testclientid",
+					ClientSecret: "testsecret",
+					Endpoint: oauth2.Endpoint{
+						AuthURL:  "fake-auth-url",
+						TokenURL: "fake-token-url",
+					},
+					RedirectURL: "",
+					Scopes:      []string{"openid", "profile", "email", "offline_access"},
+				},
 			},
 			issueNonce: true,
 			idpResponseTemplate: map[string]responseValueProvider{
@@ -726,6 +737,38 @@ func TestBackend(t *testing.T) {
 			wantBackend: &wantBackend{
 				responseMode:  "fragment",
 				responseTypes: []string{"token", "id_token"},
+			},
+			idpResponseTemplate: map[string]responseValueProvider{
+				"access_token": literalValue{mockAccessToken},
+			},
+		},
+		"mode auto, with client secret, disable offline_access scope": {
+			config: map[string]string{
+				clientIDConfigKey:       "testclientid",
+				clientSecretConfigKey:   "testsecret",
+				issuerConfigKey:         "https://test-issuer",
+				modeConfigKey:           "",
+				disableOfflineAccessKey: "true",
+			},
+			oidcProvider: &mockOIDCProvider{
+				responseTypesSupported:     allResponseTypes,
+				responseModesSupported:     allResponseModes,
+				claimsFromUserInfoEndpoint: suppliedClaims,
+				userInfoAssertAccessToken:  mockAccessToken,
+			},
+			wantBackend: &wantBackend{
+				responseMode:  "fragment",
+				responseTypes: []string{"token", "id_token"},
+				baseOauthConfig: &oauth2.Config{
+					ClientID:     "testclientid",
+					ClientSecret: "testsecret",
+					Endpoint: oauth2.Endpoint{
+						AuthURL:  "fake-auth-url",
+						TokenURL: "fake-token-url",
+					},
+					RedirectURL: "",
+					Scopes:      []string{"openid", "profile", "email"},
+				},
 			},
 			idpResponseTemplate: map[string]responseValueProvider{
 				"access_token": literalValue{mockAccessToken},
@@ -878,6 +921,9 @@ func (want *wantBackend) assertMatches(t *testing.T, got *backendImpl) {
 		want.responseTypes)
 	if want.config != nil {
 		assert.Equal(t, want.config, got.config, "unexpected config")
+	}
+	if want.baseOauthConfig != nil {
+		assert.Equal(t, *want.baseOauthConfig, got.baseOauthConfig, "unexpected baseOauthConfig")
 	}
 }
 
