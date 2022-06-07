@@ -491,5 +491,5 @@ func getSACContexts(obj *{{.Type}}, access storage.Access) map[string]context.Co
 		)),
 	}
 }
-{{ end }}
+{{end}}
 {{- end }}
