@@ -57,11 +57,16 @@ function linkForViolationsCategory(category: string) {
 
 const height = `${chartHeight}px` as const;
 
-function ViolationsByPolicyCategory() {
+type ViolationsByPolicyCategoryChartProps = {
+    violationCounts: AlertGroup[];
+};
+
+function ViolationsByPolicyCategoryChart({
+    violationCounts,
+}: ViolationsByPolicyCategoryChartProps) {
     const history = useHistory();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
-    const { violationCounts, loading, error } = useViolationCounts('CATEGORY', ''); // TODO Implement query filtering
 
     const countsBySeverity = getCountsBySeverity(violationCounts);
     const bars = Object.entries(countsBySeverity).map(([severity, counts]) => {
@@ -79,14 +84,53 @@ function ViolationsByPolicyCategory() {
                 data={data}
                 labelComponent={<ChartTooltip constrainToVisibleArea />}
                 events={[
-                    navigateOnClickEvent(history, (props) => {
-                        const category = props?.datum?.xName as string;
+                    navigateOnClickEvent(history, (targetProps) => {
+                        const category = targetProps?.datum?.xName;
                         return linkForViolationsCategory(category);
                     }),
                 ]}
             />
         );
     });
+
+    return (
+        <div className="pf-u-px-md" ref={setWidgetContainer} style={{ height }}>
+            <Chart
+                ariaDesc="Number of violation by policy category, grouped by severity"
+                ariaTitle="Policy Violations by Category"
+                domainPadding={{ x: [30, 25] }}
+                legendData={[
+                    { name: 'Low' },
+                    { name: 'Medium' },
+                    { name: 'High' },
+                    { name: 'Critical' },
+                ]}
+                legendPosition="bottom"
+                height={chartHeight}
+                width={widgetContainerResizeEntry?.contentRect.width} // Victory defaults to 450
+                padding={{
+                    // TODO Auto-adjust padding based on screen size and/or max text length, if possible
+                    left: 180, // left padding is dependent on the length of the text on the left axis
+                    bottom: 75, // Adjusted to accommodate legend
+                }}
+                theme={patternflySeverityTheme}
+            >
+                <ChartAxis
+                    tickLabelComponent={
+                        <LinkableChartLabel
+                            linkWith={({ text }) => linkForViolationsCategory(String(text))}
+                        />
+                    }
+                />
+                <ChartAxis dependentAxis showGrid />
+                <ChartStack horizontal>{bars}</ChartStack>
+            </Chart>
+        </div>
+    );
+}
+
+function ViolationsByPolicyCategory() {
+    const { violationCounts, loading, error } = useViolationCounts('CATEGORY', ''); // TODO Implement query filtering
 
     let cardContent: ReactNode;
 
@@ -101,40 +145,7 @@ function ViolationsByPolicyCategory() {
             <Skeleton height={height} screenreaderText="Loading Policy Violations By Category" />
         );
     } else {
-        cardContent = (
-            <div className="pf-u-px-md" ref={setWidgetContainer} style={{ height }}>
-                <Chart
-                    ariaDesc="Number of violation by policy category, grouped by severity"
-                    ariaTitle="Policy Violations by Category"
-                    domainPadding={{ x: [30, 25] }}
-                    legendData={[
-                        { name: 'Low' },
-                        { name: 'Medium' },
-                        { name: 'High' },
-                        { name: 'Critical' },
-                    ]}
-                    legendPosition="bottom"
-                    height={chartHeight}
-                    width={widgetContainerResizeEntry?.contentRect.width} // Victory defaults to 450
-                    padding={{
-                        // TODO Auto-adjust padding based on screen size and/or max text length, if possible
-                        left: 180, // left padding is dependent on the length of the text on the left axis
-                        bottom: 75, // Adjusted to accommodate legend
-                    }}
-                    theme={patternflySeverityTheme}
-                >
-                    <ChartAxis
-                        tickLabelComponent={
-                            <LinkableChartLabel
-                                linkWith={({ text }) => linkForViolationsCategory(String(text))}
-                            />
-                        }
-                    />
-                    <ChartAxis dependentAxis showGrid />
-                    <ChartStack horizontal>{bars}</ChartStack>
-                </Chart>
-            </div>
-        );
+        cardContent = <ViolationsByPolicyCategoryChart violationCounts={violationCounts} />;
     }
 
     return (
