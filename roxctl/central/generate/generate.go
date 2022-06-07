@@ -296,7 +296,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	)
 
 	c.PersistentFlags().VarPF(
-		flags.ForSetting(env.PlaintextEndpoints), "plaintext-endpoints", "",
+		flags.ForSetting(env.PlaintextEndpoints, cliEnvironment.Logger()), "plaintext-endpoints", "",
 		"The ports or endpoints to use for plaintext (unencrypted) exposure; comma-separated list.")
 	utils.Must(
 		c.PersistentFlags().SetAnnotation("plaintext-endpoints", flags.NoInteractiveKey, []string{"true"}))
