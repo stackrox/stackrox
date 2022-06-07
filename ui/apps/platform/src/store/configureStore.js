@@ -15,7 +15,8 @@ const sagaMiddleware = createSagaMiddleware({
     onError: (error) => Raven.captureException(error),
 });
 
-const ravenMiddleware = createRavenMiddleware(Raven);
+// Omit Redux state to reduce size of payload in /api/logimbue request.
+const ravenMiddleware = createRavenMiddleware(Raven, { stateTransformer: () => null });
 
 export default function configureStore(initialState = {}, history) {
     const middlewares = [sagaMiddleware, routerMiddleware(history), ravenMiddleware];
