@@ -16,14 +16,14 @@ const height = `${defaultChartHeight}px` as const;
 function WidgetCard({ title, isLoading, error, children }: WidgetCardProps) {
     let cardContent: ReactNode;
 
-    if (error) {
+    if (isLoading && !error) {
+        cardContent = <Skeleton height={height} screenreaderText={`Loading ${title}`} />;
+    } else if (error) {
         cardContent = (
             <WidgetErrorEmptyState height={height} title="Unable to load data">
                 There was an error loading data for this widget
             </WidgetErrorEmptyState>
         );
-    } else if (isLoading) {
-        cardContent = <Skeleton height={height} screenreaderText={`Loading ${title}`} />;
     } else {
         cardContent = children;
     }

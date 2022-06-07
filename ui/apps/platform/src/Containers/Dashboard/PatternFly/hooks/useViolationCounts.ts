@@ -35,6 +35,9 @@ export default function useViolationCounts(
             'request.query': query,
             group_by: groupBy,
         });
+
+        setError(null);
+
         request
             .then((groups) => {
                 const selected = sortBy(groups, [
