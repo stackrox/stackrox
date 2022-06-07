@@ -203,6 +203,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/rocksdb",
 			"pkg/set",
 			"pkg/sliceutils",
+			"pkg/sync",
 			"pkg/testutils",
 			"pkg/utils",
 			"pkg/uuid",
