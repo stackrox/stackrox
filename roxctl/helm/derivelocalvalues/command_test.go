@@ -24,7 +24,7 @@ type helmDeriveLocalValuesTestSuite struct {
 func (suite *helmDeriveLocalValuesTestSuite) SetupTest() {
 	testIO, _, _, _ := common.TestIO()
 	suite.helmDeriveLocalValuesCommand = helmDeriveLocalValuesCommand{}
-	suite.helmDeriveLocalValuesCommand.env = common.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	suite.helmDeriveLocalValuesCommand.env = common.NewTestCLIEnvironment(suite.T(), testIO, printer.DefaultColorPrinter())
 }
 
 func (suite *helmDeriveLocalValuesTestSuite) TestInvalidCommandArgs() {

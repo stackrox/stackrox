@@ -16,7 +16,7 @@ func NewEnvWithConn(conn *grpc.ClientConn, t *testing.T) (common.Environment, *b
 	envMock := NewMockEnvironment(gomock.NewController(t))
 
 	testIO, _, out, errOut := common.TestIO()
-	env := common.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	env := common.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
 
 	envMock.EXPECT().InputOutput().AnyTimes().Return(env.InputOutput())
 	envMock.EXPECT().Logger().AnyTimes().Return(env.Logger())

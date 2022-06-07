@@ -3,7 +3,6 @@ package common
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -14,7 +13,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
-const warningMsg = `WARNING: The remote endpoint failed TLS validation. This will be a fatal error in future releases.
+const warningMsg = `The remote endpoint failed TLS validation. This will be a fatal error in future releases.
 Please do one of the following at your earliest convenience:
   1. Obtain a valid certificate for your Central instance/Load Balancer.
   2. Use the --ca option to specify a custom CA certificate (PEM format). This Certificate can be obtained by
@@ -39,8 +38,8 @@ func (v *insecureVerifierWithWarning) VerifyPeerCertificate(leaf *x509.Certifica
 	_, err := leaf.Verify(verifyOpts)
 	if err != nil {
 		v.printWarningOnce.Do(func() {
-			fmt.Fprint(os.Stderr, warningMsg)
-			fmt.Fprintln(os.Stderr, "Certificate validation error:", err.Error())
+			CLIEnvironment().Logger().WarnfLn(warningMsg)
+			CLIEnvironment().Logger().ErrfLn("Certificate validation error:", err.Error())
 		})
 	}
 	return nil
@@ -88,7 +87,7 @@ func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
 			return nil, errors.Errorf("CA certificates file %s contains no certificates!", flags.CAFile())
 		}
 		if flags.SkipTLSValidation() != nil && *flags.SkipTLSValidation() {
-			fmt.Fprintln(os.Stderr, "Warning: --insecure-skip-tls-verify has no effect when --ca is set")
+			CLIEnvironment().Logger().WarnfLn("--insecure-skip-tls-verify has no effect when --ca is set")
 		}
 	} else {
 		if flags.SkipTLSValidation() == nil {

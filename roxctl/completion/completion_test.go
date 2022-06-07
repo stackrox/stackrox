@@ -31,7 +31,7 @@ func TestCompletionCommand_InvalidArgs(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			io, _, _, _ := common.TestIO()
-			cmd := Command(common.NewCLIEnvironment(io, nil))
+			cmd := Command(common.NewTestCLIEnvironment(t, io, nil))
 			cmd.SetArgs(c.args)
 			err := cmd.Execute()
 			assert.Equal(t, c.err, err, "expected %v to match %v", err, errInvalidArgs)
@@ -60,7 +60,7 @@ func TestCompletionCommand_Success(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			io, _, _, _ := common.TestIO()
-			cmd := Command(common.NewCLIEnvironment(io, printer.DefaultColorPrinter()))
+			cmd := Command(common.NewTestCLIEnvironment(t, io, printer.DefaultColorPrinter()))
 			cmd.SetArgs(c.args)
 			assert.NoErrorf(t, cmd.Execute(), "completion for %q failed", c.args[0])
 		})

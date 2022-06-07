@@ -360,7 +360,7 @@ func (s *imageScanTestSuite) TestDeprecationNote() {
 		s.Run(name, func() {
 			imgScanCmd := s.defaultImageScanCommand
 			io, _, _, errOut := common.TestIO()
-			imgScanCmd.env = common.NewCLIEnvironment(io, printer.DefaultColorPrinter())
+			imgScanCmd.env = common.NewTestCLIEnvironment(s.T(), io, printer.DefaultColorPrinter())
 			cmd := Command(imgScanCmd.env)
 			cmd.Flags().Duration("timeout", 1*time.Minute, "")
 			cmd.Flag("format").Changed = c.formatChanged

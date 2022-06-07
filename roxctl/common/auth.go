@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/env"
@@ -35,7 +34,7 @@ To provide a token value directly, set the ROX_API_TOKEN environment variable.
 func printAuthHelp() {
 	if !strings.Contains(flags.APITokenFile(), "/") {
 		// Specified token file looks somewhat like a literal token, try to help the user.
-		fmt.Fprintf(os.Stderr, userHelpLiteralToken, flags.APITokenFile())
+		CLIEnvironment().Logger().PrintfLn(userHelpLiteralToken, flags.APITokenFile())
 	}
 }
 

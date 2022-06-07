@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/roxctl/collector"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/completion"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/helm"
@@ -57,16 +56,7 @@ func Command() *cobra.Command {
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
 
-	// We have chicken and egg problem here. We need to parse flags to know if --no-color was set
-	// but at the same time we need to set printer to handle possible flags parsing errors.
-	// Instead of using native cobra flags mechanism we can just check if os.Args contains --no-color.
-	var colorPrinter printer.ColorfulPrinter
-	if flags.HasNoColor(os.Args) {
-		colorPrinter = printer.NoColorPrinter()
-	} else {
-		colorPrinter = printer.DefaultColorPrinter()
-	}
-	cliEnvironment := common.NewCLIEnvironment(common.DefaultIO(), colorPrinter)
+	cliEnvironment := common.CLIEnvironment()
 	c.SetErr(errorWriter{
 		logger: cliEnvironment.Logger(),
 	})

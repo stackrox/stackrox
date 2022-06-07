@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func executeUpdateDbCommand(serverURL string) (*bytes.Buffer, *bytes.Buffer, error) {
+func executeUpdateDbCommand(t *testing.T, serverURL string) (*bytes.Buffer, *bytes.Buffer, error) {
 	tmpFile, errTempFile := os.CreateTemp("", "*.zip")
 	if errTempFile != nil {
 		return nil, nil, errTempFile
@@ -28,7 +28,7 @@ func executeUpdateDbCommand(serverURL string) (*bytes.Buffer, *bytes.Buffer, err
 	})
 
 	testIO, _, stdOut, stdErr := common.TestIO()
-	env := common.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	env := common.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
 
 	cmd := Command(env)
 	flags.AddTimeout(cmd)
@@ -72,7 +72,7 @@ func TestScannerUploadDbCommand(t *testing.T) {
 		}))
 		defer server.Close()
 
-		_, _, err := executeUpdateDbCommand(server.URL)
+		_, _, err := executeUpdateDbCommand(t, server.URL)
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), expectedErrorStr)
@@ -84,7 +84,7 @@ func TestScannerUploadDbCommand(t *testing.T) {
 		}))
 		defer server.Close()
 
-		stdOut, stdErr, err := executeUpdateDbCommand(server.URL)
+		stdOut, stdErr, err := executeUpdateDbCommand(t, server.URL)
 
 		require.Error(t, err)
 		require.NotNil(t, stdOut)
@@ -101,7 +101,7 @@ func TestScannerUploadDbCommand(t *testing.T) {
 		}))
 		defer server.Close()
 
-		stdOut, stdErr, err := executeUpdateDbCommand(server.URL)
+		stdOut, stdErr, err := executeUpdateDbCommand(t, server.URL)
 
 		require.NoError(t, err)
 		assert.Empty(t, stdErr.String())
