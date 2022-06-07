@@ -65,7 +65,7 @@ func fetchCACommand(cliEnvironment common.Environment) *cobra.Command {
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if outputFile == "" {
-				return errors.New("No output file specified with --output (for stdout, specify '-')")
+				return common.ErrInvalidCommandOption.New("no output file specified with --output (for stdout, specify '-')")
 			} else if outputFile == "-" {
 				outputFile = ""
 			}

@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/roxctl/common"
@@ -94,7 +95,7 @@ func Command(cliEnvironment common.Environment) *cobra.Command {
 		RunE: func(c *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				_ = c.Help()
-				return errors.Errorf("Expected exactly one argument, but %d were provided", len(args))
+				return errox.InvalidArgs.Newf("Expected exactly one argument, but %d were provided", len(args))
 			}
 
 			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), createUpgraderSA, slimCollector, istioVersion, cliEnvironment.Logger()); err != nil {

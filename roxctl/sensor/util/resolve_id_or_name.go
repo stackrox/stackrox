@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -42,5 +42,5 @@ func ResolveClusterID(idOrName string, timeout time.Duration) (string, error) {
 			return cluster.GetId(), nil
 		}
 	}
-	return "", errors.Errorf("no cluster with name %q found", idOrName)
+	return "", errox.NotFound.Newf("no cluster with name %q found", idOrName)
 }

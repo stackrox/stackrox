@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -27,7 +28,7 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment common.Environme
 	}
 
 	if len(idsOrNames) != 0 {
-		return errors.Errorf("could not find init bundle(s) %s", strings.Join(idsOrNames.AsSlice(), ", "))
+		return errox.NotFound.Newf("could not find init bundle(s) %s", strings.Join(idsOrNames.AsSlice(), ", "))
 	}
 
 	revokeResp, err := svc.RevokeInitBundle(ctx, &v1.InitBundleRevokeRequest{Ids: revokeInitBundleIds})

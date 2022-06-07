@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/net/http2"
 )
@@ -72,7 +73,7 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 		if err != nil {
 			return nil, errors.Wrapf(err, "Expected status code %d, but received %d. Additionally, there was an error reading the response", code, resp.StatusCode)
 		}
-		return nil, errors.Errorf("Expected status code %d, but received %d. Response Body: %s", code, resp.StatusCode, string(data))
+		return nil, errox.InvariantViolation.Newf("expected status code %d, but received %d. Response Body: %s", code, resp.StatusCode, string(data))
 	}
 
 	return resp, nil
@@ -99,7 +100,7 @@ func (client *roxctlClientImpl) NewReq(method string, path string, body io.Reade
 	}
 
 	if req.URL.Scheme != "https" && !client.useInsecure {
-		return nil, errors.Errorf("URL %v uses insecure scheme %q, use --insecure flags to enable sending credentials", req.URL, req.URL.Scheme)
+		return nil, errox.InvalidArgs.Newf("URL %v uses insecure scheme %q, use --insecure flags to enable sending credentials", req.URL, req.URL.Scheme)
 	}
 	err = client.a.SetAuth(req)
 	if err != nil {

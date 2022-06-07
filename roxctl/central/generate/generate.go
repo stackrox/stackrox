@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -119,7 +120,7 @@ func createBundle(logger common.Logger, config renderer.Config) (*zip.Wrapper, e
 	wrapper := zip.NewWrapper()
 
 	if config.ClusterType == storage.ClusterType_GENERIC_CLUSTER {
-		return nil, errors.Errorf("invalid cluster type: %s", config.ClusterType)
+		return nil, errox.InvalidArgs.Newf("invalid cluster type: %s", config.ClusterType)
 	}
 
 	config.SecretsByteMap = make(map[string][]byte)

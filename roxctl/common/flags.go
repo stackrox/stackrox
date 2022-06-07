@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -36,7 +37,7 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 
 	if usePlaintext {
 		if !flags.UseInsecure() {
-			return nil, errors.New("plaintext connection mode must be used in conjunction with --insecure")
+			return nil, errox.InvalidArgs.New("plaintext connection mode must be used in conjunction with --insecure")
 		}
 		opts.InsecureNoTLS = true
 		opts.InsecureAllowCredsViaPlaintext = true
@@ -61,7 +62,7 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 			return proxy, errors.Wrap(proxyErr, "could not connect via proxy")
 		}
 	} else if flags.ForceHTTP1() {
-		return nil, errors.New("cannot force HTTP/1 mode if direct gRPC is enabled")
+		return nil, errox.InvalidArgs.New("cannot force HTTP/1 mode if direct gRPC is enabled")
 	}
 
 	if err := checkAuthParameters(); err != nil {

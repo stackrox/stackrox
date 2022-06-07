@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 var (
@@ -52,7 +53,7 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 	}
 
 	if u.Path != "" && u.Path != "/" {
-		return "", false, errors.New("endpoint URL must not include a path component")
+		return "", false, errox.InvalidArgs.New("endpoint URL must not include a path component")
 	}
 
 	var usePlaintext bool
@@ -62,12 +63,12 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 	case "https":
 		usePlaintext = false
 	default:
-		return "", false, errors.Errorf("invalid scheme %q in endpoint URL", u.Scheme)
+		return "", false, errox.InvalidArgs.Newf("invalid scheme %q in endpoint URL", u.Scheme)
 	}
 
 	if *plaintextSet {
 		if plaintext != usePlaintext {
-			return "", false, errors.Errorf("endpoint URL scheme %q is incompatible with --plaintext=%v setting", u.Scheme, plaintext)
+			return "", false, errox.InvalidArgs.Newf("endpoint URL scheme %q is incompatible with --plaintext=%v setting", u.Scheme, plaintext)
 		}
 	}
 

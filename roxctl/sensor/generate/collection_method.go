@@ -1,10 +1,10 @@
 package generate
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 var (
@@ -42,7 +42,7 @@ func (f *collectionTypeWrapper) Set(input string) error {
 	}
 	pt, ok := humanReadableToEnum[inputNormalized]
 	if !ok {
-		return fmt.Errorf("Invalid collection method: %s", input)
+		return errox.InvalidArgs.Newf("invalid collection method: %s", input)
 	}
 	*f.CollectionMethod = pt
 	return nil

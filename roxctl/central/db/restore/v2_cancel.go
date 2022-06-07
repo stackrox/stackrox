@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -62,7 +63,7 @@ func (cmd *centralRestoreCancelCommand) cancelActiveRestore() error {
 
 	processStatus := activeRestoreProcessResp.GetActiveStatus()
 	if processStatus == nil {
-		return errors.New("No restore process is currently in progress")
+		return errox.NotFound.New("no restore process is currently in progress")
 	}
 
 	cmd.env.Logger().PrintfLn("Active database restore process information")
