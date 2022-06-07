@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -43,7 +44,7 @@ func CheckConfirmation(c *cobra.Command) error {
 	}
 	resp = strings.ToLower(strings.TrimSpace(resp))
 	if resp != "y" {
-		return errors.New("User rejected")
+		return errox.NotAuthorized.New("User rejected")
 	}
 	return nil
 }

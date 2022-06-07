@@ -5,12 +5,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"io"
 	"os"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -75,7 +75,7 @@ func (cmd *centralCertCommand) certs() error {
 	// Verify that at least 1 certificate was obtained from the connection.
 	certs := conn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
-		return errors.New("server returned no certificates")
+		return errox.NotFound.New("server returned no certificates")
 	}
 
 	// "File" to output PEM certificate to.
