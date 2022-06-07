@@ -82,7 +82,7 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 		)
 	}
 	testIO, _, _, _ := env.TestIO()
-	env := env.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	env := env.NewTestCLIEnvironment(s.T(), testIO, printer.DefaultColorPrinter())
 
 	for _, tt := range tests {
 		tt := tt
@@ -125,7 +125,7 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 	outputDir := t.TempDir()
 
 	testIO, _, _, _ := env.TestIO()
-	env := env.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	env := env.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
 
 	err := executeHelpOutputCommand(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, env)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)

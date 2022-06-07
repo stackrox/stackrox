@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"time"
@@ -95,7 +94,7 @@ func (cmd *centralCertCommand) certs() error {
 	}
 
 	// Print out information about the leaf cert to STDERR.
-	writeCertInfo(os.Stderr, certs[0])
+	writeCertInfo(cmd.env.Logger(), certs[0])
 
 	// Write out the leaf cert in PEM format.
 	if err := writeCertPEM(handle, certs[0]); err != nil {
@@ -122,9 +121,10 @@ func writeCertPEM(writer io.Writer, cert *x509.Certificate) error {
 	return nil
 }
 
-func writeCertInfo(writer io.Writer, cert *x509.Certificate) {
-	fmt.Fprintf(writer, "Issuer:  %v\n", cert.Issuer)
-	fmt.Fprintf(writer, "Subject: %v\n", cert.Subject)
-	fmt.Fprintf(writer, "Not valid before: %v\n", cert.NotBefore)
-	fmt.Fprintf(writer, "Not valid after:  %v\n", cert.NotAfter)
+func writeCertInfo(logger common.Logger, cert *x509.Certificate) {
+	logger.InfofLn("Issuer: %v", cert.Issuer)
+	logger.InfofLn("Issuer:  %v", cert.Issuer)
+	logger.InfofLn("Subject: %v", cert.Subject)
+	logger.InfofLn("Not valid before: %v", cert.NotBefore)
+	logger.InfofLn("Not valid after:  %v", cert.NotAfter)
 }

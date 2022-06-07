@@ -2,7 +2,6 @@ package scan
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"time"
 
@@ -210,7 +209,7 @@ func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 // via a printer.ObjectPrinter
 func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 	if i.printer == nil {
-		return legacyPrintFormat(imageResult, i.format, i.env.InputOutput().Out())
+		return legacyPrintFormat(imageResult, i.format, i.env.InputOutput().Out(), i.env.Logger())
 	}
 
 	cveSummary := newCVESummaryForPrinting(imageResult.GetScan())
@@ -253,7 +252,7 @@ func printCVEWarning(numOfVulns int, numOfComponents int, out common.Logger) {
 
 // TODO(ROX-8303): remove this once we have fully deprecated the legacy output format
 // print CVE scan result in legacy output format
-func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer) error {
+func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer, logger common.Logger) error {
 	switch format {
 	case "csv":
 		return PrintCSV(imageResult, out)
@@ -266,7 +265,7 @@ func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer)
 			return errors.Wrap(err, "could not marshal image result")
 		}
 
-		fmt.Fprintln(out, jsonResult)
+		logger.PrintfLn(jsonResult)
 	}
 	return nil
 }

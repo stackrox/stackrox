@@ -414,7 +414,7 @@ func (suite *imageCheckTestSuite) TestValidate() {
 			imgCheckCmd.failViolationsWithJSON = c.failViolations
 			imgCheckCmd.objectPrinter = c.printer
 			testIO, _, _, errOut := common.TestIO()
-			imgCheckCmd.env = common.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+			imgCheckCmd.env = common.NewTestCLIEnvironment(suite.T(), testIO, printer.DefaultColorPrinter())
 			suite.Assert().NoError(imgCheckCmd.Validate())
 			suite.Assert().Equal(c.expectedWarning, errOut.String())
 		})
@@ -423,7 +423,7 @@ func (suite *imageCheckTestSuite) TestValidate() {
 
 func (suite *imageCheckTestSuite) TestLegacyPrint_Error() {
 	imgCheckCmd := suite.imageCheckCommand
-	env := common.NewCLIEnvironment(common.DiscardIO(), printer.DefaultColorPrinter())
+	env := common.NewTestCLIEnvironment(suite.T(), common.DiscardIO(), printer.DefaultColorPrinter())
 	imgCheckCmd.env = env
 	jsonPrinter, _ := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
 
@@ -502,7 +502,7 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
 	for name, c := range cases {
 		suite.Run(name, func() {
 			testIO, _, out, _ := common.TestIO()
-			imgCheckCmd.env = common.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+			imgCheckCmd.env = common.NewTestCLIEnvironment(suite.T(), testIO, printer.DefaultColorPrinter())
 			imgCheckCmd.json = c.json
 			imgCheckCmd.printAllViolations = c.printAllViolations
 			// Errors will be tested within TestLegacyPrint_Error
