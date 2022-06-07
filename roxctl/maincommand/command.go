@@ -28,7 +28,7 @@ func versionCommand(cliEnvironment common.Environment) *cobra.Command {
 		Args: cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
-				enc := json.NewEncoder(os.Stdout)
+				enc := json.NewEncoder(cliEnvironment.InputOutput().Out())
 				enc.SetIndent("", "  ")
 				versions := version.GetAllVersionsDevelopment()
 				if buildinfo.ReleaseBuild {
