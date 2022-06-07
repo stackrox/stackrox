@@ -2,11 +2,14 @@ package resolvers
 
 import (
 	"context"
+	"math"
+	"sort"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/distroctx"
+	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
@@ -15,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -60,12 +64,87 @@ func init() {
 			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! " +
 				"@deprecated(reason: \"use 'imageVulnerabilities'\")",
 		}),
+		schema.AddInput("sortBy", []string{
+			"sortByFixable: Boolean!",
+		}),
 		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
+		schema.AddQuery("sortedImages(query: String, pagination: Pagination, sortBy: sortBy): [Image!]!"),
 		schema.AddQuery("imageCount(query: String): Int!"),
 		schema.AddQuery("image(id: ID!): Image"),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", "layerIndex: Int"),
 		schema.AddEnumType("ImageWatchStatus", imageWatchStatuses),
 	)
+}
+
+// SortBy represents sort options to sort images by
+type SortBy struct {
+	SortByFixable bool
+}
+
+// SortedImages returns a list of images sorted by CVE severity distribution
+func (resolver *Resolver) SortedImages(ctx context.Context, args struct {
+	Query      *string
+	Pagination *inputtypes.Pagination
+	SortBy     *SortBy
+}) ([]*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Images")
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	var sortByFixable bool
+	if args.SortBy == nil {
+		sortByFixable = false
+	} else {
+		sortByFixable = args.SortBy.SortByFixable
+	}
+	var q *v1.Query
+	if args.Query == nil {
+		q := search.EmptyQuery()
+		paginated.FillPagination(q, args.Pagination.AsV1Pagination(), math.MaxInt32)
+	} else {
+		q, err := search.ParseQuery(*args.Query, search.MatchAllIfEmpty())
+		if err != nil {
+			return nil, err
+		}
+		paginated.FillPagination(q, args.Pagination.AsV1Pagination(), math.MaxInt32)
+
+	}
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	images, err := resolver.wrapImages(imageLoader.FromQuery(ctx, q))
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(images, func(i, j int) bool {
+		vulnCount1, err := images[i].ImageVulnerabilityCounter(ctx, RawQuery{args.Query, nil})
+		if err != nil {
+			return false
+		}
+		vulnCount2, err := images[j].ImageVulnerabilityCounter(ctx, RawQuery{args.Query, nil})
+		if err != nil {
+			return false
+		}
+		return compareVulnDistributionBySeverity(vulnCount1, vulnCount2, sortByFixable)
+	})
+	return images, nil
+}
+
+func compareVulnDistributionBySeverity(vulnCount1 *VulnerabilityCounterResolver,
+	vulnCount2 *VulnerabilityCounterResolver, sortByFixable bool) bool {
+	if sortByFixable {
+		return vulnCount1.critical.fixable > vulnCount2.critical.fixable ||
+			(vulnCount1.critical.fixable == vulnCount2.critical.fixable && vulnCount1.important.fixable > vulnCount2.important.fixable) ||
+			(vulnCount1.important.fixable == vulnCount2.important.fixable && vulnCount1.moderate.fixable > vulnCount2.moderate.fixable) ||
+			(vulnCount1.moderate.fixable == vulnCount2.moderate.fixable && vulnCount1.low.fixable > vulnCount2.low.fixable)
+	}
+	return vulnCount1.critical.total > vulnCount2.critical.total ||
+		(vulnCount1.critical.total == vulnCount2.critical.total && vulnCount1.important.total > vulnCount2.important.total) ||
+		(vulnCount1.important.total == vulnCount2.important.total && vulnCount1.moderate.total > vulnCount2.moderate.total) ||
+		(vulnCount1.moderate.total == vulnCount2.moderate.total && vulnCount1.low.total > vulnCount2.low.total)
 }
 
 // Images returns GraphQL resolvers for all images
