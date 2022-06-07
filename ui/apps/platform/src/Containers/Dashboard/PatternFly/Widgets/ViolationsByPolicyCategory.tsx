@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Chart, ChartAxis, ChartStack, ChartBar, ChartTooltip } from '@patternfly/react-charts';
+import {
+    Chart,
+    ChartAxis,
+    ChartStack,
+    ChartBar,
+    ChartTooltip,
+    ChartLabelProps,
+} from '@patternfly/react-charts';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import { AlertGroup } from 'services/AlertsService';
@@ -60,6 +67,8 @@ type ViolationsByPolicyCategoryChartProps = {
     violationCounts: AlertGroup[];
 };
 
+const labelLinkCallback = ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text));
+
 function ViolationsByPolicyCategoryChart({
     violationCounts,
 }: ViolationsByPolicyCategoryChartProps) {
@@ -115,11 +124,7 @@ function ViolationsByPolicyCategoryChart({
                 theme={patternflySeverityTheme}
             >
                 <ChartAxis
-                    tickLabelComponent={
-                        <LinkableChartLabel
-                            linkWith={({ text }) => linkForViolationsCategory(String(text))}
-                        />
-                    }
+                    tickLabelComponent={<LinkableChartLabel linkWith={labelLinkCallback} />}
                 />
                 <ChartAxis dependentAxis showGrid />
                 <ChartStack horizontal>{bars}</ChartStack>
