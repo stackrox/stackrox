@@ -64,9 +64,6 @@ class SACTest extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
             isRaceBuild() ? 600 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 60)
 
-    static final private Integer WAIT_FOR_RISK_RETRIES =
-            isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 80 : 50)
-
     def setupSpec() {
         // Make sure we scan the image initially to make reprocessing faster.
         def img = Services.scanImage(TEST_IMAGE)
@@ -81,17 +78,6 @@ class SACTest extends BaseSpecification {
                 WAIT_FOR_VIOLATION_TIMEOUT)
         assert waitForViolation(DEPLOYMENT_QA2.name, "Secure Shell (ssh) Port Exposed",
                 WAIT_FOR_VIOLATION_TIMEOUT)
-
-        // Make sure each deployment has a risk score.
-        listDeployments().each { DeploymentOuterClass.ListDeployment dep ->
-            try {
-                withRetry(WAIT_FOR_RISK_RETRIES, 2) {
-                    assert DeploymentService.getDeploymentWithRisk(dep.id).hasRisk()
-                }
-            } catch (Exception e) {
-                throw new AssumptionViolatedException("Failed to retrieve risk from deployment ${dep.name}", e)
-            }
-        }
     }
 
     def cleanupSpec() {
@@ -158,7 +144,6 @@ class SACTest extends BaseSpecification {
         def result = DeploymentService.listDeployments()
         log.info result.toString()
         assert result.size() == 1
-        assert DeploymentService.getDeploymentWithRisk(result.first().id).hasRisk()
         def resourceNotAllowed = result.find { it.namespace != sacResource }
         assert resourceNotAllowed == null
         cleanup:
