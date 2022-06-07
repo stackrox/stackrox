@@ -3,8 +3,8 @@ package common
 import (
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/scancomponent"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -47,11 +47,11 @@ func splitComponents(parts *NodeParts) []*ComponentParts {
 }
 
 func splitCVEs(os string, component *ComponentParts, embedded *storage.EmbeddedNodeScanComponent) []*CVEParts {
-	cves := embedded.GetVulns()
+	cves := embedded.GetVulnerabilities()
 	addedCVEs := set.NewStringSet()
 	ret := make([]*CVEParts, 0, len(cves))
 	for _, cve := range cves {
-		generatedCVE := converter.EmbeddedCVEToProtoCVE(os, cve)
+		generatedCVE := converter.NodeVulnerabilityToNodeCVE(os, cve)
 		if !addedCVEs.Add(generatedCVE.GetId()) {
 			continue
 		}
@@ -65,41 +65,40 @@ func splitCVEs(os string, component *ComponentParts, embedded *storage.EmbeddedN
 	return ret
 }
 
-func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, convertedCVE *storage.CVE, embedded *storage.EmbeddedVulnerability) *storage.ComponentCVEEdge {
-	ret := &storage.ComponentCVEEdge{
-		Id:               edges.EdgeID{ParentID: convertedComponent.GetId(), ChildID: convertedCVE.GetId()}.ToString(),
-		IsFixable:        embedded.GetFixedBy() != "",
-		ImageCveId:       convertedCVE.GetId(),
-		ImageComponentId: convertedComponent.GetId(),
+func generateComponentCVEEdge(convertedComponent *storage.NodeComponent, convertedCVE *storage.NodeCVE, embedded *storage.NodeVulnerability) *storage.NodeComponentCVEEdge {
+	ret := &storage.NodeComponentCVEEdge{
+		Id:              postgres.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}),
+		IsFixable:       embedded.GetFixedBy() != "",
+		NodeCveId:       convertedCVE.GetId(),
+		NodeComponentId: convertedComponent.GetId(),
 	}
 
 	if ret.IsFixable {
-		ret.HasFixedBy = &storage.ComponentCVEEdge_FixedBy{
+		ret.HasFixedBy = &storage.NodeComponentCVEEdge_FixedBy{
 			FixedBy: embedded.GetFixedBy(),
 		}
 	}
 	return ret
 }
 
-func generateNodeComponent(os string, from *storage.EmbeddedNodeScanComponent) *storage.ImageComponent {
-	ret := &storage.ImageComponent{
+func generateNodeComponent(os string, from *storage.EmbeddedNodeScanComponent) *storage.NodeComponent {
+	ret := &storage.NodeComponent{
 		Id:        scancomponent.ComponentID(from.GetName(), from.GetVersion(), os),
 		Name:      from.GetName(),
 		Version:   from.GetVersion(),
-		Source:    storage.SourceType_INFRASTRUCTURE,
 		RiskScore: from.GetRiskScore(),
 		Priority:  from.GetPriority(),
 	}
 
 	if from.GetSetTopCvss() != nil {
-		ret.SetTopCvss = &storage.ImageComponent_TopCvss{TopCvss: from.GetTopCvss()}
+		ret.SetTopCvss = &storage.NodeComponent_TopCvss{TopCvss: from.GetTopCvss()}
 	}
 	return ret
 }
 
-func generateNodeComponentEdge(node *storage.Node, convertedComponent *storage.ImageComponent) *storage.NodeComponentEdge {
+func generateNodeComponentEdge(node *storage.Node, convertedComponent *storage.NodeComponent) *storage.NodeComponentEdge {
 	ret := &storage.NodeComponentEdge{
-		Id:              edges.EdgeID{ParentID: node.GetId(), ChildID: convertedComponent.GetId()}.ToString(),
+		Id:              postgres.IDFromPks([]string{node.GetId(), convertedComponent.GetId()}),
 		NodeId:          node.GetId(),
 		NodeComponentId: convertedComponent.GetId(),
 	}

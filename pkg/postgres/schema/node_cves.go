@@ -19,14 +19,14 @@ var (
 		Table: `
                create table if not exists node_cves (
                    Id varchar,
-                   Cve varchar,
+                   CveBaseInfo_Cve varchar,
+                   CveBaseInfo_PublishedOn timestamp,
+                   CveBaseInfo_CreatedAt timestamp,
                    Cvss numeric,
-                   ImpactScore numeric,
-                   PublishedOn timestamp,
-                   CreatedAt timestamp,
-                   Suppressed bool,
-                   SuppressExpiry timestamp,
                    Severity integer,
+                   ImpactScore numeric,
+                   Snoozed bool,
+                   SnoozeExpiry timestamp,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
@@ -42,8 +42,8 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), "node_cves")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_VULNERABILITIES, "cve", (*storage.CVE)(nil)))
+		schema = walker.Walk(reflect.TypeOf((*storage.NodeCVE)(nil)), "node_cves")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_VULNERABILITIES, "nodecve", (*storage.NodeCVE)(nil)))
 		RegisterTable(schema, CreateTableNodeCvesStmt)
 		return schema
 	}()
@@ -55,14 +55,14 @@ const (
 
 // NodeCves holds the Gorm model for Postgres table `node_cves`.
 type NodeCves struct {
-	Id             string                        `gorm:"column:id;type:varchar;primaryKey"`
-	Cve            string                        `gorm:"column:cve;type:varchar"`
-	Cvss           float32                       `gorm:"column:cvss;type:numeric"`
-	ImpactScore    float32                       `gorm:"column:impactscore;type:numeric"`
-	PublishedOn    *time.Time                    `gorm:"column:publishedon;type:timestamp"`
-	CreatedAt      *time.Time                    `gorm:"column:createdat;type:timestamp"`
-	Suppressed     bool                          `gorm:"column:suppressed;type:bool"`
-	SuppressExpiry *time.Time                    `gorm:"column:suppressexpiry;type:timestamp"`
-	Severity       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
-	Serialized     []byte                        `gorm:"column:serialized;type:bytea"`
+	Id                     string                        `gorm:"column:id;type:varchar;primaryKey"`
+	CveBaseInfoCve         string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
+	CveBaseInfoPublishedOn *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
+	CveBaseInfoCreatedAt   *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
+	Cvss                   float32                       `gorm:"column:cvss;type:numeric"`
+	Severity               storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
+	ImpactScore            float32                       `gorm:"column:impactscore;type:numeric"`
+	Snoozed                bool                          `gorm:"column:snoozed;type:bool"`
+	SnoozeExpiry           *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
+	Serialized             []byte                        `gorm:"column:serialized;type:bytea"`
 }

@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
@@ -44,7 +45,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, noUpdateTimestam
 }
 
 // Exists returns if a node exists in the DB with the given id.
-func (b *storeImpl) Exists(id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -59,37 +60,8 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 	return exists, nil
 }
 
-// GetNodes returns all nodes regardless of request
-func (b *storeImpl) GetNodes() ([]*storage.Node, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, typ)
-
-	branch, err := b.dacky.NewReadOnlyTransaction()
-	if err != nil {
-		return nil, err
-	}
-	defer branch.Discard()
-
-	keys, err := nodeDackBox.Reader.ReadKeysIn(nodeDackBox.Bucket, branch)
-	if err != nil {
-		return nil, err
-	}
-
-	nodes := make([]*storage.Node, 0, len(keys))
-	for _, key := range keys {
-		node, err := b.readNode(branch, nodeDackBox.BucketHandler.GetID(key))
-		if err != nil {
-			return nil, err
-		}
-		if node != nil {
-			nodes = append(nodes, node)
-		}
-	}
-
-	return nodes, nil
-}
-
 // CountNodes returns the number of nodes currently stored in the DB.
-func (b *storeImpl) CountNodes() (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, typ)
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -107,7 +79,7 @@ func (b *storeImpl) CountNodes() (int, error) {
 }
 
 // GetNode returns the node with given id.
-func (b *storeImpl) GetNode(id string) (*storage.Node, bool, error) {
+func (b *storeImpl) Get(_ context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, typ)
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -124,7 +96,7 @@ func (b *storeImpl) GetNode(id string) (*storage.Node, bool, error) {
 }
 
 // GetNodeMetadata returns the node with the given id without component/CVE data.
-func (b *storeImpl) GetNodeMetadata(id string) (*storage.Node, bool, error) {
+func (b *storeImpl) GetNodeMetadata(_ context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, metadataType)
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -141,7 +113,7 @@ func (b *storeImpl) GetNodeMetadata(id string) (*storage.Node, bool, error) {
 }
 
 // GetNodesBatch returns nodes with given ids.
-func (b *storeImpl) GetNodesBatch(ids []string) ([]*storage.Node, []int, error) {
+func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Node, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, typ)
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -167,7 +139,7 @@ func (b *storeImpl) GetNodesBatch(ids []string) ([]*storage.Node, []int, error) 
 }
 
 // Upsert writes a node to the DB, overwriting previous data.
-func (b *storeImpl) Upsert(node *storage.Node) error {
+func (b *storeImpl) Upsert(_ context.Context, node *storage.Node) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, typ)
 
 	iTime := protoTypes.TimestampNow()
@@ -262,7 +234,7 @@ func (b *storeImpl) toUpsert(node *storage.Node) (*storage.Node, bool, bool, err
 }
 
 // Delete deletes a node and all its data.
-func (b *storeImpl) Delete(id string) error {
+func (b *storeImpl) Delete(_ context.Context, id string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, typ)
 
 	keyTxn, err := b.dacky.NewReadOnlyTransaction()
