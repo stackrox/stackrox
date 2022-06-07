@@ -2,7 +2,7 @@ package derivelocalvalues
 
 import (
 	"context"
-	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,16 +21,16 @@ var (
 	supportedCharts = []string{common.ChartCentralServices}
 )
 
-func deriveLocalValuesForChart(logger env.Logger, namespace, chartName, input, output string, useDirectory bool) error {
+func deriveLocalValuesForChart(env env.Environment, namespace, chartName, input, output string, useDirectory bool) error {
 	var err error
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
 	switch chartName {
 	case common.ChartCentralServices:
-		err = deriveLocalValuesForCentralServices(ctx, logger, namespace, input, output, useDirectory)
+		err = deriveLocalValuesForCentralServices(ctx, env, namespace, input, output, useDirectory)
 	default:
-		logger.ErrfLn("Deriving local values for chart %q is currently unsupported.", chartName)
-		logger.ErrfLn("Supported charts: %s", strings.Join(supportedCharts, ", "))
+		env.Logger().ErrfLn("Deriving local values for chart %q is currently unsupported.", chartName)
+		env.Logger().ErrfLn("Supported charts: %s", strings.Join(supportedCharts, ", "))
 		err = errox.InvalidArgs.Newf("unsupported chart %q", chartName)
 	}
 
@@ -38,7 +38,7 @@ func deriveLocalValuesForChart(logger env.Logger, namespace, chartName, input, o
 }
 
 // Remove nils from the given map, serialize it as YAML and write it to the output stream.
-func writeYamlToStream(values map[string]interface{}, outputHandle *os.File) error {
+func writeYamlToStream(values map[string]interface{}, outputHandle io.Writer) error {
 	yaml, err := yaml.Marshal(values)
 	if err != nil {
 		return errors.Wrap(err, "YAML marshalling")
@@ -78,7 +78,7 @@ func writeYamlToFile(values map[string]interface{}, path string) error {
 	return nil
 }
 
-func writeValuesToOutput(publicValues, privateValues map[string]interface{}, output string, useDirectory bool) error {
+func writeValuesToOutput(env env.Environment, publicValues, privateValues map[string]interface{}, output string, useDirectory bool) error {
 	var err error
 
 	if useDirectory {
@@ -102,9 +102,9 @@ func writeValuesToOutput(publicValues, privateValues map[string]interface{}, out
 		allValues := chartutil.CoalesceTables(publicValues, privateValues)
 
 		if output == "" {
-			err = writeYamlToStream(allValues, os.Stdout)
+			err = writeYamlToStream(allValues, env.InputOutput().Out())
 			// Add a newline to delimit the YAML from other output for the user.
-			fmt.Fprintln(os.Stderr)
+			env.Logger().ErrfLn("")
 		} else {
 			err = writeYamlToFile(allValues, output)
 		}
@@ -118,7 +118,7 @@ func writeValuesToOutput(publicValues, privateValues map[string]interface{}, out
 }
 
 // Implementation for command `helm derive-local-values`.
-func deriveLocalValuesForCentralServices(ctx context.Context, logger env.Logger, namespace, input, output string, useDirectory bool) error {
+func deriveLocalValuesForCentralServices(ctx context.Context, env env.Environment, namespace, input, output string, useDirectory bool) error {
 	var k8s k8sObjectDescription
 
 	if input == "" {
@@ -142,14 +142,14 @@ func deriveLocalValuesForCentralServices(ctx context.Context, logger env.Logger,
 		return errors.Wrap(err, "deriving local values")
 	}
 
-	err = writeValuesToOutput(publicValues, privateValues, output, useDirectory)
+	err = writeValuesToOutput(env, publicValues, privateValues, output, useDirectory)
 	if err != nil {
 		return errors.Wrap(err, "writing configuration")
 	}
 
-	printWarnings(logger, k8s.getWarnings())
+	printWarnings(env.Logger(), k8s.getWarnings())
 
-	logger.InfofLn(
+	env.Logger().InfofLn(
 		`Important: Please verify the correctness of the produced Helm configuration carefully prior to using it.`)
 
 	return nil

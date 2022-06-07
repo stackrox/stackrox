@@ -31,7 +31,7 @@ func Command(cliEnvironment env.Environment) *cobra.Command {
 				return err
 			}
 
-			return deriveLocalValuesForChart(cliEnvironment.Logger(), defaultNamespace, helmDeriveLocalValuesCmd.chartName, helmDeriveLocalValuesCmd.input, helmDeriveLocalValuesCmd.outputPath, helmDeriveLocalValuesCmd.useDirectory)
+			return deriveLocalValuesForChart(cliEnvironment, defaultNamespace, helmDeriveLocalValuesCmd.chartName, helmDeriveLocalValuesCmd.input, helmDeriveLocalValuesCmd.outputPath, helmDeriveLocalValuesCmd.useDirectory)
 
 		},
 	}
