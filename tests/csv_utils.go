@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,7 +22,7 @@ func verifyRiskEventTimelineCSV(t testutils.T, deploymentID string, eventNamesEx
 	escapedURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
 
 	// Get an HTTP client and query for csv content response
-	client := testutils.HTTPClientForCentral(t)
+	client := centralgrpc.HTTPClientForCentral(t)
 	resp, err := client.Get(escapedURL)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
