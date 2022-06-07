@@ -8,9 +8,10 @@ import {
     ChartTooltip,
     ChartLabelProps,
 } from '@patternfly/react-charts';
+import { sortBy } from 'lodash';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
-import { AlertGroup } from 'services/AlertsService';
+import { AlertGroup, Severity } from 'services/AlertsService';
 import { severityLabels } from 'messages/common';
 import {
     navigateOnClickEvent,
@@ -21,7 +22,7 @@ import {
 import { getQueryString } from 'utils/queryStringUtils';
 import { violationsBasePath } from 'routePaths';
 import useResizeObserver from 'hooks/useResizeObserver';
-import useViolationCounts from '../hooks/useViolationCounts';
+import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 
 type CountsBySeverity = {
@@ -30,6 +31,22 @@ type CountsBySeverity = {
     High: Record<string, number>;
     Critical: Record<string, number>;
 };
+
+function pluckSeverityCount(severity: Severity): (group: AlertGroup) => number {
+    return ({ counts }) => {
+        const severityCount = counts.find((ct) => ct.severity === severity)?.count || '0';
+        return -parseInt(severityCount, 10);
+    };
+}
+
+function sortBySeverity(groups: AlertGroup[]) {
+    return sortBy(groups, [
+        pluckSeverityCount('CRITICAL_SEVERITY'),
+        pluckSeverityCount('HIGH_SEVERITY'),
+        pluckSeverityCount('MEDIUM_SEVERITY'),
+        pluckSeverityCount('LOW_SEVERITY'),
+    ]);
+}
 
 function getCountsBySeverity(groups: AlertGroup[]): CountsBySeverity {
     const result = {
@@ -61,22 +78,24 @@ function linkForViolationsCategory(category: string) {
     return `${violationsBasePath}${queryString}`;
 }
 
-const height = `${chartHeight}px` as const;
-
 type ViolationsByPolicyCategoryChartProps = {
-    violationCounts: AlertGroup[];
+    alertGroups: AlertGroup[];
 };
 
 const labelLinkCallback = ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text));
 
-function ViolationsByPolicyCategoryChart({
-    violationCounts,
-}: ViolationsByPolicyCategoryChartProps) {
+const height = `${chartHeight}px` as const;
+
+function ViolationsByPolicyCategoryChart({ alertGroups }: ViolationsByPolicyCategoryChartProps) {
     const history = useHistory();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
-    const countsBySeverity = getCountsBySeverity(violationCounts);
+    const sortedAlertGroups = sortBySeverity(alertGroups);
+    // We reverse here, because PF/Victory charts stack the bars from bottom->up
+    const topOrderedGroups = sortedAlertGroups.slice(0, 5).reverse();
+    const countsBySeverity = getCountsBySeverity(topOrderedGroups);
+
     const bars = Object.entries(countsBySeverity).map(([severity, counts]) => {
         const data = Object.entries(counts).map(([group, count]) => ({
             name: severity,
@@ -134,11 +153,11 @@ function ViolationsByPolicyCategoryChart({
 }
 
 function ViolationsByPolicyCategory() {
-    const { violationCounts, loading, error } = useViolationCounts('CATEGORY', ''); // TODO Implement query filtering
+    const { alertGroups, loading, error } = useAlertGroups('CATEGORY', ''); // TODO Implement query filtering
 
     return (
         <WidgetCard title="Policy violations by category" isLoading={loading} error={error}>
-            <ViolationsByPolicyCategoryChart violationCounts={violationCounts} />
+            <ViolationsByPolicyCategoryChart alertGroups={alertGroups} />
         </WidgetCard>
     );
 }
