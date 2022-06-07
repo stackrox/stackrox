@@ -1,0 +1,60 @@
+name: Create Test Cluster
+on:
+  workflow_call:
+    inputs:
+      flavor:
+        description: Flavor
+        type: string
+        required: true
+      name:
+        description: Cluster name
+        type: string
+        required: true
+      lifespan:
+        description: Cluster lifespan
+        type: string
+        default: 48h
+        required: false
+      args:
+        description: Comma separated flavor arguments. Ex. nodes=5,main-image=main:tag
+        type: string
+        required: false
+        # Spaces in arguments are not supported.
+        default: ""
+      wait:
+        description: Wait or not for the cluster readiness
+        type: boolean
+        required: false
+        default: false
+jobs:
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download infractl
+        run: |
+          curl -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
+          | jq -r ".result.fileChunk" \
+          | base64 -d \
+          > infractl
+          chmod +x infractl
+      - name: Create Cluster
+        env:
+          INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
+        run: |
+          NAME="${{inputs.name}}"
+          WAIT=""
+          if [ "${{inputs.wait}}" = "true" ]
+          then
+            WAIT="--wait";
+            echo "::warning::The job will wait for the cluster creation."
+          fi
+
+          eval ./infractl create "${{inputs.flavor}}" "${NAME//./-}" \
+          --lifespan "${{inputs.lifespan}}" \
+          $WAIT \
+          $(python -c "import sys; args=sys.argv
+          args='' if len(args) <= 1 else ' --arg '.join(args[1].split(','))
+          if args: print('--arg', args)" \
+          "${{inputs.args}}")
+
+          ./infractl get "${NAME//./-}" >> $GITHUB_STEP_SUMMARY

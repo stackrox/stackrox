@@ -1,0 +1,63 @@
+name: Parse Version
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version (A.B.C or A.B.C-rc.D)
+        type: string
+        required: true
+
+    outputs:
+      release:
+        description: Release number (A.B)
+        value: ${{jobs.parse.outputs.release}}
+      patch:
+        description: Patch number (C)
+        value: ${{jobs.parse.outputs.patch}}
+      rc:
+        description: RC number (D)
+        value: ${{jobs.parse.outputs.rc}}
+      branch:
+        description: Release branch name (release/A.B.x)
+        value: ${{jobs.parse.outputs.branch}}
+      docs-branch:
+        description: Documentation branch name
+        value: ${{jobs.parse.outputs.docs-branch}}
+      milestone:
+        description: Milestone (A.B.C-rc.D)
+        value: ${{jobs.parse.outputs.milestone}}
+      next-milestone:
+        description: Milestone (A.B.C-rc.D)
+        value: ${{jobs.parse.outputs.next-milestone}}
+
+jobs:
+  parse:
+    name: Parse ${{inputs.version}}
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{steps.parse.outputs.release}}
+      patch: ${{steps.parse.outputs.patch}}
+      rc: ${{steps.parse.outputs.rc}}
+      branch: ${{steps.parse.outputs.branch}}
+      docs-branch: ${{steps.parse.outputs.docs-branch}}
+      milestone: ${{steps.parse.outputs.milestone}}
+      next-milestone: ${{steps.parse.outputs.next-milestone}}
+    steps:
+      - id: parse
+        run: |
+          read RELEASE PATCH_NUMBER RC_NUMBER <<< \
+          $(sed -rn 's/^([0-9]+\.[0-9]+)\.([0-9]+)(-rc\.([0-9]+))?$/\1 \2 \4/p' <<< ${{inputs.version}})
+          if [ -z "$RELEASE" -o -z "$PATCH_NUMBER"]
+          then
+            echo "::error ::Bad version: ${{inputs.version}}"
+            exit 1
+          fi
+          if [ -z "$RC_NUMBER" ]; then RC_NUMBER=1; fi
+          NEXT_RC_NUMBER=$((RC_NUMBER+1))
+          echo "::set-output name=release::$RELEASE"
+          echo "::set-output name=patch::$PATCH_NUMBER"
+          echo "::set-output name=rc::$RC_NUMBER"
+          echo "::set-output name=milestone::$RELEASE.$PATCH_NUMBER-rc.$RC_NUMBER"
+          echo "::set-output name=next-milestone::$RELEASE.$PATCH_NUMBER-rc.$NEXT_RC_NUMBER"
+          echo "::set-output name=branch::release/$RELEASE.x"
+          echo "::set-output name=docs-branch::rhacs-docs-$RELEASE.$PATCH_NUMBER"

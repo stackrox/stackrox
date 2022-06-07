@@ -1,0 +1,446 @@
+name: Cut RC
+on:
+  milestone:
+    types:
+      - closed
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Full RC number (A.B.C-rc.D)
+        required: true
+        default: 0.0.0-rc.1
+        type: string
+      dry-run:
+        description: Dry-run
+        required: false
+        default: true
+        type: boolean
+
+env:
+  main_branch: master
+  docs_repository: openshift/openshift-docs
+  jira_projects: ROX, RS, RTOOLS
+  slack_channel: U02MPRJDANM
+
+jobs:
+  check-jira:
+    name: Check Jira tickets for release ${{inputs.version}}
+    runs-on: ubuntu-latest
+    env:
+      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+    steps:
+      - name: Query JIRA
+        env:
+          JQL: >-
+            project IN (${{env.jira_projects}})
+            AND fixVersion = \"${{inputs.version}}\"
+            AND status != CLOSED
+            AND Component != Documentation AND type != Epic
+            order by assignee
+
+        run: |
+          GH_MD_FORMAT_LINE=$(cat << EOF
+          "* [\(.key)](https://issues.redhat.com/browse/\(.key)): **"+(.fields.assignee.displayName // "unassigned")+"** (\(.fields.status.name)) — _"+(.fields.summary | gsub (" +$";""))+"_"
+          EOF
+          )
+
+          ISSUES=$(curl -f -sSL --get --data-urlencode "jql=$JQL" \
+            -H "Authorization: Bearer $JIRA_TOKEN" \
+            -H "Accept: application/json" \
+            "https://issues.redhat.com/rest/api/2/search" \
+          | jq -r ".issues[] | $GH_MD_FORMAT_LINE" \
+          | sort)
+
+          if [ -n "$ISSUES" ]
+          then
+            cat << EOF >> $GITHUB_STEP_SUMMARY
+          The following Jira issues are still open for release ${{inputs.version}}:
+
+          $ISSUES
+
+          Please contact the assignees to clarify the status.
+          EOF
+            echo "::error::There are non-closed Jira issues for version ${{inputs.version}}."
+
+            curl -f -sSL --get --data-urlencode "jql=$JQL" \
+            -H "Authorization: Bearer $JIRA_TOKEN" \
+            -H "Accept: application/json" \
+            "https://issues.redhat.com/rest/api/2/search" \
+            | jq -r ".issues[] | .key" | while read -r KEY
+            do
+              curl -f -sSL -X POST \
+                -H "Authorization: Bearer $JIRA_TOKEN" \
+                --data '{"body": "Release ${{inputs.version}} is ongoing. Please update the status."}' \
+                -H "Content-Type: application/json" \
+                "https://issues.redhat.com/rest/api/2/issue/$KEY/comment"
+            done
+
+            exit 1
+          fi
+          echo "All issues for Jira release ${{inputs.version}} are closed." >> $GITHUB_STEP_SUMMARY
+
+  variables:
+    name: Setup variables
+    uses: stackrox/stackrox/.github/workflows/variables.yml@master
+    with:
+      version: ${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
+
+  postpone-prs:
+    name: Postpone open PRs
+    needs: variables
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Check open PRs
+        id: check
+        run: |
+          PRs=$(gh pr list -s open \
+          --repo "${{github.repository}}" \
+          --search "milestone:${{needs.variables.outputs.milestone}}" \
+          --json number \
+          --jq length)
+          if [ "$PRs" -gt 0 ]
+          then
+            echo "::set-output name=open-issues::$PRs"
+          fi
+
+      - name: Create next milestone
+        if: github.event.inputs.dry-run == 'false' && steps.check.outputs.open-issues != ''
+        run: |
+          if ! http_code=$(gh api --silent -X POST \
+            "repos/${{github.repository}}/milestones" \
+            -f "title"="${{needs.variables.outputs.next-milestone}}" \
+            2>&1)
+          then
+            if grep "HTTP 422" <<< "$http_code"
+            then
+              echo "Milestone ${{needs.variables.outputs.next-milestone}} already exists." >> $GITHUB_STEP_SUMMARY
+            else
+              echo "::error::Couldn't create milestone ${{needs.variables.outputs.next-milestone}}: $http_code"
+              exit 1
+            fi
+          else
+            echo "Milestone ${{needs.variables.outputs.next-milestone}} has been created." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Move open PRs
+        run: |
+          for PR in $(gh pr list -s open \
+            --repo "${{github.repository}}" \
+            --search "milestone:${{needs.variables.outputs.milestone}}" \
+            --json number \
+            --jq ".[] | .number")
+          do
+            [ "${{github.event.inputs.dry-run}}" = "false" ] && \
+            gh pr edit $PR \
+              --milestone "${{needs.variables.outputs.next-milestone}}" \
+              --repo "${{github.repository}}"
+            echo "PR $PR has been moved to milestone ${{needs.variables.outputs.next-milestone}}." >> $GITHUB_STEP_SUMMARY
+          done
+
+  check-merged-prs:
+    name: Cherry-pick from PRs
+    needs: [variables, postpone-prs]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{needs.variables.outputs.branch}}
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "${{github.event.sender.login}}"
+          git config user.email noreply@github.com
+      - run: |
+          # Could be optimized: done only if there are closed PRs to cherry-pick
+          git fetch origin ${{env.main_branch}}:${{env.main_branch}} --unshallow
+      - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: Cherry-pick commits from the main branch
+        id: cherry-pick
+        run: |
+          SLACK_MESSAGE_FILE=$(mktemp)
+          EMPTY=""
+          gh pr list -s closed \
+            --search "milestone:${{needs.variables.outputs.milestone}}" \
+            --base "${{env.main_branch}}" \
+            --json number,url,mergeCommit,author,title \
+            --jq '.[] | "\(.number)\t\(.url)\t\(.mergeCommit.oid)\t\(.author.login)\t\(.title)"' \
+          | while read -r PR_COMMIT
+          do
+            IFS=$'\t' read -r PR URL COMMIT AUTHOR TITLE <<< $PR_COMMIT
+            # Skip commits merged before branching.
+            if git merge-base --is-ancestor "$COMMIT" HEAD
+            then
+              continue
+            fi
+
+            FORK_POINT=$(diff -u \
+              <(git rev-list --first-parent ${{needs.variables.outputs.branch}}) \
+              <(git rev-list --first-parent ${{env.main_branch}}) \
+              | sed -ne 's/^ //p' | head -1)
+            # Find commits with the specific commit message before the fork point
+            if [[ -z "$(git log \
+              --grep "^(cherry picked from commit $COMMIT)\$" --format='%H' \
+              HEAD...$FORK_POINT )" ]]
+            then
+              if git cherry-pick -x "$COMMIT"
+              then
+                echo "Cherry-picked $COMMIT from PR $PR" >> $GITHUB_STEP_SUMMARY
+                [ "${{github.event.inputs.dry-run}}" = "false" ] && \
+                gh pr comment $PR --body "Merge commit has been cherry-picked to branch \`${{needs.variables.outputs.branch}}\`."
+                EMPTY=false
+              else
+                git cherry-pick --abort
+                [ "${{github.event.inputs.dry-run}}" = "false" ] && \
+                gh pr comment $PR --body "Please merge the changes to branch \`${{needs.variables.outputs.branch}}\`."
+                cat << EOF >> $GITHUB_STEP_SUMMARY
+          * [PR $PR]($URL) by **${AUTHOR}** (_${TITLE}_) could not be cherry-picked. Merge commit: \`$COMMIT\`.
+          EOF
+                echo "- <$URL|PR $PR> by *$AUTHOR* — $TITLE" \
+                >> "$SLACK_MESSAGE_FILE"
+              fi
+            fi
+          done
+
+          git push
+          if [ -n "$EMPTY" ]; then
+            echo "Cherry-picked commits have been pushed to the release branch." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Replace % with %25 and join lines with %0A:
+          FAILED="$(sed ':a; N; $!ba; s/%/%25/g; s/\n/%0A/g' $SLACK_MESSAGE_FILE)"
+          rm -f "$SLACK_MESSAGE_FILE"
+
+          if [ -n "$FAILED" ]
+          then
+            echo "::set-output name=bad-cherries::$FAILED"
+            cat << EOF >> $GITHUB_STEP_SUMMARY
+
+          As some of the PRs could not be cherry-picked, please help the authors to merge their changes to the release branch via opening PRs.
+          The commands may look like the following:
+
+              git pull
+              git switch "${{needs.variables.outputs.branch}}"
+              git switch --create <AUTHOR>/merge-pr-<PR NUMBER>-"${{needs.variables.outputs.release}}"
+              git cherry-pick -x <MERGE COMMIT SHA>
+              # Proceed to resolve merge conflicts. Once done:
+              git push --set-upstream origin $(git branch --show-current)
+
+              # Create PR to the release branch:
+              gh create pr --base "${{needs.variables.outputs.branch}}" --fill \\
+                --milestone "${{needs.variables.outputs.milestone}}"
+
+          EOF
+            exit 1
+          fi
+      - name: Post to Slack
+        if: always() && steps.cherry-pick.outputs.bad-cherries != ''
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          channel-id: ${{env.slack_channel}}
+          payload: |
+            { "blocks": [ {
+              "type": "header", "text": { "type": "plain_text",
+                "text": "Couldn't cherry-pick the following PRs to the release branch:"
+              }},{
+              "type": "section", "text": { "type": "mrkdwn",
+                "text": "${{steps.cherry-pick.outputs.bad-cherries}}"
+            }}]}
+
+  cut-rc:
+    name: Tag RC for milestone ${{needs.variables.outputs.milestone}}
+    runs-on: ubuntu-latest
+    needs: [variables, check-merged-prs, check-jira]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: "${{needs.variables.outputs.branch}}"
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "${{github.event.sender.login}}"
+          git config user.email noreply@github.com
+      - name: Update docs submodule
+        run: |
+          git submodule update --init --remote -- docs/content
+          git add docs/content
+          if ! git diff-index --quiet HEAD
+          then
+            git commit -m "Update docs submodule"
+            echo "Documentation submodule has been updated" >> $GITHUB_STEP_SUMMARY
+          fi
+      - name: Tag release branch with "${{needs.variables.outputs.milestone}}"
+        run: |
+          git tag --annotate "${{needs.variables.outputs.milestone}}" --message ""
+      - name: Push
+        if: github.event.inputs.dry-run == 'false'
+        run: |
+          git push --follow-tags
+      - run: |
+          echo "Release branch has been tagged with ${{needs.variables.outputs.milestone}}." >> $GITHUB_STEP_SUMMARY
+
+  reopen-milestone:
+    name: Reopen milestone ${{needs.variables.outputs.milestone}}
+    needs: [variables, cut-rc]
+    if: failure()
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Reopen milestone ${{needs.variables.outputs.milestone}}
+        if: github.event.inputs.dry-run == 'false'
+        run: |
+          gh api "repos/${{github.repository}}/milestones/${{needs.variables.outputs.milestone}}" \
+            -X PATCH -f state=open
+      - run: |
+          echo "::warning::Milestone ${{needs.variables.outputs.milestone}} has been reopened."
+
+  pre-release:
+    name: Publish a GitHub pre-release
+    needs: [variables, cut-rc]
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Create GitHub Pre-release
+        id: pre-release
+        if: github.event.inputs.dry-run == 'false'
+        run: |
+          URL=$(gh release create "${{needs.variables.outputs.milestone}}" \
+            --prerelease \
+            --generate-notes \
+            --repo "${{github.repository}}" \
+            --target "${{needs.variables.outputs.branch}}")
+          echo "::set-output name=url::$URL"
+      - run: |
+          echo "Created GitHub pre-release [${{needs.variables.outputs.milestone}}](${{steps.pre-release.outputs.url}})" >> $GITHUB_STEP_SUMMARY
+      - name: Post to Slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          channel-id: ${{env.slack_channel}}
+          payload: >-
+            { "blocks": [ {
+              "type": "header", "text": { "type": "plain_text",
+                "text": "${{needs.variables.outputs.milestone}}"
+              }},{
+              "type": "section", "text": { "type": "mrkdwn",
+                "text":
+            "<${{steps.pre-release.outputs.url}}|Release candidate ${{needs.variables.outputs.rc}}>
+            has been published on GitHub.\n\nConvert it to the final release
+            with:\n\n```gh release edit
+            \"${{needs.variables.outputs.milestone}}\"
+            --prerelease=false
+            --tag \"${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}\"
+            --title \"${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}\"```\n"
+            }}]}
+
+  create-k8s-cluster:
+    name: Create k8s cluster
+    needs: cut-rc
+    if: github.event.inputs.dry-run == 'false'
+    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@main
+    with:
+      flavor: qa-demo
+      name: qa-k8s-${{needs.variables.outputs.milestone}}
+      args: main-image=main:${{needs.variables.outputs.milestone}}
+      lifespan: 48h
+
+  create-os4-cluster:
+    name: Create OS4 cluster
+    needs: cut-rc
+    if: github.event.inputs.dry-run == 'false'
+    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@main
+    with:
+      flavor: openshift-4-demo
+      name: openshift-4-demo-${{needs.variables.outputs.milestone}}
+      lifespan: 48h
+      wait: true
+
+  patch-os4-cluster:
+    name: Patch OS4 cluster
+    needs: create-os4-cluster
+    runs-on: ubuntu-latest
+    env:
+      NAME: openshift-4-demo-${{needs.variables.outputs.milestone}}
+      TAG: ${{needs.variables.outputs.milestone}}
+      KUBECONFIG: artifacts/kubeconfig
+    steps:
+      - name: Download infractl
+        run: |
+          curl -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
+          | jq -r ".result.fileChunk" \
+          | base64 -d \
+          > infractl
+          chmod +x infractl
+      - name: Test readiness
+        run: |
+          if [ "$(./infractl get "$NAME" --json | jq -r .Status)" != "2" ]
+          then
+            exit 1
+          fi
+      - name: Download artifacts
+        id: artifacts
+        run: |
+          mkdir artifacts
+          ./infractl artifacts -d artifacts >> $GITHUB_STEP_SUMMARY
+      - name: Download Openshift CLI
+        run: |
+          URL=$(sed "s/console-/downloads-/" artifacts/url-openshift)
+          curl -o oc.tar -k -L "$URL/amd64/linux/oc.tar"
+          tar xf oc.tar
+      - name: Patch central
+        run: |
+          ./oc -n stackrox set image deploy/central central=docker.io/stackrox/main:$TAG
+      - name: Patch scanner
+        run: |
+          ./oc -n stackrox patch hpa/scanner -p '{"spec":{"minReplicas":2}}'
+          ./oc -n stackrox set image deploy/scanner scanner=docker.io/stackrox/scanner:$TAG
+          ./oc -n stackrox set image deploy/scanner-db db=docker.io/stackrox/scanner-db:$TAG
+          ./oc -n stackrox set image deploy/scanner-db init-db=docker.io/stackrox/scanner-db:$TAG
+      - name: Patch sensor
+        run: |
+          ./oc -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","env":[{"name":"POD_NAMESPACE","valueFrom":{"fieldRef":{"fieldPath":"metadata.namespace"}}}],"volumeMounts":[{"name":"cache","mountPath":"/var/cache/stackrox"}]}],"volumes":[{"name":"cache","emptyDir":{}}]}}}}'
+          ./oc -n stackrox set image deploy/sensor sensor=docker.io/stackrox/main:$TAG
+      - name: Patch collector
+        run: |
+          ./oc -n stackrox set image ds/collector compliance=docker.io/stackrox/main:$TAG
+          ./oc -n stackrox set image ds/collector collector=docker.io/stackrox/collector:$TAG
+          ./oc -n stackrox set image deploy/admission-control admission-control=docker.io/stackrox/main:$TAG
+
+  create-long-running-cluster:
+    name: Create GKE long-running cluster
+    needs: [variables, cut-rc]
+    if: >-
+      github.event.inputs.dry-run == 'false' &&
+      needs.variables.outputs.rc == '1'
+    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@main
+    with:
+      flavor: gke-default
+      name: gke-long-running-${{needs.variables.outputs.milestone}}
+      lifespan: 168h
+      args: nodes=5
+
+  notify-failed-clusters:
+    name: Notify about failed cluster creation
+    needs: [create-k8s-cluster, create-os4-cluster, create-long-running-cluster]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Slack
+        id: slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          channel-id: ${{env.slack_channel}}
+          payload: |
+            { "blocks": [ {
+              "type": "header", "text": { "type": "plain_text",
+                "text": "Couldn't create test clusters"
+            }}]}

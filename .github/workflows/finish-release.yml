@@ -1,0 +1,35 @@
+name: Finish Release
+on:
+  release:
+    types: [released]
+
+env:
+  slack_channel: U02MPRJDANM
+
+jobs:
+  notify:
+    name: Notify about ${{github.event.release.title}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          channel-id: ${{env.slack_channel}}
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header", "text": {
+                    "type": "plain_text",
+                    "text": "${{github.event.release.name}} has been published on GitHub"
+                  }
+                }, {
+                  "type": "section", "text": {
+                    "type": "mrkdwn",
+                    "text": "<${{github.event.release.url}} | ${{github.event.release.name}}> has been published on GitHub.\n\nLet's trigger the downstream release!"
+                  }
+                }
+              ]
+            }

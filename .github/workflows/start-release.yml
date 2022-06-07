@@ -1,0 +1,194 @@
+name: Start Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release number (A.B.C)
+        required: true
+        default: 0.0.0
+        type: string
+      ref:
+        description: Release base ref (for non-patch releases)
+        required: false
+        default: master
+        type: string
+      dry-run:
+        description: Dry-run
+        required: false
+        default: false
+        type: boolean
+
+env:
+  docs_repository: openshift/openshift-docs
+  slack_channel: U02MPRJDANM
+  main_branch: main
+  jira_project: ROX
+
+jobs:
+  check-jira:
+    name: Check Jira release
+    runs-on: ubuntu-latest
+    env:
+      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+    outputs:
+      release-date: ${{steps.check-jira-release.outputs.date}}
+    steps:
+      - name: Check that Jira release ${{github.event.inputs.version}} is not released
+        id: check-jira-release
+        run: |
+          JIRA_RELEASE_DATE="$(curl -f -sSL \
+            -H "Authorization: Bearer $JIRA_TOKEN" \
+            "https://issues.redhat.com/rest/api/2/project/${{env.jira_project}}/versions" \
+          | jq -r '.[] | select(.name == "${{github.event.inputs.version}}" and .released == false) | .releaseDate')"
+
+          if [ -z "$JIRA_RELEASE_DATE" ]
+          then
+            echo "::error::Couldn't find unreleased JIRA release \`${{github.event.inputs.version}}\`."
+            exit 1
+          else
+            echo "Release date: $JIRA_RELEASE_DATE" >> $GITHUB_STEP_SUMMARY
+            echo "::set-output name=date::$JIRA_RELEASE_DATE"
+          fi
+
+  variables:
+    name: Setup variables
+    uses: stackrox/stackrox/.github/workflows/variables.yml@master
+    with:
+      version: ${{github.event.inputs.version}}
+
+  check-docs-branch:
+    name: Check documentation branch
+    needs: [variables]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test if branch ${{needs.variables.outputs.docs-branch}} exists
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api "repos/${{env.docs_repository}}/git/refs/heads/${{needs.variables.outputs.docs-branch}}"
+      - name: Post to Slack
+        if: failure() && steps.check.conclusion == 'failure'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          channel-id: ${{env.slack_channel}}
+          payload: |
+            { "blocks": [ {
+              "type": "header", "text": { "type": "plain_text",
+                "text": "Please create documentation release branch"
+              }},{
+              "type": "section", "text": { "type": "mrkdwn",
+                "text": "Branch `${{needs.variables.outputs.docs-branch}}` based on `rhacs-docs`."
+            }}]}
+
+  branch:
+    name: Prepare release branch
+    needs: [variables, check-docs-branch]
+    if: needs.variables.outputs.patch == 0
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.inputs.ref}}
+      - name: Check remote branch exists
+        id: check-existing
+        run: |
+          if git ls-remote --quiet --exit-code origin "${{needs.variables.outputs.branch}}"
+          then
+            echo "::set-output name=branch-exists::true"
+          else
+            echo "::set-output name=branch-exists::false"
+          fi
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "${{github.event.sender.login}}"
+          git config user.email noreply@github.com
+      - name: Switch to ${{needs.variables.outputs.branch}} branch
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          git switch --create "${{needs.variables.outputs.branch}}"
+      - name: Update docs submodule
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          git submodule set-branch --branch "${{needs.variables.outputs.docs-branch}}" -- docs/content
+          # This takes a bit long:
+          git submodule update --init --remote -- docs/content
+          git add .gitmodules docs/content
+          if ! git diff-index --quiet HEAD
+          then
+            git commit -am "Docs update for release ${{needs.variables.outputs.milestone}}"
+            echo "Documents submodule updated on release branch." >> $GITHUB_STEP_SUMMARY
+          fi
+      - name: Update the changelog
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          sed -i "s/## \[NEXT RELEASE\]/## [${{github.event.inputs.version}}]/" CHANGELOG.md
+          git add CHANGELOG.md
+          if ! git diff-index --quiet HEAD
+          then
+            git commit --message "Changelog for ${{github.event.inputs.version}}"
+            echo "\`CHANGELOG.md\` updated on release branch." >> $GITHUB_STEP_SUMMARY
+          fi
+      - name: Push changes
+        if: github.event.inputs.dry-run == 'false' && steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          git push --set-upstream origin ${{needs.variables.outputs.branch}}
+
+      - name: Patch CHANGELOG.md on ${{env.main_branch}} branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git switch ${{env.main_branch}}
+          git pull
+          CHANGELOG_BRANCH="${{github.event.sender.login}}/changelog-${{github.event.inputs.version}}"
+          if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"
+          then
+            echo "Branch \`$CHANGELOG_BRANCH\` already exists."
+            exit 0
+          fi
+          git switch --create "$CHANGELOG_BRANCH"
+          sed -i "s/## \[NEXT RELEASE\]/\\0\n\n## [${{github.event.inputs.version}}]/" CHANGELOG.md
+          git add CHANGELOG.md
+          if ! git diff-index --quiet HEAD
+          then
+            git commit --message "Next version in changelog after ${{github.event.inputs.version}}"
+            if [ "${{github.event.inputs.dry-run}}" = "false" ]
+            then
+              git push --set-upstream origin "$CHANGELOG_BRANCH"
+              gh pr create \
+                --title "Advance \`CHANGELOG.md\` to the next release" \
+                --base "${{env.main_branch}}" \
+                --body "Cutting \`CHANGELOG.md\` after the ${{needs.variables.outputs.branch}} branch." \
+                --assignee "${{github.event.sender.login}}"
+            fi
+            # TODO: Add labels to skip CI runs
+
+            echo "A PR created on \`${{env.main_branch}}\` branch with advanced \`CHANGELOG.md\`." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  milestone:
+    name: Create milestone
+    needs: [variables]
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Create ${{needs.variables.outputs.milestone}} milestone
+        if: github.event.inputs.dry-run == 'false'
+        run: |
+          if ! http_code=$(gh api --silent -X POST \
+            "repos/${{github.repository}}/milestones" \
+            -f "title"="${{needs.variables.outputs.milestone}}" \
+            2>&1)
+          then
+            if grep "HTTP 422" <<< "$http_code"
+            then
+              echo "Milestone ${{needs.variables.outputs.milestone}} already exists." >> $GITHUB_STEP_SUMMARY
+            else
+              echo "::error::Couldn't create milestone ${{needs.variables.outputs.milestone}}: $http_code"
+              exit 1
+            fi
+          fi
