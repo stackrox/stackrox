@@ -50,11 +50,11 @@ func Load(conf *config.Config) (*gorm.DB, error) {
 		}, retry.Tries(postgresConnectionRetries), retry.BetweenAttempts(func(attempt int) {
 			time.Sleep(postgresConnectRetryInterval)
 		}), retry.OnFailedAttempts(func(err error) {
-			log.WriteToStderrf("fail to connect to central database: %v", err)
+			log.WriteToStderrf("failed to connect to central database: %v", err)
 		}))
 
 		if err != nil {
-			log.WriteToStderrf("timed out connecting to database: %v, is central-db alive?", err)
+			log.WriteToStderrf("timed out connecting to database: %v", err)
 		}
 	})
 	return gormDB, err
