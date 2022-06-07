@@ -244,6 +244,17 @@ func TestIsMissingSignatureError(t *testing.T) {
 				Err: &unauthorizedErr,
 			}, "something went wrong"),
 		},
+		"transport error with status code unauthorized should not indicate missing signature": {
+			err: &transport.Error{
+				StatusCode: http.StatusUnauthorized,
+			},
+		},
+		"transport error with status code not found should indicate missing signature": {
+			err: &transport.Error{
+				StatusCode: http.StatusNotFound,
+			},
+			missingSignature: true,
+		},
 		"neither registry nor cosign error": {
 			err: errors.New("something error"),
 		},

@@ -186,6 +186,10 @@ func isMissingSignatureError(err error) bool {
 		registryErr.Response.StatusCode == http.StatusNotFound {
 		return true
 	}
+
+	if transportErr, ok := err.(*transport.Error); ok && transportErr.StatusCode == http.StatusNotFound {
+		return true
+	}
 	return false
 }
 
