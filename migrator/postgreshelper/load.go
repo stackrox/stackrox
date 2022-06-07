@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -22,31 +23,39 @@ const (
 	postgresConnectRetryInterval = 10 * time.Second
 )
 
+var (
+	gormDB *gorm.DB
+	once   sync.Once
+	err    error
+)
+
 // Load loads a Postgres instance and returns a GormDB.
 func Load(conf *config.Config) (*gorm.DB, error) {
-	password, err := os.ReadFile(dbPasswordFile)
-	if err != nil {
-		log.WriteToStderrf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
-		return nil, err
-	}
-	source := fmt.Sprintf("%s password=%s", conf.CentralDB.Source, password)
-	source = pgutils.PgxpoolDsnToPgxDsn(source)
+	once.Do(func() {
+		var password []byte
+		password, err = os.ReadFile(dbPasswordFile)
+		if err != nil {
+			log.WriteToStderrf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
+			return
+		}
+		source := fmt.Sprintf("%s password=%s", conf.CentralDB.Source, password)
+		source = pgutils.PgxpoolDsnToPgxDsn(source)
 
-	// Central waits for central-db ready with retries
-	var gormDB *gorm.DB
-	err = retry.WithRetry(func() error {
-		gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{
-			NamingStrategy:  pgutils.NamingStrategy,
-			CreateBatchSize: 1000})
-		return err
-	}, retry.Tries(postgresConnectionRetries), retry.BetweenAttempts(func(attempt int) {
-		time.Sleep(postgresConnectRetryInterval)
-	}), retry.OnFailedAttempts(func(err error) {
-		log.WriteToStderrf("fail to connect to central database: %v", err)
-	}))
+		// Waits for central-db ready with retries
+		err = retry.WithRetry(func() error {
+			gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{
+				NamingStrategy:  pgutils.NamingStrategy,
+				CreateBatchSize: 1000})
+			return err
+		}, retry.Tries(postgresConnectionRetries), retry.BetweenAttempts(func(attempt int) {
+			time.Sleep(postgresConnectRetryInterval)
+		}), retry.OnFailedAttempts(func(err error) {
+			log.WriteToStderrf("failed to connect to central database: %v", err)
+		}))
 
-	if err != nil {
-		log.WriteToStderrf("timed out connecting to database: %v, is central-db alive?", err)
-	}
+		if err != nil {
+			log.WriteToStderrf("timed out connecting to database: %v", err)
+		}
+	})
 	return gormDB, err
 }
