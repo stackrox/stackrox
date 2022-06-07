@@ -29,7 +29,7 @@ func init() {
 			"nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!",
 			"nodeVulnerabilityCount(query: String, scopeQuery: String): Int!",
 			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
-			"plottedNodeVulnerabilities(query: String): PlottedVulnerabilities!",
+			"plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!",
 			"priority: Int!",
 			"riskScore: Float!",
 			"source: String!", // is this infrastructure ?
