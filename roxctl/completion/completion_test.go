@@ -1,9 +1,9 @@
 package completion
 
 import (
-	"errors"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +16,7 @@ func TestCompletionCommand_InvalidArgs(t *testing.T) {
 	}{
 		"no args given": {
 			args: []string{},
-			err:  errors.New("Missing argument. Use one of the following: [bash|zsh|fish|powershell]"),
+			err:  errox.InvalidArgs,
 		},
 		"invalid args given": {
 			args: []string{"oh-my-zsh"},
@@ -24,7 +24,7 @@ func TestCompletionCommand_InvalidArgs(t *testing.T) {
 		},
 		"more than 1 arg given": {
 			args: []string{"zhs", "oh-my-zsh"},
-			err:  errors.New("Missing argument. Use one of the following: [bash|zsh|fish|powershell]"),
+			err:  errox.InvalidArgs,
 		},
 	}
 
@@ -34,7 +34,8 @@ func TestCompletionCommand_InvalidArgs(t *testing.T) {
 			cmd := Command(common.NewTestCLIEnvironment(t, io, nil))
 			cmd.SetArgs(c.args)
 			err := cmd.Execute()
-			assert.Equal(t, c.err, err, "expected %v to match %v", err, errInvalidArgs)
+			assert.Error(t, err)
+			assert.ErrorIs(t, err, c.err)
 		})
 	}
 }
