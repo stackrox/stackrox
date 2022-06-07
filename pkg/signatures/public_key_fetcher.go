@@ -215,6 +215,10 @@ func errToURLError(err error) *url.Error {
 	if urlErr, ok := causeErr.(*url.Error); ok {
 		return urlErr
 	}
+	unwrapErr := errors.Unwrap(err)
+	if urlErr, ok := unwrapErr.(*url.Error); ok {
+		return urlErr
+	}
 	return nil
 }
 
