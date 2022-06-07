@@ -1,9 +1,11 @@
 #!/bin/env bash
 
-set -evx
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
+source "$ROOT/scripts/ci/lib.sh"
+
+set -xveou pipefail
 
 echo 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
-
 function generated_files-are-up-to-date() {
     git ls-files --others --exclude-standard >/tmp/untracked
     make proto-generated-srcs
@@ -11,6 +13,9 @@ function generated_files-are-up-to-date() {
     make go-generated-srcs 2>&1 | while IFS= read -r line; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
     git diff --exit-code HEAD
     { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
+
+    store_test_results /tmp/untracked-new untracked-new
+
     if [[ -s /tmp/untracked-new ]]; then
         # shellcheck disable=SC2016
         echo 'Found new untracked files after running `make proto-generated-srcs` and `make go-generated-srcs`. Did you forget to `git add` generated mocks and protos?'
@@ -29,18 +34,16 @@ echo "Matches comments of the form TODO(x), where x can be \"DO NOT MERGE/don't-
 
 # shellcheck disable=SC2016
 echo 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
-
 function check-generated-files-up-to-date() {
-#            set -e
-#            make -C operator/ generate
-#            make -C operator/ manifests
-#            echo 'Checking for diffs after making generate and manifests...'
-#            git diff --exit-code HEAD
-#            make -C operator/ bundle
-#            echo 'Checking for diffs after making bundle...'
-#            echo 'If this fails, check if the invocation of the normalize-metadata.py script in operator/Makefile'
-#            echo 'needs to change due to formatting changes in the generated files.'
-#            git diff --exit-code HEAD
-    :
+    set -e
+    make -C operator/ generate
+    make -C operator/ manifests
+    echo 'Checking for diffs after making generate and manifests...'
+    git diff --exit-code HEAD
+    make -C operator/ bundle
+    echo 'Checking for diffs after making bundle...'
+    echo 'If this fails, check if the invocation of the normalize-metadata.py script in operator/Makefile'
+    echo 'needs to change due to formatting changes in the generated files.'
+    git diff --exit-code HEAD
 }
 check-generated-files-up-to-date
