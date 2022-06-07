@@ -13,14 +13,14 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	env "github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
 // Command for writing Helm Chart
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment env.Environment) *cobra.Command {
 	helmOutputCmd := &helmOutputCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
@@ -63,7 +63,7 @@ type helmOutputCommand struct {
 	chartName               string
 	flavorProvided          bool
 	chartTemplatePathPrefix image.ChartPrefix
-	env                     environment.Environment
+	env                     env.Environment
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
@@ -147,7 +147,7 @@ func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValu
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }
 
-func handleRhacsWarnings(rhacs, imageFlavorProvided bool, logger environment.Logger) {
+func handleRhacsWarnings(rhacs, imageFlavorProvided bool, logger env.Logger) {
 	if rhacs {
 		logger.WarnfLn("'--rhacs' is deprecated, please use '--%s=%s' instead", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameRHACSRelease)
 	} else if !imageFlavorProvided {

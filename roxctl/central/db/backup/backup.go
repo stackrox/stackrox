@@ -3,7 +3,7 @@ package backup
 import (
 	"github.com/spf13/cobra"
 	centralBackup "github.com/stackrox/rox/roxctl/central/backup"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
 const (
@@ -12,7 +12,7 @@ to create central backup with database, keys and certificates.`
 )
 
 // Command defines the db backup command. This command is deprecated and can be removed on or after 3.0.57.
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	var full bool
 	c := centralBackup.Command(cliEnvironment, &full)
 	c.Deprecated = warningDeprecatedDbBackup

@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/mode"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -116,7 +115,7 @@ func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 	return nil
 }
 
-func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapper, error) {
+func createBundle(logger common.Logger, config renderer.Config) (*zip.Wrapper, error) {
 	wrapper := zip.NewWrapper()
 
 	if config.ClusterType == storage.ClusterType_GENERIC_CLUSTER {
@@ -198,7 +197,7 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 
 // OutputZip renders a deployment bundle. The deployment bundle can either be
 // written directly into a directory, or as a zipfile to STDOUT.
-func OutputZip(logger environment.Logger, config renderer.Config) error {
+func OutputZip(logger common.Logger, config renderer.Config) error {
 	logger.InfofLn("Generating deployment bundle...")
 
 	wrapper, err := createBundle(logger, config)
@@ -253,11 +252,11 @@ type centralGenerateCommand struct {
 	rendererConfig *renderer.Config
 
 	// Properties that are injected or constructed.
-	env environment.Environment
+	env common.Environment
 }
 
 // Command defines the generate command tree
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 
 	centralGenerateCmd := &centralGenerateCommand{rendererConfig: &cfg, env: cliEnvironment}
 

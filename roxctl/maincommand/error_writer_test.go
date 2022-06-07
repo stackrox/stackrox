@@ -3,7 +3,7 @@ package maincommand
 import (
 	"testing"
 
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 )
@@ -42,9 +42,9 @@ func TestErrorWriter(t *testing.T) {
 		tt := tt
 		t.Run(tt.in, func(t *testing.T) {
 			t.Parallel()
-			io, _, out, errorOut := environment.TestIO()
+			io, _, out, errorOut := common.TestIO()
 			ew := errorWriter{
-				logger: environment.NewLogger(io, printer.DefaultColorPrinter()),
+				logger: common.NewLogger(io, printer.DefaultColorPrinter()),
 			}
 			n, err := ew.Write([]byte(tt.in))
 			assert.NoError(t, err)

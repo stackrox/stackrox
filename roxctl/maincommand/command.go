@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/collector"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/completion"
@@ -67,7 +67,7 @@ func Command() *cobra.Command {
 	} else {
 		colorPrinter = printer.DefaultColorPrinter()
 	}
-	cliEnvironment := environment.NewCLIEnvironment(environment.DefaultIO(), colorPrinter)
+	cliEnvironment := common.NewCLIEnvironment(common.DefaultIO(), colorPrinter)
 	c.SetErr(errorWriter{
 		logger: cliEnvironment.Logger(),
 	})

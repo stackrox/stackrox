@@ -9,10 +9,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
-func fetchCAConfig(cliEnvironment environment.Environment, outputFile string) error {
+func fetchCAConfig(cliEnvironment common.Environment, outputFile string) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), contextTimeout)
 	defer cancel()
 
@@ -57,7 +57,7 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string) er
 	return nil
 }
 
-func fetchCACommand(cliEnvironment environment.Environment) *cobra.Command {
+func fetchCACommand(cliEnvironment common.Environment) *cobra.Command {
 	var outputFile string
 
 	c := &cobra.Command{

@@ -17,8 +17,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/mocks"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -251,7 +251,7 @@ func (s *imageScanTestSuite) createGRPCMockImageService(components []*storage.Em
 	return conn, closeF
 }
 
-func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
+func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientConn) (common.Environment, *bytes.Buffer, *bytes.Buffer) {
 	return mocks.NewEnvWithConn(conn, s.T())
 }
 
@@ -359,8 +359,8 @@ func (s *imageScanTestSuite) TestDeprecationNote() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			imgScanCmd := s.defaultImageScanCommand
-			io, _, _, errOut := environment.TestIO()
-			imgScanCmd.env = environment.NewCLIEnvironment(io, printer.DefaultColorPrinter())
+			io, _, _, errOut := common.TestIO()
+			imgScanCmd.env = common.NewCLIEnvironment(io, printer.DefaultColorPrinter())
 			cmd := Command(imgScanCmd.env)
 			cmd.Flags().Duration("timeout", 1*time.Minute, "")
 			cmd.Flag("format").Changed = c.formatChanged

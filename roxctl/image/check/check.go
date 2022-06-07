@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/report"
@@ -53,7 +53,7 @@ var (
 )
 
 // Command checks the image against image build lifecycle policies
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	imageCheckCmd := &imageCheckCommand{env: cliEnvironment}
 
 	// object printer factory - allows output formats of JSON, csv, table with table being the default
@@ -118,7 +118,7 @@ type imageCheckCommand struct {
 	timeout            time.Duration
 
 	// values injected from either Construct, parent command or for abstracting external dependencies
-	env                      environment.Environment
+	env                      common.Environment
 	objectPrinter            printer.ObjectPrinter
 	standardizedOutputFormat bool
 
@@ -199,7 +199,7 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 	// TODO: Remove this once the old output format is fully deprecated
 	// Legacy printing based on whether --json is set to true or not.
 	if i.json {
-		return legacyPrint(alerts, i.failViolationsWithJSON, amountBuildBreakingPolicies, i.env.InputOutput().Out)
+		return legacyPrint(alerts, i.failViolationsWithJSON, amountBuildBreakingPolicies, i.env.InputOutput().Out())
 	}
 
 	// conditionally print a summary when the output format is a "non-RFC/standardized" one
@@ -260,7 +260,7 @@ func legacyPrint(alerts []*storage.Alert, failViolations bool, numBuildBreakingP
 
 // printPolicySummary prints a header with an overview of all found policy violations by policySeverity for
 // non-standardized output format, i.e. table format
-func printPolicySummary(image string, numOfPolicyViolations map[string]int, out environment.Logger) {
+func printPolicySummary(image string, numOfPolicyViolations map[string]int, out common.Logger) {
 	out.PrintfLn("Policy check results for image: %s", image)
 	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		policy.TotalPolicyAmountKey, numOfPolicyViolations[policy.TotalPolicyAmountKey],
@@ -274,7 +274,7 @@ func printPolicySummary(image string, numOfPolicyViolations map[string]int, out 
 // policy that failed the check. This will be printed only for non-standardized output formats, i.e. table format
 // and if there are any failed policies
 func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.EntityResult, numBreakingPolicies int,
-	out environment.Logger) {
+	out common.Logger) {
 	if numTotalViolatedPolicies == 0 {
 		return
 	}

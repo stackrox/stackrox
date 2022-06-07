@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/pflag/autobool"
 	"github.com/stackrox/rox/roxctl/sensor/util"
@@ -26,7 +25,7 @@ Use --slim-collector=false if that is not desired.`
 Use --slim-collector if that is not desired.`
 )
 
-func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, createUpgraderSA bool, slimCollectorP *bool, istioVersion string, logger environment.Logger) error {
+func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, createUpgraderSA bool, slimCollectorP *bool, istioVersion string, logger common.Logger) error {
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
@@ -84,7 +83,7 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, cr
 }
 
 // Command defines the deploy command tree
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	var createUpgraderSA bool
 	var outputDir string
 	var slimCollector *bool

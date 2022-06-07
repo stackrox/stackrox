@@ -10,10 +10,10 @@ import (
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
-func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Environment, svc v1.ClusterInitServiceClient, idsOrNames set.StringSet) error {
+func applyRevokeInitBundles(ctx context.Context, cliEnvironment common.Environment, svc v1.ClusterInitServiceClient, idsOrNames set.StringSet) error {
 	resp, err := svc.GetInitBundles(ctx, &v1.Empty{})
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 	return nil
 }
 
-func printResponseResult(logger environment.Logger, resp *v1.InitBundleRevokeResponse) {
+func printResponseResult(logger common.Logger, resp *v1.InitBundleRevokeResponse) {
 	for _, id := range resp.GetInitBundleRevokedIds() {
 		logger.InfofLn("Revoked %q", id)
 	}
@@ -53,7 +53,7 @@ func printResponseResult(logger environment.Logger, resp *v1.InitBundleRevokeRes
 	}
 }
 
-func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []string) error {
+func revokeInitBundles(cliEnvironment common.Environment, idsOrNames []string) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), contextTimeout)
 	defer cancel()
 
@@ -72,7 +72,7 @@ func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []stri
 }
 
 // revokeCommand implements the command for revoking init bundles.
-func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
+func revokeCommand(cliEnvironment common.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:  "revoke <init bundle ID or name> [<init bundle ID or name> ...]",
 		Args: cobra.MinimumNArgs(1),
