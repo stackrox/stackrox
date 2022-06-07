@@ -1,6 +1,5 @@
-import React, { ReactNode, useState } from 'react';
+import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Card, Skeleton, Title } from '@patternfly/react-core';
 import { Chart, ChartAxis, ChartStack, ChartBar, ChartTooltip } from '@patternfly/react-charts';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
@@ -16,7 +15,7 @@ import { getQueryString } from 'utils/queryStringUtils';
 import { violationsBasePath } from 'routePaths';
 import useResizeObserver from 'hooks/useResizeObserver';
 import useViolationCounts from '../hooks/useViolationCounts';
-import WidgetErrorEmptyState from '../WidgetErrorEmptyState';
+import WidgetCard from './WidgetCard';
 
 type CountsBySeverity = {
     Low: Record<string, number>;
@@ -132,29 +131,10 @@ function ViolationsByPolicyCategoryChart({
 function ViolationsByPolicyCategory() {
     const { violationCounts, loading, error } = useViolationCounts('CATEGORY', ''); // TODO Implement query filtering
 
-    let cardContent: ReactNode;
-
-    if (error) {
-        cardContent = (
-            <WidgetErrorEmptyState height={height} title="Unable to load data">
-                There was an error loading policy violation counts
-            </WidgetErrorEmptyState>
-        );
-    } else if (loading) {
-        cardContent = (
-            <Skeleton height={height} screenreaderText="Loading Policy Violations By Category" />
-        );
-    } else {
-        cardContent = <ViolationsByPolicyCategoryChart violationCounts={violationCounts} />;
-    }
-
     return (
-        <Card>
-            <Title headingLevel="h2" className="pf-u-p-md">
-                Policy violations by category
-            </Title>
-            {cardContent}
-        </Card>
+        <WidgetCard title="Policy violations by category" isLoading={loading} error={error}>
+            <ViolationsByPolicyCategoryChart violationCounts={violationCounts} />
+        </WidgetCard>
     );
 }
 
