@@ -86,9 +86,10 @@ func runRestore(dumpPath string, sourceMap map[string]string, config *pgxpool.Co
 		"--if-exists",
 		"--exit-on-error",
 		"-Fd",
-		"-j",
-		"5",
+		//"-j",
+		//"5",
 		"-vvv",
+		"--single-transaction",
 		dumpPath,
 	}
 
