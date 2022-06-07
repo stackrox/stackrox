@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/godoccapitalizationmismatch"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/importpackagenames"
-	"github.com/stackrox/rox/tools/roxvet/analyzers/invalidoutputroxctl"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/needlessformat"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/protoclone"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/regexes"
@@ -28,7 +27,6 @@ func main() {
 		uncheckedifassign.Analyzer,
 		protoclone.Analyzer,
 		unusedroxctlargs.Analyzer,
-		invalidoutputroxctl.Analyzer,
 		filepathwalk.Analyzer,
 		validateimports.Analyzer,
 		importpackagenames.Analyzer,
