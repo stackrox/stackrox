@@ -93,6 +93,15 @@ type properties struct {
 
 	// Indicates that we should just generate the singleton store
 	SingletonStore bool
+
+	// Migration root
+	MigrationRoot string
+
+	// Where the data are migrated from in the format of "database:bucket", eg, \"rocksdb:alerts\" or \"boltdb:version\"")
+	MigrateFrom string
+
+	// The unique sequence number to migrate all tables to Postgres
+	PostgresMigrationSeq int
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -162,6 +171,15 @@ func main() {
 	c.Flags().StringVar(&props.SchemaDirectory, "schema-directory", "", "the directory in which to generate the schema")
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
+	c.Flags().StringVar(&props.MigrationRoot, "migration-root", "", "Root for migrations")
+	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from in the format of \"database:bucket\", eg, \"rocksdb:alerts\" or \"boltdb:version\"")
+	c.Flags().IntVar(&props.PostgresMigrationSeq, "postgres-migration-seq", 0, "the unique sequence number to migrate all tables to Postgres")
+	if (props.PostgresMigrationSeq == 0) != (props.MigrateFrom == "") {
+		log.Fatal("To generate codes for data migration, please use both \"--migrate-from\" and \"--postgres-migration-seq\"")
+	}
+	if props.PostgresMigrationSeq != 0 && props.MigrationRoot == "" {
+		log.Fatalf("Please ")
+	}
 
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
@@ -255,6 +273,19 @@ func main() {
 		}
 		if permissionCheckerEnabled {
 			if err := renderFile(templateMap, permissionCheckerTemplate, "permission_checker.go"); err != nil {
+				return err
+			}
+		}
+
+		if props.PostgresMigrationSeq != 0 {
+			var migrationDir = ""
+			if err := renderFile(templateMap, storeTemplate, "copy_plugin.go"); err != nil {
+				return err
+			}
+			if err := renderFile(templateMap, migrationTemplate, "migration.go"); err != nil {
+				return err
+			}
+			if err := renderFile(templateMap, migrationTestTemplate, "migration_test.go"); err != nil {
 				return err
 			}
 		}

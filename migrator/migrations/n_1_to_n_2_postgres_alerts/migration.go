@@ -69,10 +69,17 @@ type storeImpl struct {
 }
 
 // newStore returns a new Store instance using the provided sql instance.
+<<<<<<< Updated upstream
 func newStore(db *pgxpool.Pool, crud db.Crud) *storeImpl {
 	return &storeImpl{
 		db:   db,
 		crud: crud,
+=======
+func newStore(postgresDb *pgxpool.Pool, rocksdbCrud db.Crud) *storeImpl {
+	return &storeImpl{
+		db:   postgresDb,
+		crud: rocksdbCrud,
+>>>>>>> Stashed changes
 	}
 }
 
