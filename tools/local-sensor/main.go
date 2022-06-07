@@ -128,7 +128,7 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 //
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
-	//TODO(do-not-merge): remove test.jsonl file from git
+	// TODO(do-not-merge): remove test.jsonl file from git
 	fsc := mustGetCommandLineArgs()
 	fakeClient, err := k8s.MakeOutOfClusterClient()
 	// when replying a trace, there is no need to connect to K8s cluster

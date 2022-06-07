@@ -12,6 +12,7 @@ import (
 
 var _ io.Writer = (*TraceWriter)(nil)
 
+// TraceWriter writes sensor handled k8s events into a file
 type TraceWriter struct {
 	// Destination file where we will store the events
 	Destination string
@@ -44,6 +45,7 @@ func (tw *TraceWriter) Write(b []byte) (int, error) {
 
 var _ io.Reader = (*TraceReader)(nil)
 
+// TraceReader reads a file containing k8s events
 type TraceReader struct {
 	// Source file from which the lines are read
 	Source string

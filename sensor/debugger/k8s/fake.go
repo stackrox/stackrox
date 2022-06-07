@@ -21,44 +21,49 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// CreateMode different types of creation modes for the FakeEventsManager
 type CreateMode int
 
 const (
-	Timestamps CreateMode = iota
-	Delay
+	// Delay sleeps a specific duration between the creation of each event
+	Delay CreateMode = iota
 )
 
 const (
-	NamespaceKind             string = "Namespace"
-	SecretKind                string = "Secret"
-	ServiceAccountsKind       string = "ServiceAccount"
-	RoleKind                  string = "Role"
-	ClusterRoleKind           string = "ClusterRole"
-	RoleBindingKind           string = "RoleBinding"
-	ClusterRoleBindingKind    string = "ClusterRoleBinding"
-	NetworkPolicyKind         string = "NetworkPolicy"
-	NodeKind                  string = "Node"
-	ServiceKind               string = "Service"
-	JobKind                   string = "Job"
-	ReplicaSetKind            string = "ReplicaSet"
-	ReplicationControllerKind string = "ReplicationController"
-	DaemonSetKind             string = "DaemonSet"
-	DeploymentKind            string = "Deployment"
-	StatefulSetKind           string = "StatefulSet"
-	CronJobKind               string = "CronJob"
-	PodKind                   string = "Pod"
+	namespaceKind             string = "Namespace"
+	secretKind                string = "Secret"
+	serviceAccountsKind       string = "ServiceAccount"
+	roleKind                  string = "Role"
+	clusterRoleKind           string = "ClusterRole"
+	roleBindingKind           string = "RoleBinding"
+	clusterRoleBindingKind    string = "ClusterRoleBinding"
+	networkPolicyKind         string = "NetworkPolicy"
+	nodeKind                  string = "Node"
+	serviceKind               string = "Service"
+	jobKind                   string = "Job"
+	replicaSetKind            string = "ReplicaSet"
+	replicationControllerKind string = "ReplicationController"
+	daemonSetKind             string = "DaemonSet"
+	deploymentKind            string = "Deployment"
+	statefulSetKind           string = "StatefulSet"
+	cronJobKind               string = "CronJob"
+	podKind                   string = "Pod"
 )
 
 var minimumResources = map[string]int{
-	NamespaceKind: 1,
-	NodeKind:      1,
+	namespaceKind: 1,
+	nodeKind:      1,
 }
 
 // FakeEventsManager reads k8s events from a jsonl file and creates reproduces them
 type FakeEventsManager struct {
-	Delay  time.Duration
-	Mode   CreateMode
+	// Delay the sleep duration between the creation of each event (if CreteMode is Delay)
+	Delay time.Duration
+	// Mode the creation mode (at the moment there is only one mode implemented)
+	Mode CreateMode
+	// Client the k8s ClientSet
 	Client *ClientSet
+	// Reader the TraceReader
 	Reader *TraceReader
 }
 
@@ -168,7 +173,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 	obj.Object = u
 
 	switch Kind {
-	case NamespaceKind:
+	case namespaceKind:
 		var r corev1.Namespace
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -184,7 +189,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 			err := f.Client.Kubernetes().CoreV1().Namespaces().Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 			return err
 		})
-	case SecretKind:
+	case secretKind:
 		var r corev1.Secret
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -199,7 +204,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().CoreV1().Secrets(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case ServiceAccountsKind:
+	case serviceAccountsKind:
 		var r corev1.ServiceAccount
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -214,7 +219,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().CoreV1().ServiceAccounts(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case RoleKind:
+	case roleKind:
 		var r rbacv1.Role
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -229,7 +234,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().RbacV1().Roles(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case RoleBindingKind:
+	case roleBindingKind:
 		var r rbacv1.RoleBinding
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -244,7 +249,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().RbacV1().RoleBindings(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case ClusterRoleKind:
+	case clusterRoleKind:
 		var r rbacv1.ClusterRole
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -259,7 +264,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().RbacV1().ClusterRoles().Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case ClusterRoleBindingKind:
+	case clusterRoleBindingKind:
 		var r rbacv1.ClusterRoleBinding
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -274,7 +279,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().RbacV1().ClusterRoleBindings().Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case NetworkPolicyKind:
+	case networkPolicyKind:
 		var r networkingv1.NetworkPolicy
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -289,7 +294,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().NetworkingV1().NetworkPolicies(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case NodeKind:
+	case nodeKind:
 		var r corev1.Node
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -304,7 +309,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().CoreV1().Nodes().Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case ServiceKind:
+	case serviceKind:
 		var r corev1.Service
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -319,7 +324,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().CoreV1().Services(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case JobKind:
+	case jobKind:
 		var r batchv1.Job
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -334,7 +339,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().BatchV1().Jobs(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case ReplicaSetKind:
+	case replicaSetKind:
 		var r appsv1.ReplicaSet
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -349,7 +354,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().AppsV1().ReplicaSets(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case ReplicationControllerKind:
+	case replicationControllerKind:
 		var r corev1.ReplicationController
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -364,7 +369,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().CoreV1().ReplicationControllers(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case DaemonSetKind:
+	case daemonSetKind:
 		var r appsv1.DaemonSet
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -379,7 +384,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().AppsV1().DaemonSets(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case DeploymentKind:
+	case deploymentKind:
 		var r appsv1.Deployment
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -394,7 +399,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().AppsV1().Deployments(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case StatefulSetKind:
+	case statefulSetKind:
 		var r appsv1.StatefulSet
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -409,7 +414,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().AppsV1().StatefulSets(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case CronJobKind:
+	case cronJobKind:
 		var r batchv1.CronJob
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -424,7 +429,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 		}, func() error {
 			return f.Client.Kubernetes().BatchV1().CronJobs(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
-	case PodKind:
+	case podKind:
 		var r corev1.Pod
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
 			log.Printf("Unable to construct %s from unstructured", Kind)
@@ -440,7 +445,7 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 			return f.Client.Kubernetes().CoreV1().Pods(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
 		})
 	default:
-		return errors.New(fmt.Sprintf("could not create resource %s", Kind))
+		return fmt.Errorf("could not create resource %s", Kind)
 	}
 }
 
@@ -449,8 +454,5 @@ func (f *FakeEventsManager) waitOnMode() {
 	switch f.Mode {
 	case Delay:
 		time.Sleep(f.Delay)
-		break
-	case Timestamps:
-		break
 	}
 }
