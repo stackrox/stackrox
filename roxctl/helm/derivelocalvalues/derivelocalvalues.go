@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
 	env "github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
@@ -30,10 +31,10 @@ func deriveLocalValuesForChart(logger env.Logger, namespace, chartName, input, o
 	default:
 		logger.ErrfLn("Deriving local values for chart %q is currently unsupported.", chartName)
 		logger.ErrfLn("Supported charts: %s", strings.Join(supportedCharts, ", "))
-		err = errors.Errorf("unsupported chart %q", chartName)
+		err = errox.InvalidArgs.Newf("unsupported chart %q", chartName)
 	}
 
-	return err
+	return errors.Wrap(err, "deriving local values for chart")
 }
 
 // Remove nils from the given map, serialize it as YAML and write it to the output stream.

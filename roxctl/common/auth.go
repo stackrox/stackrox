@@ -1,12 +1,12 @@
 package common
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -18,10 +18,10 @@ type Auth interface {
 
 func checkAuthParameters() error {
 	if flags.APITokenFile() != "" && flags.Password() != "" {
-		return errors.New("cannot use password- and token-based authentication at the same time")
+		return errox.InvalidArgs.New("cannot use password- and token-based authentication at the same time")
 	}
 	if flags.APITokenFile() == "" && env.TokenEnv.Setting() == "" && flags.Password() == "" {
-		return errors.New("no token set via either token file or the environment variable ROX_API_TOKEN")
+		return errox.InvalidArgs.New("no token set via either token file or the environment variable ROX_API_TOKEN")
 	}
 
 	return nil

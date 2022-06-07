@@ -3,7 +3,7 @@ package generate
 import (
 	"crypto/tls"
 
-	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/renderer"
 )
 
@@ -26,7 +26,7 @@ func validateHostPath(hostpath *renderer.HostPathPersistence) error {
 		return nil
 	}
 	if (hostpath.NodeSelectorKey == "") != (hostpath.NodeSelectorValue == "") {
-		return errors.New("Both node selector key and node selector value must be specified when using a hostpath")
+		return errox.InvalidArgs.New("Both node selector key and node selector value must be specified when using a hostpath")
 	}
 	return nil
 }

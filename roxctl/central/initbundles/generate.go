@@ -122,7 +122,7 @@ func generateCommand(cliEnvironment common.Environment) *cobra.Command {
 			}
 
 			if len(outputs) == 0 {
-				return errors.New("No output files specified with --output or --output-secrets (for stdout, specify '-')")
+				return common.ErrInvalidCommandOption.New("No output files specified with --output or --output-secrets (for stdout, specify '-')")
 			}
 			return generateInitBundle(cliEnvironment, name, outputs)
 		},
