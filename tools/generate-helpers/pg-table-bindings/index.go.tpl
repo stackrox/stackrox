@@ -50,29 +50,17 @@ func (b *indexerImpl) Add{{.TrimmedType}}(deployment *{{.Type}}) error {
 	return nil
 }
 
-{{if eq .TrimmedType "Policy" }}
-func (b *indexerImpl) Add{{trimSuffix "y" .TrimmedType}}ies(_ []*{{.Type}}) error {
+func (b *indexerImpl) Add{{pluralType .TrimmedType}}(_ []*{{.Type}}) error {
 	return nil
 }
-{{- else }}
-func (b *indexerImpl) Add{{.TrimmedType}}s(_ []*{{.Type}}) error {
-	return nil
-}
-{{- end }}
 
 func (b *indexerImpl) Delete{{.TrimmedType}}(id string) error {
 	return nil
 }
 
-{{ if eq .TrimmedType "Policy" }}
-func (b *indexerImpl) Delete{{trimSuffix "y" .TrimmedType}}ies(_ []string) error {
+func (b *indexerImpl) Delete{{pluralType .TrimmedType}}(_ []string) error {
 	return nil
 }
-{{- else }}
-func (b *indexerImpl) Delete{{.TrimmedType}}s(_ []string) error {
-	return nil
-}
-{{- end }}
 
 func (b *indexerImpl) MarkInitialIndexingComplete() error {
 	return nil

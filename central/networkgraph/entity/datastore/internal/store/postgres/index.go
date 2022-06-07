@@ -48,7 +48,7 @@ func (b *indexerImpl) AddNetworkEntity(deployment *storage.NetworkEntity) error 
 	return nil
 }
 
-func (b *indexerImpl) AddNetworkEntitys(_ []*storage.NetworkEntity) error {
+func (b *indexerImpl) AddNetworkEntities(_ []*storage.NetworkEntity) error {
 	return nil
 }
 
@@ -56,7 +56,7 @@ func (b *indexerImpl) DeleteNetworkEntity(id string) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteNetworkEntitys(_ []string) error {
+func (b *indexerImpl) DeleteNetworkEntities(_ []string) error {
 	return nil
 }
 

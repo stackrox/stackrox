@@ -750,12 +750,12 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 	for _, missingIndex := range missingIndices {
 		policyID := request.PolicyIds[missingIndex]
 		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
-			PolicyId: request.PolicyIds[missingIndex],
+			PolicyId: policyID,
 			Error: &v1.PolicyError{
 				Error: "not found",
 			},
 		})
-		log.Warnf("A policy error ocurred for id %s: not found", policyID)
+		log.Warnf("A policy error occurred for id %s: not found", policyID)
 
 	}
 	if len(missingIndices) > 0 {

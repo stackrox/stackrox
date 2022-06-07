@@ -4,14 +4,12 @@ import (
 	"context"
 
 	policyUtils "github.com/stackrox/rox/central/policy/utils"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
@@ -24,10 +22,7 @@ var (
 	// Locked policy criteria guarantees that the criteria remains unchanged as is as it was shipped.
 	removedDefaultPolicyBucket = []byte("removed_default_policies")
 
-	policyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Policy)))
+	policyCtx = context.Background()
 
 	log = logging.LoggerForModule()
 )
@@ -104,7 +99,7 @@ func newWithoutDefaults(db *bolt.DB) Store {
 }
 
 func (s *storeImpl) addDefaults() {
-	policyIDSet, policyNameSet := set.NewStringSet(), set.NewStringSet()
+	policyIDSet := set.NewStringSet()
 	storedPolicies, err := s.GetAll(policyCtx)
 	if err != nil {
 		panic(err)
@@ -112,7 +107,6 @@ func (s *storeImpl) addDefaults() {
 
 	for _, p := range storedPolicies {
 		policyIDSet.Add(p.GetId())
-		policyNameSet.Add(p.GetName())
 	}
 
 	// Preload the default policies.
@@ -134,7 +128,7 @@ func (s *storeImpl) addDefaults() {
 
 		// If ID is not the same as the shipped default policy, we treat it as custom policy. Hence, the tombstone
 		// state is not tracked.
-		if policyNameSet.Contains(p.GetName()) {
+		if policyIDSet.Contains(p.GetId()) {
 			continue
 		}
 		count++
