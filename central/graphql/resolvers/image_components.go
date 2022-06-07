@@ -72,8 +72,7 @@ type ImageComponentResolver interface {
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 	Version(ctx context.Context) string
 
-	// TODO
-	//PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error)
+	PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) // TODO
 }
 
 // ImageComponent returns an image component based on an input id (name:version)
