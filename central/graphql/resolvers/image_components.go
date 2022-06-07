@@ -32,8 +32,7 @@ func init() {
 			"topImageVulnerability: ImageVulnerability",
 			"unusedVarSink(query: String): Int",
 
-			// TODO
-			//"plottedVulns(query: String): PlottedVulnerabilities!",
+			"plottedVulns(query: String): PlottedVulnerabilities!", // TODO
 		}),
 		schema.AddQuery("imageComponent(id: ID): ImageComponent"),
 		schema.AddQuery("imageComponents(query: String, scopeQuery: String, pagination: Pagination): [ImageComponent!]!"),
@@ -108,11 +107,10 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 		return resolver.componentCountV2(ctx, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
-	return 0, errors.New("Resolver NodeComponentCount does not support postgres yet")
+	return 0, errors.New("Resolver ImageComponentCount does not support postgres yet")
 }
 
 func queryWithImageIDRegexFilter(q string) string {
 	return search.AddRawQueriesAsConjunction(q,
-		// TODO check the search field
 		search.NewQueryBuilder().AddRegexes(search.ImageLabel, ".+").Query())
 }

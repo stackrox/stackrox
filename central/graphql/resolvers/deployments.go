@@ -26,8 +26,6 @@ func init() {
 		schema.AddExtraResolvers("Deployment", []string{
 			"cluster: Cluster",
 			"complianceResults(query: String): [ControlResult!]!",
-			"componentCount(query: String): Int!",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
 			"containerRestartCount: Int!",
 			"containerTerminationCount: Int!",
 			"deployAlertCount(query: String): Int!",
@@ -37,6 +35,8 @@ func init() {
 			"failingPolicyCounter(query: String): PolicyCounter",
 			"failingRuntimePolicyCount(query: String): Int!",
 			"groupedProcesses: [ProcessNameGroup!]!",
+			"imageComponentCount(query: String): Int!",
+			"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 			"imageCount(query: String): Int!",
 			"images(query: String, pagination: Pagination): [Image!]!",
 			"imageVulnerabilityCount(query: String): Int!",
@@ -44,7 +44,6 @@ func init() {
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!",
 			"latestViolation(query: String): Time",
 			"namespaceObject: Namespace",
-			"plottedVulns(query: String): PlottedVulnerabilities!",
 			"podCount: Int!",
 			"policies(query: String, pagination: Pagination): [Policy!]!",
 			"policyCount(query: String): Int!",
@@ -55,6 +54,8 @@ func init() {
 			"serviceAccountID: String!",
 			"serviceAccountObject: ServiceAccount",
 			"unusedVarSink(query: String): Int",
+
+			"plottedVulns(query: String): PlottedVulnerabilities!", // TODO
 		}),
 		// deprecated fields
 		schema.AddExtraResolvers("Deployment", []string{
@@ -64,6 +65,10 @@ func init() {
 				"@deprecated(reason: \"use 'imageVulnerabilityCounter'\")",
 			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! " +
 				"@deprecated(reason: \"use 'imageVulnerabilities'\")",
+			"componentCount(query: String): Int!" +
+				"@deprecated(reason: \"use 'imageComponentCount'\")",
+			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!" +
+				"@deprecated(reason: \"use 'imageComponents'\")",
 		}),
 		schema.AddQuery("deployment(id: ID): Deployment"),
 		schema.AddQuery("deployments(query: String, pagination: Pagination): [Deployment!]!"),
@@ -569,6 +574,25 @@ func (resolver *deploymentResolver) ComponentCount(ctx context.Context, args Raw
 		Level: v1.SearchCategory_DEPLOYMENTS,
 		ID:    resolver.data.GetId(),
 	}), RawQuery{Query: &query})
+}
+
+func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
+
+	return resolver.root.ImageComponents(resolver.deploymentScopeContext(ctx), args)
+}
+
+func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
+
+	return resolver.root.ImageComponentCount(resolver.deploymentScopeContext(ctx), args)
+}
+
+func (resolver *deploymentResolver) deploymentScopeContext(ctx context.Context) context.Context {
+	return scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_DEPLOYMENTS,
+		ID:    resolver.data.GetId(),
+	})
 }
 
 // vulnQueryScoping applies scope to the provided context so that results returned are only relevant to the given deployment
