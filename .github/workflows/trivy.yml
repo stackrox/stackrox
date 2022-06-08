@@ -14,31 +14,30 @@ on:
     branches: [ master ]
 
 jobs:
-  images:
+  scan:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    name: Scan with Trivy
     strategy:
       matrix:
         image:
           - main
           - roxctl
           - central-db
-  scan:
-    permissions:
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-    name: Scan with Trivy
     runs-on: ubuntu-18.04
     steps:
-      - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'quay.io/stackrox-io/${{ matrix.image }}:latest'
-          scan-type: 'image'
-          ignore-unfixed: true
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL'
+          - name: Run Trivy vulnerability scanner in repo mode
+            uses: aquasecurity/trivy-action@master
+            with:
+              image-ref: 'quay.io/stackrox-io/${{ matrix.image }}:latest'
+              scan-type: 'image'
+              ignore-unfixed: true
+              format: 'sarif'
+              output: 'trivy-results.sarif'
+              severity: 'CRITICAL'
 
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v1
-        with:
-          sarif_file: 'trivy-results.sarif'
+          - name: Upload Trivy scan results to GitHub Security tab
+            uses: github/codeql-action/upload-sarif@v1
+            with:
+              sarif_file: 'trivy-results.sarif'
