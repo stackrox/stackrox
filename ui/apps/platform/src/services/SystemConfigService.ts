@@ -24,5 +24,5 @@ export function fetchPublicConfig(): Promise<{ response: PublicConfig }> {
  * Save system configuration: private and public.
  */
 export function saveSystemConfig(config: SystemConfig): Promise<SystemConfig> {
-    return axios.put<SystemConfig>(baseUrl, config).then((response) => response.data);
+    return axios.put<SystemConfig>(baseUrl, { config }).then((response) => response.data);
 }

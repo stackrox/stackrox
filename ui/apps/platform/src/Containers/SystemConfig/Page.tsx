@@ -1,11 +1,17 @@
-import React, { ReactElement, useEffect, useState } from 'react';
-import { Button, PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
+import React, { ReactElement, ReactNode, useEffect, useState } from 'react';
+import {
+    Alert,
+    Bullseye,
+    Button,
+    Flex,
+    FlexItem,
+    PageSection,
+    Spinner,
+    Title,
+} from '@patternfly/react-core';
 
-import { actions } from 'reducers/systemConfig';
-import { fetchSystemConfig, saveSystemConfig } from 'services/SystemConfigService';
-import { fetchTelemetryConfig, saveTelemetryConfig } from 'services/TelemetryService';
+import { fetchSystemConfig } from 'services/SystemConfigService';
 import { SystemConfig } from 'types/config.proto';
-import { TelemetryConfig } from 'types/telemetry.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import SystemConfigForm from './SystemConfigForm';
@@ -15,56 +21,57 @@ const SystemConfigPage = (): ReactElement => {
     const [isEditing, setIsEditing] = useState(false);
 
     const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
-    const [isLoadingSystemConfig, setIsLoadingSystemConfig] = useState(false);
-    const [systemConfigErrorMessage, setSystemConfigErrorMessage] = useState('');
-
-    const [telemetryConfig, setTelemetryConfig] = useState<TelemetryConfig | null>(null);
-    const [isLoadingTelemetryConfig, setIsLoadingTelemetryConfig] = useState(false);
-    const [telemetryConfigErrorMessage, setTelemetryConfigErrorMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
-        setIsLoadingSystemConfig(true);
+        setIsLoading(true);
         fetchSystemConfig()
             .then((data) => {
                 setSystemConfig(data);
-                setSystemConfigErrorMessage('');
+                setErrorMessage('');
             })
             .catch((error) => {
                 setSystemConfig(null);
-                setSystemConfigErrorMessage(getAxiosErrorMessage(error));
+                setErrorMessage(getAxiosErrorMessage(error));
             })
-            .finally(() => setIsLoadingSystemConfig(false));
+            .finally(() => {
+                setIsLoading(false);
+            });
     }, []);
 
-    useEffect(() => {
-        setIsLoadingTelemetryConfig(true);
-        fetchTelemetryConfig()
-            .then((data) => {
-                setTelemetryConfig(data);
-                setTelemetryConfigErrorMessage('');
-            })
-            .catch((error) => {
-                setTelemetryConfig(null);
-                setTelemetryConfigErrorMessage(getAxiosErrorMessage(error));
-            })
-            .finally(() => setIsLoadingTelemetryConfig(false));
-    }, []);
-
-    const isLoading = isLoadingSystemConfig || isLoadingTelemetryConfig;
-
-    function editSystemConfig() {
+    function onClickEdit() {
         setIsEditing(true);
     }
 
-    function cancelEdit() {
+    function setIsNotEditing() {
         setIsEditing(false);
     }
 
-    function onSubmit(systemConfigSubmitted, telemetryConfigSubmitted) {
-        // TODO next step will receive the responses from requests in the form (so it can render error and loading).
-        saveSystemConfig(systemConfigSubmitted);
-        saveTelemetryConfig(telemetryConfigSubmitted);
-        setIsEditing(false);
+    let content: ReactNode = null;
+
+    if (isLoading) {
+        content = (
+            <Bullseye>
+                <Spinner isSVG />
+            </Bullseye>
+        );
+    } else if (systemConfig) {
+        content = isEditing ? (
+            <SystemConfigForm
+                systemConfig={systemConfig}
+                setSystemConfig={setSystemConfig}
+                setIsNotEditing={setIsNotEditing}
+            />
+        ) : (
+            <Details systemConfig={systemConfig} />
+        );
+    } else if (errorMessage) {
+        content = (
+            <Alert variant="warning" isInline title="failed to get system configuration">
+                {errorMessage}
+            </Alert>
+        );
     }
 
     return (
@@ -79,7 +86,7 @@ const SystemConfigPage = (): ReactElement => {
                             <Button
                                 variant="primary"
                                 isDisabled={isEditing || isLoading}
-                                onClick={editSystemConfig}
+                                onClick={onClickEdit}
                             >
                                 Edit
                             </Button>
@@ -87,18 +94,7 @@ const SystemConfigPage = (): ReactElement => {
                     </Flex>
                 </Flex>
             </PageSection>
-            <PageSection>
-                {isEditing ? (
-                    <SystemConfigForm
-                        systemConfig={systemConfig}
-                        telemetryConfig={telemetryConfig}
-                        onCancel={cancelEdit}
-                        onSubmit={onSubmit}
-                    />
-                ) : (
-                    <Details systemConfig={systemConfig} telemetryConfig={telemetryConfig} />
-                )}
-            </PageSection>
+            <PageSection>{content}</PageSection>
         </>
     );
 };
