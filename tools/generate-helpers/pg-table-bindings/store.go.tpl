@@ -58,7 +58,7 @@ const (
 var (
     log = logging.LoggerForModule()
     schema = {{ template "schemaVar" .Schema}}
-    {{ if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) -}}
+    {{ if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) -}}
     targetResource = resources.{{.Type | storageToResource}}
     {{- end }}
 )
@@ -323,7 +323,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsGloballyScoped }}
+    {{- else if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
     {{- else if and (.Obj.IsDirectlyScoped) (.Obj.IsClusterScope) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}.
@@ -332,7 +332,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     {{ template "defineScopeChecker" "READ_WRITE" }}.
         ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
     {{- end }}
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped)  }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -352,7 +352,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsGloballyScoped }}
+    {{- else if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
