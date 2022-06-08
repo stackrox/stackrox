@@ -44,7 +44,7 @@ func (s *TranslationTestSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 
-func (s TranslationTestSuite) TestImageOverrides() {
+func (s *TranslationTestSuite) TestImageOverrides() {
 	s.envIsolator.Setenv(images.ScannerSlim.EnvVar(), "stackrox/scanner:1.0.0")
 	s.envIsolator.Setenv(images.ScannerSlimDB.EnvVar(), "stackrox/scanner-db:1.0.0")
 
@@ -97,7 +97,7 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	testingUtils.AssertPathValueMatches(t, vals, regexp.MustCompile("[0-9a-f]{32}"), "meta.configFingerprintOverride")
 }
 
-func (s TranslationTestSuite) TestTranslate() {
+func (s *TranslationTestSuite) TestTranslate() {
 	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
 	t := s.T()
 
