@@ -16,15 +16,29 @@ var typeRegistry = make(map[string]string)
 
 func init() {
 	for s, r := range map[proto.Message]permissions.ResourceHandle{
+		&storage.ActiveComponent{}:                              resources.Deployment,
 		&storage.ClusterHealthStatus{}:                          resources.Cluster,
+		&storage.ClusterCVEEdge{}:                               resources.Cluster,
+		&storage.ComplianceControlResult{}:                      resources.Compliance,
+		&storage.ComplianceDomain{}:                             resources.Compliance,
+		&storage.ComplianceOperatorCheckResult{}:                resources.ComplianceOperator,
+		&storage.ComplianceOperatorProfile{}:                    resources.ComplianceOperator,
+		&storage.ComplianceOperatorRule{}:                       resources.ComplianceOperator,
+		&storage.ComplianceOperatorScan{}:                       resources.ComplianceOperator,
+		&storage.ComplianceOperatorScanSettingBinding{}:         resources.ComplianceOperator,
+		&storage.ComplianceRunMetadata{}:                        resources.Compliance,
+		&storage.ComplianceRunResults{}:                         resources.Compliance,
 		&storage.ExternalBackup{}:                               resources.BackupPlugins,
-		&storage.ImageComponentEdge{}:                           resources.ImageComponent,
+		&storage.ImageComponentEdge{}:                           resources.Image,
+		&storage.ImageCVEEdge{}:                                 resources.Image,
 		&storage.K8SRoleBinding{}:                               resources.K8sRoleBinding,
 		&storage.K8SRole{}:                                      resources.K8sRole,
 		&storage.NamespaceMetadata{}:                            resources.Namespace,
 		&storage.NetworkEntity{}:                                resources.NetworkGraph,
+		&storage.NetworkFlow{}:                                  resources.NetworkGraph,
 		&storage.NetworkPolicyApplicationUndoDeploymentRecord{}: resources.NetworkPolicy,
 		&storage.NetworkPolicyApplicationUndoRecord{}:           resources.NetworkPolicy,
+		&storage.NodeComponentEdge{}:                            resources.Node,
 		&storage.PermissionSet{}:                                resources.Role,
 		&storage.Pod{}:                                          resources.Deployment,
 		&storage.ProcessBaselineResults{}:                       resources.ProcessWhitelist,
@@ -32,13 +46,9 @@ func init() {
 		&storage.ProcessIndicator{}:                             resources.Indicator,
 		&storage.ReportConfiguration{}:                          resources.VulnerabilityReports,
 		&storage.SimpleAccessScope{}:                            resources.Role,
+		&storage.StoredLicenseKey{}:                             resources.Licenses,
+		&storage.TelemetryConfiguration{}:                       resources.DebugLogs,
 		&storage.TokenMetadata{}:                                resources.Integration,
-		&storage.ComplianceOperatorCheckResult{}:                resources.ComplianceOperator,
-		&storage.ComplianceOperatorScan{}:                       resources.ComplianceOperator,
-		&storage.ComplianceOperatorScanSettingBinding{}:         resources.ComplianceOperator,
-		&storage.ComplianceOperatorProfile{}:                    resources.ComplianceOperator,
-		&storage.ComplianceOperatorRule{}:                       resources.ComplianceOperator,
-
 		// Tests
 		&storage.TestMultiKeyStruct{}:  resources.Namespace,
 		&storage.TestSingleKeyStruct{}: resources.Namespace,
@@ -80,6 +90,13 @@ func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
 		}
 	}
 	panic("unknown resource: " + resource)
+}
+
+func identifierGetter(prefix string, schema *walker.Schema) string {
+	if len(schema.PrimaryKeys()) == 1 {
+		return schema.ID().Getter(prefix)
+	}
+	panic(schema.TypeName + " has multiple primary keys.")
 }
 
 func clusterGetter(prefix string, schema *walker.Schema) string {

@@ -63,8 +63,8 @@ message ContainerNameAndBaselineStatus {
 // `ProcessBaselineResults` represent cached results of process baseline evaluation.
 message ProcessBaselineResults {
     string                                  deployment_id     = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string                                  cluster_id        = 3;
-    string                                  namespace         = 4;
+    string                                  cluster_id        = 3 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
+    string                                  namespace         = 4 [(gogoproto.moretags) = "search:\"Namespace,hidden,store\""];
     repeated ContainerNameAndBaselineStatus baseline_statuses = 2;
 }
 
