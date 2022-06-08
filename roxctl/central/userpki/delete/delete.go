@@ -46,7 +46,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := flags.CheckConfirmation(cmd); err != nil {
+			if err := flags.CheckConfirmation(cmd, cliEnvironment.Logger(), cliEnvironment.InputOutput()); err != nil {
 				return err
 			}
 			return deleteProvider()

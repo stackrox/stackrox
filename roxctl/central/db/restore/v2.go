@@ -86,7 +86,7 @@ func validate(cbr *cobra.Command, args []string) error {
 
 func (cmd *centralDbRestoreCommand) construct(cbr *cobra.Command, args []string) error {
 	cmd.confirm = func() error {
-		return flags.CheckConfirmation(cbr)
+		return flags.CheckConfirmation(cbr, cmd.env.Logger(), cmd.env.InputOutput())
 	}
 	cmd.timeout = flags.Timeout(cbr)
 	if cmd.file == "" {
