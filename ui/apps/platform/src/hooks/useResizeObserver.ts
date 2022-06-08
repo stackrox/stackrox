@@ -8,7 +8,7 @@ type UseResizeObserverOptions = { throttleInterval: number };
  */
 function useResizeObserver(
     element: Element | null,
-    { throttleInterval = 200 }: UseResizeObserverOptions
+    { throttleInterval }: UseResizeObserverOptions = { throttleInterval: 200 }
 ): ResizeObserverEntry | null {
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
     const [entry, setEntry] = useState<ResizeObserverEntry | null>(null);
