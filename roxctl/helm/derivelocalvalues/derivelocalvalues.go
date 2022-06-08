@@ -11,7 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
-	env "github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -21,7 +22,7 @@ var (
 	supportedCharts = []string{common.ChartCentralServices}
 )
 
-func deriveLocalValuesForChart(env env.Environment, namespace, chartName, input, output string, useDirectory bool) error {
+func deriveLocalValuesForChart(env environment.Environment, namespace, chartName, input, output string, useDirectory bool) error {
 	var err error
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
@@ -78,7 +79,7 @@ func writeYamlToFile(values map[string]interface{}, path string) error {
 	return nil
 }
 
-func writeValuesToOutput(env env.Environment, publicValues, privateValues map[string]interface{}, output string, useDirectory bool) error {
+func writeValuesToOutput(env environment.Environment, publicValues, privateValues map[string]interface{}, output string, useDirectory bool) error {
 	var err error
 
 	if useDirectory {
@@ -118,7 +119,7 @@ func writeValuesToOutput(env env.Environment, publicValues, privateValues map[st
 }
 
 // Implementation for command `helm derive-local-values`.
-func deriveLocalValuesForCentralServices(ctx context.Context, env env.Environment, namespace, input, output string, useDirectory bool) error {
+func deriveLocalValuesForCentralServices(ctx context.Context, env environment.Environment, namespace, input, output string, useDirectory bool) error {
 	var k8s k8sObjectDescription
 
 	if input == "" {
@@ -347,7 +348,7 @@ func retrieveCustomEnvVars(envVars map[string]interface{}) map[string]interface{
 	return filterMap(envVars, []string{"ROX_OFFLINE_MODE", "ROX_INIT_TELEMETRY_ENABLED"})
 }
 
-func printWarnings(logger env.Logger, warnings []string) {
+func printWarnings(logger logger.Logger, warnings []string) {
 	if len(warnings) == 0 {
 		return
 	}

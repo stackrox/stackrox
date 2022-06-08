@@ -5,11 +5,11 @@ import (
 	"github.com/stackrox/rox/roxctl/central/userpki/create"
 	"github.com/stackrox/rox/roxctl/central/userpki/delete"
 	"github.com/stackrox/rox/roxctl/central/userpki/list"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 // Command adds the userpki command
-func Command(cliEnvironment common.Environment) *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "userpki",
 	}

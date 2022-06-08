@@ -17,7 +17,7 @@ issues:
       linters:
         - wrapcheck
         - forbidigo
-    - path: roxctl/common/io\.go # io.go will by default use os.Stdin/os.StdErr.
+    - path: roxctl/common/io/io\.go # io.go will by default use os.Stdin/os.StdErr.
       linters:
         - forbidigo
     - path: "roxctl/common/flags/" # flags package is currently not using environment.Logger due to a cyclic import.

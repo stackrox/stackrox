@@ -16,12 +16,14 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/download"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/sensor/util"
 )
 
-func downloadCerts(logger common.Logger, outputDir, clusterIDOrName string, timeout time.Duration) error {
-	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout)
+func downloadCerts(log logger.Logger, outputDir, clusterIDOrName string, timeout time.Duration) error {
+	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, log)
 	if err != nil {
 		return err
 	}
@@ -31,7 +33,7 @@ func downloadCerts(logger common.Logger, outputDir, clusterIDOrName string, time
 		return err
 	}
 
-	resp, err := common.DoHTTPRequestAndCheck200("/api/extensions/certgen/cluster", timeout, http.MethodPost, bytes.NewReader(body))
+	resp, err := common.DoHTTPRequestAndCheck200("/api/extensions/certgen/cluster", timeout, http.MethodPost, bytes.NewReader(body), log)
 	if err != nil {
 		return err
 	}
@@ -40,7 +42,7 @@ func downloadCerts(logger common.Logger, outputDir, clusterIDOrName string, time
 	fileName, err := download.ParseFilenameFromHeader(resp.Header)
 	if err != nil {
 		fileName = fmt.Sprintf("cluster-%s-certs.yaml", clusterIDOrName)
-		logger.WarnfLn("could not obtain output file name from HTTP Response: %v. Defaulting to %q", err, fileName)
+		log.WarnfLn("could not obtain output file name from HTTP Response: %v. Defaulting to %q", err, fileName)
 	}
 
 	outputFileNameWithDir := filepath.Join(outputDir, fileName)
@@ -65,12 +67,12 @@ func downloadCerts(logger common.Logger, outputDir, clusterIDOrName string, time
 	if err != nil {
 		return errors.Wrapf(err, "failed to close file at %s", outputFileNameWithDir)
 	}
-	logger.InfofLn("Successfully downloaded new certs. Use kubectl apply -f %s to apply them.", outputFileNameWithDir)
+	log.InfofLn("Successfully downloaded new certs. Use kubectl apply -f %s to apply them.", outputFileNameWithDir)
 	return nil
 }
 
 // Command defines the command.
-func Command(cliEnvironment common.Environment) *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	var outputDir string
 
 	c := &cobra.Command{

@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
-	env "github.com/stackrox/rox/roxctl/common"
+	env "github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 )
 
