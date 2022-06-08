@@ -2481,3 +2481,78 @@ func GetCoreDNS_1_8_0() *storage.Image {
 		},
 	}
 }
+
+func GetPartialKubeProxy_1__21_5() *storage.Image {
+	return &storage.Image{
+		Id: "sha256:b9f3f8764f5b74085edbed44202aa83dab3555638ea9de182b9f79b6728bee5b",
+		Name: &storage.ImageName{
+			Registry: "k8s.gcr.io",
+			Remote:   "kube-proxy",
+			Tag:      "v1.21.5",
+			FullName: "k8s.gcr.io/kube-proxy:v1.21.5",
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Digest:  "sha256:e08abd2be7302b7de4cc9d06bc6045be005c870f93065814da1d761980f7218d",
+				Created: &types.Timestamp{Seconds: 1631740879, Nanos: 213199897},
+				Layers: []*storage.ImageLayer{
+					{
+						Instruction: "COPY",
+						Value:       "/ / # buildkit",
+						Created:     &types.Timestamp{Seconds: 1624421429, Nanos: 471216198},
+					},
+					{
+						Instruction: "COPY",
+						Value:       " /usr/local/bin/ # buildkit",
+						Created:     &types.Timestamp{Seconds: 1631740879, Nanos: 213199897},
+					},
+				},
+				User: "root",
+			},
+			V2: &storage.V2Metadata{
+				Digest: "sha256:d74589846c98d715da65e36d78c2d3393a3e838f944d2b63831c74932ea41953",
+			},
+			LayerShas: []string{
+				"sha256:fe5d561940dfe69e13ae04ecc1285d62b937c35e4a2ae9200845b68ff60c10e7",
+				"sha256:40c307f83de60d7416e6bfb637ccb0ba274022c32df2b75f46722256aef1ae97",
+			},
+			DataSource: &storage.DataSource{
+				Id:   "c6a1a26d-8947-4cb0-a50d-a018856f9390",
+				Name: "Public Kubernetes GCR",
+			},
+		},
+		Scan: &storage.ImageScan{
+			ScannerVersion:  "2.24.0-11-g05cf175999",
+			ScanTime:        &types.Timestamp{Seconds: 1654154306, Nanos: 186771200},
+			Components: []*storage.EmbeddedImageScanComponent{
+				GetEmbeddedLibzstd_1_3_8(),
+				GetEmbeddedLsb_10_2019051400(),
+				GetEmbeddedLibnetfilterConntrack_1_0_7_1(),
+				GetEmbeddedBasePasswd_3_5_46(),
+				GetEmbeddedAdduser_3_118(),
+				GetEmbeddedOpenSSL_1_1_1d(),
+				GetEmbeddedKmod_26_1(),
+				GetEmbeddedZlib_1_1_2_11(),
+				GetEmbeddedLibftnl_1_1_7_1(),
+				GetEmbeddedAttr_1_2_4_48_4(),
+				GetEmbeddedAudit_1_2_8_4_3(),
+				GetEmbeddedPerl_5_28_1_6(),
+			},
+			OperatingSystem: "debian:10",
+			DataSource: &storage.DataSource{
+				Id:   "169b0d3f-8277-4900-bbce-1127077defae",
+				Name: "Stackrox Scanner",
+			},
+		},
+		SetComponents: &storage.Image_Components{Components: 12},
+		SetCves:       &storage.Image_Cves{Cves: 10},
+		SetFixable:    &storage.Image_FixableCves{FixableCves: 6},
+		LastUpdated:   &types.Timestamp{Seconds: 1654154306, Nanos: 877872600},
+		RiskScore:     9.2575,
+		SetTopCvss: &storage.Image_TopCvss{TopCvss: 9.8}
+		Notes: []storage.Image_Note{
+			storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA,
+			storage.Image_MISSING_SIGNATURE,
+		},
+	}
+}
