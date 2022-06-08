@@ -58,11 +58,12 @@ func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
 	options := []string{
 		"-d",
 		config.ConnConfig.Database,
-		"-Fd", // Custom format.  Compressed files written to a directory.
+		"-Fc", // Custom format, compressed hopefully supports stdin to restore
+		//"-Fd", // Custom format.  Compressed files written to a directory.
 		"-f",
 		backupPath,
-		"-j", // Allows for work to be spread across jobs
-		"5",  // The number of jobs
+		//"-j", // Allows for work to be spread across jobs
+		//"5",  // The number of jobs
 	}
 
 	// Get the common DB connection info

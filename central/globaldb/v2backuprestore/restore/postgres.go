@@ -3,6 +3,7 @@ package restore
 import (
 	"context"
 	"fmt"
+	"io"
 	"os/exec"
 	"time"
 
@@ -134,6 +135,102 @@ func LoadRestore(dumpPath string) error {
 	}
 
 	log.Info("Postgres Restore Complete")
+	return nil
+}
+
+// LoadRestoreStream a Postgres database from a dump
+func LoadRestoreStream(fileReader io.Reader) error {
+	log.Info("Starting Postgres Restore")
+	log.Info("SHREWS -- in Load Restore Stream")
+
+	sourceMap, config, err := globaldb.GetPostgresConfig()
+	if err != nil {
+		log.Fatalf("Could not parse postgres config: %v", err)
+		return err
+	}
+
+	// Now recreate the DB
+	err = createDB(sourceMap, config)
+	if err != nil {
+		log.Fatalf("Could not create restore database: %v", err)
+		return err
+	}
+
+	// Execute the restore on the temporary restore database
+	err = runRestoreStream(fileReader, sourceMap, config)
+	if err != nil {
+		log.Errorf("Could not load the Postgres backup: %v", err)
+		return err
+	}
+
+	log.Info("Postgres Restore Complete")
+	return nil
+}
+
+func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config *pgxpool.Config) error {
+	log.Info("SHREWS -- runRestoreStream")
+	// Set the options for pg_dump from the connection config
+	options := []string{
+		"-d",
+		restoreDB,
+		"--no-owner",
+		"--clean",
+		"--if-exists",
+		"--exit-on-error",
+		"-Fd",
+		//"-j",
+		//"5",
+		"-vvv",
+		"--single-transaction",
+	}
+
+	// Get the common DB connection info
+	options = append(options, common.GetConnectionOptions(config)...)
+
+	cmd := exec.Command("pg_restore", options...)
+
+	log.Info("SHREWS -- runRestoreStream -- about to get pipe")
+	// Get a pipe to the commands standard in
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Copy the data into the commands stdin
+	log.Info("SHREWS -- runRestoreStream -- copying data to the stdin")
+	//_, err = io.Copy(stdin, fileReader)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+
+	go func() {
+		defer stdin.Close()
+		_, err = io.Copy(stdin, fileReader)
+		//io.WriteString(stdin, "values written to stdin are passed to cmd's standard input")
+	}()
+
+	//if _, err := io.Copy(stdin, fileReader); err != nil {
+	//	log.Info("SHREWS -- runRestoreStream -- trouble copying")
+	//	utils.IgnoreError(stdin.Close)
+	//}
+	//if err := stdin.Close(); err != nil {
+	//	log.Info("SHREWS -- runRestoreStream -- trying to close stdin")
+	//}
+	//cmd.Stdin = fileReader
+	// use stdinpipe
+	// copy the reader to the writere returned from stdinpipe
+	//cmd.StdinPipe()
+
+	log.Info("SHREWS -- runRestoreStream -- about to set the env")
+	common.SetPostgresCmdEnv(cmd, sourceMap, config)
+	err = common.ExecutePostgresCmd(cmd)
+	if err != nil {
+		// Clean up the restore DB since the restore failed
+		_ = dropDB(sourceMap, config, restoreDB)
+		log.Errorf("Unable to restore the postgres dump.")
+		return err
+	}
+
 	return nil
 }
 
