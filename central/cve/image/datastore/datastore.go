@@ -25,8 +25,8 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.CVE, error)
 
-	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error
-	Unsuppress(ctx context.Context, ids ...string) error
+	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error
+	Unsuppress(ctx context.Context, cves ...string) error
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 }
 

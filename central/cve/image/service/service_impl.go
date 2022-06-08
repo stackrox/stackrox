@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/and"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )
 
@@ -60,11 +59,7 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 	if len(request.GetIds()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to un-snooze")
 	}
-	result, err := s.cves.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetIds()...).ProtoQuery())
-	if err != nil {
-		return nil, err
-	}
-	if err := s.cves.Suppress(ctx, createdAt, request.GetDuration(), search.ResultsToIDs(result)...); err != nil {
+	if err := s.cves.Suppress(ctx, createdAt, request.GetDuration(), request.GetIds()...); err != nil {
 		return nil, err
 	}
 	// This handles updating image-cve edges and reprocessing affected deployments.
@@ -79,11 +74,7 @@ func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.Unsuppress
 	if len(request.GetIds()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to un-snooze")
 	}
-	result, err := s.cves.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetIds()...).ProtoQuery())
-	if err != nil {
-		return nil, err
-	}
-	if err := s.cves.Unsuppress(ctx, search.ResultsToIDs(result)...); err != nil {
+	if err := s.cves.Unsuppress(ctx, request.GetIds()...); err != nil {
 		return nil, err
 	}
 	// This handles updating image-cve edges and reprocessing affected deployments.

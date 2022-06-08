@@ -26,10 +26,6 @@ import (
 const (
 	baseTable = "image_component_cve_edges"
 
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_cve_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3)"
-	getStmt    = "SELECT serialized FROM image_component_cve_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3"
-	deleteStmt = "DELETE FROM image_component_cve_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -81,27 +77,34 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string, imageComponentId string, imageCveId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ComponentCVEEdge")
 
-	row := s.db.QueryRow(ctx, existsStmt, id, imageComponentId, imageCveId)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
-	}
-	return exists, nil
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Component ID"), imageComponentId).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("CVE ID"), imageCveId).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	return count == 1, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string, imageComponentId string, imageCveId string) (*storage.ComponentCVEEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ComponentCVEEdge")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ComponentCVEEdge")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, id, imageComponentId, imageCveId)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Component ID"), imageComponentId).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("CVE ID"), imageCveId).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 

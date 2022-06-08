@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,7 +21,7 @@ func TestInternalCert(t *testing.T) {
 		ServerName:         "central.stackrox",
 	}
 
-	conn, err := tls.Dial("tcp", testutils.RoxAPIEndpoint(t), tlsConf)
+	conn, err := tls.Dial("tcp", centralgrpc.RoxAPIEndpoint(t), tlsConf)
 	require.NoError(t, err)
 	defer utils.IgnoreError(conn.Close)
 
@@ -54,7 +54,7 @@ func TestCustomCert(t *testing.T) {
 		RootCAs:            trustPool,
 	}
 
-	conn, err := tls.Dial("tcp", testutils.RoxAPIEndpoint(t), tlsConf)
+	conn, err := tls.Dial("tcp", centralgrpc.RoxAPIEndpoint(t), tlsConf)
 	require.NoError(t, err)
 	defer utils.IgnoreError(conn.Close)
 

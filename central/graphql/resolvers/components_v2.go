@@ -591,10 +591,10 @@ func (eicr *imageComponentResolver) PlottedVulns(ctx context.Context, args RawQu
 }
 
 // PlottedNodeVulnerabilities returns the data required by top risky component scatter-plot on vuln mgmt dashboard
-func (eicr *imageComponentResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+func (eicr *imageComponentResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "PlottedNodeVulnerabilities")
 	if !features.PostgresDatastore.Enabled() {
-		return eicr.PlottedVulns(ctx, args)
+		return newPlottedNodeVulnerabilitiesResolver(eicr.imageComponentScopeContext(), eicr.root, args)
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver PlottedNodeVulnerabilities in NodeComponent does not support postgres yet")

@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/suite"
 )
@@ -22,9 +23,9 @@ type helmDeriveLocalValuesTestSuite struct {
 }
 
 func (suite *helmDeriveLocalValuesTestSuite) SetupTest() {
-	testIO, _, _, _ := environment.TestIO()
+	testIO, _, _, _ := io.TestIO()
 	suite.helmDeriveLocalValuesCommand = helmDeriveLocalValuesCommand{}
-	suite.helmDeriveLocalValuesCommand.env = environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	suite.helmDeriveLocalValuesCommand.env = environment.NewTestCLIEnvironment(suite.T(), testIO, printer.DefaultColorPrinter())
 }
 
 func (suite *helmDeriveLocalValuesTestSuite) TestInvalidCommandArgs() {

@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -34,70 +35,86 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// CountNodes mocks base method.
-func (m *MockStore) CountNodes() (int, error) {
+// Count mocks base method.
+func (m *MockStore) Count(ctx context.Context) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountNodes")
+	ret := m.ctrl.Call(m, "Count", ctx)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CountNodes indicates an expected call of CountNodes.
-func (mr *MockStoreMockRecorder) CountNodes() *gomock.Call {
+// Count indicates an expected call of Count.
+func (mr *MockStoreMockRecorder) Count(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountNodes", reflect.TypeOf((*MockStore)(nil).CountNodes))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx)
 }
 
 // Delete mocks base method.
-func (m *MockStore) Delete(id string) error {
+func (m *MockStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), ctx, id)
 }
 
 // Exists mocks base method.
-func (m *MockStore) Exists(id string) (bool, error) {
+func (m *MockStore) Exists(ctx context.Context, id string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exists", id)
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Exists indicates an expected call of Exists.
-func (mr *MockStoreMockRecorder) Exists(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), ctx, id)
 }
 
-// GetNode mocks base method.
-func (m *MockStore) GetNode(id string) (*storage.Node, bool, error) {
+// Get mocks base method.
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.Node, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNode", id)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.Node)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetNode indicates an expected call of GetNode.
-func (mr *MockStoreMockRecorder) GetNode(id interface{}) *gomock.Call {
+// Get indicates an expected call of Get.
+func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNode", reflect.TypeOf((*MockStore)(nil).GetNode), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
+}
+
+// GetMany mocks base method.
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
+	ret0, _ := ret[0].([]*storage.Node)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetMany indicates an expected call of GetMany.
+func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
 // GetNodeMetadata mocks base method.
-func (m *MockStore) GetNodeMetadata(id string) (*storage.Node, bool, error) {
+func (m *MockStore) GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNodeMetadata", id)
+	ret := m.ctrl.Call(m, "GetNodeMetadata", ctx, id)
 	ret0, _ := ret[0].(*storage.Node)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -105,52 +122,21 @@ func (m *MockStore) GetNodeMetadata(id string) (*storage.Node, bool, error) {
 }
 
 // GetNodeMetadata indicates an expected call of GetNodeMetadata.
-func (mr *MockStoreMockRecorder) GetNodeMetadata(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetNodeMetadata(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeMetadata", reflect.TypeOf((*MockStore)(nil).GetNodeMetadata), id)
-}
-
-// GetNodes mocks base method.
-func (m *MockStore) GetNodes() ([]*storage.Node, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNodes")
-	ret0, _ := ret[0].([]*storage.Node)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNodes indicates an expected call of GetNodes.
-func (mr *MockStoreMockRecorder) GetNodes() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodes", reflect.TypeOf((*MockStore)(nil).GetNodes))
-}
-
-// GetNodesBatch mocks base method.
-func (m *MockStore) GetNodesBatch(ids []string) ([]*storage.Node, []int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNodesBatch", ids)
-	ret0, _ := ret[0].([]*storage.Node)
-	ret1, _ := ret[1].([]int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetNodesBatch indicates an expected call of GetNodesBatch.
-func (mr *MockStoreMockRecorder) GetNodesBatch(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodesBatch", reflect.TypeOf((*MockStore)(nil).GetNodesBatch), ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeMetadata", reflect.TypeOf((*MockStore)(nil).GetNodeMetadata), ctx, id)
 }
 
 // Upsert mocks base method.
-func (m *MockStore) Upsert(node *storage.Node) error {
+func (m *MockStore) Upsert(ctx context.Context, node *storage.Node) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", node)
+	ret := m.ctrl.Call(m, "Upsert", ctx, node)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockStoreMockRecorder) Upsert(node interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Upsert(ctx, node interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), node)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, node)
 }

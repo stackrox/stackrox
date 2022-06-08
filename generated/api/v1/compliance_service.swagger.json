@@ -729,6 +729,72 @@
         }
       }
     },
+    "storageCVEInfo": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time",
+          "description": "This indicates the timestamp when the cve was first published in the cve feeds."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in the system."
+        },
+        "lastModified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "scoreVersion": {
+          "$ref": "#/definitions/storageCVEInfoScoreVersion"
+        },
+        "cvssV2": {
+          "$ref": "#/definitions/storageCVSSV2"
+        },
+        "cvssV3": {
+          "$ref": "#/definitions/storageCVSSV3"
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageCVEInfoReference"
+          }
+        }
+      }
+    },
+    "storageCVEInfoReference": {
+      "type": "object",
+      "properties": {
+        "URI": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "storageCVEInfoScoreVersion": {
+      "type": "string",
+      "enum": [
+        "V2",
+        "V3",
+        "UNKNOWN"
+      ],
+      "default": "V2"
+    },
     "storageCVSSV2": {
       "type": "object",
       "properties": {
@@ -1623,6 +1689,12 @@
             "$ref": "#/definitions/storageEmbeddedVulnerability"
           }
         },
+        "vulnerabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNodeVulnerability"
+          }
+        },
         "priority": {
           "type": "string",
           "format": "int64"
@@ -1992,6 +2064,35 @@
         "KERNEL_UNSUPPORTED"
       ],
       "default": "UNSET"
+    },
+    "storageNodeVulnerability": {
+      "type": "object",
+      "properties": {
+        "cveBaseInfo": {
+          "$ref": "#/definitions/storageCVEInfo"
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/storageVulnerabilitySeverity"
+        },
+        "fixedBy": {
+          "type": "string"
+        },
+        "snoozed": {
+          "type": "boolean"
+        },
+        "snoozeStart": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "snoozeExpiry": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     },
     "storageOrchestratorMetadata": {
       "type": "object",

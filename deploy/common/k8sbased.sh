@@ -162,6 +162,8 @@ function launch_central {
         add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
     fi
 
+    add_args "--image-defaults=${ROXCTL_ROX_IMAGE_FLAVOR}"
+
     pkill -f kubectl'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
     pkill -9 -f kubectl'.*port-forward.*' || true
     command -v oc >/dev/null && pkill -f oc'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
@@ -186,6 +188,10 @@ function launch_central {
 
     if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
     	add_args "--with-config-file=${ROXDEPLOY_CONFIG_FILE_MAP}"
+    fi
+
+    if [[ "$POD_SECURITY_POLICIES" == "false" ]]; then
+      add_args "--enable-pod-security-policies=false"
     fi
 
     local unzip_dir="${k8s_dir}/central-deploy/"
@@ -283,6 +289,12 @@ function launch_central {
       if [[ -n $MODULE_LOGLEVELS ]]; then
         helm_args+=(
           --set customize.central.envVars.MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
+        )
+      fi
+
+      if [[ "$POD_SECURITY_POLICIES" == "false" ]]; then
+        helm_args+=(
+          --set system.enablePodSecurityPolicies=false
         )
       fi
 

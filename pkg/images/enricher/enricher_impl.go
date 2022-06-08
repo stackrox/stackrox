@@ -669,7 +669,7 @@ func getMatchingRegistries(registries []registryTypes.ImageRegistry,
 func normalizeVulnerabilities(scan *storage.ImageScan) {
 	for _, c := range scan.GetComponents() {
 		for _, v := range c.GetVulns() {
-			v.Severity = cvss.VulnToSeverity(v)
+			v.Severity = cvss.VulnToSeverity(cvss.NewFromEmbeddedVulnerability(v))
 		}
 	}
 }

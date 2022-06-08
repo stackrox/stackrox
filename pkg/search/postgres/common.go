@@ -94,7 +94,7 @@ func (q *query) getPortionBeforeFromClause() string {
 	case COUNT:
 		return "select count(*)"
 	case GET:
-		return "select serialized"
+		return fmt.Sprintf("select %q.serialized", q.From)
 	case SEARCH:
 		var primaryKeyPaths []string
 		// Always select the primary keys first.

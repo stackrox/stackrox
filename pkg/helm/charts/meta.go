@@ -53,6 +53,8 @@ type MetaValues struct {
 	AdmissionControllerEnabled       bool
 	AdmissionControlEnforceOnUpdates bool
 	ReleaseBuild                     bool
+
+	EnablePodSecurityPolicies bool
 }
 
 // GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
@@ -80,6 +82,8 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		Operator:                 false,
 		ReleaseBuild:             buildinfo.ReleaseBuild,
 		FeatureFlags:             getFeatureFlags(),
+
+		EnablePodSecurityPolicies: true,
 	}
 
 	return &metaValues

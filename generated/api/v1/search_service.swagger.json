@@ -59,6 +59,7 @@
                 "CLUSTERS",
                 "NAMESPACES",
                 "NODES",
+                "NODE_COMPONENTS",
                 "NODE_VULN_EDGE",
                 "NODE_COMPONENT_EDGE",
                 "NODE_COMPONENT_CVE_EDGE",
@@ -79,7 +80,10 @@
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
                 "NETWORK_ENTITY",
-                "VULN_REQUEST"
+                "VULN_REQUEST",
+                "NETWORK_BASELINE",
+                "NETWORK_POLICIES",
+                "PROCESS_BASELINE_RESULTS"
               ]
             },
             "collectionFormat": "multi"
@@ -138,6 +142,7 @@
                 "CLUSTERS",
                 "NAMESPACES",
                 "NODES",
+                "NODE_COMPONENTS",
                 "NODE_VULN_EDGE",
                 "NODE_COMPONENT_EDGE",
                 "NODE_COMPONENT_CVE_EDGE",
@@ -158,7 +163,10 @@
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
                 "NETWORK_ENTITY",
-                "VULN_REQUEST"
+                "VULN_REQUEST",
+                "NETWORK_BASELINE",
+                "NETWORK_POLICIES",
+                "PROCESS_BASELINE_RESULTS"
               ]
             },
             "collectionFormat": "multi"
@@ -211,6 +219,7 @@
                 "CLUSTERS",
                 "NAMESPACES",
                 "NODES",
+                "NODE_COMPONENTS",
                 "NODE_VULN_EDGE",
                 "NODE_COMPONENT_EDGE",
                 "NODE_COMPONENT_CVE_EDGE",
@@ -231,7 +240,10 @@
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
                 "NETWORK_ENTITY",
-                "VULN_REQUEST"
+                "VULN_REQUEST",
+                "NETWORK_BASELINE",
+                "NETWORK_POLICIES",
+                "PROCESS_BASELINE_RESULTS"
               ]
             },
             "collectionFormat": "multi"
@@ -333,6 +345,7 @@
         "CLUSTERS",
         "NAMESPACES",
         "NODES",
+        "NODE_COMPONENTS",
         "NODE_VULN_EDGE",
         "NODE_COMPONENT_EDGE",
         "NODE_COMPONENT_CVE_EDGE",
@@ -353,10 +366,13 @@
         "COMPONENT_VULN_EDGE",
         "CLUSTER_VULN_EDGE",
         "NETWORK_ENTITY",
-        "VULN_REQUEST"
+        "VULN_REQUEST",
+        "NETWORK_BASELINE",
+        "NETWORK_POLICIES",
+        "PROCESS_BASELINE_RESULTS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 38"
+      "title": "Next available tag: 42"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

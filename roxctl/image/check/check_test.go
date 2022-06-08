@@ -16,7 +16,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/mocks"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/summaries/policy"
 	"github.com/stretchr/testify/suite"
@@ -413,8 +414,8 @@ func (suite *imageCheckTestSuite) TestValidate() {
 			imgCheckCmd.json = c.json
 			imgCheckCmd.failViolationsWithJSON = c.failViolations
 			imgCheckCmd.objectPrinter = c.printer
-			testIO, _, _, errOut := environment.TestIO()
-			imgCheckCmd.env = environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+			testIO, _, _, errOut := io.TestIO()
+			imgCheckCmd.env = environment.NewTestCLIEnvironment(suite.T(), testIO, printer.DefaultColorPrinter())
 			suite.Assert().NoError(imgCheckCmd.Validate())
 			suite.Assert().Equal(c.expectedWarning, errOut.String())
 		})
@@ -423,7 +424,7 @@ func (suite *imageCheckTestSuite) TestValidate() {
 
 func (suite *imageCheckTestSuite) TestLegacyPrint_Error() {
 	imgCheckCmd := suite.imageCheckCommand
-	env := environment.NewCLIEnvironment(environment.DiscardIO(), printer.DefaultColorPrinter())
+	env := environment.NewTestCLIEnvironment(suite.T(), io.DiscardIO(), printer.DefaultColorPrinter())
 	imgCheckCmd.env = env
 	jsonPrinter, _ := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
 
@@ -501,8 +502,8 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
 
 	for name, c := range cases {
 		suite.Run(name, func() {
-			testIO, _, out, _ := environment.TestIO()
-			imgCheckCmd.env = environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+			testIO, _, out, _ := io.TestIO()
+			imgCheckCmd.env = environment.NewTestCLIEnvironment(suite.T(), testIO, printer.DefaultColorPrinter())
 			imgCheckCmd.json = c.json
 			imgCheckCmd.printAllViolations = c.printAllViolations
 			// Errors will be tested within TestLegacyPrint_Error

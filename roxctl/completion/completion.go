@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 var (
@@ -61,7 +62,7 @@ PowerShell:
 )
 
 // Command provides the shell completion cobra command
-func Command() *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	return &cobra.Command{
 		DisableFlagsInUseLine: true,
 		Use:                   "completion [bash|zsh|fish|powershell]",
@@ -81,7 +82,7 @@ func Command() *cobra.Command {
 			default:
 				return errInvalidArgs
 			}
-			return errors.Wrap(gen(cmd.OutOrStdout()), "could not generate completion")
+			return errors.Wrap(gen(cliEnvironment.InputOutput().Out()), "could not generate completion")
 		},
 	}
 }

@@ -82,6 +82,7 @@ defaults:
 
   system:
     createSCCs: [< not .Operator >]
+    enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]
 
   enableOpenShiftMonitoring: false
 

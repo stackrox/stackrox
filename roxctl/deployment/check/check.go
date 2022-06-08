@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/report"
 	"github.com/stackrox/rox/roxctl/summaries/policy"
@@ -201,7 +202,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 	}
 
 	if d.json {
-		return errors.Wrap(report.JSON(d.env.InputOutput().Out, alerts), "could not print JSON report")
+		return errors.Wrap(report.JSON(d.env.InputOutput().Out(), alerts), "could not print JSON report")
 	}
 
 	// TODO: Need to refactor this to include additional summary info for non-standardized formats
@@ -229,7 +230,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 	return nil
 }
 
-func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out environment.Logger, deployments ...string) {
+func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out logger.Logger, deployments ...string) {
 	out.PrintfLn("Policy check results for deployments: %v", deployments)
 	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		policy.TotalPolicyAmountKey, numOfPolicyViolations[policy.TotalPolicyAmountKey],
@@ -240,7 +241,7 @@ func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out envi
 }
 
 func printAdditionalWarnsAndErrs(amountViolatedPolicies, amountBreakingPolicies int, results []policy.EntityResult,
-	out environment.Logger) {
+	out logger.Logger) {
 	if amountViolatedPolicies == 0 {
 		return
 	}

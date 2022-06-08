@@ -230,6 +230,8 @@ func (s *netPolDataStoreTestSuite) TestAllowUpdateUndoNewer() {
 func (s *netPolDataStoreTestSuite) TestDisallowUpdateUndoOlder() {
 	oldTS := timestamp.TimestampNow()
 	newTS := timestamp.TimestampNow()
+	// Ensure the timestamps differ
+	newTS.Nanos += 1000
 	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: newTS}
 	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(oldCluster, true, nil)
 

@@ -7,23 +7,25 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	http1DowngradeClient "golang.stackrox.io/grpc-http1/client"
 	"google.golang.org/grpc"
 )
 
 // GetGRPCConnection gets a grpc connection to Central with the correct auth
-func GetGRPCConnection() (*grpc.ClientConn, error) {
+func GetGRPCConnection(logger logger.Logger) (*grpc.ClientConn, error) {
 	endpoint, usePlaintext, err := flags.EndpointAndPlaintextSetting()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get endpoint for gRPC connection")
 	}
 
-	tlsOpts, err := tlsConfigOptsForCentral()
+	tlsOpts, err := tlsConfigOptsForCentral(logger)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +38,7 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 
 	if usePlaintext {
 		if !flags.UseInsecure() {
-			return nil, errors.New("plaintext connection mode must be used in conjunction with --insecure")
+			return nil, errox.InvalidArgs.New("plaintext connection mode must be used in conjunction with --insecure")
 		}
 		opts.InsecureNoTLS = true
 		opts.InsecureAllowCredsViaPlaintext = true
@@ -61,7 +63,7 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 			return proxy, errors.Wrap(proxyErr, "could not connect via proxy")
 		}
 	} else if flags.ForceHTTP1() {
-		return nil, errors.New("cannot force HTTP/1 mode if direct gRPC is enabled")
+		return nil, errox.InvalidArgs.New("cannot force HTTP/1 mode if direct gRPC is enabled")
 	}
 
 	if err := checkAuthParameters(); err != nil {
@@ -72,7 +74,7 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 	} else {
 		apiToken, err := retrieveAuthToken()
 		if err != nil {
-			printAuthHelp()
+			printAuthHelp(logger)
 			return nil, err
 		}
 		if apiToken != "" {

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 type centralUserPkiListCommand struct {
@@ -95,7 +96,7 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 }
 
 // PrintProviderDetails print the details of a provider.
-func PrintProviderDetails(logger environment.Logger, p *storage.AuthProvider, defaultRoles map[string]string) {
+func PrintProviderDetails(logger logger.Logger, p *storage.AuthProvider, defaultRoles map[string]string) {
 	logger.PrintfLn("Provider: %s", p.GetName())
 	logger.PrintfLn("  ID: %s", p.GetId())
 	logger.PrintfLn("  Enabled: %t", p.GetEnabled())

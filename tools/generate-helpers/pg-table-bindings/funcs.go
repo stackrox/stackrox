@@ -108,10 +108,11 @@ func concatWith(strs []string, sep string) string {
 }
 
 var funcMap = template.FuncMap{
-	"lowerCamelCase":    lowerCamelCase,
-	"upperCamelCase":    upperCamelCase,
-	"valueExpansion":    valueExpansion,
-	"lowerCase":         strings.ToLower,
-	"storageToResource": storageToResource,
-	"concatWith":        concatWith,
+	"lowerCamelCase":               lowerCamelCase,
+	"upperCamelCase":               upperCamelCase,
+	"valueExpansion":               valueExpansion,
+	"lowerCase":                    strings.ToLower,
+	"storageToResource":            storageToResource,
+	"concatWith":                   concatWith,
+	"searchFieldNameInOtherSchema": searchFieldNameInOtherSchema,
 }

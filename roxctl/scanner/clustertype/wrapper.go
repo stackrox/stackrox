@@ -1,10 +1,10 @@
 package clustertype
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -39,7 +39,7 @@ func (w wrapper) Set(input string) error {
 		*w.ClusterType = val
 		return nil
 	}
-	return fmt.Errorf("invalid cluster type: %q; valid values are %+v", input, validClusterStrings)
+	return errox.InvalidArgs.Newf("invalid cluster type: %q; valid values are %+v", input, validClusterStrings)
 }
 
 func (w wrapper) Type() string {

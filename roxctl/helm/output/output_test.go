@@ -6,7 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	env "github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"github.com/stretchr/testify/suite"
@@ -24,9 +25,9 @@ type helmOutputTestSuite struct {
 }
 
 func (suite *helmOutputTestSuite) SetupTest() {
-	testIO, _, _, errOut := environment.TestIO()
+	testIO, _, _, errOut := io.TestIO()
 	suite.helmOutputCommand = helmOutputCommand{}
-	suite.helmOutputCommand.env = environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	suite.helmOutputCommand.env = env.NewTestCLIEnvironment(suite.T(), testIO, printer.DefaultColorPrinter())
 	suite.errOur = errOut
 }
 

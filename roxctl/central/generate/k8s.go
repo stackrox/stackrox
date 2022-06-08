@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
@@ -57,7 +58,7 @@ func orchestratorCommand(shortName, longName string) *cobra.Command {
 			categoryAnnotation: "Enter orchestrator",
 		},
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
-			return errors.New("storage type must be specified")
+			return errox.InvalidArgs.New("storage type must be specified")
 		}),
 	}
 	if !roxctl.InMainImage() {

@@ -2,13 +2,13 @@ package logconvert
 
 import (
 	"bufio"
-	"fmt"
 	"io"
-	"os"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
@@ -18,7 +18,7 @@ var (
 )
 
 // Command defines the log-convert command tree
-func Command() *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:    "log-convert",
 		Short:  "Read messages line by line from stdin and log them via the default logging facilities",
@@ -26,13 +26,13 @@ func Command() *cobra.Command {
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			level, ok := logging.LevelForLabel(levelLabel)
 			if !ok {
-				return fmt.Errorf("unknown level %s", levelLabel)
+				return errox.InvalidArgs.Newf("unknown level %s", levelLabel)
 			}
 			if level > logging.WarnLevel {
-				return errors.New("only non-destructive log levels are supported")
+				return errox.InvalidArgs.New("only non-destructive log levels are supported")
 			}
 
-			scanner := bufio.NewScanner(os.Stdin)
+			scanner := bufio.NewScanner(cliEnvironment.InputOutput().In())
 			logger := logging.ModuleForName(module).Logger()
 
 			for scanner.Scan() {

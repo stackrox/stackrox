@@ -9,7 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -219,7 +219,7 @@ func getImageActiveStates(t *testing.T, imageID, deploymentID string) Components
 
 func waitForImageScanned(t *testing.T) {
 	once.Do(func() {
-		conn := testutils.GRPCConnectionToCentral(t)
+		conn := centralgrpc.GRPCConnectionToCentral(t)
 		imageService := v1.NewImageServiceClient(conn)
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		defer cancel()

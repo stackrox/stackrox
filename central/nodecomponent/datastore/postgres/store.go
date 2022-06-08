@@ -11,12 +11,14 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -35,22 +37,23 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.NodeComponentsSchema
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.NodeComponentsSchema
+	targetResource = resources.NodeComponent
 )
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
-	Get(ctx context.Context, id string) (*storage.ImageComponent, bool, error)
-	Upsert(ctx context.Context, obj *storage.ImageComponent) error
-	UpsertMany(ctx context.Context, objs []*storage.ImageComponent) error
+	Get(ctx context.Context, id string) (*storage.NodeComponent, bool, error)
+	Upsert(ctx context.Context, obj *storage.NodeComponent) error
+	UpsertMany(ctx context.Context, objs []*storage.NodeComponent) error
 	Delete(ctx context.Context, id string) error
 	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponent, []int, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.NodeComponent, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(ctx context.Context, fn func(obj *storage.ImageComponent) error) error
+	Walk(ctx context.Context, fn func(obj *storage.NodeComponent) error) error
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
@@ -68,7 +71,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoNodeComponents(ctx context.Context, tx pgx.Tx, obj *storage.ImageComponent) error {
+func insertIntoNodeComponents(ctx context.Context, tx pgx.Tx, obj *storage.NodeComponent) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -80,13 +83,12 @@ func insertIntoNodeComponents(ctx context.Context, tx pgx.Tx, obj *storage.Image
 		obj.GetId(),
 		obj.GetName(),
 		obj.GetVersion(),
-		obj.GetSource(),
 		obj.GetRiskScore(),
 		obj.GetTopCvss(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO node_components (Id, Name, Version, Source, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO node_components (Id, Name, Version, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -95,7 +97,7 @@ func insertIntoNodeComponents(ctx context.Context, tx pgx.Tx, obj *storage.Image
 	return nil
 }
 
-func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.ImageComponent) error {
+func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponent) error {
 
 	inputRows := [][]interface{}{}
 
@@ -112,8 +114,6 @@ func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs 
 		"name",
 
 		"version",
-
-		"source",
 
 		"riskscore",
 
@@ -138,8 +138,6 @@ func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs 
 			obj.GetName(),
 
 			obj.GetVersion(),
-
-			obj.GetSource(),
 
 			obj.GetRiskScore(),
 
@@ -176,8 +174,8 @@ func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs 
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ImageComponent) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageComponent")
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NodeComponent) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeComponent")
 	if err != nil {
 		return err
 	}
@@ -200,8 +198,8 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ImageComponen
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ImageComponent) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageComponent")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NodeComponent) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeComponent")
 	if err != nil {
 		return err
 	}
@@ -226,14 +224,28 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ImageComponent)
 	return nil
 }
 
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ImageComponent) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "ImageComponent")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NodeComponent) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NodeComponent")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
 
 	return s.upsert(ctx, obj)
 }
 
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ImageComponent) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ImageComponent")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NodeComponent) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NodeComponent")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
 
 	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
@@ -250,7 +262,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ImageCompone
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ImageComponent")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "NodeComponent")
 
 	var sacQueryFilter *v1.Query
 
@@ -259,7 +271,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ImageComponent")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NodeComponent")
 
 	var sacQueryFilter *v1.Query
 
@@ -273,8 +285,8 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageComponent, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponent")
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NodeComponent, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeComponent")
 
 	var sacQueryFilter *v1.Query
 
@@ -288,7 +300,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageComponent
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.ImageComponent
+	var msg storage.NodeComponent
 	if err := proto.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
@@ -306,7 +318,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ImageComponent")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NodeComponent")
 
 	var sacQueryFilter *v1.Query
 
@@ -320,7 +332,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ImageComponentIDs")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NodeComponentIDs")
 	var sacQueryFilter *v1.Query
 
 	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
@@ -337,8 +349,8 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponent, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageComponent")
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NodeComponent, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponent")
 
 	if len(ids) == 0 {
 		return nil, nil, nil
@@ -362,9 +374,9 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.ImageComponent)
+	resultsByID := make(map[string]*storage.NodeComponent)
 	for _, data := range rows {
-		msg := &storage.ImageComponent{}
+		msg := &storage.NodeComponent{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
 		}
@@ -373,7 +385,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
 	// It is important that the elems are populated in the same order as the input ids
 	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.ImageComponent, 0, len(resultsByID))
+	elems := make([]*storage.NodeComponent, 0, len(resultsByID))
 	for i, id := range ids {
 		if result, ok := resultsByID[id]; !ok {
 			missingIndices = append(missingIndices, i)
@@ -386,7 +398,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ImageComponent")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NodeComponent")
 
 	var sacQueryFilter *v1.Query
 
@@ -399,14 +411,14 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ImageComponent) error) error {
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NodeComponent) error) error {
 	var sacQueryFilter *v1.Query
 	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
 	for _, data := range rows {
-		var msg storage.ImageComponent
+		var msg storage.NodeComponent
 		if err := proto.Unmarshal(data, &msg); err != nil {
 			return err
 		}

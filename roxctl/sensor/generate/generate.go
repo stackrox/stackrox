@@ -50,6 +50,8 @@ type sensorGenerateCommand struct {
 	slimCollectorP   *bool
 	timeout          time.Duration
 
+	enablePodSecurityPolicies bool
+
 	// injected or constructed values
 	cluster     storage.Cluster
 	env         environment.Environment
@@ -159,8 +161,10 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		CreateUpgraderSA: &s.createUpgraderSA,
 		SlimCollector:    pointer.BoolPtr(s.cluster.GetSlimCollector()),
 		IstioVersion:     s.istioVersion,
+
+		DisablePodSecurityPolicies: !s.enablePodSecurityPolicies,
 	}
-	if err := s.getBundleFn(params, s.outputDir, s.timeout); err != nil {
+	if err := s.getBundleFn(params, s.outputDir, s.timeout, s.env.Logger()); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 
@@ -224,6 +228,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "admission-controller-listen-on-creates", false, "whether or not to configure the admission controller webhook to listen on deployment creates")
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "whether or not to configure the admission controller webhook to listen on deployment updates")
+	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 
 	// Admission controller config
 	ac := generateCmd.cluster.DynamicConfig.AdmissionControllerConfig
