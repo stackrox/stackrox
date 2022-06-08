@@ -45,7 +45,7 @@ func (ds *datastoreImpl) buildSuppressedCache() error {
 	ds.cveSuppressionLock.Lock()
 	defer ds.cveSuppressionLock.Unlock()
 	for _, cve := range suppressedCVEs {
-		ds.cveSuppressionCache[cve.GetId()] = common.SuppressionCacheEntry{
+		ds.cveSuppressionCache[cve.GetCve()] = common.SuppressionCacheEntry{
 			SuppressActivation: cve.GetSuppressActivation(),
 			SuppressExpiry:     cve.GetSuppressExpiry(),
 		}
