@@ -294,6 +294,7 @@ func (s *deployerTestSuite) TestFieldsFromClusterAndRenderOpts() {
 		"development": defaults.DevelopmentBuildImageFlavor(),
 		"stackrox":    defaults.StackRoxIOReleaseImageFlavor(),
 		"rhacs":       defaults.RHACSReleaseImageFlavor(),
+		"opensource":  defaults.OpenSourceImageFlavor(),
 	}
 
 	for name, flavor := range flavorCases {
