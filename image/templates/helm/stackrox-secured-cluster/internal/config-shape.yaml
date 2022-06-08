@@ -151,3 +151,4 @@ meta:
     extraAPIResources: null # [string]
 system:
   createSCCs: null # bool
+  enablePodSecurityPolicies: null # bool

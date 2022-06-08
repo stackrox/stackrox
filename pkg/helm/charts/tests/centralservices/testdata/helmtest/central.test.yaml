@@ -23,6 +23,15 @@ tests:
     .deployments["central"] | assertThat(. != null)
     .services["central"] | assertThat(. != null)
 
+- name: "central with deprecated PodSecurityPolicies disabled"
+  values:
+    system:
+      enablePodSecurityPolicies: false
+  expect: |
+    .podsecuritypolicys["stackrox-central"] | assertThat(. == null)
+    .rolebindings["stackrox-central-psp"] | assertThat(. == null)
+    .clusterroles["stackrox-central-psp"] | assertThat(. == null)
+
 - name: "central with OpenShift 3 and enabled SCCs"
   server:
     visibleSchemas:
