@@ -107,7 +107,7 @@ jobs:
           fi
 
       - name: Create next milestone
-        if: github.event.inputs.dry-run == 'false' && steps.check.outputs.open-issues != ''
+        if: github.event.inputs.dry-run != 'true' && steps.check.outputs.open-issues != ''
         run: |
           if ! http_code=$(gh api --silent -X POST \
             "repos/${{github.repository}}/milestones" \
@@ -133,7 +133,7 @@ jobs:
             --json number \
             --jq ".[] | .number")
           do
-            [ "${{github.event.inputs.dry-run}}" = "false" ] && \
+            [ "${{github.event.inputs.dry-run}}" != "true" ] && \
             gh pr edit $PR \
               --milestone "${{needs.variables.outputs.next-milestone}}" \
               --repo "${{github.repository}}"
@@ -189,12 +189,12 @@ jobs:
               if git cherry-pick -x "$COMMIT"
               then
                 echo "Cherry-picked $COMMIT from PR $PR" >> $GITHUB_STEP_SUMMARY
-                [ "${{github.event.inputs.dry-run}}" = "false" ] && \
+                [ "${{github.event.inputs.dry-run}}" != "true" ] && \
                 gh pr comment $PR --body "Merge commit has been cherry-picked to branch \`${{needs.variables.outputs.branch}}\`."
                 EMPTY=false
               else
                 git cherry-pick --abort
-                [ "${{github.event.inputs.dry-run}}" = "false" ] && \
+                [ "${{github.event.inputs.dry-run}}" != "true" ] && \
                 gh pr comment $PR --body "Please merge the changes to branch \`${{needs.variables.outputs.branch}}\`."
                 cat << EOF >> $GITHUB_STEP_SUMMARY
           * [PR $PR]($URL) by **${AUTHOR}** (_${TITLE}_) could not be cherry-picked. Merge commit: \`$COMMIT\`.
@@ -277,7 +277,7 @@ jobs:
         run: |
           git tag --annotate "${{needs.variables.outputs.milestone}}" --message ""
       - name: Push
-        if: github.event.inputs.dry-run == 'false'
+        if: github.event.inputs.dry-run != 'true'
         run: |
           git push --follow-tags
       - run: |
@@ -292,7 +292,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Reopen milestone ${{needs.variables.outputs.milestone}}
-        if: github.event.inputs.dry-run == 'false'
+        if: github.event.inputs.dry-run != 'true'
         run: |
           gh api "repos/${{github.repository}}/milestones/${{needs.variables.outputs.milestone}}" \
             -X PATCH -f state=open
@@ -308,7 +308,7 @@ jobs:
     steps:
       - name: Create GitHub Pre-release
         id: pre-release
-        if: github.event.inputs.dry-run == 'false'
+        if: github.event.inputs.dry-run != 'true'
         run: |
           URL=$(gh release create "${{needs.variables.outputs.milestone}}" \
             --prerelease \
@@ -342,8 +342,8 @@ jobs:
 
   create-k8s-cluster:
     name: Create k8s cluster
-    needs: cut-rc
-    if: github.event.inputs.dry-run == 'false'
+    needs: [variables, cut-rc]
+    if: github.event.inputs.dry-run != 'true'
     uses: stackrox/stackrox/.github/workflows/create-cluster.yml@master
     with:
       flavor: qa-demo
@@ -353,8 +353,8 @@ jobs:
 
   create-os4-cluster:
     name: Create OS4 cluster
-    needs: cut-rc
-    if: github.event.inputs.dry-run == 'false'
+    needs: [variables, cut-rc]
+    if: github.event.inputs.dry-run != 'true'
     uses: stackrox/stackrox/.github/workflows/create-cluster.yml@master
     with:
       flavor: openshift-4-demo
@@ -364,12 +364,13 @@ jobs:
 
   patch-os4-cluster:
     name: Patch OS4 cluster
-    needs: create-os4-cluster
+    needs: [variables, create-os4-cluster]
     runs-on: ubuntu-latest
     env:
       NAME: openshift-4-demo-${{needs.variables.outputs.milestone}}
       TAG: ${{needs.variables.outputs.milestone}}
       KUBECONFIG: artifacts/kubeconfig
+      INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
     steps:
       - name: Download infractl
         run: |
@@ -417,7 +418,7 @@ jobs:
     name: Create GKE long-running cluster
     needs: [variables, cut-rc]
     if: >-
-      github.event.inputs.dry-run == 'false' &&
+      github.event.inputs.dry-run != 'true' &&
       needs.variables.outputs.rc == '1'
     uses: stackrox/stackrox/.github/workflows/create-cluster.yml@master
     with:
@@ -425,6 +426,62 @@ jobs:
       name: gke-long-running-${{needs.variables.outputs.milestone}}
       lifespan: 168h
       args: nodes=5
+      wait: true
+
+  patch-long-running-cluster:
+    name: Patch OS4 cluster
+    needs: [variables, create-long-running-cluster]
+    runs-on: ubuntu-latest
+    env:
+      NAME: gke-long-running-${{needs.variables.outputs.milestone}}
+      TAG: ${{needs.variables.outputs.milestone}}
+      KUBECONFIG: artifacts/kubeconfig
+      INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
+    steps:
+      - name: Download infractl
+        run: |
+          curl -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
+          | jq -r ".result.fileChunk" \
+          | base64 -d \
+          > infractl
+          chmod +x infractl
+      - name: Test readiness
+        run: |
+          if [ "$(./infractl get "$NAME" --json | jq -r .Status)" != "2" ]
+          then
+            exit 1
+          fi
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v2.0
+        id: install
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{needs.variables.outputs.milestone}}
+      - name: Launch central
+        env:
+          MAIN_IMAGE_TAG: ${{needs.variables.outputs.milestone}} # Release version, e.g. 3.63.0-rc.2.
+          API_ENDPOINT: localhost:8000
+          STORAGE: pvc # Backing storage
+          STORAGE_CLASS: faster # Runs on an SSD type
+          STORAGE_SIZE: 100 # 100G
+          MONITORING_SUPPORT: true # Runs monitoring
+          LOAD_BALANCER: lb
+          ROX_ADMIN_USERNAME: admin
+        run: |
+          ./deploy/k8s/central.sh
+          ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)
+          kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
+
+          ./deploy/k8s/sensor.sh
+
+          kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
+          kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD=long-running
+          kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
+
+          kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
+          kubectl -n stackrox patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
+          echo "Long-running GKE cluster has been patched" >> $GITHUB_STEP_SUMMARY
 
   notify-failed-clusters:
     name: Notify about failed cluster creation

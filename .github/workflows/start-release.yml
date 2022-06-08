@@ -133,7 +133,7 @@ jobs:
             echo "\`CHANGELOG.md\` updated on release branch." >> $GITHUB_STEP_SUMMARY
           fi
       - name: Push changes
-        if: github.event.inputs.dry-run == 'false' && steps.check-existing.outputs.branch-exists == 'false'
+        if: github.event.inputs.dry-run != 'true' && steps.check-existing.outputs.branch-exists == 'false'
         run: |
           git push --set-upstream origin ${{needs.variables.outputs.branch}}
 
@@ -155,7 +155,7 @@ jobs:
           if ! git diff-index --quiet HEAD
           then
             git commit --message "Next version in changelog after ${{github.event.inputs.version}}"
-            if [ "${{github.event.inputs.dry-run}}" = "false" ]
+            if [ "${{github.event.inputs.dry-run}}" != "true" ]
             then
               git push --set-upstream origin "$CHANGELOG_BRANCH"
               gh pr create \
@@ -177,7 +177,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Create ${{needs.variables.outputs.milestone}} milestone
-        if: github.event.inputs.dry-run == 'false'
+        if: github.event.inputs.dry-run != 'true'
         run: |
           if ! http_code=$(gh api --silent -X POST \
             "repos/${{github.repository}}/milestones" \
