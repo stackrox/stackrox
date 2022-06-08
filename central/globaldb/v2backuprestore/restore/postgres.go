@@ -143,6 +143,8 @@ func LoadRestoreStream(fileReader io.Reader) error {
 	log.Info("Starting Postgres Restore")
 	log.Info("SHREWS -- in Load Restore Stream")
 
+	globaldb.ClosePostgresPool()
+
 	sourceMap, config, err := globaldb.GetPostgresConfig()
 	if err != nil {
 		log.Fatalf("Could not parse postgres config: %v", err)
@@ -177,7 +179,8 @@ func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config 
 		"--clean",
 		"--if-exists",
 		"--exit-on-error",
-		"-Fd",
+		"-Fc",
+		//"-Fd",
 		//"-j",
 		//"5",
 		"-vvv",

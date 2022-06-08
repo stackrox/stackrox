@@ -50,8 +50,12 @@ func BackupPostgres(ctx context.Context, postgresDB *pgxpool.Pool, includeCerts 
 	defer utils.IgnoreError(zipWriter.Close)
 
 	// TODO:  Fix it so it can work with a file.
-	if err := generators.PutTarInZip(generators.PutDirectoryInTar(dbs.NewPostgresBackup(postgresDB)), backup.PostgresFileName).WriteTo(ctx, zipWriter); err != nil {
-		return errors.Wrap(err, "backing up postgres")
+	//if err := generators.PutTarInZip(generators.PutDirectoryInTar(dbs.NewPostgresBackup(postgresDB)), backup.PostgresFileName).WriteTo(ctx, zipWriter); err != nil {
+	//	return errors.Wrap(err, "backing up postgres")
+	//}
+
+	if err := generators.PutStreamInZip(dbs.NewPostgresBackup(postgresDB), backup.PostgresFileName).WriteTo(ctx, zipWriter); err != nil {
+		return errors.Wrap(err, "backing up bolt")
 	}
 
 	return zipWriter.Close()

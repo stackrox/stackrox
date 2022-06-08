@@ -70,6 +70,10 @@ var (
 	postgresQueryTimeout = 10 * time.Second
 )
 
+func ClosePostgresPool() {
+	postgresDB.Close()
+}
+
 // GetPostgres returns a global database instance
 func GetPostgres() *pgxpool.Pool {
 	pgSync.Do(func() {
