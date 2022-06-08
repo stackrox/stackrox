@@ -71,6 +71,8 @@ import (
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
@@ -170,6 +172,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -221,6 +224,16 @@ func runSafeMode() {
 
 func main() {
 	premain.StartMain()
+
+	k8sConfig := ctrl.GetConfigOrDie()
+	_, err := ctrlClient.New(k8sConfig, ctrlClient.Options{})
+	utils.CrashOnError(err)
+
+	//// Install type before executing this command
+	//obj := &v1beta1.Frigate{}
+	//err = k8sClient.Get(context.TODO(), ctrlClient.ObjectKey{Namespace: "stackrox", Name: "auth"}, obj)
+	//utils.CrashOnError(err)
+	//log.Infof("Found frigate %+v", obj)
 
 	conf := config.GetConfig()
 	if conf == nil || conf.Maintenance.SafeMode {

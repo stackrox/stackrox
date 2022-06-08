@@ -38,7 +38,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v1.2.2
+	github.com/go-logr/logr v1.2.3
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
@@ -125,6 +125,7 @@ require (
 	k8s.io/apimachinery v0.23.5
 	k8s.io/apiserver v0.23.4
 	k8s.io/client-go v0.23.5
+	k8s.io/code-generator v0.23.6
 	k8s.io/kubectl v0.23.1
 	k8s.io/kubelet v0.22.9
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
