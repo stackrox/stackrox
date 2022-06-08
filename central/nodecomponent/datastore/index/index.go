@@ -14,7 +14,5 @@ type Indexer interface {
 	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteNodeComponent(id string) error
 	DeleteNodeComponents(ids []string) error
-	MarkInitialIndexingComplete() error
-	NeedsInitialIndexing() (bool, error)
 	Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
 }
