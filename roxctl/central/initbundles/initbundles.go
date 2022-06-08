@@ -2,11 +2,11 @@ package initbundles
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
 // Command defines the bootstrap-token command tree
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "init-bundles",
 	}

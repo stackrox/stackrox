@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	. "github.com/stackrox/rox/roxctl/common/logger"
 	"golang.org/x/net/http2"
 )
 
@@ -20,8 +19,8 @@ var (
 )
 
 // GetHTTPClient gets a client with the correct config
-func GetHTTPClient(timeout time.Duration, logger Logger) (*http.Client, error) {
-	tlsConf, err := tlsConfigForCentral(logger)
+func GetHTTPClient(timeout time.Duration) (*http.Client, error) {
+	tlsConf, err := tlsConfigForCentral()
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating TLS configuration for central")
 	}
@@ -47,13 +46,13 @@ func GetHTTPClient(timeout time.Duration, logger Logger) (*http.Client, error) {
 // DoHTTPRequestAndCheck200 does an http request to the provided path in Central,
 // and passes through the remaining params. It checks that the returned status code is 200, and returns an error if it is not.
 // The caller receives the http response object, which it is the caller's responsibility to close.
-func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string, body io.Reader, logger Logger) (*http.Response, error) {
-	req, err := newHTTPRequestWithAuth(method, path, body, logger)
+func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string, body io.Reader) (*http.Response, error) {
+	req, err := newHTTPRequestWithAuth(method, path, body)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := GetHTTPClient(timeout, logger)
+	client, err := GetHTTPClient(timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +74,7 @@ func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string,
 }
 
 // addAuthToRequest adds the correct auth to the request
-func addAuthToRequest(req *http.Request, logger Logger) error {
+func addAuthToRequest(req *http.Request) error {
 	if err := checkAuthParameters(); err != nil {
 		return errors.Wrap(err, "Failed to enrich HTTP request with authentication information")
 	}
@@ -85,7 +84,7 @@ func addAuthToRequest(req *http.Request, logger Logger) error {
 	} else {
 		token, err := retrieveAuthToken()
 		if err != nil {
-			printAuthHelp(logger)
+			printAuthHelp()
 			return errors.Wrap(err, "Failed to enrich HTTP request with authentication information")
 		}
 		if token != "" {
@@ -110,7 +109,7 @@ func getURL(path string) (string, error) {
 
 // newHTTPRequestWithAuth returns a new HTTP request, resolving the given path against the endpoint via `GetPath`, and
 // injecting authorization headers into the request.
-func newHTTPRequestWithAuth(method string, path string, body io.Reader, logger Logger) (*http.Request, error) {
+func newHTTPRequestWithAuth(method string, path string, body io.Reader) (*http.Request, error) {
 	reqURL, err := getURL(path)
 	if err != nil {
 		return nil, err
@@ -126,7 +125,7 @@ func newHTTPRequestWithAuth(method string, path string, body io.Reader, logger L
 	if req.URL.Scheme != "https" && !flags.UseInsecure() {
 		return nil, errors.Errorf("URL %v uses insecure scheme %q, use --insecure flags to enable sending credentials", req.URL, req.URL.Scheme)
 	}
-	err = addAuthToRequest(req, logger)
+	err = addAuthToRequest(req)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
-	. "github.com/stackrox/rox/roxctl/common/logger"
 	"golang.org/x/net/http2"
 )
 
@@ -27,8 +26,8 @@ type roxctlClientImpl struct {
 }
 
 // GetRoxctlHTTPClient returns a new instance of RoxctlHTTPClient with the given configuration
-func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure bool, logger Logger) (RoxctlHTTPClient, error) {
-	tlsConf, err := tlsConfigForCentral(logger)
+func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure bool) (RoxctlHTTPClient, error) {
+	tlsConf, err := tlsConfigForCentral()
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating TLS configuration for central")
 	}
@@ -49,7 +48,7 @@ func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure boo
 		Transport: transport,
 	}
 
-	auth, err := newAuth(logger)
+	auth, err := newAuth()
 	if err != nil {
 		return nil, err
 	}

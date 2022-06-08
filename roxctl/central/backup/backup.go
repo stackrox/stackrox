@@ -17,8 +17,8 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/central/db/transfer"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/download"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -28,7 +28,7 @@ const (
 )
 
 // Command defines the backup command.
-func Command(cliEnvironment environment.Environment, full *bool) *cobra.Command {
+func Command(cliEnvironment common.Environment, full *bool) *cobra.Command {
 	centralBackupCmd := &centralBackupCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
@@ -52,7 +52,7 @@ type centralBackupCommand struct {
 	output string
 
 	// Properties that are injected or constructed.
-	env environment.Environment
+	env common.Environment
 }
 
 func parseUserProvidedOutput(userProvidedOutput string) (string, error) {

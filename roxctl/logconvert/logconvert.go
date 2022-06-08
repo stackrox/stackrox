@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
@@ -18,7 +18,7 @@ var (
 )
 
 // Command defines the log-convert command tree
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:    "log-convert",
 		Short:  "Read messages line by line from stdin and log them via the default logging facilities",

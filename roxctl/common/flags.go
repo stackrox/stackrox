@@ -13,19 +13,18 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	. "github.com/stackrox/rox/roxctl/common/logger"
 	http1DowngradeClient "golang.stackrox.io/grpc-http1/client"
 	"google.golang.org/grpc"
 )
 
 // GetGRPCConnection gets a grpc connection to Central with the correct auth
-func GetGRPCConnection(logger Logger) (*grpc.ClientConn, error) {
+func GetGRPCConnection() (*grpc.ClientConn, error) {
 	endpoint, usePlaintext, err := flags.EndpointAndPlaintextSetting()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get endpoint for gRPC connection")
 	}
 
-	tlsOpts, err := tlsConfigOptsForCentral(logger)
+	tlsOpts, err := tlsConfigOptsForCentral()
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +73,7 @@ func GetGRPCConnection(logger Logger) (*grpc.ClientConn, error) {
 	} else {
 		apiToken, err := retrieveAuthToken()
 		if err != nil {
-			printAuthHelp(logger)
+			printAuthHelp()
 			return nil, err
 		}
 		if apiToken != "" {

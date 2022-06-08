@@ -16,14 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/download"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/sensor/util"
 )
 
-func downloadCerts(logger logger.Logger, outputDir, clusterIDOrName string, timeout time.Duration) error {
-	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, logger)
+func downloadCerts(logger common.Logger, outputDir, clusterIDOrName string, timeout time.Duration) error {
+	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout)
 	if err != nil {
 		return err
 	}
@@ -33,7 +31,7 @@ func downloadCerts(logger logger.Logger, outputDir, clusterIDOrName string, time
 		return err
 	}
 
-	resp, err := common.DoHTTPRequestAndCheck200("/api/extensions/certgen/cluster", timeout, http.MethodPost, bytes.NewReader(body), logger)
+	resp, err := common.DoHTTPRequestAndCheck200("/api/extensions/certgen/cluster", timeout, http.MethodPost, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -72,7 +70,7 @@ func downloadCerts(logger logger.Logger, outputDir, clusterIDOrName string, time
 }
 
 // Command defines the command.
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	var outputDir string
 
 	c := &cobra.Command{

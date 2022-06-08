@@ -9,7 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"google.golang.org/grpc/codes"
@@ -17,12 +17,12 @@ import (
 )
 
 type centralRestoreCancelCommand struct {
-	env     environment.Environment
+	env     common.Environment
 	confirm func() error
 	timeout time.Duration
 }
 
-func v2RestoreCancelCommand(cliEnvironment environment.Environment) *cobra.Command {
+func v2RestoreCancelCommand(cliEnvironment common.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "cancel",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
@@ -33,7 +33,7 @@ func v2RestoreCancelCommand(cliEnvironment environment.Environment) *cobra.Comma
 	return c
 }
 
-func makeCentralRestoreCancelCommand(cliEnvironment environment.Environment, cbr *cobra.Command) *centralRestoreCancelCommand {
+func makeCentralRestoreCancelCommand(cliEnvironment common.Environment, cbr *cobra.Command) *centralRestoreCancelCommand {
 	return &centralRestoreCancelCommand{
 		env:     cliEnvironment,
 		timeout: flags.Timeout(cbr),

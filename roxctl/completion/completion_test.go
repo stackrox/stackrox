@@ -4,8 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,8 +30,8 @@ func TestCompletionCommand_InvalidArgs(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			io, _, _, _ := io.TestIO()
-			cmd := Command(environment.NewTestCLIEnvironment(t, io, nil))
+			io, _, _, _ := common.TestIO()
+			cmd := Command(common.NewTestCLIEnvironment(t, io, nil))
 			cmd.SetArgs(c.args)
 			err := cmd.Execute()
 			assert.Error(t, err)
@@ -61,8 +60,8 @@ func TestCompletionCommand_Success(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			io, _, _, _ := io.TestIO()
-			cmd := Command(environment.NewTestCLIEnvironment(t, io, printer.DefaultColorPrinter()))
+			io, _, _, _ := common.TestIO()
+			cmd := Command(common.NewTestCLIEnvironment(t, io, printer.DefaultColorPrinter()))
 			cmd.SetArgs(c.args)
 			assert.NoErrorf(t, cmd.Execute(), "completion for %q failed", c.args[0])
 		})

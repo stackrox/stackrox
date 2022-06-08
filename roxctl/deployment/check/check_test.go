@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/mocks"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/summaries/policy"
@@ -261,7 +261,7 @@ func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.
 	return conn, closeFunction
 }
 
-func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
+func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (common.Environment, *bytes.Buffer, *bytes.Buffer) {
 	return mocks.NewEnvWithConn(conn, d.T())
 }
 

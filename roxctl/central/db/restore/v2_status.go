@@ -10,15 +10,14 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/v2backuprestore"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func v2RestoreStatusCmd(cliEnvironment environment.Environment) *cobra.Command {
+func v2RestoreStatusCmd(cliEnvironment common.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "status",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
@@ -29,7 +28,7 @@ func v2RestoreStatusCmd(cliEnvironment environment.Environment) *cobra.Command {
 	return c
 }
 
-func printStatus(logger logger.Logger, st *v1.DBRestoreProcessStatus) {
+func printStatus(logger common.Logger, st *v1.DBRestoreProcessStatus) {
 	logger.PrintfLn("ID:")
 	logger.PrintfLn(" ", st.GetMetadata().GetId())
 	logger.PrintfLn("State:")
@@ -52,7 +51,7 @@ func printStatus(logger logger.Logger, st *v1.DBRestoreProcessStatus) {
 	}
 }
 
-func showRestoreStatus(cliEnvironment environment.Environment, timeout time.Duration) error {
+func showRestoreStatus(cliEnvironment common.Environment, timeout time.Duration) error {
 	conn, err := cliEnvironment.GRPCConnection()
 	if err != nil {
 		return errors.Wrap(err, "could not establish gRPC connection to central")

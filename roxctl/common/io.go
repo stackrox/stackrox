@@ -1,17 +1,10 @@
-package io
+package common
 
 import (
 	"bytes"
 	"io"
 	"os"
 )
-
-// IO holds information about io streams used within commands of roxctl.
-type IO interface {
-	In() io.Reader
-	Out() io.Writer
-	ErrOut() io.Writer
-}
 
 type ioImpl struct {
 	// In = os.Stdin

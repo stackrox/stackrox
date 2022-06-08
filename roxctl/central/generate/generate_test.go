@@ -15,8 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
-	"github.com/stackrox/rox/roxctl/common/io"
-	"github.com/stackrox/rox/roxctl/common/logger"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -82,8 +81,8 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 		},
 	}
 
-	io, _, _, _ := io.TestIO()
-	logger := logger.NewLogger(io, printer.DefaultColorPrinter())
+	io, _, _, _ := common.TestIO()
+	logger := common.NewLogger(io, printer.DefaultColorPrinter())
 
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {

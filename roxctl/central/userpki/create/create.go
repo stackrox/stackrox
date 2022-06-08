@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
@@ -27,7 +27,7 @@ type centralUserPkiCreateCommand struct {
 	roleName string
 
 	// Properties that are injected or constructed.
-	env          environment.Environment
+	env          common.Environment
 	timeout      time.Duration
 	providerName string
 }
@@ -39,7 +39,7 @@ var (
 )
 
 // Command adds the userpki create command
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	centralUserPkiCreateCmd := &centralUserPkiCreateCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use: "create name",

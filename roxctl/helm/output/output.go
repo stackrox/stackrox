@@ -13,9 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/utils"
-	env "github.com/stackrox/rox/roxctl/common/environment"
+	env "github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
@@ -148,7 +147,7 @@ func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValu
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }
 
-func handleRhacsWarnings(rhacs, imageFlavorProvided bool, logger logger.Logger) {
+func handleRhacsWarnings(rhacs, imageFlavorProvided bool, logger env.Logger) {
 	if rhacs {
 		logger.WarnfLn("'--rhacs' is deprecated, please use '--%s=%s' instead", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameRHACSRelease)
 	} else if !imageFlavorProvided {

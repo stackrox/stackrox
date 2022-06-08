@@ -14,9 +14,8 @@ import (
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
@@ -25,12 +24,12 @@ type centralCertCommand struct {
 	filename string
 
 	// Properties that are injected or constructed.
-	env     environment.Environment
+	env     common.Environment
 	timeout time.Duration
 }
 
 // Command defines the cert command tree
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	centralCertCommand := &centralCertCommand{env: cliEnvironment}
 	cbr := &cobra.Command{
 		Use: "cert",
@@ -122,7 +121,7 @@ func writeCertPEM(writer io.Writer, cert *x509.Certificate) error {
 	return nil
 }
 
-func writeCertInfo(logger logger.Logger, cert *x509.Certificate) {
+func writeCertInfo(logger common.Logger, cert *x509.Certificate) {
 	logger.InfofLn("Issuer: %v", cert.Issuer)
 	logger.InfofLn("Issuer:  %v", cert.Issuer)
 	logger.InfofLn("Subject: %v", cert.Subject)

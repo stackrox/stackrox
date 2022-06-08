@@ -13,9 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 type centralUserPkiListCommand struct {
@@ -23,12 +22,12 @@ type centralUserPkiListCommand struct {
 	json bool
 
 	// Properties that are injected or constructed.
-	env     environment.Environment
+	env     common.Environment
 	timeout time.Duration
 }
 
 // Command adds the userpki list command
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	centralUserPkiListCmd := &centralUserPkiListCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use: "list",
@@ -96,7 +95,7 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 }
 
 // PrintProviderDetails print the details of a provider.
-func PrintProviderDetails(logger logger.Logger, p *storage.AuthProvider, defaultRoles map[string]string) {
+func PrintProviderDetails(logger common.Logger, p *storage.AuthProvider, defaultRoles map[string]string) {
 	logger.PrintfLn("Provider: %s", p.GetName())
 	logger.PrintfLn("  ID: %s", p.GetId())
 	logger.PrintfLn("  Enabled: %t", p.GetEnabled())

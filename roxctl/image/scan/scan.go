@@ -16,9 +16,7 @@ import (
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -47,7 +45,7 @@ var (
 )
 
 // Command checks the image against image build lifecycle policies
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	imageScanCmd := &imageScanCommand{env: cliEnvironment}
 
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
@@ -104,7 +102,7 @@ type imageScanCommand struct {
 	timeout        time.Duration
 
 	// injected or constructed values
-	env                environment.Environment
+	env                common.Environment
 	printer            printer.ObjectPrinter
 	standardizedFormat bool
 }
@@ -233,7 +231,7 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 }
 
 // print summary of amount of CVEs found
-func printCVESummary(image string, cveSummary map[string]int, out logger.Logger) {
+func printCVESummary(image string, cveSummary map[string]int, out common.Logger) {
 	out.PrintfLn("Scan results for image: %s", image)
 	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		totalComponentsMapKey, cveSummary[totalComponentsMapKey],
@@ -245,7 +243,7 @@ func printCVESummary(image string, cveSummary map[string]int, out logger.Logger)
 }
 
 // print warning with amount of CVEs found in components
-func printCVEWarning(numOfVulns int, numOfComponents int, out logger.Logger) {
+func printCVEWarning(numOfVulns int, numOfComponents int, out common.Logger) {
 	if numOfVulns != 0 {
 		out.WarnfLn("A total of %d vulnerabilities were found in %d components",
 			numOfVulns, numOfComponents)
@@ -254,7 +252,7 @@ func printCVEWarning(numOfVulns int, numOfComponents int, out logger.Logger) {
 
 // TODO(ROX-8303): remove this once we have fully deprecated the legacy output format
 // print CVE scan result in legacy output format
-func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer, logger logger.Logger) error {
+func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer, logger common.Logger) error {
 	switch format {
 	case "csv":
 		return PrintCSV(imageResult, out)

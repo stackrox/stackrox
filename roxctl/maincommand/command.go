@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/collector"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/completion"
 	"github.com/stackrox/rox/roxctl/deployment"
@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/roxctl/sensor"
 )
 
-func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
+func versionCommand(cliEnvironment common.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:  "version",
 		Args: cobra.NoArgs,
@@ -56,7 +56,7 @@ func Command() *cobra.Command {
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
 
-	cliEnvironment := environment.CLIEnvironment()
+	cliEnvironment := common.CLIEnvironment()
 	c.SetErr(errorWriter{
 		logger: cliEnvironment.Logger(),
 	})

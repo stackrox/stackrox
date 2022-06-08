@@ -1,19 +1,18 @@
-package logger
+package common
 
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 )
 
 type logger struct {
-	io      io.IO
+	io      IO
 	printer printer.ColorfulPrinter
 }
 
 // NewLogger returns new instance of Logger
-func NewLogger(io io.IO, colorfulPrinter printer.ColorfulPrinter) Logger {
+func NewLogger(io IO, colorfulPrinter printer.ColorfulPrinter) Logger {
 	return &logger{
 		io:      io,
 		printer: colorfulPrinter,
