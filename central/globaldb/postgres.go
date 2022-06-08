@@ -70,6 +70,8 @@ var (
 	postgresQueryTimeout = 10 * time.Second
 )
 
+// ClosePostgresPool - closes the postgres pool so all connections are dropped.
+// This is useful for DB admin functions like restores.
 func ClosePostgresPool() {
 	postgresDB.Close()
 }

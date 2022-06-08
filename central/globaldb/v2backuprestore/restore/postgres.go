@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	"github.com/stackrox/rox/pkg/logging"
@@ -77,92 +78,28 @@ func createDB(sourceMap map[string]string, config *pgxpool.Config) error {
 	return common.ExecutePostgresCmd(cmd)
 }
 
-func runRestore(dumpPath string, sourceMap map[string]string, config *pgxpool.Config) error {
-	// Set the options for pg_dump from the connection config
-	options := []string{
-		"-d",
-		restoreDB,
-		"--no-owner",
-		"--clean",
-		"--if-exists",
-		"--exit-on-error",
-		"-Fd",
-		//"-j",
-		//"5",
-		"-vvv",
-		"--single-transaction",
-		dumpPath,
-	}
-
-	// Get the common DB connection info
-	options = append(options, common.GetConnectionOptions(config)...)
-
-	cmd := exec.Command("pg_restore", options...)
-
-	common.SetPostgresCmdEnv(cmd, sourceMap, config)
-	err := common.ExecutePostgresCmd(cmd)
-	if err != nil {
-		// Clean up the restore DB since the restore failed
-		_ = dropDB(sourceMap, config, restoreDB)
-		log.Errorf("Unable to restore the postgres dump.")
-		return err
-	}
-
-	return nil
-}
-
-// LoadRestore a Postgres database from a dump
-func LoadRestore(dumpPath string) error {
-	log.Info("Starting Postgres Restore")
-	sourceMap, config, err := globaldb.GetPostgresConfig()
-	if err != nil {
-		log.Fatalf("Could not parse postgres config: %v", err)
-		return err
-	}
-
-	// Now recreate the DB
-	err = createDB(sourceMap, config)
-	if err != nil {
-		log.Fatalf("Could not create restore database: %v", err)
-		return err
-	}
-
-	// Execute the restore on the temporary restore database
-	err = runRestore(dumpPath, sourceMap, config)
-	if err != nil {
-		log.Errorf("Could not load the Postgres backup: %v", err)
-		return err
-	}
-
-	log.Info("Postgres Restore Complete")
-	return nil
-}
-
 // LoadRestoreStream a Postgres database from a dump
 func LoadRestoreStream(fileReader io.Reader) error {
 	log.Info("Starting Postgres Restore")
-	log.Info("SHREWS -- in Load Restore Stream")
 
+	// Close the connection pool so data is not in flight while trying to restore.
 	globaldb.ClosePostgresPool()
 
 	sourceMap, config, err := globaldb.GetPostgresConfig()
 	if err != nil {
-		log.Fatalf("Could not parse postgres config: %v", err)
-		return err
+		return errors.Wrap(err, "Could not parse postgres config")
 	}
 
-	// Now recreate the DB
-	err = createDB(sourceMap, config)
-	if err != nil {
-		log.Fatalf("Could not create restore database: %v", err)
-		return err
-	}
+	//// Now recreate the DB
+	//err = createDB(sourceMap, config)
+	//if err != nil {
+	//	return errors.Wrap(err, "Could not create restore database")
+	//}
 
 	// Execute the restore on the temporary restore database
 	err = runRestoreStream(fileReader, sourceMap, config)
 	if err != nil {
-		log.Errorf("Could not load the Postgres backup: %v", err)
-		return err
+		return errors.Wrap(err, "Could not load the Postgres backup")
 	}
 
 	log.Info("Postgres Restore Complete")
@@ -170,19 +107,16 @@ func LoadRestoreStream(fileReader io.Reader) error {
 }
 
 func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config *pgxpool.Config) error {
-	log.Info("SHREWS -- runRestoreStream")
 	// Set the options for pg_dump from the connection config
 	options := []string{
 		"-d",
-		restoreDB,
+		config.ConnConfig.Database,
+		//restoreDB,
 		"--no-owner",
 		"--clean",
 		"--if-exists",
 		"--exit-on-error",
 		"-Fc",
-		//"-Fd",
-		//"-j",
-		//"5",
 		"-vvv",
 		"--single-transaction",
 	}
@@ -192,46 +126,25 @@ func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config 
 
 	cmd := exec.Command("pg_restore", options...)
 
-	log.Info("SHREWS -- runRestoreStream -- about to get pipe")
 	// Get a pipe to the commands standard in
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "Unable to get pipe to feed restore command")
 	}
 
 	// Copy the data into the commands stdin
-	log.Info("SHREWS -- runRestoreStream -- copying data to the stdin")
-	//_, err = io.Copy(stdin, fileReader)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-
 	go func() {
 		defer stdin.Close()
 		_, err = io.Copy(stdin, fileReader)
-		//io.WriteString(stdin, "values written to stdin are passed to cmd's standard input")
 	}()
 
-	//if _, err := io.Copy(stdin, fileReader); err != nil {
-	//	log.Info("SHREWS -- runRestoreStream -- trouble copying")
-	//	utils.IgnoreError(stdin.Close)
-	//}
-	//if err := stdin.Close(); err != nil {
-	//	log.Info("SHREWS -- runRestoreStream -- trying to close stdin")
-	//}
-	//cmd.Stdin = fileReader
-	// use stdinpipe
-	// copy the reader to the writere returned from stdinpipe
-	//cmd.StdinPipe()
-
-	log.Info("SHREWS -- runRestoreStream -- about to set the env")
 	common.SetPostgresCmdEnv(cmd, sourceMap, config)
 	err = common.ExecutePostgresCmd(cmd)
+
 	if err != nil {
 		// Clean up the restore DB since the restore failed
 		_ = dropDB(sourceMap, config, restoreDB)
-		log.Errorf("Unable to restore the postgres dump.")
-		return err
+		return errors.Wrap(err, "Unable to restore the postgres dump")
 	}
 
 	return nil

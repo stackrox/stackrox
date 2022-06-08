@@ -54,7 +54,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	dbAuthz "github.com/stackrox/rox/central/globaldb/authz"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
-	"github.com/stackrox/rox/central/globaldb/v2backuprestore/restore"
 	backupRestoreService "github.com/stackrox/rox/central/globaldb/v2backuprestore/service"
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
@@ -236,21 +235,21 @@ func main() {
 
 	devmode.StartOnDevBuilds("central")
 
-	if features.PostgresDatastore.Enabled() {
-		sourceMap, config, err := globaldb.GetPostgresConfig()
-		if err != nil {
-			log.Errorf("Unable to get Postgres DB config: %v", err)
-			return
-		}
-		// Check to see if a restore DB exists, if so use it.
-		if restore.CheckIfRestoreDBExists(config) {
-			// Now flip the restore DB to be the primary DB
-			err := restore.SwitchToRestoredDB(sourceMap, config)
-			if err != nil {
-				log.Errorf("Unable to switch to restored DB: %v", err)
-			}
-		}
-	}
+	//if features.PostgresDatastore.Enabled() {
+	//	sourceMap, config, err := globaldb.GetPostgresConfig()
+	//	if err != nil {
+	//		log.Errorf("Unable to get Postgres DB config: %v", err)
+	//		return
+	//	}
+	//	// Check to see if a restore DB exists, if so use it.
+	//	if restore.CheckIfRestoreDBExists(config) {
+	//		// Now flip the restore DB to be the primary DB
+	//		err := restore.SwitchToRestoredDB(sourceMap, config)
+	//		if err != nil {
+	//			log.Errorf("Unable to switch to restored DB: %v", err)
+	//		}
+	//	}
+	//}
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	ensureDB()
