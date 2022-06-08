@@ -62,6 +62,9 @@ var migrationTestFile string
 //go:embed postgres_plugin.go.tpl
 var postgresPluginFile string
 
+//go:embed rocksdb_plugin.go.tpl
+var rocksdbPluginFile string
+
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(singletonFile)
@@ -73,6 +76,7 @@ var (
 	migrationTemplate         = newTemplate(migrationFile)
 	migrationTestTemplate     = newTemplate(migrationTestFile)
 	postgresPluginTemplate    = newTemplate(strings.Join([]string{storeCommonFile, postgresPluginFile}, "\n"))
+	rocksdbPluginTemplate     = newTemplate(strings.Join([]string{storeCommonFile, rocksdbPluginFile}, "\n"))
 )
 
 type properties struct {
@@ -306,13 +310,16 @@ func main() {
 			migrationDir := fmt.Sprintf("n_%d_to_n_%d_postgres_%s", props.PostgresMigrationSeq, props.PostgresMigrationSeq+1, props.Table)
 			root := filepath.Join(props.MigrationRoot, migrationDir)
 
-			if err := renderFile(templateMap, postgresPluginTemplate, filepath.Join(root, "postgres_plugin.go")); err != nil {
-				return err
-			}
 			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {
 				return err
 			}
 			if err := renderFile(templateMap, migrationTestTemplate, filepath.Join(root, "migration_test.go")); err != nil {
+				return err
+			}
+			if err := renderFile(templateMap, postgresPluginTemplate, filepath.Join(root, "postgres_plugin.go")); err != nil {
+				return err
+			}
+			if err := renderFile(templateMap, rocksdbPluginTemplate, filepath.Join(root, "rocksdb_plugin.go")); err != nil {
 				return err
 			}
 		}

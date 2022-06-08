@@ -169,16 +169,10 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
 {{ template "insertObject" dict "schema" .Schema "joinTable" .JoinTable }}
 {{- end}}
 
-
-
 {{- if not .JoinTable }}
 {{ template "copyObject" .Schema }}
-
 {{ template "copyFrom" . }}
-{{- end }}
 
-
-{{- if not .JoinTable }}
 func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
     conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {

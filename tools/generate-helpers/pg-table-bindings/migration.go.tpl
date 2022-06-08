@@ -42,7 +42,7 @@ var (
 			return nil
 		},
 	}
-	rocksdbBucket = []byte("alerts")
+	rocksdbBucket = []byte("{{.Migration.MigrateFromBucket}}")
 	batchSize     = 10000
 	schema        = {{template "schemaVar" .Schema}}
 	log           = loghelper.LogWrapper{}

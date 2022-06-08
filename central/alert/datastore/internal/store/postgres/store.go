@@ -334,6 +334,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Alert) error 
 	}
 	return nil
 }
+
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Alert) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Alert")
 	if err != nil {
