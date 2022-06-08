@@ -15,7 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download roxctl
-      run: curl -sSLO https://mirror.openshift.com/pub/rhacs/assets/latest/bin/Linux/roxctl && chmod +x roxctl
+      env:
+        ROX_API_TOKEN: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
+        ROX_CENTRAL_ADDRESS: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}
+      run:  curl -sSLO -H "Authorization: Bearer $ROX_API_TOKEN" https://$ROX_CENTRAL_ADDRESS:443/api/cli/download/roxctl-linux -o roxctl && chmod +x ./roxctl
     - name: Image scan
       env:
         ROX_API_TOKEN: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
