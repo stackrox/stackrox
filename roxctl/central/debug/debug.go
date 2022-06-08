@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -27,12 +27,12 @@ type centralDebugLogLevelCommand struct {
 	modules []string
 
 	// Properties that are injected or constructed.
-	env     common.Environment
+	env     environment.Environment
 	timeout time.Duration
 }
 
 // Command defines the debug command tree
-func Command(cliEnvironment common.Environment) *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "debug",
 	}
@@ -44,7 +44,7 @@ func Command(cliEnvironment common.Environment) *cobra.Command {
 }
 
 // logLevelCommand allows getting and setting the Log Level for StackRox services.
-func logLevelCommand(cliEnvironment common.Environment) *cobra.Command {
+func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
 	levelCmd := &centralDebugLogLevelCommand{env: cliEnvironment}
 
 	c := &cobra.Command{

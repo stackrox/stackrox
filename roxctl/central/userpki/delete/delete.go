@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/roxctl/central/userpki/list"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
@@ -28,12 +28,12 @@ type centralUserPkiDeleteCommand struct {
 	providerArg string
 
 	// Properties that are injected or constructed.
-	env     common.Environment
+	env     environment.Environment
 	timeout time.Duration
 }
 
 // Command adds the userpki delete command
-func Command(cliEnvironment common.Environment) *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use: "delete id|name",
@@ -57,7 +57,7 @@ func Command(cliEnvironment common.Environment) *cobra.Command {
 	return c
 }
 
-func makeCentralUserPkiDeleteCommand(cliEnvironment common.Environment, cmd *cobra.Command, args []string) *centralUserPkiDeleteCommand {
+func makeCentralUserPkiDeleteCommand(cliEnvironment environment.Environment, cmd *cobra.Command, args []string) *centralUserPkiDeleteCommand {
 	return &centralUserPkiDeleteCommand{
 		providerArg: args[0],
 		env:         cliEnvironment,

@@ -17,17 +17,15 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/download"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 const (
 	inMemFileSizeThreshold = 1 << 20 // 1MB
 )
 
-var (
-	log = common.CLIEnvironment().Logger()
-)
-
-func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, outputDir string) error {
+func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, outputDir string, log logger.Logger) error {
 	reader, err := zip.NewReader(contents, contentsLength)
 	if err != nil {
 		return errors.Wrap(err, "could not read from zip")
@@ -81,7 +79,7 @@ type GetZipOptions struct {
 	OutputDir                string
 }
 
-func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string) error {
+func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string, log logger.Logger) error {
 	outputFile := fileName
 	if outputDir != "" {
 		if err := os.MkdirAll(outputDir, 0755); err != nil {
@@ -108,8 +106,8 @@ func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string) er
 
 // GetZip downloads a zip from the given endpoint.
 // bundleType is used for logging.
-func GetZip(opts GetZipOptions) error {
-	resp, err := common.DoHTTPRequestAndCheck200(opts.Path, opts.Timeout, opts.Method, bytes.NewBuffer(opts.Body))
+func GetZip(opts GetZipOptions, log logger.Logger) error {
+	resp, err := common.DoHTTPRequestAndCheck200(opts.Path, opts.Timeout, opts.Method, bytes.NewBuffer(opts.Body), log)
 	if err != nil {
 		return errors.Wrap(err, "could not download zip")
 	}
@@ -124,7 +122,7 @@ func GetZip(opts GetZipOptions) error {
 
 	// If containerized, then write a zip file to stdout
 	if roxctl.InMainImage() {
-		if _, err := io.Copy(common.CLIEnvironment().InputOutput().Out(), resp.Body); err != nil {
+		if _, err := io.Copy(environment.CLIEnvironment().InputOutput().Out(), resp.Body); err != nil {
 			return errors.Wrap(err, "Error writing out zip file")
 		}
 		log.InfofLn("Successfully wrote %s zip file", opts.BundleType)
@@ -132,7 +130,7 @@ func GetZip(opts GetZipOptions) error {
 	}
 
 	if !opts.ExpandZip {
-		return storeZipFile(resp.Body, zipFileName, opts.OutputDir, opts.BundleType)
+		return storeZipFile(resp.Body, zipFileName, opts.OutputDir, opts.BundleType, log)
 	}
 
 	buf := ioutils.NewRWBuf(ioutils.RWBufOptions{MemLimit: inMemFileSizeThreshold})
@@ -152,5 +150,5 @@ func GetZip(opts GetZipOptions) error {
 		outputDir = strings.TrimSuffix(zipFileName, filepath.Ext(zipFileName))
 	}
 
-	return extractZipToFolder(contents, size, opts.BundleType, outputDir)
+	return extractZipToFolder(contents, size, opts.BundleType, outputDir, log)
 }

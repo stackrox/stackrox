@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/v2backuprestore"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
 	"golang.org/x/crypto/ssh/terminal"
@@ -52,7 +53,7 @@ var (
 )
 
 type v2Restorer struct {
-	env           common.Environment
+	env           environment.Environment
 	retryDeadline time.Time // does not affect ongoing transfers
 
 	interrupt bool

@@ -1,12 +1,13 @@
 //go:build linux || darwin
 // +build linux darwin
 
-package common
+package logger
 
 import (
 	"testing"
 
 	"github.com/fatih/color"
+	io2 "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 )
@@ -49,7 +50,7 @@ func TestLogger(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.out+tc.errOut, func(t *testing.T) {
-			io, _, out, errOut := TestIO()
+			io, _, out, errOut := io2.TestIO()
 			logger := NewLogger(io, printer.DefaultColorPrinter())
 			tc.fun(logger)
 			assert.Equal(t, tc.out, out.String())

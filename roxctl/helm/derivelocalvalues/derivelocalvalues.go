@@ -11,7 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
-	env "github.com/stackrox/rox/roxctl/common"
+	env "github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -347,7 +348,7 @@ func retrieveCustomEnvVars(envVars map[string]interface{}) map[string]interface{
 	return filterMap(envVars, []string{"ROX_OFFLINE_MODE", "ROX_INIT_TELEMETRY_ENABLED"})
 }
 
-func printWarnings(logger env.Logger, warnings []string) {
+func printWarnings(logger logger.Logger, warnings []string) {
 	if len(warnings) == 0 {
 		return
 	}

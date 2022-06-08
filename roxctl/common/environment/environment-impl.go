@@ -1,4 +1,4 @@
-package common
+package environment
 
 import (
 	"io"
@@ -8,14 +8,17 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	cliIO "github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"google.golang.org/grpc"
 )
 
 type cliEnvironmentImpl struct {
-	io              IO
-	logger          Logger
+	io              cliIO.IO
+	logger          logger.Logger
 	colorfulPrinter printer.ColorfulPrinter
 }
 
@@ -26,11 +29,11 @@ var (
 
 // NewTestCLIEnvironment creates a new CLI environment with the given IO and common.RoxctlHTTPClient.
 // It should be only used within tests.
-func NewTestCLIEnvironment(_ *testing.T, io IO, c printer.ColorfulPrinter) Environment {
+func NewTestCLIEnvironment(_ *testing.T, io cliIO.IO, c printer.ColorfulPrinter) Environment {
 	return &cliEnvironmentImpl{
 		io:              io,
 		colorfulPrinter: c,
-		logger:          NewLogger(io, c),
+		logger:          logger.NewLogger(io, c),
 	}
 }
 
@@ -47,32 +50,32 @@ func CLIEnvironment() Environment {
 			colorPrinter = printer.DefaultColorPrinter()
 		}
 		singleton = &cliEnvironmentImpl{
-			io:              DefaultIO(),
+			io:              cliIO.DefaultIO(),
 			colorfulPrinter: colorPrinter,
-			logger:          NewLogger(DefaultIO(), colorPrinter),
+			logger:          logger.NewLogger(cliIO.DefaultIO(), colorPrinter),
 		}
 	})
 	return singleton
 }
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
-func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (RoxctlHTTPClient, error) {
-	client, err := GetRoxctlHTTPClient(timeout, flags.ForceHTTP1(), flags.UseInsecure())
+func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
+	client, err := common.GetRoxctlHTTPClient(timeout, flags.ForceHTTP1(), flags.UseInsecure(), c.Logger())
 	return client, errors.WithStack(err)
 }
 
 // GRPCConnection returns the common.GetGRPCConnection
 func (c *cliEnvironmentImpl) GRPCConnection() (*grpc.ClientConn, error) {
-	connection, err := GetGRPCConnection()
+	connection, err := common.GetGRPCConnection(c.Logger())
 	return connection, errors.WithStack(err)
 }
 
 // InputOutput returns the IO associated with the CLI Environment which holds all relevant input / output streams
-func (c *cliEnvironmentImpl) InputOutput() IO {
+func (c *cliEnvironmentImpl) InputOutput() cliIO.IO {
 	return c.io
 }
 
-func (c *cliEnvironmentImpl) Logger() Logger {
+func (c *cliEnvironmentImpl) Logger() logger.Logger {
 	return c.logger
 }
 
@@ -85,7 +88,7 @@ func (c *cliEnvironmentImpl) ColorWriter() io.Writer {
 
 // ConnectNames returns the endpoint and (SNI) server name
 func (c *cliEnvironmentImpl) ConnectNames() (string, string, error) {
-	names, s, err := ConnectNames()
+	names, s, err := common.ConnectNames()
 	return names, s, errors.Wrap(err, "could not get endpoint")
 }
 

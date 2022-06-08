@@ -13,7 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/report"
 	"github.com/stackrox/rox/roxctl/summaries/policy"
@@ -51,7 +53,7 @@ var (
 )
 
 // Command checks the deployment against deploy time system policies
-func Command(cliEnvironment common.Environment) *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
@@ -104,7 +106,7 @@ type deploymentCheckCommand struct {
 	timeout            time.Duration
 
 	// injected or constructed values by Construct
-	env                common.Environment
+	env                environment.Environment
 	printer            printer.ObjectPrinter
 	standardizedFormat bool
 }
@@ -228,7 +230,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 	return nil
 }
 
-func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out common.Logger, deployments ...string) {
+func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out logger.Logger, deployments ...string) {
 	out.PrintfLn("Policy check results for deployments: %v", deployments)
 	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		policy.TotalPolicyAmountKey, numOfPolicyViolations[policy.TotalPolicyAmountKey],
@@ -239,7 +241,7 @@ func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out comm
 }
 
 func printAdditionalWarnsAndErrs(amountViolatedPolicies, amountBreakingPolicies int, results []policy.EntityResult,
-	out common.Logger) {
+	out logger.Logger) {
 	if amountViolatedPolicies == 0 {
 		return
 	}
