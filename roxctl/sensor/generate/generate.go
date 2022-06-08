@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/pflag/autobool"
 	"github.com/stackrox/rox/roxctl/sensor/util"
@@ -51,7 +52,7 @@ type sensorGenerateCommand struct {
 
 	// injected or constructed values
 	cluster     storage.Cluster
-	env         common.Environment
+	env         environment.Environment
 	getBundleFn util.GetBundleFn
 }
 
@@ -159,7 +160,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		SlimCollector:    pointer.BoolPtr(s.cluster.GetSlimCollector()),
 		IstioVersion:     s.istioVersion,
 	}
-	if err := s.getBundleFn(params, s.outputDir, s.timeout); err != nil {
+	if err := s.getBundleFn(params, s.outputDir, s.timeout, s.env.Logger()); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 
@@ -189,7 +190,7 @@ func (s *sensorGenerateCommand) createCluster(ctx context.Context, svc v1.Cluste
 }
 
 // Command defines the sensor generate command tree
-func Command(cliEnvironment common.Environment) *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	generateCmd := &sensorGenerateCommand{env: cliEnvironment, cluster: defaultCluster()}
 	c := &cobra.Command{
 		Use: "generate",

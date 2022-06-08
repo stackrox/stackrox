@@ -1,10 +1,11 @@
-package common
+package environment
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/fatih/color"
+	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 )
@@ -34,7 +35,7 @@ func Test_colorWriter_Write(t *testing.T) {
 	for _, tt := range tests {
 		c := tt
 		t.Run(c.given, func(t *testing.T) {
-			testIO, _, testStdOut, _ := TestIO()
+			testIO, _, testStdOut, _ := io.TestIO()
 			env := NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
 
 			w := env.ColorWriter()

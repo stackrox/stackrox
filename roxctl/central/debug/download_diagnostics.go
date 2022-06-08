@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
@@ -18,7 +18,7 @@ const (
 )
 
 // downloadDiagnosticsCommand allows downloading the diagnostics bundle.
-func downloadDiagnosticsCommand(cliEnvironment common.Environment) *cobra.Command {
+func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputDir string
 	var clusters []string
 	var since string
@@ -27,8 +27,28 @@ func downloadDiagnosticsCommand(cliEnvironment common.Environment) *cobra.Comman
 		Use: "download-diagnostics",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cliEnvironment.Logger().InfofLn("Downloading diagnostic bundle...")
-			return retrieveDiagnosticBundle(flags.Timeout(c), outputDir,
-				clusters, since)
+			path := "/api/extensions/diagnostics"
+
+			values := url.Values{}
+			for _, cluster := range clusters {
+				values.Add("cluster", cluster)
+			}
+			if since != "" {
+				values.Add("since", since)
+			}
+
+			urlParams := values.Encode()
+			if urlParams != "" {
+				path = fmt.Sprintf("%s?%s", path, urlParams)
+			}
+			return zipdownload.GetZip(zipdownload.GetZipOptions{
+				Path:       path,
+				Method:     http.MethodGet,
+				Timeout:    flags.Timeout(c),
+				BundleType: "diagnostic",
+				ExpandZip:  false,
+				OutputDir:  outputDir,
+			}, cliEnvironment.Logger())
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, diagnosticBundleDownloadTimeout)
@@ -37,30 +57,4 @@ func downloadDiagnosticsCommand(cliEnvironment common.Environment) *cobra.Comman
 	c.PersistentFlags().StringVar(&since, "since", "", "timestamp starting when logs should be collected from sensor clusters")
 
 	return c
-}
-
-func retrieveDiagnosticBundle(timeout time.Duration, outputDir string, clusters []string, since string) error {
-	path := "/api/extensions/diagnostics"
-
-	values := url.Values{}
-	for _, cluster := range clusters {
-		values.Add("cluster", cluster)
-	}
-	if since != "" {
-		values.Add("since", since)
-	}
-
-	urlParams := values.Encode()
-	if urlParams != "" {
-		path = fmt.Sprintf("%s?%s", path, urlParams)
-	}
-
-	return zipdownload.GetZip(zipdownload.GetZipOptions{
-		Path:       path,
-		Method:     http.MethodGet,
-		Timeout:    timeout,
-		BundleType: "diagnostic",
-		ExpandZip:  false,
-		OutputDir:  outputDir,
-	})
 }
