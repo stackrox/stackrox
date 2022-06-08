@@ -81,13 +81,12 @@ func ProcessComponent(component scancomponent.ScanComponent) (min, max Component
 // so we use the severity instead.
 // For example, given a vulnerability with CVSSv3.1 score of 9.0 and severity rating Low,
 // this will return 2.0 as the score.
-func vulnScore(vuln *storage.EmbeddedVulnerability) float32 {
+func vulnScore(vuln cvss.VulnI) float32 {
 	severity := cvss.VulnToSeverity(vuln)
 
-	if vuln.GetScoreVersion() == storage.EmbeddedVulnerability_V2 {
+	if vuln.GetScoreVersion() == storage.CVEInfo_V2 {
 		return cvss2Score(severity)
 	}
-
 	return cvss3Score(severity)
 }
 

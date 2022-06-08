@@ -16,10 +16,10 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_COMPONENTS, schema)
+	mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_COMPONENTS, schema)
 }
 
-// NewIndexer returns new indexer for `storage.ImageComponent`.
+// NewIndexer returns new indexer for `storage.NodeComponent`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,
@@ -31,32 +31,32 @@ type indexerImpl struct {
 }
 
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ImageComponent")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "NodeComponent")
 
-	return postgres.RunCountRequest(v1.SearchCategory_IMAGE_COMPONENTS, q, b.db)
+	return postgres.RunCountRequest(v1.SearchCategory_NODE_COMPONENTS, q, b.db)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ImageComponent")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "NodeComponent")
 
-	return postgres.RunSearchRequest(v1.SearchCategory_IMAGE_COMPONENTS, q, b.db)
+	return postgres.RunSearchRequest(v1.SearchCategory_NODE_COMPONENTS, q, b.db)
 }
 
 //// Stubs for satisfying interfaces
 
-func (b *indexerImpl) AddImageComponent(deployment *storage.ImageComponent) error {
+func (b *indexerImpl) AddNodeComponent(deployment *storage.NodeComponent) error {
 	return nil
 }
 
-func (b *indexerImpl) AddImageComponents(_ []*storage.ImageComponent) error {
+func (b *indexerImpl) AddNodeComponents(_ []*storage.NodeComponent) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteImageComponent(id string) error {
+func (b *indexerImpl) DeleteNodeComponent(id string) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteImageComponents(_ []string) error {
+func (b *indexerImpl) DeleteNodeComponents(_ []string) error {
 	return nil
 }
 

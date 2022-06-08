@@ -238,7 +238,7 @@ func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "ImageComponent")
 
-	risk := e.imageComponentScorer.Score(allAccessCtx, imageComponent)
+	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent))
 	if risk == nil {
 		return
 	}
@@ -262,7 +262,7 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 func (e *managerImpl) reprocessNodeComponentRisk(nodeComponent *storage.EmbeddedNodeScanComponent) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "NodeComponent")
 
-	risk := e.nodeComponentScorer.Score(allAccessCtx, nodeComponent)
+	risk := e.nodeComponentScorer.Score(allAccessCtx, scancomponent.NewFromNodeComponent(nodeComponent))
 	if risk == nil {
 		return
 	}

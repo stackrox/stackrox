@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	imageFlavorDefault string = defaults.ImageFlavorNameRHACSRelease
+	imageFlavorDefault = defaults.ImageFlavorNameRHACSRelease
 )
 
 // ImageDefaultsFlagName is a shared constant for --image-defaults command line flag.

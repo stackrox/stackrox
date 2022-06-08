@@ -31,6 +31,9 @@ echo "StackRox roxctl image tag set to $ROXCTL_IMAGE_TAG"
 export ROXCTL_IMAGE="${ROXCTL_IMAGE_REPO}:${ROXCTL_IMAGE_TAG}"
 echo "StackRox roxctl image set to $ROXCTL_IMAGE"
 
+export ROXCTL_ROX_IMAGE_FLAVOR="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" image-flavor)}"
+echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
+
 export SCANNER_IMAGE="${SCANNER_IMAGE:-}"
 if [[ -z "${SCANNER_IMAGE}" ]]; then
   SCANNER_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"

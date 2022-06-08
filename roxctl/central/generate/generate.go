@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/mode"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -116,11 +118,11 @@ func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 	return nil
 }
 
-func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapper, error) {
+func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, error) {
 	wrapper := zip.NewWrapper()
 
 	if config.ClusterType == storage.ClusterType_GENERIC_CLUSTER {
-		return nil, errors.Errorf("invalid cluster type: %s", config.ClusterType)
+		return nil, errox.InvalidArgs.Newf("invalid cluster type: %s", config.ClusterType)
 	}
 
 	config.SecretsByteMap = make(map[string][]byte)
@@ -198,7 +200,7 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 
 // OutputZip renders a deployment bundle. The deployment bundle can either be
 // written directly into a directory, or as a zipfile to STDOUT.
-func OutputZip(logger environment.Logger, config renderer.Config) error {
+func OutputZip(logger logger.Logger, config renderer.Config) error {
 	logger.InfofLn("Generating deployment bundle...")
 
 	wrapper, err := createBundle(logger, config)
@@ -294,7 +296,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	)
 
 	c.PersistentFlags().VarPF(
-		flags.ForSetting(env.PlaintextEndpoints), "plaintext-endpoints", "",
+		flags.ForSetting(env.PlaintextEndpoints, cliEnvironment.Logger()), "plaintext-endpoints", "",
 		"The ports or endpoints to use for plaintext (unencrypted) exposure; comma-separated list.")
 	utils.Must(
 		c.PersistentFlags().SetAnnotation("plaintext-endpoints", flags.NoInteractiveKey, []string{"true"}))

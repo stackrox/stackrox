@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ import (
 func TestVersions(t *testing.T) {
 	t.Parallel()
 
-	client := testutils.HTTPClientForCentral(t)
+	client := centralgrpc.HTTPClientForCentral(t)
 
 	resp, err := client.Get("/debug/versions.json")
 	require.NoError(t, err)

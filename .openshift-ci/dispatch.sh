@@ -40,6 +40,9 @@ case "$ci_job" in
     generated-checks)
         "$ROOT/scripts/ci/jobs/check-generated.sh"
         ;;
+    mitre-bundles-checks)
+        "$ROOT/scripts/ci/jobs/check-mitre-bundles.sh"
+        ;;
     go-unit-tests-release)
         GOTAGS=release "$ROOT/scripts/ci/jobs/go-unit-tests.sh"
         ;;

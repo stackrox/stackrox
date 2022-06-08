@@ -22,12 +22,12 @@ func mergeComponents(parts *NodeParts, node *storage.Node) {
 	// Use the edges to combine into the parent node.
 	for _, cp := range parts.Children {
 		// Parse the IDs of the edge.
-		nodeComponentEdgeIDs, err := edges.FromString(cp.Edge.GetId())
+		nodeComponentEdgeID, err := edges.FromString(cp.Edge.GetId())
 		if err != nil {
 			log.Error(err)
 			continue
 		}
-		if nodeComponentEdgeIDs.ParentID != node.GetId() {
+		if nodeComponentEdgeID.ParentID != node.GetId() {
 			log.Error("node to component edge does not match node")
 			continue
 		}
@@ -45,6 +45,7 @@ func generateEmbeddedComponent(cp *ComponentParts) *storage.EmbeddedNodeScanComp
 		Name:      cp.Component.GetName(),
 		Version:   cp.Component.GetVersion(),
 		RiskScore: cp.Component.GetRiskScore(),
+		Priority:  cp.Component.GetPriority(),
 	}
 
 	if cp.Component.GetSetTopCvss() != nil {
@@ -69,6 +70,12 @@ func generateEmbeddedCVE(cp *CVEParts) *storage.EmbeddedVulnerability {
 			FixedBy: cp.Edge.GetFixedBy(),
 		}
 	}
+
+	// Only legacy vuln snoozing feature affected node vulns state.
+	if ret.GetSuppressed() {
+		ret.State = storage.VulnerabilityState_DEFERRED
+	}
+
 	// The `Suppressed` field is transferred to `State` field in `converter.ProtoCVEToEmbeddedCVE` and node cve deferral
 	// through vuln risk management workflow is not supported, hence, nothing to do here.
 	return ret

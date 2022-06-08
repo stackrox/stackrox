@@ -24,6 +24,7 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 		defaults.DevelopmentBuildImageFlavor(),
 		defaults.StackRoxIOReleaseImageFlavor(),
 		defaults.RHACSReleaseImageFlavor(),
+		defaults.OpenSourceImageFlavor(),
 	}
 	for _, flavor := range cases {
 		testName := fmt.Sprintf("Image Flavor %s", flavor.MainRegistry)

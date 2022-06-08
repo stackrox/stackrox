@@ -12,6 +12,10 @@ type object struct {
 	schema                   *walker.Schema
 }
 
+func (o object) GetID(name string) string {
+	return identifierGetter(name, o.schema)
+}
+
 func (o object) GetClusterID(name string) string {
 	return clusterGetter(name, o.schema)
 }

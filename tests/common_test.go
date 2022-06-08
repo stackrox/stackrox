@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -32,7 +33,7 @@ var (
 
 //lint:ignore U1000 Ignore unused code check since this function could be useful in future.
 func assumeFeatureFlagHasValue(t *testing.T, featureFlag features.FeatureFlag, assumedValue bool) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	featureService := v1.NewFeatureFlagServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -72,7 +73,7 @@ func retrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.Lis
 }
 
 func waitForDeployment(t testutils.T, deploymentName string) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
 
@@ -118,7 +119,7 @@ func waitForDeployment(t testutils.T, deploymentName string) {
 }
 
 func waitForTermination(t testutils.T, deploymentName string) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
 
@@ -184,7 +185,7 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	cmd := exec.Command(`kubectl`, `set`, `image`, fmt.Sprintf("deployment/%s", deploymentName), fmt.Sprintf("%s=%s", containerName, image))
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewDeploymentServiceClient(conn)
 
 	waitForCondition(t, func() bool {

@@ -186,6 +186,10 @@ func isMissingSignatureError(err error) bool {
 		registryErr.Response.StatusCode == http.StatusNotFound {
 		return true
 	}
+
+	if transportErr, ok := err.(*transport.Error); ok && transportErr.StatusCode == http.StatusNotFound {
+		return true
+	}
 	return false
 }
 
@@ -209,6 +213,10 @@ func isUnauthorizedError(err error) bool {
 func errToURLError(err error) *url.Error {
 	causeErr := errors.Cause(err)
 	if urlErr, ok := causeErr.(*url.Error); ok {
+		return urlErr
+	}
+	unwrapErr := errors.Unwrap(err)
+	if urlErr, ok := unwrapErr.(*url.Error); ok {
 		return urlErr
 	}
 	return nil

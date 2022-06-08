@@ -2261,31 +2261,6 @@ jobs:
               '{"text": "CircleCI build for tag `\($tag)` started! Check the status of the build under the following URL: https://circleci.com/workflow-run/\($workflow_id)"}' \
             | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 
-  go-unit-tests:
-    executor: custom
-    resource_class: large
-    environment:
-      ROX_IMAGE_FLAVOR: development_build
-    steps:
-      - pre-go-unit-tests
-      - run:
-          name: Run Go unit tests
-          command: make go-unit-tests GOTAGS=''
-      - post-go-unit-tests:
-          path: go-unit-junit-reports
-
-  go-unit-tests-release:
-    executor: custom
-    resource_class: large
-    environment:
-      ROX_IMAGE_FLAVOR: stackrox.io
-    steps:
-      - pre-go-unit-tests
-      - run:
-          name: Run Go unit tests with release tag
-          command: make go-unit-tests GOTAGS=release
-      - post-go-unit-tests:
-          path: go-unit-release-junit-reports
   go-postgres-tests:
     docker:
       - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.37
@@ -2307,37 +2282,6 @@ jobs:
           make go-postgres-unit-tests
     - post-go-unit-tests:
         path: go-unit-release-junit-reports
-
-
-  shell-unit-tests:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-
-      - run:
-          name: Run Shell unit tests
-          command: make shell-unit-tests
-
-      - store-test-results-and-artifacts:
-          path: shell-test-output
-
-  ui-unit-tests:
-    executor: custom
-    resource_class: xlarge
-    steps:
-      - checkout
-      - check-to-run:
-          run-on-master: false # don't run on master by default
-          run-on-tags: true
-          changed-path: '^ui/'
-      - restore-npm-deps-cache
-
-      - run:
-          name: Run UI unit tests
-          command: make ui-test
-
-      - *storeUITestReports
 
   # This job checks that the docs/content submodule is pointing to the correct branch in the openshift-docs repo,
   # and that it is up-to-date. It only runs on RC builds, and is primarily intended as a reminder for the release
@@ -2470,37 +2414,6 @@ jobs:
       - ci-artifacts/store:
           path: /tmp/mitre-diff
           destination: mitre-diff
-
-  integration-unit-tests:
-    executor:
-      name: custom
-      resource_class: large
-    steps:
-      - checkout
-      - restore-go-mod-cache
-      - setup-go-build-env
-
-      - *restoreGoBuildCache
-
-      - run:
-          name: Run integration tests
-          # Retry a few times if the tests fail since they can be flaky.
-          command: |
-            success=0
-            max_tries=5
-            for i in $(seq 1 "${max_tries}"); do
-              if make integration-unit-tests; then
-                success=1
-                break
-              fi
-              echo "Retrying (failed ${i} times)"
-            done
-            if [[ "${success}" == 0 ]]; then
-              echo "Failed after ${max_tries} tries"
-              exit 1
-            fi
-
-      - *saveGoBuildCache
 
   designated-image-tests:
 
@@ -4707,17 +4620,7 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - check-mitre-attack-bundle-up-to-date:
           <<: *runOnAllTagsWithQuayIOPullCtx
-      - go-unit-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - go-unit-tests-release:
-          <<: *runOnAllTagsWithQuayIOPullCtx
       - go-postgres-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - shell-unit-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - ui-unit-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - integration-unit-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-create-parameters:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -4896,8 +4799,6 @@ workflows:
           requires:
             - build-stackrox
             - build-rhacs
-            - go-unit-tests
-            - ui-unit-tests
             - push-release
 
       - provision-openshift-rosa-api-e2e-tests:
@@ -4991,8 +4892,6 @@ workflows:
           requires:
             - build-stackrox
             - build-rhacs
-            - go-unit-tests
-            - ui-unit-tests
 
       - scan-images-in-quay:
           <<: *runOnTagsOnly

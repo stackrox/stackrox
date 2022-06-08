@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	env "github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 )
 
@@ -17,7 +17,7 @@ If the derived Helm configuration should really be written to stdout, please use
 )
 
 // Command for deriving local values from existing StackRox Kubernetes resources.
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment env.Environment) *cobra.Command {
 	helmDeriveLocalValuesCmd := &helmDeriveLocalValuesCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
@@ -31,7 +31,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 				return err
 			}
 
-			return deriveLocalValuesForChart(defaultNamespace, helmDeriveLocalValuesCmd.chartName, helmDeriveLocalValuesCmd.input, helmDeriveLocalValuesCmd.outputPath, helmDeriveLocalValuesCmd.useDirectory)
+			return deriveLocalValuesForChart(cliEnvironment, defaultNamespace, helmDeriveLocalValuesCmd.chartName, helmDeriveLocalValuesCmd.input, helmDeriveLocalValuesCmd.outputPath, helmDeriveLocalValuesCmd.useDirectory)
 
 		},
 	}
@@ -53,7 +53,7 @@ type helmDeriveLocalValuesCommand struct {
 	chartName    string
 	outputPath   string
 	useDirectory bool
-	env          environment.Environment
+	env          env.Environment
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables

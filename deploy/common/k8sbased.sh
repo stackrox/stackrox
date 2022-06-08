@@ -162,6 +162,8 @@ function launch_central {
         add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
     fi
 
+    add_args "--image-defaults=${ROXCTL_ROX_IMAGE_FLAVOR}"
+
     pkill -f kubectl'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
     pkill -9 -f kubectl'.*port-forward.*' || true
     command -v oc >/dev/null && pkill -f oc'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs

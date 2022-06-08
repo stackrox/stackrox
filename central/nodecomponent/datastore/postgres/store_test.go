@@ -73,50 +73,50 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 
 	store := s.store
 
-	imageComponent := &storage.ImageComponent{}
-	s.NoError(testutils.FullInit(imageComponent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	nodeComponent := &storage.NodeComponent{}
+	s.NoError(testutils.FullInit(nodeComponent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundImageComponent, exists, err := store.Get(ctx, imageComponent.GetId())
+	foundNodeComponent, exists, err := store.Get(ctx, nodeComponent.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundImageComponent)
+	s.Nil(foundNodeComponent)
 
-	s.NoError(store.Upsert(ctx, imageComponent))
-	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId())
+	s.NoError(store.Upsert(ctx, nodeComponent))
+	foundNodeComponent, exists, err = store.Get(ctx, nodeComponent.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(imageComponent, foundImageComponent)
+	s.Equal(nodeComponent, foundNodeComponent)
 
-	imageComponentCount, err := store.Count(ctx)
+	nodeComponentCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(1, imageComponentCount)
+	s.Equal(1, nodeComponentCount)
 
-	imageComponentExists, err := store.Exists(ctx, imageComponent.GetId())
+	nodeComponentExists, err := store.Exists(ctx, nodeComponent.GetId())
 	s.NoError(err)
-	s.True(imageComponentExists)
-	s.NoError(store.Upsert(ctx, imageComponent))
+	s.True(nodeComponentExists)
+	s.NoError(store.Upsert(ctx, nodeComponent))
 
-	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId())
+	foundNodeComponent, exists, err = store.Get(ctx, nodeComponent.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(imageComponent, foundImageComponent)
+	s.Equal(nodeComponent, foundNodeComponent)
 
-	s.NoError(store.Delete(ctx, imageComponent.GetId()))
-	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId())
+	s.NoError(store.Delete(ctx, nodeComponent.GetId()))
+	foundNodeComponent, exists, err = store.Get(ctx, nodeComponent.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundImageComponent)
+	s.Nil(foundNodeComponent)
 
-	var imageComponents []*storage.ImageComponent
+	var nodeComponents []*storage.NodeComponent
 	for i := 0; i < 200; i++ {
-		imageComponent := &storage.ImageComponent{}
-		s.NoError(testutils.FullInit(imageComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		imageComponents = append(imageComponents, imageComponent)
+		nodeComponent := &storage.NodeComponent{}
+		s.NoError(testutils.FullInit(nodeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		nodeComponents = append(nodeComponents, nodeComponent)
 	}
 
-	s.NoError(store.UpsertMany(ctx, imageComponents))
+	s.NoError(store.UpsertMany(ctx, nodeComponents))
 
-	imageComponentCount, err = store.Count(ctx)
+	nodeComponentCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, imageComponentCount)
+	s.Equal(200, nodeComponentCount)
 }

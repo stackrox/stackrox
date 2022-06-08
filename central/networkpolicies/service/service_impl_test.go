@@ -545,6 +545,30 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 	suite.Equal(expectedPolicies, actualResp.GetNetworkPolicies(), "response should be policies applied to deployments")
 }
 
+func (suite *ServiceTestSuite) TestGetAllNetworkPoliciesForNamespace() {
+	// Mock that cluster exists.
+	suite.clusters.EXPECT().Exists(gomock.Any(), fakeClusterID).
+		Return(true, nil)
+
+	// Mock that we have network policies in effect for the cluster.
+	neps := make([]*storage.NetworkPolicy, 0)
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, fakeClusterID, gomock.Eq("my-namespace")).
+		Return(neps, nil).
+		Times(1)
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, fakeClusterID, gomock.Eq("")).
+		Times(0)
+
+	// Make the request to the service and check that it did not err.
+	request := &v1.GetNetworkPoliciesRequest{
+		ClusterId: fakeClusterID,
+		Namespace: "my-namespace",
+	}
+	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
+
+	suite.NoError(err, "expected graph generation to succeed")
+	suite.Equal(neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
+}
+
 func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment() {
 	// NOTE: although the test verifies GetAllowedPeersFromCurrentPolicyForDeployment, most of the
 	// dependency calls are mocked out. Thus those dependency calls' logics are not tested. This
