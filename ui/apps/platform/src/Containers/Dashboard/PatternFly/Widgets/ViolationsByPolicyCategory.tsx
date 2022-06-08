@@ -22,6 +22,7 @@ import {
 import { getQueryString } from 'utils/queryStringUtils';
 import { violationsBasePath } from 'routePaths';
 import useResizeObserver from 'hooks/useResizeObserver';
+import { Title } from '@patternfly/react-core';
 import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 
@@ -156,7 +157,15 @@ function ViolationsByPolicyCategory() {
     const { alertGroups, loading, error } = useAlertGroups('CATEGORY', ''); // TODO Implement query filtering
 
     return (
-        <WidgetCard title="Policy violations by category" isLoading={loading} error={error}>
+        <WidgetCard
+            isLoading={loading}
+            error={error}
+            header={
+                <Title headingLevel="h2" className="pf-u-p-md">
+                    Policy violations by category
+                </Title>
+            }
+        >
             <ViolationsByPolicyCategoryChart alertGroups={alertGroups} />
         </WidgetCard>
     );
