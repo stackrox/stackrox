@@ -9,9 +9,6 @@ on:
   schedule:
     # * is a special character in YAML so you have to quote this string
     - cron:  '15 0 * * *'
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ master ]
 
 jobs:
   scan:
