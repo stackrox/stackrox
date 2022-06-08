@@ -307,7 +307,7 @@ func main() {
 				MigrateFromBucket: froms[1],
 				MigrateSequence:   props.PostgresMigrationSeq,
 			}
-			migrationDir := fmt.Sprintf("n_%d_to_n_%d_postgres_%s", props.PostgresMigrationSeq, props.PostgresMigrationSeq+1, props.Table)
+			migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.PostgresMigrationSeq, props.PostgresMigrationSeq+1, props.Table)
 			root := filepath.Join(props.MigrationRoot, migrationDir)
 
 			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/logging"
@@ -43,8 +44,14 @@ func GetSchemaForTable(tableName string) *walker.Schema {
 func getAllRegisteredTablesInOrder() []*registeredTable {
 	visited := set.NewStringSet()
 
-	var rts []*registeredTable
+	tables := make([]string, 0, len(registeredTables))
 	for table := range registeredTables {
+		tables = append(tables, table)
+	}
+	sort.Strings(tables)
+
+	var rts []*registeredTable
+	for _, table := range tables {
 		rts = append(rts, getRegisteredTablesFor(visited, table)...)
 	}
 	return rts
