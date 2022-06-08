@@ -2,6 +2,8 @@ import { History } from 'react-router-dom';
 import { getTheme, ChartThemeColor } from '@patternfly/react-charts';
 import { EventCallbackInterface, EventPropTypeInterface } from 'victory-core';
 
+// TODO - Extract these colors to a top level global that is not chart-specific
+// We may also want to drop the `@patternfly/patternfly` dep in favor of the build in global palette
 const severityColorScale = [
     'var(--pf-chart-color-black-300)',
     'var(--pf-chart-color-gold-300)',
