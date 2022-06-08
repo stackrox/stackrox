@@ -1,4 +1,4 @@
-
+{{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 
 import (
@@ -66,12 +66,12 @@ func (s *postgresMigrationSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	_ = s.gormDB.Migrator().DropTable(pkgSchema.CreateTableAlertsStmt.GormModel)
+	_ = s.gormDB.Migrator().DropTable({{template "createTableStmtVar" .Schema}}.GormModel)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
 	rocksdbtest.TearDownRocksDB(s.rocksDB)
-	_ = s.gormDB.Migrator().DropTable(pkgSchema.CreateTableAlertsStmt.GormModel)
+	_ = s.gormDB.Migrator().DropTable({{template "createTableStmtVar" .Schema}}.GormModel)
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
@@ -80,9 +80,9 @@ func (s *postgresMigrationSuite) TestMigration() {
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
-	var objs []*storage.Alert
+	var objs []*{{.Type}}
 	for i := 0; i < 200; i++ {
-		obj := &storage.Alert{}
+		obj := &{{.Type}}{}
 		s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		bytes, err := proto.Marshal(obj)
 		s.NoError(err, "failed to marshal data")
@@ -91,20 +91,20 @@ func (s *postgresMigrationSuite) TestMigration() {
 	}
 
 	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
-	s.NoError(moveAlerts(s.rocksDB, s.gormDB, s.pool))
+	s.NoError(move{{.Table|upperCamelCase}}(s.rocksDB, s.gormDB, s.pool))
 	var count int64
-	s.gormDB.Model(pkgSchema.CreateTableAlertsStmt.GormModel).Count(&count)
+	s.gormDB.Model({{template  "createTableStmtVar" .Schema}}.GormModel).Count(&count)
 	s.Equal(int64(len(objs)), count)
 	for _, obj := range objs {
 		s.Equal(obj, s.get(obj.Id))
 	}
 }
 
-func (s *postgresMigrationSuite) get(id string) *storage.Alert {
+func (s *postgresMigrationSuite) get(id string) *{{.Type}} {
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
 	s.NoError(err)
-	var msg storage.Alert
+	var msg {{.Type}}
 	s.NoError(proto.Unmarshal(data, &msg))
 	return &msg
 }

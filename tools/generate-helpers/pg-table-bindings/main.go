@@ -38,6 +38,9 @@ var singletonFile string
 //go:embed singleton_test.go.tpl
 var singletonTestFile string
 
+//go:embed store_common.go.tpl
+var storeCommonFile string
+
 //go:embed store.go.tpl
 var storeFile string
 
@@ -56,16 +59,20 @@ var migrationFile string
 //go:embed migration_test.go.tpl
 var migrationTestFile string
 
+//go:embed postgres_plugin.go.tpl
+var postgresPluginFile string
+
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(singletonFile)
 	singletonTestTemplate     = newTemplate(singletonTestFile)
-	storeTemplate             = newTemplate(storeFile)
+	storeTemplate             = newTemplate(strings.Join([]string{storeCommonFile, storeFile}, "\n"))
 	storeTestTemplate         = newTemplate(storeTestFile)
 	indexTemplate             = newTemplate(indexFile)
 	permissionCheckerTemplate = newTemplate(permissionCheckerFile)
 	migrationTemplate         = newTemplate(migrationFile)
 	migrationTestTemplate     = newTemplate(migrationTestFile)
+	postgresPluginTemplate    = newTemplate(strings.Join([]string{storeCommonFile, postgresPluginFile}, "\n"))
 )
 
 type properties struct {
@@ -190,7 +197,7 @@ func main() {
 		if props.PostgresMigrationSeq != 0 && props.MigrationRoot == "" {
 			log.Fatalf("please specify --migration-root")
 		}
-		if !migrateFromRegex.MatchString(props.MigrateFrom) {
+		if props.PostgresMigrationSeq != 0 && !migrateFromRegex.MatchString(props.MigrateFrom) {
 			log.Fatalf("unknown format for --migrate-from: %s", props.MigrateFrom)
 		}
 
@@ -299,7 +306,7 @@ func main() {
 			migrationDir := fmt.Sprintf("n_%d_to_n_%d_postgres_%s", props.PostgresMigrationSeq, props.PostgresMigrationSeq+1, props.Table)
 			root := filepath.Join(props.MigrationRoot, migrationDir)
 
-			if err := renderFile(templateMap, storeTemplate, filepath.Join(root, "postgres_plugin.go")); err != nil {
+			if err := renderFile(templateMap, postgresPluginTemplate, filepath.Join(root, "postgres_plugin.go")); err != nil {
 				return err
 			}
 			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {

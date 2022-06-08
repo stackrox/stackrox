@@ -41,7 +41,7 @@ var (
 func moveAlerts(rocksDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
 	ctx := context.Background()
 	store := newStore(postgresDB, generic.NewCRUD(rocksDB, rocksdbBucket, keyFunc, alloc, false))
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.AlertsSchema)
+	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 
 	var alerts []*storage.Alert
 	store.Walk(ctx, func(obj *storage.Alert) error {

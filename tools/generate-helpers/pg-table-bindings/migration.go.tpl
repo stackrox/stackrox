@@ -1,4 +1,5 @@
-
+{{- define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
+{{- define "createTableStmtVar"}}CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 {{- $ := . }}
 {{- $pks := .Schema.PrimaryKeys }}
@@ -34,39 +35,39 @@ var (
 		StartingSeqNum: 100,
 		VersionAfter:   storage.Version{SeqNum: 101},
 		Run: func(databases *types.Databases) error {
-			if err := moveAlerts(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB); err != nil {
+			if err := move{{.Table|upperCamelCase}}(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB); err != nil {
 				return errors.Wrap(err,
-					"moving alerts from rocksdb to postgres")
+					"moving {{.Table|lowerCase}} from rocksdb to postgres")
 			}
 			return nil
 		},
 	}
 	rocksdbBucket = []byte("alerts")
 	batchSize     = 10000
-	schema        = pkgSchema.AlertsSchema
+	schema        = {{template "schemaVar" .Schema}}
 	log           = loghelper.LogWrapper{}
 )
 
-func moveAlerts(rocksDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
+func move{{.Table|upperCamelCase}}(rocksDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
 	ctx := context.Background()
 	store := newStore(postgresDB, generic.NewCRUD(rocksDB, rocksdbBucket, keyFunc, alloc, false))
-	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, "alerts")
+	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 
-	var alerts []*storage.Alert
-	store.Walk(ctx, func(obj *storage.Alert) error {
-		alerts = append(alerts, obj)
-		if len(alerts) == 10*batchSize {
-			if err := store.copyFrom(ctx, alerts...); err != nil {
-				log.WriteToStderrf("failed to persist alerts to store %v", err)
+	var {{.Table|lowerCamelCase}} []*{{.Type}}
+	store.Walk(ctx, func(obj *{{.Type}}) error {
+		{{.Table|lowerCamelCase}} = append({{.Table|lowerCamelCase}}, obj)
+		if len({{.Table|lowerCamelCase}}) == 10*batchSize {
+			if err := store.copyFrom(ctx, {{.Table|lowerCamelCase}}...); err != nil {
+				log.WriteToStderrf("failed to persist {{.Table|lowerCase}} to store %v", err)
 				return err
 			}
-			alerts = alerts[:0]
+			{{.Table|lowerCamelCase}} = {{.Table|lowerCamelCase}}[:0]
 		}
 		return nil
 	})
-	if len(alerts) > 0 {
-		if err := store.copyFrom(ctx, alerts...); err != nil {
-			log.WriteToStderrf("failed to persist alerts to store %v", err)
+	if len({{.Table|lowerCamelCase}}) > 0 {
+		if err := store.copyFrom(ctx, {{.Table|lowerCamelCase}}...); err != nil {
+			log.WriteToStderrf("failed to persist {{.Table|lowerCase}} to store %v", err)
 			return err
 		}
 	}
