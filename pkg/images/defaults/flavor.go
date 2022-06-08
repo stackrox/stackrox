@@ -195,9 +195,22 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 	}
 }
 
-// OpenSourceImageFlavor returns image values for `opensource` flavor.
+// OpenSourceImageFlavor returns image values for `opensource` flavor. Opensource flavor can be used both in development
+// and in releases.
+// In non-release builds, i.e. in development, Collector and Scanner should have original tags so that developers don't
+// need to retag Collector and Scanner images every time they commit to this repo.
+// Release builds get unified tags like in other release image flavors.
 func OpenSourceImageFlavor() ImageFlavor {
-	v := version.GetAllVersionsUnified()
+	v := version.GetAllVersionsDevelopment()
+	collectorTag := v.CollectorVersion + "-latest"
+	collectorSlimName := "collector"
+	collectorSlimTag := v.CollectorVersion + "-slim"
+	if buildinfo.ReleaseBuild {
+		v = version.GetAllVersionsUnified()
+		collectorTag = v.CollectorVersion
+		collectorSlimName = "collector-slim"
+		collectorSlimTag = v.CollectorVersion
+	}
 	return ImageFlavor{
 		MainRegistry:       "quay.io/stackrox-io",
 		MainImageName:      "main",
@@ -207,9 +220,9 @@ func OpenSourceImageFlavor() ImageFlavor {
 
 		CollectorRegistry:      "quay.io/stackrox-io",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      v.CollectorVersion,
-		CollectorSlimImageName: "collector-slim",
-		CollectorSlimImageTag:  v.CollectorVersion,
+		CollectorImageTag:      collectorTag,
+		CollectorSlimImageName: collectorSlimName,
+		CollectorSlimImageTag:  collectorSlimTag,
 
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",

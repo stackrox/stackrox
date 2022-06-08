@@ -6,6 +6,7 @@ import (
 
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
@@ -52,28 +53,22 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 
 func TestWithDifferentImageFlavors(t *testing.T) {
 	testbuildinfo.SetForTest(t)
-	// having a function as value allows to successfully run this test without dependency to GOTAGS='' and GOTAGS='release'
-	imageFlavorCases := map[string]func() defaults.ImageFlavor{
-		"development": func() defaults.ImageFlavor {
-			testutils.SetVersion(t, testutils.GetExampleVersion(t))
-			return defaults.DevelopmentBuildImageFlavor()
-		},
-		"stackrox": func() defaults.ImageFlavor {
-			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
-			return defaults.StackRoxIOReleaseImageFlavor()
-		},
-		"rhacs": func() defaults.ImageFlavor {
-			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
-			return defaults.RHACSReleaseImageFlavor()
-		},
-		"custom": func() defaults.ImageFlavor {
-			return customFlavor(t)
-		},
+	testutils.SetVersion(t, testutils.GetExampleVersion(t))
+	imageFlavorCases := map[string]defaults.ImageFlavor{
+		"development": defaults.DevelopmentBuildImageFlavor(),
+		"stackrox":    defaults.StackRoxIOReleaseImageFlavor(),
+		"rhacs":       defaults.RHACSReleaseImageFlavor(),
+		"custom":      customFlavor(t),
+	}
+	if buildinfo.ReleaseBuild {
+		imageFlavorCases["opensource-release"] = defaults.OpenSourceImageFlavor()
+	} else {
+		imageFlavorCases["opensource-development"] = defaults.OpenSourceImageFlavor()
 	}
 
-	for name, f := range imageFlavorCases {
-		imageFlavor := f()
+	for name, imageFlavor := range imageFlavorCases {
 		t.Run(name, func(t *testing.T) {
+			imageFlavor := imageFlavor
 			helmChartTestUtils.RunHelmTestSuite(t, testDir, image.CentralServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
 				Flavor:       &imageFlavor,
 				HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, name))},
