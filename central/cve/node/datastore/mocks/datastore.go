@@ -53,16 +53,16 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// EnrichImageWithSuppressedCVEs mocks base method.
-func (m *MockDataStore) EnrichImageWithSuppressedCVEs(image *storage.Image) {
+// EnrichNodeWithSuppressedCVEs mocks base method.
+func (m *MockDataStore) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EnrichImageWithSuppressedCVEs", image)
+	m.ctrl.Call(m, "EnrichNodeWithSuppressedCVEs", node)
 }
 
-// EnrichImageWithSuppressedCVEs indicates an expected call of EnrichImageWithSuppressedCVEs.
-func (mr *MockDataStoreMockRecorder) EnrichImageWithSuppressedCVEs(image interface{}) *gomock.Call {
+// EnrichNodeWithSuppressedCVEs indicates an expected call of EnrichNodeWithSuppressedCVEs.
+func (mr *MockDataStoreMockRecorder) EnrichNodeWithSuppressedCVEs(node interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageWithSuppressedCVEs", reflect.TypeOf((*MockDataStore)(nil).EnrichImageWithSuppressedCVEs), image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithSuppressedCVEs", reflect.TypeOf((*MockDataStore)(nil).EnrichNodeWithSuppressedCVEs), node)
 }
 
 // Exists mocks base method.
@@ -81,10 +81,10 @@ func (mr *MockDataStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
+func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.NodeCVE, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.CVE)
+	ret0, _ := ret[0].(*storage.NodeCVE)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -97,10 +97,10 @@ func (mr *MockDataStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 }
 
 // GetBatch mocks base method.
-func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.CVE, error) {
+func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.NodeCVE, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBatch", ctx, id)
-	ret0, _ := ret[0].([]*storage.CVE)
+	ret0, _ := ret[0].([]*storage.NodeCVE)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -142,10 +142,10 @@ func (mr *MockDataStoreMockRecorder) SearchCVEs(ctx, q interface{}) *gomock.Call
 }
 
 // SearchRawCVEs mocks base method.
-func (m *MockDataStore) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
+func (m *MockDataStore) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.NodeCVE, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchRawCVEs", ctx, q)
-	ret0, _ := ret[0].([]*storage.CVE)
+	ret0, _ := ret[0].([]*storage.NodeCVE)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
