@@ -16,7 +16,7 @@ import (
 	pkgRocksDB "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/utils"
 )
 
 // DataStore is an intermediary to RoleBindingStorage.
@@ -52,7 +52,7 @@ func New(k8sRoleBindingStore store.Store, indexer index.Indexer, searcher search
 // NewForTestOnly returns a new instance of DataStore. TO BE USED FOR TESTING PURPOSES ONLY.
 // To make this more explicit, we require passing a testing.T to this version.
 func NewForTestOnly(t *testing.T, db *pkgRocksDB.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
-	testutils.MustBeInTest(t)
+	utils.MustBeInTest(t)
 	k8sRoleBindingStore := rocksdb.New(db)
 	indexer := index.New(bleveIndex)
 

@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
 // MakeImageFlavorForTest is to be used in tests where flavor is passed as a parameter. This makes it easier to test and expect
 // values in the tests without having to inject values and rely on flavor determination in the production code.
 func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
-	testutils.MustBeInTest(t)
+	utils.MustBeInTest(t)
 	return defaults.ImageFlavor{
 		MainRegistry:           "test.registry",
 		MainImageName:          "main",
