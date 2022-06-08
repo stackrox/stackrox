@@ -334,7 +334,6 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Alert) error 
 	}
 	return nil
 }
-
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Alert) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Alert")
 	if err != nil {
@@ -605,13 +604,10 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Alert
 	return elems, missingIndices, nil
 }
 
-// DeleteMany removes the specified IDs from the store
+// Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Alert")
-	return s.DeleteMany(ctx, ids)
-}
 
-func (s *storeImpl) deleteMany(ctx context.Context, ids []string) error {
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)

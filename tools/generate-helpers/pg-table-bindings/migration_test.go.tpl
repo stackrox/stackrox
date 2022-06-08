@@ -1,4 +1,5 @@
-package n{{}}ton{{}}
+
+package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 
 import (
 	"context"
@@ -90,7 +91,7 @@ func (s *postgresMigrationSuite) TestMigration() {
 	}
 
 	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
-	s.NoError(moveAlerts(s.rocksDB.DB, s.gormDB, s.pool))
+	s.NoError(moveAlerts(s.rocksDB, s.gormDB, s.pool))
 	var count int64
 	s.gormDB.Model(pkgSchema.CreateTableAlertsStmt.GormModel).Count(&count)
 	s.Equal(int64(len(objs)), count)

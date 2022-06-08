@@ -50,6 +50,12 @@ var indexFile string
 //go:embed permission_checker.go.tpl
 var permissionCheckerFile string
 
+//go:embed migration.go.tpl
+var migrationFile string
+
+//go:embed migration_test.go.tpl
+var migrationTestFile string
+
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(singletonFile)
@@ -58,6 +64,8 @@ var (
 	storeTestTemplate         = newTemplate(storeTestFile)
 	indexTemplate             = newTemplate(indexFile)
 	permissionCheckerTemplate = newTemplate(permissionCheckerFile)
+	migrationTemplate         = newTemplate(migrationFile)
+	migrationTestTemplate     = newTemplate(migrationTestFile)
 )
 
 type properties struct {
@@ -172,16 +180,20 @@ func main() {
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 	c.Flags().StringVar(&props.MigrationRoot, "migration-root", "", "Root for migrations")
-	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from in the format of \"database:bucket\", eg, \"rocksdb:alerts\" or \"boltdb:version\"")
+	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from in the format of \"<database>:<bucket>\", eg, \"rocksdb:alerts\" or \"boltdb:version\"")
 	c.Flags().IntVar(&props.PostgresMigrationSeq, "postgres-migration-seq", 0, "the unique sequence number to migrate all tables to Postgres")
-	if (props.PostgresMigrationSeq == 0) != (props.MigrateFrom == "") {
-		log.Fatal("To generate codes for data migration, please use both \"--migrate-from\" and \"--postgres-migration-seq\"")
-	}
-	if props.PostgresMigrationSeq != 0 && props.MigrationRoot == "" {
-		log.Fatalf("Please ")
-	}
 
 	c.RunE = func(*cobra.Command, []string) error {
+		if (props.PostgresMigrationSeq == 0) != (props.MigrateFrom == "") {
+			log.Fatal("please use both \"--migrate-from\" and \"--postgres-migration-seq\" to create data migration")
+		}
+		if props.PostgresMigrationSeq != 0 && props.MigrationRoot == "" {
+			log.Fatalf("please specify --migration-root")
+		}
+		if !migrateFromRegex.MatchString(props.MigrateFrom) {
+			log.Fatalf("unknown format for --migrate-from: %s", props.MigrateFrom)
+		}
+
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
 		fmt.Println(readable.Time(time.Now()), "Generating for", typ)
 		mt := proto.MessageType(typ)
@@ -278,14 +290,22 @@ func main() {
 		}
 
 		if props.PostgresMigrationSeq != 0 {
-			var migrationDir = ""
-			if err := renderFile(templateMap, storeTemplate, "copy_plugin.go"); err != nil {
+			froms := strings.SplitN(props.MigrateFrom, ":", 2)
+			templateMap["Migration"] = MigrationOptions{
+				MigrateFromDB:     froms[0],
+				MigrateFromBucket: froms[1],
+				MigrateSequence:   props.PostgresMigrationSeq,
+			}
+			migrationDir := fmt.Sprintf("n_%d_to_n_%d_postgres_%s", props.PostgresMigrationSeq, props.PostgresMigrationSeq+1, props.Table)
+			root := filepath.Join(props.MigrationRoot, migrationDir)
+
+			if err := renderFile(templateMap, storeTemplate, filepath.Join(root, "postgres_plugin.go")); err != nil {
 				return err
 			}
-			if err := renderFile(templateMap, migrationTemplate, "migration.go"); err != nil {
+			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {
 				return err
 			}
-			if err := renderFile(templateMap, migrationTestTemplate, "migration_test.go"); err != nil {
+			if err := renderFile(templateMap, migrationTestTemplate, filepath.Join(root, "migration_test.go")); err != nil {
 				return err
 			}
 		}

@@ -16,9 +16,9 @@
 {{- else if .Schema.ID.ColumnName}}
 {{ $singlePK = .Schema.ID }}
 {{- end }}
+{{ $migrationOnly := ne (index . "Migration") nil }}
 
-package postgres
-
+package {{ if $migrationOnly }}n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}{{else}}postgres{{end}}
 import (
     "context"
     "strings"
@@ -44,6 +44,7 @@ import (
     "gorm.io/gorm"
 )
 
+{{- if not $migrationOnly }}
 const (
         baseTable = "{{.Table}}"
 
@@ -102,20 +103,16 @@ type storeImpl struct {
     mutex sync.Mutex
 }
 
-{{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
-
-{{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
-
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
     return &storeImpl{
         db: db,
     }
 }
-
-{{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
 {{- end}}
 
+{{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
+{{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}{{- end}}
 {{- define "insertObject"}}
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
@@ -166,7 +163,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
 {{range $idx, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
 {{- end}}
 
-{{- if not .JoinTable }}
+{{- if and (not .JoinTable) (not $migrationOnly) }}
 {{ template "insertObject" dict "schema" .Schema "joinTable" .JoinTable }}
 {{- end}}
 
@@ -294,7 +291,9 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
     }
     return nil
 }
-
+{{- end}}
+{{- if not $migrationOnly }}
+{{- if not .JoinTable }}
 func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
     conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {
@@ -872,8 +871,8 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 	}
 	return nil
 }
+{{- end}}
 
-//// Used for testing
 {{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}
 {{- define "dropTable"}}
 {{- $schema := . }}
@@ -885,6 +884,8 @@ func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgx
 {{range $child := $schema.Children}}{{ template "dropTable" $child }}{{end}}
 {{- end}}
 
+{{- if not $migrationOnly }}
+//// Used for testing
 {{template "dropTable" .Schema}}
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
@@ -908,3 +909,4 @@ func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
+{{- end}}
