@@ -66,11 +66,11 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 		imageFlavorCases["opensource-development"] = defaults.OpenSourceImageFlavor()
 	}
 
-	for name, f := range imageFlavorCases {
+	for name, imageFlavor := range imageFlavorCases {
 		t.Run(name, func(t *testing.T) {
-			f := f
+			imageFlavor := imageFlavor
 			helmChartTestUtils.RunHelmTestSuite(t, testDir, image.CentralServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
-				Flavor:       &f,
+				Flavor:       &imageFlavor,
 				HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, name))},
 			})
 		})
