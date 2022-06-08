@@ -3,8 +3,6 @@ package resolvers
 import (
 	"context"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -26,35 +24,15 @@ type PlottedVulnerabilitiesResolver struct {
 }
 
 func newPlottedVulnerabilitiesResolver(ctx context.Context, root *Resolver, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
-	q, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-
-	q = tryUnsuppressedQuery(q)
-	q.Pagination = &v1.QueryPagination{
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.CVSS.String(),
-				Reversed: true,
-			},
-		},
-	}
-	all, err := root.CVEDataStore.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	fixable, err := root.CVEDataStore.Count(ctx,
-		search.ConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
+	allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, root, args)
 	if err != nil {
 		return nil, err
 	}
 
 	return &PlottedVulnerabilitiesResolver{
 		root:    root,
-		all:     search.ResultsToIDs(all),
-		fixable: fixable,
+		all:     allCveIds,
+		fixable: fixableCount,
 	}, nil
 }
 
@@ -70,30 +48,14 @@ func (pvr *PlottedVulnerabilitiesResolver) BasicVulnCounter(ctx context.Context)
 
 // Vulns returns the vulns for scatter-plot
 func (pvr *PlottedVulnerabilitiesResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	q, err := args.AsV1QueryOrEmpty()
+	vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, args)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(pvr.all) == 0 {
-		return nil, nil
+	ret := make([]VulnerabilityResolver, 0, len(vulnResolvers))
+	for _, resolver := range vulnResolvers {
+		ret = append(ret, resolver)
 	}
-
-	cvesInterface, err := paginationWrapper{
-		pv: q.GetPagination(),
-	}.paginate(pvr.all, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	vulns, err := pvr.root.CVEDataStore.GetBatch(ctx, cvesInterface.([]string))
-	if err != nil {
-		return nil, err
-	}
-
-	vulnerabilityResolvers := make([]VulnerabilityResolver, 0, len(vulns))
-	for _, vuln := range vulns {
-		vulnerabilityResolvers = append(vulnerabilityResolvers, &cVEResolver{root: pvr.root, data: vuln})
-	}
-	return vulnerabilityResolvers, nil
+	return ret, nil
 }
