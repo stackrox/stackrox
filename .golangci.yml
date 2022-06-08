@@ -20,9 +20,6 @@ issues:
     - path: roxctl/common/io/io\.go # io.go will by default use os.Stdin/os.StdErr.
       linters:
         - forbidigo
-    - path: "roxctl/common/flags/" # flags package is currently not using environment.Logger due to a cyclic import.
-      linters:
-        - forbidigo
     - linters:
         - revive
       text: "should have a package comment, unless it's in another file for this package"

@@ -38,7 +38,7 @@ func makeCentralRestoreCancelCommand(cliEnvironment environment.Environment, cbr
 		env:     cliEnvironment,
 		timeout: flags.Timeout(cbr),
 		confirm: func() error {
-			return flags.CheckConfirmation(cbr)
+			return flags.CheckConfirmation(cbr, cliEnvironment.Logger(), cliEnvironment.InputOutput())
 		},
 	}
 }
