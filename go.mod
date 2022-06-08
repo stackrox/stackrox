@@ -100,6 +100,7 @@ require (
 	github.com/tkuchiki/go-timezone v0.2.2
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.6
+	go.opentelemetry.io/otel/internal/metric v0.27.0 // indirect
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
@@ -120,12 +121,12 @@ require (
 	gorm.io/driver/postgres v1.3.5
 	gorm.io/gorm v1.23.5
 	gotest.tools v2.2.0+incompatible
-	helm.sh/helm/v3 v3.7.2
-	k8s.io/api v0.23.5
-	k8s.io/apimachinery v0.23.5
-	k8s.io/apiserver v0.23.4
-	k8s.io/client-go v0.23.5
-	k8s.io/kubectl v0.23.1
+	helm.sh/helm/v3 v3.9.0
+	k8s.io/api v0.24.0
+	k8s.io/apimachinery v0.24.0
+	k8s.io/apiserver v0.24.0
+	k8s.io/client-go v0.24.0
+	k8s.io/kubectl v0.24.0
 	k8s.io/kubelet v0.22.9
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/controller-runtime v0.11.0
