@@ -68,7 +68,7 @@ const SystemConfigPage = (): ReactElement => {
         );
     } else if (errorMessage) {
         content = (
-            <Alert variant="warning" isInline title="failed to get system configuration">
+            <Alert variant="warning" isInline title="Failed to get system configuration">
                 {errorMessage}
             </Alert>
         );
