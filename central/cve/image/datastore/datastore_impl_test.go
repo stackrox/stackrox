@@ -102,10 +102,12 @@ func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.CVE{
 		{
 			Id:         "CVE-ABC",
+			Cve:        "CVE-ABC",
 			Suppressed: true,
 		},
 		{
 			Id:         "CVE-DEF",
+			Cve:        "CVE-DEF",
 			Suppressed: true,
 		},
 	}, nil)
@@ -127,9 +129,9 @@ func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 	expiry, err := getSuppressExpiry(start, duration)
 	suite.NoError(err)
 
-	suite.storage.EXPECT().GetMany(testAllAccessContext, []string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
+	suite.searcher.EXPECT().SearchRawCVEs(testAllAccessContext, gomock.Any()).Return([]*storage.CVE{{Cve: "CVE-GHI"}}, nil)
 	storedCVE := &storage.CVE{
-		Id:                 "CVE-GHI",
+		Cve:                "CVE-GHI",
 		Suppressed:         true,
 		SuppressActivation: start,
 		SuppressExpiry:     expiry,
@@ -145,8 +147,8 @@ func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 
 	// Clear image before unsupressing
 	img = getImageWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
-	suite.storage.EXPECT().GetMany(testAllAccessContext, []string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
-	suite.storage.EXPECT().UpsertMany(testAllAccessContext, []*storage.CVE{{Id: "CVE-GHI"}}).Return(nil)
+	suite.searcher.EXPECT().SearchRawCVEs(testAllAccessContext, gomock.Any()).Return([]*storage.CVE{storedCVE}, nil)
+	suite.storage.EXPECT().UpsertMany(testAllAccessContext, []*storage.CVE{{Cve: "CVE-GHI"}}).Return(nil)
 	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
 	suite.NoError(err)
 	suite.datastore.EnrichImageWithSuppressedCVEs(img)
