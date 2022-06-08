@@ -78,7 +78,6 @@ type SummaryAlertCountsFilters = {
 /*
  * Fetch severity counts.
  */
-// TODO Make cancellable
 export function fetchSummaryAlertCounts(
     filters: SummaryAlertCountsFilters
 ): CancellableRequest<AlertGroup[]> {

@@ -4,8 +4,8 @@ import { ChartLabel, ChartLabelProps } from '@patternfly/react-charts';
 
 export type LinkableChartLabelProps = ChartLabelProps & {
     /**
-     * Function that uses the `props` object passed to `ChartLabel` and
-     * uses it to generate the link to navigate to when clicked.
+     * Function that takes the `props` object passed to `ChartLabel` and
+     * uses it to generate a link to navigate to when clicked.
      */
     linkWith: (props: ChartLabelProps) => string;
 };
