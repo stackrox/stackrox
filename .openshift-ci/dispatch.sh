@@ -58,6 +58,9 @@ case "$ci_job" in
     gke-qa-e2e-tests)
         "$ROOT/.openshift-ci/gke_qa_e2e_test.py"
         ;;
+    gke-nongroovy-e2e-tests)
+        "$ROOT/.openshift-ci/gke_nongroovy_e2e_test.py"
+        ;;
     gke-upgrade-tests)
         "$ROOT/.openshift-ci/gke_upgrade_test.py"
         ;;
