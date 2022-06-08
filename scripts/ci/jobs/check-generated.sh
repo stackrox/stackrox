@@ -3,14 +3,12 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
 
-set -xveou pipefail
+set -euo pipefail
 
-#      - restore-go-mod-cache
-# go cache?
 go mod tidy
-#      - setup-go-build-env
 
 
+# shellcheck disable=SC2016
 echo 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
 function generated_files-are-up-to-date() {
     git ls-files --others --exclude-standard >/tmp/untracked
