@@ -11,12 +11,14 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -35,8 +37,9 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.NodeCvesSchema
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.NodeCvesSchema
+	targetResource = resources.NodeCVE
 )
 
 type Store interface {
@@ -244,11 +247,25 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NodeCVE) error 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NodeCVE) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NodeCVE")
 
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NodeCVE) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NodeCVE")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
 
 	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
