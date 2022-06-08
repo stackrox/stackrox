@@ -39,6 +39,14 @@
         "run_on_master": "true",
         "run_on_tags": "true"
     },
+    "gke-nongroovy-e2e-tests": {
+        "run_with_labels": [],
+        "skip_with_label": "ci-no-nongroovy-tests",
+        "run_with_changed_path": "^.*$",
+        "changed_path_to_ignore": "^ui/",
+        "run_on_master": "true",
+        "run_on_tags": "true"
+    },
     "gke-upgrade-tests": {
         "run_with_labels": ["ci-upgrade-tests"],
         "skip_with_label": "ci-no-upgrade-tests",
