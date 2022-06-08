@@ -13,9 +13,9 @@ package storage;
 message NetworkPolicy {
     string                    id            = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string                    name          = 2;
-    string                    cluster_id    = 3;
+    string                    cluster_id    = 3 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
     string                    cluster_name  = 4;
-    string                    namespace     = 5;
+    string                    namespace     = 5 [(gogoproto.moretags) = "search:\"Namespace,hidden,store\""];
     map<string, string>       labels        = 6;
     map<string, string>       annotations   = 7;
 

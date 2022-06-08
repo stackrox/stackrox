@@ -80,7 +80,10 @@
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
                 "NETWORK_ENTITY",
-                "VULN_REQUEST"
+                "VULN_REQUEST",
+                "NETWORK_BASELINE",
+                "NETWORK_POLICIES",
+                "PROCESS_BASELINE_RESULTS"
               ]
             },
             "collectionFormat": "multi"
@@ -160,7 +163,10 @@
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
                 "NETWORK_ENTITY",
-                "VULN_REQUEST"
+                "VULN_REQUEST",
+                "NETWORK_BASELINE",
+                "NETWORK_POLICIES",
+                "PROCESS_BASELINE_RESULTS"
               ]
             },
             "collectionFormat": "multi"
@@ -234,7 +240,10 @@
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
                 "NETWORK_ENTITY",
-                "VULN_REQUEST"
+                "VULN_REQUEST",
+                "NETWORK_BASELINE",
+                "NETWORK_POLICIES",
+                "PROCESS_BASELINE_RESULTS"
               ]
             },
             "collectionFormat": "multi"
@@ -357,10 +366,13 @@
         "COMPONENT_VULN_EDGE",
         "CLUSTER_VULN_EDGE",
         "NETWORK_ENTITY",
-        "VULN_REQUEST"
+        "VULN_REQUEST",
+        "NETWORK_BASELINE",
+        "NETWORK_POLICIES",
+        "PROCESS_BASELINE_RESULTS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 39"
+      "title": "Next available tag: 42"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

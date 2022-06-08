@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
 import "storage/cluster.proto";
@@ -76,7 +77,7 @@ message ComplianceDomain {
 message ComplianceRunMetadata {
     string run_id = 1;
     string standard_id = 2;
-    string cluster_id = 3;
+    string cluster_id = 3 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
 
     google.protobuf.Timestamp start_timestamp  = 4;
     google.protobuf.Timestamp finish_timestamp = 5;
