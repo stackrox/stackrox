@@ -71,7 +71,7 @@ const SystemConfigForm = ({
     setIsNotEditing,
 }: SystemConfigFormProps): ReactElement => {
     const dispatch = useDispatch();
-    const [errorMessage, setErrorMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
@@ -91,6 +91,7 @@ const SystemConfigForm = ({
                             response: data.publicConfig,
                         });
                         setSystemConfig(data);
+                        setErrorMessage(null);
                         setIsNotEditing();
                     })
                     .catch((error) => {
@@ -478,7 +479,7 @@ const SystemConfigForm = ({
                     </Card>
                 </GridItem>
             </Grid>
-            {errorMessage && (
+            {typeof errorMessage === 'string' && (
                 <Alert variant="danger" isInline title="Failed to save system configuration">
                     {errorMessage}
                 </Alert>
