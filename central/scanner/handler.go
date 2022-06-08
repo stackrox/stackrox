@@ -94,6 +94,7 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 			"scanner-db-key.pem":  scannerDBCert.KeyPEM,
 			"scanner-db-password": dbPassword,
 		},
+		EnablePodSecurityPolicies: !params.DisablePodSecurityPolicies,
 	}
 
 	return renderer.RenderScannerOnly(config, flavor)

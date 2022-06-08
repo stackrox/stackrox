@@ -1957,6 +1957,10 @@ commands:
               fi
             fi
 
+            if [[ -n "${POD_SECURITY_POLICIES:-}" ]]; then
+              cci-export POD_SECURITY_POLICIES "$POD_SECURITY_POLICIES"
+            fi
+
             deploy_dir="deploy/<< parameters.orchestrator-flavor >>"
             "${deploy_dir}/central.sh"
 
