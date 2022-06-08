@@ -30,6 +30,8 @@ const (
 	DefaultAttemptedRuntimeAlertRetention = 7
 	// DefaultExpiredVulnReqRetention is the number of days to retain expired vulnerability requests.
 	DefaultExpiredVulnReqRetention = 90
+	// DefaultDecommissionedClusterRetention is the number of days to retain a cluster that is unreachable.
+	DefaultDecommissionedClusterRetention = 90
 )
 
 var (
@@ -48,7 +50,8 @@ var (
 				AttemptedRuntimeRetentionDurationDays: DefaultAttemptedRuntimeAlertRetention,
 			},
 		},
-		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
+		ExpiredVulnReqRetentionDurationDays:        DefaultExpiredVulnReqRetention,
+		DecommissionedClusterRetentionDurationDays: DefaultDecommissionedClusterRetention,
 	}
 )
 
