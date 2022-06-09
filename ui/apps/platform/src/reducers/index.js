@@ -16,7 +16,6 @@ import policies, { selectors as policySelectors } from './policies/reducer';
 import roles, { selectors as roleSelectors } from './roles';
 import searchAutoComplete, { selectors as searchAutoCompleteSelectors } from './searchAutocomplete';
 import serverError, { selectors as serverErrorSelectors } from './serverError';
-import secrets, { selectors as secretSelectors } from './secrets';
 import metadata, { selectors as metadataSelectors } from './metadata';
 import loading, { selectors as loadingSelectors } from './loading';
 import { selectors as routeSelectors } from './routes';
@@ -43,7 +42,6 @@ const appReducer = combineReducers({
     roles,
     searchAutoComplete,
     serverError,
-    secrets,
     loading,
     metadata,
     network,
@@ -81,7 +79,6 @@ const getPolicies = (state) => getApp(state).policies;
 const getRoles = (state) => getApp(state).roles;
 const getSearchAutocomplete = (state) => getApp(state).searchAutoComplete;
 const getServerError = (state) => getApp(state).serverError;
-const getSecrets = (state) => getApp(state).secrets;
 const getLoadingStatus = (state) => getApp(state).loading;
 const getMetadata = (state) => getApp(state).metadata;
 const getNetwork = (state) => getApp(state).network;
@@ -106,7 +103,6 @@ const boundSelectors = {
     ...bindSelectors(getRoute, routeSelectors),
     ...bindSelectors(getSearchAutocomplete, searchAutoCompleteSelectors),
     ...bindSelectors(getServerError, serverErrorSelectors),
-    ...bindSelectors(getSecrets, secretSelectors),
     ...bindSelectors(getLoadingStatus, loadingSelectors),
     ...bindSelectors(getMetadata, metadataSelectors),
     ...bindSelectors(getNetwork, networkSelectors),
