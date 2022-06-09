@@ -11,18 +11,15 @@ import com.jayway.restassured.response.Response
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 
 import groups.Integration
-import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
-import util.NetworkGraphUtil
 import util.SplunkUtil
 import util.Timer
 
 import org.junit.Rule
 import org.junit.experimental.categories.Category
 import org.junit.rules.Timeout
-import spock.lang.Ignore
 
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Rule
@@ -221,7 +218,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static String extractNestedString(JsonPath jsonPath, String path) {
         try {
             return jsonPath.getString(path)
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException ignored) {
             return null
         }
     }
