@@ -82,6 +82,10 @@ type Store interface {
 {{- if not .JoinTable }}
     DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error
 {{- end }}
+{{- if eq .TrimmedType "Policy" }}
+    RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
+    DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
+{{- end }}
 {{- end }}
 
     Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error
@@ -847,6 +851,16 @@ func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.
 }
 
 //// Stubs for satisfying legacy interfaces
+
+{{- if eq .TrimmedType "Policy" }}
+func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
+    return errors.New("unimplemented")
+}
+
+func (s *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
+    return errors.New("unimplemented")
+}
+{{- end }}
 
 // AckKeysIndexed acknowledges the passed keys were indexed
 func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
