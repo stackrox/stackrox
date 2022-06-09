@@ -119,6 +119,17 @@ ensure_cluster_exists() {
   infractl get "${cluster_name}" || die "cluster '${cluster_name}' not found"
 }
 
+wait_for_pods_to_be_ready() {
+  while true; do
+    sleep 5
+    ready_containers="$(kubectl -n stackrox get pod -o jsonpath='{.items[*].status.containerStatuses[?(@.ready == true)]}')"
+    not_ready_containers="$(kubectl -n stackrox get pod -o jsonpath='{.items[*].status.containerStatuses[?(@.ready == false)]}')"
+    if [[ -n "$ready_containers" && -z "$not_ready_containers" ]]; then
+      break
+    fi
+  done
+}
+
 fetch_artifacts() {
   local cluster_name="$1"
 
@@ -130,7 +141,7 @@ fetch_artifacts() {
 }
 
 get_cluster_postfix() {
-  echo "${RELEASE//./-}-rc${RC_NUMBER}-test" # Change before merging
+  echo "${RELEASE//./-}-${PATCH_NUMBER}-rc${RC_NUMBER}" # Change before merging
 }
 
 get_cluster_prefix() {
@@ -235,6 +246,8 @@ create_long_running_cluster() {
   
   # Set your local kubectl context to the remote cluster once the above completes successfully.
   infractl get $CLUSTER_NAME --json | jq '.Connect' -r | bash
+
+  kubectl -n stackrox get pod
   
   
   export MAIN_IMAGE_TAG=$(git describe --tags --abbrev=0) # Release version, e.g. 3.63.0-rc.2.
@@ -248,6 +261,7 @@ create_long_running_cluster() {
   
   toplevel_dir="$(git rev-parse --show-toplevel)"
   "$toplevel_dir/deploy/k8s/central.sh" # Launches central
+  wait_for_pods_to_be_ready
   
   # Open port-forward to central, e.g. with
   kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
@@ -256,17 +270,19 @@ create_long_running_cluster() {
   export ROX_ADMIN_USERNAME=admin
   
   export ROX_ADMIN_PASSWORD="$(cat deploy/k8s/central-deploy/password)"
+  export ROX_PASSWORD="$ROX_ADMIN_PASSWORD"
 
   "$toplevel_dir/deploy/k8s/sensor.sh"
+  wait_for_pods_to_be_ready
 
   kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
   kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD=long-running
-  kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
+  wait_for_pods_to_be_ready
   
   kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
-  kubectl -n stackrox patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
+  wait_for_pods_to_be_ready
 
-  "$toplevel_dir/scale/launch_workload.sh np-load"
+  "$($toplevel_dir/scale/launch_workload.sh np-load)"
 }
 
 cleanup_artifacts() {
