@@ -74,7 +74,7 @@ var (
 	indexTemplate             = newTemplate(indexFile)
 	permissionCheckerTemplate = newTemplate(permissionCheckerFile)
 	migrationTemplate         = newTemplate(migrationFile)
-	migrationTestTemplate     = newTemplate(migrationTestFile)
+	migrationTestTemplate     = newTemplate(strings.Join([]string{storeCommonFile, migrationTestFile}, "\n"))
 	postgresPluginTemplate    = newTemplate(strings.Join([]string{storeCommonFile, postgresPluginFile}, "\n"))
 	rocksdbPluginTemplate     = newTemplate(strings.Join([]string{storeCommonFile, rocksdbPluginFile}, "\n"))
 )

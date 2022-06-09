@@ -1,5 +1,7 @@
 {{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
+{{- $name := .TrimmedType|lowerCamelCase }}
 package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
+{{define "getterParamList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $idx, $pk := .Schema.PrimaryKeys}}{{if $idx}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
 
 import (
 	"context"
@@ -80,31 +82,53 @@ func (s *postgresMigrationSuite) TestMigration() {
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
-	var objs []*{{.Type}}
+	var {{$name}}s []*{{.Type}}
 	for i := 0; i < 200; i++ {
-		obj := &{{.Type}}{}
-		s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		bytes, err := proto.Marshal(obj)
+		{{$name}} := &{{.Type}}{}
+		s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		bytes, err := proto.Marshal({{$name}})
 		s.NoError(err, "failed to marshal data")
-		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, []byte(obj.Id)), bytes)
-		objs = append(objs, obj)
+		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, []byte({{$name}}.Id)), bytes)
+		{{$name}}s = append({{$name}}s, {{$name}})
 	}
 
 	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
 	s.NoError(move{{.Table|upperCamelCase}}(s.rocksDB, s.gormDB, s.pool))
 	var count int64
 	s.gormDB.Model({{template  "createTableStmtVar" .Schema}}.GormModel).Count(&count)
-	s.Equal(int64(len(objs)), count)
-	for _, obj := range objs {
-		s.Equal(obj, s.get(obj.Id))
+	s.Equal(int64(len({{$name}}s)), count)
+	for _, {{$name}} := range {{$name}}s {
+		s.Equal({{$name}}, s.get({{ template "getterParamList" $ }}))
 	}
 }
 
-func (s *postgresMigrationSuite) get(id string) *{{.Type}} {
-	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
+func (s *postgresMigrationSuite) get({{template "paramList" $pks}}) *{{.Type}} {
+{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
+{{- if eq (len $pks) 1 }}
+    q := search.ConjunctionQuery(
+    {{- range $idx, $pk := $pks}}
+        {{- if eq $pk.Name $singlePK.Name }}
+            search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        {{- else }}
+            search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        {{- end}}
+    {{- end}}
+    )
+
 	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
 	s.NoError(err)
+{{- else }}
+	conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+	s.NoError(err)
+	defer release()
+
+	row := conn.QueryRow(ctx, getStmt, {{template "argList" $pks}})
+	var data []byte
+	err = row.Scan(&data)
+	s.NoError(pgutils.ErrNilIfNoRows(err))
+{{- end }}
 	var msg {{.Type}}
 	s.NoError(proto.Unmarshal(data, &msg))
 	return &msg
 }
+

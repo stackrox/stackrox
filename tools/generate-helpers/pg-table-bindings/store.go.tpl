@@ -1,21 +1,8 @@
 {{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
-{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
 {{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
-
-{{- $ := . }}
-{{- $pks := .Schema.PrimaryKeys }}
-
-{{- $singlePK := false }}
-{{- if eq (len $pks) 1 }}
-{{ $singlePK = index $pks 0 }}
-{{/*If there are multiple pks, then use the explicitly specified id column.*/}}
-{{- else if .Schema.ID.ColumnName}}
-{{ $singlePK = .Schema.ID }}
-{{- end }}
 
 package postgres
 
