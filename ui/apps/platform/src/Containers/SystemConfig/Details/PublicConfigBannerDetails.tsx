@@ -20,15 +20,15 @@ import {
 
 type BannerType = 'header' | 'footer';
 
-export type ConfigBannerDetailWidgetProps = {
+export type PublicConfigBannerDetailsProps = {
     type: BannerType;
     publicConfig: PublicConfig | null;
 };
 
-const ConfigBannerDetailWidget = ({
+const PublicConfigBannerDetails = ({
     type,
     publicConfig,
-}: ConfigBannerDetailWidgetProps): ReactElement => {
+}: PublicConfigBannerDetailsProps): ReactElement => {
     const {
         backgroundColor = null,
         color = null,
@@ -84,4 +84,4 @@ const ConfigBannerDetailWidget = ({
     );
 };
 
-export default ConfigBannerDetailWidget;
+export default PublicConfigBannerDetails;
