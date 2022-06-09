@@ -43,7 +43,7 @@ func (ds *datastoreImpl) Count(ctx context.Context) (int, error) {
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.NodeComponentEdge, bool, error) {
-	if features.PostgresDatastore.Enabled() {
+	if !features.PostgresDatastore.Enabled() {
 		filteredIDs, err := ds.filterReadable(ctx, []string{id})
 		if err != nil || len(filteredIDs) != 1 {
 			return nil, false, err

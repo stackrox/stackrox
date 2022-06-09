@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/nodecomponentedge/store"
 	"github.com/stackrox/rox/central/nodecomponentedge/store/dackbox"
 	"github.com/stackrox/rox/central/nodecomponentedge/store/postgres"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -20,18 +21,23 @@ var (
 )
 
 func initialize() {
+	var graphProvider graph.Provider
 	var storage store.Store
+	var indexer index.Indexer
 	var searcher search.Searcher
 
 	if features.PostgresDatastore.Enabled() {
 		storage = postgres.New(globaldb.GetPostgres())
-		searcher = search.New(storage, index.New(globalindex.GetGlobalIndex()))
+		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+		searcher = search.New(storage, indexer)
 	} else {
+		graphProvider = globalDackbox.GetGlobalDackBox()
 		storage = dackbox.New(globalDackbox.GetGlobalDackBox())
-		searcher = search.New(storage, index.New(globalindex.GetGlobalIndex()))
+		indexer = index.New(globalindex.GetGlobalIndex())
+		searcher = search.New(storage, indexer)
 	}
 
-	ad = New(globalDackbox.GetGlobalDackBox(), storage, index.New(globalindex.GetGlobalIndex()), searcher)
+	ad = New(graphProvider, storage, indexer, searcher)
 }
 
 // Singleton provides the interface for non-service external interaction.
