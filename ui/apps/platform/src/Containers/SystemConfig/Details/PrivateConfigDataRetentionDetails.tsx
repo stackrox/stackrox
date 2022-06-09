@@ -33,13 +33,13 @@ const NumberBox = ({ label, value = UNKNOWN_FLAG, suffix = '' }: NumberBoxProps)
     </Hint>
 );
 
-export type SystemConfigDataRetentionDetailProps = {
+export type PrivateConfigDataRetentionDetailsProps = {
     privateConfig: PrivateConfig;
 };
 
-const SystemConfigDataRetentionDetail = ({
+const PrivateConfigDataRetentionDetails = ({
     privateConfig,
-}: SystemConfigDataRetentionDetailProps): ReactElement => {
+}: PrivateConfigDataRetentionDetailsProps): ReactElement => {
     return (
         <Card data-testid="data-retention-config">
             <CardTitle>Data retention configuration</CardTitle>
@@ -103,4 +103,4 @@ const SystemConfigDataRetentionDetail = ({
     );
 };
 
-export default SystemConfigDataRetentionDetail;
+export default PrivateConfigDataRetentionDetails;

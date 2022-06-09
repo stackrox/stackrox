@@ -16,11 +16,13 @@ import {
     Label,
 } from '@patternfly/react-core';
 
-export type SystemConfigLoginDetailProps = {
+export type PublicConfigLoginDetailsProps = {
     publicConfig: PublicConfig | null;
 };
 
-const SystemConfigLoginDetail = ({ publicConfig }: SystemConfigLoginDetailProps): ReactElement => {
+const PublicConfigLoginDetails = ({
+    publicConfig,
+}: PublicConfigLoginDetailsProps): ReactElement => {
     const isEnabled = publicConfig?.loginNotice?.enabled || false;
     const loginNoticeText = publicConfig?.loginNotice?.text || 'None';
 
@@ -47,4 +49,4 @@ const SystemConfigLoginDetail = ({ publicConfig }: SystemConfigLoginDetailProps)
     );
 };
 
-export default SystemConfigLoginDetail;
+export default PublicConfigLoginDetails;

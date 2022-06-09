@@ -14,7 +14,7 @@ import { fetchSystemConfig } from 'services/SystemConfigService';
 import { SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import SystemConfigDetail from './Detail/SystemConfigDetail';
+import SystemConfigDetails from './Details/SystemConfigDetails';
 import SystemConfigForm from './Form/SystemConfigForm';
 
 const SystemConfigPage = (): ReactElement => {
@@ -64,7 +64,7 @@ const SystemConfigPage = (): ReactElement => {
                 setIsNotEditing={setIsNotEditing}
             />
         ) : (
-            <SystemConfigDetail systemConfig={systemConfig} />
+            <SystemConfigDetails systemConfig={systemConfig} />
         );
     } else {
         content = (
