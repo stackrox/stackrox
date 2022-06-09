@@ -304,7 +304,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         NetworkBaselineService.getNetworkBaseline(uid)
         NetworkBaselineService.lockNetworkBaseline(uid)
         orchestrator.execInContainer(splunkDeployment.deployment,
-                "for i in `seq 100`; do curl http://${centralHost}:443 --max-time 1; sleep 1; done")
+                "for i in `seq 100`; do  wget -S http://${centralHost}:443; sleep 1; done")
 
         // TODO: this code is flaky; see https://stack-rox.atlassian.net/browse/ROX-7772
         assert waitForAlertWithPolicyId("1b74ffdd-8e67-444c-9814-1c23863c8ccb")
