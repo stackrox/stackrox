@@ -37,6 +37,7 @@ import (
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
@@ -82,6 +83,7 @@ type Resolver struct {
 	PodDataStore                podDatastore.DataStore
 	ImageDataStore              imageDatastore.DataStore
 	ImageComponentDataStore     imageComponentDataStore.DataStore
+	NodeComponentDataStore      nodeComponentDataStore.DataStore
 	ImageComponentEdgeDataStore imageComponentEdgeDataStore.DataStore
 	ImageCVEEdgeDataStore       imageCVEEdgeDataStore.DataStore
 	GroupDataStore              groupDataStore.DataStore
@@ -115,9 +117,11 @@ type Resolver struct {
 func New() *Resolver {
 	var imageCVEDS imageCVEDataStore.DataStore
 	var nodeCVEDS nodeCVEDataStore.DataStore
+	var nodeComponentDS nodeComponentDataStore.DataStore
 	if features.PostgresDatastore.Enabled() {
 		imageCVEDS = imageCVEDataStore.Singleton()
 		nodeCVEDS = nodeCVEDataStore.Singleton()
+		nodeComponentDS = nodeComponentDataStore.Singleton()
 	} else {
 		imageCVEDS = legacyImageCVEDataStore.Singleton()
 	}
@@ -140,6 +144,7 @@ func New() *Resolver {
 		PodDataStore:                podDatastore.Singleton(),
 		ImageDataStore:              imageDatastore.Singleton(),
 		ImageComponentDataStore:     imageComponentDataStore.Singleton(),
+		NodeComponentDataStore:      nodeComponentDS,
 		ImageComponentEdgeDataStore: imageComponentEdgeDataStore.Singleton(),
 		ImageCVEEdgeDataStore:       imageCVEEdgeDataStore.Singleton(),
 		GroupDataStore:              groupDataStore.Singleton(),
