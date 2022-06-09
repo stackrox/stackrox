@@ -2,16 +2,13 @@ package dbs
 
 import (
 	"context"
+	"io"
 	"os/exec"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	"github.com/stackrox/rox/pkg/logging"
-)
-
-const (
-	dumpTmpPath = "pg_backup"
 )
 
 var (
@@ -26,43 +23,24 @@ func NewPostgresBackup(db *pgxpool.Pool) *PostgresBackup {
 	}
 }
 
-// PostgresBackup is an implementation of a postgres connection pool
+// PostgresBackup is an implementation of a StreamGenerator which writes a backup of PostgresDB to the input io.Writer.
 type PostgresBackup struct {
 	db *pgxpool.Pool
 }
 
-// getPostgresSize Method to calculate size
-func (bu *PostgresBackup) getPostgresSize(ctx context.Context) (int64, error) {
-	row := bu.db.QueryRow(ctx, "SELECT pg_database_size('postgres')")
-	var count int64
-	if err := row.Scan(&count); err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-// WriteDirectory writes a backup of Postgres to the input path.
-func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
+// WriteTo writes a backup of Postgres to the writer
+func (bu *PostgresBackup) WriteTo(ctx context.Context, out io.Writer) error {
 	sourceMap, config, err := globaldb.GetPostgresConfig()
 	if err != nil {
 		log.Fatalf("Could not parse postgres config: %v", err)
-		return "", err
-	}
-
-	backupPath, err := bu.findScratchPath(ctx)
-	if err != nil {
-		return "", err
+		return err
 	}
 
 	// Set the options for pg_dump from the connection config
 	options := []string{
 		"-d",
 		config.ConnConfig.Database,
-		"-Fd", // Custom format.  Compressed files written to a directory.
-		"-f",
-		backupPath,
-		"-j", // Allows for work to be spread across jobs
-		"5",  // The number of jobs
+		"-Fc", // Custom format, compressed hopefully supports stdin to restore
 	}
 
 	// Get the common DB connection info
@@ -70,21 +48,24 @@ func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
 
 	cmd := exec.Command("pg_dump", options...)
 
+	// Get a pipe to the commands standard out
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+
+	// Copy the data from stdout to the outgoing writer.
+	go func() {
+		defer stdout.Close()
+		_, err = io.Copy(out, stdout)
+	}()
+
 	common.SetPostgresCmdEnv(cmd, sourceMap, config)
 
 	err = common.ExecutePostgresCmd(cmd)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return backupPath, nil
-}
-
-func (bu *PostgresBackup) findScratchPath(ctx context.Context) (string, error) {
-	dbSize, err := bu.getPostgresSize(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return common.FindTmpPath(dbSize, dumpTmpPath)
+	return nil
 }
