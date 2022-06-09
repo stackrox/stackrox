@@ -333,8 +333,14 @@ func TestPopulateImageMetadata(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			registryStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
+			if c.isClusterLocal {
+				require.NoError(t, registryStore.UpsertRegistry(context.Background(), "testdev", "image-registry.openshift-image-registry.svc:5000", config.DockerConfigEntry{}))
+			}
+
 			wrap := deploymentWrap{
-				Deployment: &storage.Deployment{},
+				Deployment:    &storage.Deployment{},
+				registryStore: registryStore,
 			}
 			for _, container := range c.wrap {
 				img, err := imageUtils.GenerateImageFromString(container.image)
@@ -358,12 +364,7 @@ func TestPopulateImageMetadata(t *testing.T) {
 				pods = append(pods, k8sPod)
 			}
 
-			registryStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-			if c.isClusterLocal {
-				require.NoError(t, registryStore.UpsertRegistry(context.Background(), "testdev", "image-registry.openshift-image-registry.svc:5000", config.DockerConfigEntry{}))
-			}
-
-			wrap.populateImageMetadata(registryStore, pods...)
+			wrap.populateImageMetadata(pods...)
 			for i, m := range c.expectedMetadata {
 				assert.Equal(t, m.expectedID, wrap.Deployment.Containers[i].Image.Id)
 				assert.Equal(t, m.expectedNotPullable, wrap.Deployment.Containers[i].Image.NotPullable)

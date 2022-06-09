@@ -30,13 +30,15 @@ type Service interface {
 // NewService returns the ImageService API for the Admission Controller to use.
 func NewService(imageCache expiringcache.Cache) Service {
 	return &serviceImpl{
-		imageCache: imageCache,
+		imageCache:    imageCache,
+		registryStore: registry.Singleton(),
 	}
 }
 
 type serviceImpl struct {
 	centralClient v1.ImageServiceClient
 	imageCache    expiringcache.Cache
+	registryStore *registry.Store
 }
 
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
@@ -57,7 +59,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 	// so we determine it here.
 	// If Sensor's registry store has an entry for the given image's registry,
 	// it is considered cluster-local.
-	req.Image.IsClusterLocal = registry.Singleton().HasRegistryForImage(req.GetImage().GetName())
+	req.Image.IsClusterLocal = s.registryStore.HasRegistryForImage(req.GetImage().GetName())
 
 	// Ask Central to scan the image if the image is not internal.
 	if !features.LocalImageScanning.Enabled() || !req.GetImage().GetIsClusterLocal() {
