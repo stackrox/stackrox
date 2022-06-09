@@ -55,7 +55,7 @@ From here you can install stackrox-central-services to get Central and Scanner c
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="$(cat stackrox-admin-password.txt)"
 ```
 
-If you're deploying StackRox on a small node like a local development cluster, run the following command to reduce StackRox resource requirements. Please don't run this command against a production cluster.
+If you're deploying StackRox on a small node like a local development cluster, run the following command to reduce StackRox resource requirements. Please keep in mind that these reduced resource settings are not suited for production setups.
 ```sh
 helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-services \
   --set central.resources.requests.memory=1Gi \
@@ -85,7 +85,7 @@ Make sure to provide some name in `clusterName` argument meaningful to you. The 
 
 When deploying stackrox-secured-cluster-services on a different cluster, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
-When deploying StackRox on a small node, add the following arguments to the helm install command above. This should reduce stackrox-secured-cluster-services resource requirements. Don't include these when deploying on a production cluster.
+When deploying StackRox on a small node, add the following arguments to the helm install command above. This should reduce stackrox-secured-cluster-services resource requirements. Please keep in mind that these reduced resource settings are not recommended for production setups.
 ```sh
 --set sensor.resources.requests.memory=500Mi \
 --set sensor.resources.requests.cpu=500m \
@@ -108,9 +108,7 @@ kubectl -n stackrox port-forward deploy/central 8000:8443
 
 2.Open <https://localhost:8000> in your browser.
 
-3.Accept certificate warnings and proceed.
-
-4.Log in as `admin` using the password in `stackrox-admin-password.txt`
+3.Log in as `admin` using the password in `stackrox-admin-password.txt`
 
 ## Manual Deployment
 
