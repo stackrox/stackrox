@@ -5,9 +5,9 @@ import { Deployment, ListDeployment } from 'types/deployment.proto';
 import { ContainerNameAndBaselineStatus } from 'types/processBaseline.proto';
 import { Risk } from 'types/risk.proto';
 import {
-    ORCHESTRATOR_COMPONENT_KEY,
-    orchestratorComponentOption,
-} from 'Containers/Navigation/OrchestratorComponentsToggle';
+    ORCHESTRATOR_COMPONENTS_KEY,
+    orchestratorComponentsOption,
+} from 'utils/orchestratorComponents';
 import axios from './instance';
 
 const deploymentsUrl = '/v1/deploymentswithprocessinfo';
@@ -17,7 +17,7 @@ const deploymentsCountUrl = '/v1/deploymentscount';
 
 function shouldHideOrchestratorComponents() {
     // for openshift filtering toggle
-    return localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true';
+    return localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true';
 }
 
 /**
@@ -32,7 +32,7 @@ export function fetchDeployments(
     const offset = page * pageSize;
     let searchOptions: RestSearchOption[] = options;
     if (shouldHideOrchestratorComponents()) {
-        searchOptions = [...options, ...orchestratorComponentOption];
+        searchOptions = [...options, ...orchestratorComponentsOption];
     }
     const query = searchOptionsToQuery(searchOptions);
     const queryObject: Record<
@@ -65,7 +65,7 @@ export type ListDeploymentWithProcessInfo = {
 export function fetchDeploymentsCount(options: RestSearchOption[]): Promise<number> {
     let searchOptions: RestSearchOption[] = options;
     if (shouldHideOrchestratorComponents()) {
-        searchOptions = [...options, ...orchestratorComponentOption];
+        searchOptions = [...options, ...orchestratorComponentsOption];
     }
     const query = searchOptionsToQuery(searchOptions);
     const queryObject =

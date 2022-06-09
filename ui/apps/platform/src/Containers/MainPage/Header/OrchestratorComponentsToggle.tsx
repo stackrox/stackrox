@@ -3,20 +3,8 @@ import { connect } from 'react-redux';
 import { Switch } from '@patternfly/react-core';
 
 import { actions as graphActions } from 'reducers/network/graph';
-import { RestSearchOption } from 'services/searchOptionsToQuery';
 import useCases from 'constants/useCaseTypes';
-
-export const orchestratorComponentOption: RestSearchOption[] = [
-    {
-        value: 'Orchestrator Component:',
-        type: 'categoryOption',
-    },
-    {
-        value: 'false',
-    },
-];
-
-export const ORCHESTRATOR_COMPONENT_KEY = 'showOrchestratorComponents';
+import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
 
 type OrchestratorComponentsToggleProps = {
     useCase: string;
@@ -30,7 +18,7 @@ const OrchestratorComponentsToggle = ({
     const [showOrchestratorComponents, setShowOrchestratorComponents] = useState('false');
 
     useEffect(() => {
-        const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
+        const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY);
         if (orchestratorComponentShowState) {
             setShowOrchestratorComponents(orchestratorComponentShowState);
         }
@@ -38,7 +26,7 @@ const OrchestratorComponentsToggle = ({
 
     function handleToggle(value) {
         const storedValue = value ? 'true' : 'false';
-        localStorage.setItem(ORCHESTRATOR_COMPONENT_KEY, storedValue);
+        localStorage.setItem(ORCHESTRATOR_COMPONENTS_KEY, storedValue);
         if (useCase === useCases.NETWORK) {
             setShowOrchestratorComponents(storedValue);
             // we don't want to force reload on the network graph since search filters are not URL based
