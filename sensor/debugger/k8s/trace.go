@@ -1,7 +1,7 @@
 package k8s
 
 import (
-	"bufio"
+	"bytes"
 	"io"
 	"os"
 	"path"
@@ -43,8 +43,6 @@ func (tw *TraceWriter) Write(b []byte) (int, error) {
 	return fObjs.Write(append(b, []byte{10}...))
 }
 
-var _ io.Reader = (*TraceReader)(nil)
-
 // TraceReader reads a file containing k8s events
 type TraceReader struct {
 	// Source file from which the lines are read
@@ -65,81 +63,19 @@ func (tw *TraceReader) Init() error {
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
 	tw.lineNo = 1
-	return os.MkdirAll(path.Dir(tw.Source), os.ModePerm)
+	_, err := os.Stat(path.Dir(tw.Source))
+	return err
 }
 
-// ReadFile reads the file line by line and executes the handle function
-func (tw *TraceReader) ReadFile(mode CreateMode, done chan int, readerError chan error, handle func([]byte, CreateMode)) {
+// ReadFile reads the entire file and returns a slice of objects
+func (tw *TraceReader) ReadFile() ([][]byte, error) {
 	if !tw.Enabled {
-		return
+		return nil, nil
 	}
-	for {
-		buf := make([]byte, 8*4096)
-		n, err := tw.Read(buf)
-		if err != nil {
-			done <- 0
-			readerError <- err
-			return
-		}
-		handle(buf[:n], mode)
-	}
-}
-
-// Read reads one line from the trace file. This line corresponds to a single K8s event
-func (tw *TraceReader) Read(p []byte) (n int, err error) {
-	if !tw.Enabled {
-		return 0, nil
-	}
-	file, err := os.OpenFile(tw.Source, os.O_RDONLY, 0644)
+	data, err := os.ReadFile(tw.Source)
 	if err != nil {
-		return 0, errors.Wrapf(err, "Error opening file: %s\n", tw.Source)
+		return nil, err
 	}
-	defer func() {
-		_ = file.Close()
-	}()
-	tw.mu.Lock()
-	defer tw.mu.Unlock()
-	scanner := bufio.NewScanner(file)
-	scBuf := make([]byte, 0, 64*1024)
-	scanner.Buffer(scBuf, 1024*1024)
-	var lno int64
-	for scanner.Scan() {
-		lno++
-		if lno < tw.lineNo {
-			continue
-		}
-		tw.lineNo++
-		b := scanner.Bytes()
-		n = copy(p, b)
-		return n, scanner.Err()
-	}
-	return 0, io.EOF
-}
-
-// ReadFileBlocking reads the file line by line blocking the mutex until is done
-func (tw *TraceReader) ReadFileBlocking(mode CreateMode, done chan int, handle func([]byte, CreateMode)) error {
-	if !tw.Enabled {
-		return nil
-	}
-	file, err := os.OpenFile(tw.Source, os.O_RDONLY, 0644)
-	if err != nil {
-		return errors.Wrapf(err, "Error opening file: %s\n", tw.Source)
-	}
-	defer func() {
-		_ = file.Close()
-	}()
-	tw.mu.Lock()
-	defer tw.mu.Unlock()
-	buf := bufio.NewReader(file)
-	for {
-		line, err := buf.ReadBytes('\n')
-		if err != nil {
-			if err == io.EOF && len(line) > 0 {
-				handle(line, mode)
-			}
-			done <- 0
-			return err
-		}
-		handle(line, mode)
-	}
+	objs := bytes.Split(data, []byte{'\n'})
+	return objs, nil
 }

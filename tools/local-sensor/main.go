@@ -128,11 +128,10 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 //
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
-	// TODO(do-not-merge): remove test.jsonl file from git
-	fsc := mustGetCommandLineArgs()
+	sensorConfig := mustGetCommandLineArgs()
 	fakeClient, err := k8s.MakeOutOfClusterClient()
 	// when replying a trace, there is no need to connect to K8s cluster
-	if fsc.ShallReplayK8sTrace {
+	if sensorConfig.ShallReplayK8sTrace {
 		fakeClient = k8s.MakeFakeClient()
 	}
 	utils.CrashOnError(err)
@@ -149,34 +148,36 @@ func main() {
 		message.PolicySync([]*storage.Policy{}),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 
-	if fsc.Verbose {
+	if sensorConfig.Verbose {
 		fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
 			log.Printf("MESSAGE RECEIVED: %s\n", msg.String())
 		})
 	}
 
-	go registerHostKillSignals(startTime, fakeCentral, fsc.CentralOutput)
+	go registerHostKillSignals(startTime, fakeCentral, sensorConfig.CentralOutput)
 
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	defer shutdownFakeServer()
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
 	traceRec := &k8s.TraceWriter{
-		Destination: path.Clean(fsc.RecordK8sFile),
-		Enabled:     fsc.ShallRecordK8sInput,
+		Destination: path.Clean(sensorConfig.RecordK8sFile),
+		Enabled:     sensorConfig.ShallRecordK8sInput,
 	}
-	_ = traceRec.Init()
 
 	trReader := &k8s.TraceReader{
-		Source:  path.Clean(fsc.ReplayK8sTraceFile),
-		Enabled: fsc.ShallReplayK8sTrace,
+		Source:  path.Clean(sensorConfig.ReplayK8sTraceFile),
+		Enabled: sensorConfig.ShallReplayK8sTrace,
 	}
-	_ = trReader.Init()
+
+	if err := trReader.Init(); err != nil {
+		log.Fatalln(err)
+	}
 
 	if trReader.Enabled {
 		fm := k8s.FakeEventsManager{
-			Delay:  fsc.Delay,
-			Mode:   fsc.CreateMode,
+			Delay:  sensorConfig.Delay,
+			Mode:   sensorConfig.CreateMode,
 			Client: fakeClient,
 			Reader: trReader,
 		}
@@ -189,7 +190,7 @@ func main() {
 		WithK8sClient(fakeClient).
 		WithCentralConnectionFactory(fakeConnectionFactory).
 		WithLocalSensor(true).
-		WithResyncPeriod(fsc.ResyncPeriod).WithTraceWriter(traceRec))
+		WithResyncPeriod(sensorConfig.ResyncPeriod).WithTraceWriter(traceRec))
 	if err != nil {
 		panic(err)
 	}
@@ -199,11 +200,11 @@ func main() {
 
 	spyCentral.ConnectionStarted.Wait()
 
-	log.Printf("Running scenario for %f minutes\n", fsc.Duration.Minutes())
-	<-time.Tick(fsc.Duration)
+	log.Printf("Running scenario for %f minutes\n", sensorConfig.Duration.Minutes())
+	<-time.Tick(sensorConfig.Duration)
 	endTime := time.Now()
 	allMessages := fakeCentral.GetAllMessages()
-	dumpMessages(allMessages, startTime, endTime, fsc.CentralOutput)
+	dumpMessages(allMessages, startTime, endTime, sensorConfig.CentralOutput)
 
 	spyCentral.KillSwitch.Signal()
 }

@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -65,11 +67,75 @@ type FakeEventsManager struct {
 	Client *ClientSet
 	// Reader the TraceReader
 	Reader *TraceReader
+	// clientMap map with the k8s clients
+	clientMap map[string]func(string) interface{}
+	// resourceMap map with the k8s resources
+	resourceMap map[string]interface{}
 }
 
-// WaitForMinimumResources waits for a minimum number of resources to be created or once all the events have been processed
-func WaitForMinimumResources(ch chan string, done chan int, readerError chan error) error {
+var actionToMethod = map[string]string{
+	"CREATE_RESOURCE": "Create",
+	"UPDATE_RESOURCE": "Update",
+	"DELETE_RESOURCE": "Delete",
+}
+
+var actionToOptions = map[string]interface{}{
+	"CREATE_RESOURCE": metav1.CreateOptions{},
+	"UPDATE_RESOURCE": metav1.UpdateOptions{},
+	"DELETE_RESOURCE": metav1.DeleteOptions{},
+}
+
+func (f *FakeEventsManager) Init() {
+	f.clientMap = map[string]func(string) interface{}{
+		namespaceKind:          func(string) interface{} { return f.Client.Kubernetes().CoreV1().Namespaces() },
+		clusterRoleKind:        func(string) interface{} { return f.Client.Kubernetes().RbacV1().ClusterRoles() },
+		clusterRoleBindingKind: func(string) interface{} { return f.Client.Kubernetes().RbacV1().ClusterRoleBindings() },
+		nodeKind:               func(string) interface{} { return f.Client.Kubernetes().CoreV1().Nodes() },
+		secretKind:             func(namespace string) interface{} { return f.Client.Kubernetes().CoreV1().Secrets(namespace) },
+		serviceAccountsKind:    func(namespace string) interface{} { return f.Client.Kubernetes().CoreV1().ServiceAccounts(namespace) },
+		roleKind:               func(namespace string) interface{} { return f.Client.Kubernetes().RbacV1().Roles(namespace) },
+		roleBindingKind:        func(namespace string) interface{} { return f.Client.Kubernetes().RbacV1().RoleBindings(namespace) },
+		networkPolicyKind: func(namespace string) interface{} {
+			return f.Client.Kubernetes().NetworkingV1().NetworkPolicies(namespace)
+		},
+		serviceKind:    func(namespace string) interface{} { return f.Client.Kubernetes().CoreV1().Services(namespace) },
+		jobKind:        func(namespace string) interface{} { return f.Client.Kubernetes().BatchV1().Jobs(namespace) },
+		replicaSetKind: func(namespace string) interface{} { return f.Client.Kubernetes().AppsV1().ReplicaSets(namespace) },
+		replicationControllerKind: func(namespace string) interface{} {
+			return f.Client.Kubernetes().CoreV1().ReplicationControllers(namespace)
+		},
+		daemonSetKind:   func(namespace string) interface{} { return f.Client.Kubernetes().AppsV1().DaemonSets(namespace) },
+		deploymentKind:  func(namespace string) interface{} { return f.Client.Kubernetes().AppsV1().Deployments(namespace) },
+		statefulSetKind: func(namespace string) interface{} { return f.Client.Kubernetes().AppsV1().StatefulSets(namespace) },
+		cronJobKind:     func(namespace string) interface{} { return f.Client.Kubernetes().BatchV1().CronJobs(namespace) },
+		podKind:         func(namespace string) interface{} { return f.Client.Kubernetes().CoreV1().Pods(namespace) },
+	}
+	f.resourceMap = map[string]interface{}{
+		namespaceKind:             &corev1.Namespace{},
+		secretKind:                &corev1.Secret{},
+		serviceAccountsKind:       &corev1.ServiceAccount{},
+		roleKind:                  &rbacv1.Role{},
+		clusterRoleKind:           &rbacv1.ClusterRole{},
+		roleBindingKind:           &rbacv1.RoleBinding{},
+		clusterRoleBindingKind:    &rbacv1.ClusterRoleBinding{},
+		networkPolicyKind:         &networkingv1.NetworkPolicy{},
+		nodeKind:                  &corev1.Node{},
+		serviceKind:               &corev1.Service{},
+		jobKind:                   &batchv1.Job{},
+		replicaSetKind:            &appsv1.ReplicaSet{},
+		replicationControllerKind: &corev1.ReplicationController{},
+		daemonSetKind:             &appsv1.DaemonSet{},
+		deploymentKind:            &appsv1.Deployment{},
+		statefulSetKind:           &appsv1.StatefulSet{},
+		cronJobKind:               &batchv1.CronJob{},
+		podKind:                   &corev1.Pod{},
+	}
+}
+
+// waitForMinimumResources waits for a minimum number of resources to be created or once all the events have been processed
+func waitForMinimumResources(ch chan string, done concurrency.Signal) error {
 	count := 0
+	doneC := done.WaitC()
 	for {
 		select {
 		case obj := <-ch:
@@ -82,82 +148,78 @@ func WaitForMinimumResources(ch chan string, done chan int, readerError chan err
 					return nil
 				}
 			}
-		case err := <-readerError:
-			return err
-		case <-done:
+		case <-doneC:
 			return errors.New("the events file did not contain the minimum resources required to start sensor")
 		}
 	}
 }
 
-// executeAction executes an action and waits depending on the Mode
-func (f *FakeEventsManager) executeAction(action string, kind string, ch chan string, create, update, delete func() error) error {
-	switch action {
-	case "CREATE_RESOURCE":
-		err := create()
-		if k8sErrors.IsAlreadyExists(err) {
-			err := update()
-			if err != nil {
-				return err
+// CreateEvents creates the k8s events from a given jsonl file
+func (f *FakeEventsManager) CreateEvents() error {
+	ch := make(chan string)
+	done := concurrency.NewSignal()
+	objs, err := f.Reader.ReadFile()
+	if err != nil {
+		return err
+	}
+	go func() {
+		for _, obj := range objs {
+			if len(obj) == 0 {
+				continue
 			}
-			f.waitOnMode()
-			return nil
+			msg := resources.InformerK8sMsg{}
+			if err := json.Unmarshal(obj, &msg); err != nil {
+				log.Fatalln(err)
+			}
+			log.Printf("%s Event: %s", msg.Action, msg.ObjectType)
+			if err := f.createEvent(msg, ch); err != nil {
+				log.Fatalf("cannot create event for %s: %s", msg.ObjectType, err)
+			}
 		}
-		if err != nil {
-			return err
-		}
+		done.Signal()
+	}()
+	return waitForMinimumResources(ch, done)
+}
+
+func runOp(action string, resourceClient, resourceObject reflect.Value) []reflect.Value {
+	method, ok := actionToMethod[action]
+	if !ok {
+		log.Fatalf("method not found")
+	}
+	options, ok := actionToOptions[action]
+	if !ok {
+		log.Fatalf("options not found")
+	}
+	return resourceClient.MethodByName(method).Call([]reflect.Value{
+		reflect.ValueOf(context.Background()),
+		resourceObject,
+		reflect.ValueOf(options),
+	})
+}
+
+func getNamespace(resource reflect.Value) string {
+	values := resource.MethodByName("GetNamespace").Call([]reflect.Value{})
+	if len(values) != 1 {
+		return ""
+	}
+	return values[0].String()
+}
+
+func (f *FakeEventsManager) handleRunOp(action, kind string, client, object reflect.Value, ch chan string) error {
+	returnVals := runOp(action, client, object)
+	if len(returnVals) == 0 {
+		return fmt.Errorf("expected 1 or 2 values from %s. Received: %d", action, len(returnVals))
+	}
+	errInt := returnVals[len(returnVals)-1].Interface()
+	if errInt == nil {
 		select {
 		case ch <- kind:
 		default:
 		}
 		f.waitOnMode()
 		return nil
-	case "UPDATE_RESOURCE":
-		err := update()
-		if k8sErrors.IsNotFound(err) {
-			err := create()
-			if err != nil {
-				return err
-			}
-			select {
-			case ch <- kind:
-			default:
-			}
-			f.waitOnMode()
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		f.waitOnMode()
-		return nil
-	case "DELETE_RESOURCE":
-		err := delete()
-		if err != nil {
-			return err
-		}
-		f.waitOnMode()
-		return nil
 	}
-	return errors.New("unknown action")
-}
-
-// CreateEvents creates the k8s events from a given jsonl file
-func (f *FakeEventsManager) CreateEvents() error {
-	ch := make(chan string)
-	done := make(chan int)
-	readerError := make(chan error)
-	go f.Reader.ReadFile(f.Mode, done, readerError, func(line []byte, m CreateMode) {
-		obj := resources.InformerK8sMsg{}
-		if err := json.Unmarshal(line, &obj); err != nil {
-			log.Fatalf("cannot unmarshal: %s\n", err)
-		}
-		log.Printf("%s Event: %s", obj.Action, obj.ObjectType)
-		if err := f.createEvent(obj, ch); err != nil {
-			log.Fatalf("cannot create event for %s %s", obj.ObjectType, err)
-		}
-	})
-	return WaitForMinimumResources(ch, done, readerError)
+	return errInt.(error)
 }
 
 // createEvent creates a single k8s event
@@ -166,287 +228,35 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 	objType := strings.Split(msg.ObjectType, ".")
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&msg.Payload)
 	if err != nil {
-		log.Printf("error constructing unstructured: %s", err)
-		return err
+		return fmt.Errorf("error constructing unstructured: %s", err)
 	}
 	Kind := objType[1]
 	obj.Object = u
 
-	switch Kind {
-	case namespaceKind:
-		var r corev1.Namespace
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().Namespaces().Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().Namespaces().Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			err := f.Client.Kubernetes().CoreV1().Namespaces().Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-			return err
-		})
-	case secretKind:
-		var r corev1.Secret
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().Secrets(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().Secrets(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().CoreV1().Secrets(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case serviceAccountsKind:
-		var r corev1.ServiceAccount
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().ServiceAccounts(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().ServiceAccounts(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().CoreV1().ServiceAccounts(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case roleKind:
-		var r rbacv1.Role
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().RbacV1().Roles(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().RbacV1().Roles(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().RbacV1().Roles(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case roleBindingKind:
-		var r rbacv1.RoleBinding
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().RbacV1().RoleBindings(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().RbacV1().RoleBindings(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().RbacV1().RoleBindings(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case clusterRoleKind:
-		var r rbacv1.ClusterRole
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().RbacV1().ClusterRoles().Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().RbacV1().ClusterRoles().Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().RbacV1().ClusterRoles().Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case clusterRoleBindingKind:
-		var r rbacv1.ClusterRoleBinding
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().RbacV1().ClusterRoleBindings().Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().RbacV1().ClusterRoleBindings().Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().RbacV1().ClusterRoleBindings().Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case networkPolicyKind:
-		var r networkingv1.NetworkPolicy
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().NetworkingV1().NetworkPolicies(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().NetworkingV1().NetworkPolicies(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().NetworkingV1().NetworkPolicies(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case nodeKind:
-		var r corev1.Node
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().Nodes().Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().Nodes().Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().CoreV1().Nodes().Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case serviceKind:
-		var r corev1.Service
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().Services(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().Services(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().CoreV1().Services(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case jobKind:
-		var r batchv1.Job
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().BatchV1().Jobs(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().BatchV1().Jobs(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().BatchV1().Jobs(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case replicaSetKind:
-		var r appsv1.ReplicaSet
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().AppsV1().ReplicaSets(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().AppsV1().ReplicaSets(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().AppsV1().ReplicaSets(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case replicationControllerKind:
-		var r corev1.ReplicationController
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().ReplicationControllers(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().ReplicationControllers(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().CoreV1().ReplicationControllers(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case daemonSetKind:
-		var r appsv1.DaemonSet
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().AppsV1().DaemonSets(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().AppsV1().DaemonSets(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().AppsV1().DaemonSets(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case deploymentKind:
-		var r appsv1.Deployment
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().AppsV1().Deployments(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().AppsV1().Deployments(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().AppsV1().Deployments(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case statefulSetKind:
-		var r appsv1.StatefulSet
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().AppsV1().StatefulSets(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().AppsV1().StatefulSets(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().AppsV1().StatefulSets(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case cronJobKind:
-		var r batchv1.CronJob
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().BatchV1().CronJobs(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().BatchV1().CronJobs(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().BatchV1().CronJobs(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	case podKind:
-		var r corev1.Pod
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &r); err != nil {
-			log.Printf("Unable to construct %s from unstructured", Kind)
-			return err
-		}
-		return f.executeAction(msg.Action, Kind, ch, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().Pods(obj.GetNamespace()).Create(context.Background(), &r, metav1.CreateOptions{})
-			return err
-		}, func() error {
-			_, err := f.Client.Kubernetes().CoreV1().Pods(obj.GetNamespace()).Update(context.Background(), &r, metav1.UpdateOptions{})
-			return err
-		}, func() error {
-			return f.Client.Kubernetes().CoreV1().Pods(obj.GetNamespace()).Delete(context.Background(), obj.GetName(), metav1.DeleteOptions{})
-		})
-	default:
-		return fmt.Errorf("could not create resource %s", Kind)
+	f.Init()
+
+	r, ok := f.resourceMap[Kind]
+	if !ok {
+		return fmt.Errorf("resource %s not found", Kind)
 	}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), r); err != nil {
+		return fmt.Errorf("unable to construct %s from unstructured: %s", Kind, err)
+	}
+
+	clFunc, ok := f.clientMap[Kind]
+	if !ok {
+		return fmt.Errorf("resource %s not found", Kind)
+	}
+	cl := clFunc(getNamespace(reflect.ValueOf(r)))
+
+	err = f.handleRunOp(msg.Action, Kind, reflect.ValueOf(cl), reflect.ValueOf(r), ch)
+	if k8sErrors.IsNotFound(err) && msg.Action == "UPDATE_RESOURCE" {
+		return f.handleRunOp("CREATE_RESOURCE", Kind, reflect.ValueOf(cl), reflect.ValueOf(r), ch)
+	}
+	if k8sErrors.IsAlreadyExists(err) && msg.Action == "CREATE_RESOURCE" {
+		return f.handleRunOp("UPDATE_RESOURCE", Kind, reflect.ValueOf(cl), reflect.ValueOf(r), ch)
+	}
+	return err
 }
 
 // waitOnMode waits depending on the mode
