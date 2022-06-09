@@ -1,8 +1,6 @@
 package search
 
 import (
-	"runtime/debug"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -28,7 +26,6 @@ func ApplyFnToAllBaseQueries(q *v1.Query, fn func(*v1.BaseQuery)) {
 		fn(typedQ.BaseQuery)
 	default:
 		log.Errorf("Unhandled query type: %T; query was %s", q, proto.MarshalTextString(q))
-		debug.PrintStack()
 	}
 }
 
