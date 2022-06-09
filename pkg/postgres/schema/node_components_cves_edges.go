@@ -24,7 +24,7 @@ var (
                    NodeComponentId varchar,
                    NodeCveId varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, NodeComponentId, NodeCveId),
+                   PRIMARY KEY(Id),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (NodeComponentId) REFERENCES node_components(Id) ON DELETE CASCADE
                )
                `,
@@ -63,8 +63,8 @@ type NodeComponentsCvesEdges struct {
 	Id                string         `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable         bool           `gorm:"column:isfixable;type:bool"`
 	FixedBy           string         `gorm:"column:fixedby;type:varchar"`
-	NodeComponentId   string         `gorm:"column:nodecomponentid;type:varchar;primaryKey"`
-	NodeCveId         string         `gorm:"column:nodecveid;type:varchar;primaryKey"`
+	NodeComponentId   string         `gorm:"column:nodecomponentid;type:varchar"`
+	NodeCveId         string         `gorm:"column:nodecveid;type:varchar"`
 	Serialized        []byte         `gorm:"column:serialized;type:bytea"`
 	NodeComponentsRef NodeComponents `gorm:"foreignKey:nodecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

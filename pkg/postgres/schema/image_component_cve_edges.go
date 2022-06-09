@@ -24,7 +24,7 @@ var (
                    ImageComponentId varchar,
                    ImageCveId varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ImageComponentId, ImageCveId),
+                   PRIMARY KEY(Id),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId) REFERENCES image_components(Id) ON DELETE CASCADE
                )
                `,
@@ -63,8 +63,8 @@ type ImageComponentCveEdges struct {
 	Id                 string          `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable          bool            `gorm:"column:isfixable;type:bool"`
 	FixedBy            string          `gorm:"column:fixedby;type:varchar"`
-	ImageComponentId   string          `gorm:"column:imagecomponentid;type:varchar;primaryKey"`
-	ImageCveId         string          `gorm:"column:imagecveid;type:varchar;primaryKey"`
+	ImageComponentId   string          `gorm:"column:imagecomponentid;type:varchar"`
+	ImageCveId         string          `gorm:"column:imagecveid;type:varchar"`
 	Serialized         []byte          `gorm:"column:serialized;type:bytea"`
 	ImageComponentsRef ImageComponents `gorm:"foreignKey:imagecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
