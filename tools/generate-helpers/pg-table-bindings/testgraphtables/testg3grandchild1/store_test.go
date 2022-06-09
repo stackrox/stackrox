@@ -81,6 +81,8 @@ func (s *TestG3GrandChild1StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundTestG3GrandChild1)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, testG3GrandChild1))
 	foundTestG3GrandChild1, exists, err = store.Get(ctx, testG3GrandChild1.GetId())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *TestG3GrandChild1StoreSuite) TestStore() {
 	testG3GrandChild1Count, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, testG3GrandChild1Count)
+	testG3GrandChild1Count, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(testG3GrandChild1Count)
 
 	testG3GrandChild1Exists, err := store.Exists(ctx, testG3GrandChild1.GetId())
 	s.NoError(err)
 	s.True(testG3GrandChild1Exists)
 	s.NoError(store.Upsert(ctx, testG3GrandChild1))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, testG3GrandChild1), sac.ErrResourceAccessDenied)
 
 	foundTestG3GrandChild1, exists, err = store.Get(ctx, testG3GrandChild1.GetId())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *TestG3GrandChild1StoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestG3GrandChild1)
+	s.NoError(store.Delete(withNoAccessCtx, testG3GrandChild1.GetId()))
 
 	var testG3GrandChild1s []*storage.TestG3GrandChild1
 	for i := 0; i < 200; i++ {

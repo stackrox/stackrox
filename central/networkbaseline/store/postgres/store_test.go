@@ -94,6 +94,9 @@ func (s *NetworkBaselinesStoreSuite) TestStore() {
 	networkBaselineCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, networkBaselineCount)
+	networkBaselineCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(networkBaselineCount)
 
 	networkBaselineExists, err := store.Exists(ctx, networkBaseline.GetDeploymentId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *NetworkBaselinesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkBaseline)
+	s.NoError(store.Delete(withNoAccessCtx, networkBaseline.GetDeploymentId()))
 
 	var networkBaselines []*storage.NetworkBaseline
 	for i := 0; i < 200; i++ {

@@ -94,6 +94,9 @@ func (s *ProcessBaselinesStoreSuite) TestStore() {
 	processBaselineCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, processBaselineCount)
+	processBaselineCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(processBaselineCount)
 
 	processBaselineExists, err := store.Exists(ctx, processBaseline.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *ProcessBaselinesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundProcessBaseline)
+	s.NoError(store.Delete(withNoAccessCtx, processBaseline.GetId()))
 
 	var processBaselines []*storage.ProcessBaseline
 	for i := 0; i < 200; i++ {
