@@ -43,15 +43,16 @@ message AlertRetentionConfig {
     int32 attempted_runtime_retention_duration_days = 5;
 }
 
-// next available tag: 5
+// next available tag: 6
 message PrivateConfig {
     oneof alert_retention {
         // will be deprecated after migration is ready
-        int32                DEPRECATED_alert_retention_duration_days      = 1;
-        AlertRetentionConfig alert_config                                  = 3;
+        int32                DEPRECATED_alert_retention_duration_days       = 1;
+        AlertRetentionConfig alert_config                                   = 3;
     }
-    int32                    image_retention_duration_days                 = 2;
-    int32                    expired_vuln_req_retention_duration_days      = 4;
+    int32                    image_retention_duration_days                  = 2;
+    int32                    expired_vuln_req_retention_duration_days       = 4;
+    int32                    decommissioned_cluster_retention_duration_days = 5;
 }
 
 
