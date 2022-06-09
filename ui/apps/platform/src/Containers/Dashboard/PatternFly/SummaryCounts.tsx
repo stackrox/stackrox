@@ -83,6 +83,7 @@ function SummaryCounts() {
         <Split className="pf-u-flex-wrap">
             {tileEntityTypes.map((tileEntity) => (
                 <Button
+                    key={tileEntity}
                     variant={ButtonVariant.link}
                     component={LinkShim}
                     href={tileLinks[tileEntity]}

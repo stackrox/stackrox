@@ -25,4 +25,11 @@ export const fileUploadColors = {
 
 export const defaultColorType = 'base';
 
+export const severityColors = {
+    low: 'var(--pf-global--palette--black-500)',
+    medium: 'var(--pf-global--palette--gold-300)',
+    important: 'var(--pf-global--palette--orange-300)',
+    critical: 'var(--pf-global--palette--red-100)',
+};
+
 export default colors;
