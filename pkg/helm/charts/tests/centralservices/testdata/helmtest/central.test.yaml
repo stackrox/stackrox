@@ -20,7 +20,7 @@ tests:
     .deployments["central"] | assertThat(. != null)
     .services["central"] | assertThat(. != null)
 
-- name: "central with deprecated PodSecurityPolicies disabled"
+- name: "central with deprecated PodSecurityPolicies enabled"
   values:
     system:
       enablePodSecurityPolicies: true
