@@ -744,11 +744,11 @@ func TestBackend(t *testing.T) {
 		},
 		"mode auto, with client secret, disable offline_access scope": {
 			config: map[string]string{
-				clientIDConfigKey:            "testclientid",
-				clientSecretConfigKey:        "testsecret",
-				issuerConfigKey:              "https://test-issuer",
-				modeConfigKey:                "",
-				disableOfflineAccessScopeKey: "true",
+				clientIDConfigKey:                  "testclientid",
+				clientSecretConfigKey:              "testsecret",
+				issuerConfigKey:                    "https://test-issuer",
+				modeConfigKey:                      "",
+				disableOfflineAccessScopeConfigKey: "true",
 			},
 			oidcProvider: &mockOIDCProvider{
 				responseTypesSupported:     allResponseTypes,

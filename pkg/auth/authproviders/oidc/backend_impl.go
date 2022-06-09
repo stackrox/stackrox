@@ -29,12 +29,12 @@ import (
 const (
 	fragmentCallbackURLPath = "/auth/response/oidc"
 
-	issuerConfigKey              = "issuer"
-	clientIDConfigKey            = "client_id"
-	clientSecretConfigKey        = "client_secret"
-	dontUseClientSecretConfigKey = "do_not_use_client_secret"
-	modeConfigKey                = "mode"
-	disableOfflineAccessScopeKey = "disable_offline_access_scope"
+	issuerConfigKey                    = "issuer"
+	clientIDConfigKey                  = "client_id"
+	clientSecretConfigKey              = "client_secret"
+	dontUseClientSecretConfigKey       = "do_not_use_client_secret"
+	modeConfigKey                      = "mode"
+	disableOfflineAccessScopeConfigKey = "disable_offline_access_scope"
 
 	userInfoExpiration = 5 * time.Minute
 
@@ -306,7 +306,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 
 	b.idTokenVerifier = provider.Verifier(&oidc.Config{ClientID: clientID})
 
-	disableOfflineAccessScope := config[disableOfflineAccessScopeKey] == "true"
+	disableOfflineAccessScope := config[disableOfflineAccessScopeConfigKey] == "true"
 	b.baseOauthConfig, err = createBaseOAuthConfig(
 		clientID,
 		clientSecret,
@@ -325,7 +325,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		modeConfigKey:         mode,
 	}
 	if disableOfflineAccessScope {
-		b.config[disableOfflineAccessScopeKey] = "true"
+		b.config[disableOfflineAccessScopeConfigKey] = "true"
 	}
 
 	return b, nil
