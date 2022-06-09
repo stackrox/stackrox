@@ -161,9 +161,9 @@ const DeploymentDetails = ({ deployment }) => {
                             <CardBody>
                                 {namespacePoliciesList?.length > 0 ? (
                                     <List>
-                                        {namespacePoliciesList.map((netpol) => (
+                                        {namespacePoliciesList?.map((netpol: any) => (
                                             // eslint-disable-next-line react/no-array-index-key
-                                            <ListItem key={netpol["id"]}>{netpol["name"]}</ListItem>
+                                            <ListItem key={netpol.id}>{netpol.name}</ListItem>
                                         ))}
                                     </List>
                                 ) : (
