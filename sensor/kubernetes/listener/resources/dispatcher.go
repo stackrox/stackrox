@@ -195,70 +195,77 @@ func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.R
 	return events
 }
 
+func wrapDispatcher(dispatcher Dispatcher, w io.Writer) Dispatcher {
+	if w == nil {
+		return wrapWithMetricDispatcher(dispatcher)
+	}
+	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(dispatcher, w))
+}
+
 func (d *registryImpl) ForDeployments(deploymentType string) Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(newDeploymentDispatcher(deploymentType, d.deploymentHandler), d.traceWriter))
+	return wrapDispatcher(newDeploymentDispatcher(deploymentType, d.deploymentHandler), d.traceWriter)
 }
 
 func (d *registryImpl) ForJobs() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(newJobDispatcherImpl(d.deploymentHandler), d.traceWriter))
+	return wrapDispatcher(newJobDispatcherImpl(d.deploymentHandler), d.traceWriter)
 }
 
 func (d *registryImpl) ForNamespaces() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.namespaceDispatcher, d.traceWriter))
+	return wrapDispatcher(d.namespaceDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForNetworkPolicies() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.networkPolicyDispatcher, d.traceWriter))
+	return wrapDispatcher(d.networkPolicyDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForNodes() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.nodeDispatcher, d.traceWriter))
+	return wrapDispatcher(d.nodeDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForSecrets() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.secretDispatcher, d.traceWriter))
+	return wrapDispatcher(d.secretDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForServices() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.serviceDispatcher, d.traceWriter))
+	return wrapDispatcher(d.serviceDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForOpenshiftRoutes() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.osRouteDispatcher, d.traceWriter))
+	return wrapDispatcher(d.osRouteDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForServiceAccounts() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.serviceAccountDispatcher, d.traceWriter))
+	return wrapDispatcher(d.serviceAccountDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForRBAC() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.rbacDispatcher, d.traceWriter))
+	return wrapDispatcher(d.rbacDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForClusterOperators() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.clusterOperatorDispatcher, d.traceWriter))
+	return wrapDispatcher(d.clusterOperatorDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorResults() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.complianceOperatorResultDispatcher, d.traceWriter))
+	return wrapDispatcher(d.complianceOperatorResultDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorProfiles() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.complianceOperatorProfileDispatcher, d.traceWriter))
+	return wrapDispatcher(d.complianceOperatorProfileDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorTailoredProfiles() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.complianceOperatorTailoredProfileDispatcher, d.traceWriter))
+	return wrapDispatcher(d.complianceOperatorTailoredProfileDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorRules() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.complianceOperatorRulesDispatcher, d.traceWriter))
+	return wrapDispatcher(d.complianceOperatorRulesDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorScanSettingBindings() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.complianceOperatorScanSettingBindingsDispatcher, d.traceWriter))
+	return wrapDispatcher(d.complianceOperatorScanSettingBindingsDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorScans() Dispatcher {
-	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(d.complianceOperatorScanDispatcher, d.traceWriter))
+	return wrapDispatcher(d.complianceOperatorScanDispatcher, d.traceWriter)
 }

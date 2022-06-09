@@ -16,13 +16,13 @@ var _ io.Writer = (*TraceWriter)(nil)
 type TraceWriter struct {
 	// Destination file where we will store the events
 	Destination string
-	// Enabled defines whether this writer should do anything at all
-	Enabled bool
+	// mu mutex to avoid multiple goroutines writing at the same time
+	mu sync.Mutex
 }
 
 // Init initializes the writer
 func (tw *TraceWriter) Init() error {
-	if !tw.Enabled || path.Dir(tw.Destination) == "" {
+	if path.Dir(tw.Destination) == "" {
 		return nil
 	}
 	return os.MkdirAll(path.Dir(tw.Destination), os.ModePerm)
@@ -30,9 +30,8 @@ func (tw *TraceWriter) Init() error {
 
 // Write a slice of bytes in the Destination file
 func (tw *TraceWriter) Write(b []byte) (int, error) {
-	if !tw.Enabled {
-		return 0, nil
-	}
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
 	fObjs, err := os.OpenFile(tw.Destination, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return 0, errors.Wrapf(err, "Error opening file: %s\n", tw.Destination)
@@ -47,31 +46,16 @@ func (tw *TraceWriter) Write(b []byte) (int, error) {
 type TraceReader struct {
 	// Source file from which the lines are read
 	Source string
-	// lineNo is the pointer marking which line from the file has been read recently
-	lineNo int64
-	// Enabled defines whether this reader should do anything at all (can be removed maybe)
-	Enabled bool
-	// mu is a mutex that might be useful if many goroutines would read from the same file
-	mu sync.Mutex
 }
 
 // Init initializes the reader
 func (tw *TraceReader) Init() error {
-	if !tw.Enabled || path.Dir(tw.Source) == "" {
-		return nil
-	}
-	tw.mu.Lock()
-	defer tw.mu.Unlock()
-	tw.lineNo = 1
 	_, err := os.Stat(path.Dir(tw.Source))
 	return err
 }
 
 // ReadFile reads the entire file and returns a slice of objects
 func (tw *TraceReader) ReadFile() ([][]byte, error) {
-	if !tw.Enabled {
-		return nil, nil
-	}
 	data, err := os.ReadFile(tw.Source)
 	if err != nil {
 		return nil, err

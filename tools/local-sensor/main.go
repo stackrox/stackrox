@@ -59,56 +59,58 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 }
 
 type localSensorConfig struct {
-	Duration            time.Duration
-	CentralOutput       string
-	ShallRecordK8sInput bool
-	RecordK8sFile       string
-	ShallReplayK8sTrace bool
-	ReplayK8sTraceFile  string
-	Verbose             bool
-	ResyncPeriod        time.Duration
-	CreateMode          k8s.CreateMode
-	Delay               time.Duration
+	Duration           time.Duration
+	CentralOutput      string
+	RecordK8sEnabled   bool
+	RecordK8sFile      string
+	ReplayK8sEnabled   bool
+	ReplayK8sTraceFile string
+	Verbose            bool
+	ResyncPeriod       time.Duration
+	CreateMode         k8s.CreateMode
+	Delay              time.Duration
 }
 
 func mustGetCommandLineArgs() localSensorConfig {
-	fsc := localSensorConfig{}
-	verboseFlag := flag.Bool("verbose", false, "prints all messages to stdout as well as to the output file")
-
-	durationFlag := flag.Duration("duration", 0, "duration that the scenario should run (leave it empty to run it without timeout)")
-	centralOutputFile := flag.String("central-out", "central-out.json", "file to store the events that would be sent to central")
-
-	recordTrace := flag.Bool("record", false, "whether to record a trace with k8s events")
-	traceOutFile := flag.String("record-out", "k8s-trace.jsonl", "a file where recorded trace would be stored")
-	replayTrace := flag.Bool("replay", false, "whether to reply recorded a trace with k8s events")
-	traceInFile := flag.String("replay-in", "k8s-trace.jsonl", "a file where recorded trace would be read from")
-	resyncPeriod := flag.Duration("resync", 1*time.Minute, "resync period")
-	delay := flag.Duration("delay", 10*time.Second, "create events with a given delay")
+	sensorConfig := localSensorConfig{
+		Verbose:            false,
+		Duration:           0,
+		CentralOutput:      "central-out.json",
+		RecordK8sEnabled:   false,
+		RecordK8sFile:      "k8s-trace.jsonl",
+		ReplayK8sEnabled:   false,
+		ReplayK8sTraceFile: "k8s-trace.jsonl",
+		ResyncPeriod:       1 * time.Minute,
+		Delay:              5 * time.Second,
+		CreateMode:         k8s.Delay,
+	}
+	flag.BoolVar(&sensorConfig.Verbose, "verbose", sensorConfig.Verbose, "prints all messages to stdout as well as to the output file")
+	flag.DurationVar(&sensorConfig.Duration, "duration", sensorConfig.Duration, "duration that the scenario should run (leave it empty to run it without timeout)")
+	flag.StringVar(&sensorConfig.CentralOutput, "central-out", sensorConfig.CentralOutput, "file to store the events that would be sent to central")
+	flag.BoolVar(&sensorConfig.RecordK8sEnabled, "record", sensorConfig.RecordK8sEnabled, "whether to record a trace with k8s events")
+	flag.StringVar(&sensorConfig.RecordK8sFile, "record-out", sensorConfig.RecordK8sFile, "a file where recorded trace would be stored")
+	flag.BoolVar(&sensorConfig.ReplayK8sEnabled, "replay", sensorConfig.ReplayK8sEnabled, "whether to reply recorded a trace with k8s events")
+	flag.StringVar(&sensorConfig.ReplayK8sTraceFile, "replay-in", sensorConfig.ReplayK8sTraceFile, "a file where recorded trace would be read from")
+	flag.DurationVar(&sensorConfig.ResyncPeriod, "resync", sensorConfig.ResyncPeriod, "resync period")
+	flag.DurationVar(&sensorConfig.Delay, "delay", sensorConfig.Delay, "create events with a given delay")
 	flag.Parse()
 
-	fsc.Duration = *durationFlag
-	fsc.CentralOutput = path.Clean(*centralOutputFile)
+	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
 
-	if *recordTrace && *replayTrace {
+	if sensorConfig.ReplayK8sEnabled && sensorConfig.RecordK8sEnabled {
 		log.Fatalf("cannot record and replay a trace at the same time. Use either -record or -replay flag")
 	}
-	fsc.ShallRecordK8sInput = *recordTrace
-	if *recordTrace && *traceOutFile == "" {
+	if sensorConfig.RecordK8sEnabled && sensorConfig.RecordK8sFile == "" {
 		log.Printf("trace destination empty. Using default 'k8s-trace.jsonl'\n")
-		*traceOutFile = "k8s-trace.jsonl"
+		sensorConfig.RecordK8sFile = "k8s-trace.jsonl"
 	}
-	fsc.RecordK8sFile = path.Clean(*traceOutFile)
-	if *replayTrace && *traceInFile == "" {
+	sensorConfig.RecordK8sFile = path.Clean(sensorConfig.RecordK8sFile)
+	if sensorConfig.ReplayK8sEnabled && sensorConfig.ReplayK8sTraceFile == "" {
 		log.Fatalf("trace source empty")
 	}
 
-	fsc.ShallReplayK8sTrace = *replayTrace
-	fsc.ReplayK8sTraceFile = path.Clean(*traceInFile)
-	fsc.Verbose = *verboseFlag
-	fsc.ResyncPeriod = *resyncPeriod
-	fsc.Delay = *delay
-	fsc.CreateMode = k8s.Delay
-	return fsc
+	sensorConfig.ReplayK8sTraceFile = path.Clean(sensorConfig.ReplayK8sTraceFile)
+	return sensorConfig
 }
 
 func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string) {
@@ -128,10 +130,10 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 //
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
-	sensorConfig := mustGetCommandLineArgs()
+	localConfig := mustGetCommandLineArgs()
 	fakeClient, err := k8s.MakeOutOfClusterClient()
 	// when replying a trace, there is no need to connect to K8s cluster
-	if sensorConfig.ShallReplayK8sTrace {
+	if localConfig.ReplayK8sEnabled {
 		fakeClient = k8s.MakeFakeClient()
 	}
 	utils.CrashOnError(err)
@@ -148,36 +150,45 @@ func main() {
 		message.PolicySync([]*storage.Policy{}),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 
-	if sensorConfig.Verbose {
+	if localConfig.Verbose {
 		fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
 			log.Printf("MESSAGE RECEIVED: %s\n", msg.String())
 		})
 	}
 
-	go registerHostKillSignals(startTime, fakeCentral, sensorConfig.CentralOutput)
+	go registerHostKillSignals(startTime, fakeCentral, localConfig.CentralOutput)
 
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	defer shutdownFakeServer()
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
-	traceRec := &k8s.TraceWriter{
-		Destination: path.Clean(sensorConfig.RecordK8sFile),
-		Enabled:     sensorConfig.ShallRecordK8sInput,
+	sensorConfig := sensor.ConfigWithDefaults().
+		WithK8sClient(fakeClient).
+		WithCentralConnectionFactory(fakeConnectionFactory).
+		WithLocalSensor(true).
+		WithResyncPeriod(localConfig.ResyncPeriod)
+
+	if localConfig.RecordK8sEnabled {
+		traceRec := &k8s.TraceWriter{
+			Destination: path.Clean(localConfig.RecordK8sFile),
+		}
+		if err := traceRec.Init(); err != nil {
+			log.Fatalln(err)
+		}
+		sensorConfig.WithTraceWriter(traceRec)
 	}
 
-	trReader := &k8s.TraceReader{
-		Source:  path.Clean(sensorConfig.ReplayK8sTraceFile),
-		Enabled: sensorConfig.ShallReplayK8sTrace,
-	}
+	if localConfig.ReplayK8sEnabled {
+		trReader := &k8s.TraceReader{
+			Source: path.Clean(localConfig.ReplayK8sTraceFile),
+		}
+		if err := trReader.Init(); err != nil {
+			log.Fatalln(err)
+		}
 
-	if err := trReader.Init(); err != nil {
-		log.Fatalln(err)
-	}
-
-	if trReader.Enabled {
 		fm := k8s.FakeEventsManager{
-			Delay:  sensorConfig.Delay,
-			Mode:   sensorConfig.CreateMode,
+			Delay:  localConfig.Delay,
+			Mode:   localConfig.CreateMode,
 			Client: fakeClient,
 			Reader: trReader,
 		}
@@ -186,11 +197,7 @@ func main() {
 		}
 	}
 
-	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
-		WithK8sClient(fakeClient).
-		WithCentralConnectionFactory(fakeConnectionFactory).
-		WithLocalSensor(true).
-		WithResyncPeriod(sensorConfig.ResyncPeriod).WithTraceWriter(traceRec))
+	s, err := sensor.CreateSensor(sensorConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -200,11 +207,11 @@ func main() {
 
 	spyCentral.ConnectionStarted.Wait()
 
-	log.Printf("Running scenario for %f minutes\n", sensorConfig.Duration.Minutes())
-	<-time.Tick(sensorConfig.Duration)
+	log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
+	<-time.Tick(localConfig.Duration)
 	endTime := time.Now()
 	allMessages := fakeCentral.GetAllMessages()
-	dumpMessages(allMessages, startTime, endTime, sensorConfig.CentralOutput)
+	dumpMessages(allMessages, startTime, endTime, localConfig.CentralOutput)
 
 	spyCentral.KillSwitch.Signal()
 }
