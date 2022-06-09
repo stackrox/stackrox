@@ -243,9 +243,13 @@
         "expiredVulnReqRetentionDurationDays": {
           "type": "integer",
           "format": "int32"
+        },
+        "decommissionedClusterRetentionDurationDays": {
+          "type": "integer",
+          "format": "int32"
         }
       },
-      "title": "next available tag: 5"
+      "title": "next available tag: 6"
     },
     "storagePublicConfig": {
       "type": "object",
