@@ -11,10 +11,12 @@ import (
 	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
+	"github.com/stackrox/rox/central/policy/store/boltdb"
 	"github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
@@ -89,16 +91,16 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 	return policy, true, nil
 }
 
-func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, []error, error) {
+func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, error) {
 	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	policies, missingIndices, policyErrors, err := ds.storage.GetMany(ctx, ids...)
+	policies, missingIndices, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-	return policies, missingIndices, policyErrors, nil
+	return policies, missingIndices, nil
 }
 
 func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
@@ -218,6 +220,9 @@ func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) erro
 }
 
 func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
 	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -230,6 +235,10 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, request *v1.R
 }
 
 func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
+
 	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -380,7 +389,7 @@ func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Po
 }
 
 func getImportErrorsFromError(err error) []*v1.ImportPolicyError {
-	var policyError *store.PolicyStoreErrorList
+	var policyError *boltdb.PolicyStoreErrorList
 	if errors.As(err, &policyError) {
 		return handlePolicyStoreErrorList(policyError)
 	}
@@ -393,10 +402,10 @@ func getImportErrorsFromError(err error) []*v1.ImportPolicyError {
 	}
 }
 
-func handlePolicyStoreErrorList(policyError *store.PolicyStoreErrorList) []*v1.ImportPolicyError {
+func handlePolicyStoreErrorList(policyError *boltdb.PolicyStoreErrorList) []*v1.ImportPolicyError {
 	var errList []*v1.ImportPolicyError
 	for _, err := range policyError.Errors {
-		var nameErr *store.NameConflictError
+		var nameErr *boltdb.NameConflictError
 		if errors.As(err, &nameErr) {
 			errList = append(errList, &v1.ImportPolicyError{
 				Message: nameErr.ErrString,
@@ -408,7 +417,7 @@ func handlePolicyStoreErrorList(policyError *store.PolicyStoreErrorList) []*v1.I
 			continue
 		}
 
-		var idError *store.IDConflictError
+		var idError *boltdb.IDConflictError
 		if errors.As(err, &idError) {
 			errList = append(errList, &v1.ImportPolicyError{
 				Message: idError.ErrString,
