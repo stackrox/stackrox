@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -35,6 +36,7 @@ var (
 
 // GetGlobalDackBox returns the global dackbox.DackBox instance.
 func GetGlobalDackBox() *dackbox.DackBox {
+	postgres.LogCallerOnPostgres("GetGlobalDackBox")
 	initializeDackBox()
 	return duckBox
 }
