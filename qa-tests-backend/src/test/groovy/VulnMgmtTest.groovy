@@ -132,27 +132,27 @@ fragment cveFields on EmbeddedVulnerability {
         def gqlService = new GraphQLService()
 
         def embeddedImageRes = gqlService.Call(EMBEDDED_IMAGE_QUERY,
-                [id: imageDigest, query: "CVE:CVE-2017-10685"])
+                [id: imageDigest, query: "CVE:CVE-2017-10684"])
         assert embeddedImageRes.hasNoErrors()
         def embeddedImageResVuln = embeddedImageRes.value.result.scan.components[0].vulns[0]
 
         def topLevelImageRes = gqlService.Call(TOPLEVEL_IMAGE_QUERY,
-                [id: imageDigest, query: "CVE:CVE-2017-10685"])
+                [id: imageDigest, query: "CVE:CVE-2017-10684"])
         assert topLevelImageRes.hasNoErrors()
         def topLevelImageResVuln = topLevelImageRes.value.result.vulns[0]
 
         def fixableCVEImageRes = gqlService.Call(IMAGE_FIXABLE_CVE_QUERY,
-                [id: imageDigest, vulnQuery: "CVE:CVE-2017-10685", scopeQuery: "Image SHA:${imageDigest}"])
+                [id: imageDigest, vulnQuery: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
         assert fixableCVEImageRes.hasNoErrors()
         def fixableCVEImageResVuln = fixableCVEImageRes.value.result.vulnerabilities[0]
 
         def fixableCVEComponentRes = gqlService.Call(COMPONENT_FIXABLE_CVE_QUERY,
-                [id: componentB64, vulnQuery: "CVE:CVE-2017-10685", scopeQuery: "Image SHA:${imageDigest}"])
+                [id: componentB64, vulnQuery: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
         assert fixableCVEComponentRes.hasNoErrors()
         def fixableCVEComponentResVuln = fixableCVEComponentRes.value.result.vulnerabilities[0]
 
         def subCVEComponentRes = gqlService.Call(COMPONENT_SUBCVE_QUERY,
-                [id: componentB64, query: "CVE:CVE-2017-10685", scopeQuery: "Image SHA:${imageDigest}"])
+                [id: componentB64, query: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
         assert subCVEComponentRes.hasNoErrors()
         def subCVEComponentResVuln = subCVEComponentRes.value.result.vulns[0]
 
@@ -176,7 +176,7 @@ fragment cveFields on EmbeddedVulnerability {
         "Data inputs are: "
         imageDigest | component | componentB64 | severity | cvss
         RHEL_IMAGE_DIGEST   | "ncurses-base" | "bmN1cnNlcy1iYXNl:NS45LTE0LjIwMTMwNTExLmVsN180" |
-                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 7.0
+                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 5.3
         UBUNTU_IMAGE_DIGEST | "ncurses"      | "bmN1cnNlcw:NS45KzIwMTQwMTE4LTF1YnVudHUx"       |
                 VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY      | 9.8
     }

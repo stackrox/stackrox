@@ -51,24 +51,24 @@ func (mr *MockStoreMockRecorder) Count(ctx interface{}) *gomock.Call {
 }
 
 // Exists mocks base method.
-func (m *MockStore) Exists(ctx context.Context, id, imageComponentID, imageCveID string) (bool, error) {
+func (m *MockStore) Exists(ctx context.Context, id string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exists", ctx, id, imageComponentID, imageCveID)
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Exists indicates an expected call of Exists.
-func (mr *MockStoreMockRecorder) Exists(ctx, id, imageComponentID, imageCveID interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), ctx, id, imageComponentID, imageCveID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(ctx context.Context, id, imageComponentID, imageCveID string) (*storage.ComponentCVEEdge, bool, error) {
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.ComponentCVEEdge, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, id, imageComponentID, imageCveID)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.ComponentCVEEdge)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -76,9 +76,9 @@ func (m *MockStore) Get(ctx context.Context, id, imageComponentID, imageCveID st
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockStoreMockRecorder) Get(ctx, id, imageComponentID, imageCveID interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id, imageComponentID, imageCveID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
 // GetMany mocks base method.

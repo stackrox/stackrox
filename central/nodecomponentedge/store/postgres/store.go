@@ -41,8 +41,8 @@ var (
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, nodeId string, nodeComponentId string) (bool, error)
-	Get(ctx context.Context, id string, nodeId string, nodeComponentId string) (*storage.NodeComponentEdge, bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*storage.NodeComponentEdge, bool, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.NodeComponentEdge, []int, error)
 
@@ -74,7 +74,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string, nodeId string, nodeComponentId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NodeComponentEdge")
 
 	var sacQueryFilter *v1.Query
@@ -82,8 +82,6 @@ func (s *storeImpl) Exists(ctx context.Context, id string, nodeId string, nodeCo
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Node ID"), nodeId).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Component ID"), nodeComponentId).ProtoQuery(),
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
@@ -91,7 +89,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string, nodeId string, nodeCo
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string, nodeId string, nodeComponentId string) (*storage.NodeComponentEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NodeComponentEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeComponentEdge")
 
 	var sacQueryFilter *v1.Query
@@ -99,8 +97,6 @@ func (s *storeImpl) Get(ctx context.Context, id string, nodeId string, nodeCompo
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Node ID"), nodeId).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Component ID"), nodeComponentId).ProtoQuery(),
 	)
 
 	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)

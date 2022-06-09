@@ -1,4 +1,4 @@
-package store
+package boltdb
 
 import (
 	"context"
@@ -122,11 +122,10 @@ func (s *storeImpl) GetAll(_ context.Context) ([]*storage.Policy, error) {
 	return policies, err
 }
 
-func (s *storeImpl) GetMany(_ context.Context, ids ...string) ([]*storage.Policy, []int, []error, error) {
+func (s *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Policy, []int, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 	var policies []*storage.Policy
 	var missingIndices []int
-	var errorList []error
 	err := s.View(func(tx *bolt.Tx) error {
 		for i, id := range ids {
 			policy := new(storage.Policy)
@@ -134,12 +133,10 @@ func (s *storeImpl) GetMany(_ context.Context, ids ...string) ([]*storage.Policy
 			val := b.Get([]byte(id))
 			if val == nil {
 				missingIndices = append(missingIndices, i)
-				errorList = append(errorList, errors.New("not found"))
 				continue
 			}
 			if err := proto.Unmarshal(val, policy); err != nil {
 				missingIndices = append(missingIndices, i)
-				errorList = append(errorList, err)
 				continue
 			}
 			policies = append(policies, policy)
@@ -147,7 +144,7 @@ func (s *storeImpl) GetMany(_ context.Context, ids ...string) ([]*storage.Policy
 		return nil
 	})
 
-	return policies, missingIndices, errorList, err
+	return policies, missingIndices, err
 }
 
 // Upsert updates a policy to bolt

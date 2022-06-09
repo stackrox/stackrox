@@ -48,7 +48,7 @@ func (b *indexerImpl) AddPolicy(deployment *storage.Policy) error {
 	return nil
 }
 
-func (b *indexerImpl) AddPolicys(_ []*storage.Policy) error {
+func (b *indexerImpl) AddPolicies(_ []*storage.Policy) error {
 	return nil
 }
 
@@ -56,7 +56,7 @@ func (b *indexerImpl) DeletePolicy(id string) error {
 	return nil
 }
 
-func (b *indexerImpl) DeletePolicys(_ []string) error {
+func (b *indexerImpl) DeletePolicies(_ []string) error {
 	return nil
 }
 

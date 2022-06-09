@@ -67,7 +67,9 @@ const AsyncAccessControlPageV2 = asyncComponent(
     () => import('Containers/AccessControl/AccessControl')
 );
 const AsyncUserPage = asyncComponent(() => import('Containers/User/UserPage'));
-const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
+const AsyncSystemConfigPage = asyncComponent(
+    () => import('Containers/SystemConfig/SystemConfigPage')
+);
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
 const AsyncVulnMgmtReports = asyncComponent(
     () => import('Containers/VulnMgmt/Reports/VulnMgmtReports')
