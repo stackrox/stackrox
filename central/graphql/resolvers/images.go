@@ -163,7 +163,7 @@ func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (Vuln
 	return resolver.topVulnV2(ctx, args)
 }
 
-func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
+func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (*cVEResolver, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -171,22 +171,6 @@ func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (Vu
 
 	if resolver.data.GetSetTopCvss() == nil {
 		return nil, nil
-	}
-
-	if args.IsEmpty() {
-		var max *storage.EmbeddedVulnerability
-		for _, c := range resolver.data.GetScan().GetComponents() {
-			for _, v := range c.GetVulns() {
-				if max == nil {
-					max = v
-					continue
-				}
-				if v.GetCvss() > max.GetCvss() || (v.GetCvss() == max.GetCvss() && v.GetCve() > max.GetCve()) {
-					max = v
-				}
-			}
-		}
-		return resolver.root.wrapEmbeddedVulnerability(max, nil)
 	}
 
 	query = search.ConjunctionQuery(query, resolver.getImageQuery())
