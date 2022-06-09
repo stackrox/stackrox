@@ -31,7 +31,7 @@ test_e2e() {
     setup_default_TLS_certs
     "$ROOT/tests/complianceoperator/create.sh"
 
-    deploy_central
+    deploy_stackrox
 
     prepare_for_endpoints_test
 
