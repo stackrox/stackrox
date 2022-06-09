@@ -12,7 +12,6 @@
     "dependencies": {
         "@apollo/client": "^3.5.5",
         "@lifeomic/axios-fetch": "^3.0.0",
-        "@patternfly/patternfly": "^4.185.1",
         "@patternfly/react-charts": "^6.55.16",
         "@patternfly/react-core": "^4.202.16",
         "@patternfly/react-icons": "^4.53.16",
