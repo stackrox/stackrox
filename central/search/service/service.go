@@ -214,8 +214,11 @@ func NewService() Service {
 		WithAggregator(aggregation.Singleton()).
 		WithClusterDataStore(clusterDataStore.Singleton()).
 		WithCVEDataStore(imageCVEDataStore).
-		WithImageComponentDataStore(imageComponentDataStore.Singleton()).
-		WithNodeComponentDataStore(nodeComponentDataStore.Singleton())
+		WithImageComponentDataStore(imageComponentDataStore.Singleton())
+
+	if features.PostgresDatastore.Enabled() {
+		builder.WithNodeComponentDataStore(nodeComponentDataStore.Singleton())
+	}
 
 	return builder.Build()
 }
