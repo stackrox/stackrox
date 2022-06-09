@@ -203,6 +203,15 @@ func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, e
 func OutputZip(logger logger.Logger, config renderer.Config) error {
 	logger.InfofLn("Generating deployment bundle...")
 
+	if config.EnablePodSecurityPolicies {
+		logger.InfofLn("Central deployment bundle includes PodSecurityPolicies (PSPs). This is incompatible with Kubernetes >= v1.25.")
+		logger.InfofLn("Use --enable-pod-security-policies=false for disabling PodSecurityPolicies.")
+		logger.InfofLn("For the time being PodSecurityPolicies remain enabled by default in deployment bundles and need to be disabled explicitly for Kubernetes >= v1.25.")
+	} else {
+		logger.InfofLn("Central deployment bundle does not include PodSecurityPolicies (PSPs).")
+		logger.InfofLn("This is incompatible with pre-v1.25 Kubernetes installations having the PodSecurityPolicy Admission Controller plugin enabled.")
+		logger.InfofLn("Use --enable-pod-security-policies if PodSecurityPolicies are required for your Kubernetes environment.")
+	}
 	wrapper, err := createBundle(logger, config)
 	if err != nil {
 		return err
@@ -310,7 +319,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	if !buildinfo.ReleaseBuild {
 		flags.AddHelmChartDebugSetting(c)
 	}
-	c.PersistentFlags().BoolVar(&centralGenerateCmd.rendererConfig.EnablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
+	c.PersistentFlags().BoolVar(&centralGenerateCmd.rendererConfig.EnablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 
 	c.AddCommand(centralGenerateCmd.interactive())
 	c.AddCommand(k8s(cliEnvironment))

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
 	"github.com/stackrox/rox/roxctl/scanner/clustertype"
 )
@@ -59,7 +60,17 @@ func (cmd *scannerGenerateCommand) validate() error {
 	return nil
 }
 
-func (cmd *scannerGenerateCommand) generate() error {
+func (cmd *scannerGenerateCommand) generate(logger logger.Logger) error {
+	if cmd.enablePodSecurityPolicies {
+		logger.InfofLn("Scanner deployment bundle includes PodSecurityPolicies (PSPs). This is incompatible with Kubernetes >= v1.25.")
+		logger.InfofLn("Use --enable-pod-security-policies=false for disabling PodSecurityPolicies.")
+		logger.InfofLn("For the time being PodSecurityPolicies remain enabled by default in deployment bundles and need to be disabled explicitly for Kubernetes >= v1.25.")
+	} else {
+		logger.InfofLn("Scanner deployment bundle does not include PodSecurityPolicies (PSPs).")
+		logger.InfofLn("This is incompatible with pre-v1.25 Kubernetes installations having the PodSecurityPolicy Admission Controller plugin enabled.")
+		logger.InfofLn("Use --enable-pod-security-policies if PodSecurityPolicies are required for your Kubernetes environment.")
+	}
+
 	cmd.apiParams.ClusterType = clustertype.Get().String()
 	cmd.apiParams.DisablePodSecurityPolicies = !cmd.enablePodSecurityPolicies
 
@@ -95,7 +106,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 				return err
 			}
 
-			return scannerGenerateCmd.generate()
+			return scannerGenerateCmd.generate(cliEnvironment.Logger())
 		},
 	}
 
@@ -109,7 +120,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		fmt.Sprintf(
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
-	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
+	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 
 	return c
 }
