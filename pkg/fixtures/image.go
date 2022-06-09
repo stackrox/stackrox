@@ -2522,8 +2522,8 @@ func GetPartialKubeProxy_1__21_5() *storage.Image {
 			},
 		},
 		Scan: &storage.ImageScan{
-			ScannerVersion:  "2.24.0-11-g05cf175999",
-			ScanTime:        &types.Timestamp{Seconds: 1654154306, Nanos: 186771200},
+			ScannerVersion: "2.24.0-11-g05cf175999",
+			ScanTime:       &types.Timestamp{Seconds: 1654154306, Nanos: 186771200},
 			Components: []*storage.EmbeddedImageScanComponent{
 				GetEmbeddedLibzstd_1_3_8(),
 				GetEmbeddedLsb_10_2019051400(),
@@ -2549,7 +2549,7 @@ func GetPartialKubeProxy_1__21_5() *storage.Image {
 		SetFixable:    &storage.Image_FixableCves{FixableCves: 6},
 		LastUpdated:   &types.Timestamp{Seconds: 1654154306, Nanos: 877872600},
 		RiskScore:     9.2575,
-		SetTopCvss: &storage.Image_TopCvss{TopCvss: 9.8}
+		SetTopCvss:    &storage.Image_TopCvss{TopCvss: 9.8},
 		Notes: []storage.Image_Note{
 			storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA,
 			storage.Image_MISSING_SIGNATURE,
