@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/features"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
 )
@@ -42,12 +43,14 @@ func (ds *datastoreImpl) Count(ctx context.Context) (int, error) {
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.NodeComponentEdge, bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
-		return nil, false, err
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err := ds.filterReadable(ctx, []string{id})
+		if err != nil || len(filteredIDs) != 1 {
+			return nil, false, err
+		}
 	}
 
-	edge, found, err := ds.storage.Get(id)
+	edge, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -55,12 +58,14 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.NodeCompo
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
-		return false, err
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err := ds.filterReadable(ctx, []string{id})
+		if err != nil || len(filteredIDs) != 1 {
+			return false, err
+		}
 	}
 
-	found, err := ds.storage.Exists(id)
+	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
 	}
@@ -68,12 +73,16 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.NodeComponentEdge, error) {
-	filteredIDs, err := ds.filterReadable(ctx, ids)
-	if err != nil {
-		return nil, err
+	filteredIDs := ids
+	var err error
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err = ds.filterReadable(ctx, ids)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	edges, _, err := ds.storage.GetBatch(filteredIDs)
+	edges, _, err := ds.storage.GetMany(ctx, filteredIDs)
 	if err != nil {
 		return nil, err
 	}
