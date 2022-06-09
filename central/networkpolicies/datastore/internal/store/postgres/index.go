@@ -48,7 +48,7 @@ func (b *indexerImpl) AddNetworkPolicy(deployment *storage.NetworkPolicy) error 
 	return nil
 }
 
-func (b *indexerImpl) AddNetworkPolicys(_ []*storage.NetworkPolicy) error {
+func (b *indexerImpl) AddNetworkPolicies(_ []*storage.NetworkPolicy) error {
 	return nil
 }
 
@@ -56,7 +56,7 @@ func (b *indexerImpl) DeleteNetworkPolicy(id string) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteNetworkPolicys(_ []string) error {
+func (b *indexerImpl) DeleteNetworkPolicies(_ []string) error {
 	return nil
 }
 
