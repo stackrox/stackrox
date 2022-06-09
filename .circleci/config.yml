@@ -2282,7 +2282,6 @@ jobs:
     - run:
         name: Run Go postgres unit tests
         command: |
-          export PATH=/usr/pgsql-14/bin:$PATH
           make go-postgres-unit-tests
     - post-go-unit-tests:
         path: go-unit-release-junit-reports
