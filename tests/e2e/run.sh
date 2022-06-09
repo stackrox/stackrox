@@ -14,10 +14,10 @@ source "$ROOT/tests/e2e/lib.sh"
 
 test_e2e() {
     info "Starting e2e tests"
+    debug_namespace
 
     require_environment "KUBECONFIG"
 
-    DEPLOY_DIR="deploy/k8s"
     QUAY_REPO="rhacs-eng"
     if is_CI; then
         REGISTRY="quay.io/$QUAY_REPO"
@@ -41,6 +41,7 @@ test_e2e() {
     [[ ! -f FAIL ]] || die "e2e tests failed"
 
     info "E2E API tests"
+    debug_namespace
     make -C tests || touch FAIL
     store_test_results "tests/all-tests-results" "all-tests-results"
     [[ ! -f FAIL ]] || die "e2e tests failed"

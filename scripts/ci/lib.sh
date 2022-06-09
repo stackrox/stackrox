@@ -739,6 +739,13 @@ openshift_ci_mods() {
     fi
 }
 
+debug_namespace() {
+    info "Debug namespace: ${NAMESPACE:-}"
+    env | grep "ci-op" || true
+    kubectl get ns || true
+    kubectl get all || true
+}
+
 validate_expected_go_version() {
     info "Validating the expected go version against what was used to build roxctl"
 
