@@ -213,6 +213,14 @@ func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQ
 	return ret, nil
 }
 
+func (resolver *Resolver) imageVulnerabilityV2(ctx context.Context, args IDQuery) (ImageVulnerabilityResolver, error) {
+	vulnResolver, err := resolver.unwrappedVulnerabilityV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return vulnResolver, nil
+}
+
 // imageVulnerabilitiesV2 wraps the resolvers as ImageVulnerabilityResolver objects to restrict the supported API
 func (resolver *Resolver) imageVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
@@ -517,7 +525,7 @@ func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, 
 	return false, nil
 }
 
-func (resolver *cVEResolver) addVulnScopeContext(ctx context.Context) context.Context {
+func (resolver *cVEResolver) withVulnerabilityScope(ctx context.Context) context.Context {
 	return scoped.Context(ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
 		Level: v1.SearchCategory_VULNERABILITIES,
@@ -536,7 +544,7 @@ func (resolver *cVEResolver) getEnvImpactComponentsForImages(ctx context.Context
 	if err != nil {
 		return 0, 0, err
 	}
-	withThisCVECount, err := deploymentLoader.CountFromQuery(resolver.addVulnScopeContext(ctx), search.EmptyQuery())
+	withThisCVECount, err := deploymentLoader.CountFromQuery(resolver.withVulnerabilityScope(ctx), search.EmptyQuery())
 	if err != nil {
 		return 0, 0, err
 	}
@@ -555,7 +563,7 @@ func (resolver *cVEResolver) getEnvImpactComponentsForNodes(ctx context.Context)
 	if err != nil {
 		return 0, 0, err
 	}
-	withThisCVECount, err := nodeLoader.CountFromQuery(resolver.addVulnScopeContext(ctx), search.EmptyQuery())
+	withThisCVECount, err := nodeLoader.CountFromQuery(resolver.withVulnerabilityScope(ctx), search.EmptyQuery())
 	if err != nil {
 		return 0, 0, err
 	}
@@ -631,7 +639,7 @@ func (resolver *cVEResolver) LastScanned(ctx context.Context) (*graphql.Time, er
 		},
 	}
 
-	images, err := imageLoader.FromQuery(resolver.addVulnScopeContext(ctx), q)
+	images, err := imageLoader.FromQuery(resolver.withVulnerabilityScope(ctx), q)
 	if err != nil || len(images) == 0 {
 		return nil, err
 	} else if len(images) > 1 {
@@ -704,12 +712,22 @@ func (resolver *cVEResolver) ComponentCount(ctx context.Context, args RawQuery) 
 	return componentLoader.CountFromQuery(resolver.addScopeContext(query))
 }
 
+func (resolver *cVEResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "ImageComponents")
+	return resolver.ImageComponents(resolver.withVulnerabilityScope(ctx), args)
+}
+
+func (resolver *cVEResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "ImageComponentCount")
+	return resolver.ImageComponentCount(resolver.withVulnerabilityScope(ctx), args)
+}
+
 // NodeComponents are the node components that contain the CVE/Vulnerability.
 func (resolver *cVEResolver) NodeComponents(_ context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponents")
 	if !features.PostgresDatastore.Enabled() {
 		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
-		return resolver.root.NodeComponents(resolver.addVulnScopeContext(resolver.ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+		return resolver.root.NodeComponents(resolver.withVulnerabilityScope(resolver.ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver NodeComponents in NodeVulnerability does not support postgres yet")
@@ -720,7 +738,7 @@ func (resolver *cVEResolver) NodeComponentCount(ctx context.Context, args RawQue
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponentCount")
 	if !features.PostgresDatastore.Enabled() {
 		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
-		return resolver.root.NodeComponentCount(resolver.addVulnScopeContext(resolver.ctx), RawQuery{Query: &query})
+		return resolver.root.NodeComponentCount(resolver.withVulnerabilityScope(resolver.ctx), RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
 	return 0, errors.New("Sub-resolver NodeComponentCount in NodeVulnerability does not support postgres yet")
@@ -1004,7 +1022,7 @@ func (resolver *cVEResolver) addScopeContext(query *v1.Query) (context.Context, 
 	ctx := resolver.ctx
 	scope, ok := scoped.GetScope(ctx)
 	if !ok {
-		return resolver.addVulnScopeContext(ctx), query
+		return resolver.withVulnerabilityScope(ctx), query
 	}
 	// If the scope is not set to vulnerabilities then
 	// we need to add a query to scope the search to the current vuln
