@@ -88,8 +88,6 @@ func init() {
 			"subject(name: String!): Subject",
 			"subjectCount(query: String): Int!",
 			"unusedVarSink(query: String): Int",
-
-            // TODO plotted image vulns
 		}),
 
 		// deprecated fields
