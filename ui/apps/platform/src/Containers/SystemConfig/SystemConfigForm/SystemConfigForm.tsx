@@ -1,6 +1,8 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import {
     ActionGroup,
+    Alert,
     Button,
     TextArea,
     Form,
@@ -22,10 +24,11 @@ import {
 import { useFormik } from 'formik';
 
 import ColorPicker from 'Components/ColorPicker';
-import { getProductBranding } from 'constants/productBranding';
+import { types } from 'reducers/systemConfig';
+import { saveSystemConfig } from 'services/SystemConfigService';
 import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
-import { TelemetryConfig } from 'types/telemetry.proto';
-import { ConfigTelemetryDetailContent } from '../ConfigTelemetryDetailWidget';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
 import FormSelect from './FormSelect';
 
 function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
@@ -54,38 +57,49 @@ function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
 type Values = {
     privateConfig: PrivateConfig;
     publicConfig: PublicConfig;
-    telemetryConfig: TelemetryConfig;
 };
 
 export type SystemConfigFormProps = {
     systemConfig: SystemConfig;
-    telemetryConfig: TelemetryConfig;
-    onCancel: () => void;
-    onSubmit: (
-        systemConfigSubmitted: SystemConfig,
-        telemetryConfigSubmitted: TelemetryConfig
-    ) => void;
+    setSystemConfig: (systemConfig: SystemConfig) => void;
+    setIsNotEditing: () => void;
 };
 
 const SystemConfigForm = ({
     systemConfig,
-    telemetryConfig,
-    onCancel,
-    onSubmit,
+    setSystemConfig,
+    setIsNotEditing,
 }: SystemConfigFormProps): ReactElement => {
-    const { type } = getProductBranding();
+    const dispatch = useDispatch();
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
     const { submitForm, setFieldValue, values, dirty, isValid, isSubmitting, setSubmitting } =
         useFormik<Values>({
-            initialValues: { privateConfig, publicConfig, telemetryConfig },
+            initialValues: { privateConfig, publicConfig },
             onSubmit: () => {
-                // TODO next step will call save functions directly from services instead of indirectly via sagas.
-                onSubmit(
-                    { privateConfig: values.privateConfig, publicConfig: values.publicConfig },
-                    values.telemetryConfig
-                );
-                setSubmitting(false);
+                // Payload for privateConfig allows strings as number values.
+                saveSystemConfig({
+                    privateConfig: values.privateConfig,
+                    publicConfig: values.publicConfig,
+                })
+                    .then((data) => {
+                        // Simulate fetchPublicConfig response to update Redux state.
+                        dispatch({
+                            type: types.FETCH_PUBLIC_CONFIG.SUCCESS,
+                            response: data.publicConfig,
+                        });
+                        setSystemConfig(data);
+                        setErrorMessage(null);
+                        setIsNotEditing();
+                    })
+                    .catch((error) => {
+                        setErrorMessage(getAxiosErrorMessage(error));
+                    })
+                    .finally(() => {
+                        setSubmitting(false);
+                    });
             },
         });
 
@@ -464,31 +478,12 @@ const SystemConfigForm = ({
                         </CardBody>
                     </Card>
                 </GridItem>
-                {type === 'RHACS_BRANDING' && (
-                    <GridItem md={6}>
-                        <Card>
-                            <CardHeader>
-                                <CardHeaderMain>
-                                    <CardTitle>Online telemetry data collection</CardTitle>
-                                </CardHeaderMain>
-                                <CardActions>
-                                    <Switch
-                                        id="telemetryConfig.enabled"
-                                        label="Enabled"
-                                        labelOff="Disabled"
-                                        isChecked={values?.telemetryConfig?.enabled}
-                                        onChange={onChange}
-                                    />
-                                </CardActions>
-                            </CardHeader>
-                            <Divider component="div" />
-                            <CardBody>
-                                <ConfigTelemetryDetailContent />
-                            </CardBody>
-                        </Card>
-                    </GridItem>
-                )}
             </Grid>
+            {typeof errorMessage === 'string' && (
+                <Alert variant="danger" isInline title="Failed to save system configuration">
+                    {errorMessage}
+                </Alert>
+            )}
             <ActionGroup>
                 <Button
                     variant="primary"
@@ -498,7 +493,7 @@ const SystemConfigForm = ({
                 >
                     Save
                 </Button>
-                <Button variant="secondary" onClick={onCancel}>
+                <Button variant="secondary" onClick={setIsNotEditing} isDisabled={isSubmitting}>
                     Cancel
                 </Button>
             </ActionGroup>

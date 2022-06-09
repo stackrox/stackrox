@@ -1,49 +1,77 @@
-import React, { ReactElement, useState } from 'react';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
-import { Button, PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
+import React, { ReactElement, ReactNode, useEffect, useState } from 'react';
+import {
+    Alert,
+    Bullseye,
+    Button,
+    Flex,
+    FlexItem,
+    PageSection,
+    Spinner,
+    Title,
+} from '@patternfly/react-core';
 
-import { selectors } from 'reducers';
-import { actions } from 'reducers/systemConfig';
-import { actions as telemetryActions } from 'reducers/telemetryConfig';
+import { fetchSystemConfig } from 'services/SystemConfigService';
 import { SystemConfig } from 'types/config.proto';
-import { TelemetryConfig } from 'types/telemetry.proto';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import SystemConfigForm from './SystemConfigForm';
 import Details from './Details';
 
-export type PageProps = {
-    systemConfig: SystemConfig;
-    saveSystemConfig: (systemConfig: SystemConfig) => void;
-    telemetryConfig: TelemetryConfig;
-    saveTelemetryConfig: (telemetryConfig: TelemetryConfig) => void;
-};
-
-const Page = ({
-    systemConfig,
-    saveSystemConfig,
-    telemetryConfig,
-    saveTelemetryConfig,
-}: PageProps): ReactElement => {
+const SystemConfigPage = (): ReactElement => {
     const [isEditing, setIsEditing] = useState(false);
-    // TODO next step will call fetch functions directly from services instead of indirectly via sagas
-    // Wait while either object is empty, which is initial state of the reducers.
-    const isLoading =
-        Object.keys(systemConfig).length === 0 || Object.keys(telemetryConfig).length === 0;
 
-    function editSystemConfig() {
+    const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+
+    useEffect(() => {
+        setIsLoading(true);
+        fetchSystemConfig()
+            .then((data) => {
+                setSystemConfig(data);
+                setErrorMessage('');
+            })
+            .catch((error) => {
+                setSystemConfig(null);
+                setErrorMessage(getAxiosErrorMessage(error));
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+    }, []);
+
+    function onClickEdit() {
         setIsEditing(true);
     }
 
-    function cancelEdit() {
+    function setIsNotEditing() {
         setIsEditing(false);
     }
 
-    function onSubmit(systemConfigSubmitted, telemetryConfigSubmitted) {
-        // TODO next step will receive the responses from requests in the form (so it can render error and loading).
-        saveSystemConfig(systemConfigSubmitted);
-        saveTelemetryConfig(telemetryConfigSubmitted);
-        setIsEditing(false);
+    let content: ReactNode = null;
+
+    if (isLoading) {
+        content = (
+            <Bullseye>
+                <Spinner isSVG />
+            </Bullseye>
+        );
+    } else if (systemConfig) {
+        content = isEditing ? (
+            <SystemConfigForm
+                systemConfig={systemConfig}
+                setSystemConfig={setSystemConfig}
+                setIsNotEditing={setIsNotEditing}
+            />
+        ) : (
+            <Details systemConfig={systemConfig} />
+        );
+    } else {
+        content = (
+            <Alert variant="warning" isInline title="Failed to get system configuration">
+                {errorMessage}
+            </Alert>
+        );
     }
 
     return (
@@ -58,7 +86,7 @@ const Page = ({
                             <Button
                                 variant="primary"
                                 isDisabled={isEditing || isLoading}
-                                onClick={editSystemConfig}
+                                onClick={onClickEdit}
                             >
                                 Edit
                             </Button>
@@ -66,30 +94,9 @@ const Page = ({
                     </Flex>
                 </Flex>
             </PageSection>
-            <PageSection>
-                {isEditing ? (
-                    <SystemConfigForm
-                        systemConfig={systemConfig}
-                        telemetryConfig={telemetryConfig}
-                        onCancel={cancelEdit}
-                        onSubmit={onSubmit}
-                    />
-                ) : (
-                    <Details systemConfig={systemConfig} telemetryConfig={telemetryConfig} />
-                )}
-            </PageSection>
+            <PageSection>{content}</PageSection>
         </>
     );
 };
 
-const mapStateToProps = createStructuredSelector({
-    systemConfig: selectors.getSystemConfig,
-    telemetryConfig: selectors.getTelemetryConfig,
-});
-
-const mapDispatchToProps = {
-    saveSystemConfig: actions.saveSystemConfig,
-    saveTelemetryConfig: telemetryActions.saveTelemetryConfig,
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(Page);
+export default SystemConfigPage;

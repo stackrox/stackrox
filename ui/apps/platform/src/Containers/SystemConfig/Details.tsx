@@ -1,21 +1,16 @@
 import React, { ReactElement } from 'react';
 import { Grid, GridItem } from '@patternfly/react-core';
 
-import { getProductBranding } from 'constants/productBranding';
 import { SystemConfig } from 'types/config.proto';
-import { TelemetryConfig } from 'types/telemetry.proto';
 import ConfigBannerDetailWidget from './ConfigBannerDetailWidget';
 import ConfigLoginDetailWidget from './ConfigLoginDetailWidget';
 import ConfigDataRetentionDetailWidget from './ConfigDataRetentionDetailWidget';
-import ConfigTelemetryDetailWidget from './ConfigTelemetryDetailWidget';
 
 export type DetailsProps = {
     systemConfig: SystemConfig;
-    telemetryConfig: TelemetryConfig;
 };
 
-function Details({ systemConfig, telemetryConfig }: DetailsProps): ReactElement {
-    const { type } = getProductBranding();
+function Details({ systemConfig }: DetailsProps): ReactElement {
     return (
         <Grid hasGutter>
             <GridItem span={12}>
@@ -30,14 +25,6 @@ function Details({ systemConfig, telemetryConfig }: DetailsProps): ReactElement 
             <GridItem sm={12} md={6}>
                 <ConfigLoginDetailWidget publicConfig={systemConfig?.publicConfig} />
             </GridItem>
-            {type === 'RHACS_BRANDING' && (
-                <GridItem sm={12} md={6}>
-                    <ConfigTelemetryDetailWidget
-                        telemetryConfig={telemetryConfig}
-                        editable={false}
-                    />
-                </GridItem>
-            )}
         </Grid>
     );
 }
