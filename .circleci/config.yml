@@ -2595,7 +2595,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      EKS_AUTOMATION_VERSION: 0.2.24-3-gbdb37f16bc-snapshot
+      EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - pre-build-ui:
           branding: STACKROX_BRANDING
@@ -2604,7 +2604,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      EKS_AUTOMATION_VERSION: 0.2.24-3-gbdb37f16bc-snapshot
+      EKS_AUTOMATION_VERSION: 0.2.17
       REACT_APP_ROX_PRODUCT_BRANDING: RHACS_BRANDING
     steps:
       - pre-build-ui:
@@ -2614,7 +2614,7 @@ jobs:
     executor: custom
     resource_class: medium
     environment:
-      - EKS_AUTOMATION_VERSION: 0.2.24-3-gbdb37f16bc-snapshot
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
       - attach_workspace:
@@ -2650,7 +2650,7 @@ jobs:
     working_directory: ~/go/src/github.com/stackrox/rox
     environment:
       GOPATH: /home/circleci/go
-      EKS_AUTOMATION_VERSION: 0.2.24-3-gbdb37f16bc-snapshot
+      EKS_AUTOMATION_VERSION: 0.2.17
     resource_class: large
     steps:
       - checkout
@@ -2711,7 +2711,7 @@ jobs:
     executor: custom
     resource_class: medium
     environment:
-      EKS_AUTOMATION_VERSION: 0.2.24-3-gbdb37f16bc-snapshot
+      EKS_AUTOMATION_VERSION: 0.2.17
       ROX_PRODUCT_BRANDING: "STACKROX_BRANDING"
     steps:
       - build
@@ -2720,7 +2720,7 @@ jobs:
     executor: custom
     resource_class: medium
     environment:
-      EKS_AUTOMATION_VERSION: 0.2.24-3-gbdb37f16bc-snapshot
+      EKS_AUTOMATION_VERSION: 0.2.17
       ROX_PRODUCT_BRANDING: "RHACS_BRANDING"
     steps:
       - build
@@ -2912,7 +2912,7 @@ jobs:
     executor: custom
     resource_class: medium
     environment:
-      - EKS_AUTOMATION_VERSION: 0.2.24-3-gbdb37f16bc-snapshot
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
       - setup_remote_docker
@@ -3006,7 +3006,7 @@ jobs:
     executor: kubectl-client-1-23
     resource_class: small
     environment:
-      - EKS_AUTOMATION_VERSION: 0.2.24-3-gbdb37f16bc-snapshot
+      - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -3751,7 +3751,7 @@ jobs:
   eks-api-e2e-tests:
     executor: kubectl-client-1-23
     environment:
-      - EKS_AUTOMATION_VERSION: 0.2.24-3-gbdb37f16bc-snapshot
+      - EKS_AUTOMATION_VERSION: 0.2.17
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: false
