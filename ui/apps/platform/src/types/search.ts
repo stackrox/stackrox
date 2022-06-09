@@ -3,7 +3,7 @@
  * 'Lifecycle Stage': 'BUILD' from 's[Lifecycle Stage]=BUILD
  * 'Lifecycle Stage': ['BUILD', 'DEPLOY'] from 's[Lifecycle Stage]=BUILD&s[Lifecycle State]=DEPLOY'
  */
-export type SearchFilter = Record<string, string | string[]>;
+export type SearchFilter = Partial<Record<string, string | string[]>>;
 
 /*
  * For array values of SearchInput props: searchModifiers and searchOptions.
