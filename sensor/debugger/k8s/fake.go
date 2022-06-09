@@ -85,6 +85,7 @@ var actionToOptions = map[string]interface{}{
 	"DELETE_RESOURCE": metav1.DeleteOptions{},
 }
 
+// Init initializes the FakeEventsManager
 func (f *FakeEventsManager) Init() {
 	f.clientMap = map[string]func(string) interface{}{
 		namespaceKind:          func(string) interface{} { return f.Client.Kubernetes().CoreV1().Namespaces() },
@@ -162,6 +163,7 @@ func (f *FakeEventsManager) CreateEvents() error {
 	if err != nil {
 		return err
 	}
+	f.Init()
 	go func() {
 		for _, obj := range objs {
 			if len(obj) == 0 {
@@ -181,6 +183,7 @@ func (f *FakeEventsManager) CreateEvents() error {
 	return waitForMinimumResources(ch, done)
 }
 
+// runOp runs the create/update/delete operation
 func runOp(action string, resourceClient, resourceObject reflect.Value) []reflect.Value {
 	method, ok := actionToMethod[action]
 	if !ok {
@@ -197,6 +200,7 @@ func runOp(action string, resourceClient, resourceObject reflect.Value) []reflec
 	})
 }
 
+// getNamespace returns the namespace from a resource
 func getNamespace(resource reflect.Value) string {
 	values := resource.MethodByName("GetNamespace").Call([]reflect.Value{})
 	if len(values) != 1 {
@@ -205,6 +209,7 @@ func getNamespace(resource reflect.Value) string {
 	return values[0].String()
 }
 
+// handleRunOp handles the execution of runOp
 func (f *FakeEventsManager) handleRunOp(action, kind string, client, object reflect.Value, ch chan string) error {
 	returnVals := runOp(action, client, object)
 	if len(returnVals) == 0 {
@@ -228,19 +233,17 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 	objType := strings.Split(msg.ObjectType, ".")
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&msg.Payload)
 	if err != nil {
-		return fmt.Errorf("error constructing unstructured: %s", err)
+		return fmt.Errorf("error constructing unstructured: %w", err)
 	}
 	Kind := objType[1]
 	obj.Object = u
-
-	f.Init()
 
 	r, ok := f.resourceMap[Kind]
 	if !ok {
 		return fmt.Errorf("resource %s not found", Kind)
 	}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), r); err != nil {
-		return fmt.Errorf("unable to construct %s from unstructured: %s", Kind, err)
+		return fmt.Errorf("unable to construct %s from unstructured: %w", Kind, err)
 	}
 
 	clFunc, ok := f.clientMap[Kind]

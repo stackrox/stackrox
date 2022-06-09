@@ -48,8 +48,6 @@ var (
 type Sensor struct {
 	centralEndpoint    string
 	advertisedEndpoint string
-	k8sTraceRecording  string
-	k8sTraceReplay     string
 
 	configHandler config.Handler
 	detector      detector.Detector
