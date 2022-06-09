@@ -27,7 +27,7 @@ function generated_files-are-up-to-date() {
         exit 1
     fi
 }
-generated_files-are-up-to-date || { echo "Failed, waiting for prow to wind down"; sleep 300; exit 1; }
+generated_files-are-up-to-date #|| { echo "Failed, waiting for prow to wind down"; sleep 300; exit 1; }
 
 echo 'Ensure that all TODO references to fixed tickets are gone'
 .circleci/check-pr-fixes.sh
