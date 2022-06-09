@@ -168,11 +168,11 @@ func (suite *ImageStoreTestSuite) TestImages() {
 
 	// Check that the Image CVE Edges were written with the correct timestamp.
 	// This test relies on dackbox that does not require the primary keys.
-	imageCVEEdge, _, err := suite.imageCVEEdgeStore.Get(allAccessCtx, edges.EdgeID{ParentID: "sha256:sha1", ChildID: "cve1"}.ToString(), "", "")
+	imageCVEEdge, _, err := suite.imageCVEEdgeStore.Get(allAccessCtx, edges.EdgeID{ParentID: "sha256:sha1", ChildID: "cve1"}.ToString())
 	suite.NoError(err)
 	suite.Equal(images[0].GetLastUpdated(), imageCVEEdge.GetFirstImageOccurrence())
 	// This test relies on dackbox that does not require the primary keys.
-	imageCVEEdge, _, err = suite.imageCVEEdgeStore.Get(allAccessCtx, edges.EdgeID{ParentID: "sha256:sha1", ChildID: "cve1"}.ToString(), "", "")
+	imageCVEEdge, _, err = suite.imageCVEEdgeStore.Get(allAccessCtx, edges.EdgeID{ParentID: "sha256:sha1", ChildID: "cve1"}.ToString())
 	suite.NoError(err)
 	suite.Equal(images[0].GetLastUpdated(), imageCVEEdge.GetFirstImageOccurrence())
 
