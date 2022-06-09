@@ -77,7 +77,7 @@ func TestSearchFuncs(t *testing.T) {
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
 		WithCVEDataStore(cveMocks.NewMockDataStore(mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(mockCtrl)).
+		WithImageComponentDataStore(componentMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil).
 		Build()
 
@@ -166,7 +166,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
+		WithImageComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
@@ -246,7 +246,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
+		WithImageComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
@@ -301,7 +301,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
+		WithImageComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
@@ -375,7 +375,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
+		WithImageComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
