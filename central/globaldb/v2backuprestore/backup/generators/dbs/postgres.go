@@ -41,6 +41,7 @@ func (bu *PostgresBackup) WriteTo(ctx context.Context, out io.Writer) error {
 		"-d",
 		config.ConnConfig.Database,
 		"-Fc", // Custom format, compressed hopefully supports stdin to restore
+		"-vvv",
 	}
 
 	// Get the common DB connection info
