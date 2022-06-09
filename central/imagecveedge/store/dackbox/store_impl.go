@@ -34,7 +34,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) store.Store {
 	}
 }
 
-func (b *storeImpl) Exists(_ context.Context, id string, _ string, _ string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -66,7 +66,7 @@ func (b *storeImpl) Count(_ context.Context) (int, error) {
 	return count, nil
 }
 
-func (b *storeImpl) Get(_ context.Context, id string, _ string, _ string) (cve *storage.ImageCVEEdge, exists bool, err error) {
+func (b *storeImpl) Get(_ context.Context, id string) (cve *storage.ImageCVEEdge, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ImageCVEEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()

@@ -76,7 +76,7 @@ func (s *ImageCveEdgesStoreSuite) TestStore() {
 	imageCVEEdge := &storage.ImageCVEEdge{}
 	s.NoError(testutils.FullInit(imageCVEEdge, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundImageCVEEdge, exists, err := store.Get(ctx, imageCVEEdge.GetId(), imageCVEEdge.GetImageId(), imageCVEEdge.GetImageCveId())
+	foundImageCVEEdge, exists, err := store.Get(ctx, imageCVEEdge.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImageCVEEdge)

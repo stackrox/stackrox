@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/componentcveedge/index"
 	sacFilters "github.com/stackrox/rox/central/componentcveedge/sac"
 	"github.com/stackrox/rox/central/componentcveedge/search"
@@ -14,13 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
-	"github.com/stackrox/rox/pkg/search/postgres"
 )
-
-type componentCVEEdgePks struct {
-	componentID string
-	cveID       string
-}
 
 type datastoreImpl struct {
 	storage       store.Store
@@ -57,17 +50,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.Component
 		}
 	}
 
-	var pks componentCVEEdgePks
-	var err error
-	if features.PostgresDatastore.Enabled() {
-		pks, err = getPKs(id)
-		if err != nil {
-			return nil, false, err
-		}
-	}
-	// For dackbox, we do not need all the primary keys.
-
-	edge, found, err := ds.storage.Get(ctx, id, pks.componentID, pks.cveID)
+	edge, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -82,17 +65,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 		}
 	}
 
-	var pks componentCVEEdgePks
-	var err error
-	if features.PostgresDatastore.Enabled() {
-		pks, err = getPKs(id)
-		if err != nil {
-			return false, err
-		}
-	}
-	// For dackbox, we do not need all the primary keys.
-
-	found, err := ds.storage.Exists(ctx, id, pks.componentID, pks.cveID)
+	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
 	}
@@ -106,21 +79,4 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
 	})
 	return filteredIDs, err
-}
-
-func getPKs(id string) (componentCVEEdgePks, error) {
-	parts := postgres.IDToParts(id)
-	if len(parts) != 5 {
-		return componentCVEEdgePks{}, errors.Errorf("unexpected number of primary keys (%v) found for component-cve relation. Expected 5 parts", parts)
-	}
-
-	compName := parts[0]
-	compVersion := parts[1]
-	compOS := parts[2]
-	cve := parts[3]
-	cveOS := parts[4]
-	return componentCVEEdgePks{
-		componentID: postgres.IDFromPks([]string{compName, compVersion, compOS}),
-		cveID:       postgres.IDFromPks([]string{cve, cveOS}),
-	}, nil
 }
