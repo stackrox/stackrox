@@ -10,4 +10,4 @@
 # - `make update` and commit the results
 # - run `/test pj-rehearse-max` on the openshift/release PR to validate the change
 
-FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.40-10-gab87d63a8a
+FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.40-11-g5ee174bbe4
