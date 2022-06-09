@@ -741,9 +741,12 @@ openshift_ci_mods() {
 
 debug_namespace() {
     info "Debug namespace: ${NAMESPACE:-}"
+    set -x
+    env | grep "KUBE" || true
     env | grep "ci-op" || true
     kubectl get ns || true
     kubectl get all || true
+    set +x
 }
 
 validate_expected_go_version() {
