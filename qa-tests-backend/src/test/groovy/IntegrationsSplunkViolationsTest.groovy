@@ -11,9 +11,11 @@ import com.jayway.restassured.response.Response
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 
 import groups.Integration
+import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
+import util.NetworkGraphUtil
 import util.SplunkUtil
 import util.Timer
 
@@ -37,6 +39,41 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static final String CIM_REMOTE_LOCATION = "/tmp/cim.tgz"
     private static final String TEST_NAMESPACE = "qa-splunk-violation"
     private static final String SPLUNK_INPUT_NAME = "stackrox-violations-input"
+
+    static final private String SERVER_DEP_NAME = "net-bl-server"
+    static final private String BASELINED_CLIENT_DEP_NAME = "net-bl-client-baselined"
+    static final private String USER_DEP_NAME = "net-bl-user-server"
+    static final private String BASELINED_USER_CLIENT_DEP_NAME = "net-bl-user-client-baselined"
+    static final private String ANOMALOUS_CLIENT_DEP_NAME = "net-bl-client-anomalous"
+    static final private String DEFERRED_BASELINED_CLIENT_DEP_NAME = "net-bl-client-deferred-baselined"
+    static final private String DEFERRED_POST_LOCK_DEP_NAME = "net-bl-client-post-lock"
+
+    static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa:nginx-1.19-alpine"
+
+    // The baseline generation duration must be changed from the default for this test to succeed.
+    static final private int EXPECTED_BASELINE_DURATION_SECONDS = 240
+
+    static final private int CLOCK_SKEW_ALLOWANCE_SECONDS = 15
+
+    static final private List<Deployment> DEPLOYMENTS = []
+
+    static final private SERVER_DEP = createAndRegisterDeployment()
+            .setName(SERVER_DEP_NAME)
+            .setNamespace("server-ns-${System.nanoTime()}")
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", SERVER_DEP_NAME)
+            .addPort(80)
+            .setExposeAsService(true)
+
+    static final private BASELINED_CLIENT_DEP = createAndRegisterDeployment()
+            .setName(BASELINED_CLIENT_DEP_NAME)
+            .setNamespace("client-ns-${System.nanoTime()}")
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", BASELINED_CLIENT_DEP_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(
+                    ["for i in \$(seq 1 1000); do wget -S http://${SERVER_DEP_NAME}; sleep 1; done; sleep 1000" as String]
+            )
 
     def setupSpec() {
         // when using "Analyst" api token to access central Splunk violations endpoint
@@ -83,7 +120,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     @Category(Integration)
-    @Ignore("ROX-11138")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
@@ -94,7 +130,18 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         def splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE, false)
         configureSplunkTA(splunkDeployment, centralHost)
         triggerProcessViolation(splunkDeployment)
-        triggerNetworkFlowViolation(splunkDeployment, centralHost)
+        batchCreate([SERVER_DEP, BASELINED_CLIENT_DEP])
+        assert NetworkGraphUtil.checkForEdge(BASELINED_CLIENT_DEP.getDeploymentUid(), SERVER_DEP.getDeploymentUid(), null,180)
+        def serverBaseline = evaluateWithRetry(30, 4) {
+            def baseline = NetworkBaselineService.getNetworkBaseline(SERVER_DEP.getDeploymentUid())
+            if (baseline == null) {
+                throw new RuntimeException(
+                        "No peers in baseline for deployment ${SERVER_DEP.getDeploymentUid()} yet. Baseline is ${baseline}"
+                )
+            }
+            return baseline
+        }
+        triggerNetworkFlowViolation(SERVER_DEP.getDeploymentUid(), centralHost)
 
         when:
         "Search for violations in Splunk"
@@ -138,6 +185,9 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         "remove splunk"
         if (splunkDeployment) {
             tearDownSplunk(orchestrator, splunkDeployment)
+        }
+        for (Deployment deployment : DEPLOYMENTS) {
+            orchestrator.deleteDeployment(deployment)
         }
         orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
@@ -294,14 +344,12 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     def triggerProcessViolation(SplunkUtil.SplunkDeployment splunkDeployment) {
-        orchestrator.execInContainer(splunkDeployment.deployment, "curl http://127.0.0.1:10248/")
+        orchestrator.execInContainer(splunkDeployment.deployment, "curl http://127.0.0.1:10248/ --max-time 2")
         assert waitForAlertWithPolicyId("86804b96-e87e-4eae-b56e-1718a8a55763")
     }
 
-    def triggerNetworkFlowViolation(SplunkUtil.SplunkDeployment splunkDeployment, String centralHost) {
-        NetworkBaselineService.lockNetworkBaseline(splunkDeployment.getDeployment().deploymentUid)
-        orchestrator.execInContainer(splunkDeployment.deployment,
-                "for i in `seq 25`; do curl http://${centralHost}:443; sleep 1; done")
+    def triggerNetworkFlowViolation(String uid, String centralHost) {
+        NetworkBaselineService.lockNetworkBaseline(uid)
 
         // TODO: this code is flaky; see https://stack-rox.atlassian.net/browse/ROX-7772
         assert waitForAlertWithPolicyId("1b74ffdd-8e67-444c-9814-1c23863c8ccb")
@@ -341,5 +389,18 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             }
         }
         return false
+    }
+
+    private batchCreate(List<Deployment> deployments) {
+        orchestrator.batchCreateDeployments(deployments)
+        for (Deployment deployment : deployments) {
+            assert Services.waitForDeployment(deployment)
+        }
+    }
+
+    private static createAndRegisterDeployment() {
+        Deployment deployment = new Deployment()
+        DEPLOYMENTS.add(deployment)
+        return deployment
     }
 }
