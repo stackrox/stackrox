@@ -21,7 +21,7 @@ func init() {
 			"activeState(query: String): ActiveState",
 			"deploymentCount(query: String, scopeQuery: String): Int!",
 			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
-			"fixedIn: String!",
+			"fixedIn: String! @deprecated(reason: \"use 'fixedBy'\")",
 			"imageCount(query: String, scopeQuery: String): Int!",
 			"images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!",
 			"imageVulnerabilityCount(query: String, scopeQuery: String): Int!",
@@ -111,5 +111,5 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 
 func queryWithImageIDRegexFilter(q string) string {
 	return search.AddRawQueriesAsConjunction(q,
-		search.NewQueryBuilder().AddRegexes(search.ImageLabel, ".+").Query())
+		search.NewQueryBuilder().AddRegexes(search.ImageSHA, ".+").Query())
 }

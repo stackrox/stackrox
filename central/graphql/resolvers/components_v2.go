@@ -48,6 +48,7 @@ func (resolver *Resolver) imageComponentV2(ctx context.Context, args IDQuery) (I
 	res.ctx = ctx
 	return res, nil
 }
+
 func (resolver *Resolver) imageComponentsV2(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {

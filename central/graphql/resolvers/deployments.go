@@ -525,13 +525,6 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 	return results[0].ID, nil
 }
 
-func (resolver *deploymentResolver) scopeContext(ctx context.Context) context.Context {
-	return scoped.Context(ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
-		Level: v1.SearchCategory_DEPLOYMENTS,
-	})
-}
-
 func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Images")
 	if err := readImages(ctx); err != nil {
@@ -541,7 +534,7 @@ func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQu
 		return nil, nil
 	}
 
-	return resolver.root.Images(resolver.scopeContext(ctx), PaginatedQuery{Query: args.Query, Pagination: args.Pagination})
+	return resolver.root.Images(resolver.withDeploymentScope(ctx), PaginatedQuery{Query: args.Query, Pagination: args.Pagination})
 }
 
 func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -550,7 +543,7 @@ func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuer
 		return 0, err
 	}
 
-	return resolver.root.ImageCount(resolver.scopeContext(ctx), RawQuery{Query: args.Query})
+	return resolver.root.ImageCount(resolver.withDeploymentScope(ctx), RawQuery{Query: args.Query})
 }
 
 func (resolver *deploymentResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
@@ -578,55 +571,34 @@ func (resolver *deploymentResolver) ComponentCount(ctx context.Context, args Raw
 
 func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
-
-	return resolver.root.ImageComponents(resolver.deploymentScopeContext(ctx), args)
+	return resolver.root.ImageComponents(resolver.withDeploymentScope(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
-
-	return resolver.root.ImageComponentCount(resolver.deploymentScopeContext(ctx), args)
-}
-
-func (resolver *deploymentResolver) deploymentScopeContext(ctx context.Context) context.Context {
-	return scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    resolver.data.GetId(),
-	})
-}
-
-// vulnQueryScoping applies scope to the provided context so that results returned are only relevant to the given deployment
-func (resolver *deploymentResolver) vulnQueryScoping(ctx context.Context) context.Context {
-	ctx = scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    resolver.data.GetId(),
-	})
-
-	return ctx
+	return resolver.root.ImageComponentCount(resolver.withDeploymentScope(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilities")
-
-	ctx = resolver.vulnQueryScoping(ctx)
-
-	return resolver.root.ImageVulnerabilities(ctx, args)
+	return resolver.root.ImageVulnerabilities(resolver.withDeploymentScope(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCount")
-
-	ctx = resolver.vulnQueryScoping(ctx)
-
-	return resolver.root.ImageVulnerabilityCount(ctx, args)
+	return resolver.root.ImageVulnerabilityCount(resolver.withDeploymentScope(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCounter")
+	return resolver.root.ImageVulnerabilityCounter(resolver.withDeploymentScope(ctx), args)
+}
 
-	ctx = resolver.vulnQueryScoping(ctx)
-
-	return resolver.root.ImageVulnerabilityCounter(ctx, args)
+func (resolver *deploymentResolver) withDeploymentScope(ctx context.Context) context.Context {
+	return scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_DEPLOYMENTS,
+		ID:    resolver.data.GetId(),
+	})
 }
 
 func (resolver *deploymentResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {

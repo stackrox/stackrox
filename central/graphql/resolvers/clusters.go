@@ -573,14 +573,12 @@ func (resolver *clusterResolver) ComponentCount(ctx context.Context, args RawQue
 
 func (resolver *clusterResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponents")
-
-	return resolver.root.ImageComponents(resolver.clusterScopeContext(ctx), args)
+	return resolver.root.ImageComponents(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponents")
-
-	return resolver.root.ImageComponentCount(resolver.clusterScopeContext(ctx), args)
+	return resolver.root.ImageComponentCount(resolver.withClusterScope(ctx), args)
 }
 
 // NodeComponents returns the node components in the cluster.
@@ -588,7 +586,7 @@ func (resolver *clusterResolver) NodeComponents(ctx context.Context, args Pagina
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponents")
 
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeComponents(resolver.clusterScopeContext(ctx), args)
+		return resolver.root.NodeComponents(resolver.withClusterScope(ctx), args)
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver NodeComponents in Cluster does not support postgres yet")
@@ -599,7 +597,7 @@ func (resolver *clusterResolver) NodeComponentCount(ctx context.Context, args Ra
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponents")
 
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeComponentCount(resolver.clusterScopeContext(ctx), args)
+		return resolver.root.NodeComponentCount(resolver.withClusterScope(ctx), args)
 	}
 	// TODO : Add postgres support
 	return 0, errors.New("Sub-resolver NodeComponentCount in Cluster does not support postgres yet")
@@ -667,7 +665,7 @@ func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, a
 	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in Cluster does not support postgres yet")
 }
 
-func (resolver *clusterResolver) clusterQueryScoping(ctx context.Context) context.Context {
+func (resolver *clusterResolver) withClusterScope(ctx context.Context) context.Context {
 	return scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_CLUSTERS,
 		ID:    resolver.data.GetId(),
@@ -676,74 +674,62 @@ func (resolver *clusterResolver) clusterQueryScoping(ctx context.Context) contex
 
 func (resolver *clusterResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageVulnerabilities")
-
-	return resolver.root.ImageVulnerabilities(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.ImageVulnerabilities(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageVulnerabilityCount")
-
-	return resolver.root.ImageVulnerabilityCount(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.ImageVulnerabilityCount(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageVulnerabilityCounter")
-
-	return resolver.root.ImageVulnerabilityCounter(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.ImageVulnerabilityCounter(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) ClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilities")
-
-	return resolver.root.ClusterVulnerabilities(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.ClusterVulnerabilities(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) ClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilityCount")
-
-	return resolver.root.ClusterVulnerabilityCount(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.ClusterVulnerabilityCount(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) ClusterVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilityCounter")
-
-	return resolver.root.ClusterVulnerabilityCounter(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.ClusterVulnerabilityCounter(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) K8sClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sClusterVulnerabilities")
-
-	return resolver.root.K8sClusterVulnerabilities(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.K8sClusterVulnerabilities(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) K8sClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sClusterVulnerabilityCount")
-
-	return resolver.root.K8sClusterVulnerabilityCount(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.K8sClusterVulnerabilityCount(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) IstioClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IstioClusterVulnerabilities")
-
-	return resolver.root.IstioClusterVulnerabilities(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.IstioClusterVulnerabilities(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) IstioClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IstioClusterVulnerabilityCount")
-
-	return resolver.root.IstioClusterVulnerabilityCount(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.IstioClusterVulnerabilityCount(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) OpenShiftClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "OpenShiftClusterVulnerabilities")
-
-	return resolver.root.OpenShiftClusterVulnerabilities(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.OpenShiftClusterVulnerabilities(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) OpenShiftClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "OpenShiftClusterVulnerabilityCount")
-
-	return resolver.root.OpenShiftClusterVulnerabilityCount(resolver.clusterQueryScoping(ctx), args)
+	return resolver.root.OpenShiftClusterVulnerabilityCount(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) K8sVulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
@@ -1154,13 +1140,6 @@ func (resolver *clusterResolver) PlottedNodeVulnerabilities(ctx context.Context,
 
 func (resolver *clusterResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
 	return nil
-}
-
-func (resolver *clusterResolver) clusterScopeContext(ctx context.Context) context.Context {
-	return scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_CLUSTERS,
-		ID:    resolver.data.GetId(),
-	})
 }
 
 func (resolver *orchestratorMetadataResolver) OpenShiftVersion() (string, error) {
