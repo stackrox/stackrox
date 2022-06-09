@@ -229,6 +229,22 @@ export function fetchNetworkFlowGraph(clusterId, namespaces, query, date, includ
 /**
  * Fetches policies details for given array of ids.
  *
+ * @param {!String} namespaceId
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchNetworkPoliciesInNamespace(clusterId, namespaceId) {
+    const options = {
+        method: 'GET',
+        url: `${networkPoliciesBaseUrl}?cluster_id=${clusterId}&namespace=${namespaceId}`,
+    };
+    return axios(options).then((response) => ({
+        response: response.data,
+    }));
+}
+
+/**
+ * Fetches policies details for given array of ids.
+ *
  * @param {!array} policyIds
  * @returns {Promise<Object, Error>}
  */

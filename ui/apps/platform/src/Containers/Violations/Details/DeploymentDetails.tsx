@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Flex, FlexItem, Card, CardBody, Title, Divider } from '@patternfly/react-core';
+import {
+    Alert,
+    Flex,
+    FlexItem,
+    Card,
+    CardBody,
+    Title,
+    Divider,
+    List,
+    ListItem,
+} from '@patternfly/react-core';
 
 import { fetchDeployment } from 'services/DeploymentsService';
+import { fetchNetworkPoliciesInNamespace } from 'services/NetworkService';
 import { portExposureLabels } from 'messages/common';
 import ObjectDescriptionList from 'Components/ObjectDescriptionList';
 import DeploymentOverview from './Deployment/DeploymentOverview';
@@ -62,6 +73,7 @@ export const formatDeploymentPorts = (ports: Port[] = []): FormattedPort[] => {
 const DeploymentDetails = ({ deployment }) => {
     // attempt to fetch related deployment to selected alert
     const [relatedDeployment, setRelatedDeployment] = useState(deployment);
+    const [namespacePolicies, setNamespacePolicies] = useState([]);
 
     useEffect(() => {
         fetchDeployment(deployment.id).then(
@@ -70,7 +82,15 @@ const DeploymentDetails = ({ deployment }) => {
         );
     }, [deployment.id, setRelatedDeployment]);
 
+    useEffect(() => {
+        fetchNetworkPoliciesInNamespace(deployment.clusterId, deployment.namespace).then(
+            (policies) => setNamespacePolicies(policies.response.networkPolicies),
+            () => setNamespacePolicies([])
+        );
+    }, [deployment.namespace, deployment.clusterId, setNamespacePolicies]);
+
     const deploymentObj = relatedDeployment || deployment;
+    const namespacePoliciesList = namespacePolicies || [];
 
     return (
         <Flex
@@ -129,6 +149,28 @@ const DeploymentDetails = ({ deployment }) => {
                     </FlexItem>
                     <FlexItem>
                         <SecurityContext deployment={relatedDeployment} />
+                    </FlexItem>
+                    <FlexItem>
+                        <Title headingLevel="h3" className="pf-u-my-md">
+                            All Network Policies for {deploymentObj.namespace}
+                        </Title>
+                        <Divider component="div" />
+                    </FlexItem>
+                    <FlexItem>
+                        <Card isFlat data-testid="network-policy">
+                            <CardBody>
+                                {namespacePoliciesList?.length > 0 ? (
+                                    <List>
+                                        {namespacePoliciesList.map((netpol) => (
+                                            // eslint-disable-next-line react/no-array-index-key
+                                            <ListItem key={netpol["id"]}>{netpol["name"]}</ListItem>
+                                        ))}
+                                    </List>
+                                ) : (
+                                    'No Network Policies found'
+                                )}
+                            </CardBody>
+                        </Card>
                     </FlexItem>
                 </Flex>
                 <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
