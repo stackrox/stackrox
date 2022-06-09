@@ -5,6 +5,8 @@ import (
 	"hash/fnv"
 	"reflect"
 
+	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/mitchellh/hashstructure"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,15 +29,18 @@ type key struct {
 type deduper struct {
 	stream   messagestream.SensorMessageStream
 	lastSent map[key]uint64
-	hasher   hash.Hash64
+
+	lastSentMessage map[key]proto.Message
+	hasher          hash.Hash64
 }
 
 // NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
 func NewDedupingMessageStream(stream messagestream.SensorMessageStream) messagestream.SensorMessageStream {
 	return &deduper{
-		stream:   stream,
-		lastSent: make(map[key]uint64),
-		hasher:   fnv.New64a(),
+		stream:          stream,
+		lastSent:        make(map[key]uint64),
+		lastSentMessage: make(map[key]proto.Message),
+		hasher:          fnv.New64a(),
 	}
 }
 
@@ -76,10 +81,20 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		return nil
 	}
 
+	if _, ok := d.lastSentMessage[key]; ok {
+		marshaler := jsonpb.Marshaler{Indent: "  "}
+		json, _ := marshaler.MarshalToString(d.lastSentMessage[key])
+		log.Info("Prev: " + json)
+
+		json, _ = marshaler.MarshalToString(msg)
+		log.Info("New: " + json)
+	}
+
 	if err := d.stream.Send(msg); err != nil {
 		return err
 	}
 	d.lastSent[key] = hashValue
+	d.lastSentMessage[key] = msg
 
 	return nil
 }
