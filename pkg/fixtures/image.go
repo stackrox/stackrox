@@ -2525,18 +2525,18 @@ func GetPartialKubeProxy_1__21_5() *storage.Image {
 			ScannerVersion: "2.24.0-11-g05cf175999",
 			ScanTime:       &types.Timestamp{Seconds: 1654154306, Nanos: 186771200},
 			Components: []*storage.EmbeddedImageScanComponent{
-				GetEmbeddedLibzstd_1_3_8(),
-				GetEmbeddedLsb_10_2019051400(),
-				GetEmbeddedLibnetfilterConntrack_1_0_7_1(),
-				GetEmbeddedBasePasswd_3_5_46(),
-				GetEmbeddedAdduser_3_118(),
-				GetEmbeddedOpenSSL_1_1_1d(),
-				GetEmbeddedKmod_26_1(),
-				GetEmbeddedZlib_1_1_2_11(),
-				GetEmbeddedLibftnl_1_1_7_1(),
-				GetEmbeddedAttr_1_2_4_48_4(),
-				GetEmbeddedAudit_1_2_8_4_3(),
-				GetEmbeddedPerl_5_28_1_6(),
+				GetEmbeddedImageComponentLibzstd_1_3_8(),
+				GetEmbeddedImageComponentLsb_10_2019051400(),
+				GetEmbeddedImageComponentLibnetfilterConntrack_1_0_7_1(),
+				GetEmbeddedImageComponentBasePasswd_3_5_46(),
+				GetEmbeddedImageComponentAdduser_3_118(),
+				GetEmbeddedImageComponentOpenSSL_1_1_1d(),
+				GetEmbeddedImageComponentKmod_26_1(),
+				GetEmbeddedImageComponentZlib_1_1_2_11(),
+				GetEmbeddedImageComponentLibftnl_1_1_7_1(),
+				GetEmbeddedImageComponentAttr_1_2_4_48_4(),
+				GetEmbeddedImageComponentAudit_1_2_8_4_3(),
+				GetEmbeddedImageComponentPerl_5_28_1_6(),
 			},
 			OperatingSystem: "debian:10",
 			DataSource: &storage.DataSource{
@@ -2553,6 +2553,136 @@ func GetPartialKubeProxy_1__21_5() *storage.Image {
 		Notes: []storage.Image_Note{
 			storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA,
 			storage.Image_MISSING_SIGNATURE,
+		},
+	}
+}
+
+func GetScopedPartialNginX_1_14_2() *storage.Image {
+	return &storage.Image{
+		Id: "sha256:f7988fb6c02e0ce69257d9bd9cf37ae20a60f1df7563c3a2a6abe24160306b8d",
+		Name: &storage.ImageName{
+			Registry: "docker.io",
+			Remote:   "library/nginx",
+			Tag:      "1.14.2",
+			FullName: "docker.io/library/nginx:1.14.2",
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Digest:  "sha256:295c7be079025306c4f1d65997fcf7adb411c88f139ad1d34b537164aa060369",
+				Created: &types.Timestamp{Seconds: 1553642092, Nanos: 227945051},
+				Layers: []*storage.ImageLayer{
+					{
+						Instruction: "ADD",
+						Value:       "file:4fc310c0cb879c876c5c0f571af665a0d24d36cb9263e0f53b0cda2f7e4b1844 in /",
+						Created:     &types.Timestamp{Seconds: 1553640086, Nanos: 106246179},
+					},
+					{
+						Instruction: "CMD",
+						Value:       "[\"bash\"]",
+						Created:     &types.Timestamp{Seconds: 1553640086, Nanos: 302497847},
+						Empty:       true,
+					},
+					{
+						Instruction: "LABEL",
+						Value:       "maintainer=NGINX Docker Maintainers <docker-maint@nginx.com>",
+						Created:     &types.Timestamp{Seconds: 1553641996, Nanos: 970741082},
+						Empty:       true,
+					},
+					{
+						Instruction: "ENV",
+						Value:       "NGINX_VERSION=1.14.2-1~stretch",
+						Created:     &types.Timestamp{Seconds: 1553642066, Nanos: 130250839},
+						Empty:       true,
+					},
+					{
+						Instruction: "ENV",
+						Value:       "NJS_VERSION=1.14.2.0.2.6-1~stretch",
+						Created:     &types.Timestamp{Seconds: 1553642066, Nanos: 292539689},
+						Empty:       true,
+					},
+					{
+						Instruction: "RUN",
+						Value:       "set -x && apt-get update && apt-get install --no-install-recommends --no-install-suggests -y gnupg1 apt-transport-https ca-certificates && NGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; found=''; for server in ha.pool.sks-keyservers.net hkp://keyserver.ubuntu.com:80 hkp://p80.pool.sks-keyservers.net:80 pgp.mit.edu ; do echo \"Fetching GPG key $NGINX_GPGKEY from $server\"; apt-key adv --keyserver \"$server\" --keyserver-options timeout=10 --recv-keys \"$NGINX_GPGKEY\" && found=yes && break; done; test -z \"$found\" && echo >&2 \"error: failed to fetch GPG key $NGINX_GPGKEY\" && exit 1; apt-get remove --purge --auto-remove -y gnupg1 && rm -rf /var/lib/apt/lists/* && dpkgArch=\"$(dpkg --print-architecture)\" && nginxPackages=\" nginx=${NGINX_VERSION} nginx-module-xslt=${NGINX_VERSION} nginx-module-geoip=${NGINX_VERSION} nginx-module-image-filter=${NGINX_VERSION} nginx-module-njs=${NJS_VERSION} \" && case \"$dpkgArch\" in amd64|i386) echo \"deb https://nginx.org/packages/debian/ stretch nginx\" >> /etc/apt/sources.list.d/nginx.list && apt-get update ;; *) echo \"deb-src https://nginx.org/packages/debian/ stretch nginx\" >> /etc/apt/sources.list.d/nginx.list && tempDir=\"$(mktemp -d)\" && chmod 777 \"$tempDir\" && savedAptMark=\"$(apt-mark showmanual)\" && apt-get update && apt-get build-dep -y $nginxPackages && ( cd \"$tempDir\" && DEB_BUILD_OPTIONS=\"nocheck parallel=$(nproc)\" apt-get source --compile $nginxPackages ) && apt-mark showmanual | xargs apt-mark auto > /dev/null && { [ -z \"$savedAptMark\" ] || apt-mark manual $savedAptMark; } && ls -lAFh \"$tempDir\" && ( cd \"$tempDir\" && dpkg-scanpackages . > Packages ) && grep '^Package: ' \"$tempDir/Packages\" && echo \"deb [ trusted=yes ] file://$tempDir ./\" > /etc/apt/sources.list.d/temp.list && apt-get -o Acquire::GzipIndexes=false update ;; esac && apt-get install --no-install-recommends --no-install-suggests -y $nginxPackages gettext-base && apt-get remove --purge --auto-remove -y apt-transport-https ca-certificates && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx.list && if [ -n \"$tempDir\" ]; then apt-get purge -y --auto-remove && rm -rf \"$tempDir\" /etc/apt/sources.list.d/temp.list; fi",
+						Created:     &types.Timestamp{Seconds: 1553642090, Nanos: 851725507},
+					},
+					{
+						Instruction: "RUN",
+						Value:       "ln -sf /dev/stdout /var/log/nginx/access.log && ln -sf /dev/stderr /var/log/nginx/error.log",
+						Created:     &types.Timestamp{Seconds: 1553642091, Nanos: 711682497},
+					},
+					{
+						Instruction: "EXPOSE",
+						Value:       "80",
+						Created:     &types.Timestamp{Seconds: 1553642091, Nanos: 894981136},
+						Empty:       true,
+					},
+					{
+						Instruction: "STOPSIGNAL",
+						Value:       "SIGTERM",
+						Created:     &types.Timestamp{Seconds: 1553642092, Nanos: 59858592},
+						Empty:       true,
+					},
+					{
+						Instruction: "CMD",
+						Value:       "[\"nginx\" \"-g\" \"daemon off;\"]",
+						Created:     &types.Timestamp{Seconds: 1553642092, Nanos: 227945051},
+						Empty:       true,
+					},
+				},
+				User: "root",
+				Command: []string{
+					"nginx",
+					"-g",
+					"daemon off;",
+				},
+				Labels: map[string]string{
+					"maintainer": "NGINX Docker Maintainers <docker-maint@nginx.com>",
+				},
+			},
+			V2: &storage.V2Metadata{Digest: "sha256:706446e9c6667c0880d5da3f39c09a6c7d2114f5a5d6b74a2fafd24ae30d2078"},
+			LayerShas: []string{
+				"sha256:27833a3ba0a545deda33bb01eaf95a14d05d43bf30bce9267d92d17f069fe897",
+				"sha256:0f23e58bd0b7c74311703e20c21c690a6847e62240ed456f8821f4c067d3659b",
+				"sha256:8ca774778e858d3f97d9ec1bec1de879ac5e10096856dc22ed325a3ad944f78a",
+			},
+			DataSource: &storage.DataSource{
+				Id:   "10d3b4dc-8295-41bc-bb50-6da5484cdb1a",
+				Name: "Public DockerHub",
+			},
+		},
+		Scan: &storage.ImageScan{
+			ScannerVersion: "2.24.0-11-g05cf175999",
+			ScanTime:       &types.Timestamp{Seconds: 1654154310, Nanos: 970783800},
+			Components: []*storage.EmbeddedImageScanComponent{
+				GetEmbeddedImageComponentPam_1_1_8_3_6(),
+				GetEmbeddedImageComponentOpenSSL_1_1_0j_1(),
+				GetEmbeddedImageComponentGLibC_2_24_11(),
+				GetEmbeddedImageComponentNginX_1_14_2_1(),
+				GetEmbeddedImageComponentPcre3_2_8_39_3(),
+				GetEmbeddedImageComponentNginX_Module_NJS_1_14_2_0_2_6(),
+				GetEmbeddedImageComponentNginX_Module_XSLT_1_14_2_1(),
+				GetEmbeddedImageComponentNginX_Module_Image_Filter_1_14_2_1(),
+				GetEmbeddedImageComponentLibXSLT_1_1_29_2_1(),
+				GetEmbeddedImageComponentZlib_1_1_2_8(),
+				GetEmbeddedImageComponentGeoIP_1_6_9_4(),
+				GetEmbeddedImageComponentNginX_Module_GeoIP_1_14_2_1(),
+				GetEmbeddedImageComponentLz4_0_0(),
+			},
+			OperatingSystem: "debian:9",
+			DataSource: &storage.DataSource{
+				Id:   "169b0d3f-8277-4900-bbce-1127077defae",
+				Name: "Stackrox Scanner",
+			},
+		},
+		SetComponents: &storage.Image_Components{Components: 13},
+		SetCves:       &storage.Image_Cves{Cves: 62},
+		SetFixable:    &storage.Image_FixableCves{FixableCves: 16},
+		LastUpdated:   &types.Timestamp{Seconds: 1654154313, Nanos: 67882700},
+		RiskScore:     9.900001,
+		SetTopCvss:    &storage.Image_TopCvss{TopCvss: 9.8},
+		Notes: []storage.Image_Note{
+			storage.Image_MISSING_SIGNATURE,
+			storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA,
 		},
 	}
 }

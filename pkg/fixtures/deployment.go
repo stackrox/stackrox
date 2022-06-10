@@ -283,6 +283,56 @@ func GetDeploymentCoreDNS_1_8_0(id string) *storage.Deployment {
 	}
 }
 
-func GetScopedDeploymentNginX_xxx() *storage.Deployment {
-	return nil
+func GetScopedDeploymentNginX_1_14_2(ID string, clusterID string, namespace string) *storage.Deployment {
+	return &storage.Deployment{
+		Id:            ID,
+		Name:          "nginc-deployment",
+		Hash:          1362104289343785658,
+		Type:          "Deployment",
+		Namespace:     namespace,
+		NamespaceId:   "67a01249-5e0a-4f7f-c785-cce2d69aa327",
+		Replicas:      2,
+		PodLabels:     map[string]string{"app": "nginx"},
+		LabelSelector: &storage.LabelSelector{MatchLabels: map[string]string{"app": "nginx"}},
+		Created:       &types.Timestamp{Seconds: 1644486016},
+		ClusterId:     clusterID,
+		ClusterName:   "remote",
+		Containers: []*storage.Container{
+			{
+				Id:     "d562070f-ff41-4d4a-8203-d978a871ee9f:nginx",
+				Config: nil,
+				Image: &storage.ContainerImage{
+					Id: "sha256:f7988fb6c02e0ce69257d9bd9cf37ae20a60f1df7563c3a2a6abe24160306b8d",
+					Name: &storage.ImageName{
+						Registry: "docker.io",
+						Remote:   "library/nginx",
+						Tag:      "1.14.2",
+						FullName: "docker.io/library/nginx:1.14.2",
+					},
+				},
+				SecurityContext: nil,
+				Ports: []*storage.PortConfig{
+					{
+						ContainerPort: 80,
+						Protocol:      "TCP",
+					},
+				},
+				Resources:      nil,
+				Name:           "nginx",
+				LivenessProbe:  nil,
+				ReadinessProbe: nil,
+			},
+		},
+		Priority:                      2,
+		ServiceAccount:                "default",
+		ServiceAccountPermissionLevel: storage.PermissionLevel_NONE,
+		Ports: []*storage.PortConfig{
+			{
+				ContainerPort: 80,
+				Protocol:      "TCP",
+			},
+		},
+		StateTimestamp: 1654762976891636,
+		RiskScore:      1.125,
+	}
 }
