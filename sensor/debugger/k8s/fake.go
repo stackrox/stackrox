@@ -71,6 +71,8 @@ type FakeEventsManager struct {
 	clientMap map[string]func(string) interface{}
 	// resourceMap map with the k8s resources
 	resourceMap map[string]interface{}
+	// done signal to indicate the end the events creation
+	done concurrency.Signal
 }
 
 var actionToMethod = map[string]string{
@@ -133,8 +135,14 @@ func (f *FakeEventsManager) Init() {
 	}
 }
 
+// WaitForDone waits until all the events have been processed
+func (f *FakeEventsManager) WaitForDone() {
+	doneC := f.done.WaitC()
+	<-doneC
+}
+
 // waitForMinimumResources waits for a minimum number of resources to be created or once all the events have been processed
-func waitForMinimumResources(ch chan string, done concurrency.Signal) error {
+func waitForMinimumResources(ch <-chan string, done concurrency.Signal) error {
 	count := 0
 	doneC := done.WaitC()
 	for {
@@ -158,13 +166,14 @@ func waitForMinimumResources(ch chan string, done concurrency.Signal) error {
 // CreateEvents creates the k8s events from a given jsonl file
 func (f *FakeEventsManager) CreateEvents() error {
 	ch := make(chan string)
-	done := concurrency.NewSignal()
+	f.done = concurrency.NewSignal()
 	objs, err := f.Reader.ReadFile()
 	if err != nil {
 		return err
 	}
 	f.Init()
 	go func() {
+		defer close(ch)
 		for _, obj := range objs {
 			if len(obj) == 0 {
 				continue
@@ -178,9 +187,9 @@ func (f *FakeEventsManager) CreateEvents() error {
 				log.Fatalf("cannot create event for %s: %s", msg.ObjectType, err)
 			}
 		}
-		done.Signal()
+		f.done.Signal()
 	}()
-	return waitForMinimumResources(ch, done)
+	return waitForMinimumResources(ch, f.done)
 }
 
 // runOp runs the create/update/delete operation
@@ -210,7 +219,7 @@ func getNamespace(resource reflect.Value) string {
 }
 
 // handleRunOp handles the execution of runOp
-func (f *FakeEventsManager) handleRunOp(action, kind string, client, object reflect.Value, ch chan string) error {
+func (f *FakeEventsManager) handleRunOp(action, kind string, client, object reflect.Value, ch chan<- string) error {
 	returnVals := runOp(action, client, object)
 	if len(returnVals) == 0 {
 		return fmt.Errorf("expected 1 or 2 values from %s. Received: %d", action, len(returnVals))
@@ -228,7 +237,7 @@ func (f *FakeEventsManager) handleRunOp(action, kind string, client, object refl
 }
 
 // createEvent creates a single k8s event
-func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan string) error {
+func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan<- string) error {
 	obj := &unstructured.Unstructured{}
 	objType := strings.Split(msg.ObjectType, ".")
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&msg.Payload)
