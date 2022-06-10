@@ -2405,7 +2405,7 @@ var (
 	}
 )
 
-func GetCoreDNS_1_8_0() *storage.Image {
+func GetImageCoreDNS_1_8_0() *storage.Image {
 	return &storage.Image{
 		Id: "sha256:cc8fb77bc2a0541949d1d9320a641b82fd392b0d3d8145469ca4709ae769980e",
 		Name: &storage.ImageName{
@@ -2482,7 +2482,7 @@ func GetCoreDNS_1_8_0() *storage.Image {
 	}
 }
 
-func GetPartialKubeProxy_1__21_5() *storage.Image {
+func GetPartialImageKubeProxy_1__21_5() *storage.Image {
 	return &storage.Image{
 		Id: "sha256:b9f3f8764f5b74085edbed44202aa83dab3555638ea9de182b9f79b6728bee5b",
 		Name: &storage.ImageName{
@@ -2557,7 +2557,7 @@ func GetPartialKubeProxy_1__21_5() *storage.Image {
 	}
 }
 
-func GetScopedPartialNginX_1_14_2() *storage.Image {
+func GetPartialImageNginX_1_14_2() *storage.Image {
 	return &storage.Image{
 		Id: "sha256:f7988fb6c02e0ce69257d9bd9cf37ae20a60f1df7563c3a2a6abe24160306b8d",
 		Name: &storage.ImageName{

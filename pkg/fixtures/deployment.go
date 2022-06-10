@@ -302,13 +302,8 @@ func GetScopedDeploymentNginX_1_14_2(ID string, clusterID string, namespace stri
 				Id:     "d562070f-ff41-4d4a-8203-d978a871ee9f:nginx",
 				Config: nil,
 				Image: &storage.ContainerImage{
-					Id: "sha256:f7988fb6c02e0ce69257d9bd9cf37ae20a60f1df7563c3a2a6abe24160306b8d",
-					Name: &storage.ImageName{
-						Registry: "docker.io",
-						Remote:   "library/nginx",
-						Tag:      "1.14.2",
-						FullName: "docker.io/library/nginx:1.14.2",
-					},
+					Id:   GetPartialImageNginX_1_14_2().GetId(),
+					Name: GetPartialImageNginX_1_14_2().GetName(),
 				},
 				SecurityContext: nil,
 				Ports: []*storage.PortConfig{
