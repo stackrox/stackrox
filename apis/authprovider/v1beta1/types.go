@@ -36,6 +36,7 @@ type AuthProvider struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +genclient
 
 // AuthProviderList is a list of AuthProvider resources
 type AuthProviderList struct {
