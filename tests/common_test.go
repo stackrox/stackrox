@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"testing"
 	"time"
@@ -174,6 +175,7 @@ func setupDeployment(t *testing.T, image, deploymentName string) {
 }
 
 func setupDeploymentWithReplicas(t *testing.T, image, deploymentName string, replicas int) {
+	log.Infof("NAMESPACE %s at deployment create", os.Getenv("NAMESPACE"))
 	cmd := exec.Command(`kubectl`, `create`, `deployment`, deploymentName, fmt.Sprintf("--image=%s", image), fmt.Sprintf("--replicas=%d", replicas))
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
