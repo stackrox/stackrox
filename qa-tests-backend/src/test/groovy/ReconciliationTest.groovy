@@ -1,8 +1,5 @@
-import static Services.getClusterClient
-import static Services.getPodClient
 import static Services.getViolationsWithTimeout
 
-import com.athaydes.spockframework.report.internal.StringFormatHelper
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.apps.Deployment as OrchestratorDeployment
 
@@ -57,7 +54,7 @@ class ReconciliationTest extends BaseSpecification {
     ]
 
     private Set<String> getPodsInCluster() {
-        Set<String> result = new HashSet<>()
+        Set<String> result = [] as Set
         for (namespace in orchestrator.getNamespaces()) {
             List<Pod> allPods = orchestrator.getPodsByLabel(namespace, new HashMap<String, String>())
             for (pod in allPods) {
@@ -171,7 +168,6 @@ class ReconciliationTest extends BaseSpecification {
             for (pod in podsBeforeDeleting) {
                 log.info pod
             }
-
 
             orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
 
