@@ -22,9 +22,21 @@ import {
 import { getQueryString } from 'utils/queryStringUtils';
 import { violationsBasePath } from 'routePaths';
 import useResizeObserver from 'hooks/useResizeObserver';
-import { Title } from '@patternfly/react-core';
+import {
+    Dropdown,
+    DropdownToggle,
+    Flex,
+    FlexItem,
+    Form,
+    FormGroup,
+    Title,
+    ToggleGroup,
+    ToggleGroupItem,
+} from '@patternfly/react-core';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 
@@ -40,6 +52,13 @@ function pluckSeverityCount(severity: Severity): (group: AlertGroup) => number {
         const severityCount = counts.find((ct) => ct.severity === severity)?.count || '0';
         return -parseInt(severityCount, 10);
     };
+}
+
+function sortByVolume(groups: AlertGroup[]) {
+    const sum = (a: number, b: number) => a + b;
+    return sortBy(groups, ({ counts }) => {
+        return -counts.map(({ count }) => parseInt(count, 10)).reduce(sum);
+    });
 }
 
 function sortBySeverity(groups: AlertGroup[]) {
@@ -81,20 +100,27 @@ function linkForViolationsCategory(category: string) {
     return `${violationsBasePath}${queryString}`;
 }
 
+type SortTypeOption = 'Severity' | 'Volume';
+
 type ViolationsByPolicyCategoryChartProps = {
     alertGroups: AlertGroup[];
+    sortType: SortTypeOption;
 };
 
 const labelLinkCallback = ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text));
 
 const height = `${chartHeight}px` as const;
 
-function ViolationsByPolicyCategoryChart({ alertGroups }: ViolationsByPolicyCategoryChartProps) {
+function ViolationsByPolicyCategoryChart({
+    alertGroups,
+    sortType,
+}: ViolationsByPolicyCategoryChartProps) {
     const history = useHistory();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
-    const sortedAlertGroups = sortBySeverity(alertGroups);
+    const sortedAlertGroups =
+        sortType === 'Severity' ? sortBySeverity(alertGroups) : sortByVolume(alertGroups);
     // We reverse here, because PF/Victory charts stack the bars from bottom->up
     const topOrderedGroups = sortedAlertGroups.slice(0, 5).reverse();
     const countsBySeverity = getCountsBySeverity(topOrderedGroups);
@@ -124,12 +150,12 @@ function ViolationsByPolicyCategoryChart({ alertGroups }: ViolationsByPolicyCate
     });
 
     return (
-        <div className="pf-u-px-md" ref={setWidgetContainer} style={{ height }}>
+        <div ref={setWidgetContainer} style={{ height }}>
             <Chart
                 ariaDesc="Number of violation by policy category, grouped by severity"
                 ariaTitle="Policy Violations by Category"
                 animate={{ duration: 300 }}
-                domainPadding={{ x: [30, 25] }}
+                domainPadding={{ x: [20, 20] }}
                 legendData={[
                     { name: 'Low' },
                     { name: 'Medium' },
@@ -142,23 +168,37 @@ function ViolationsByPolicyCategoryChart({ alertGroups }: ViolationsByPolicyCate
                 padding={{
                     // TODO Auto-adjust padding based on screen size and/or max text length, if possible
                     left: 180, // left padding is dependent on the length of the text on the left axis
-                    bottom: 75, // Adjusted to accommodate legend
+                    bottom: 55, // Adjusted to accommodate legend
                 }}
                 theme={patternflySeverityTheme}
             >
                 <ChartAxis
                     tickLabelComponent={<LinkableChartLabel linkWith={labelLinkCallback} />}
                 />
-                <ChartAxis dependentAxis showGrid />
+                <ChartAxis dependentAxis />
                 <ChartStack horizontal>{bars}</ChartStack>
             </Chart>
         </div>
     );
 }
 
+type LifecycleOption = 'All' | 'Deploy' | 'Runtime';
+
+const fieldIdPrefix = 'policy-category-violations';
+
 function ViolationsByPolicyCategory() {
+    const { isOpen: isOptionsOpen, onToggle: toggleOptionsOpen } = useSelectToggle();
     const { searchFilter } = useURLSearch();
-    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const [sortType, sortTypeOption] = useState<SortTypeOption>('Severity');
+    const [lifecycle, setLifecycle] = useState<LifecycleOption>('All');
+
+    const queryFilter = { ...searchFilter };
+    if (lifecycle === 'Deploy') {
+        queryFilter['Lifecycle Stage'] = LIFECYCLE_STAGES.DEPLOY;
+    } else if (lifecycle === 'Runtime') {
+        queryFilter['Lifecycle Stage'] = LIFECYCLE_STAGES.RUNTIME;
+    }
+    const query = getRequestQueryStringForSearchFilter(queryFilter);
     const { alertGroups, loading, error } = useAlertGroups('CATEGORY', query);
 
     return (
@@ -166,12 +206,74 @@ function ViolationsByPolicyCategory() {
             isLoading={loading}
             error={error}
             header={
-                <Title headingLevel="h2" className="pf-u-p-md">
-                    Policy violations by category
-                </Title>
+                <Flex direction={{ default: 'row' }} className="pf-u-pb-md">
+                    <FlexItem grow={{ default: 'grow' }}>
+                        <Title headingLevel="h2">Policy violations by category</Title>
+                    </FlexItem>
+                    <FlexItem>
+                        <Dropdown
+                            toggle={
+                                <DropdownToggle
+                                    id={`${fieldIdPrefix}-options-toggle`}
+                                    toggleVariant="secondary"
+                                    onToggle={toggleOptionsOpen}
+                                >
+                                    Options
+                                </DropdownToggle>
+                            }
+                            position="right"
+                            isOpen={isOptionsOpen}
+                        >
+                            <Form className="pf-u-px-md pf-u-py-sm">
+                                <FormGroup fieldId={`${fieldIdPrefix}-sort-by`} label="Sort by">
+                                    <ToggleGroup aria-label="Sort data by highest severity counts or highest total violations">
+                                        <ToggleGroupItem
+                                            className="pf-u-font-weight-normal"
+                                            text="Severity"
+                                            buttonId={`${fieldIdPrefix}-sort-by-severity`}
+                                            isSelected={sortType === 'Severity'}
+                                            onChange={() => sortTypeOption('Severity')}
+                                        />
+                                        <ToggleGroupItem
+                                            text="Volume"
+                                            buttonId={`${fieldIdPrefix}-sort-by-volume`}
+                                            isSelected={sortType === 'Volume'}
+                                            onChange={() => sortTypeOption('Volume')}
+                                        />
+                                    </ToggleGroup>
+                                </FormGroup>
+                                <FormGroup
+                                    fieldId={`${fieldIdPrefix}-lifecycle`}
+                                    label="Policy Lifecycle"
+                                >
+                                    <ToggleGroup aria-label="Filter by policy lifecycle">
+                                        <ToggleGroupItem
+                                            text="All"
+                                            buttonId={`${fieldIdPrefix}-lifecycle-all`}
+                                            isSelected={lifecycle === 'All'}
+                                            onChange={() => setLifecycle('All')}
+                                        />
+                                        <ToggleGroupItem
+                                            text="Deploy"
+                                            buttonId={`${fieldIdPrefix}-lifecycle-deploy`}
+                                            isSelected={lifecycle === 'Deploy'}
+                                            onChange={() => setLifecycle('Deploy')}
+                                        />
+                                        <ToggleGroupItem
+                                            text="Runtime"
+                                            buttonId={`${fieldIdPrefix}-lifecycle-runtime`}
+                                            isSelected={lifecycle === 'Runtime'}
+                                            onChange={() => setLifecycle('Runtime')}
+                                        />
+                                    </ToggleGroup>
+                                </FormGroup>
+                            </Form>
+                        </Dropdown>
+                    </FlexItem>
+                </Flex>
             }
         >
-            <ViolationsByPolicyCategoryChart alertGroups={alertGroups} />
+            <ViolationsByPolicyCategoryChart alertGroups={alertGroups} sortType={sortType} />
         </WidgetCard>
     );
 }
