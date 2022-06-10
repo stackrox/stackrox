@@ -26,7 +26,7 @@ function createOptions(clusters: Cluster[], filterValue?: string) {
         <Divider key="cluster-select-option-divider" className="pf-u-mb-0" component="div" />,
         ...visibleClusters.map(({ name }) => (
             <SelectOption key={name} value={name}>
-                <ResourceIcon className="pf-u-mr-sm" kind="Cluster" />
+                <ResourceIcon kind="Cluster" />
                 <span>{name}</span>
             </SelectOption>
         )),

@@ -41,7 +41,7 @@ function createOptions(clusters: Cluster[], filterValue?: string) {
             <SelectGroup key={clusterName} label={clusterName}>
                 {namespaces.map(({ metadata: { id, name } }) => (
                     <SelectOption key={id} value={id}>
-                        <ResourceIcon className="pf-u-mr-sm" kind="Namespace" />
+                        <ResourceIcon kind="Namespace" />
                         <span>{name}</span>
                     </SelectOption>
                 ))}
