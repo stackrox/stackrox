@@ -93,7 +93,7 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks.MockStore, *indexMocks.MockIndexer, *searchMocks.MockSearcher) {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
-	mockStorage.EXPECT().GetKeysToIndex(context.TODO()).Return(nil, nil)
+	mockStorage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
 
 	mockIndexer := indexMocks.NewMockIndexer(suite.mockCtrl)
 	mockIndexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
