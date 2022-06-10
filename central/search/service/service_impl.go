@@ -14,11 +14,9 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	complianceSearch "github.com/stackrox/rox/central/compliance/search"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	componentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -78,8 +76,6 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_SERVICE_ACCOUNTS: s.serviceaccounts.SearchServiceAccounts,
 		v1.SearchCategory_ROLES:            s.roles.SearchRoles,
 		v1.SearchCategory_ROLEBINDINGS:     s.bindings.SearchRoleBindings,
-		v1.SearchCategory_IMAGE_COMPONENTS: s.components.SearchImageComponents,
-		v1.SearchCategory_VULNERABILITIES:  s.cves.SearchCVEs,
 		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(s.bindings).SearchSubjects,
 	}
 
@@ -101,8 +97,6 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_SERVICE_ACCOUNTS: s.serviceaccounts,
 		v1.SearchCategory_ROLES:            s.roles,
 		v1.SearchCategory_ROLEBINDINGS:     s.bindings,
-		v1.SearchCategory_IMAGE_COMPONENTS: s.components,
-		v1.SearchCategory_VULNERABILITIES:  s.cves,
 		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(s.bindings),
 	}
 
@@ -131,8 +125,6 @@ type serviceImpl struct {
 	roles           roleDataStore.DataStore
 	bindings        roleBindingDataStore.DataStore
 	clusters        clusterDataStore.DataStore
-	cves            cveDataStore.DataStore
-	components      componentDataStore.DataStore
 
 	aggregator aggregation.Aggregator
 	authorizer authz.Authorizer
