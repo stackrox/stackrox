@@ -59,6 +59,7 @@ func (bu *PostgresBackup) WriteTo(ctx context.Context, out io.Writer) error {
 	go func() {
 		defer stdout.Close()
 		_, err = io.Copy(out, stdout)
+		log.Info("Copying stdout pipe to output writer.")
 	}()
 
 	common.SetPostgresCmdEnv(cmd, sourceMap, config)

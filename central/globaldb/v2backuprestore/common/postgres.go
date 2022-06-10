@@ -32,6 +32,7 @@ func ExecutePostgresCmd(cmd *exec.Cmd) error {
 		return err
 	}
 
+	log.Info("Exiting execution of command")
 	return nil
 }
 
