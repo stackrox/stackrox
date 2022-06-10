@@ -139,8 +139,8 @@ func GetDeploymentCoreDNS_1_8_0(id string) *storage.Deployment {
 					Args: []string{"-conf", "/etc/coredns/Corefile"},
 				},
 				Image: &storage.ContainerImage{
-					Id:   GetCoreDNS_1_8_0().GetId(),
-					Name: GetCoreDNS_1_8_0().GetName(),
+					Id:   GetImageCoreDNS_1_8_0().GetId(),
+					Name: GetImageCoreDNS_1_8_0().GetName(),
 				},
 				SecurityContext: &storage.SecurityContext{
 					DropCapabilities:       []string{"all"},
