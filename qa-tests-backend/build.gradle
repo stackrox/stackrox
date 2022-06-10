@@ -141,6 +141,7 @@ tasks.withType(Test) {
 }
 
 test {
+    systemProperty "kubernetes.request.retry.backoffLimit", "3"
     timeout = Duration.ofHours(3)
     testLogging.showStandardStreams = true
 
