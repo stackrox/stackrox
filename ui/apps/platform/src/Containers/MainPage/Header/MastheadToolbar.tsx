@@ -15,11 +15,12 @@ import ClusterStatusProblems from 'Components/ClusterStatusProblems';
 import GlobalSearchButton from 'Components/GlobalSearchButton';
 import ThemeToggleButton from 'Components/ThemeToggleButton';
 import useCases from 'constants/useCaseTypes';
-import OrchestratorComponentsToggle from 'Containers/Navigation/OrchestratorComponentsToggle';
-import UserMenu from 'Containers/Navigation/UserMenu';
 import useMetadata from 'hooks/useMetadata';
 import parseURL from 'utils/URLParser';
+
 import CLIDownloadMenu from './CLIDownloadMenu';
+import OrchestratorComponentsToggle from './OrchestratorComponentsToggle';
+import UserMenu from './UserMenu';
 
 function MastheadToolbar(): ReactElement {
     const [isHelpOpen, setIsHelpOpen] = useState(false);
