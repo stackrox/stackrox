@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"errors"
-	"os"
 	"testing"
 	"time"
 
@@ -142,13 +141,13 @@ func TestComplianceOperatorResults(t *testing.T) {
 }
 
 func getDynamicClientGenerator(t *testing.T) dynamic.Interface {
-	tmpKubeConfig, err := os.CreateTemp("/tmp", "kubeconfig")
-	require.NoError(t, err)
-	require.NoError(t, tmpKubeConfig.Close())
-	config, err := clientcmd.BuildConfigFromFlags("", tmpKubeConfig.Name())
-	require.NoError(t, err)
+	config, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
+	require.NoError(t, err, "could not load default Kubernetes client config")
 
-	dynamicClientGenerator, err := dynamic.NewForConfig(config)
+	restCfg, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
+	require.NoError(t, err, "could not get REST client config from kubernetes config")
+
+	dynamicClientGenerator, err := dynamic.NewForConfig(restCfg)
 	require.NoError(t, err)
 	return dynamicClientGenerator
 }
