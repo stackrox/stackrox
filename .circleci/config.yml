@@ -488,6 +488,19 @@ executors:
           password: $QUAY_RHACS_ENG_RO_PASSWORD
     working_directory: /go/src/github.com/stackrox/rox
 
+  kubectl-client-1-23:
+    parameters:
+      resource_class:
+        type: string
+        default: medium
+    resource_class: << parameters.resource_class >>
+    docker:
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.35 # do not auto upgrade
+        auth:
+          username: $QUAY_RHACS_ENG_RO_USERNAME
+          password: $QUAY_RHACS_ENG_RO_PASSWORD
+    working_directory: /go/src/github.com/stackrox/rox
+
 commands:
   collect-k8s-logs:
     description: "Collect k8s logs and metrics"
@@ -1161,7 +1174,7 @@ commands:
       - run:
           name: Destroy OpenShift 4 cluster
           environment:
-            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.18-35-gdd80648215-snapshot
+            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.26
           command: |
             if [ ! -d "$PWD/<< parameters.cluster-name >>" ]; then
               echo "OpenShift 4 Cluster not created (due to missing artifacts), skipping destroy."
@@ -1240,7 +1253,7 @@ commands:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.26 \
               aws destroy
 
   destroy-osd-gcp-cluster:
@@ -1264,7 +1277,7 @@ commands:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e GCP_SA_CREDS_JSON_BASE64="$GCP_SA_CREDS_JSON_BASE64" \
               -e GCP_PROJECT="srox-temp-dev-test" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.26 \
               gcp destroy
 
 
@@ -2207,7 +2220,7 @@ commands:
       - run:
           name: Create OpenShift 4 cluster
           environment:
-          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.18-35-gdd80648215-snapshot
+          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.26
           - GCP_PROJECT: stackrox-ci
           command: |
             mkdir $PWD/<< parameters.cluster-name >>
@@ -2989,7 +3002,7 @@ jobs:
           version: 0.2.11-1-geb3414898d
 
   provision-eks-api-e2e-tests:
-    executor: custom
+    executor: kubectl-client-1-23
     resource_class: small
     environment:
       - EKS_AUTOMATION_VERSION: 0.2.17
@@ -3735,7 +3748,7 @@ jobs:
           version: 0.2.11-1-geb3414898d
 
   eks-api-e2e-tests:
-    executor: custom
+    executor: kubectl-client-1-23
     environment:
       - EKS_AUTOMATION_VERSION: 0.2.17
       - LOCAL_PORT: 8000
@@ -4394,7 +4407,7 @@ jobs:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.26 \
               aws create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
@@ -4427,7 +4440,7 @@ jobs:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e GCP_SA_CREDS_JSON_BASE64="$GCP_SA_CREDS_JSON_BASE64" \
               -e GCP_PROJECT="srox-temp-dev-test" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.26 \
               gcp create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
