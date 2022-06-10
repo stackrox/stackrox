@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -143,7 +142,10 @@ func TestComplianceOperatorResults(t *testing.T) {
 }
 
 func getDynamicClientGenerator(t *testing.T) dynamic.Interface {
-	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kubeconfig"))
+	tmpKubeConfig, err := os.CreateTemp("/tmp", "kubeconfig")
+	require.NoError(t, err)
+	require.NoError(t, tmpKubeConfig.Close())
+	config, err := clientcmd.BuildConfigFromFlags("", tmpKubeConfig.Name())
 	require.NoError(t, err)
 
 	dynamicClientGenerator, err := dynamic.NewForConfig(config)
