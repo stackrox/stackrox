@@ -4,9 +4,9 @@ import PropTypes from 'prop-types';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import PageHeader from 'Components/PageHeader';
 import {
-    ORCHESTRATOR_COMPONENT_KEY,
-    orchestratorComponentOption,
-} from 'Containers/Navigation/OrchestratorComponentsToggle';
+    ORCHESTRATOR_COMPONENTS_KEY,
+    orchestratorComponentsOption,
+} from 'utils/orchestratorComponents';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import useURLSearch from 'hooks/useURLSearch';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
@@ -17,9 +17,9 @@ function RiskPageHeader({ isViewFiltered, searchOptions }) {
     const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
     const autoCompleteCategory = searchCategories[entityTypes.DEPLOYMENT];
 
-    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
+    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY);
     const prependAutocompleteQuery =
-        orchestratorComponentShowState !== 'true' ? orchestratorComponentOption : [];
+        orchestratorComponentShowState !== 'true' ? orchestratorComponentsOption : [];
     return (
         <PageHeader header="Risk" subHeader={subHeader}>
             <SearchFilterInput
