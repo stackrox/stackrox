@@ -240,7 +240,6 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 }
 
 func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
-
 	key := &storage.ProcessBaselineKey{
 		DeploymentId:  baselineKey.deploymentID,
 		ContainerName: baselineKey.containerName,
