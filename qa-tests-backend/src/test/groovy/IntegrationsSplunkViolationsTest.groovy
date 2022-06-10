@@ -20,7 +20,6 @@ import util.Timer
 import org.junit.Rule
 import org.junit.experimental.categories.Category
 import org.junit.rules.Timeout
-import spock.lang.Ignore
 
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Rule
@@ -83,7 +82,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     @Category(Integration)
-    @Ignore("ROX-11138")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
@@ -220,7 +218,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static String extractNestedString(JsonPath jsonPath, String path) {
         try {
             return jsonPath.getString(path)
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException ignored) {
             return null
         }
     }
@@ -294,14 +292,16 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     def triggerProcessViolation(SplunkUtil.SplunkDeployment splunkDeployment) {
-        orchestrator.execInContainer(splunkDeployment.deployment, "curl http://127.0.0.1:10248/")
+        orchestrator.execInContainer(splunkDeployment.deployment, "curl http://127.0.0.1:10248/ --max-time 2")
         assert waitForAlertWithPolicyId("86804b96-e87e-4eae-b56e-1718a8a55763")
     }
 
     def triggerNetworkFlowViolation(SplunkUtil.SplunkDeployment splunkDeployment, String centralHost) {
-        NetworkBaselineService.lockNetworkBaseline(splunkDeployment.getDeployment().deploymentUid)
+        def uid = splunkDeployment.getDeployment().getDeploymentUid()
+        NetworkBaselineService.getNetworkBaseline(uid)
+        NetworkBaselineService.lockNetworkBaseline(uid)
         orchestrator.execInContainer(splunkDeployment.deployment,
-                "for i in `seq 25`; do curl http://${centralHost}:443; sleep 1; done")
+                "for i in `seq 100`; do  wget -S http://${centralHost}:443; sleep 1; done")
 
         // TODO: this code is flaky; see https://stack-rox.atlassian.net/browse/ROX-7772
         assert waitForAlertWithPolicyId("1b74ffdd-8e67-444c-9814-1c23863c8ccb")
