@@ -746,6 +746,17 @@ openshift_ci_mods() {
     fi
     KUBECONFIG="$(mktemp)"
     info "An empty KUBECONFIG was created in ${KUBECONFIG}"
+
+    # KUBERNETES_{PORT,SERVICE} env values also interact with commandline kubectl tests
+    local envfile
+    envfile="$(mktemp)"
+    info "Will clear ^KUBERNETES_ env:"
+    env | grep -e ^KUBERNETES_
+    env | grep -e ^KUBERNETES_ | cut -d= -f1 | awk '{ print "unset", $1 }' > "$envfile"
+    # shellcheck disable=SC1090
+    source "$envfile"
+    info "Cleared"
+    env | grep -e ^KUBERNETES_
 }
 
 debug_namespace() {
