@@ -11,8 +11,8 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	authproviderv1beta1 "github.com/stackrox/stackrox/apis/api/v1beta1"
-	"github.com/stackrox/stackrox/apis/controllers"
+	authproviderv1beta1 "github.com/stackrox/rox/apiskubebuilder/api/v1beta1"
+	"github.com/stackrox/rox/apiskubebuilder/controllers"
 )
 
 var (
@@ -47,13 +47,13 @@ func StartControllerManager() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AuthProvider")
+		log.Error(err, "unable to create controller", "controller", "AuthProvider")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+		log.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }

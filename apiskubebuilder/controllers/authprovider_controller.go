@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	authproviderv1beta1 "github.com/stackrox/stackrox/apis/api/v1beta1"
+	authproviderv1beta1 "github.com/stackrox/rox/apiskubebuilder/api/v1beta1"
 )
 
 // AuthProviderReconciler reconciles a AuthProvider object

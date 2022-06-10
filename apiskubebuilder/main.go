@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	authproviderv1beta1 "github.com/stackrox/stackrox/apis/api/v1beta1"
-	"github.com/stackrox/stackrox/apis/controllers"
+	authproviderv1beta1 "github.com/stackrox/rox/apiskubebuilder/api/v1beta1"
+	"github.com/stackrox/rox/apiskubebuilder/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
