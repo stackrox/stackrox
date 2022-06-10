@@ -105,12 +105,12 @@ require (
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
 	golang.org/x/net v0.0.0-20220607020251-c690dde0001d
 	golang.org/x/oauth2 v0.0.0-20220524215830-622c5d57e401
-	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
+	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.10
 	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.82.0
+	google.golang.org/api v0.83.0
 	google.golang.org/genproto v0.0.0-20220602131408-e326c6e8e9c8
 	google.golang.org/grpc v1.47.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
