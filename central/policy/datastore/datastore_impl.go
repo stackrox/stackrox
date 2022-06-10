@@ -47,6 +47,9 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) buildIndex() error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
 	policies, err := ds.storage.GetAll(policyCtx)
 	if err != nil {
 		return err
