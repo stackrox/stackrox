@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/stackrox/rox/apiskubebuilder/manager"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
@@ -264,6 +265,8 @@ func main() {
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
 	go startGRPCServer()
+
+	go manager.StartControllerManager()
 
 	waitForTerminationSignal()
 }

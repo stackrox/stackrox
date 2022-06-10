@@ -1,0 +1,16 @@
+domain: central.stackrox.io
+layout:
+- go.kubebuilder.io/v3
+projectName: apiskubebuilder
+repo: github.com/stackrox/stackrox/apis
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: central.stackrox.io
+  group: authprovider
+  kind: AuthProvider
+  path: github.com/stackrox/stackrox/apis/api/v1beta1
+  version: v1beta1
+version: "3"
