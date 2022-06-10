@@ -47,8 +47,7 @@ jobs:
         run: |
           read RELEASE PATCH_NUMBER RC_NUMBER <<< \
           $(sed -rn 's/^([0-9]+\.[0-9]+)\.([0-9]+)(-rc\.([0-9]+))?$/\1 \2 \4/p' <<< ${{inputs.version}})
-          if [ -z "$RELEASE" -o -z "$PATCH_NUMBER"]
-          then
+          if [ -z "$RELEASE" -o -z "$PATCH_NUMBER"]; then
             echo "::error ::Bad version: ${{inputs.version}}"
             exit 1
           fi

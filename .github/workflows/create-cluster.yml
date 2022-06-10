@@ -42,19 +42,21 @@ jobs:
           INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
         run: |
           NAME="${{inputs.name}}"
-          WAIT=""
-          if [ "${{inputs.wait}}" = "true" ]
-          then
-            WAIT="--wait";
+
+          OPTIONS=()
+          if [ "${{inputs.wait}}" = "true" ]; then
+            OPTIONS+=("--wait")
             echo "::warning::The job will wait for the cluster creation."
           fi
 
-          eval ./infractl create "${{inputs.flavor}}" "${NAME//./-}" \
-          --lifespan "${{inputs.lifespan}}" \
-          $WAIT \
-          $(python -c "import sys; args=sys.argv
-          args='' if len(args) <= 1 else ' --arg '.join(args[1].split(','))
-          if args: print('--arg', args)" \
-          "${{inputs.args}}")
+          IFS=', ' read -ra args <<< "${{inputs.args}}"
+          for arg in ${args[@]}; do
+            OPTIONS+=("--arg")
+            OPTIONS+=("$arg")
+          done
+
+          ./infractl create "${{inputs.flavor}}" "${NAME//./-}" \
+            --lifespan "${{inputs.lifespan}}" \
+            "${OPTIONS[@]}"
 
           ./infractl get "${NAME//./-}" >> $GITHUB_STEP_SUMMARY

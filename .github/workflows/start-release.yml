@@ -41,10 +41,8 @@ jobs:
             "https://issues.redhat.com/rest/api/2/project/${{env.jira_project}}/versions" \
           | jq -r '.[] | select(.name == "${{github.event.inputs.version}}" and .released == false) | .releaseDate')"
 
-          if [ -z "$JIRA_RELEASE_DATE" ]
-          then
+          if [ -z "$JIRA_RELEASE_DATE" ]; then
             echo "::error::Couldn't find unreleased JIRA release \`${{github.event.inputs.version}}\`."
-            exit 1
           else
             echo "Release date: $JIRA_RELEASE_DATE" >> $GITHUB_STEP_SUMMARY
             echo "::set-output name=date::$JIRA_RELEASE_DATE"
@@ -96,8 +94,7 @@ jobs:
       - name: Check remote branch exists
         id: check-existing
         run: |
-          if git ls-remote --quiet --exit-code origin "${{needs.variables.outputs.branch}}"
-          then
+          if git ls-remote --quiet --exit-code origin "${{needs.variables.outputs.branch}}"; then
             echo "::set-output name=branch-exists::true"
           else
             echo "::set-output name=branch-exists::false"
@@ -117,8 +114,7 @@ jobs:
           # This takes a bit long:
           git submodule update --init --remote -- docs/content
           git add .gitmodules docs/content
-          if ! git diff-index --quiet HEAD
-          then
+          if ! git diff-index --quiet HEAD; then
             git commit -am "Docs update for release ${{needs.variables.outputs.milestone}}"
             echo "Documents submodule updated on release branch." >> $GITHUB_STEP_SUMMARY
           fi
@@ -127,8 +123,7 @@ jobs:
         run: |
           sed -i "s/## \[NEXT RELEASE\]/## [${{github.event.inputs.version}}]/" CHANGELOG.md
           git add CHANGELOG.md
-          if ! git diff-index --quiet HEAD
-          then
+          if ! git diff-index --quiet HEAD; then
             git commit --message "Changelog for ${{github.event.inputs.version}}"
             echo "\`CHANGELOG.md\` updated on release branch." >> $GITHUB_STEP_SUMMARY
           fi
@@ -137,26 +132,35 @@ jobs:
         run: |
           git push --set-upstream origin ${{needs.variables.outputs.branch}}
 
+  patch-changelog:
+    name: Patch CHANGELOG.md
+    needs: [variables, branch]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.inputs.ref}}
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "${{github.event.sender.login}}"
+          git config user.email noreply@github.com
       - name: Patch CHANGELOG.md on ${{env.main_branch}} branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git switch ${{env.main_branch}}
-          git pull
-          CHANGELOG_BRANCH="${{github.event.sender.login}}/changelog-${{github.event.inputs.version}}"
-          if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"
-          then
+          CHANGELOG_BRANCH="automation/changelog-${{github.event.inputs.version}}"
+          if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"; then
             echo "Branch \`$CHANGELOG_BRANCH\` already exists."
             exit 0
           fi
           git switch --create "$CHANGELOG_BRANCH"
           sed -i "s/## \[NEXT RELEASE\]/\\0\n\n## [${{github.event.inputs.version}}]/" CHANGELOG.md
           git add CHANGELOG.md
-          if ! git diff-index --quiet HEAD
-          then
+          if ! git diff-index --quiet HEAD; then
             git commit --message "Next version in changelog after ${{github.event.inputs.version}}"
-            if [ "${{github.event.inputs.dry-run}}" != "true" ]
-            then
+
+            if [ "${{github.event.inputs.dry-run}}" != "true" ]; then
               git push --set-upstream origin "$CHANGELOG_BRANCH"
               gh pr create \
                 --title "Advance \`CHANGELOG.md\` to the next release" \
@@ -179,13 +183,12 @@ jobs:
       - name: Create ${{needs.variables.outputs.milestone}} milestone
         if: github.event.inputs.dry-run != 'true'
         run: |
-          if ! http_code=$(gh api --silent -X POST \
+          http_code=$(gh api --silent -X POST \
             "repos/${{github.repository}}/milestones" \
             -f "title"="${{needs.variables.outputs.milestone}}" \
             2>&1)
-          then
-            if grep "HTTP 422" <<< "$http_code"
-            then
+          if ! $?; then
+            if grep "HTTP 422" <<< "$http_code"; then
               echo "Milestone ${{needs.variables.outputs.milestone}} already exists." >> $GITHUB_STEP_SUMMARY
             else
               echo "::error::Couldn't create milestone ${{needs.variables.outputs.milestone}}: $http_code"
