@@ -2,6 +2,7 @@ package derivelocalvalues
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -23,6 +24,7 @@ var (
 )
 
 func deriveLocalValuesForChart(env environment.Environment, namespace, chartName, input, output string, useDirectory bool) error {
+	fmt.Println("roxctl -- deriveLocalValuesForChart")
 	var err error
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
@@ -80,6 +82,7 @@ func writeYamlToFile(values map[string]interface{}, path string) error {
 }
 
 func writeValuesToOutput(env environment.Environment, publicValues, privateValues map[string]interface{}, output string, useDirectory bool) error {
+	fmt.Println("roxctl -- writeValuesToOutput")
 	var err error
 
 	if useDirectory {
@@ -120,6 +123,7 @@ func writeValuesToOutput(env environment.Environment, publicValues, privateValue
 
 // Implementation for command `helm derive-local-values`.
 func deriveLocalValuesForCentralServices(ctx context.Context, env environment.Environment, namespace, input, output string, useDirectory bool) error {
+	fmt.Println("roxctl -- deriveLocalValuesForCentralServices")
 	var k8s k8sObjectDescription
 
 	if input == "" {

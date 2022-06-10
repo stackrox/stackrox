@@ -2,6 +2,7 @@ package maincommand
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -46,6 +47,7 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 
 // Command constructs and returns the roxctl command tree
 func Command() *cobra.Command {
+	fmt.Println("roxctl -- main command")
 	c := &cobra.Command{
 		SilenceUsage: true,
 		Use:          os.Args[0],

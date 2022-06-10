@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"fmt"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -269,6 +270,7 @@ var (
 // based on the given config. The values are returned as a *zip.File slice, containing
 // two entries, one for `values-public.yaml`, and one for `values-private.yaml`.
 func renderNewHelmValues(c Config) ([]*zip.File, error) {
+	fmt.Println("pkg -- renderNewHelmValues")
 	publicValuesBytes, err := templates.ExecuteToBytes(publicValuesTemplate, &c)
 	if err != nil {
 		return nil, errors.Wrap(err, "executing public values template")

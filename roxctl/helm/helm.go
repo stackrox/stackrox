@@ -1,6 +1,8 @@
 package helm
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/helm/derivelocalvalues"
@@ -9,6 +11,7 @@ import (
 
 // Command defines the helm command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
+	fmt.Println("roxctl -- helm.go")
 	c := &cobra.Command{
 		Use: "helm",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

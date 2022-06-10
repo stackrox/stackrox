@@ -9,11 +9,13 @@ import (
 const (
 	BoltFileName     = "bolt.db"
 	RocksFileName    = "rocks.db"
-	PostgresFileName = "postgres.dump"
-	KeysBaseFolder   = "keys"
-	CaKeyPem         = mtls.CAKeyFileName
-	CaCertPem        = mtls.CACertFileName
-	JwtKeyInDer      = certgen.JWTKeyDERFileName
-	JwtKeyInPem      = certgen.JWTKeyPEMFileName
-	MigrationVersion = "migration_version.yaml"
+	PostgresFileName   = "postgres.db.tar"
+	KeysBaseFolder     = "keys"
+	CaKeyPem           = mtls.CAKeyFileName
+	CaCertPem          = mtls.CACertFileName
+	JwtKeyInDer        = certgen.JWTKeyDERFileName
+	JwtKeyInPem        = certgen.JWTKeyPEMFileName
+	MigrationVersion   = "migration_version.yaml"
+	DatabaseBaseFolder = "central-db"
+	DatabasePassword   = "password"
 )

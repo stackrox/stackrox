@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/cas"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/dbs"
@@ -51,6 +52,20 @@ func BackupPostgres(ctx context.Context, postgresDB *pgxpool.Pool, includeCerts 
 
 	if err := generators.PutStreamInZip(dbs.NewPostgresBackup(postgresDB), backup.PostgresFileName).WriteTo(ctx, zipWriter); err != nil {
 		return errors.Wrap(err, "backing up postgres")
+	}
+
+	if includeCerts {
+		if err := generators.PutPathMapInZip(cas.NewCertsBackup(), backup.KeysBaseFolder).WriteTo(ctx, zipWriter); err != nil {
+			return errors.Wrap(err, "backing up certificates")
+		}
+
+		if err := generators.PutStreamInZip(generators.PutFileInStream(globaldb.DBPasswordFile), filepath.Join(backup.DatabaseBaseFolder, backup.DatabasePassword)).WriteTo(ctx, zipWriter); err != nil {
+			return errors.Wrap(err, "backing up postgres password")
+		}
+	}
+
+	if err := generators.PutStreamInZip(generators.PutFileInStream(filepath.Join(migrations.CurrentPath(), backup.MigrationVersion)), backup.MigrationVersion).WriteTo(ctx, zipWriter); err != nil {
+		return errors.Wrap(err, "backing up migration version")
 	}
 
 	return zipWriter.Close()

@@ -1,22 +1,16 @@
-package roxdbv1
+package common
 
 import (
 	"io"
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
-func restoreMigrationVersion(ctx common.RestoreFileContext, fileReader io.Reader, _ int64) error {
+func RestoreMigrationVersion(ctx RestoreFileContext, fileReader io.Reader, _ int64) error {
 	versionFile, err := ctx.OpenFile(migrations.MigrationVersionFile, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return errors.Wrap(err, "could not create migration version file")

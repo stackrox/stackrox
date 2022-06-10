@@ -18,6 +18,7 @@ If the derived Helm configuration should really be written to stdout, please use
 
 // Command for deriving local values from existing StackRox Kubernetes resources.
 func Command(cliEnvironment env.Environment) *cobra.Command {
+	fmt.Println("roxctl -- helm command")
 	helmDeriveLocalValuesCmd := &helmDeriveLocalValuesCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
