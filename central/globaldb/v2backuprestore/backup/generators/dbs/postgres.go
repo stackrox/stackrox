@@ -30,6 +30,8 @@ type PostgresBackup struct {
 
 // WriteTo writes a backup of Postgres to the writer
 func (bu *PostgresBackup) WriteTo(ctx context.Context, out io.Writer) error {
+	log.Info("WriteTo")
+	log.Info(ctx)
 	sourceMap, config, err := globaldb.GetPostgresConfig()
 	if err != nil {
 		log.Fatalf("Could not parse postgres config: %v", err)
@@ -49,18 +51,19 @@ func (bu *PostgresBackup) WriteTo(ctx context.Context, out io.Writer) error {
 
 	cmd := exec.Command("pg_dump", options...)
 
-	// Get a pipe to the commands standard out
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-
-	// Copy the data from stdout to the outgoing writer.
-	go func() {
-		defer stdout.Close()
-		_, err = io.Copy(out, stdout)
-		log.Info("Copying stdout pipe to output writer.")
-	}()
+	cmd.Stdout = out
+	//// Get a pipe to the commands standard out
+	//stdout, err := cmd.StdoutPipe()
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//// Copy the data from stdout to the outgoing writer.
+	//go func() {
+	//	defer stdout.Close()
+	//	_, err = io.Copy(out, stdout)
+	//	log.Info("Copying stdout pipe to output writer.")
+	//}()
 
 	common.SetPostgresCmdEnv(cmd, sourceMap, config)
 
