@@ -21,7 +21,7 @@ env:
   main_branch: master
   docs_repository: openshift/openshift-docs
   jira_projects: ROX, RS, RTOOLS
-  slack_channel: U02MPRJDANM
+  slack_channel: C03D78P4RFF
 
 jobs:
   check-jira:
