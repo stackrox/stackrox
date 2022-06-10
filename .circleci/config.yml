@@ -1207,7 +1207,7 @@ commands:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.26 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.17 \
               destroy
 
   destroy-aro-cluster:
@@ -1229,7 +1229,7 @@ commands:
               -e CIRCLECI="$CIRCLECI" \
               -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.26 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.17 \
               destroy
 
   destroy-osd-aws-cluster:
@@ -4344,7 +4344,7 @@ jobs:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.26 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.17 \
               create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
@@ -4375,7 +4375,7 @@ jobs:
               -e CIRCLECI="$CIRCLECI" \
               -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.26 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.17 \
               create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
