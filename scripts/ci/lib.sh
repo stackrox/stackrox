@@ -755,8 +755,8 @@ openshift_ci_mods() {
     env | grep -e ^KUBERNETES_ | cut -d= -f1 | awk '{ print "unset", $1 }' > "$envfile"
     # shellcheck disable=SC1090
     source "$envfile"
-    info "Cleared"
-    env | grep -e ^KUBERNETES_
+    info "After clear"
+    env | grep -e ^KUBERNETES_ || info "Cleared"
 }
 
 debug_namespace() {
