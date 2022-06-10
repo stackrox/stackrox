@@ -494,13 +494,11 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 
 func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageComponents")
-
 	return resolver.root.ImageComponents(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageComponents")
-
 	return resolver.root.ImageComponentCount(resolver.namespaceScopeContext(ctx), args)
 }
 

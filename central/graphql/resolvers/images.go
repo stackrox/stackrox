@@ -160,7 +160,12 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVuln")
-	return resolver.topVulnV2(ctx, args)
+
+	vulnResolver, err := resolver.topVulnV2(ctx, args)
+	if err != nil || vulnResolver == nil {
+		return nil, err
+	}
+	return vulnResolver, nil
 }
 
 func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (*cVEResolver, error) {
