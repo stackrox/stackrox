@@ -94,7 +94,7 @@ type datastoreImpl struct {
 }
 
 func (b *datastoreImpl) buildIndex(ctx context.Context) error {
-	log.Info("[STARTUP] Indexing namespaces")
+	log.Info("[STARTUP] initializing namespaces")
 	var namespaces []*storage.NamespaceMetadata
 	err := b.store.Walk(ctx, func(ns *storage.NamespaceMetadata) error {
 		namespaces = append(namespaces, ns)
@@ -107,7 +107,10 @@ func (b *datastoreImpl) buildIndex(ctx context.Context) error {
 	if b.idMapStorage != nil {
 		b.idMapStorage.OnNamespaceAdd(namespaces...)
 	}
-
+	if features.PostgresDatastore.Enabled() {
+		log.Info("[STARTUP] Successfully initialized namespaces")
+		return nil
+	}
 	if err := b.indexer.AddNamespaceMetadatas(namespaces); err != nil {
 		return err
 	}

@@ -12,6 +12,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/pod/store/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
@@ -51,8 +52,10 @@ func (suite *PodDataStoreTestSuite) SetupTest() {
 	suite.filter = filter.NewFilter(5, []int{5, 4, 3, 2, 1})
 
 	var err error
-	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-	suite.storage.EXPECT().GetKeysToIndex(ctx).Return(nil, nil)
+	if !features.PostgresDatastore.Enabled() {
+		suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+		suite.storage.EXPECT().GetKeysToIndex(ctx).Return(nil, nil)
+	}
 	suite.datastore, err = newDatastoreImpl(ctx, suite.storage, suite.indexer, suite.searcher, suite.processStore, suite.filter)
 	suite.NoError(err)
 }
@@ -223,6 +226,9 @@ func (suite *PodDataStoreTestSuite) TestRemovePod() {
 }
 
 func (suite *PodDataStoreTestSuite) TestReconciliationFullReindex() {
+	if features.PostgresDatastore.Enabled() {
+		return
+	}
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(true, nil)
 
 	pod1 := fixtures.GetPod()
@@ -245,6 +251,9 @@ func (suite *PodDataStoreTestSuite) TestReconciliationFullReindex() {
 }
 
 func (suite *PodDataStoreTestSuite) TestReconciliationPartialReindex() {
+	if features.PostgresDatastore.Enabled() {
+		return
+	}
 	suite.storage.EXPECT().GetKeysToIndex(ctx).Return([]string{"A", "B", "C"}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
