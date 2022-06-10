@@ -2652,6 +2652,7 @@ jobs:
       - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
+      - continue-when-in-a-pr-or-nightly-context
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-go-mod-cache
