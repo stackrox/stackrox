@@ -46,6 +46,9 @@ case "$ci_job" in
     go-unit-tests)
         GOTAGS='' "$ROOT/scripts/ci/jobs/go-unit-tests.sh"
         ;;
+    go-postgres-tests)
+        GOTAGS='' "$ROOT/scripts/ci/jobs/go-postgres-tests.sh"
+        ;;
     integration-unit-tests)
         "$ROOT/scripts/ci/jobs/integration-unit-tests.sh"
         ;;
