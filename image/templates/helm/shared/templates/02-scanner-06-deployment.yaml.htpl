@@ -253,19 +253,14 @@ spec:
           image: {{ ._rox.scanner.dbImage.fullRef | quote }}
           [< end ->]
           env:
-            - name: PGDATA
-              value: "/var/lib/postgresql/data/pgdata"
-          command:
-            - /bin/sh
-            - -c
-            - |
-              # Initialize DB if it does not exist
-              if [ ! -s "$PGDATA/PG_VERSION" ]; then
-                docker-entrypoint.sh initdb --pwfile /run/secrets/stackrox.io/secrets/password
-              fi
+            - name: POSTGRES_PASSWORD_FILE
+              value: "/run/secrets/stackrox.io/secrets/password"
           volumeMounts:
             - name: scanner-db-data
               mountPath: /var/lib/postgresql/data
+            - name: scanner-db-tls-volume
+              mountPath: /run/secrets/stackrox.io/certs
+              readOnly: true
             - name: scanner-db-password
               mountPath: /run/secrets/stackrox.io/secrets
               readOnly: true
@@ -285,8 +280,6 @@ spec:
         [< end ->]
         env:
           {{- include "srox.envVars" (list . "deployment" "scanner-db" "db") | nindent 10 }}
-          - name: PGDATA
-            value: "/var/lib/postgresql/data/pgdata"
         ports:
         - name: postgresql
           protocol: TCP
