@@ -122,20 +122,11 @@ func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config 
 
 	cmd := exec.Command("pg_restore", options...)
 
-	// Get a pipe to the commands standard in
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return errors.Wrap(err, "Unable to get pipe to feed restore command")
-	}
-
-	// Copy the data into the commands stdin
-	go func() {
-		defer stdin.Close()
-		_, err = io.Copy(stdin, fileReader)
-	}()
+	// Set stdin to be the incoming reader
+	cmd.Stdin = fileReader
 
 	common.SetPostgresCmdEnv(cmd, sourceMap, config)
-	err = common.ExecutePostgresCmd(cmd)
+	err := common.ExecutePostgresCmd(cmd)
 
 	if err != nil {
 		// Clean up the restore DB since the restore failed
