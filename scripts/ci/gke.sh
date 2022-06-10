@@ -270,11 +270,6 @@ teardown_gke_cluster() {
     require_environment "CLUSTER_NAME"
     require_executable "gcloud"
 
-    while [[ -e /tmp/hold-cluster ]]; do
-        info "Holding this cluster for debug"
-        sleep 60
-    done
-
     # (prefix output to avoid triggering prow log focus)
     "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
 

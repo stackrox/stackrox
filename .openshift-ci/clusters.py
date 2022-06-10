@@ -4,7 +4,9 @@
 Clusters used in test
 """
 
+import os
 import subprocess
+import time
 
 from common import popen_graceful_kill
 
@@ -57,6 +59,10 @@ class GKECluster:
         return self
 
     def teardown(self):
+        while os.path.exists("/tmp/hold-cluster"):
+            print("Pausing teardown because /tmp/hold-cluster exists")
+            time.sleep(60)
+
         try:
             popen_graceful_kill(self.refresh_token_cmd)
         except Exception as err:
