@@ -184,6 +184,11 @@ cleanup_proxy_tests() {
 run_proxy_tests() {
     info "Running proxy tests"
 
+    while [[ -e /tmp/hold ]]; do
+        info "Holding this job for debug"
+        sleep 60
+    done
+
     info "Test HTTP access to plain HTTP proxy"
     # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
     local license_status
