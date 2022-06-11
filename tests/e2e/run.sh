@@ -46,6 +46,7 @@ test_e2e() {
 
     setup_proxy_tests
     run_proxy_tests
+    cd "$ROOT"
 
     collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
 
