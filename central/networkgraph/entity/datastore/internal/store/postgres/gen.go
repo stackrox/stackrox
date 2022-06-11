@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-table-bindings-wrapper --type=storage.NetworkEntity --search-category NETWORK_ENTITY
+//go:generate pg-table-bindings-wrapper --type=storage.NetworkEntity --search-category NETWORK_ENTITY --postgres-migration-seq 28 --migrate-from "rocksdb:networkentity"
