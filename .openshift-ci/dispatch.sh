@@ -10,9 +10,7 @@ for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
 done
 
-debug_namespace
 openshift_ci_mods
-debug_namespace
 
 function hold() {
     while [[ -e /tmp/hold ]]; do
