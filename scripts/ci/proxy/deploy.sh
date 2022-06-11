@@ -18,7 +18,7 @@ kubectl apply -f "${dir}/nginx-proxy-plain-http.yaml"
 cert_dir="${PROXY_CERTS_DIR:-$(mktemp -d)}"
 
 echo "Cert directory: ${cert_dir}"
-"${dir}/../../../tests/scripts/setup-certs.sh" "${cert_dir}" "central-proxy" "Proxy CA"
+"${dir}/../../../tests/scripts/setup-certs.sh" "${cert_dir}" "localhost" "Proxy CA"
 
 kubectl -n proxies create secret tls nginx-proxy-tls-certs \
 	--cert="${cert_dir}/tls.crt" \

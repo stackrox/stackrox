@@ -166,11 +166,6 @@ setup_proxy_tests() {
     nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http2 14443:443 </dev/null &>/dev/null &
     nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http2-plain 15443:443 </dev/null &>/dev/null &
     sleep 1
-
-    export HOSTALIASES=/tmp/hostaliases
-    if ! grep central-proxy "${HOSTALIASES}"; then
-        echo "central-proxy localhost" > "${HOSTALIASES}"
-    fi
 }
 
 cleanup_proxy_tests() {
@@ -190,7 +185,7 @@ run_proxy_tests() {
     info "Test HTTP access to plain HTTP proxy"
     # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
     local license_status
-    license_status="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f 'http://central-proxy:10080/v1/metadata' | jq -r '.licenseStatus')"
+    license_status="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f 'http://localhost:10080/v1/metadata' | jq -r '.licenseStatus')"
     echo "Got license status ${license_status} from server"
     [[ "$license_status" == "VALID" ]]
 
@@ -200,7 +195,7 @@ run_proxy_tests() {
         curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
         --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
         -f \
-        'https://central-proxy:10443/v1/metadata' | jq -r '.licenseStatus')"
+        'https://localhost:10443/v1/metadata' | jq -r '.licenseStatus')"
     echo "Got license status ${license_status} from server"
     [[ "$license_status" == "VALID" ]]
 
@@ -246,7 +241,7 @@ run_proxy_tests() {
         esac
 
         info "Testing roxctl access through ${name}..."
-        local endpoint="central-proxy:${port}"
+        local endpoint="localhost:${port}"
         for endpoint_tgt in "${scheme}://${endpoint}" "${scheme}://${endpoint}/" "$endpoint"; do
         roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
             failures+=("$p")
@@ -270,7 +265,7 @@ run_proxy_tests() {
         fi
 
         done
-        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "central-proxy:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
+        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "localhost:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
         failures+=("${p},sensor-generate")
         echo "Done."
         rm -rf "/tmp/proxy-test-${port}"
