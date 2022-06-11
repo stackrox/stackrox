@@ -34,15 +34,15 @@ test_e2e() {
 
     prepare_for_endpoints_test
 
-    # run_roxctl_tests
-    # run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
-    # store_test_results "roxctl-test-output" "roxctl-test-output"
-    # [[ ! -f FAIL ]] || die "e2e tests failed"
+    run_roxctl_tests
+    run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
+    store_test_results "roxctl-test-output" "roxctl-test-output"
+    [[ ! -f FAIL ]] || die "e2e tests failed"
 
-    # info "E2E API tests"
-    # make -C tests || touch FAIL
-    # store_test_results "tests/all-tests-results" "all-tests-results"
-    # [[ ! -f FAIL ]] || die "e2e tests failed"
+    info "E2E API tests"
+    make -C tests || touch FAIL
+    store_test_results "tests/all-tests-results" "all-tests-results"
+    [[ ! -f FAIL ]] || die "e2e tests failed"
 
     setup_proxy_tests
     run_proxy_tests
