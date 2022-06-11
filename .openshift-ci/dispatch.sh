@@ -31,6 +31,12 @@ ci_export CI_JOB_NAME "$ci_job"
 gate_job "$ci_job"
 
 case "$ci_job" in
+    gke-qa-e2e-tests|gke-nongroovy-e2e-tests|gke-upgrade-tests|gke-ui-e2e-tests)
+        openshift_ci_e2e_mods
+        ;;
+esac
+
+case "$ci_job" in
     style-checks)
         make style
         ;;

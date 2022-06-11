@@ -730,6 +730,12 @@ openshift_ci_mods() {
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
+}
+
+openshift_ci_e2e_mods() {
+    if ! is_OPENSHIFT_CI; then
+        return
+    fi
 
     # NAMESPACE is injected by OpenShift CI for the cluster that is running the
     # tests but this can have side effects for stackrox tests due to its use as
@@ -750,12 +756,11 @@ openshift_ci_mods() {
     if env | grep -e ^KUBERNETES_; then
         local envfile
         envfile="$(mktemp)"
-        info "Will clear ^KUBERNETES_ env:"
-        env | grep -e ^KUBERNETES_
+        info "Will clear ^KUBERNETES_ env"
         env | grep -e ^KUBERNETES_ | cut -d= -f1 | awk '{ print "unset", $1 }' > "$envfile"
         # shellcheck disable=SC1090
         source "$envfile"
-        info "After clear"
+        info "After clear:"
         env | grep -e ^KUBERNETES_ || info "Cleared"
     fi
 }
