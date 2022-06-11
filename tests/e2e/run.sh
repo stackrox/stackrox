@@ -169,8 +169,9 @@ setup_proxy_tests() {
     nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http2-plain 15443:443 </dev/null &>/dev/null &
     sleep 1
 
-    if ! grep central-proxy.stackrox.local /etc/hosts; then
-        sudo bash -c 'echo "127.0.0.1 central-proxy.stackrox.local" >>/etc/hosts'
+    export HOSTALIASES=/tmp/hostaliases
+    if ! grep central-proxy.stackrox.local "${HOSTALIASES}"; then
+        echo "central-proxy.stackrox.local 127.0.0.1" > "${HOSTALIASES}"
     fi
 }
 
