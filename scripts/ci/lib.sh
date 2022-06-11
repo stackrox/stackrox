@@ -743,20 +743,21 @@ openshift_ci_mods() {
     if [[ -n "${KUBECONFIG:-}" ]]; then
         info "There is an incoming KUBECONFIG in ${KUBECONFIG}"
         export OPENSHIFT_CI_KUBECONFIG="$KUBECONFIG"
+        unset KUBECONFIG
     fi
-    KUBECONFIG="$(mktemp)"
-    info "An empty KUBECONFIG was created in ${KUBECONFIG}"
 
     # KUBERNETES_{PORT,SERVICE} env values also interact with commandline kubectl tests
-    local envfile
-    envfile="$(mktemp)"
-    info "Will clear ^KUBERNETES_ env:"
-    env | grep -e ^KUBERNETES_
-    env | grep -e ^KUBERNETES_ | cut -d= -f1 | awk '{ print "unset", $1 }' > "$envfile"
-    # shellcheck disable=SC1090
-    source "$envfile"
-    info "After clear"
-    env | grep -e ^KUBERNETES_ || info "Cleared"
+    if env | grep -e ^KUBERNETES_; then
+        local envfile
+        envfile="$(mktemp)"
+        info "Will clear ^KUBERNETES_ env:"
+        env | grep -e ^KUBERNETES_
+        env | grep -e ^KUBERNETES_ | cut -d= -f1 | awk '{ print "unset", $1 }' > "$envfile"
+        # shellcheck disable=SC1090
+        source "$envfile"
+        info "After clear"
+        env | grep -e ^KUBERNETES_ || info "Cleared"
+    fi
 }
 
 validate_expected_go_version() {
