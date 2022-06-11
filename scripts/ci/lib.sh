@@ -733,10 +733,6 @@ openshift_ci_mods() {
 }
 
 openshift_ci_e2e_mods() {
-    if ! is_OPENSHIFT_CI; then
-        return
-    fi
-
     # NAMESPACE is injected by OpenShift CI for the cluster that is running the
     # tests but this can have side effects for stackrox tests due to its use as
     # the default namespace e.g. with helm.
@@ -749,8 +745,10 @@ openshift_ci_e2e_mods() {
     if [[ -n "${KUBECONFIG:-}" ]]; then
         info "There is an incoming KUBECONFIG in ${KUBECONFIG}"
         export OPENSHIFT_CI_KUBECONFIG="$KUBECONFIG"
-        unset KUBECONFIG
     fi
+    KUBECONFIG="$(mktemp)"
+    info "KUBECONFIG set: ${KUBECONFIG}"
+    export KUBECONFIG
 
     # KUBERNETES_{PORT,SERVICE} env values also interact with commandline kubectl tests
     if env | grep -e ^KUBERNETES_; then
@@ -760,8 +758,6 @@ openshift_ci_e2e_mods() {
         env | grep -e ^KUBERNETES_ | cut -d= -f1 | awk '{ print "unset", $1 }' > "$envfile"
         # shellcheck disable=SC1090
         source "$envfile"
-        info "After clear:"
-        env | grep -e ^KUBERNETES_ || info "Cleared"
     fi
 }
 
