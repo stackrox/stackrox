@@ -62,9 +62,6 @@ var migrationTestFile string
 //go:embed postgres_plugin.go.tpl
 var postgresPluginFile string
 
-//go:embed rocksdb_plugin.go.tpl
-var rocksdbPluginFile string
-
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(singletonFile)
@@ -76,7 +73,6 @@ var (
 	migrationTemplate         = newTemplate(migrationFile)
 	migrationTestTemplate     = newTemplate(strings.Join([]string{storeCommonFile, migrationTestFile}, "\n"))
 	postgresPluginTemplate    = newTemplate(strings.Join([]string{storeCommonFile, postgresPluginFile}, "\n"))
-	rocksdbPluginTemplate     = newTemplate(strings.Join([]string{storeCommonFile, rocksdbPluginFile}, "\n"))
 )
 
 type properties struct {
@@ -114,13 +110,13 @@ type properties struct {
 	SingletonStore bool
 
 	// Migration root
-	MigrationRoot string
+	MigrateRoot string
 
 	// Where the data are migrated from in the format of "database:bucket", eg, \"rocksdb:alerts\" or \"boltdb:version\"")
 	MigrateFrom string
 
 	// The unique sequence number to migrate all tables to Postgres
-	PostgresMigrationSeq int
+	MigrateSeq int
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -190,18 +186,18 @@ func main() {
 	c.Flags().StringVar(&props.SchemaDirectory, "schema-directory", "", "the directory in which to generate the schema")
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
-	c.Flags().StringVar(&props.MigrationRoot, "migration-root", "", "Root for migrations")
+	c.Flags().StringVar(&props.MigrateRoot, "migration-root", "", "Root for migrations")
 	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from in the format of \"<database>:<bucket>\", eg, \"rocksdb:alerts\" or \"boltdb:version\"")
-	c.Flags().IntVar(&props.PostgresMigrationSeq, "postgres-migration-seq", 0, "the unique sequence number to migrate all tables to Postgres")
+	c.Flags().IntVar(&props.MigrateSeq, "postgres-migration-seq", 0, "the unique sequence number to migrate to Postgres")
 
 	c.RunE = func(*cobra.Command, []string) error {
-		if (props.PostgresMigrationSeq == 0) != (props.MigrateFrom == "") {
+		if (props.MigrateSeq == 0) != (props.MigrateFrom == "") {
 			log.Fatal("please use both \"--migrate-from\" and \"--postgres-migration-seq\" to create data migration")
 		}
-		if props.PostgresMigrationSeq != 0 && props.MigrationRoot == "" {
+		if props.MigrateSeq != 0 && props.MigrateRoot == "" {
 			log.Fatalf("please specify --migration-root")
 		}
-		if props.PostgresMigrationSeq != 0 && !migrateFromRegex.MatchString(props.MigrateFrom) {
+		if props.MigrateSeq != 0 && !migrateFromRegex.MatchString(props.MigrateFrom) {
 			log.Fatalf("unknown format for --migrate-from: %s", props.MigrateFrom)
 		}
 
@@ -300,15 +296,15 @@ func main() {
 			}
 		}
 
-		if props.PostgresMigrationSeq != 0 {
+		if props.MigrateSeq != 0 {
 			froms := strings.SplitN(props.MigrateFrom, ":", 2)
 			templateMap["Migration"] = MigrationOptions{
 				MigrateFromDB:     froms[0],
 				MigrateFromBucket: froms[1],
-				MigrateSequence:   props.PostgresMigrationSeq,
+				MigrateSequence:   props.MigrateSeq,
 			}
-			migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.PostgresMigrationSeq, props.PostgresMigrationSeq+1, props.Table)
-			root := filepath.Join(props.MigrationRoot, migrationDir)
+			migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.MigrateSeq, props.MigrateSeq+1, props.Table)
+			root := filepath.Join(props.MigrateRoot, migrationDir)
 
 			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {
 				return err
@@ -317,9 +313,6 @@ func main() {
 				return err
 			}
 			if err := renderFile(templateMap, postgresPluginTemplate, filepath.Join(root, "postgres_plugin.go")); err != nil {
-				return err
-			}
-			if err := renderFile(templateMap, rocksdbPluginTemplate, filepath.Join(root, "rocksdb_plugin.go")); err != nil {
 				return err
 			}
 		}

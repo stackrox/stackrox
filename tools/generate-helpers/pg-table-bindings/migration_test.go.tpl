@@ -88,7 +88,7 @@ func (s *postgresMigrationSuite) TestMigration() {
 		s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		bytes, err := proto.Marshal({{$name}})
 		s.NoError(err, "failed to marshal data")
-		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, []byte({{$name}}.Id)), bytes)
+		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, keyFunc({{$name}})), bytes)
 		{{$name}}s = append({{$name}}s, {{$name}})
 	}
 
