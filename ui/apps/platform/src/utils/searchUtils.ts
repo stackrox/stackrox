@@ -117,13 +117,22 @@ export function isCompleteSearchFilter(searchFilter: SearchFilter) {
     );
 }
 
+/**
+ * Type Guard to determine if a 2-tuple SearchFilter entry contains a non-empty value
+ */
+function isNonEmptySearchEntry<Key>(
+    entry: [Key, string | string[] | undefined]
+): entry is [Key, string | string[]] {
+    return typeof entry[1] !== 'undefined' && entry[1].length !== 0;
+}
+
 /*
  * Return request query string for search filter. Omit filter criterion:
  * If option does not have value.
  */
 export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter): string {
     return Object.entries(searchFilter)
-        .filter(([, value]) => value.length !== 0)
+        .filter(isNonEmptySearchEntry)
         .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
         .join('+');
 }

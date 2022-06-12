@@ -33,6 +33,9 @@ type searcherImpl struct {
 }
 
 func (s *searcherImpl) buildIndex(ctx context.Context) error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing process baselines")
 	baselines := make([]*storage.ProcessBaseline, 0, baselineBatchLimit)

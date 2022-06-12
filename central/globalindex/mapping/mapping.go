@@ -20,6 +20,7 @@ import (
 	imageCVEEdgeMapping "github.com/stackrox/rox/central/imagecveedge/mappings"
 	namespaceMapping "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeMapping "github.com/stackrox/rox/central/node/index/mappings"
+	nodeComponentEdgeMapping "github.com/stackrox/rox/central/nodecomponentedge/mappings"
 	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
 	podMapping "github.com/stackrox/rox/central/pod/mappings"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
@@ -92,6 +93,14 @@ func singleTermAnalyzer() map[string]interface{} {
 
 // GetEntityOptionsMap is a mapping from search categories to the options
 func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
+	nodeSearchOptions := search.CombineOptionsMaps(
+		nodeMapping.OptionsMap,
+		nodeComponentEdgeMapping.OptionsMap,
+		imageComponentMapping.OptionsMap,
+		componentVulnEdgeMapping.OptionsMap,
+		cveMapping.OptionsMap,
+	)
+
 	// Images in dackbox support an expanded set of search options
 	imageSearchOptions := search.CombineOptionsMaps(
 		imageMapping.OptionsMap,
@@ -133,7 +142,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_COMPLIANCE_CONTROL:    index.ControlOptions,
 		v1.SearchCategory_CLUSTERS:              clusterMapping.OptionsMap,
 		v1.SearchCategory_NAMESPACES:            namespaceMapping.OptionsMap,
-		v1.SearchCategory_NODES:                 nodeMapping.OptionsMap,
+		v1.SearchCategory_NODES:                 nodeSearchOptions,
 		v1.SearchCategory_PROCESS_BASELINES:     processBaselineMapping.OptionsMap,
 		v1.SearchCategory_REPORT_CONFIGURATIONS: reportConfigurationsMapping.OptionsMap,
 		v1.SearchCategory_RISKS:                 riskMappings.OptionsMap,

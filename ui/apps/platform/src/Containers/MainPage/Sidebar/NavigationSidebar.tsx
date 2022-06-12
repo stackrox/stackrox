@@ -35,13 +35,13 @@ const platformConfigurationPaths = [
     systemHealthPath,
 ];
 
-type NavigationSideBarProps = {
+type NavigationSidebarProps = {
     hasReadAccess: HasReadAccess;
     // eslint-disable-next-line react/no-unused-prop-types
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
-function NavigationSideBar({ hasReadAccess }: NavigationSideBarProps): ReactElement {
+function NavigationSidebar({ hasReadAccess }: NavigationSidebarProps): ReactElement {
     const location: Location = useLocation();
 
     const vulnerabilityManagementPaths = [vulnManagementPath];
@@ -140,4 +140,4 @@ function NavigationSideBar({ hasReadAccess }: NavigationSideBarProps): ReactElem
     return <PageSidebar nav={Navigation} />;
 }
 
-export default NavigationSideBar;
+export default NavigationSidebar;

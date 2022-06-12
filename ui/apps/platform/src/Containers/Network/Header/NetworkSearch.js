@@ -12,9 +12,9 @@ import { getSearchOptionsForCategory } from 'services/SearchService';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import {
-    ORCHESTRATOR_COMPONENT_KEY,
-    orchestratorComponentOption,
-} from 'Containers/Navigation/OrchestratorComponentsToggle';
+    ORCHESTRATOR_COMPONENTS_KEY,
+    orchestratorComponentsOption,
+} from 'utils/orchestratorComponents';
 
 import './NetworkSearch.css';
 
@@ -71,9 +71,9 @@ function NetworkSearch({
         }
     }
 
-    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
+    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY);
     const prependAutocompleteQuery =
-        orchestratorComponentShowState !== 'true' ? [...orchestratorComponentOption] : [];
+        orchestratorComponentShowState !== 'true' ? [...orchestratorComponentsOption] : [];
 
     if (selectedNamespaceFilters.length) {
         prependAutocompleteQuery.push({ value: 'Namespace:', type: 'categoryOption' });

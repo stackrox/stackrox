@@ -115,7 +115,7 @@ function getSearchEntriesForFilter(
                         value,
                     });
                 });
-            } else if (valueOrValues.length !== 0) {
+            } else if (valueOrValues && valueOrValues.length !== 0) {
                 searchEntries.push({
                     label: valueOrValues,
                     value: valueOrValues,
@@ -130,7 +130,7 @@ function getSearchEntriesForFilter(
 /*
  * Return search filter object for changed search entries.
  *
- * Assume search enries have been filtered to include only categoryOption in search options.
+ * Assume search entries have been filtered to include only categoryOption in search options.
  */
 function getSearchFilterForEntries(searchEntries: SearchEntry[]): SearchFilter {
     const searchFilter: SearchFilter = {};

@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
@@ -390,6 +391,9 @@ func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
 }
 
 func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
 	defer debug.FreeOSMemory()
 
 	needsFullIndexing, err := ds.indexer.NeedsInitialIndexing()
