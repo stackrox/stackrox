@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -113,10 +114,12 @@ func mustGetCommandLineArgs() localSensorConfig {
 	return sensorConfig
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string) {
+func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string, cancelFunc context.CancelFunc) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
+	// We cancel the creation of Events
+	cancelFunc()
 	endTime := time.Now()
 	allMessages := fakeCentral.GetAllMessages()
 	dumpMessages(allMessages, startTime, endTime, outfile)
@@ -156,7 +159,8 @@ func main() {
 		})
 	}
 
-	go registerHostKillSignals(startTime, fakeCentral, localConfig.CentralOutput)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	go registerHostKillSignals(startTime, fakeCentral, localConfig.CentralOutput, cancelFunc)
 
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	defer shutdownFakeServer()
@@ -192,7 +196,14 @@ func main() {
 			Client: fakeClient,
 			Reader: trReader,
 		}
-		if err := fm.CreateEvents(); err != nil {
+		errCh := fm.CreateEvents(ctx)
+		go func() {
+			for e := range errCh {
+				cancelFunc()
+				fmt.Println(e)
+			}
+		}()
+		if err := fm.WaitForMinimumResources(); err != nil {
 			log.Fatalln(err)
 		}
 	}

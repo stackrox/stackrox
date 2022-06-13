@@ -3,13 +3,13 @@ package k8s
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"reflect"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	appsv1 "k8s.io/api/apps/v1"
@@ -52,7 +52,7 @@ const (
 	podKind                   string = "Pod"
 )
 
-var minimumResources = map[string]int{
+var minimumResourcesMap = map[string]int{
 	namespaceKind: 1,
 	nodeKind:      1,
 }
@@ -73,6 +73,8 @@ type FakeEventsManager struct {
 	resourceMap map[string]interface{}
 	// done signal to indicate the end the events creation
 	done concurrency.Signal
+	// minimumResources signal to indicate the minimum resources have been created
+	minimumResources concurrency.Signal
 }
 
 var actionToMethod = map[string]string{
@@ -135,82 +137,111 @@ func (f *FakeEventsManager) Init() {
 	}
 }
 
-// WaitForDone waits until all the events have been processed
-func (f *FakeEventsManager) WaitForDone() {
-	doneC := f.done.WaitC()
-	<-doneC
+// WaitForMinimumResources waits for a minimumResourcesMap number of resources to be created or once all the events have been processed
+func (f *FakeEventsManager) WaitForMinimumResources() error {
+	select {
+	case <-f.minimumResources.WaitC():
+		return nil
+	case <-f.done.WaitC():
+		return errors.New("all events processed without reaching the minimumResourcesMap resources needed")
+	}
 }
 
-// waitForMinimumResources waits for a minimum number of resources to be created or once all the events have been processed
-func waitForMinimumResources(ch <-chan string, done concurrency.Signal) error {
-	count := 0
-	doneC := done.WaitC()
-	d := false
-	for {
-		select {
-		case obj, more := <-ch:
-			if !more && d {
-				return errors.New("the events file did not contain the minimum resources required to start sensor")
-			}
-			if _, ok := minimumResources[obj]; ok {
-				minimumResources[obj]--
-				if minimumResources[obj] == 0 {
-					count++
-				}
-				if len(minimumResources) == count {
-					return nil
-				}
-			}
-		case <-doneC:
-			// We make sure there are not more messages in the channel
-			obj, more := <-ch
-			if !more {
-				return errors.New("the events file did not contain the minimum resources required to start sensor")
-			}
-			if _, ok := minimumResources[obj]; ok {
-				minimumResources[obj]--
-				if minimumResources[obj] == 0 {
-					count++
-				}
-				if len(minimumResources) == 0 {
-					return nil
-				}
-			}
-			d = true
-		}
-	}
+// WaitForDone waits for all the events to be processed
+func (f *FakeEventsManager) WaitForDone() {
+	f.done.Wait()
 }
 
 // CreateEvents creates the k8s events from a given jsonl file
-func (f *FakeEventsManager) CreateEvents() error {
-	f.done = concurrency.NewSignal()
-	objs, err := f.Reader.ReadFile()
-	ch := make(chan string, len(objs))
-	if err != nil {
-		return err
-	}
-	f.Init()
+func (f *FakeEventsManager) CreateEvents(ctx context.Context) <-chan error {
+	errorCh := make(chan error)
+	min, done, errCh := f.handleEventsCreation(ctx)
+	f.done = done
+	f.minimumResources = min
 	go func() {
+		defer close(errorCh)
+		for err := range errCh {
+			errorCh <- err
+		}
+	}()
+	return errorCh
+}
+
+// handleEventsCreation handles the creation of the events
+// it returns a concurrency.Signal indicating that we reached the minimum number of resources needed,
+// another concurrency.Signal indicating that we finished the creation of all resources, and an error channel
+func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (concurrency.Signal, concurrency.Signal, <-chan error) {
+	minimumResources := concurrency.NewSignal()
+	done := concurrency.NewSignal()
+	errorCh := make(chan error)
+	events, errCh := f.eventsCreation()
+	go func() {
+		count := 0
+		defer done.Signal()
+		defer close(errorCh)
+		for {
+			select {
+			case e, more := <-events:
+				// If we received and event we check if we reached the minimum number of resources needed.
+				if more {
+					if _, ok := minimumResourcesMap[e]; ok {
+						minimumResourcesMap[e]--
+						if minimumResourcesMap[e] == 0 {
+							count++
+						}
+						if len(minimumResourcesMap) == count {
+							minimumResources.Signal()
+						}
+					}
+				} else {
+					return
+				}
+			case err, more := <-errCh:
+				if more {
+					errorCh <- err
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+
+		}
+	}()
+	return minimumResources, done, errorCh
+}
+
+// eventsCreation creates the k8s events.
+// It returns a channel in which this function will send the kind of resource created and an error channel
+func (f *FakeEventsManager) eventsCreation() (<-chan string, <-chan error) {
+	ch := make(chan string)
+	errorCh := make(chan error)
+	go func() {
+		defer close(errorCh)
 		defer close(ch)
+		f.Init()
+		objs, err := f.Reader.ReadFile()
+		if err != nil {
+			errorCh <- err
+			return
+		}
 		for _, obj := range objs {
 			if len(obj) == 0 {
 				continue
 			}
 			msg := resources.InformerK8sMsg{}
 			if err := json.Unmarshal(obj, &msg); err != nil {
-				log.Fatalln(err)
+				errorCh <- err
+				return
 			}
 			log.Printf("%s Event: %s", msg.Action, msg.ObjectType)
-			if err := f.createEvent(msg); err != nil {
-				log.Fatalf("cannot create event for %s: %s", msg.ObjectType, err)
+			if err := f.createEvent(msg, ch); err != nil {
+				errorCh <- errors.Wrapf(err, "cannot create event for %s", msg.ObjectType)
+				return
 			}
-			objType := strings.Split(msg.ObjectType, ".")
-			ch <- objType[1]
 			f.waitOnMode()
 		}
-		f.done.Signal()
 	}()
-	return waitForMinimumResources(ch, f.done)
+	return ch, errorCh
 }
 
 // runOp runs the create/update/delete operation
@@ -240,49 +271,52 @@ func getNamespace(resource reflect.Value) string {
 }
 
 // handleRunOp handles the execution of runOp
-func (f *FakeEventsManager) handleRunOp(action, kind string, client, object reflect.Value) error {
+func (f *FakeEventsManager) handleRunOp(action, kind string, ch chan<- string, client, object reflect.Value) error {
 	returnVals := runOp(action, client, object)
 	if len(returnVals) == 0 {
 		return fmt.Errorf("expected 1 or 2 values from %s. Received: %d", action, len(returnVals))
 	}
 	errInt := returnVals[len(returnVals)-1].Interface()
 	if errInt == nil {
+		if action == "CREATE_RESOURCE" {
+			ch <- kind
+		}
 		return nil
 	}
 	return errInt.(error)
 }
 
 // createEvent creates a single k8s event
-func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg) error {
+func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan<- string) error {
 	obj := &unstructured.Unstructured{}
 	objType := strings.Split(msg.ObjectType, ".")
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&msg.Payload)
 	if err != nil {
 		return fmt.Errorf("error constructing unstructured: %w", err)
 	}
-	Kind := objType[1]
+	kind := objType[1]
 	obj.Object = u
 
-	r, ok := f.resourceMap[Kind]
+	r, ok := f.resourceMap[kind]
 	if !ok {
-		return fmt.Errorf("resource %s not found", Kind)
+		return fmt.Errorf("resource %s not found", kind)
 	}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), r); err != nil {
-		return fmt.Errorf("unable to construct %s from unstructured: %w", Kind, err)
+		return fmt.Errorf("unable to construct %s from unstructured: %w", kind, err)
 	}
 
-	clFunc, ok := f.clientMap[Kind]
+	clFunc, ok := f.clientMap[kind]
 	if !ok {
-		return fmt.Errorf("resource %s not found", Kind)
+		return fmt.Errorf("resource %s not found", kind)
 	}
 	cl := clFunc(getNamespace(reflect.ValueOf(r)))
 
-	err = f.handleRunOp(msg.Action, Kind, reflect.ValueOf(cl), reflect.ValueOf(r))
+	err = f.handleRunOp(msg.Action, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
 	if k8sErrors.IsNotFound(err) && msg.Action == "UPDATE_RESOURCE" {
-		return f.handleRunOp("CREATE_RESOURCE", Kind, reflect.ValueOf(cl), reflect.ValueOf(r))
+		return f.handleRunOp("CREATE_RESOURCE", kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
 	}
 	if k8sErrors.IsAlreadyExists(err) && msg.Action == "CREATE_RESOURCE" {
-		return f.handleRunOp("UPDATE_RESOURCE", Kind, reflect.ValueOf(cl), reflect.ValueOf(r))
+		return f.handleRunOp("UPDATE_RESOURCE", kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
 	}
 	return err
 }
