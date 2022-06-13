@@ -177,6 +177,7 @@ const DeploymentDetails = ({ deployment }) => {
                                             {namespacePoliciesList
                                                 .sort(sortNetworkPolicies)
                                                 .map((netpol: NetworkPolicy) => (
+                                                    // TODO(ROX-11034): This should be a link to the Network Policy yaml or detail screen. 
                                                     <Tr key={netpol.id}>
                                                         <Td dataLabel="Name">{netpol.name}</Td>
                                                     </Tr>
