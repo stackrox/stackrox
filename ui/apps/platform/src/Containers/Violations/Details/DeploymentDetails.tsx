@@ -66,7 +66,7 @@ export const formatDeploymentPorts = (ports: Port[] = []): FormattedPort[] => {
     return formattedPorts;
 };
 
-const sortNetworkPolicies = (a: NetworkPolicy, b: NetworkPolicy): number => {
+const compareNetworkPolicies = (a: NetworkPolicy, b: NetworkPolicy): number => {
     return a.name.localeCompare(b.name);
 };
 
@@ -162,11 +162,8 @@ const DeploymentDetails = ({ deployment }) => {
                                 {namespacePoliciesList?.length > 0 ? (
                                     <TableComposable aria-label="Simple table" variant="compact">
                                         <Caption>
-                                            <Title headingLevel="h3">
-                                                All network policies of deployment
-                                            </Title>
-                                            <br />
-                                            in {deploymentObj.namespace} namespace
+                                            <Title headingLevel="h3">All network policies</Title>
+                                            in &quot;{deploymentObj.namespace}&quot; namespace
                                         </Caption>
                                         <Thead>
                                             <Tr>
@@ -175,9 +172,9 @@ const DeploymentDetails = ({ deployment }) => {
                                         </Thead>
                                         <Tbody>
                                             {namespacePoliciesList
-                                                .sort(sortNetworkPolicies)
+                                                .sort(compareNetworkPolicies)
                                                 .map((netpol: NetworkPolicy) => (
-                                                    // TODO(ROX-11034): This should be a link to the Network Policy yaml or detail screen. 
+                                                    // TODO(ROX-11034): This should be a link to the Network Policy yaml or detail screen.
                                                     <Tr key={netpol.id}>
                                                         <Td dataLabel="Name">{netpol.name}</Td>
                                                     </Tr>
@@ -185,7 +182,10 @@ const DeploymentDetails = ({ deployment }) => {
                                         </Tbody>
                                     </TableComposable>
                                 ) : (
-                                    'No network policies found'
+                                    <>
+                                        No network policies found in namespace &quot;
+                                        {deploymentObj.namespace}&quot;
+                                    </>
                                 )}
                             </CardBody>
                         </Card>
