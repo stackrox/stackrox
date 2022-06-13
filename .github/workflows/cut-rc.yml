@@ -372,7 +372,7 @@ jobs:
     with:
       flavor: qa-demo
       name: qa-k8s-${{needs.variables.outputs.milestone}}
-      args: main-image=main:${{needs.variables.outputs.milestone}}
+      args: main-image=docker.io/stackrox/main:${{needs.variables.outputs.milestone}}
       lifespan: 48h
 
   create-os4-cluster:
