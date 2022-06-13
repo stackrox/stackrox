@@ -477,7 +477,25 @@ get_repo_full_name() {
         # CIRCLE_REPOSITORY_URL=git@github.com:stackrox/stackrox.git
         echo "${CIRCLE_REPOSITORY_URL:15:-4}"
     elif is_OPENSHIFT_CI; then
-        jq -r .base.repo.full_name <<<"$(get_pr_details)"
+        if [[ -n "${REPO_OWNER:-}" ]]; then
+            # presubmit, postsubmit and batch runs
+            # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
+            [[ -n "${REPO_NAME:-}" ]] || die "expect: REPO_NAME"
+            echo "${REPO_OWNER:-}/${REPO_NAME:-}"
+        elif [[ -n "${JOB_SPEC:-}" ]]; then
+            # periodics
+            # OpenShift CI adds 'extra_refs'
+            local org
+            local repo
+            org="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].org')" || die "invalid JOB_SPEC yaml"
+            repo="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].repo')" || die "invalid JOB_SPEC yaml"
+            if [[ "$org" == "null" ]] || [[ "$repo" == "null" ]]; then
+                die "expect: org and repo in JOB_SEC.extra_refs[0]"
+            fi
+            echo "${org}/${repo}"
+        else
+            die "Expect REPO_OWNER/NAME or JOB_SPEC"
+        fi
     else
         die "unsupported"
     fi
