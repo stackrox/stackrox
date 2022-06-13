@@ -21,7 +21,7 @@ on:
         required: false
         default: ""
       wait:
-        description: Wait or not for the cluster readiness
+        description: Whether to wait for the cluster readiness
         type: boolean
         required: false
         default: false
