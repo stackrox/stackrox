@@ -36,7 +36,7 @@ jobs:
       - name: Check that Jira release ${{github.event.inputs.version}} is not released
         id: check-jira-release
         run: |
-          JIRA_RELEASE_DATE="$(curl -f -sSL \
+          JIRA_RELEASE_DATE="$(curl --fail -sSL \
             -H "Authorization: Bearer $JIRA_TOKEN" \
             "https://issues.redhat.com/rest/api/2/project/${{env.jira_project}}/versions" \
           | jq -r '.[] | select(.name == "${{github.event.inputs.version}}" and .released == false) | .releaseDate')"

@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: Download infractl
         run: |
-          curl -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
+          curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
           | jq -r ".result.fileChunk" \
           | base64 -d \
           > infractl
@@ -45,7 +45,7 @@ jobs:
           OPTIONS=()
           if [ "${{inputs.wait}}" = "true" ]; then
             OPTIONS+=("--wait")
-            echo "::warning::The job will wait for the cluster creation."
+            echo "::warning::The job will wait for the cluster creation to finish."
           fi
 
           IFS=',' read -ra args <<< "${{inputs.args}}"

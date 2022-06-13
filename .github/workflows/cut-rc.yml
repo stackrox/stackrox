@@ -52,7 +52,7 @@ jobs:
           EOF
           )
 
-          ISSUES=$(curl -f -sSL --get --data-urlencode "jql=$JQL" \
+          ISSUES=$(curl --fail -sSL --get --data-urlencode "jql=$JQL" \
             -H "Authorization: Bearer $JIRA_TOKEN" \
             -H "Accept: application/json" \
             "https://issues.redhat.com/rest/api/2/search" \
@@ -69,7 +69,7 @@ jobs:
           EOF
             echo "::error::There are non-closed Jira issues for version ${{needs.variables.outputs.release-patch}}."
 
-            OPEN_ISSUES=$(curl -f -sSL --get --data-urlencode "jql=$JQL" \
+            OPEN_ISSUES=$(curl --fail -sSL --get --data-urlencode "jql=$JQL" \
             -H "Authorization: Bearer $JIRA_TOKEN" \
             -H "Accept: application/json" \
             "https://issues.redhat.com/rest/api/2/search")
@@ -78,7 +78,7 @@ jobs:
 
             if [ "${{github.event.inputs.dry-run}}" != "true" ]; then
               echo "$OPEN_ISSUES" | jq -r ".issues[] | .key" | while read -r KEY; do
-                curl -f -sSL -X POST \
+                curl --fail -sSL -X POST \
                   -H "Authorization: Bearer $JIRA_TOKEN" \
                   --data '{"body": "Release ${{needs.variables.outputs.release-patch}} is ongoing. Please update the status."}' \
                   -H "Content-Type: application/json" \
@@ -264,7 +264,7 @@ jobs:
             exit 1
           fi
       - name: Post to Slack
-        if: always() && steps.cherry-pick.outputs.bad-cherries != ''
+        if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: slackapi/slack-github-action@v1.19.0
@@ -398,7 +398,7 @@ jobs:
     steps:
       - name: Download infractl
         run: |
-          curl -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
+          curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
           | jq -r ".result.fileChunk" \
           | base64 -d \
           > infractl
@@ -416,7 +416,7 @@ jobs:
       - name: Download Openshift CLI
         run: |
           URL=$(sed "s/console-/downloads-/" artifacts/url-openshift)
-          curl -o oc.tar -k -L "$URL/amd64/linux/oc.tar"
+          curl --fail -o oc.tar -k -L "$URL/amd64/linux/oc.tar"
           tar xf oc.tar
       - name: Patch central
         run: |
@@ -486,7 +486,7 @@ jobs:
     steps:
       - name: Download infractl
         run: |
-          curl -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
+          curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
           | jq -r ".result.fileChunk" \
           | base64 -d \
           > infractl
