@@ -231,7 +231,7 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 	clonedConfig := *c.oauth2Config
 
 	redirectURL := url.URL{
-		Scheme: r.URL.Scheme,
+		Scheme: "https",
 		Host:   r.Host,
 		Path:   r.URL.Path,
 	}
