@@ -28,10 +28,10 @@ type Service interface {
 }
 
 // NewService returns the ImageService API for the Admission Controller to use.
-func NewService(imageCache expiringcache.Cache) Service {
+func NewService(imageCache expiringcache.Cache, registryStore *registry.Store) Service {
 	return &serviceImpl{
 		imageCache:    imageCache,
-		registryStore: registry.Singleton(),
+		registryStore: registryStore,
 	}
 }
 

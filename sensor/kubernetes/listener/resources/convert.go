@@ -73,8 +73,8 @@ func doesFieldExist(value reflect.Value) bool {
 
 func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType, clusterID string,
 	lister v1listers.PodLister, namespaceStore *namespaceStore, hierarchy references.ParentHierarchy, registryOverride string,
-	namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentWrap {
-	wrap := newWrap(obj, deploymentType, clusterID, registryOverride)
+	namespaces *orchestratornamespaces.OrchestratorNamespaces, registryStore *registry.Store) *deploymentWrap {
+	wrap := newWrap(obj, deploymentType, clusterID, registryOverride, registryStore)
 	if wrap == nil {
 		return nil
 	}
@@ -88,7 +88,7 @@ func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAct
 	return wrap
 }
 
-func newWrap(obj interface{}, kind, clusterID, registryOverride string) *deploymentWrap {
+func newWrap(obj interface{}, kind, clusterID, registryOverride string, registryStore *registry.Store) *deploymentWrap {
 	deployment, err := resources.NewDeploymentFromStaticResource(obj, kind, clusterID, registryOverride)
 	if err != nil || deployment == nil {
 		return nil
@@ -96,7 +96,7 @@ func newWrap(obj interface{}, kind, clusterID, registryOverride string) *deploym
 	return &deploymentWrap{
 		Deployment:       deployment,
 		registryOverride: registryOverride,
-		registryStore:    registry.Singleton(),
+		registryStore:    registryStore,
 	}
 }
 
