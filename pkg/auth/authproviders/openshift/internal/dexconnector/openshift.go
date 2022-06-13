@@ -18,6 +18,7 @@ import (
 	"github.com/dexidp/dex/storage/kubernetes/k8sapi"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2"
@@ -45,6 +46,8 @@ const (
 	openshiftWellKnownURL = "/.well-known/oauth-authorization-server"
 	openshiftUsersURL     = "/apis/user.openshift.io/v1/users/~"
 )
+
+var log = logging.LoggerForModule()
 
 // Config holds configuration options for OpenShift OAuth login.
 type Config struct {
@@ -146,6 +149,8 @@ func (c *Config) Open() (*openshiftConnector, error) {
 		return nil, errors.Wrap(err, "establishing connection to one of the oauth2 endpoints")
 	}
 
+	log.Infof("Open() - Redirect URI: %s", openshiftConnector.oauth2Config.RedirectURL)
+
 	return &openshiftConnector, nil
 }
 
@@ -204,11 +209,15 @@ func validateEndpoint(endpoint string, tlsConfig *tls.Config) error {
 func (c *openshiftConnector) LoginURL(_ connector.Scopes, callbackURL string, state string) (string, error) {
 	clonedConfig := *c.oauth2Config
 	clonedConfig.RedirectURL = callbackURL
+	log.Infof("LoginURL() - redirect URL on copied config: %s", clonedConfig.RedirectURL)
+	log.Infof("LoginURL() - redirect URL on original config: %s", c.oauth2Config.RedirectURL)
 	return clonedConfig.AuthCodeURL(state, oauth2.SetAuthURLParam("redirect_uri", callbackURL)), nil
 }
 
 // HandleCallback parses the request and returns the user's identity.
 func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request) (identity connector.Identity, err error) {
+	log.Infof("HandleCallback() entry - redirect URL on original config: %s", c.oauth2Config.RedirectURL)
+
 	q := r.URL.Query()
 	if errType := q.Get("error"); errType != "" {
 		return identity, &oauth2Error{errType, q.Get("error_description")}
@@ -218,7 +227,7 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 	if c.httpClient != nil {
 		ctx = context.WithValue(r.Context(), oauth2.HTTPClient, c.httpClient)
 	}
-
+	log.Infof("HandleCallback() before exchange - redirect URL on original config: %s", c.oauth2Config.RedirectURL)
 	token, err := c.oauth2Config.Exchange(ctx, q.Get("code"))
 	if err != nil {
 		return identity, errors.Wrap(err, "failed to get token")
