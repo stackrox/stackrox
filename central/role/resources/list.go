@@ -175,14 +175,6 @@ func newDeprecatedResourceMetadataWithFeatureFlag(name permissions.Resource, sco
 	return md
 }
 
-func newInternalResourceMetadata(name permissions.Resource,
-	scope permissions.ResourceScope) permissions.ResourceMetadata {
-	return permissions.ResourceMetadata{
-		Resource: name,
-		Scope:    scope,
-	}
-}
-
 // ListAll returns a list of all resources.
 func ListAll() []permissions.Resource {
 	resources := make([]permissions.Resource, 0, len(resourceToMetadata))
