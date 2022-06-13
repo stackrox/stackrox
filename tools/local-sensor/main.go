@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -205,7 +205,7 @@ func main() {
 			}
 			// If the errCh is closed but err == nil we know we are done creating resources,
 			// but we did not reach the minimum resources to start sensor
-			log.Fatalln(fmt.Errorf("the minimum resources to start sensor were not created"))
+			log.Fatalln(errors.New("the minimum resources to start sensor were not created"))
 		case <-min.WaitC():
 			break
 		}
