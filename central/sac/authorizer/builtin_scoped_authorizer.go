@@ -23,8 +23,6 @@ var (
 	ErrUnexpectedScopeKey = errors.New("unexpected scope key")
 	// ErrUnknownResource is returned when resource is unknown.
 	ErrUnknownResource = errors.New("unknown resource")
-
-	errNoGlobalEffectiveAccessScope = errors.New("global scope checker has no effective access scope")
 )
 
 // NewBuiltInScopeChecker returns a new SAC-aware scope checker for the given
