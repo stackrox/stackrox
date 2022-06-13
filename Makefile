@@ -280,7 +280,7 @@ clean-easyjson-srcs:
 .PHONY: go-generated-srcs
 go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
-	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate ./... || { echo $? failed-go_generate_from_make; sleep 30; exit 1 }
+	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate ./... || { echo \$? failed-go_generate_from_make; sleep 30; exit 1 }
 
 proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"
