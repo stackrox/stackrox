@@ -232,7 +232,7 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 
 	redirectURL := url.URL{
 		Scheme: r.URL.Scheme,
-		Host:   r.URL.Host,
+		Host:   r.Host,
 		Path:   r.URL.Path,
 	}
 
