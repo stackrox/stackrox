@@ -148,7 +148,7 @@ func CSVHandler() http.HandlerFunc {
 			options.clusterIDs = clusterIDs
 		}
 
-		data, err := complianceDS.GetLatestRunResultsForClustersAndStandards(r.Context(), options.clusterIDs, options.standardIDs, complianceDSTypes.WithMessageStrings)
+		data, err := complianceDS.GetLatestRunResultsBatch(r.Context(), options.clusterIDs, options.standardIDs, complianceDSTypes.WithMessageStrings)
 		if err != nil {
 			csv.WriteError(w, http.StatusInternalServerError, err)
 			return
