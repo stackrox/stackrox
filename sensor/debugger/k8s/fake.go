@@ -145,9 +145,13 @@ func (f *FakeEventsManager) WaitForDone() {
 func waitForMinimumResources(ch <-chan string, done concurrency.Signal) error {
 	count := 0
 	doneC := done.WaitC()
+	d := false
 	for {
 		select {
-		case obj := <-ch:
+		case obj, more := <-ch:
+			if !more && d {
+				return errors.New("the events file did not contain the minimum resources required to start sensor")
+			}
 			if _, ok := minimumResources[obj]; ok {
 				minimumResources[obj]--
 				if minimumResources[obj] == 0 {
@@ -158,16 +162,30 @@ func waitForMinimumResources(ch <-chan string, done concurrency.Signal) error {
 				}
 			}
 		case <-doneC:
-			return errors.New("the events file did not contain the minimum resources required to start sensor")
+			// We make sure there are not more messages in the channel
+			obj, more := <-ch
+			if !more {
+				return errors.New("the events file did not contain the minimum resources required to start sensor")
+			}
+			if _, ok := minimumResources[obj]; ok {
+				minimumResources[obj]--
+				if minimumResources[obj] == 0 {
+					count++
+				}
+				if len(minimumResources) == 0 {
+					return nil
+				}
+			}
+			d = true
 		}
 	}
 }
 
 // CreateEvents creates the k8s events from a given jsonl file
 func (f *FakeEventsManager) CreateEvents() error {
-	ch := make(chan string)
 	f.done = concurrency.NewSignal()
 	objs, err := f.Reader.ReadFile()
+	ch := make(chan string, len(objs))
 	if err != nil {
 		return err
 	}
@@ -183,9 +201,12 @@ func (f *FakeEventsManager) CreateEvents() error {
 				log.Fatalln(err)
 			}
 			log.Printf("%s Event: %s", msg.Action, msg.ObjectType)
-			if err := f.createEvent(msg, ch); err != nil {
+			if err := f.createEvent(msg); err != nil {
 				log.Fatalf("cannot create event for %s: %s", msg.ObjectType, err)
 			}
+			objType := strings.Split(msg.ObjectType, ".")
+			ch <- objType[1]
+			f.waitOnMode()
 		}
 		f.done.Signal()
 	}()
@@ -219,25 +240,20 @@ func getNamespace(resource reflect.Value) string {
 }
 
 // handleRunOp handles the execution of runOp
-func (f *FakeEventsManager) handleRunOp(action, kind string, client, object reflect.Value, ch chan<- string) error {
+func (f *FakeEventsManager) handleRunOp(action, kind string, client, object reflect.Value) error {
 	returnVals := runOp(action, client, object)
 	if len(returnVals) == 0 {
 		return fmt.Errorf("expected 1 or 2 values from %s. Received: %d", action, len(returnVals))
 	}
 	errInt := returnVals[len(returnVals)-1].Interface()
 	if errInt == nil {
-		select {
-		case ch <- kind:
-		default:
-		}
-		f.waitOnMode()
 		return nil
 	}
 	return errInt.(error)
 }
 
 // createEvent creates a single k8s event
-func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan<- string) error {
+func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg) error {
 	obj := &unstructured.Unstructured{}
 	objType := strings.Split(msg.ObjectType, ".")
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&msg.Payload)
@@ -261,12 +277,12 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan<- 
 	}
 	cl := clFunc(getNamespace(reflect.ValueOf(r)))
 
-	err = f.handleRunOp(msg.Action, Kind, reflect.ValueOf(cl), reflect.ValueOf(r), ch)
+	err = f.handleRunOp(msg.Action, Kind, reflect.ValueOf(cl), reflect.ValueOf(r))
 	if k8sErrors.IsNotFound(err) && msg.Action == "UPDATE_RESOURCE" {
-		return f.handleRunOp("CREATE_RESOURCE", Kind, reflect.ValueOf(cl), reflect.ValueOf(r), ch)
+		return f.handleRunOp("CREATE_RESOURCE", Kind, reflect.ValueOf(cl), reflect.ValueOf(r))
 	}
 	if k8sErrors.IsAlreadyExists(err) && msg.Action == "CREATE_RESOURCE" {
-		return f.handleRunOp("UPDATE_RESOURCE", Kind, reflect.ValueOf(cl), reflect.ValueOf(r), ch)
+		return f.handleRunOp("UPDATE_RESOURCE", Kind, reflect.ValueOf(cl), reflect.ValueOf(r))
 	}
 	return err
 }
