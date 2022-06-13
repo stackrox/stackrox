@@ -135,10 +135,10 @@ push_main_image_set() {
     info "Pushing main and roxctl images"
 
     if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: push_main_image_set <branch> <brand>"
+        die "missing arg. usage: push_main_image_set <push_context> <brand>"
     fi
 
-    local branch="$1"
+    local push_context="$1"
     local brand="$2"
 
     local main_image_set=("main" "roxctl" "central-db")
@@ -207,7 +207,7 @@ push_main_image_set() {
             _tag_main_image_set "$tag" "$registry" "$tag"
             _push_main_image_set "$registry" "$tag"
         fi
-        if [[ "$branch" == "master" ]]; then
+        if [[ "$push_context" == "merge-to-master" ]]; then
             if is_OPENSHIFT_CI; then
                 _mirror_main_image_set "$registry" "latest"
             else
@@ -712,7 +712,11 @@ gate_merge_job() {
     run_on_tags="$(get_var_from_job_config run_on_tags "$job_config")"
 
     local base_ref
-    base_ref="$(get_base_ref)"
+    base_ref="$(get_base_ref)" || {
+        info "Warning: error running get_base_ref():"
+        echo "${base_ref}"
+        info "will continue with tests."
+    }
 
     if [[ "${base_ref}" == "master" && "${run_on_master}" == "true" ]]; then
         info "$job will run because this is master and run_on_master==true"
