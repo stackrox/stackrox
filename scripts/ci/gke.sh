@@ -183,11 +183,6 @@ create_cluster() {
         echo "Cluster creation failed"
         return 1
     fi
-
-    if is_OPENSHIFT_CI; then
-        # explicitly set the default namespace to avoid persistence of openshift CI namespace
-        kubectl config set-context --current --namespace=default
-    fi
 }
 
 wait_for_cluster() {
@@ -257,10 +252,6 @@ refresh_gke_token() {
         KUBECONFIG=/tmp/kubeconfig-new gcloud container clusters get-credentials --project stackrox-ci --zone "$ZONE" "$CLUSTER_NAME"
         KUBECONFIG=/tmp/kubeconfig-new kubectl get ns >/dev/null
         mv /tmp/kubeconfig-new "$real_kubeconfig"
-        if is_OPENSHIFT_CI; then
-            # explicitly set the default namespace to avoid persistence of openshift CI namespace
-            kubectl config set-context --current --namespace=default
-        fi
     done
 }
 
