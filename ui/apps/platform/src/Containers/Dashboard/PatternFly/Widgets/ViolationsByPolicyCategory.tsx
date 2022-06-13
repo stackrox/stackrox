@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
+    Dropdown,
+    DropdownToggle,
+    Flex,
+    FlexItem,
+    Form,
+    FormGroup,
+    Title,
+    ToggleGroup,
+    ToggleGroupItem,
+} from '@patternfly/react-core';
+import {
     Chart,
     ChartAxis,
     ChartStack,
@@ -22,21 +33,12 @@ import {
 import { getQueryString } from 'utils/queryStringUtils';
 import { violationsBasePath } from 'routePaths';
 import useResizeObserver from 'hooks/useResizeObserver';
-import {
-    Dropdown,
-    DropdownToggle,
-    Flex,
-    FlexItem,
-    Form,
-    FormGroup,
-    Title,
-    ToggleGroup,
-    ToggleGroupItem,
-} from '@patternfly/react-core';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
+import { LifecycleStage } from 'types/policy.proto';
+
 import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 
@@ -182,7 +184,7 @@ function ViolationsByPolicyCategoryChart({
     );
 }
 
-type LifecycleOption = 'All' | 'Deploy' | 'Runtime';
+type LifecycleOption = 'ALL' | Exclude<LifecycleStage, 'BUILD'>;
 
 const fieldIdPrefix = 'policy-category-violations';
 
@@ -190,12 +192,12 @@ function ViolationsByPolicyCategory() {
     const { isOpen: isOptionsOpen, onToggle: toggleOptionsOpen } = useSelectToggle();
     const { searchFilter } = useURLSearch();
     const [sortType, sortTypeOption] = useState<SortTypeOption>('Severity');
-    const [lifecycle, setLifecycle] = useState<LifecycleOption>('All');
+    const [lifecycle, setLifecycle] = useState<LifecycleOption>('ALL');
 
     const queryFilter = { ...searchFilter };
-    if (lifecycle === 'Deploy') {
+    if (lifecycle === 'DEPLOY') {
         queryFilter['Lifecycle Stage'] = LIFECYCLE_STAGES.DEPLOY;
-    } else if (lifecycle === 'Runtime') {
+    } else if (lifecycle === 'RUNTIME') {
         queryFilter['Lifecycle Stage'] = LIFECYCLE_STAGES.RUNTIME;
     }
     const query = getRequestQueryStringForSearchFilter(queryFilter);
@@ -250,20 +252,20 @@ function ViolationsByPolicyCategory() {
                                         <ToggleGroupItem
                                             text="All"
                                             buttonId={`${fieldIdPrefix}-lifecycle-all`}
-                                            isSelected={lifecycle === 'All'}
-                                            onChange={() => setLifecycle('All')}
+                                            isSelected={lifecycle === 'ALL'}
+                                            onChange={() => setLifecycle('ALL')}
                                         />
                                         <ToggleGroupItem
                                             text="Deploy"
                                             buttonId={`${fieldIdPrefix}-lifecycle-deploy`}
-                                            isSelected={lifecycle === 'Deploy'}
-                                            onChange={() => setLifecycle('Deploy')}
+                                            isSelected={lifecycle === 'DEPLOY'}
+                                            onChange={() => setLifecycle('DEPLOY')}
                                         />
                                         <ToggleGroupItem
                                             text="Runtime"
                                             buttonId={`${fieldIdPrefix}-lifecycle-runtime`}
-                                            isSelected={lifecycle === 'Runtime'}
-                                            onChange={() => setLifecycle('Runtime')}
+                                            isSelected={lifecycle === 'RUNTIME'}
+                                            onChange={() => setLifecycle('RUNTIME')}
                                         />
                                     </ToggleGroup>
                                 </FormGroup>
