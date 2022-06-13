@@ -45,7 +45,11 @@ import { LifecycleStage, policySeverities, PolicySeverity } from 'types/policy.p
 import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 
-function filterAlertGroupSeverities(
+/**
+ * This function iterates an array of AlertGroups and zeros out severities that
+ * have been filtered by the user in the widget's legend.
+ */
+function zeroOutFilteredSeverities(
     groups: AlertGroup[],
     hiddenSeverities: Set<PolicySeverity>
 ): AlertGroup[] {
@@ -139,9 +143,11 @@ function ViolationsByPolicyCategoryChart({
 
     const [hiddenSeverities, setHiddenSeverities] = useState<Set<PolicySeverity>>(new Set());
 
-    const filteredGroups = filterAlertGroupSeverities(alertGroups, hiddenSeverities);
+    const filteredAlertGroups = zeroOutFilteredSeverities(alertGroups, hiddenSeverities);
     const sortedAlertGroups =
-        sortType === 'Severity' ? sortBySeverity(filteredGroups) : sortByVolume(filteredGroups);
+        sortType === 'Severity'
+            ? sortBySeverity(filteredAlertGroups)
+            : sortByVolume(filteredAlertGroups);
     // We reverse here, because PF/Victory charts stack the bars from bottom->up
     const topOrderedGroups = sortedAlertGroups.slice(0, 5).reverse();
     const countsBySeverity = getCountsBySeverity(topOrderedGroups);
@@ -166,36 +172,30 @@ function ViolationsByPolicyCategoryChart({
         setHiddenSeverities(newHidden);
     }
 
-    function isSeverityHidden(index: number): boolean {
-        return hiddenSeverities.has(policySeverities[index]);
-    }
+    const bars = policySeverities.map((severity) => {
+        const counts = countsBySeverity[severity];
+        const data = Object.entries(counts).map(([group, count]) => ({
+            name: severity,
+            x: group,
+            y: count,
+            label: `${severity}: ${count}`,
+        }));
 
-    function getChartBars() {
-        return policySeverities.map((severity) => {
-            const counts = countsBySeverity[severity];
-            const data = Object.entries(counts).map(([group, count]) => ({
-                name: severity,
-                x: group,
-                y: count,
-                label: `${severity}: ${count}`,
-            }));
-
-            return (
-                <ChartBar
-                    barWidth={defaultChartBarWidth}
-                    key={severity}
-                    data={data}
-                    labelComponent={<ChartTooltip constrainToVisibleArea />}
-                    events={[
-                        navigateOnClickEvent(history, (targetProps) => {
-                            const category = targetProps?.datum?.xName;
-                            return linkForViolationsCategory(category);
-                        }),
-                    ]}
-                />
-            );
-        });
-    }
+        return (
+            <ChartBar
+                barWidth={defaultChartBarWidth}
+                key={severity}
+                data={data}
+                labelComponent={<ChartTooltip constrainToVisibleArea />}
+                events={[
+                    navigateOnClickEvent(history, (targetProps) => {
+                        const category = targetProps?.datum?.xName;
+                        return linkForViolationsCategory(category);
+                    }),
+                ]}
+            />
+        );
+    });
 
     return (
         <div ref={setWidgetContainer} style={{ height }}>
@@ -206,7 +206,7 @@ function ViolationsByPolicyCategoryChart({
                 domainPadding={{ x: [20, 20] }}
                 events={getInteractiveLegendEvents({
                     chartNames: [Object.values(severityLabels)],
-                    isHidden: isSeverityHidden,
+                    isHidden: (index) => hiddenSeverities.has(policySeverities[index]),
                     legendName: 'legend',
                     onLegendClick,
                 })}
@@ -225,7 +225,7 @@ function ViolationsByPolicyCategoryChart({
                     tickLabelComponent={<LinkableChartLabel linkWith={labelLinkCallback} />}
                 />
                 <ChartAxis dependentAxis />
-                <ChartStack horizontal>{getChartBars()}</ChartStack>
+                <ChartStack horizontal>{bars}</ChartStack>
             </Chart>
         </div>
     );
