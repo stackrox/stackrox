@@ -55,7 +55,7 @@ From here you can install stackrox-central-services to get Central and Scanner c
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="$(cat stackrox-admin-password.txt)"
 ```
 
-If you're deploying StackRox on a small node like a local development cluster, run the following command to reduce StackRox resource requirements. Please keep in mind that these reduced resource settings are not suited for production setups.
+If you're deploying StackRox on a small node like a local development cluster, run the following command to reduce StackRox resource requirements. Please keep in mind that these reduced resource settings are not suited for a production setup.
 ```sh
 helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-services \
   --set central.resources.requests.memory=1Gi \
@@ -69,28 +69,35 @@ helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-ser
   --set scanner.resources.limits.memory=2500Mi \
   --set scanner.resources.limits.cpu=2000m
 ```
-To create a secured cluster, you first need to generate an init bundle containing initialization secrets. The init bundle will be saved in `stackrox-init-bundle.yaml`. Use it to provision secured clusters as shown below.
+To create a secured cluster, you first need to generate an init bundle containing initialization secrets. The init bundle will be saved in `stackrox-init-bundle.yaml`, and you will use it to provision secured clusters as shown below.
 ```sh
 kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
   --password "$(cat stackrox-admin-password.txt)" \
   central init-bundles generate stackrox-init-bundle --output - > stackrox-init-bundle.yaml
 ```
+Set a `CLUSTER_NAME` for your secured cluster.
+````sh
+CLUSTER_NAME="my-secured-cluster"
+````
 Then install stackrox-secured-cluster-services in the same cluster using this command with the init bundle you just generated:
 ```sh
 helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
-  -f stackrox-init-bundle.yaml \ 
-  --set clusterName=<name_of_the_secured_cluster> 
+  -f stackrox-init-bundle.yaml \
+  --set clusterName="$CLUSTER_NAME"
 ```
 Make sure to provide some name in `clusterName` argument meaningful to you. The cluster will be identified by this name in clusters list in StackRox UI.
 
 When deploying stackrox-secured-cluster-services on a different cluster, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
-When deploying StackRox on a small node, add the following arguments to the helm install command above. This should reduce stackrox-secured-cluster-services resource requirements. Please keep in mind that these reduced resource settings are not recommended for production setups.
+When deploying StackRox on a small node, helm install stackrox-secured-cluster-services with additional options. This should reduce stackrox-secured-cluster-services resource requirements. Please keep in mind that these reduced resource settings are not recommended for a production setup.
 ```sh
---set sensor.resources.requests.memory=500Mi \
---set sensor.resources.requests.cpu=500m \
---set sensor.resources.limits.memory=500Mi \
---set sensor.resources.limits.cpu=500m
+helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+  -f stackrox-init-bundle.yaml \
+  --set clusterName="$CLUSTER_NAME" \
+  --set sensor.resources.requests.memory=500Mi \
+  --set sensor.resources.requests.cpu=500m \
+  --set sensor.resources.limits.memory=500Mi \
+  --set sensor.resources.limits.cpu=500m
 ```
 
 To further customize your Helm installation consult these documents:
