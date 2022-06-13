@@ -71,10 +71,6 @@ type FakeEventsManager struct {
 	clientMap map[string]func(string) interface{}
 	// resourceMap map with the k8s resources
 	resourceMap map[string]interface{}
-	// done signal to indicate the end the events creation
-	done concurrency.Signal
-	// minimumResources signal to indicate the minimum resources have been created
-	minimumResources concurrency.Signal
 }
 
 var actionToMethod = map[string]string{
@@ -137,47 +133,29 @@ func (f *FakeEventsManager) Init() {
 	}
 }
 
-// WaitForMinimumResources waits for a minimumResourcesMap number of resources to be created or once all the events have been processed
-func (f *FakeEventsManager) WaitForMinimumResources() error {
-	select {
-	case <-f.minimumResources.WaitC():
-		return nil
-	case <-f.done.WaitC():
-		return errors.New("all events processed without reaching the minimumResourcesMap resources needed")
-	}
-}
-
-// WaitForDone waits for all the events to be processed
-func (f *FakeEventsManager) WaitForDone() {
-	f.done.Wait()
-}
-
 // CreateEvents creates the k8s events from a given jsonl file
-func (f *FakeEventsManager) CreateEvents(ctx context.Context) <-chan error {
+// It returns a concurrency.Signal that will be triggered if we reach the minimum number of resources needed to start sensor
+// and an error channel
+func (f *FakeEventsManager) CreateEvents(ctx context.Context) (concurrency.Signal, <-chan error) {
+	min, errCh := f.handleEventsCreation(ctx)
 	errorCh := make(chan error)
-	min, done, errCh := f.handleEventsCreation(ctx)
-	f.done = done
-	f.minimumResources = min
 	go func() {
 		defer close(errorCh)
 		for err := range errCh {
 			errorCh <- err
 		}
 	}()
-	return errorCh
+	return min, errorCh
 }
 
 // handleEventsCreation handles the creation of the events
-// it returns a concurrency.Signal indicating that we reached the minimum number of resources needed,
-// another concurrency.Signal indicating that we finished the creation of all resources, and an error channel
-func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (concurrency.Signal, concurrency.Signal, <-chan error) {
+// It returns a concurrency.Signal indicating that we reached the minimum number of resources needed and an error channel
+func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (concurrency.Signal, <-chan error) {
 	minimumResources := concurrency.NewSignal()
-	done := concurrency.NewSignal()
 	errorCh := make(chan error)
 	events, errCh := f.eventsCreation()
 	go func() {
 		count := 0
-		defer done.Signal()
 		defer close(errorCh)
 		for {
 			select {
@@ -207,7 +185,7 @@ func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (concurren
 
 		}
 	}()
-	return minimumResources, done, errorCh
+	return minimumResources, errorCh
 }
 
 // eventsCreation creates the k8s events.

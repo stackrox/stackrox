@@ -196,16 +196,26 @@ func main() {
 			Client: fakeClient,
 			Reader: trReader,
 		}
-		errCh := fm.CreateEvents(ctx)
+		min, errCh := fm.CreateEvents(ctx)
+		select {
+		case err := <-errCh:
+			if err != nil {
+				cancelFunc()
+				log.Fatalln(err)
+			}
+			// If the errCh is closed but err == nil we know we are done creating resources,
+			// but we did not reach the minimum resources to start sensor
+			log.Fatalln(fmt.Errorf("the minimum resources to start sensor were not created"))
+		case <-min.WaitC():
+			break
+		}
+		// in case there are errors after we received the minimum resources signal
 		go func() {
 			for e := range errCh {
 				cancelFunc()
-				fmt.Println(e)
+				log.Fatalln(e)
 			}
 		}()
-		if err := fm.WaitForMinimumResources(); err != nil {
-			log.Fatalln(err)
-		}
 	}
 
 	s, err := sensor.CreateSensor(sensorConfig)
