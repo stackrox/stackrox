@@ -40,6 +40,34 @@ func (resolver *Resolver) componentsV2(ctx context.Context, args PaginatedQuery)
 	return resolver.componentsV2Query(ctx, query)
 }
 
+func (resolver *Resolver) imageComponentV2(ctx context.Context, args IDQuery) (ImageComponentResolver, error) {
+	res, err := resolver.imageComponentDataStoreQuery(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	res.ctx = ctx
+	return res, nil
+}
+
+func (resolver *Resolver) imageComponentsV2(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers, err := resolver.imageComponentsLoaderQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]ImageComponentResolver, 0, len(resolvers))
+	for _, res := range resolvers {
+		res.ctx = ctx
+		ret = append(ret, res)
+	}
+	return ret, err
+}
+
 func (resolver *Resolver) nodeComponentV2(ctx context.Context, args IDQuery) (NodeComponentResolver, error) {
 	nodeCompRes, err := resolver.imageComponentDataStoreQuery(ctx, args)
 	if err != nil {
@@ -197,6 +225,19 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 	return vulnResolver, nil
 }
 
+func (eicr *imageComponentResolver) TopImageVulnerability(ctx context.Context) (ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopImageVulnerability")
+	if !features.PostgresDatastore.Enabled() {
+		vulnResolver, err := eicr.unwrappedTopVulnQuery(ctx)
+		if err != nil || vulnResolver == nil {
+			return nil, err
+		}
+		return vulnResolver, nil
+	}
+	// TODO : Add postgres support
+	return nil, errors.New("Sub-resolver TopImageVulnerability in ImageComponent does not support postgres yet")
+}
+
 // TopNodeVulnerability returns the first node component vulnerability with the top CVSS score.
 func (eicr *imageComponentResolver) TopNodeVulnerability(ctx context.Context) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopNodeVulnerability")
@@ -330,6 +371,21 @@ func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, args RawQue
 		return nil, err
 	}
 	return mapCVEsToVulnerabilityCounter(fixableVulns, unFixableCVEs), nil
+}
+
+func (eicr *imageComponentResolver) ImageVulnerabilities(_ context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
+	return eicr.root.ImageVulnerabilities(eicr.imageComponentScopeContext(), args)
+}
+
+func (eicr *imageComponentResolver) ImageVulnerabilityCount(_ context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCount")
+	return eicr.root.ImageVulnerabilityCount(eicr.imageComponentScopeContext(), args)
+}
+
+func (eicr *imageComponentResolver) ImageVulnerabilityCounter(_ context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCounter")
+	return eicr.root.ImageVulnerabilityCounter(eicr.imageComponentScopeContext(), args)
 }
 
 // NodeVulnerabilities resolves the node vulnerabilities contained in the node component.

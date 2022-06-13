@@ -25,12 +25,15 @@ func init() {
 		schema.AddQuery("clusterVulnerability(id: ID): ClusterVulnerability"),
 		schema.AddQuery("clusterVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ClusterVulnerability!]!"),
 		schema.AddQuery("clusterVulnerabilityCount(query: String): Int!"),
-		schema.AddQuery("k8sClusterVulnerability(id: ID): ClusterVulnerability"),
 		schema.AddQuery("k8sClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!"),
-		schema.AddQuery("istioClusterVulnerability(id: ID): ClusterVulnerability"),
+		schema.AddQuery("k8sClusterVulnerability(id: ID): ClusterVulnerability"),
+		schema.AddQuery("k8sClusterVulnerabilityCount(query: String): Int!"),
 		schema.AddQuery("istioClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!"),
-		schema.AddQuery("openShiftClusterVulnerability(id: ID): ClusterVulnerability"),
+		schema.AddQuery("istioClusterVulnerability(id: ID): ClusterVulnerability"),
+		schema.AddQuery("istioClusterVulnerabilityCount(query: String): Int!"),
 		schema.AddQuery("openShiftClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!"),
+		schema.AddQuery("openShiftClusterVulnerability(id: ID): ClusterVulnerability"),
+		schema.AddQuery("openShiftClusterVulnerabilityCount(query: String): Int!"),
 	)
 }
 
@@ -107,6 +110,17 @@ func (resolver *Resolver) K8sClusterVulnerabilities(ctx context.Context, args Pa
 	return nil, errors.New("Resolver K8sClusterVulnerabilities does not support postgres yet")
 }
 
+// K8sClusterVulnerabilityCount returns count of image vulnerabilities for the input query
+func (resolver *Resolver) K8sClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sClusterVulnerabilityCount")
+	if !features.PostgresDatastore.Enabled() {
+		query := withK8sTypeFiltering(args.String())
+		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
+	}
+	// TODO add postgres support
+	return 0, errors.New("Resolver K8sClusterVulnerabilityCount does not support postgres yet")
+}
+
 // IstioClusterVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
 func (resolver *Resolver) IstioClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioClusterVulnerability")
@@ -128,6 +142,17 @@ func (resolver *Resolver) IstioClusterVulnerabilities(ctx context.Context, args 
 	return nil, errors.New("Resolver IstioClusterVulnerabilities does not support postgres yet")
 }
 
+// IstioClusterVulnerabilityCount returns count of image vulnerabilities for the input query
+func (resolver *Resolver) IstioClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioClusterVulnerabilityCount")
+	if !features.PostgresDatastore.Enabled() {
+		query := withIstioTypeFiltering(args.String())
+		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
+	}
+	// TODO add postgres support
+	return 0, errors.New("Resolver IstioClusterVulnerabilityCount does not support postgres yet")
+}
+
 // OpenShiftClusterVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
 func (resolver *Resolver) OpenShiftClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftClusterVulnerability")
@@ -147,6 +172,17 @@ func (resolver *Resolver) OpenShiftClusterVulnerabilities(ctx context.Context, a
 	}
 	// TODO add postgres support
 	return nil, errors.New("Resolver OpenShiftClusterVulnerabilities does not support postgres yet")
+}
+
+// OpenShiftClusterVulnerabilityCount returns count of image vulnerabilities for the input query
+func (resolver *Resolver) OpenShiftClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftClusterVulnerabilityCount")
+	if !features.PostgresDatastore.Enabled() {
+		query := withOpenShiftTypeFiltering(args.String())
+		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
+	}
+	// TODO add postgres support
+	return 0, errors.New("Resolver OpenShiftClusterVulnerabilityCount does not support postgres yet")
 }
 
 // withClusterTypeFiltering adds a conjunction as a raw query to filter vulnerability type by cluster
