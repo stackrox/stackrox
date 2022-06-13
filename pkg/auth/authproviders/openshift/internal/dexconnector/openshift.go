@@ -216,8 +216,8 @@ func (c *openshiftConnector) LoginURL(_ connector.Scopes, callbackURL string, st
 
 // HandleCallback parses the request and returns the user's identity.
 func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request) (identity connector.Identity, err error) {
-	log.Infof("HandleCallback() entry - redirect URL on original config: %s", c.oauth2Config.RedirectURL)
-
+	log.Infof("HandleCallback() - HTTP request %+v", r)
+	log.Infof("HandleCallback() - URL on request: %s", r.URL.String())
 	q := r.URL.Query()
 	if errType := q.Get("error"); errType != "" {
 		return identity, &oauth2Error{errType, q.Get("error_description")}
@@ -227,8 +227,11 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 	if c.httpClient != nil {
 		ctx = context.WithValue(r.Context(), oauth2.HTTPClient, c.httpClient)
 	}
-	log.Infof("HandleCallback() before exchange - redirect URL on original config: %s", c.oauth2Config.RedirectURL)
-	token, err := c.oauth2Config.Exchange(ctx, q.Get("code"))
+
+	clonedConfig := *c.oauth2Config
+	clonedConfig.RedirectURL = r.URL.String()
+	log.Infof("HandleCallback() - redirect URL on copied config: %s", clonedConfig.RedirectURL)
+	token, err := clonedConfig.Exchange(ctx, q.Get("code"))
 	if err != nil {
 		return identity, errors.Wrap(err, "failed to get token")
 	}
