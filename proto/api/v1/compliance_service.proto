@@ -70,10 +70,6 @@ message GetComplianceStandardsResponse {
     repeated ComplianceStandardMetadata standards = 1;
 }
 
-message ComplianceControlResultsResponse {
-    repeated storage.ComplianceControlResult results = 1;
-}
-
 message GetComplianceRunResultsRequest {
     string cluster_id = 1;
     string standard_id = 2;
@@ -99,12 +95,6 @@ service ComplianceService {
     rpc GetStandard(ResourceByID) returns (GetComplianceStandardResponse) {
         option (google.api.http) = {
             get: "/v1/compliance/standards/{id}"
-        };
-    }
-
-    rpc GetComplianceControlResults(RawQuery) returns (ComplianceControlResultsResponse) {
-        option (google.api.http) = {
-            get: "/v1/compliance/results"
         };
     }
 
