@@ -18,11 +18,14 @@ import {
     ChartBar,
     ChartTooltip,
     ChartLabelProps,
+    ChartLegend,
+    getInteractiveLegendEvents,
+    getInteractiveLegendItemStyles,
 } from '@patternfly/react-charts';
-import { sortBy } from 'lodash';
+import sortBy from 'lodash/sortBy';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
-import { AlertGroup, Severity } from 'services/AlertsService';
+import { AlertGroup } from 'services/AlertsService';
 import { severityLabels } from 'messages/common';
 import {
     navigateOnClickEvent,
@@ -37,19 +40,30 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-import { LifecycleStage } from 'types/policy.proto';
+import { LifecycleStage, policySeverities, PolicySeverity } from 'types/policy.proto';
 
 import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 
-type CountsBySeverity = {
-    Low: Record<string, number>;
-    Medium: Record<string, number>;
-    High: Record<string, number>;
-    Critical: Record<string, number>;
-};
+function filterAlertGroupSeverities(
+    groups: AlertGroup[],
+    hiddenSeverities: Set<PolicySeverity>
+): AlertGroup[] {
+    const filteredGroups: AlertGroup[] = [];
+    groups.forEach(({ group, counts }) => {
+        const filteredCounts = counts.map(({ severity, count }) => ({
+            severity,
+            count: hiddenSeverities.has(severity) ? '0' : count,
+        }));
+        filteredGroups.push({
+            group,
+            counts: filteredCounts,
+        });
+    });
+    return filteredGroups;
+}
 
-function pluckSeverityCount(severity: Severity): (group: AlertGroup) => number {
+function pluckSeverityCount(severity: PolicySeverity): (group: AlertGroup) => number {
     return ({ counts }) => {
         const severityCount = counts.find((ct) => ct.severity === severity)?.count || '0';
         return -parseInt(severityCount, 10);
@@ -72,22 +86,24 @@ function sortBySeverity(groups: AlertGroup[]) {
     ]);
 }
 
+type CountsBySeverity = Record<PolicySeverity, Record<string, number>>;
+
 function getCountsBySeverity(groups: AlertGroup[]): CountsBySeverity {
     const result = {
-        Low: {},
-        Medium: {},
-        High: {},
-        Critical: {},
+        LOW_SEVERITY: {},
+        MEDIUM_SEVERITY: {},
+        HIGH_SEVERITY: {},
+        CRITICAL_SEVERITY: {},
     };
 
     groups.forEach(({ group, counts }) => {
-        result.Low[group] = 0;
-        result.Medium[group] = 0;
-        result.High[group] = 0;
-        result.Critical[group] = 0;
+        result.LOW_SEVERITY[group] = 0;
+        result.MEDIUM_SEVERITY[group] = 0;
+        result.HIGH_SEVERITY[group] = 0;
+        result.CRITICAL_SEVERITY[group] = 0;
 
         counts.forEach(({ severity, count }) => {
-            result[severityLabels[severity]][group] = parseInt(count, 10);
+            result[severity][group] = parseInt(count, 10);
         });
     });
 
@@ -121,35 +137,65 @@ function ViolationsByPolicyCategoryChart({
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
+    const [hiddenSeverities, setHiddenSeverities] = useState<Set<PolicySeverity>>(new Set());
+
+    const filteredGroups = filterAlertGroupSeverities(alertGroups, hiddenSeverities);
     const sortedAlertGroups =
-        sortType === 'Severity' ? sortBySeverity(alertGroups) : sortByVolume(alertGroups);
+        sortType === 'Severity' ? sortBySeverity(filteredGroups) : sortByVolume(filteredGroups);
     // We reverse here, because PF/Victory charts stack the bars from bottom->up
     const topOrderedGroups = sortedAlertGroups.slice(0, 5).reverse();
     const countsBySeverity = getCountsBySeverity(topOrderedGroups);
 
-    const bars = Object.entries(countsBySeverity).map(([severity, counts]) => {
-        const data = Object.entries(counts).map(([group, count]) => ({
-            name: severity,
-            x: group,
-            y: count,
-            label: `${severity}: ${count}`,
-        }));
+    function getLegendData() {
+        return policySeverities.map((severity) => {
+            return {
+                name: severityLabels[severity],
+                ...getInteractiveLegendItemStyles(hiddenSeverities.has(severity)),
+            };
+        });
+    }
 
-        return (
-            <ChartBar
-                barWidth={defaultChartBarWidth}
-                key={severity}
-                data={data}
-                labelComponent={<ChartTooltip constrainToVisibleArea />}
-                events={[
-                    navigateOnClickEvent(history, (targetProps) => {
-                        const category = targetProps?.datum?.xName;
-                        return linkForViolationsCategory(category);
-                    }),
-                ]}
-            />
-        );
-    });
+    function onLegendClick({ index }: { index: number }) {
+        const newHidden = new Set(hiddenSeverities);
+        const targetSeverity = policySeverities[index];
+        if (newHidden.has(targetSeverity)) {
+            newHidden.delete(targetSeverity);
+        } else {
+            newHidden.add(targetSeverity);
+        }
+        setHiddenSeverities(newHidden);
+    }
+
+    function isSeverityHidden(index: number): boolean {
+        return hiddenSeverities.has(policySeverities[index]);
+    }
+
+    function getChartBars() {
+        return policySeverities.map((severity) => {
+            const counts = countsBySeverity[severity];
+            const data = Object.entries(counts).map(([group, count]) => ({
+                name: severity,
+                x: group,
+                y: count,
+                label: `${severity}: ${count}`,
+            }));
+
+            return (
+                <ChartBar
+                    barWidth={defaultChartBarWidth}
+                    key={severity}
+                    data={data}
+                    labelComponent={<ChartTooltip constrainToVisibleArea />}
+                    events={[
+                        navigateOnClickEvent(history, (targetProps) => {
+                            const category = targetProps?.datum?.xName;
+                            return linkForViolationsCategory(category);
+                        }),
+                    ]}
+                />
+            );
+        });
+    }
 
     return (
         <div ref={setWidgetContainer} style={{ height }}>
@@ -158,12 +204,13 @@ function ViolationsByPolicyCategoryChart({
                 ariaTitle="Policy Violations by Category"
                 animate={{ duration: 300 }}
                 domainPadding={{ x: [20, 20] }}
-                legendData={[
-                    { name: 'Low' },
-                    { name: 'Medium' },
-                    { name: 'High' },
-                    { name: 'Critical' },
-                ]}
+                events={getInteractiveLegendEvents({
+                    chartNames: [Object.values(severityLabels)],
+                    isHidden: isSeverityHidden,
+                    legendName: 'legend',
+                    onLegendClick,
+                })}
+                legendComponent={<ChartLegend name="legend" data={getLegendData()} />}
                 legendPosition="bottom"
                 height={chartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width} // Victory defaults to 450
@@ -178,7 +225,7 @@ function ViolationsByPolicyCategoryChart({
                     tickLabelComponent={<LinkableChartLabel linkWith={labelLinkCallback} />}
                 />
                 <ChartAxis dependentAxis />
-                <ChartStack horizontal>{bars}</ChartStack>
+                <ChartStack horizontal>{getChartBars()}</ChartStack>
             </Chart>
         </div>
     );
