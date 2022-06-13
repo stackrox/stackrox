@@ -53,18 +53,13 @@ function zeroOutFilteredSeverities(
     groups: AlertGroup[],
     hiddenSeverities: Set<PolicySeverity>
 ): AlertGroup[] {
-    const filteredGroups: AlertGroup[] = [];
-    groups.forEach(({ group, counts }) => {
-        const filteredCounts = counts.map(({ severity, count }) => ({
+    return groups.map(({ group, counts }) => ({
+        group,
+        counts: counts.map(({ severity, count }) => ({
             severity,
             count: hiddenSeverities.has(severity) ? '0' : count,
-        }));
-        filteredGroups.push({
-            group,
-            counts: filteredCounts,
-        });
-    });
-    return filteredGroups;
+        })),
+    }));
 }
 
 function pluckSeverityCount(severity: PolicySeverity): (group: AlertGroup) => number {
@@ -178,7 +173,7 @@ function ViolationsByPolicyCategoryChart({
             name: severity,
             x: group,
             y: count,
-            label: `${severity}: ${count}`,
+            label: `${severityLabels[severity]}: ${count}`,
         }));
 
         return (
