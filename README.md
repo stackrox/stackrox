@@ -108,7 +108,9 @@ kubectl -n stackrox port-forward deploy/central 8000:8443
 
 2.Open <https://localhost:8000> in your browser.
 
-3.Log in as `admin` using the password in `stackrox-admin-password.txt`
+3.Accept certificate warnings and proceed.
+
+4.Log in as `admin` using the password in `stackrox-admin-password.txt`
 
 ## Manual Deployment
 
