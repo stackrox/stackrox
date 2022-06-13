@@ -19,7 +19,6 @@ on:
         description: Comma separated flavor arguments. Ex. nodes=5,main-image=main:tag
         type: string
         required: false
-        # Spaces in arguments are not supported.
         default: ""
       wait:
         description: Wait or not for the cluster readiness
@@ -49,8 +48,8 @@ jobs:
             echo "::warning::The job will wait for the cluster creation."
           fi
 
-          IFS=', ' read -ra args <<< "${{inputs.args}}"
-          for arg in ${args[@]}; do
+          IFS=',' read -ra args <<< "${{inputs.args}}"
+          for arg in "${args[@]}"; do
             OPTIONS+=("--arg")
             OPTIONS+=("$arg")
           done

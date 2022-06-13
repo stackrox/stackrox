@@ -50,7 +50,7 @@ jobs:
 
   variables:
     name: Setup variables
-    uses: stackrox/stackrox/.github/workflows/variables.yml@master
+    uses: ./github/workflows/variables.yml
     with:
       version: ${{github.event.inputs.version}}
 
@@ -72,13 +72,12 @@ jobs:
         uses: slackapi/slack-github-action@v1.19.0
         with:
           channel-id: ${{env.slack_channel}}
-          payload: |
-            { "blocks": [ {
-              "type": "header", "text": { "type": "plain_text",
-                "text": "Please create documentation release branch"
-              }},{
-              "type": "section", "text": { "type": "mrkdwn",
-                "text": "Branch `${{needs.variables.outputs.docs-branch}}` based on `rhacs-docs`."
+          payload: >-
+            { "blocks": [ { "type": "section", "text": { "type": "mrkdwn",
+            "text": "Upstream release ${{needs.variables.outputs.release}} has been initiated,
+            but there has been no documentation branch created
+            in `${{needs.variables.outputs.docs_repository}}` repository.\n\n*Please
+            create branch `${{needs.variables.outputs.docs-branch}}` from the `rhacs-docs` branch.*"
             }}]}
 
   branch:

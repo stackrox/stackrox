@@ -24,8 +24,15 @@ env:
   slack_channel: C03D78P4RFF
 
 jobs:
+  variables:
+    name: Setup variables
+    uses: ./github/workflows/variables.yml
+    with:
+      version: ${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
+
   check-jira:
-    name: Check Jira tickets for release ${{inputs.version}}
+    name: Check Jira tickets for release
+    needs: variables
     runs-on: ubuntu-latest
     env:
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
@@ -34,7 +41,7 @@ jobs:
         env:
           JQL: >-
             project IN (${{env.jira_projects}})
-            AND fixVersion = \"${{inputs.version}}\"
+            AND fixVersion = \"${{needs.variables.outputs.release-patch}}\"
             AND status != CLOSED
             AND Component != Documentation AND type != Epic
             order by assignee
@@ -54,36 +61,34 @@ jobs:
 
           if [ -n "$ISSUES" ]; then
             cat << EOF >> $GITHUB_STEP_SUMMARY
-          The following Jira issues are still open for release ${{inputs.version}}:
+          The following Jira issues are still open for release ${{needs.variables.outputs.release-patch}}:
 
           $ISSUES
 
           Please contact the assignees to clarify the status.
           EOF
-            echo "::error::There are non-closed Jira issues for version ${{inputs.version}}."
+            echo "::error::There are non-closed Jira issues for version ${{needs.variables.outputs.release-patch}}."
 
-            curl -f -sSL --get --data-urlencode "jql=$JQL" \
+            OPEN_ISSUES=$(curl -f -sSL --get --data-urlencode "jql=$JQL" \
             -H "Authorization: Bearer $JIRA_TOKEN" \
             -H "Accept: application/json" \
-            "https://issues.redhat.com/rest/api/2/search" \
-            | jq -r ".issues[] | .key" | while read -r KEY
-            do
-              curl -f -sSL -X POST \
-                -H "Authorization: Bearer $JIRA_TOKEN" \
-                --data '{"body": "Release ${{inputs.version}} is ongoing. Please update the status."}' \
-                -H "Content-Type: application/json" \
-                "https://issues.redhat.com/rest/api/2/issue/$KEY/comment"
-            done
+            "https://issues.redhat.com/rest/api/2/search")
+
+            echo "Open issues: $OPEN_ISSUES"
+
+            if [ "${{github.event.inputs.dry-run}}" != "true" ]; then
+              echo "$OPEN_ISSUES" | jq -r ".issues[] | .key" | while read -r KEY; do
+                curl -f -sSL -X POST \
+                  -H "Authorization: Bearer $JIRA_TOKEN" \
+                  --data '{"body": "Release ${{needs.variables.outputs.release-patch}} is ongoing. Please update the status."}' \
+                  -H "Content-Type: application/json" \
+                  "https://issues.redhat.com/rest/api/2/issue/$KEY/comment"
+              done
+            fi
 
             exit 1
           fi
-          echo "All issues for Jira release ${{inputs.version}} are closed." >> $GITHUB_STEP_SUMMARY
-
-  variables:
-    name: Setup variables
-    uses: stackrox/stackrox/.github/workflows/variables.yml@master
-    with:
-      version: ${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
+          echo "All issues for Jira release ${{needs.variables.outputs.release-patch}} are closed." >> $GITHUB_STEP_SUMMARY
 
   postpone-prs:
     name: Postpone open PRs
@@ -245,8 +250,8 @@ jobs:
           The commands may look like the following:
 
               git pull
-              git switch "${{needs.variables.outputs.branch}}"
-              git switch --create <AUTHOR>/merge-pr-<PR NUMBER>-"${{needs.variables.outputs.release}}"
+              git switch --create <AUTHOR>/merge-pr-<PR NUMBER>-"${{needs.variables.outputs.release-patch}}" \\
+                "${{needs.variables.outputs.branch}}"
               git cherry-pick -x <MERGE COMMIT SHA>
               # Proceed to resolve merge conflicts. Once done:
               git push --set-upstream origin $(git branch --show-current)
@@ -265,13 +270,11 @@ jobs:
         uses: slackapi/slack-github-action@v1.19.0
         with:
           channel-id: ${{env.slack_channel}}
-          payload: |
+          payload: >-
             { "blocks": [ {
-              "type": "header", "text": { "type": "plain_text",
-                "text": "Couldn't cherry-pick the following PRs to the release branch:"
-              }},{
               "type": "section", "text": { "type": "mrkdwn",
-                "text": "${{steps.cherry-pick.outputs.bad-cherries}}"
+                "text": "*Couldn't cherry-pick the following PRs
+            to the release branch:*\n\n${{steps.cherry-pick.outputs.bad-cherries}}"
             }}]}
 
   cut-rc:
@@ -357,15 +360,15 @@ jobs:
             with:\n\n```gh release edit
             \"${{needs.variables.outputs.milestone}}\"
             --prerelease=false
-            --tag \"${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}\"
-            --title \"${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}\"```\n"
+            --tag \"${{needs.variables.outputs.release-patch}}\"
+            --title \"${{needs.variables.outputs.release-patch}}\"```\n"
             }}]}
 
   create-k8s-cluster:
     name: Create k8s cluster
     needs: [variables, cut-rc]
     if: github.event.inputs.dry-run != 'true'
-    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@master
+    uses: ./github/workflows/create-cluster.yml
     with:
       flavor: qa-demo
       name: qa-k8s-${{needs.variables.outputs.milestone}}
@@ -376,7 +379,7 @@ jobs:
     name: Create OS4 cluster
     needs: [variables, cut-rc]
     if: github.event.inputs.dry-run != 'true'
-    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@master
+    uses: ./github/workflows/create-cluster.yml
     with:
       flavor: openshift-4-demo
       name: openshift-4-demo-${{needs.variables.outputs.milestone}}
@@ -463,7 +466,7 @@ jobs:
     if: >-
       github.event.inputs.dry-run != 'true' &&
       needs.variables.outputs.rc == '1'
-    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@master
+    uses: ./github/workflows/create-cluster.yml
     with:
       flavor: gke-default
       name: gke-long-running-${{needs.variables.outputs.milestone}}
@@ -542,6 +545,6 @@ jobs:
           channel-id: ${{env.slack_channel}}
           payload: |
             { "blocks": [ {
-              "type": "header", "text": { "type": "plain_text",
-                "text": "Couldn't create test clusters"
+              "type": "section", "text": { "type": "mrkdwn",
+                "text": "Couldn't create test clusters for "
             }}]}
