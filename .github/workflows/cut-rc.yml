@@ -294,7 +294,7 @@ jobs:
           git submodule update --init --remote -- docs/content
           git add docs/content
           if ! git diff-index --quiet HEAD; then
-            git commit -m "Update docs submodule"
+            git commit -m "Update docs submodule for milestone ${{needs.variables.outputs.milestone}}"
             echo "Documentation submodule has been updated" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Tag release branch with "${{needs.variables.outputs.milestone}}"
