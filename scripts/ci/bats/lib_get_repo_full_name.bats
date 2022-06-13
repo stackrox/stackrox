@@ -4,6 +4,10 @@
 load "../../test_helpers.bats"
 
 function setup() {
+    unset OPENSHIFT_CI
+    unset REPO_OWNER
+    unset REPO_NAME
+    unset JOB_SPEC
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 }
 
