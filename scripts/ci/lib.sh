@@ -466,7 +466,22 @@ get_base_ref() {
     if is_CIRCLECI; then
         echo "${CIRCLE_BRANCH}"
     elif is_OPENSHIFT_CI; then
-        jq -r '.refs[0].base_ref' <<<"$CLONEREFS_OPTIONS"
+        if [[ -n "${PULL_BASE_REF:-}" ]]; then
+            # presubmit, postsubmit and batch runs
+            # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
+            echo "${PULL_BASE_REF}"
+        elif [[ -n "${JOB_SPEC:-}" ]]; then
+            # periodics
+            # OpenShift CI adds 'extra_refs'
+            local base_ref
+            base_ref="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].base_ref')" || die "invalid JOB_SPEC yaml"
+            if [[ "$base_ref" == "null" ]]; then
+                die "expect: base_ref in JOB_SEC.extra_refs[0]"
+            fi
+            echo "${base_ref}"
+        else
+            die "Expect PULL_BASE_REF or JOB_SPEC"
+        fi
     else
         die "unsupported"
     fi
@@ -481,7 +496,7 @@ get_repo_full_name() {
             # presubmit, postsubmit and batch runs
             # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
             [[ -n "${REPO_NAME:-}" ]] || die "expect: REPO_NAME"
-            echo "${REPO_OWNER:-}/${REPO_NAME:-}"
+            echo "${REPO_OWNER}/${REPO_NAME}"
         elif [[ -n "${JOB_SPEC:-}" ]]; then
             # periodics
             # OpenShift CI adds 'extra_refs'
