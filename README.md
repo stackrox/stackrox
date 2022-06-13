@@ -75,19 +75,17 @@ kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
   --password "$(cat stackrox-admin-password.txt)" \
   central init-bundles generate stackrox-init-bundle --output - > stackrox-init-bundle.yaml
 ```
-Set a `CLUSTER_NAME` for your secured cluster.
-````sh
+Set a meaningful cluster name for your secured cluster in the `CLUSTER_NAME` environment variable. The cluster will be identified by this name in the clusters list of the StackRox UI.
+```sh
 CLUSTER_NAME="my-secured-cluster"
-````
-Then install stackrox-secured-cluster-services in the same cluster using this command with the init bundle you just generated:
+```
+Then install stackrox-secured-cluster-services (with the init bundle you generated earlier) using this command:
 ```sh
 helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
   -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME"
 ```
-Make sure to provide some name in `clusterName` argument meaningful to you. The cluster will be identified by this name in clusters list in StackRox UI.
-
-When deploying stackrox-secured-cluster-services on a different cluster, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
+When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services are deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
 When deploying StackRox on a small node, you can install with additional options. This should reduce stackrox-secured-cluster-services resource requirements. Please keep in mind that these reduced resource settings are not recommended for a production setup.
 ```sh
