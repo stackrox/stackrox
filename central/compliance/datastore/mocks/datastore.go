@@ -12,7 +12,6 @@ import (
 	compliance "github.com/stackrox/rox/central/compliance"
 	datastore "github.com/stackrox/rox/central/compliance/datastore"
 	types "github.com/stackrox/rox/central/compliance/datastore/types"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -128,21 +127,6 @@ func (m *MockDataStore) PerformStoredAggregation(ctx context.Context, args *data
 func (mr *MockDataStoreMockRecorder) PerformStoredAggregation(ctx, args interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerformStoredAggregation", reflect.TypeOf((*MockDataStore)(nil).PerformStoredAggregation), ctx, args)
-}
-
-// QueryControlResults mocks base method.
-func (m *MockDataStore) QueryControlResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceControlResult, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QueryControlResults", ctx, query)
-	ret0, _ := ret[0].([]*storage.ComplianceControlResult)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// QueryControlResults indicates an expected call of QueryControlResults.
-func (mr *MockDataStoreMockRecorder) QueryControlResults(ctx, query interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryControlResults", reflect.TypeOf((*MockDataStore)(nil).QueryControlResults), ctx, query)
 }
 
 // StoreComplianceDomain mocks base method.
