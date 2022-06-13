@@ -1,23 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import {
-    Alert,
-    Flex,
-    FlexItem,
-    Card,
-    CardBody,
-    Title,
-    Divider,
-    List,
-    ListItem,
-} from '@patternfly/react-core';
+import { Alert, Flex, FlexItem, Card, CardBody, Title, Divider } from '@patternfly/react-core';
 
 import { fetchDeployment } from 'services/DeploymentsService';
 import { fetchNetworkPoliciesInNamespace } from 'services/NetworkService';
 import { portExposureLabels } from 'messages/common';
 import ObjectDescriptionList from 'Components/ObjectDescriptionList';
+import { TableComposable, Caption, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import DeploymentOverview from './Deployment/DeploymentOverview';
 import SecurityContext from './Deployment/SecurityContext';
 import ContainerConfiguration from './Deployment/ContainerConfiguration';
+
+type NetworkPolicy = {
+    id: string;
+    name: string;
+};
 
 type PortExposure = 'EXTERNAL' | 'NODE' | 'HOST' | 'INTERNAL' | 'UNSET';
 
@@ -68,6 +64,10 @@ export const formatDeploymentPorts = (ports: Port[] = []): FormattedPort[] => {
         formattedPorts.push(formattedPort);
     });
     return formattedPorts;
+};
+
+const sortNetworkPolicies = (a: NetworkPolicy, b: NetworkPolicy): number => {
+    return a.name.localeCompare(b.name);
 };
 
 const DeploymentDetails = ({ deployment }) => {
@@ -152,7 +152,7 @@ const DeploymentDetails = ({ deployment }) => {
                     </FlexItem>
                     <FlexItem>
                         <Title headingLevel="h3" className="pf-u-my-md">
-                            All Network Policies for {deploymentObj.namespace}
+                            Network Policy
                         </Title>
                         <Divider component="div" />
                     </FlexItem>
@@ -160,14 +160,31 @@ const DeploymentDetails = ({ deployment }) => {
                         <Card isFlat data-testid="network-policy">
                             <CardBody>
                                 {namespacePoliciesList?.length > 0 ? (
-                                    <List>
-                                        {namespacePoliciesList?.map((netpol: any) => (
-                                            // eslint-disable-next-line react/no-array-index-key
-                                            <ListItem key={netpol.id}>{netpol.name}</ListItem>
-                                        ))}
-                                    </List>
+                                    <TableComposable aria-label="Simple table" variant="compact">
+                                        <Caption>
+                                            <Title headingLevel="h3">
+                                                All network policies of deployment
+                                            </Title>
+                                            <br />
+                                            in {deploymentObj.namespace} namespace
+                                        </Caption>
+                                        <Thead>
+                                            <Tr>
+                                                <Th>Name</Th>
+                                            </Tr>
+                                        </Thead>
+                                        <Tbody>
+                                            {namespacePoliciesList
+                                                .sort(sortNetworkPolicies)
+                                                .map((netpol: NetworkPolicy) => (
+                                                    <Tr key={netpol.id}>
+                                                        <Td dataLabel="Name">{netpol.name}</Td>
+                                                    </Tr>
+                                                ))}
+                                        </Tbody>
+                                    </TableComposable>
                                 ) : (
-                                    'No Network Policies found'
+                                    'No network policies found'
                                 )}
                             </CardBody>
                         </Card>
