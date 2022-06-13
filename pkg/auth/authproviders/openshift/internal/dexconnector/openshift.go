@@ -229,7 +229,14 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 	}
 
 	clonedConfig := *c.oauth2Config
-	clonedConfig.RedirectURL = r.URL.String()
+
+	redirectURL := url.URL{
+		Scheme: r.URL.Scheme,
+		Host:   r.URL.Host,
+		Path:   r.URL.Path,
+	}
+
+	clonedConfig.RedirectURL = redirectURL.String()
 	log.Infof("HandleCallback() - redirect URL on copied config: %s", clonedConfig.RedirectURL)
 	token, err := clonedConfig.Exchange(ctx, q.Get("code"))
 	if err != nil {
