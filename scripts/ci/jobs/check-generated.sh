@@ -12,10 +12,6 @@ go mod tidy
 echo 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
 function generated_files-are-up-to-date() {
 
-    PATH="${PATH}:${PWD}/tools/generate-helpers" go generate -v -x ./... || echo $?
-    echo "NEXT_TRY_NOT_VERBOSE"
-    PATH="${PATH}:${PWD}/tools/generate-helpers" go generate ./... || { echo $?; echo direct_run_failed; sleep 30; exit 1; }
-
     git ls-files --others --exclude-standard >/tmp/untracked
     make proto-generated-srcs
     # Print the timestamp along with each new line of output, so we can track how long each command takes
