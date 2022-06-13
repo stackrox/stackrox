@@ -18,15 +18,20 @@ push_images() {
     [[ "${OPENSHIFT_CI:-false}" == "true" ]] || { die "Only supported in OpenShift CI"; }
 
     local brand="$1"
-    local branch
-    branch=$(get_pr_details | jq -r '.head.ref')
-    if [[ "$branch" == "null" ]]; then
-        branch="master"
+    local push_context=""
+    local base_ref
+    base_ref="$(get_base_ref)" || {
+        info "Warning: error running get_base_ref():"
+        echo "${base_ref}"
+        info "will continue with pushing images."
+    }
+    if ! is_in_PR_context && [[ "${base_ref}" == "master" ]]; then
+        push_context="merge-to-master"
     fi
 
-    push_main_image_set "$branch" "$brand"
+    push_main_image_set "$push_context" "$brand"
 
-    if [[ "$branch" != "master" && "$brand" == "STACKROX_BRANDING" ]]; then
+    if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]]; then
         comment_on_pr
     fi
 }

@@ -1,10 +1,10 @@
 #!/usr/bin/env bats
 # shellcheck disable=SC1091
 
-load "../test_helpers.bats"
+load "../../test_helpers.bats"
 
 function setup() {
-    source "${BATS_TEST_DIRNAME}/lib.sh"
+    source "${BATS_TEST_DIRNAME}/../lib.sh"
 }
 
 @test "missing tag argument" {
