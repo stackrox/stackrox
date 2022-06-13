@@ -4,6 +4,7 @@ import groups.BAT
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import objects.Deployment
 import org.junit.experimental.categories.Category
+import org.junit.Assume
 import spock.lang.Unroll
 import util.Env
 
@@ -63,7 +64,7 @@ class GlobalSearch extends BaseSpecification {
 
         // Temporarily skip the test until postgres searching is fixed.
         if (searchCategories.size() == 0) {
-            assumeFalse("This test is skipped in this environment", Env.CI_JOBNAME.contains("postgres"))
+            Assume.assumeFalse("This test is skipped in this environment", Env.CI_JOBNAME.contains("postgres"))
         }
 
         // This assertion is a validation on the test inputs, to ensure some consistency.
