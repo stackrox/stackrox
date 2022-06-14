@@ -24,6 +24,19 @@ export function updateOrAddGroup({ oldGroups, newGroups }) {
 }
 
 /**
+ * Fetches the default rule.
+ *
+ * @returns {Promise<Object, Error>} fulfilled with array of groups
+ */
+export function getDefaultGroup({ authProviderId, roleName }) {
+    return axios
+        .get(`${url}?authProviderId=${authProviderId}&key=&value=&roleName=${roleName}`)
+        .then((response) => ({
+            response: response.data?.groups[0],
+        }));
+}
+
+/**
  * Deletes a group rule.
  *
  * @returns {Promise<Object, Error>}

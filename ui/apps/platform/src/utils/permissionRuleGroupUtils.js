@@ -12,22 +12,24 @@ export const getExistingGroupsWithDefault = (existingGroups, authProviderId) => 
     existingGroupsWithDefault.push({
         props: {
             authProviderId,
+            id: currentlyExistingGroup.defaultId,
         },
         roleName: currentlyExistingGroup.defaultRole,
     });
     return existingGroupsWithDefault;
 };
 
-export const getGroupsWithDefault = (groups, authProviderId, defaultRole) => {
+export const getGroupsWithDefault = (groups, authProviderId, defaultGroup) => {
     const groupsWithDefault = [...groups];
-    if (!defaultRole) {
+    if (!defaultGroup) {
         return groupsWithDefault;
     }
     groupsWithDefault.push({
         props: {
             authProviderId,
+            id: defaultGroup.props.id,
         },
-        roleName: defaultRole,
+        roleName: defaultGroup.roleName,
     });
     return groupsWithDefault;
 };

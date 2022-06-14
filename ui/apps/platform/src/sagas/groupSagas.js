@@ -36,8 +36,12 @@ function* saveRuleGroup(action) {
             );
         }
         const existingGroups = yield select(selectors.getGroupsByAuthProviderId);
+        const defaultGroup = yield call(service.getDefaultGroup, {
+            authProviderId: id,
+            roleName: defaultRole,
+        });
         yield call(service.updateOrAddGroup, {
-            newGroups: getGroupsWithDefault(group, id, defaultRole),
+            newGroups: getGroupsWithDefault(group, id, defaultGroup?.response),
             oldGroups: getExistingGroupsWithDefault(existingGroups, id),
         });
         yield call(getRuleGroups);
