@@ -20,10 +20,8 @@ class SummaryTest extends BaseSpecification {
 
     @Category([BAT])
     @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+    @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
-        // https://stack-rox.atlassian.net/browse/ROX-6844
-        Assume.assumeFalse(ClusterService.isOpenShift4())
-
         expect:
         "Counts API should match orchestrator details"
 
@@ -102,10 +100,8 @@ class SummaryTest extends BaseSpecification {
     }
 
     @Category([BAT])
+    @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify namespace details"() {
-        // https://stack-rox.atlassian.net/browse/ROX-6844
-        Assume.assumeFalse(ClusterService.isOpenShift4())
-
         given:
         "fetch the list of namespace"
 
