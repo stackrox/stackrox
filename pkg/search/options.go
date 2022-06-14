@@ -313,6 +313,10 @@ var (
 	TestChild2Val            = newFieldLabel("Test Child2 Val")
 	TestParent3ID            = newFieldLabel("Test Parent3 ID")
 	TestParent3Val           = newFieldLabel("Test Parent3 Val")
+
+	ComplianceDomainID             = newFieldLabel("Compliance Domain ID")
+	ComplianceRunID                = newFieldLabel("Compliance Run ID")
+	ComplianceRunFinishedTimestamp = newFieldLabel("Compliance Run Finished Timestamp")
 )
 
 func newFieldLabel(s string) FieldLabel {
