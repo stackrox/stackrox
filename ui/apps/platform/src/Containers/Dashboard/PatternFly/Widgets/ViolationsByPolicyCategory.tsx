@@ -147,27 +147,6 @@ function ViolationsByPolicyCategoryChart({
     const topOrderedGroups = sortedAlertGroups.slice(0, 5).reverse();
     const countsBySeverity = getCountsBySeverity(topOrderedGroups);
 
-    function getLegendData() {
-        return policySeverities.map((severity) => {
-            return {
-                name: severityLabels[severity],
-                ...getInteractiveLegendItemStyles(hiddenSeverities.has(severity)),
-            };
-        });
-    }
-
-    function onLegendClick({ index }: { index: number }) {
-        const newHidden = new Set(hiddenSeverities);
-        const targetSeverity = policySeverities[index];
-        if (newHidden.has(targetSeverity)) {
-            newHidden.delete(targetSeverity);
-            // Do not allow the user to disable all severities
-        } else if (hiddenSeverities.size < 3) {
-            newHidden.add(targetSeverity);
-        }
-        setHiddenSeverities(newHidden);
-    }
-
     const bars = policySeverities.map((severity) => {
         const counts = countsBySeverity[severity];
         const data = Object.entries(counts).map(([group, count]) => ({
@@ -192,6 +171,27 @@ function ViolationsByPolicyCategoryChart({
             />
         );
     });
+
+    function getLegendData() {
+        return policySeverities.map((severity) => {
+            return {
+                name: severityLabels[severity],
+                ...getInteractiveLegendItemStyles(hiddenSeverities.has(severity)),
+            };
+        });
+    }
+
+    function onLegendClick({ index }: { index: number }) {
+        const newHidden = new Set(hiddenSeverities);
+        const targetSeverity = policySeverities[index];
+        if (newHidden.has(targetSeverity)) {
+            newHidden.delete(targetSeverity);
+            // Do not allow the user to disable all severities
+        } else if (hiddenSeverities.size < 3) {
+            newHidden.add(targetSeverity);
+        }
+        setHiddenSeverities(newHidden);
+    }
 
     return (
         <div ref={setWidgetContainer} style={{ height }}>
