@@ -208,6 +208,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/utils",
 			"pkg/uuid",
 			"pkg/version",
+			"pkg/binenc",
 		)
 	}
 
