@@ -2,7 +2,6 @@ package boltdb
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"testing"
 
@@ -53,32 +52,6 @@ func (suite *PolicyStoreTestSuite) TearDownTest() {
 func (suite *PolicyStoreTestSuite) verifyAddPolicySucceeds(policy *storage.Policy) {
 	err := suite.store.Upsert(suite.ctx, policy)
 	suite.NoError(err)
-}
-
-func (suite *PolicyStoreTestSuite) verifyPolicyExists(policy *storage.Policy) {
-	dbPolicy, exists, err := suite.store.Get(suite.ctx, policy.GetId())
-	suite.NoError(err)
-	suite.True(exists)
-	suite.Equal(policy, dbPolicy)
-}
-
-func (suite *PolicyStoreTestSuite) verifyPolicyDoesNotExist(id string) {
-	_, exists, err := suite.store.Get(suite.ctx, id)
-	suite.NoError(err)
-	suite.False(exists)
-}
-
-func (suite *PolicyStoreTestSuite) verifyPolicyStoreErrorList(policy *storage.Policy, errorTypes []error) {
-	err := suite.store.Upsert(suite.ctx, policy)
-	suite.Error(err)
-	policyStoreErrorList := new(PolicyStoreErrorList)
-	suite.Require().IsType(policyStoreErrorList, err)
-	if errors.As(err, &policyStoreErrorList) {
-		suite.Require().Len(policyStoreErrorList.Errors, len(errorTypes))
-		for i, errType := range errorTypes {
-			suite.IsType(errType, policyStoreErrorList.Errors[i])
-		}
-	}
 }
 
 func (suite *PolicyStoreTestSuite) TestPolicies() {
