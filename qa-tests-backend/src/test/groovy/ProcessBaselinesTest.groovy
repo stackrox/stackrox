@@ -17,7 +17,6 @@ import org.apache.commons.lang3.StringUtils
 import org.junit.experimental.categories.Category
 
 import services.ProcessBaselineService
-import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Unroll
 
@@ -428,8 +427,6 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    // TODO:  ROX-10903
-    @Ignore
     def "Processes come in after baseline deleted by API"() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
