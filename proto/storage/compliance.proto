@@ -67,7 +67,7 @@ message ComplianceControlResult {
 
 // Next available tag: 5
 message ComplianceDomain {
-    string id = 4 [(gogoproto.moretags) = 'sql:"pk" search:"Compliance Domain ID,hidden'];
+    string id = 4 [(gogoproto.moretags) = 'sql:"pk" search:"Compliance Domain ID,hidden"'];
 
     Cluster cluster = 1 [(gogoproto.moretags) = 'sql:"ignore_pk,ignore_unique"'];
     map<string, Node> nodes = 2;
