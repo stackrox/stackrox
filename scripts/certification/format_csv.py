@@ -2,7 +2,7 @@ import heapq
 import sys
 
 def usage():
-    print('usage: python format_csv.py <input file>.csv <output file>.csv')
+    print('usage: python3 format_csv.py <input file>.csv <output file>.csv')
     sys.exit(1)
 
 if len(sys.argv) != 3:

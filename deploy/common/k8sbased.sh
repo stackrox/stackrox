@@ -2,7 +2,7 @@
 
 function realpath {
 	[[ -n "$1" ]] || return 0
-	python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
+	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
 }
 
 function launch_service {
