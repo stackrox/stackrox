@@ -20,7 +20,7 @@ on:
 
 env:
   docs_repository: openshift/openshift-docs
-  slack_channel: C03D78P4RFF
+  slack_channel: C03D78P4RFF #epic-release-improvements
   main_branch: main
   jira_project: ROX
 
@@ -50,7 +50,7 @@ jobs:
 
   variables:
     name: Setup variables
-    uses: ./github/workflows/variables.yml
+    uses: ./.github/workflows/variables.yml
     with:
       version: ${{github.event.inputs.version}}
 
