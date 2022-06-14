@@ -108,10 +108,6 @@ class ReconciliationTest extends BaseSpecification {
         when:
         "Get Sensor and counts"
 
-        // Verify initial reconciliation stats (from the reconciliation that must have happened
-        // whenever the sensor first connected).
-        verifyReconciliationStats(false)
-
         OrchestratorDeployment sensorOrchestratorDeployment =
                 orchestrator.getOrchestratorDeployment("stackrox", "sensor")
         Deployment sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
