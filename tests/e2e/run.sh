@@ -185,7 +185,7 @@ run_proxy_tests() {
     info "Running proxy tests"
 
     if [[ "$#" -ne 1 ]]; then
-        die "missing args. usage: setup_proxy_tests <server_name>"
+        die "missing args. usage: run_proxy_tests <server_name>"
     fi
 
     local server_name="$1"
