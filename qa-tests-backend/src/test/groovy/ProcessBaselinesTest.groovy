@@ -134,6 +134,8 @@ class ProcessBaselinesTest extends BaseSpecification {
         }
         assert baseline
 
+        // sleep 5 seconds to allow for propagation to sensor
+        sleep 5000
         orchestrator.execInContainer(deployment, "pwd")
 
         then:
@@ -396,6 +398,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         DEPLOYMENTNGINX_REMOVEPROCESS           |   "nginx"
     }
 
+    @Unroll
     @Category(BAT)
     def "Delete process baselines via API"() {
         given:
@@ -426,6 +429,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         orchestrator.deleteDeployment(deployment)
     }
 
+    @Unroll
     @Category(BAT)
     def "Processes come in after baseline deleted by API"() {
         when:
@@ -453,13 +457,29 @@ class ProcessBaselinesTest extends BaseSpecification {
         // Baseline should still exist but have no elements associated.  Essentially cleared out.
         assert  ( baselineAfterDelete.elementsList == [] )
 
-        // Give the baseline time to lock again keep in mind process indicators flush every 60 seconds
-        sleep 60000
+        // Give the baseline time to come back out of observation
+        baselineAfterDelete = evaluateWithRetry(30, 3) {
+            def tmpBaseline = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
+            def now = System.currentTimeSeconds()
+            if (tmpBaseline.getStackRoxLockedTimestamp().getSeconds() > now) {
+                throw new RuntimeException(
+                    "Baseline ${deployment} is still in observation. Baseline is ${tmpBaseline}."
+                )
+            }
+            return tmpBaseline
+        }
+        assert baselineAfterDelete
+
+        log.info "Process Baseline before pwd: ${baselineAfterDelete}"
+
+        // sleep 5 seconds to allow for propagation to sensor
+        sleep 5000
         orchestrator.execInContainer(deployment, "pwd")
+
 
         then:
         "verify for suspicious process in risk indicator"
-        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 120)
+        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 240)
         assert (result != null)
         // Check that pwd is a risky process
         RiskOuterClass.Risk.Result.Factor pwdFactor =  result.factorsList.find { it.message.contains("pwd") }
