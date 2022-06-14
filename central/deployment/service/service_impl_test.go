@@ -9,6 +9,7 @@ import (
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/ranking"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -123,7 +124,7 @@ func TestLabelsMap(t *testing.T) {
 			dacky, registry, indexingQ := testDackBoxInstance(t, rocksDB, bleveIndex)
 			registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 
-			deploymentsDS := datastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+			deploymentsDS := datastore.New(dacky, concurrency.NewKeyFence(), globaldb.GetPostgres(), nil, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 			for _, deployment := range c.deployments {
 				assert.NoError(t, deploymentsDS.UpsertDeployment(ctx, deployment))

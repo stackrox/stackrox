@@ -27,6 +27,7 @@ var (
 func initialize() {
 	ad = New(dackbox.GetGlobalDackBox(),
 		dackbox.GetKeyFence(),
+		globaldb.GetPostgres(),
 		processtagsstore.New(globaldb.GetGlobalDB()),
 		globalindex.GetGlobalIndex(),
 		globalindex.GetProcessIndex(),

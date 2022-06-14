@@ -2,14 +2,20 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store"
+	postgresStorage "github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/postgres"
+	rocksdbStorage "github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
+	"gorm.io/gorm"
 )
 
 const (
@@ -42,6 +48,18 @@ func New(s store.Store) DataStore {
 	}
 
 	return ds
+}
+
+// GetTestPostgresDataStore provides a networkgraph config datastore hooked on postgres for testing purposes.
+func GetTestPostgresDataStore(ctx context.Context, _ *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) (DataStore, error) {
+	dbstore := postgresStorage.CreateTableAndNewStore(ctx, pool, gormDB)
+	return New(dbstore), nil
+}
+
+// GetTestRocksBleveDataStore provides a processbaselineresult datastore hooked on rocksDB for testing purposes.
+func GetTestRocksBleveDataStore(_ *testing.T, rocksEngine *rocksdb.RocksDB) (DataStore, error) {
+	dbstore := rocksdbStorage.New(rocksEngine)
+	return New(dbstore), nil
 }
 
 func (d *datastoreImpl) initDefaultConfig(ctx context.Context) error {

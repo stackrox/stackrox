@@ -2,14 +2,17 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	dackBoxStore "github.com/stackrox/rox/central/image/datastore/internal/store/dackbox"
+	postgresStore "github.com/stackrox/rox/central/image/datastore/internal/store/postgres"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
@@ -21,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"gorm.io/gorm"
 )
 
 // DataStore is an intermediary to AlertStorage.
@@ -80,4 +84,17 @@ func NewWithPostgres(storage store.Store, index imageIndexer.Indexer, risks risk
 	ds := newDatastoreImpl(storage, index, search.NewV2(storage, index), risks, imageRanker, imageComponentRanker)
 	ds.initializeRankers()
 	return ds
+}
+
+// GetTestPostgresDataStore provides an image datastore hooked on rocksDB and bleve for testing purposes.
+func GetTestPostgresDataStore(ctx context.Context, _ *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB, riskDataStore riskDS.DataStore) (DataStore, error) {
+	postgresStore.Destroy(ctx, pool)
+	storage := postgresStore.CreateTableAndNewStore(ctx, pool, gormDB, false)
+	indexer := postgresStore.NewIndexer(pool)
+	return NewWithPostgres(storage, indexer, riskDataStore, ranking.ImageRanker(), ranking.ComponentRanker()), nil
+}
+
+// GetTestRocksBleveDataStore provides an image datastore hooked on rocksDB and bleve for testing purposes.
+func GetTestRocksBleveDataStore(_ *testing.T, dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, riskDataStore riskDS.DataStore) (DataStore, error) {
+	return New(dacky, keyFence, bleveIndex, bleveIndex, false, riskDataStore, ranking.ImageRanker(), ranking.ComponentRanker()), nil
 }

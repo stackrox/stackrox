@@ -2,16 +2,23 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
+	postgresStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
+	rocksdbStorage "github.com/stackrox/rox/central/processindicator/store/rocksdb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"gorm.io/gorm"
 )
 
 // DataStore represents the interface to access data.
@@ -52,4 +59,20 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, p
 	}
 	go d.prunePeriodically(ctx)
 	return d, nil
+}
+
+// GetTestPostgresDataStore provides a processindicator datastore hooked on rocksDB and bleve for testing purposes.
+func GetTestPostgresDataStore(ctx context.Context, _ *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) (DataStore, error) {
+	dbstore := postgresStorage.CreateTableAndNewStore(ctx, pool, gormDB)
+	indexer := postgresStorage.NewIndexer(pool)
+	searcher := search.New(dbstore, indexer)
+	return New(dbstore, indexer, searcher, nil)
+}
+
+// GetTestRocksBleveDataStore provides a processindicator datastore hooked on rocksDB and bleve for testing purposes.
+func GetTestRocksBleveDataStore(_ *testing.T, rocksEngine *rocksdb.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
+	dbstore := rocksdbStorage.New(rocksEngine)
+	indexer := index.New(bleveIndex)
+	searcher := search.New(dbstore, indexer)
+	return New(dbstore, indexer, searcher, nil)
 }

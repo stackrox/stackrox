@@ -2482,7 +2482,7 @@ func GetImageCoreDNS_1_8_0() *storage.Image {
 	}
 }
 
-func GetPartialImageKubeProxy_1__21_5() *storage.Image {
+func GetPartialImageKubeProxy_1_21_5() *storage.Image {
 	return &storage.Image{
 		Id: "sha256:b9f3f8764f5b74085edbed44202aa83dab3555638ea9de182b9f79b6728bee5b",
 		Name: &storage.ImageName{
