@@ -53,7 +53,7 @@ type ImageDataStoreTestSuite struct {
 
 func (suite *ImageDataStoreTestSuite) SetupSuite() {
 	if features.PostgresDatastore.Enabled() {
-		suite.T().Skip("Skip non-postgres store tests if postgres is enabled")
+		suite.T().Skip("Skip dackbox tests if postgres is enabled")
 		suite.T().SkipNow()
 	}
 

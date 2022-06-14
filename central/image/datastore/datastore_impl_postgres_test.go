@@ -50,8 +50,10 @@ func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
-	s.T().Skip("Skip postgres store tests")
-	s.T().SkipNow()
+	if !features.PostgresDatastore.Enabled() {
+		s.T().Skip("Skip postgres store tests")
+		s.T().SkipNow()
+	}
 
 	s.ctx = context.Background()
 
@@ -169,8 +171,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestFixableWithPostgres() {
 
 	results, err := s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddBools(pkgSearch.Fixable, true).ProtoQuery())
 	s.NoError(err)
-	// This should be 1, but until outer join changes to inner join, it is going to be 10 because there are 10 cves in `cloned`.
-	s.Len(results, 10)
+	s.Len(results, 1)
 	s.Equal(image.GetId(), results[0].ID)
 
 	image.Scan.ScanTime = protoTypes.TimestampNow()
@@ -214,7 +215,6 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 
 	results, err := s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery())
 	s.NoError(err)
-	// This should be 1, but until outer join changes to inner join, it is going to be 10 because there are 10 cves in `cloned`.
-	s.Len(results, 10)
+	s.Len(results, 1)
 	s.Equal(cloned.GetId(), results[0].ID)
 }

@@ -48,7 +48,6 @@ type Builder interface {
 	WithRoleStore(store roleDataStore.DataStore) Builder
 	WithRoleBindingStore(store roleBindingDataStore.DataStore) Builder
 	WithClusterDataStore(store clusterDataStore.DataStore) Builder
-
 	WithAggregator(aggregation.Aggregator) Builder
 
 	Build() Service
