@@ -292,7 +292,7 @@
           "type": "string"
         }
       },
-      "description": "GroupProperties defines the properties of a unique group.\nGroups apply to users when their properties match. For instance:\nIf the GroupProperties on has a auth_provider_id, then that group applies to all users logged in\nwith that auth provider. If it has a claim key, then it applies to all users with that auth provider\nand claim key, etc.\nThis can be used to create default groups/roles for All source provider (no fields set), a specific\nauth provider (only auth_provider_id field set) etc."
+      "description": "GroupProperties defines the properties of a group. Groups apply to users when\ntheir properties match. For instance:\n  * If GroupProperties has only an auth_provider_id, then that group applies\n    to all users logged in with that auth provider.\n  * If GroupProperties in addition has a claim key, then it applies to all\n    users with that auth provider and the claim key, etc."
     },
     "v1Empty": {
       "type": "object"
