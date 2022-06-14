@@ -106,62 +106,6 @@
         ]
       }
     },
-    "/v1/compliance/results": {
-      "get": {
-        "operationId": "ComplianceService_GetComplianceControlResults",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1ComplianceControlResultsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "query",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "pagination.offset",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "pagination.sortOption.field",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pagination.sortOption.reversed",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          }
-        ],
-        "tags": [
-          "ComplianceService"
-        ]
-      }
-    },
     "/v1/compliance/runresults": {
       "get": {
         "operationId": "ComplianceService_GetRunResults",
@@ -385,48 +329,6 @@
         }
       },
       "title": "Next available tag: 5"
-    },
-    "ComplianceResourceClusterName": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
-      }
-    },
-    "ComplianceResourceDeploymentName": {
-      "type": "object",
-      "properties": {
-        "cluster": {
-          "$ref": "#/definitions/ComplianceResourceClusterName"
-        },
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        }
-      }
-    },
-    "ComplianceResourceNodeName": {
-      "type": "object",
-      "properties": {
-        "cluster": {
-          "$ref": "#/definitions/ComplianceResourceClusterName"
-        },
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
-      }
     },
     "ComplianceResultValueEvidence": {
       "type": "object",
@@ -1263,20 +1165,6 @@
       ],
       "default": "UNKNOWN"
     },
-    "storageComplianceControlResult": {
-      "type": "object",
-      "properties": {
-        "resource": {
-          "$ref": "#/definitions/storageComplianceResource"
-        },
-        "controlId": {
-          "type": "string"
-        },
-        "value": {
-          "$ref": "#/definitions/storageComplianceResultValue"
-        }
-      }
-    },
     "storageComplianceDomain": {
       "type": "object",
       "properties": {
@@ -1300,23 +1188,6 @@
         }
       },
       "title": "Next available tag: 5"
-    },
-    "storageComplianceResource": {
-      "type": "object",
-      "properties": {
-        "cluster": {
-          "$ref": "#/definitions/ComplianceResourceClusterName"
-        },
-        "deployment": {
-          "$ref": "#/definitions/ComplianceResourceDeploymentName"
-        },
-        "node": {
-          "$ref": "#/definitions/ComplianceResourceNodeName"
-        },
-        "image": {
-          "$ref": "#/definitions/storageImageName"
-        }
-      }
     },
     "storageComplianceResultValue": {
       "type": "object",
@@ -2490,17 +2361,6 @@
         "numImplementedChecks": {
           "type": "integer",
           "format": "int32"
-        }
-      }
-    },
-    "v1ComplianceControlResultsResponse": {
-      "type": "object",
-      "properties": {
-        "results": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageComplianceControlResult"
-          }
         }
       }
     },
