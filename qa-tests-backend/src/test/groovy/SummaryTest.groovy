@@ -7,7 +7,6 @@ import objects.Namespace
 import org.javers.core.Javers
 import org.javers.core.JaversBuilder
 import org.javers.core.diff.ListCompareAlgorithm
-import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.NamespaceService
