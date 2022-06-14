@@ -112,7 +112,7 @@
     },
     "/v1/imagecves/unsuppress": {
       "patch": {
-        "summary": "UnsuppressCVE unsuppresse image cves.",
+        "summary": "UnsuppressCVE unsuppresses image cves.",
         "operationId": "ImageCVEService_UnsuppressCVEs",
         "responses": {
           "200": {
@@ -178,7 +178,7 @@
     },
     "/v1/nodecves/unsuppress": {
       "patch": {
-        "summary": "UnsuppressCVE unsuppresse node cves.",
+        "summary": "UnsuppressCVE unsuppresses node cves.",
         "operationId": "NodeCVEService_UnsuppressCVEs",
         "responses": {
           "200": {

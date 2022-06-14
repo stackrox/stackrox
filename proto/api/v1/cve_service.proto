@@ -54,7 +54,7 @@ service ImageCVEService {
             body: "*"
         };
     }
-    // UnsuppressCVE unsuppresse image cves.
+    // UnsuppressCVE unsuppresses image cves.
     rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/imagecves/unsuppress"
@@ -72,7 +72,7 @@ service NodeCVEService {
             body: "*"
         };
     }
-    // UnsuppressCVE unsuppresse node cves.
+    // UnsuppressCVE unsuppresses node cves.
     rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/nodecves/unsuppress"
