@@ -116,40 +116,6 @@ func (s *complianceDataStoreTestSuite) TestGetLatestRunResultsBatch() {
 	s.Equal(expectedReturn[csPair], result[csPair])
 }
 
-func (s *complianceDataStoreTestSuite) TestGetLatestRunResultsFiltered() {
-	csPair := compliance.ClusterStandardPair{
-		ClusterID:  "cid",
-		StandardID: "CIS_Docker_v1_2_0",
-	}
-	expectedReturn := map[compliance.ClusterStandardPair]types.ResultsWithStatus{
-		csPair: {
-			LastSuccessfulResults: &storage.ComplianceRunResults{
-				DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
-					"dep1": {},
-					"dep2": {},
-					"dep3": {},
-				},
-			},
-		},
-	}
-
-	// Expect storage fetch since filtering is performed afterwards.
-	s.mockFilter.EXPECT().FilterBatchResults(s.hasReadCtx, expectedReturn).Return(expectedReturn, nil)
-
-	// Expect storage fetch.
-	s.mockStorage.EXPECT().GetLatestRunResultsByClusterAndStandard(gomock.Any(), gomock.Any(), types.WithMessageStrings).Return(expectedReturn, nil)
-
-	// Call tested.
-	clusterIDs := []string{csPair.ClusterID}
-	standardIDs := []string{csPair.StandardID}
-	result, err := s.dataStore.GetLatestRunResultsForClustersAndStandards(s.hasReadCtx, clusterIDs, standardIDs, types.WithMessageStrings)
-
-	// Check results match.
-	s.Nil(err)
-	s.Equal(1, len(result))
-	s.Equal(expectedReturn[csPair], result[csPair])
-}
-
 func (s *complianceDataStoreTestSuite) TestStoreRunResults() {
 	rr := &storage.ComplianceRunResults{}
 	s.mockStorage.EXPECT().ClearAggregationResults()

@@ -6,9 +6,14 @@ import (
 	"github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/option"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 func main() {
+	if features.PostgresDatastore.Enabled() {
+		return
+	}
+
 	option.CentralOptions.DBPathBase = "local/database-restore/full"
 
 	blevePath := filepath.Join(option.CentralOptions.DBPathBase, "bleve")

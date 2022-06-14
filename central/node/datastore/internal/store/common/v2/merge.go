@@ -1,6 +1,8 @@
 package common
 
 import (
+	"sort"
+
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
@@ -47,6 +49,18 @@ func mergeComponents(parts *NodeParts, node *storage.Node) {
 
 		// Generate an embedded component for the edge and non-embedded version.
 		node.Scan.Components = append(node.Scan.Components, generateEmbeddedComponent(cp))
+	}
+
+	sort.SliceStable(node.GetScan().GetComponents(), func(i, j int) bool {
+		if node.GetScan().GetComponents()[i].GetName() == node.GetScan().GetComponents()[j].GetName() {
+			return node.GetScan().GetComponents()[i].GetVersion() < node.GetScan().GetComponents()[j].GetVersion()
+		}
+		return node.GetScan().GetComponents()[i].GetName() < node.GetScan().GetComponents()[j].GetName()
+	})
+	for _, comp := range node.GetScan().GetComponents() {
+		sort.SliceStable(comp.Vulnerabilities, func(i, j int) bool {
+			return comp.Vulnerabilities[i].GetCveBaseInfo().GetCve() < comp.Vulnerabilities[j].GetCveBaseInfo().GetCve()
+		})
 	}
 }
 

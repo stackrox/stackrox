@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/sac"
@@ -127,8 +128,10 @@ func (ds *datastoreImpl) canReadNode(ctx context.Context, id string) (bool, erro
 
 // GetNode delegates to the underlying store.
 func (ds *datastoreImpl) GetNode(ctx context.Context, id string) (*storage.Node, bool, error) {
-	if ok, err := ds.canReadNode(ctx, id); err != nil || !ok {
-		return nil, false, err
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err := ds.canReadNode(ctx, id); err != nil || !ok {
+			return nil, false, err
+		}
 	}
 
 	node, found, err := ds.storage.Get(ctx, id)
@@ -144,9 +147,15 @@ func (ds *datastoreImpl) GetNode(ctx context.Context, id string) (*storage.Node,
 // GetNodesBatch delegates to the underlying store.
 func (ds *datastoreImpl) GetNodesBatch(ctx context.Context, ids []string) ([]*storage.Node, error) {
 	var nodes []*storage.Node
-	if ok, err := nodesSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
+	var err error
+	ok := true
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err = nodesSAC.ReadAllowed(ctx); err != nil {
+			return nil, err
+		}
+	}
+
+	if ok {
 		nodes, _, err = ds.storage.GetMany(ctx, ids)
 		if err != nil {
 			return nil, err
@@ -172,10 +181,12 @@ func (ds *datastoreImpl) UpsertNode(ctx context.Context, node *storage.Node) err
 		return errors.New("cannot upsert a node without an id")
 	}
 
-	if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
 	}
 
 	ds.keyedMutex.Lock(node.GetId())
@@ -195,10 +206,12 @@ func (ds *datastoreImpl) UpsertNode(ctx context.Context, node *storage.Node) err
 func (ds *datastoreImpl) DeleteNodes(ctx context.Context, ids ...string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "DeleteNodes")
 
-	if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
 	}
 
 	errorList := errorhelpers.NewErrorList("deleting nodes")
@@ -221,8 +234,10 @@ func (ds *datastoreImpl) DeleteNodes(ctx context.Context, ids ...string) error {
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "Exists")
 
-	if ok, err := ds.canReadNode(ctx, id); err != nil || !ok {
-		return false, err
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err := ds.canReadNode(ctx, id); err != nil || !ok {
+			return false, err
+		}
 	}
 	return ds.storage.Exists(ctx, id)
 }

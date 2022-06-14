@@ -26,6 +26,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Use `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` to snooze and unsnooze image  vulnerabilities.
   - Use `/v1/nodecves/suppress` and `/v1/nodecves/unsuppress` to snooze and unsnooze node/host vulnerabilities.
   - Use `/v1/platformcves/suppress` and `/v1/platformcves/unsuppress` to snooze and unsnooze platform (k8s, istio, and openshift) vulnerabilities.
+- /v1/compliance/results was never implemented and will be removed in this release
 
 ## [70.0]
 

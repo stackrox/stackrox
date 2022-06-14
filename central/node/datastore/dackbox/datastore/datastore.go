@@ -8,6 +8,7 @@ import (
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/node/datastore/internal/search"
+	"github.com/stackrox/rox/central/node/datastore/internal/store"
 	dackBoxStore "github.com/stackrox/rox/central/node/datastore/internal/store/dackbox"
 	nodeIndexer "github.com/stackrox/rox/central/node/index"
 	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
@@ -62,4 +63,9 @@ func newDatastore(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIn
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
 func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
 	return newDatastore(dacky, keyFence, bleveIndex, false, risks, nodeRanker, nodeComponentRanker)
+}
+
+// NewWithPostgres returns a new instance of DataStore using the input store, indexer, and searcher.
+func NewWithPostgres(storage store.Store, indexer nodeIndexer.Indexer, searcher search.Searcher, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
+	return newDatastoreImpl(storage, indexer, searcher, risks, nodeRanker, nodeComponentRanker)
 }

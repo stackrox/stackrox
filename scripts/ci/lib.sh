@@ -135,10 +135,10 @@ push_main_image_set() {
     info "Pushing main and roxctl images"
 
     if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: push_main_image_set <branch> <brand>"
+        die "missing arg. usage: push_main_image_set <push_context> <brand>"
     fi
 
-    local branch="$1"
+    local push_context="$1"
     local brand="$2"
 
     local main_image_set=("main" "roxctl" "central-db")
@@ -207,7 +207,7 @@ push_main_image_set() {
             _tag_main_image_set "$tag" "$registry" "$tag"
             _push_main_image_set "$registry" "$tag"
         fi
-        if [[ "$branch" == "master" ]]; then
+        if [[ "$push_context" == "merge-to-master" ]]; then
             if is_OPENSHIFT_CI; then
                 _mirror_main_image_set "$registry" "latest"
             else
@@ -466,7 +466,22 @@ get_base_ref() {
     if is_CIRCLECI; then
         echo "${CIRCLE_BRANCH}"
     elif is_OPENSHIFT_CI; then
-        jq -r '.refs[0].base_ref' <<<"$CLONEREFS_OPTIONS"
+        if [[ -n "${PULL_BASE_REF:-}" ]]; then
+            # presubmit, postsubmit and batch runs
+            # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
+            echo "${PULL_BASE_REF}"
+        elif [[ -n "${JOB_SPEC:-}" ]]; then
+            # periodics
+            # OpenShift CI adds 'extra_refs'
+            local base_ref
+            base_ref="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].base_ref')" || die "invalid JOB_SPEC yaml"
+            if [[ "$base_ref" == "null" ]]; then
+                die "expect: base_ref in JOB_SEC.extra_refs[0]"
+            fi
+            echo "${base_ref}"
+        else
+            die "Expect PULL_BASE_REF or JOB_SPEC"
+        fi
     else
         die "unsupported"
     fi
@@ -477,7 +492,25 @@ get_repo_full_name() {
         # CIRCLE_REPOSITORY_URL=git@github.com:stackrox/stackrox.git
         echo "${CIRCLE_REPOSITORY_URL:15:-4}"
     elif is_OPENSHIFT_CI; then
-        jq -r .base.repo.full_name <<<"$(get_pr_details)"
+        if [[ -n "${REPO_OWNER:-}" ]]; then
+            # presubmit, postsubmit and batch runs
+            # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
+            [[ -n "${REPO_NAME:-}" ]] || die "expect: REPO_NAME"
+            echo "${REPO_OWNER}/${REPO_NAME}"
+        elif [[ -n "${JOB_SPEC:-}" ]]; then
+            # periodics
+            # OpenShift CI adds 'extra_refs'
+            local org
+            local repo
+            org="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].org')" || die "invalid JOB_SPEC yaml"
+            repo="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].repo')" || die "invalid JOB_SPEC yaml"
+            if [[ "$org" == "null" ]] || [[ "$repo" == "null" ]]; then
+                die "expect: org and repo in JOB_SEC.extra_refs[0]"
+            fi
+            echo "${org}/${repo}"
+        else
+            die "Expect REPO_OWNER/NAME or JOB_SPEC"
+        fi
     else
         die "unsupported"
     fi
@@ -679,7 +712,11 @@ gate_merge_job() {
     run_on_tags="$(get_var_from_job_config run_on_tags "$job_config")"
 
     local base_ref
-    base_ref="$(get_base_ref)"
+    base_ref="$(get_base_ref)" || {
+        info "Warning: error running get_base_ref():"
+        echo "${base_ref}"
+        info "will continue with tests."
+    }
 
     if [[ "${base_ref}" == "master" && "${run_on_master}" == "true" ]]; then
         info "$job will run because this is master and run_on_master==true"
