@@ -15,7 +15,7 @@ import (
 )
 
 type enricherImpl struct {
-	cves cveSuppressor
+	cves CVESuppressor
 
 	lock     sync.RWMutex
 	scanners map[string]types.NodeScannerWithDataSource

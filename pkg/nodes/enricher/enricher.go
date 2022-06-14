@@ -22,13 +22,14 @@ type NodeEnricher interface {
 	RemoveNodeIntegration(id string)
 }
 
-type cveSuppressor interface {
-	EnrichNodeWithSuppressedCVEs(node *storage.Node)
+// CVESuppressor provides enrichment for suppressed CVEs for an node's components.
+type CVESuppressor interface {
+	EnrichNodeWithSuppressedCVEs(image *storage.Node)
 }
 
 // New returns a new NodeEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cves cveSuppressor, subsystem pkgMetrics.Subsystem) NodeEnricher {
+func New(cves CVESuppressor, subsystem pkgMetrics.Subsystem) NodeEnricher {
 	enricher := &enricherImpl{
 		cves: cves,
 
