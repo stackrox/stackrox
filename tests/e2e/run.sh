@@ -173,6 +173,10 @@ setup_proxy_tests() {
     nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http2 14443:443 </dev/null &>/dev/null &
     nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http2-plain 15443:443 </dev/null &>/dev/null &
     sleep 1
+
+    if is_CIRCLECI && ! grep "${server_name}" /etc/hosts; then
+        sudo bash -c "echo 127.0.0.1 ${server_name} >>/etc/hosts"
+    fi
 }
 
 cleanup_proxy_tests() {
