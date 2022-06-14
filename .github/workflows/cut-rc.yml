@@ -280,7 +280,7 @@ jobs:
             { "blocks": [
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":red_circle: *Upstream release milestone ${{needs.variables.outputs.milestone}} on <${{github.repositoryUrl}}|${{github.repository}}>*" }},
+            ":red_circle: *Couldn't close upstream milestone ${{needs.variables.outputs.milestone}} on <${{github.repositoryUrl}}|${{github.repository}}>.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             "*Couldn't cherry-pick the following PRs
