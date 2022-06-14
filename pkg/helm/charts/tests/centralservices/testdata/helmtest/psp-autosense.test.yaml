@@ -1,0 +1,19 @@
+tests:
+  - name: "Detect support for PodSecurityPolicies"
+    values:
+      meta:
+        apiServer:
+          overrideAPIResources: ["policy/v1beta"]
+      system:
+        enablePodSecurityPolicies: null
+    expect: |
+      .podsecuritypolicys["stackrox-central"] | assertThat(. != null)
+  - name: "Detect absent support for PodSecurityPolicies"
+    values:
+      meta:
+        apiServer:
+          overrideAPIResources: []
+      system:
+        enablePodSecurityPolicies: null
+    expect: |
+      .podsecuritypolicys["stackrox-central"] | assertThat(. == null)
