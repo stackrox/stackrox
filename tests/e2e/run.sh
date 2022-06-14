@@ -44,8 +44,8 @@ test_e2e() {
     store_test_results "tests/all-tests-results" "all-tests-results"
     [[ ! -f FAIL ]] || die "e2e tests failed"
 
-    setup_proxy_tests
-    run_proxy_tests
+    setup_proxy_tests "localhost"
+    run_proxy_tests "localhost"
     cd "$ROOT"
 
     collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
@@ -149,9 +149,15 @@ run_roxctl_tests() {
 setup_proxy_tests() {
     info "Setup for proxy tests"
 
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: setup_proxy_tests <server_name>"
+    fi
+
+    local server_name="$1"
+
     PROXY_CERTS_DIR="$(mktemp -d)"
     export PROXY_CERTS_DIR="$PROXY_CERTS_DIR"
-    "$ROOT/scripts/ci/proxy/deploy.sh"
+    "$ROOT/scripts/ci/proxy/deploy.sh" "${server_name}"
 
     # Try preventing kubectl port-forward from hitting the FD limit, see
     # https://github.com/kubernetes/kubernetes/issues/74551#issuecomment-910520361
@@ -178,10 +184,16 @@ cleanup_proxy_tests() {
 run_proxy_tests() {
     info "Running proxy tests"
 
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: setup_proxy_tests <server_name>"
+    fi
+
+    local server_name="$1"
+
     info "Test HTTP access to plain HTTP proxy"
     # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
     local license_status
-    license_status="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f 'http://localhost:10080/v1/metadata' | jq -r '.licenseStatus')"
+    license_status="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f http://"${server_name}":10080/v1/metadata | jq -r '.licenseStatus')"
     echo "Got license status ${license_status} from server"
     [[ "$license_status" == "VALID" ]]
 
@@ -191,7 +203,7 @@ run_proxy_tests() {
         curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
         --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
         -f \
-        'https://localhost:10443/v1/metadata' | jq -r '.licenseStatus')"
+        https://"${server_name}":10443/v1/metadata | jq -r '.licenseStatus')"
     echo "Got license status ${license_status} from server"
     [[ "$license_status" == "VALID" ]]
 
@@ -237,7 +249,7 @@ run_proxy_tests() {
         esac
 
         info "Testing roxctl access through ${name}..."
-        local endpoint="localhost:${port}"
+        local endpoint="${server_name}:${port}"
         for endpoint_tgt in "${scheme}://${endpoint}" "${scheme}://${endpoint}/" "$endpoint"; do
         roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
             failures+=("$p")
@@ -261,7 +273,7 @@ run_proxy_tests() {
         fi
 
         done
-        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "localhost:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
+        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${server_name}:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
         failures+=("${p},sensor-generate")
         echo "Done."
         rm -rf "/tmp/proxy-test-${port}"
