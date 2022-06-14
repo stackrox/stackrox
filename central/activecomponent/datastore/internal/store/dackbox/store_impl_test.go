@@ -3,17 +3,17 @@ package dackbox
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/central/activecomponent/converter"
-	acDackBox "github.com/stackrox/stackrox/central/activecomponent/dackbox"
-	"github.com/stackrox/stackrox/central/activecomponent/datastore/internal/store"
-	deploymentDackBox "github.com/stackrox/stackrox/central/deployment/dackbox"
-	componentDackBox "github.com/stackrox/stackrox/central/imagecomponent/dackbox"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/dackbox"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/central/activecomponent/converter"
+	acDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
+	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
+	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
+	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 

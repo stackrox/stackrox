@@ -3,9 +3,9 @@ package networkentities
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/networkpolicies/graph"
-	"github.com/stackrox/stackrox/central/sensor/service/common"
-	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/rox/central/networkpolicies/graph"
+	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 // Controller handles pushing network entities to remote clusters.

@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/protoconv"
-	registryTypes "github.com/stackrox/stackrox/pkg/registries/types"
-	"github.com/stackrox/stackrox/pkg/retry"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/retry"
 )
 
 var (

@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/odirect"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/odirect"
+	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
 )
 

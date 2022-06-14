@@ -5,11 +5,11 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/protoutils"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // The EvaluationMode specifies when to treat a process baseline as being locked.

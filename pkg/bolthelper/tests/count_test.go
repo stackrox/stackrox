@@ -3,8 +3,8 @@ package tests
 import (
 	"testing"
 
-	. "github.com/stackrox/stackrox/pkg/bolthelper"
-	"github.com/stackrox/stackrox/pkg/testutils"
+	. "github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
 )

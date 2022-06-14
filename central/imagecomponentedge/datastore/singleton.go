@@ -1,16 +1,16 @@
 package datastore
 
 import (
-	"github.com/stackrox/stackrox/central/globaldb"
-	globaldbDackbox "github.com/stackrox/stackrox/central/globaldb/dackbox"
-	"github.com/stackrox/stackrox/central/globalindex"
-	"github.com/stackrox/stackrox/central/imagecomponentedge/datastore/internal/store/postgres"
-	"github.com/stackrox/stackrox/central/imagecomponentedge/index"
-	"github.com/stackrox/stackrox/central/imagecomponentedge/search"
-	"github.com/stackrox/stackrox/central/imagecomponentedge/store/dackbox"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/globaldb"
+	globaldbDackbox "github.com/stackrox/rox/central/globaldb/dackbox"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/imagecomponentedge/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/imagecomponentedge/index"
+	"github.com/stackrox/rox/central/imagecomponentedge/search"
+	"github.com/stackrox/rox/central/imagecomponentedge/store/dackbox"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

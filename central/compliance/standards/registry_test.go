@@ -3,11 +3,11 @@ package standards
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/central/compliance/standards/index"
-	"github.com/stackrox/stackrox/central/compliance/standards/metadata"
-	"github.com/stackrox/stackrox/central/globalindex"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/compliance/standards/index"
+	"github.com/stackrox/rox/central/compliance/standards/metadata"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

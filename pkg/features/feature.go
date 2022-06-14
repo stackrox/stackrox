@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/stackrox/stackrox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/buildinfo"
 )
 
 type feature struct {

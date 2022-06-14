@@ -10,7 +10,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	mtls "github.com/stackrox/stackrox/pkg/mtls"
+	mtls "github.com/stackrox/rox/pkg/mtls"
 )
 
 // MockCA is a mock of CA interface.

@@ -5,8 +5,8 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 type queryConverter struct {

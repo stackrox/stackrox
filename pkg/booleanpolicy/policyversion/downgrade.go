@@ -2,7 +2,7 @@ package policyversion
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Downgrader takes a policy in version N and *must* convert it to N-1.

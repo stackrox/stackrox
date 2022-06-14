@@ -1,6 +1,6 @@
 package datastore
 
-import "github.com/stackrox/stackrox/generated/storage"
+import "github.com/stackrox/rox/generated/storage"
 
 func fillSortHelperFields(listAlert *storage.ListAlert) *storage.ListAlert {
 	if listAlert.GetPolicy() == nil {

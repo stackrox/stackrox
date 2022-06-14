@@ -6,11 +6,11 @@ import (
 	"text/template"
 
 	types2 "github.com/gogo/protobuf/types"
-	mitreDataStore "github.com/stackrox/stackrox/central/mitre/datastore"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/fixtures"
-	"github.com/stackrox/stackrox/pkg/images/types"
-	"github.com/stackrox/stackrox/pkg/timeutil"
+	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

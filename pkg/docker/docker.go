@@ -6,8 +6,8 @@ import (
 
 	"github.com/docker/docker/api"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/docker/client"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/pkg/docker/client"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

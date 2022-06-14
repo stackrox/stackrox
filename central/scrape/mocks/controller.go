@@ -8,10 +8,10 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	central "github.com/stackrox/stackrox/generated/internalapi/central"
-	compliance "github.com/stackrox/stackrox/generated/internalapi/compliance"
-	concurrency "github.com/stackrox/stackrox/pkg/concurrency"
-	set "github.com/stackrox/stackrox/pkg/set"
+	central "github.com/stackrox/rox/generated/internalapi/central"
+	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
+	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	set "github.com/stackrox/rox/pkg/set"
 )
 
 // MockController is a mock of Controller interface.

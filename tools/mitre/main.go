@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/tools/mitre/command"
+	"github.com/stackrox/rox/tools/mitre/command"
 )
 
 func main() {

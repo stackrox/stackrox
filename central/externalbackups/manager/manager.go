@@ -5,17 +5,17 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/externalbackups/plugins"
-	"github.com/stackrox/stackrox/central/externalbackups/plugins/types"
-	"github.com/stackrox/stackrox/central/externalbackups/scheduler"
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/integrationhealth"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/protoconv/schedule"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/externalbackups/plugins"
+	"github.com/stackrox/rox/central/externalbackups/plugins/types"
+	"github.com/stackrox/rox/central/externalbackups/scheduler"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv/schedule"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

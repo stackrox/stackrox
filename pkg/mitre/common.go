@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (

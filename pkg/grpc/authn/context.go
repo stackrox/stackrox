@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 type identityContextKey struct{}

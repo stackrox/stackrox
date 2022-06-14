@@ -3,8 +3,8 @@ package compound
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/pkg/dackbox/keys/transformation"
-	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // TransformResults applies a transformer to a list of results.

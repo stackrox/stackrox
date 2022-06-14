@@ -2,8 +2,8 @@ package resources
 
 import (
 	routeV1 "github.com/openshift/api/route/v1"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )

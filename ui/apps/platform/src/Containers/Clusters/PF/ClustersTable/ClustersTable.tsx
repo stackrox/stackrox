@@ -74,7 +74,7 @@ function ClustersTable(): ReactElement {
             <TableComposable variant="compact" isStickyHeader>
                 <Thead>
                     <Tr>
-                        {/* TODO: https://github.com/stackrox/stackrox/pull/9396#discussion_r714272049 */}
+                        {/* TODO: https://github.com/stackrox/rox/pull/9396#discussion_r714272049 */}
                         {columns.map((column, columnIndex) => (
                             <Th key={columnIndex}>{column}</Th>
                         ))}

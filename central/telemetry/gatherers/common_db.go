@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	dto "github.com/prometheus/client_model/go"
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
 func getName(metric *dto.Metric) string {

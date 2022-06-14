@@ -6,15 +6,15 @@ import (
 	"sort"
 	"strings"
 
-	roleStore "github.com/stackrox/stackrox/central/rbac/k8srole/datastore"
-	bindingStore "github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore"
-	"github.com/stackrox/stackrox/central/rbac/utils"
-	serviceAccountStore "github.com/stackrox/stackrox/central/serviceaccount/datastore"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/k8srbac"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/set"
+	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	bindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/central/rbac/utils"
+	serviceAccountStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (

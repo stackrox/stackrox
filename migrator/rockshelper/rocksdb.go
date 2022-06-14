@@ -5,8 +5,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/migrator/migrations/rocksdbmigration"
-	"github.com/stackrox/stackrox/migrator/option"
+	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
+	"github.com/stackrox/rox/migrator/option"
 	"github.com/tecbot/gorocksdb"
 )
 

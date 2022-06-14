@@ -4,16 +4,16 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
-	deploymentDataStore "github.com/stackrox/stackrox/central/deployment/datastore"
-	"github.com/stackrox/stackrox/central/detection/lifecycle"
-	countMetrics "github.com/stackrox/stackrox/central/metrics"
-	"github.com/stackrox/stackrox/central/sensor/service/common"
-	"github.com/stackrox/stackrox/central/sensor/service/pipeline"
-	"github.com/stackrox/stackrox/central/sensor/service/pipeline/reconciliation"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/metrics"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/detection/lifecycle"
+	countMetrics "github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/metrics"
 )
 
 var (

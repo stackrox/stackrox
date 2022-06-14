@@ -5,11 +5,11 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/fileutils"
-	"github.com/stackrox/stackrox/pkg/mtls"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/pkg/x509utils"
-	"github.com/stackrox/stackrox/sensor/admission-control/fetchcerts"
+	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/x509utils"
+	"github.com/stackrox/rox/sensor/admission-control/fetchcerts"
 )
 
 const (

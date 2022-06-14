@@ -9,8 +9,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	permissions "github.com/stackrox/stackrox/pkg/auth/permissions"
+	storage "github.com/stackrox/rox/generated/storage"
+	permissions "github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 // MockDataStore is a mock of DataStore interface.

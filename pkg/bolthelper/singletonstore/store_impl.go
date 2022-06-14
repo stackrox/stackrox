@@ -5,7 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"go.etcd.io/bbolt"
 )
 

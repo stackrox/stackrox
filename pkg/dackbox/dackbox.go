@@ -2,15 +2,15 @@ package dackbox
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/pkg/dackbox/graph"
-	"github.com/stackrox/stackrox/pkg/dackbox/sortedkeys"
-	"github.com/stackrox/stackrox/pkg/dackbox/transactions"
-	rocksdbTxns "github.com/stackrox/stackrox/pkg/dackbox/transactions/rocksdb"
-	"github.com/stackrox/stackrox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/stackrox/pkg/dbhelper"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
-	"github.com/stackrox/stackrox/pkg/sliceutils"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/dackbox/transactions"
+	rocksdbTxns "github.com/stackrox/rox/pkg/dackbox/transactions/rocksdb"
+	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 func newDackBox(dbFactory transactions.DBTransactionFactory, toIndex queue.AcceptsKeyValue, graphPrefix, dirtyPrefix, validPrefix []byte) (*DackBox, error) {

@@ -9,8 +9,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	tree "github.com/stackrox/stackrox/pkg/networkgraph/tree"
+	storage "github.com/stackrox/rox/generated/storage"
+	tree "github.com/stackrox/rox/pkg/networkgraph/tree"
 )
 
 // MockManager is a mock of Manager interface.

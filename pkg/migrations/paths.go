@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/fileutils"
-	"github.com/stackrox/stackrox/pkg/migrations/internal"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/migrations/internal"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (

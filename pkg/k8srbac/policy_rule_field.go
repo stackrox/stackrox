@@ -3,8 +3,8 @@ package k8srbac
 import (
 	"sort"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/sliceutils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // PolicyRuleField represents a field of a PolicyRule.

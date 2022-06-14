@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/roxctl/common"
-	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 var (

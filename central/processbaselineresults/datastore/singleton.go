@@ -1,13 +1,13 @@
 package datastore
 
 import (
-	"github.com/stackrox/stackrox/central/globaldb"
-	"github.com/stackrox/stackrox/central/processbaselineresults/datastore/internal/store"
-	"github.com/stackrox/stackrox/central/processbaselineresults/datastore/internal/store/postgres"
-	"github.com/stackrox/stackrox/central/processbaselineresults/datastore/internal/store/rocksdb"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store"
+	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/rocksdb"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

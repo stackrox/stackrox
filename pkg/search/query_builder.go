@@ -5,11 +5,11 @@ import (
 	"sort"
 	"strings"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/conv"
-	"github.com/stackrox/stackrox/pkg/generic"
-	"github.com/stackrox/stackrox/pkg/set"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/conv"
+	"github.com/stackrox/rox/pkg/generic"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (

@@ -1,9 +1,9 @@
 package unified
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/detection"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 func isLifecycleStage(policy *storage.Policy, stage storage.LifecycleStage) bool {

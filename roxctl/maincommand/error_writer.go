@@ -3,7 +3,7 @@ package maincommand
 import (
 	"bytes"
 
-	"github.com/stackrox/stackrox/roxctl/common/logger"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 // errorWriter implements io.Writer that could be passed to Cobra to handle colorful printing for error messages.

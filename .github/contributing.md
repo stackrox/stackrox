@@ -16,7 +16,7 @@
   enclosing it in `~...~`, and mark the box as checked (you can do so at PR creation time by replacing the `[ ]` with `[x]`). The
   `If any of these don't apply, ...` placeholder text can be removed, but that is not a requirement.
 - **Testing performed:** Typical entries here include `CI`, `added a unit test for X`. For complex, functional features, you can also
-  include detailed manual testing/verification instructions ([example](https://github.com/stackrox/stackrox/pull/3978)). It is recommended to
+  include detailed manual testing/verification instructions ([example](https://github.com/stackrox/rox/pull/3978)). It is recommended to
   populate this section early on to include the testing steps you _intend_ to do, and annotate them with `(TBD)`, or add a task checkbox via `[ ]`,
   to indicate they haven't been done yet. Make sure all `(TBD)`s are removed/all tasks are completed before checking the box and merging the PR.
 - **PR type:** If you are creating a PR primarily to give CI a first shot, and don't intend anyone to review the PR yet, create a [*Draft* PR](https://github.blog/2019-02-14-introducing-draft-pull-requests/)

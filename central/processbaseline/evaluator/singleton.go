@@ -1,10 +1,10 @@
 package evaluator
 
 import (
-	baselinesStore "github.com/stackrox/stackrox/central/processbaseline/datastore"
-	baselineResultsStore "github.com/stackrox/stackrox/central/processbaselineresults/datastore"
-	indicatorsStore "github.com/stackrox/stackrox/central/processindicator/datastore"
-	"github.com/stackrox/stackrox/pkg/sync"
+	baselinesStore "github.com/stackrox/rox/central/processbaseline/datastore"
+	baselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
+	indicatorsStore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

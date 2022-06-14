@@ -3,7 +3,7 @@ package logging
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zapcore"
 )

@@ -3,7 +3,7 @@ package common
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

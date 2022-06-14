@@ -2,7 +2,7 @@ package logging
 
 import (
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/pkg/logging"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"

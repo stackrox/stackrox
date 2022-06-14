@@ -3,7 +3,7 @@ package k8scfgwatch
 import (
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 const (

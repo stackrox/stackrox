@@ -7,10 +7,10 @@ import (
 	"reflect"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/stackrox/central/graphql/generator"
-	"github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage" // end range imports
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/graphql/generator"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage" // end range imports
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func registerGeneratedTypes(builder generator.SchemaBuilder) {

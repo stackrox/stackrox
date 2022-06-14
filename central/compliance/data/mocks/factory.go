@@ -9,8 +9,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	framework "github.com/stackrox/stackrox/central/compliance/framework"
-	compliance "github.com/stackrox/stackrox/generated/internalapi/compliance"
+	framework "github.com/stackrox/rox/central/compliance/framework"
+	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 )
 
 // MockRepositoryFactory is a mock of RepositoryFactory interface.

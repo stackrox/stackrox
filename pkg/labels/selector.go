@@ -1,7 +1,7 @@
 package labels
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // CompiledSelector is a representation of a label selector optimized for quick evaluations.

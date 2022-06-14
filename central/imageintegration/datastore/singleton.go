@@ -3,17 +3,17 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/enrichment"
-	"github.com/stackrox/stackrox/central/globaldb"
-	"github.com/stackrox/stackrox/central/imageintegration/store"
-	"github.com/stackrox/stackrox/central/imageintegration/store/bolt"
-	"github.com/stackrox/stackrox/central/imageintegration/store/postgres"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/env"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/enrichment"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/imageintegration/store"
+	"github.com/stackrox/rox/central/imageintegration/store/bolt"
+	"github.com/stackrox/rox/central/imageintegration/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

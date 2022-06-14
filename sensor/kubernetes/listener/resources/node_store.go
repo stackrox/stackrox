@@ -3,9 +3,9 @@ package resources
 import (
 	"sort"
 
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/net"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/sync"
 	v1 "k8s.io/api/core/v1"
 )
 

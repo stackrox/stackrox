@@ -5,14 +5,14 @@ package index
 import (
 	"bytes"
 	bleve "github.com/blevesearch/bleve"
-	mappings "github.com/stackrox/stackrox/central/cluster/index/mappings"
-	metrics "github.com/stackrox/stackrox/central/metrics"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	batcher "github.com/stackrox/stackrox/pkg/batcher"
-	ops "github.com/stackrox/stackrox/pkg/metrics"
-	search "github.com/stackrox/stackrox/pkg/search"
-	blevesearch "github.com/stackrox/stackrox/pkg/search/blevesearch"
+	mappings "github.com/stackrox/rox/central/cluster/index/mappings"
+	metrics "github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
+	batcher "github.com/stackrox/rox/pkg/batcher"
+	ops "github.com/stackrox/rox/pkg/metrics"
+	search "github.com/stackrox/rox/pkg/search"
+	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 	"time"
 )
 

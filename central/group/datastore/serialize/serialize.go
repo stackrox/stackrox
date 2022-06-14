@@ -1,8 +1,8 @@
 package serialize
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/binenc"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/binenc"
 )
 
 // PropsKey is the key function for GroupProperties objects

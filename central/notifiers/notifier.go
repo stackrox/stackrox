@@ -3,7 +3,7 @@ package notifiers
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Notifier is the base notifier that all types of notifiers must implement

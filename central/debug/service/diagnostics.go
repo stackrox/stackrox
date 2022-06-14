@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/sensor/service/connection"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/pkg/centralsensor"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/k8sintrospect"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/sliceutils"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/k8sintrospect"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"k8s.io/client-go/rest"
 )
 

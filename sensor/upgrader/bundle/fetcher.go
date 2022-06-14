@@ -7,10 +7,10 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
 
 type fetcher struct {

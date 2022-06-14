@@ -2,7 +2,7 @@ package util
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 // RunENoArgs is a wrapper for RunE that does not consult the args argument.

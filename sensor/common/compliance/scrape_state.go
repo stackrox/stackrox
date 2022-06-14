@@ -1,7 +1,7 @@
 package compliance
 
 import (
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type scrapeState struct {

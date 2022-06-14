@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/stackrox/stackrox/image"
+	"github.com/stackrox/rox/image"
 )
 
 var (

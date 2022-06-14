@@ -6,13 +6,13 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/authprovider/datastore/internal/store"
-	"github.com/stackrox/stackrox/central/metrics"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/bolthelper"
-	"github.com/stackrox/stackrox/pkg/dberrors"
-	ops "github.com/stackrox/stackrox/pkg/metrics"
-	"github.com/stackrox/stackrox/pkg/secondarykey"
+	"github.com/stackrox/rox/central/authprovider/datastore/internal/store"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/dberrors"
+	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/secondarykey"
 	bolt "go.etcd.io/bbolt"
 )
 

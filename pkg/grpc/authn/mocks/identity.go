@@ -9,9 +9,9 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	authproviders "github.com/stackrox/stackrox/pkg/auth/authproviders"
-	permissions "github.com/stackrox/stackrox/pkg/auth/permissions"
+	storage "github.com/stackrox/rox/generated/storage"
+	authproviders "github.com/stackrox/rox/pkg/auth/authproviders"
+	permissions "github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 // MockIdentity is a mock of Identity interface.

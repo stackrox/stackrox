@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/sac/mocks"
+	. "github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/mocks"
 	"github.com/stretchr/testify/suite"
 )
 

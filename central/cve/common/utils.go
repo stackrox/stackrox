@@ -2,9 +2,9 @@ package common
 
 import (
 	"github.com/gogo/protobuf/types"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

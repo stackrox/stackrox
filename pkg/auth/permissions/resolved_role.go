@@ -1,6 +1,6 @@
 package permissions
 
-import "github.com/stackrox/stackrox/generated/storage"
+import "github.com/stackrox/rox/generated/storage"
 
 // ResolvedRole type unites a role with the corresponding permission set and
 // access scope. It has been designed to simplify working with the new Role +

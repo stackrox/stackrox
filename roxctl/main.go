@@ -4,11 +4,11 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/roxctl/maincommand"
-	"github.com/stackrox/stackrox/roxctl/properties"
+	"github.com/stackrox/rox/roxctl/maincommand"
+	"github.com/stackrox/rox/roxctl/properties"
 
 	// Make sure devbuild setting is registered.
-	_ "github.com/stackrox/stackrox/pkg/devbuild"
+	_ "github.com/stackrox/rox/pkg/devbuild"
 )
 
 func main() {

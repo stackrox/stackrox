@@ -9,12 +9,12 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/stackrox/central/alert/datastore"
-	"github.com/stackrox/stackrox/central/globalindex"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
-	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

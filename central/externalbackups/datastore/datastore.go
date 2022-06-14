@@ -3,8 +3,8 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/externalbackups/internal/store"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/central/externalbackups/internal/store"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // DataStore is the entry point for modifying External Backup data.

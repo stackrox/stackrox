@@ -3,9 +3,9 @@ package scorer
 import (
 	"time"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/images/types"
-	"github.com/stackrox/stackrox/pkg/protoconv"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 // GetMockImage returns a mock image

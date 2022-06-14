@@ -3,8 +3,8 @@ package services
 import (
 	"strings"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 // ServiceTypeToSlugName converts a service type (such as storage.ADMISSION_CONTROL_SERVICE) to the

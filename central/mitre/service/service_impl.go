@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/stackrox/central/mitre/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc/authz"
-	"github.com/stackrox/stackrox/pkg/grpc/authz/allow"
-	"github.com/stackrox/stackrox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/central/mitre/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"google.golang.org/grpc"
 )
 

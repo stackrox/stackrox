@@ -3,13 +3,13 @@ package updater
 import (
 	"context"
 
-	activeComponent "github.com/stackrox/stackrox/central/activecomponent/datastore"
-	"github.com/stackrox/stackrox/central/activecomponent/updater/aggregator"
-	deploymentStore "github.com/stackrox/stackrox/central/deployment/datastore"
-	imageStore "github.com/stackrox/stackrox/central/image/datastore"
-	processIndicatorStore "github.com/stackrox/stackrox/central/processindicator/datastore"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/simplecache"
+	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
+	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
+	imageStore "github.com/stackrox/rox/central/image/datastore"
+	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/simplecache"
 )
 
 //go:generate mockgen-wrapper

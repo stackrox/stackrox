@@ -3,8 +3,8 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/user/datastore/internal/store"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/central/user/datastore/internal/store"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // DataStore is the datastore for users.

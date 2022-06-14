@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
-	"github.com/stackrox/stackrox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"helm.sh/helm/v3/pkg/chartutil"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

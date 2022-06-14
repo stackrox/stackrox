@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	awscredentials "github.com/stackrox/stackrox/sensor/common/awscredentials"
+	awscredentials "github.com/stackrox/rox/sensor/common/awscredentials"
 )
 
 // MockRegistryCredentialsManager is a mock of RegistryCredentialsManager interface.

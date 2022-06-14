@@ -1,16 +1,16 @@
 package datastore
 
 import (
-	"github.com/stackrox/stackrox/central/globaldb"
-	"github.com/stackrox/stackrox/central/globalindex"
-	"github.com/stackrox/stackrox/central/serviceaccount/internal/index"
-	"github.com/stackrox/stackrox/central/serviceaccount/internal/store"
-	"github.com/stackrox/stackrox/central/serviceaccount/internal/store/postgres"
-	"github.com/stackrox/stackrox/central/serviceaccount/internal/store/rocksdb"
-	"github.com/stackrox/stackrox/central/serviceaccount/search"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/serviceaccount/internal/index"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store/postgres"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store/rocksdb"
+	"github.com/stackrox/rox/central/serviceaccount/search"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

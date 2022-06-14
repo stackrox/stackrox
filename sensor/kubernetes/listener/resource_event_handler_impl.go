@@ -2,12 +2,12 @@ package listener
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/kubernetes"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"

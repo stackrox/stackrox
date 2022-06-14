@@ -5,14 +5,14 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	groupDataStore "github.com/stackrox/stackrox/central/group/datastore"
-	roleDataStore "github.com/stackrox/stackrox/central/role/datastore"
-	userDataStore "github.com/stackrox/stackrox/central/user/datastore"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/grpc/authn"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/set"
+	groupDataStore "github.com/stackrox/rox/central/group/datastore"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	userDataStore "github.com/stackrox/rox/central/user/datastore"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (

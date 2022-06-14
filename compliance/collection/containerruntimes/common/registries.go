@@ -4,10 +4,10 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/containers/image/v5/pkg/sysregistriesv2"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/compliance/collection/utils"
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/compliance/collection/utils"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (

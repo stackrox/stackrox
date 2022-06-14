@@ -2,8 +2,8 @@ package crud
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/pkg/dackbox"
-	"github.com/stackrox/stackrox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 type readerImpl struct {

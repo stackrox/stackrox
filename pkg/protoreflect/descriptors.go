@@ -11,7 +11,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc"
 )
 

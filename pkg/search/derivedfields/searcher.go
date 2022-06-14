@@ -4,9 +4,9 @@ import (
 	"context"
 	"sort"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/derivedfields/counter"
-	"github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/derivedfields/counter"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // CountSortedSearcher generates a searcher that applies derived field sorting.

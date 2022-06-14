@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/timeutil"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/timeutil"
 )
 
 // RevocationLayer is a source layer that deals with token revocation.

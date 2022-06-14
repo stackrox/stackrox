@@ -8,16 +8,16 @@ import (
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
-	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
-	clusterCVEEdgeDataStore "github.com/stackrox/stackrox/central/clustercveedge/datastore"
-	"github.com/stackrox/stackrox/central/cve/converter"
-	cveDataStore "github.com/stackrox/stackrox/central/cve/datastore"
-	cveMatcher "github.com/stackrox/stackrox/central/cve/matcher"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/urlfmt"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
+	"github.com/stackrox/rox/central/cve/converter"
+	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
+	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 type istioCVEManager struct {

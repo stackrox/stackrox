@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/stackrox/central/metrics"
-	"github.com/stackrox/stackrox/generated/storage"
-	pkgMetrics "github.com/stackrox/stackrox/pkg/metrics"
-	"github.com/stackrox/stackrox/pkg/search/predicate"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/storage"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search/predicate"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

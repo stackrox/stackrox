@@ -1,8 +1,8 @@
 package search
 
 import (
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/set"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // Result is a wrapper around the search results

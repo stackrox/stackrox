@@ -3,12 +3,12 @@ package transitional
 import (
 	"context"
 
-	resources2 "github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/sac/effectiveaccessscope"
-	"github.com/stackrox/stackrox/pkg/sync"
+	resources2 "github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type permissionUseRecorder struct {

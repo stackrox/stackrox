@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/roxctl/central/db/transfer"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/central/db/transfer"
 )
 
 func (cmd *centralDbRestoreCommand) restoreV1(file *os.File, deadline time.Time) error {

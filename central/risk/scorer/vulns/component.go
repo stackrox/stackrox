@@ -3,9 +3,9 @@ package vulns
 import (
 	"math"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/cvss"
-	"github.com/stackrox/stackrox/pkg/scancomponent"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cvss"
+	"github.com/stackrox/rox/pkg/scancomponent"
 )
 
 // ComponentScore holds the numerical value of the score with the associated severity rating.

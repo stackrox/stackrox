@@ -1,6 +1,6 @@
 package fixtures
 
-import "github.com/stackrox/stackrox/generated/storage"
+import "github.com/stackrox/rox/generated/storage"
 
 // GetScopedProcessBaselineResult returns a mock ProcessBaselineResult belonging to the input scope.
 func GetScopedProcessBaselineResult(id string, clusterID string, namespace string) *storage.ProcessBaselineResults {

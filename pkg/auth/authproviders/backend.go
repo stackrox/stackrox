@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/auth/tokens"
-	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 )
 
 // AuthResponse is the response by an auth provider backend that leads to a token issuance.

@@ -3,7 +3,7 @@ package rocksdb
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store provides the interface to the underlying storage

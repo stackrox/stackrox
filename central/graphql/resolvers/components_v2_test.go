@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	imageMocks "github.com/stackrox/stackrox/central/image/datastore/mocks"
-	imageComponentEdgeMocks "github.com/stackrox/stackrox/central/imagecomponentedge/datastore/mocks"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/dackbox/edges"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/scoped"
+	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
+	imageComponentEdgeMocks "github.com/stackrox/rox/central/imagecomponentedge/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/assert"
 )
 

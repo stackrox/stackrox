@@ -4,8 +4,8 @@ import (
 	"reflect"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/predicate/basematchers"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 )
 
 func createTimestampPredicate(fullPath, value string) (internalPredicate, error) {

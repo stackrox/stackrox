@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"strings"
 
-	clusterDatastore "github.com/stackrox/stackrox/central/cluster/datastore"
-	"github.com/stackrox/stackrox/central/compliance/datastore"
-	"github.com/stackrox/stackrox/central/compliance/datastore/types"
-	"github.com/stackrox/stackrox/central/compliance/standards"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/jsonutil"
-	"github.com/stackrox/stackrox/pkg/logging"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/compliance/datastore"
+	"github.com/stackrox/rox/central/compliance/datastore/types"
+	"github.com/stackrox/rox/central/compliance/standards"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/stackrox/external-network-pusher/pkg/common"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/migrations"
 )
 
 const (

@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/roxctl/common/environment"
-	"github.com/stackrox/stackrox/roxctl/common/flags"
-	"github.com/stackrox/stackrox/roxctl/common/util"
-	"github.com/stackrox/stackrox/roxctl/common/zipdownload"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
+	"github.com/stackrox/rox/roxctl/common/zipdownload"
 )
 
 const (

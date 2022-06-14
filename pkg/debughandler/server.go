@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/devbuild"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // StartServer starts a debug handler server. This function always returns with a non-nil error code.

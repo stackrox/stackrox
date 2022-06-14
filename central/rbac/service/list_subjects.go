@@ -5,14 +5,14 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore"
-	"github.com/stackrox/stackrox/central/rbac/service/mapping"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/k8srbac"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/predicate"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/central/rbac/service/mapping"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/predicate"
 )
 
 var (

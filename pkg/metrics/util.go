@@ -3,7 +3,7 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // EmplaceCollector registers, or re-registers, the given metrics collector.

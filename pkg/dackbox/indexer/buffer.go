@@ -1,7 +1,7 @@
 package indexer
 
 import (
-	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 // Buffer is a buffer used by the lazy indexer to collect values which require updating in the index.

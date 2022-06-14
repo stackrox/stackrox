@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/stackrox/central/deployment/store"
-	"github.com/stackrox/stackrox/central/deployment/store/types"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/central/deployment/store"
+	"github.com/stackrox/rox/central/deployment/store/types"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // NewFullStore augments the generated store with ListDeployment functions

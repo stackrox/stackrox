@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	ptypes "github.com/gogo/protobuf/types"
-	clusterDackBox "github.com/stackrox/stackrox/central/cluster/dackbox"
-	namespaceDackBox "github.com/stackrox/stackrox/central/namespace/dackbox"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/dackbox"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
+	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
+	namespaceDackBox "github.com/stackrox/rox/central/namespace/dackbox"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 

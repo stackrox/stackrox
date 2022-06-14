@@ -3,17 +3,17 @@ package deployment
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/processbaseline/evaluator"
-	roleStore "github.com/stackrox/stackrox/central/rbac/k8srole/datastore"
-	bindingStore "github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore"
-	"github.com/stackrox/stackrox/central/risk/datastore"
-	"github.com/stackrox/stackrox/central/risk/getters"
-	"github.com/stackrox/stackrox/central/risk/multipliers/deployment"
-	"github.com/stackrox/stackrox/central/risk/multipliers/image"
-	saStore "github.com/stackrox/stackrox/central/serviceaccount/datastore"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/env"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/central/processbaseline/evaluator"
+	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	bindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/central/risk/getters"
+	"github.com/stackrox/rox/central/risk/multipliers/deployment"
+	"github.com/stackrox/rox/central/risk/multipliers/image"
+	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

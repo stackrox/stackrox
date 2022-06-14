@@ -3,8 +3,8 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/processbaselineresults/datastore/internal/store"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // DataStore wraps storage, indexer, and searcher for ProcessBaselineResults.

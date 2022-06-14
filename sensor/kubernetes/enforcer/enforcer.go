@@ -1,10 +1,10 @@
 package enforcer
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/sensor/common/enforcer"
-	"github.com/stackrox/stackrox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/enforcer"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"k8s.io/client-go/tools/record"
 )
 

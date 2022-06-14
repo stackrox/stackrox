@@ -6,10 +6,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	dsMocks "github.com/stackrox/stackrox/central/cluster/datastore/mocks"
-	"github.com/stackrox/stackrox/central/clusterinit/backend/mocks"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
+	dsMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/clusterinit/backend/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 

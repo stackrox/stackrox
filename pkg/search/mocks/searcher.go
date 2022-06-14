@@ -9,8 +9,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	search "github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	search "github.com/stackrox/rox/pkg/search"
 )
 
 // MockSearcher is a mock of Searcher interface.

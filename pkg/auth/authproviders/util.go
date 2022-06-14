@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil"
 )
 
 // Some common user identity attribute keys.

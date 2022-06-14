@@ -3,8 +3,8 @@ package gatherers
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/node/globaldatastore"
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	"github.com/stackrox/rox/central/node/globaldatastore"
+	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
 type nodeGatherer struct {

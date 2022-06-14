@@ -4,13 +4,13 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/stackrox/central/role/resources"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/grpc/authz"
-	"github.com/stackrox/stackrox/pkg/grpc/authz/perrpc"
-	"github.com/stackrox/stackrox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
 )
 

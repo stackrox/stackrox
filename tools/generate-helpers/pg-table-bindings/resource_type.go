@@ -3,8 +3,8 @@ package main
 import (
 	"strings"
 
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 // ResourceType of the resource, determined according to resource metadata, schema and join type.

@@ -3,15 +3,15 @@ package service
 import (
 	"context"
 
-	clusterDS "github.com/stackrox/stackrox/central/cluster/datastore"
-	dDS "github.com/stackrox/stackrox/central/deployment/datastore"
-	"github.com/stackrox/stackrox/central/networkgraph/config/datastore"
-	networkEntityDS "github.com/stackrox/stackrox/central/networkgraph/entity/datastore"
-	"github.com/stackrox/stackrox/central/networkgraph/entity/networktree"
-	nfDS "github.com/stackrox/stackrox/central/networkgraph/flow/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
-	"github.com/stackrox/stackrox/pkg/logging"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	dDS "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/networkgraph/config/datastore"
+	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
+	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

@@ -4,9 +4,9 @@ package resources
 import (
 	"sort"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 // All resource types that we want to define (for the purposes of enforcing

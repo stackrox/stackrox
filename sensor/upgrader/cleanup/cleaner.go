@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/k8sutil/k8sobjects"
-	"github.com/stackrox/stackrox/pkg/kubernetes"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/sensor/upgrader/common"
-	"github.com/stackrox/stackrox/sensor/upgrader/resources"
-	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
+	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/upgrader/common"
+	"github.com/stackrox/rox/sensor/upgrader/resources"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

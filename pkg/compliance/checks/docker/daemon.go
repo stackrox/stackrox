@@ -6,13 +6,13 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/compliance/checks/common"
-	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
-	"github.com/stackrox/stackrox/pkg/compliance/framework"
-	"github.com/stackrox/stackrox/pkg/compliance/msgfmt"
-	internalTypes "github.com/stackrox/stackrox/pkg/docker/types"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/checks/common"
+	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/compliance/msgfmt"
+	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 )
 
 func init() {

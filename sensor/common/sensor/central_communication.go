@@ -1,10 +1,10 @@
 package sensor
 
 import (
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/sensor/common"
-	"github.com/stackrox/stackrox/sensor/common/config"
-	"github.com/stackrox/stackrox/sensor/common/detector"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/detector"
 	"google.golang.org/grpc"
 )
 

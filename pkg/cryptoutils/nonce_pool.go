@@ -3,8 +3,8 @@ package cryptoutils
 import (
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/timeutil"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/timeutil"
 )
 
 // NoncePool is a source and consumer of nonces. It can be used to issue short-lived nonces, and verify that every

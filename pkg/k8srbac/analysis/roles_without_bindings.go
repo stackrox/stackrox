@@ -1,9 +1,9 @@
 package analysis
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/k8srbac"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // getRolesWithNoBindings returns a list of roles without any bindings that are not default K8s roles.

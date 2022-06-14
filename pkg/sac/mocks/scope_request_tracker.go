@@ -10,7 +10,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	payload "github.com/stackrox/default-authz-plugin/pkg/payload"
-	sac "github.com/stackrox/stackrox/pkg/sac"
+	sac "github.com/stackrox/rox/pkg/sac"
 )
 
 // MockScopeRequest is a mock of ScopeRequest interface.

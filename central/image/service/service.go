@@ -3,17 +3,17 @@ package service
 import (
 	"context"
 
-	cveDataStore "github.com/stackrox/stackrox/central/cve/image/datastore"
-	"github.com/stackrox/stackrox/central/image/datastore"
-	"github.com/stackrox/stackrox/central/risk/manager"
-	"github.com/stackrox/stackrox/central/sensor/service/connection"
-	watchedImageDataStore "github.com/stackrox/stackrox/central/watchedimage/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/env"
-	"github.com/stackrox/stackrox/pkg/expiringcache"
-	"github.com/stackrox/stackrox/pkg/grpc"
-	"github.com/stackrox/stackrox/pkg/images/enricher"
-	"github.com/stackrox/stackrox/pkg/logging"
+	cveDataStore "github.com/stackrox/rox/central/cve/image/datastore"
+	"github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/sync/semaphore"
 )
 

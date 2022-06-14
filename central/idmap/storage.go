@@ -1,6 +1,6 @@
 package idmap
 
-import "github.com/stackrox/stackrox/generated/storage"
+import "github.com/stackrox/rox/generated/storage"
 
 // Storage stores information about
 type Storage interface {

@@ -3,9 +3,9 @@ package checks
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	"github.com/stackrox/stackrox/central/compliance/standards"
-	"github.com/stackrox/stackrox/central/compliance/standards/metadata"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/standards"
+	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	"github.com/stretchr/testify/assert"
 )
 

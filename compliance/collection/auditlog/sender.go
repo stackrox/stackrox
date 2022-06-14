@@ -3,7 +3,7 @@ package auditlog
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 )
 
 // auditLogSender provides functionality to send audit events to Sensor.

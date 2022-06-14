@@ -1,12 +1,12 @@
 package updater
 
 import (
-	activeComponent "github.com/stackrox/stackrox/central/activecomponent/datastore"
-	"github.com/stackrox/stackrox/central/activecomponent/updater/aggregator"
-	deploymentDataStore "github.com/stackrox/stackrox/central/deployment/datastore"
-	imageStore "github.com/stackrox/stackrox/central/image/datastore"
-	processIndicatorDataStore "github.com/stackrox/stackrox/central/processindicator/datastore"
-	"github.com/stackrox/stackrox/pkg/sync"
+	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
+	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	imageStore "github.com/stackrox/rox/central/image/datastore"
+	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

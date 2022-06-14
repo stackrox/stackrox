@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/stackrox/stackrox/central/mitre/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/rox/central/mitre/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
 )
 
 // Service provides the MITRE ATTACK service interface.

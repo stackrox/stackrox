@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore/internal/store/testcommon"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/postgres/pgtest"
-	pkgSchema "github.com/stackrox/stackrox/pkg/postgres/schema"
-	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/testcommon"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 

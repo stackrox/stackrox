@@ -3,7 +3,7 @@ package undodeploymentstore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // UndoDeploymentStore provides storage functionality for network baselines.

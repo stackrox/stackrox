@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/debug"
+	"github.com/stackrox/rox/pkg/debug"
 )
 
 const (

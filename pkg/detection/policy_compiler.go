@@ -1,7 +1,7 @@
 package detection
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // CompilePolicy compiles the given policy, making it ready for matching.

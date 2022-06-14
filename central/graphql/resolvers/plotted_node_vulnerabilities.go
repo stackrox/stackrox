@@ -3,7 +3,7 @@ package resolvers
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {

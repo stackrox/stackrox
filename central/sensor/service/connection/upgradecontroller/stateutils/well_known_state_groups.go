@@ -1,8 +1,8 @@
 package stateutils
 
 import (
-	"github.com/stackrox/stackrox/generated/set"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/set"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 var (

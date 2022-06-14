@@ -5,15 +5,15 @@ import (
 	"regexp"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/query"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/querybuilders"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/violationmessages"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/query"
+	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

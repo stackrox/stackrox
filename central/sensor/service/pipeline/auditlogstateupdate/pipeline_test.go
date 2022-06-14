@@ -6,9 +6,9 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	clusterMocks "github.com/stackrox/stackrox/central/cluster/datastore/mocks"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/generated/storage"
+	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 

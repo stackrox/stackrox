@@ -2,5 +2,5 @@ package all
 
 import (
 	// Register formats.
-	_ "github.com/stackrox/stackrox/central/globaldb/v2backuprestore/formats/roxdbv1"
+	_ "github.com/stackrox/rox/central/globaldb/v2backuprestore/formats/roxdbv1"
 )

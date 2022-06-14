@@ -3,7 +3,7 @@ package scoped
 import (
 	"context"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 // Scope hold an id and scope level for scoping searches.

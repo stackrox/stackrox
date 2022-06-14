@@ -2,7 +2,7 @@ package pathutil
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type tree struct {

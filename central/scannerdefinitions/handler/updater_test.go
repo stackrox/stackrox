@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/stackrox/central/scannerdefinitions/file"
-	"github.com/stackrox/stackrox/pkg/fileutils"
+	"github.com/stackrox/rox/central/scannerdefinitions/file"
+	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

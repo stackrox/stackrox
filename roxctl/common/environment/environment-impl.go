@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/roxctl/common"
-	"github.com/stackrox/stackrox/roxctl/common/flags"
-	cliIO "github.com/stackrox/stackrox/roxctl/common/io"
-	"github.com/stackrox/stackrox/roxctl/common/logger"
-	"github.com/stackrox/stackrox/roxctl/common/printer"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/flags"
+	cliIO "github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/logger"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"google.golang.org/grpc"
 )
 

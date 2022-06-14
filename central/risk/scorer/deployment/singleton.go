@@ -1,12 +1,12 @@
 package deployment
 
 import (
-	alertDataStore "github.com/stackrox/stackrox/central/alert/datastore"
-	"github.com/stackrox/stackrox/central/processbaseline/evaluator"
-	roleStore "github.com/stackrox/stackrox/central/rbac/k8srole/datastore"
-	bindingStore "github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore"
-	saStore "github.com/stackrox/stackrox/central/serviceaccount/datastore"
-	"github.com/stackrox/stackrox/pkg/sync"
+	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/processbaseline/evaluator"
+	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	bindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

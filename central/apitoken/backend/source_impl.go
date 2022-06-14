@@ -4,15 +4,15 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/stackrox/central/apitoken/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/authproviders"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/auth/tokens"
-	"github.com/stackrox/stackrox/pkg/auth/user"
-	"github.com/stackrox/stackrox/pkg/protoconv"
-	"github.com/stackrox/stackrox/pkg/timeutil"
+	"github.com/stackrox/rox/central/apitoken/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/auth/user"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/timeutil"
 )
 
 const (

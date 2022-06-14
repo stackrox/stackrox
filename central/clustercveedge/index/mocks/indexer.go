@@ -8,10 +8,10 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	search "github.com/stackrox/stackrox/pkg/search"
-	blevesearch "github.com/stackrox/stackrox/pkg/search/blevesearch"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
+	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 // MockIndexer is a mock of Indexer interface.

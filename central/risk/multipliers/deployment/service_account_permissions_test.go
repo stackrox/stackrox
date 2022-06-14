@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	roleMocks "github.com/stackrox/stackrox/central/rbac/k8srole/datastore/mocks"
-	bindingMocks "github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore/mocks"
-	"github.com/stackrox/stackrox/central/risk/multipliers"
-	saMocks "github.com/stackrox/stackrox/central/serviceaccount/datastore/mocks"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/search"
+	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
+	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
+	"github.com/stackrox/rox/central/risk/multipliers"
+	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 

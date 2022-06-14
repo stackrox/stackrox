@@ -1,10 +1,10 @@
 package options
 
 import (
-	"github.com/stackrox/stackrox/central/globalindex"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	searchCommon "github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/central/globalindex"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	searchCommon "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // CategoryToOptionsSet is a map of all option sets by category, with a category for each indexed data type.

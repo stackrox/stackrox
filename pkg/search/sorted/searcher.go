@@ -4,8 +4,8 @@ import (
 	"context"
 	"sort"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // Ranker returns the rank for the given id for the given field.

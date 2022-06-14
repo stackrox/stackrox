@@ -3,11 +3,11 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/central/sensorupgradeconfig/datastore/internal/store"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/internal/store"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 type dataStore struct {

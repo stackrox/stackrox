@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	clusterMocks "github.com/stackrox/stackrox/central/cluster/datastore/mocks"
-	secretMocks "github.com/stackrox/stackrox/central/secret/datastore/mocks"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/pkg/fixtures"
+	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 )
 

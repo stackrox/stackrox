@@ -2,8 +2,8 @@ package printer
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func registerFunc(key string, f Func) {

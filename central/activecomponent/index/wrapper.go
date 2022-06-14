@@ -2,10 +2,10 @@ package index
 
 import (
 	"github.com/gogo/protobuf/proto"
-	activeComponentDackBox "github.com/stackrox/stackrox/central/activecomponent/dackbox"
-	"github.com/stackrox/stackrox/central/activecomponent/index/internal"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
+	activeComponentDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
+	"github.com/stackrox/rox/central/activecomponent/index/internal"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Wrapper implements the wrapper interface for use in dackbox.

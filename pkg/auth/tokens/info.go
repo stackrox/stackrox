@@ -3,7 +3,7 @@ package tokens
 import (
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/timeutil"
+	"github.com/stackrox/rox/pkg/timeutil"
 )
 
 // TokenInfo is a user-friendly representation of everything that a token represents.

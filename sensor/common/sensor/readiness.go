@@ -3,8 +3,8 @@ package sensor
 import (
 	"net/http"
 
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/httputil"
 )
 
 type readinessHandler struct {

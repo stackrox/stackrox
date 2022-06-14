@@ -1,7 +1,7 @@
 package signal
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Pipeline defines the way to process a process signal

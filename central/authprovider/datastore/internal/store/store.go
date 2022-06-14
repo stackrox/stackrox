@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store stores and retrieves providers from the KV storage mechanism.

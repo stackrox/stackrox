@@ -9,14 +9,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/apiparams"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/istioutils"
-	"github.com/stackrox/stackrox/roxctl/common/environment"
-	"github.com/stackrox/stackrox/roxctl/common/flags"
-	"github.com/stackrox/stackrox/roxctl/common/zipdownload"
-	"github.com/stackrox/stackrox/roxctl/scanner/clustertype"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/zipdownload"
+	"github.com/stackrox/rox/roxctl/scanner/clustertype"
 )
 
 const (

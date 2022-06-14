@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/roxctl/common/logger"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"golang.org/x/net/http2"
 )
 

@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/stackrox/stackrox/pkg/auth/authproviders"
-	"github.com/stackrox/stackrox/pkg/auth/authproviders/idputil"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (

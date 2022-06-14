@@ -3,7 +3,7 @@ package common
 import (
 	"fmt"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Failf returns "fail" evidence from the given template.

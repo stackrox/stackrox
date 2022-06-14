@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
-	"github.com/stackrox/stackrox/image"
-	"github.com/stackrox/stackrox/pkg/helm/charts"
-	"github.com/stackrox/stackrox/pkg/images/defaults"
-	flavorUtils "github.com/stackrox/stackrox/pkg/images/defaults/testutils"
+	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/helm/charts"
+	"github.com/stackrox/rox/pkg/images/defaults"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 )

@@ -1,6 +1,6 @@
 package crud
 
-import "github.com/stackrox/stackrox/pkg/features"
+import "github.com/stackrox/rox/pkg/features"
 
 // UpserterOption is an option that modifies an Upserter.
 type UpserterOption func(*upserterImpl)

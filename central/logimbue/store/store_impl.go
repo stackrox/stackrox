@@ -5,9 +5,9 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/stackrox/stackrox/central/metrics"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	ops "github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	bolt "go.etcd.io/bbolt"
 )
 

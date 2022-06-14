@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mitreMocks "github.com/stackrox/stackrox/central/mitre/datastore/mocks"
-	namespaceMocks "github.com/stackrox/stackrox/central/namespace/datastore/mocks"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/fixtures"
+	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/stackrox/central/cluster/index"
-	store "github.com/stackrox/stackrox/central/cluster/store/cluster"
-	"github.com/stackrox/stackrox/central/ranking"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/blevesearch"
-	"github.com/stackrox/stackrox/pkg/search/paginated"
-	"github.com/stackrox/stackrox/pkg/search/sorted"
+	"github.com/stackrox/rox/central/cluster/index"
+	store "github.com/stackrox/rox/central/cluster/store/cluster"
+	"github.com/stackrox/rox/central/ranking"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.

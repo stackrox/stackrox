@@ -1,6 +1,6 @@
 package v2backuprestore
 
-import v1 "github.com/stackrox/stackrox/generated/api/v1"
+import v1 "github.com/stackrox/rox/generated/api/v1"
 
 // RestoreBodySize returns the total size of all data specified in the manifest, i.e., the sum over all encoded file
 // sizes.

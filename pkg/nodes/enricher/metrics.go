@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	pkgMetrics "github.com/stackrox/stackrox/pkg/metrics"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 )
 
 // This interface encapsulates the metrics this package needs.

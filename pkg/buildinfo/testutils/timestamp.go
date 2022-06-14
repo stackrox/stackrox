@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/buildinfo/internal/timestamp"
-	"github.com/stackrox/stackrox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/buildinfo/internal/timestamp"
+	"github.com/stackrox/rox/pkg/testutils"
 )
 
 // SetBuildTimestamp sets the build timestamp in UNIX secs. This function is only intended for testing.

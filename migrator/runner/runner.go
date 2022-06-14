@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/migrator/log"
-	"github.com/stackrox/stackrox/migrator/migrations"
-	"github.com/stackrox/stackrox/migrator/types"
-	pkgMigrations "github.com/stackrox/stackrox/pkg/migrations"
+	"github.com/stackrox/rox/migrator/log"
+	"github.com/stackrox/rox/migrator/migrations"
+	"github.com/stackrox/rox/migrator/types"
+	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 )
 
 // Run runs the migrator.

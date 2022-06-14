@@ -5,9 +5,9 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/utils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ApplyFnToAllBaseQueries walks recursively over the query, applying fn to all the base queries.

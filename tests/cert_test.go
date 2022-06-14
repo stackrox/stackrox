@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/mtls"
-	"github.com/stackrox/stackrox/pkg/testutils/centralgrpc"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

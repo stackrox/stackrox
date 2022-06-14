@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // FileGenerator is a generator that produces a backup in the form of a file.

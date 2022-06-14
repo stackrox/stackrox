@@ -1,9 +1,9 @@
 package remote
 
 import (
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	_ "github.com/stackrox/stackrox/pkg/compliance/checks" // Make sure all checks are available
-	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/central/compliance/framework"
+	_ "github.com/stackrox/rox/pkg/compliance/checks" // Make sure all checks are available
+	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
 func init() {

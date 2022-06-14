@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 // An AugmentedObjMeta represents metadata (ie, type information) about an augmented object.

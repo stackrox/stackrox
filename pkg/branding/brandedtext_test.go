@@ -3,7 +3,7 @@ package branding
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 

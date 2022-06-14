@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"cloud.google.com/go/compute/metadata"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/env"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 type gcpMetadata struct {

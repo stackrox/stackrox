@@ -4,7 +4,7 @@ import (
 	"container/list"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // DeploymentObservation struct used as element in the queue

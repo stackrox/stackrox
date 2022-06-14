@@ -1,10 +1,10 @@
 package imageintegration
 
 import (
-	"github.com/stackrox/stackrox/central/integrationhealth/reporter"
-	"github.com/stackrox/stackrox/pkg/images/integration"
-	"github.com/stackrox/stackrox/pkg/scanners"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/integrationhealth/reporter"
+	"github.com/stackrox/rox/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/scanners"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

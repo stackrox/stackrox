@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/stackrox/stackrox/central/graphql/resolvers"
+	"github.com/stackrox/rox/central/graphql/resolvers"
 )
 
 func main() {

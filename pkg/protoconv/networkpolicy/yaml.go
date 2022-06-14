@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 	k8sV1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )

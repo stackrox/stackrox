@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	"github.com/stackrox/stackrox/generated/storage"
-	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/generated/storage"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 func init() {

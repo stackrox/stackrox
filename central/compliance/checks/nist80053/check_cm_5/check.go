@@ -1,10 +1,10 @@
 package checkcm5
 
 import (
-	"github.com/stackrox/stackrox/central/compliance/checks/common"
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	pkgCommon "github.com/stackrox/stackrox/pkg/compliance/checks/common"
-	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/checks/common"
+	"github.com/stackrox/rox/central/compliance/framework"
+	pkgCommon "github.com/stackrox/rox/pkg/compliance/checks/common"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 const (

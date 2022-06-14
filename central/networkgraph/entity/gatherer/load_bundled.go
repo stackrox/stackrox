@@ -8,10 +8,10 @@ import (
 	"path"
 
 	"github.com/pkg/errors"
-	entityDataStore "github.com/stackrox/stackrox/central/networkgraph/entity/datastore"
-	"github.com/stackrox/stackrox/pkg/networkgraph/defaultexternalsrcs"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/utils"
+	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func loadBundledExternalSrcs(networkEntityDS entityDataStore.EntityDataStore) error {

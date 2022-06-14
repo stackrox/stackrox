@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/imagecomponent/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/imagecomponent/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var componentLoaderType = reflect.TypeOf(storage.ImageComponent{})

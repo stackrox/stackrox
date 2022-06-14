@@ -3,13 +3,13 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/clustercveedge/index"
-	"github.com/stackrox/stackrox/central/clustercveedge/store"
-	cveIndex "github.com/stackrox/stackrox/central/cve/index"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/dackbox/graph"
-	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/central/clustercveedge/index"
+	"github.com/stackrox/rox/central/clustercveedge/store"
+	cveIndex "github.com/stackrox/rox/central/cve/index"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // Searcher provides search functionality on existing cves.

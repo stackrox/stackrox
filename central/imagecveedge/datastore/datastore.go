@@ -3,12 +3,12 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/imagecveedge/search"
-	"github.com/stackrox/stackrox/central/imagecveedge/store"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/dackbox/graph"
-	pkgSearch "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/central/imagecveedge/search"
+	"github.com/stackrox/rox/central/imagecveedge/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to Image/CVE edge storage.

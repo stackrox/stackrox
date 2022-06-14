@@ -3,7 +3,7 @@ package cache
 import (
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/expiringcache"
 )
 
 const (

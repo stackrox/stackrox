@@ -3,12 +3,12 @@ package factory
 import (
 	"fmt"
 
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	"github.com/stackrox/stackrox/central/sensor/service/connection"
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
-	"github.com/stackrox/stackrox/pkg/centralsensor"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type scrapeFactory struct {

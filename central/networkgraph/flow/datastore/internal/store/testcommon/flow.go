@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore/internal/store"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/protoconv"
-	"github.com/stackrox/stackrox/pkg/timestamp"
+	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
 )
 

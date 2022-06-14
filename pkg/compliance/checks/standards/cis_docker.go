@@ -1,6 +1,6 @@
 package standards
 
-import "github.com/stackrox/stackrox/pkg/set"
+import "github.com/stackrox/rox/pkg/set"
 
 // CISDocker is the string name of this standard
 const CISDocker = "CIS_Docker_v1_2_0"

@@ -1,21 +1,21 @@
 package datastore
 
 import (
-	clusterDS "github.com/stackrox/stackrox/central/cluster/datastore"
-	"github.com/stackrox/stackrox/central/globaldb"
-	"github.com/stackrox/stackrox/central/globalindex"
-	notifierDS "github.com/stackrox/stackrox/central/notifier/datastore"
-	"github.com/stackrox/stackrox/central/policy/index"
-	"github.com/stackrox/stackrox/central/policy/search"
-	policyStore "github.com/stackrox/stackrox/central/policy/store"
-	"github.com/stackrox/stackrox/central/policy/store/boltdb"
-	policyPostgres "github.com/stackrox/stackrox/central/policy/store/postgres"
-	policyUtils "github.com/stackrox/stackrox/central/policy/utils"
-	"github.com/stackrox/stackrox/pkg/defaults/policies"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/globalindex"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/policy/index"
+	"github.com/stackrox/rox/central/policy/search"
+	policyStore "github.com/stackrox/rox/central/policy/store"
+	"github.com/stackrox/rox/central/policy/store/boltdb"
+	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
+	policyUtils "github.com/stackrox/rox/central/policy/utils"
+	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

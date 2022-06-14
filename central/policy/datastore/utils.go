@@ -1,7 +1,7 @@
 package datastore
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func markPoliciesAsCustom(policies ...*storage.Policy) {

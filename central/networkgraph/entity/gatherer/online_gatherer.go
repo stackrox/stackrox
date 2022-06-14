@@ -7,16 +7,16 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	entityDataStore "github.com/stackrox/stackrox/central/networkgraph/entity/datastore"
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/env"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/networkgraph/defaultexternalsrcs"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/set"
+	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (

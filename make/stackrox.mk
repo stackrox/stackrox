@@ -15,7 +15,7 @@ export GO111MODULE
 docs: generated-srcs
 	@echo "+ $@"
 	@echo
-	@echo 'Access your docs at http://localhost:6061/pkg/github.com/stackrox/stackrox/$(ROX_PROJECT)/'
+	@echo 'Access your docs at http://localhost:6061/pkg/github.com/stackrox/rox/$(ROX_PROJECT)/'
 	@echo 'Hit CTRL-C to quit.'
 	@godoc -http=:6061
 
@@ -66,4 +66,4 @@ report: $(GO_JUNIT_REPORT_BIN)
 	@echo "`grep 'FAIL	github.com/stackrox/rox' test.log | wc -l` package(s) detected with compilation or test failures."
 	@-grep 'FAIL	github.com/stackrox/rox' test.log || true
 	@echo
-	@testerror="$$(grep -e 'can.t load package' -e '^# github.com/stackrox/stackrox/' -e 'FAIL	github.com/stackrox/rox' test.log | wc -l)" && test $$testerror -eq 0
+	@testerror="$$(grep -e 'can.t load package' -e '^# github.com/stackrox/rox/' -e 'FAIL	github.com/stackrox/rox' test.log | wc -l)" && test $$testerror -eq 0

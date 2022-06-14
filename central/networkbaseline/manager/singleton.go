@@ -1,14 +1,14 @@
 package manager
 
 import (
-	deploymentDS "github.com/stackrox/stackrox/central/deployment/datastore"
-	"github.com/stackrox/stackrox/central/networkbaseline/datastore"
-	networkEntityDS "github.com/stackrox/stackrox/central/networkgraph/entity/datastore"
-	nfDS "github.com/stackrox/stackrox/central/networkgraph/flow/datastore"
-	networkPolicyDS "github.com/stackrox/stackrox/central/networkpolicies/datastore"
-	"github.com/stackrox/stackrox/central/sensor/service/connection"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

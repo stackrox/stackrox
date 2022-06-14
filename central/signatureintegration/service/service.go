@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/reprocessor"
-	"github.com/stackrox/stackrox/central/signatureintegration/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/signatureintegration/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
 )
 
 // Service provides the interface to the service for managing signature integrations.

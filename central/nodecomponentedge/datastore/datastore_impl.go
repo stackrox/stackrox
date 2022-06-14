@@ -3,16 +3,16 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/nodecomponentedge/index"
-	sacFilters "github.com/stackrox/stackrox/central/nodecomponentedge/sac"
-	"github.com/stackrox/stackrox/central/nodecomponentedge/search"
-	"github.com/stackrox/stackrox/central/nodecomponentedge/store"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/dackbox/graph"
-	"github.com/stackrox/stackrox/pkg/features"
-	searchPkg "github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/filtered"
+	"github.com/stackrox/rox/central/nodecomponentedge/index"
+	sacFilters "github.com/stackrox/rox/central/nodecomponentedge/sac"
+	"github.com/stackrox/rox/central/nodecomponentedge/search"
+	"github.com/stackrox/rox/central/nodecomponentedge/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/features"
+	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/filtered"
 )
 
 type datastoreImpl struct {

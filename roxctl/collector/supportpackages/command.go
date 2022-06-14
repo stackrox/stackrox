@@ -2,8 +2,8 @@ package supportpackages
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/roxctl/collector/supportpackages/upload"
-	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/collector/supportpackages/upload"
+	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 // Command defines the central command tree

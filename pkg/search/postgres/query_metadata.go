@@ -5,9 +5,9 @@ import (
 	"strconv"
 
 	"github.com/jackc/pgtype"
-	"github.com/stackrox/stackrox/pkg/pointers"
-	"github.com/stackrox/stackrox/pkg/postgres/walker"
-	"github.com/stackrox/stackrox/pkg/readable"
+	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/readable"
 )
 
 // dataTypeQueryMetadata includes metadata for queries on different data types.

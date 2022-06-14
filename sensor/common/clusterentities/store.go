@@ -3,10 +3,10 @@ package clusterentities
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/net"
-	"github.com/stackrox/stackrox/pkg/networkgraph"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance

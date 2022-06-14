@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	accessPkg "github.com/stackrox/stackrox/central/clusterinit/backend/access"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/sync"
+	accessPkg "github.com/stackrox/rox/central/clusterinit/backend/access"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type permissionChecker struct{}

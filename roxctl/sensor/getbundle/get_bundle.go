@@ -8,17 +8,17 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/apiparams"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/istioutils"
-	"github.com/stackrox/stackrox/pkg/pointers"
-	"github.com/stackrox/stackrox/roxctl/common"
-	"github.com/stackrox/stackrox/roxctl/common/environment"
-	"github.com/stackrox/stackrox/roxctl/common/flags"
-	"github.com/stackrox/stackrox/roxctl/common/logger"
-	"github.com/stackrox/stackrox/roxctl/pflag/autobool"
-	"github.com/stackrox/stackrox/roxctl/sensor/util"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
+	"github.com/stackrox/rox/roxctl/pflag/autobool"
+	"github.com/stackrox/rox/roxctl/sensor/util"
 )
 
 const (

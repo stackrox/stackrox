@@ -8,9 +8,9 @@ import (
 	"unicode"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/stackrox/stackrox/pkg/postgres/pgutils"
-	"github.com/stackrox/stackrox/pkg/postgres/walker"
-	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 func parseReferencesAndInjectPeerSchemas(schema *walker.Schema, refs []string) (parsedRefs []parsedReference) {

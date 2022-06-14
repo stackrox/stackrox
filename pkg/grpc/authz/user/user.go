@@ -3,13 +3,13 @@ package user
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/grpc/authn"
-	"github.com/stackrox/stackrox/pkg/grpc/authz"
-	"github.com/stackrox/stackrox/pkg/grpc/authz/internal/permissioncheck"
-	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 // With returns an authorizer that only authorizes users/tokens

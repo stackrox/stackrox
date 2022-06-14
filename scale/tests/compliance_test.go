@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/stackrox/central/compliance/standards/metadata"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/roxctl/common"
+	"github.com/stackrox/rox/central/compliance/standards/metadata"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/roxctl/common"
 )
 
 var (

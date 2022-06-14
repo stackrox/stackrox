@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

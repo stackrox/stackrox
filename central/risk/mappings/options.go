@@ -3,9 +3,9 @@
 package mappings
 
 import (
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	search "github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 )
 
 var OptionsMap = search.Walk(v1.SearchCategory_RISKS, "risk", (*storage.Risk)(nil))

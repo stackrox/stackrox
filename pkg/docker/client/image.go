@@ -11,7 +11,7 @@ import (
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/versions"
 	"github.com/mailru/easyjson"
-	internalTypes "github.com/stackrox/stackrox/pkg/docker/types"
+	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 )
 
 // ImageList returns a list of images in the docker host.

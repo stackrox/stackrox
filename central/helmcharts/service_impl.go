@@ -9,12 +9,12 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/image"
-	"github.com/stackrox/stackrox/pkg/grpc/authz/user"
-	"github.com/stackrox/stackrox/pkg/grpc/routes"
-	pkgCharts "github.com/stackrox/stackrox/pkg/helm/charts"
-	"github.com/stackrox/stackrox/pkg/images/defaults"
-	"github.com/stackrox/stackrox/pkg/zip"
+	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/grpc/routes"
+	pkgCharts "github.com/stackrox/rox/pkg/helm/charts"
+	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc"
 )
 

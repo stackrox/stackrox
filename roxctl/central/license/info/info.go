@@ -8,8 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/roxctl/common/flags"
-	"github.com/stackrox/stackrox/roxctl/common/util"
+	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 type centralLicenseInfoCommand struct {

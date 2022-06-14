@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 	networkingV1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

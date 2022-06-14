@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils"
 )
 
 // AppendSpecificVersionInfoToContext appends a version info to the context that embeds the specific version passed.

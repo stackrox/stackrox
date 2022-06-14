@@ -1,9 +1,9 @@
 package scancomponent
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/cvss"
-	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cvss"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 // ScanComponent is the interface which encompasses potentially vulnerable components of entites

@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // RemoteReadable represents a shared graph state somewhere else that should be considered the current state of the

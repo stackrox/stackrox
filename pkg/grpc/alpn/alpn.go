@@ -3,7 +3,7 @@ package alpn
 import (
 	"crypto/tls"
 
-	"github.com/stackrox/stackrox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (

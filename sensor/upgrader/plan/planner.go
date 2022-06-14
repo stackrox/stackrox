@@ -3,10 +3,10 @@ package plan
 import (
 	"reflect"
 
-	"github.com/stackrox/stackrox/pkg/k8sutil"
-	"github.com/stackrox/stackrox/pkg/k8sutil/k8sobjects"
-	"github.com/stackrox/stackrox/sensor/upgrader/common"
-	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
+	"github.com/stackrox/rox/sensor/upgrader/common"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 

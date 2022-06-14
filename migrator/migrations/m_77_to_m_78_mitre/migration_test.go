@@ -5,8 +5,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/migrator/common/test"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/common/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"

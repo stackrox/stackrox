@@ -6,12 +6,12 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/clientconn"
-	"github.com/stackrox/stackrox/pkg/mtls"
-	"github.com/stackrox/stackrox/pkg/netutil"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/roxctl/common/flags"
-	"github.com/stackrox/stackrox/roxctl/common/logger"
+	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 const warningMsg = `The remote endpoint failed TLS validation. This will be a fatal error in future releases.

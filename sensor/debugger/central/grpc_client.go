@@ -1,8 +1,8 @@
 package central
 
 import (
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/grpc/util"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/grpc/util"
 	"google.golang.org/grpc"
 )
 

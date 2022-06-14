@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"gotest.tools/assert"
 )
 

@@ -1,6 +1,6 @@
 package graph
 
-import "github.com/stackrox/stackrox/generated/storage"
+import "github.com/stackrox/rox/generated/storage"
 
 func hasEgress(types []storage.NetworkPolicyType) bool {
 	return hasPolicyType(types, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE)

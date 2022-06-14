@@ -1,7 +1,7 @@
 package stateutils
 
 import (
-	"github.com/stackrox/stackrox/pkg/sensorupgrader"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 )
 
 var (

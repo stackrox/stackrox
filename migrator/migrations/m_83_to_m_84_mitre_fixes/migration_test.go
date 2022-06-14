@@ -3,7 +3,7 @@ package m83to84
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/migrator/migrations/policymigrationhelper"
+	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
 	"github.com/stretchr/testify/suite"
 )
 

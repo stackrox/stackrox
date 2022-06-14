@@ -3,11 +3,11 @@ package tests
 import (
 	"testing"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/defaults/policies"
-	"github.com/stackrox/stackrox/pkg/roxctl/common"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/roxctl/common"
 )
 
 func submitDryRunJob(service v1.PolicyServiceClient, policy *storage.Policy, jobChan chan string) func() error {

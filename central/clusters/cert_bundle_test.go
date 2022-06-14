@@ -3,9 +3,9 @@ package clusters
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/buildinfo"
-	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/assert"
 )
 

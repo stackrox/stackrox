@@ -2,7 +2,7 @@ package store
 
 import (
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // GetMockResult returns a mock ComplianceRunResults object

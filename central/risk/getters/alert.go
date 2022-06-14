@@ -3,8 +3,8 @@ package getters
 import (
 	"context"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // AlertGetter provides the required access to alerts for risk scoring.

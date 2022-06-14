@@ -3,7 +3,7 @@ package notifiers
 import (
 	"fmt"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Creator is a function stub for a function that creates a Notifier

@@ -5,13 +5,13 @@ import (
 	"crypto/x509"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/auth/authproviders"
-	"github.com/stackrox/stackrox/pkg/cryptoutils"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/mtls"
-	"github.com/stackrox/stackrox/pkg/mtls/certwatch"
-	"github.com/stackrox/stackrox/pkg/mtls/verifier"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/mtls/certwatch"
+	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

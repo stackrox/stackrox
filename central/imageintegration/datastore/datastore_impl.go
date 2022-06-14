@@ -3,12 +3,12 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/imageintegration/store"
-	"github.com/stackrox/stackrox/central/role/resources"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/central/imageintegration/store"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (

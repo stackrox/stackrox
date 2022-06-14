@@ -13,14 +13,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth"
-	"github.com/stackrox/stackrox/pkg/auth/authproviders/idputil"
-	perm "github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/auth/tokens"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
-	"github.com/stackrox/stackrox/pkg/testutils/roletest"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth"
+	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
+	perm "github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/suite"
 )
 

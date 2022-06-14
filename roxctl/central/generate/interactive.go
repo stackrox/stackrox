@@ -12,11 +12,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/stackrox/stackrox/pkg/buildinfo"
-	"github.com/stackrox/stackrox/pkg/images/defaults"
-	"github.com/stackrox/stackrox/pkg/sliceutils"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/roxctl/common/flags"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"golang.org/x/crypto/ssh/terminal"
 )
 

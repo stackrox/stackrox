@@ -6,7 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/stackrox/generated/test"
+	"github.com/stackrox/rox/generated/test"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
-	"github.com/stackrox/stackrox/pkg/compliance/framework"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 // SystemdOwnershipCheck checks the users and groups of the file

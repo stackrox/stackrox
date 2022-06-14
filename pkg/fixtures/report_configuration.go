@@ -1,7 +1,7 @@
 package fixtures
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // GetValidReportConfiguration returns a mock report configuration

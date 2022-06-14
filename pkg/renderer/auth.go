@@ -5,8 +5,8 @@ import (
 	"crypto/rand"
 	"math/big"
 
-	"github.com/stackrox/stackrox/pkg/auth/htpasswd"
-	"github.com/stackrox/stackrox/pkg/grpc/authn/basic"
+	"github.com/stackrox/rox/pkg/auth/htpasswd"
+	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 )
 
 const (

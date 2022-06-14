@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	nodeComponentMultiplier "github.com/stackrox/stackrox/central/risk/multipliers/component/node"
-	"github.com/stackrox/stackrox/central/risk/scorer"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/scancomponent"
+	nodeComponentMultiplier "github.com/stackrox/rox/central/risk/multipliers/component/node"
+	"github.com/stackrox/rox/central/risk/scorer"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -1,6 +1,6 @@
 package registry
 
-import "github.com/stackrox/stackrox/pkg/sync"
+import "github.com/stackrox/rox/pkg/sync"
 
 var (
 	once   sync.Once

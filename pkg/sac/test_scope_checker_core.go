@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 // TestClusterScope contains cluster-level scope information (cluster included or list of included namespaces

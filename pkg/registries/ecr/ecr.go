@@ -14,12 +14,12 @@ import (
 	protobuftypes "github.com/gogo/protobuf/types"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/registries/docker"
-	"github.com/stackrox/stackrox/pkg/registries/types"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/registries/docker"
+	"github.com/stackrox/rox/pkg/registries/types"
 )
 
 var (

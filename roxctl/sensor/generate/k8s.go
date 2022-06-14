@@ -2,9 +2,9 @@ package generate
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/generated/storage"
-	clusterValidation "github.com/stackrox/stackrox/pkg/cluster"
-	"github.com/stackrox/stackrox/roxctl/common/util"
+	"github.com/stackrox/rox/generated/storage"
+	clusterValidation "github.com/stackrox/rox/pkg/cluster"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 type sensorGenerateK8sCommand struct {

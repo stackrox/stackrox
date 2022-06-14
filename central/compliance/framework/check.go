@@ -1,6 +1,6 @@
 package framework
 
-import pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
+import pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 
 // A Check is a single piece of logic executed as part of a compliance run. It usually corresponds to one or multiple
 // controls in a compliance standard.

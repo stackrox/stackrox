@@ -3,7 +3,7 @@ package store
 import (
 	"fmt"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type stringCollector struct {

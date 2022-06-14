@@ -6,12 +6,12 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/image"
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
-	"github.com/stackrox/stackrox/pkg/docker"
-	"github.com/stackrox/stackrox/pkg/docker/client"
-	internalTypes "github.com/stackrox/stackrox/pkg/docker/types"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/docker/client"
+	internalTypes "github.com/stackrox/rox/pkg/docker/types"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/time/rate"
 )
 

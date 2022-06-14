@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/stackrox/central/cluster/datastore"
-	datastoreMocks "github.com/stackrox/stackrox/central/cluster/datastore/mocks"
-	probeSourcesMocks "github.com/stackrox/stackrox/central/probesources/mocks"
-	"github.com/stackrox/stackrox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/stackrox/pkg/images/defaults"
-	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
-	"github.com/stackrox/stackrox/pkg/version/testutils"
+	"github.com/stackrox/rox/central/cluster/datastore"
+	datastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	probeSourcesMocks "github.com/stackrox/rox/central/probesources/mocks"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
 

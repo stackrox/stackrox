@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

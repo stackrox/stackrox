@@ -5,12 +5,12 @@ import (
 	"sync/atomic"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/networkpolicies/graph"
-	"github.com/stackrox/stackrox/central/sensor/service/common"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/networkpolicies/graph"
+	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type controller struct {

@@ -1,8 +1,8 @@
 package k8s
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	v1 "k8s.io/api/core/v1"
 )
 

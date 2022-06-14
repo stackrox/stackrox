@@ -1,8 +1,8 @@
 package pipeline
 
 import (
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/metrics"
 )
 
 // ActionToOperation converts a resource action to a metric op for recording.

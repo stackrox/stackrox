@@ -1,6 +1,6 @@
 package alert
 
-import "github.com/stackrox/stackrox/generated/storage"
+import "github.com/stackrox/rox/generated/storage"
 
 // IsDeployTimeAttemptedAlert indicates whether an alert is an attempted deploy-time alert.
 func IsDeployTimeAttemptedAlert(alert *storage.Alert) bool {

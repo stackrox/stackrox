@@ -1,9 +1,9 @@
 package policyutils
 
 import (
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // DeploymentExclusionToQuery returns the proto query to get all excluded deployments

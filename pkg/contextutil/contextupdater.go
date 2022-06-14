@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/stackrox/stackrox/pkg/grpc/util"
-	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/grpc/util"
+	"github.com/stackrox/rox/pkg/httputil"
 	"google.golang.org/grpc"
 )
 

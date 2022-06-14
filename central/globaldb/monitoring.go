@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/stackrox/central/globaldb/metrics"
+	"github.com/stackrox/rox/central/globaldb/metrics"
 	bolt "go.etcd.io/bbolt"
 )
 

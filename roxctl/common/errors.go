@@ -1,6 +1,6 @@
 package common
 
-import "github.com/stackrox/stackrox/pkg/errox"
+import "github.com/stackrox/rox/pkg/errox"
 
 var (
 	// ErrInvalidCommandOption indicates bad options provided by the user

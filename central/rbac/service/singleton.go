@@ -1,9 +1,9 @@
 package service
 
 import (
-	rolesDataStore "github.com/stackrox/stackrox/central/rbac/k8srole/datastore"
-	roleBindingsDataStore "github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore"
-	"github.com/stackrox/stackrox/pkg/sync"
+	rolesDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingsDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

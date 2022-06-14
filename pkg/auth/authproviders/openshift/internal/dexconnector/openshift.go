@@ -17,9 +17,9 @@ import (
 	"github.com/dexidp/dex/connector"
 	"github.com/dexidp/dex/storage/kubernetes/k8sapi"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/httputil/proxy"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2"
 )
 

@@ -4,9 +4,9 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/compliance/collection/containerruntimes/common"
-	collectionUtils "github.com/stackrox/stackrox/compliance/collection/utils"
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/compliance/collection/containerruntimes/common"
+	collectionUtils "github.com/stackrox/rox/compliance/collection/utils"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
 )
 
 const (

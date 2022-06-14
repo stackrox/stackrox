@@ -1,9 +1,9 @@
 package datastore
 
 import (
-	"github.com/stackrox/stackrox/central/compliance"
-	"github.com/stackrox/stackrox/central/compliance/datastore/types"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/central/compliance"
+	"github.com/stackrox/rox/central/compliance/datastore/types"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // ValidResultsAndSources decomposes the given map into the valid, most recent results, and a list of sources that store the

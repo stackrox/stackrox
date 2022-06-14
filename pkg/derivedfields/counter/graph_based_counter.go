@@ -3,11 +3,11 @@ package counter
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/pkg/dackbox"
-	"github.com/stackrox/stackrox/pkg/dackbox/graph"
-	"github.com/stackrox/stackrox/pkg/dbhelper"
-	"github.com/stackrox/stackrox/pkg/search/filtered"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/search/filtered"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // NewGraphBasedDerivedFieldCounter generates derived field count for input keys by traversing the RGraph

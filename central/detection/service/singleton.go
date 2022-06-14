@@ -1,14 +1,14 @@
 package service
 
 import (
-	clusterDatastore "github.com/stackrox/stackrox/central/cluster/datastore"
-	buildTimeDetection "github.com/stackrox/stackrox/central/detection/buildtime"
-	"github.com/stackrox/stackrox/central/detection/deploytime"
-	"github.com/stackrox/stackrox/central/enrichment"
-	imageDatastore "github.com/stackrox/stackrox/central/image/datastore"
-	"github.com/stackrox/stackrox/central/notifier/processor"
-	"github.com/stackrox/stackrox/central/risk/manager"
-	"github.com/stackrox/stackrox/pkg/sync"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
+	"github.com/stackrox/rox/central/detection/deploytime"
+	"github.com/stackrox/rox/central/enrichment"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

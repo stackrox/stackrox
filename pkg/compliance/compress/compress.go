@@ -1,7 +1,7 @@
 package compress
 
 import (
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
 )
 
 // ResultWrapper wraps a map of ComplianceStandardResults in an easyjson wrapper

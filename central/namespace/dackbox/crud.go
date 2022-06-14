@@ -1,7 +1,7 @@
 package dackbox
 
 import (
-	"github.com/stackrox/stackrox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/dbhelper"
 )
 
 var (

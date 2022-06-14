@@ -2,7 +2,7 @@ package indexer
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // WrapperRegistry is a registry of all indexers we should use to store messages.

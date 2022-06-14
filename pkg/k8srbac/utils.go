@@ -1,8 +1,8 @@
 package k8srbac
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // ReadResourceVerbs verbs are all possible verbs in a PolicyRule that give some read access.

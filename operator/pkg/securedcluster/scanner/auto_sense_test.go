@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	platform "github.com/stackrox/stackrox/operator/apis/platform/v1alpha1"
-	"github.com/stackrox/stackrox/operator/pkg/utils/testutils"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

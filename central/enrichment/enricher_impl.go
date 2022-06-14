@@ -3,12 +3,12 @@ package enrichment
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/image/datastore"
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/images/enricher"
-	"github.com/stackrox/stackrox/pkg/images/types"
-	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 var (

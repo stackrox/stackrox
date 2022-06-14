@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/networkgraph/config/datastore/internal/store"
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (

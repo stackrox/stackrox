@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	grpc_errors "github.com/stackrox/stackrox/pkg/grpc/errors"
+	grpc_errors "github.com/stackrox/rox/pkg/grpc/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

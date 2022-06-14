@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (

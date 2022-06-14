@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/stackrox/central/sac/datastore/mocks"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/secrets"
+	"github.com/stackrox/rox/central/sac/datastore/mocks"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/suite"
 )
 

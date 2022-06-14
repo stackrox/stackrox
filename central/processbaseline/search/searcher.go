@@ -3,14 +3,14 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/processbaseline/index"
-	"github.com/stackrox/stackrox/central/processbaseline/store"
-	"github.com/stackrox/stackrox/central/role/resources"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/sac"
-	pkgSearch "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/central/processbaseline/index"
+	"github.com/stackrox/rox/central/processbaseline/store"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 var (

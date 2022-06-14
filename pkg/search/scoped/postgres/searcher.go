@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/postgres/mapping"
-	"github.com/stackrox/stackrox/pkg/search/scoped"
-	"github.com/stackrox/stackrox/pkg/utils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
+	"github.com/stackrox/rox/pkg/search/scoped"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // WithScoping allows the input searcher to be scoped.

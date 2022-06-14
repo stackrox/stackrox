@@ -4,12 +4,12 @@ import (
 	"testing"
 
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/cve"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/scancomponent"
-	"github.com/stackrox/stackrox/pkg/search/postgres"
-	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/scancomponent"
+	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -3,10 +3,10 @@ package backend
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/apitoken/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/tokens"
+	"github.com/stackrox/rox/central/apitoken/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 )
 
 // Backend is the backend for the API tokens component.

@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // GetFlags controls the behavior of the Get... methods of a Store.

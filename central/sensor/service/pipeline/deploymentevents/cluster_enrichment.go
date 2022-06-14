@@ -3,8 +3,8 @@ package deploymentevents
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/cluster/datastore"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func newClusterEnrichment(clusters datastore.DataStore) *clusterEnrichmentImpl {

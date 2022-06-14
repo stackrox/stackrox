@@ -3,14 +3,14 @@ package gatherers
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/env"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/providers"
-	"github.com/stackrox/stackrox/pkg/telemetry"
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
-	"github.com/stackrox/stackrox/pkg/telemetry/gatherers"
-	"github.com/stackrox/stackrox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/providers"
+	"github.com/stackrox/rox/pkg/telemetry"
+	"github.com/stackrox/rox/pkg/telemetry/data"
+	"github.com/stackrox/rox/pkg/telemetry/gatherers"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"k8s.io/client-go/kubernetes"
 )
 

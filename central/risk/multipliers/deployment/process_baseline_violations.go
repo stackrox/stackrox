@@ -4,10 +4,10 @@ import (
 	"context"
 	"strings"
 
-	"github.com/stackrox/stackrox/central/processbaseline/evaluator"
-	"github.com/stackrox/stackrox/central/risk/multipliers"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/rox/central/processbaseline/evaluator"
+	"github.com/stackrox/rox/central/risk/multipliers"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 const (

@@ -9,17 +9,17 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/httputil/proxy"
-	imageTypes "github.com/stackrox/stackrox/pkg/images/types"
-	imageUtils "github.com/stackrox/stackrox/pkg/images/utils"
-	"github.com/stackrox/stackrox/pkg/logging"
-	quayRegistry "github.com/stackrox/stackrox/pkg/registries/quay"
-	registryTypes "github.com/stackrox/stackrox/pkg/registries/types"
-	"github.com/stackrox/stackrox/pkg/scanners/types"
-	"github.com/stackrox/stackrox/pkg/urlfmt"
-	"github.com/stackrox/stackrox/pkg/utils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
+	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/logging"
+	quayRegistry "github.com/stackrox/rox/pkg/registries/quay"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (

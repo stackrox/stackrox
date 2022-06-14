@@ -2,9 +2,9 @@ package service
 
 import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/stackrox/stackrox/central/sensor/service/connection"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/grpc"
 )
 
 // Service is the v1.SensorUpgrade service.

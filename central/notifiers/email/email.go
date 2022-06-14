@@ -17,16 +17,16 @@ import (
 	"time"
 
 	"github.com/mitchellh/go-wordwrap"
-	mitreDataStore "github.com/stackrox/stackrox/central/mitre/datastore"
-	namespaceDataStore "github.com/stackrox/stackrox/central/namespace/datastore"
-	"github.com/stackrox/stackrox/central/notifiers"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/branding"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/httputil/proxy"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/utils"
+	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/branding"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

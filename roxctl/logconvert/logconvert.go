@@ -6,10 +6,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/roxctl/common/environment"
-	"github.com/stackrox/stackrox/roxctl/common/util"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 var (

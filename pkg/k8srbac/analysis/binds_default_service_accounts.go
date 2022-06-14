@@ -1,8 +1,8 @@
 package analysis
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/k8srbac"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/k8srbac"
 )
 
 // getRoleBindingsForDefaultServiceAccounts returns a list of the bindings that bind a default service account to a role.

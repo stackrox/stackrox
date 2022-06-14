@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stretchr/testify/assert"
 	bolt "go.etcd.io/bbolt"
 )

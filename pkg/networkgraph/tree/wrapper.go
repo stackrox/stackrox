@@ -2,10 +2,10 @@ package tree
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	pkgNet "github.com/stackrox/stackrox/pkg/net"
-	"github.com/stackrox/stackrox/pkg/networkgraph"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/generated/storage"
+	pkgNet "github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // networkTreeWrapper is a wrapper around networkTreeImpl structure that handles both IPv4 and IPv6 networks.

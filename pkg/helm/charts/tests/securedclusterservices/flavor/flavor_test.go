@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
-	"github.com/stackrox/stackrox/image"
-	"github.com/stackrox/stackrox/pkg/buildinfo"
-	"github.com/stackrox/stackrox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/stackrox/pkg/helm/charts"
-	helmChartTestUtils "github.com/stackrox/stackrox/pkg/helm/charts/testutils"
-	"github.com/stackrox/stackrox/pkg/images/defaults"
-	"github.com/stackrox/stackrox/pkg/version/testutils"
+	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/helm/charts"
+	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
+	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/version/testutils"
 )
 
 const testDir = "testdata/helmtest"

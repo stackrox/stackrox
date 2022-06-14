@@ -3,7 +3,7 @@ package scanners
 import (
 	"errors"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 // VulnDefsInfoProvider provides functionality to obtain vulnerability definitions information.

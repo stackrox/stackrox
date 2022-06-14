@@ -3,8 +3,8 @@ package m101tom102
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/migrator/bolthelpers"
-	"github.com/stackrox/stackrox/pkg/testutils"
+	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
 )

@@ -2,8 +2,8 @@ package images
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/env"
-	helmUtil "github.com/stackrox/stackrox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/env"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 

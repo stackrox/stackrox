@@ -1,6 +1,6 @@
 package defaults
 
-import "github.com/stackrox/stackrox/pkg/env"
+import "github.com/stackrox/rox/pkg/env"
 
 const (
 	imageFlavorEnvName = "ROX_IMAGE_FLAVOR"

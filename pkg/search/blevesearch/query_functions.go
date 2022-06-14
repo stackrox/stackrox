@@ -8,11 +8,11 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/parse"
-	pkgSearch "github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/enumregistry"
-	"github.com/stackrox/stackrox/pkg/utils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/parse"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type queryFunction func(category v1.SearchCategory, field, value string, queryModifiers ...queryModifier) (query.Query, error)

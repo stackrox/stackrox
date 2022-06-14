@@ -3,7 +3,7 @@ package compound
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -3,7 +3,7 @@ package bundle
 import (
 	"io"
 
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type trackedContents struct {

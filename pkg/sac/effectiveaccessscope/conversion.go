@@ -6,7 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 )

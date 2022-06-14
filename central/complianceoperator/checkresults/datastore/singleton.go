@@ -1,13 +1,13 @@
 package datastore
 
 import (
-	store "github.com/stackrox/stackrox/central/complianceoperator/checkresults/store"
-	"github.com/stackrox/stackrox/central/complianceoperator/checkresults/store/postgres"
-	"github.com/stackrox/stackrox/central/complianceoperator/checkresults/store/rocksdb"
-	"github.com/stackrox/stackrox/central/globaldb"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	store "github.com/stackrox/rox/central/complianceoperator/checkresults/store"
+	"github.com/stackrox/rox/central/complianceoperator/checkresults/store/postgres"
+	"github.com/stackrox/rox/central/complianceoperator/checkresults/store/rocksdb"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

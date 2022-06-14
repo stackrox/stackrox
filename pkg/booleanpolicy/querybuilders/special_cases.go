@@ -5,11 +5,11 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/query"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/predicate/basematchers"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/query"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ForK8sRBAC returns a specific query builder for K8s RBAC.

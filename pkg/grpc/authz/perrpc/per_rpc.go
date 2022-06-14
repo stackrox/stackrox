@@ -3,9 +3,9 @@ package perrpc
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/pkg/grpc/authz"
-	"github.com/stackrox/stackrox/pkg/grpc/authz/deny"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/deny"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

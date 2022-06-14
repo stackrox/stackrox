@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/networkgraph/aggregator"
-	graphConfigDS "github.com/stackrox/stackrox/central/networkgraph/config/datastore"
-	"github.com/stackrox/stackrox/central/networkgraph/entity/networktree"
-	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore/internal/store"
-	"github.com/stackrox/stackrox/pkg/expiringcache"
-	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/rox/central/networkgraph/aggregator"
+	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
+	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
+	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 type clusterDataStoreImpl struct {

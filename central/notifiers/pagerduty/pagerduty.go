@@ -13,12 +13,12 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/notifiers"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/httputil/proxy"
-	imagesTypes "github.com/stackrox/stackrox/pkg/images/types"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
+	imagesTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (

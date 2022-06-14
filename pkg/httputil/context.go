@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 type contextBoundRoundTripper struct {

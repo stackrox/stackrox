@@ -4,7 +4,7 @@ import (
 	"sort"
 	"testing"
 
-	pkgNet "github.com/stackrox/stackrox/pkg/net"
+	pkgNet "github.com/stackrox/rox/pkg/net"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -1,6 +1,6 @@
 package images
 
-import "github.com/stackrox/stackrox/pkg/env"
+import "github.com/stackrox/rox/pkg/env"
 
 // Environment variable settings for related image overrides.
 var (

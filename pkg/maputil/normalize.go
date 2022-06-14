@@ -1,6 +1,6 @@
 package maputil
 
-import "github.com/stackrox/stackrox/pkg/reflectutils"
+import "github.com/stackrox/rox/pkg/reflectutils"
 
 // NormalizeGenericMap removes empty values from the provided generic map.
 func NormalizeGenericMap(src map[string]interface{}) map[string]interface{} {

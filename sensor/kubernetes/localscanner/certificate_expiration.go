@@ -7,7 +7,7 @@ import (
 
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 var (

@@ -9,8 +9,8 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	processindicator "github.com/stackrox/stackrox/central/processindicator"
-	pruner "github.com/stackrox/stackrox/central/processindicator/pruner"
+	processindicator "github.com/stackrox/rox/central/processindicator"
+	pruner "github.com/stackrox/rox/central/processindicator/pruner"
 )
 
 // MockPruner is a mock of Pruner interface.

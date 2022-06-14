@@ -1,18 +1,18 @@
 package gatherers
 
 import (
-	clusterDatastore "github.com/stackrox/stackrox/central/cluster/datastore"
-	depDatastore "github.com/stackrox/stackrox/central/deployment/datastore"
-	"github.com/stackrox/stackrox/central/globaldb"
-	"github.com/stackrox/stackrox/central/globalindex"
-	"github.com/stackrox/stackrox/central/grpc/metrics"
-	installation "github.com/stackrox/stackrox/central/installation/store"
-	namespaceDatastore "github.com/stackrox/stackrox/central/namespace/datastore"
-	nodeDatastore "github.com/stackrox/stackrox/central/node/globaldatastore"
-	"github.com/stackrox/stackrox/central/sensor/service/connection"
-	sensorUpgradeConfigDatastore "github.com/stackrox/stackrox/central/sensorupgradeconfig/datastore"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/telemetry/gatherers"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	depDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/grpc/metrics"
+	installation "github.com/stackrox/rox/central/installation/store"
+	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	sensorUpgradeConfigDatastore "github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/gatherers"
 )
 
 var (

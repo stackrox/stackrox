@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/stackrox/stackrox/central/probeupload/manager"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/probeupload/manager"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

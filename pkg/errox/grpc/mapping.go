@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/rox/pkg/errox"
 	"google.golang.org/grpc/codes"
 )
 

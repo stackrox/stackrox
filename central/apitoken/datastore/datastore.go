@@ -3,9 +3,9 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/apitoken/datastore/internal/store"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // DataStore is the gateway to the DB that enforces access control.

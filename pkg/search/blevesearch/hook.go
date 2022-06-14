@@ -3,7 +3,7 @@ package blevesearch
 import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 // ResultsFilterFunc is a function for filtering Bleve search results.

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/jwt"
+	"github.com/stackrox/rox/pkg/jwt"
 )
 
 // Validator is responsible for validating (and thus parsing) tokens.

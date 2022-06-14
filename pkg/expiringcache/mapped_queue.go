@@ -3,7 +3,7 @@ package expiringcache
 import (
 	"container/list"
 
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var log = logging.LoggerForModule()

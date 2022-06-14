@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/machinebox/graphql"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/testutils"
-	"github.com/stackrox/stackrox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

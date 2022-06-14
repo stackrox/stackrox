@@ -3,14 +3,14 @@ package buildtime
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/detection"
-	policyDataStore "github.com/stackrox/stackrox/central/policy/datastore"
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/generated/storage"
-	policyUtils "github.com/stackrox/stackrox/pkg/policies"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/detection"
+	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
+	policyUtils "github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

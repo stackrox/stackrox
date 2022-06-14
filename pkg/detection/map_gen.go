@@ -6,7 +6,7 @@
 package detection
 
 import (
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // CloneStringCompiledPolicyMap clones a map of the given type.

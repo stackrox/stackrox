@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/cluster/datastore"
-	"github.com/stackrox/stackrox/central/probesources"
-	"github.com/stackrox/stackrox/central/risk/manager"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/probesources"
+	"github.com/stackrox/rox/central/risk/manager"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
 )
 
 // Service provides the interface to the microservice that serves alert data.

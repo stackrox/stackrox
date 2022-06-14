@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/stackrox/central/risk/multipliers"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/scancomponent"
+	"github.com/stackrox/rox/central/risk/multipliers"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/assert"
 )
 

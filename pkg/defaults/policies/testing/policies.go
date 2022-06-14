@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/defaults/policies"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/defaults/policies"
 )
 
 // GetDefaultPolicy returns a default policy by its name

@@ -2,8 +2,8 @@ package scopecomp
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/regexutils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/regexutils"
 )
 
 // CompiledScope a transformed scope into the relevant regexes

@@ -8,9 +8,9 @@ import (
 	"github.com/blevesearch/bleve/search"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	searchPkg "github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/blevesearch/validpositions"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
 )
 
 func treeForField(locationsMap search.FieldTermLocationMap, fieldPath string) *validpositions.Tree {

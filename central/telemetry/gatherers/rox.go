@@ -3,7 +3,7 @@ package gatherers
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
 // RoxGatherer is the top level gatherer that encompasses all the information we collect for Telemetry

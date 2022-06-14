@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	flag "github.com/spf13/pflag"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const hostProc = "/host/proc"

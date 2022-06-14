@@ -9,10 +9,10 @@ import (
 
 	. "github.com/dave/jennifer/jen"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/tools/generate-helpers/boltbindings/operations"
-	"github.com/stackrox/stackrox/tools/generate-helpers/common/packagenames"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/tools/generate-helpers/boltbindings/operations"
+	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
 )
 
 func generateFunctions(props *operations.GeneratorProperties, methods []string) (interfaceMethods []Code, implementations []Code) {
@@ -162,7 +162,7 @@ func main() {
 	}
 
 	props := operations.GeneratorProperties{}
-	c.Flags().StringVar(&props.Pkg, "package", "github.com/stackrox/stackrox/generated/storage", "the package of the object being stored")
+	c.Flags().StringVar(&props.Pkg, "package", "github.com/stackrox/rox/generated/storage", "the package of the object being stored")
 
 	c.Flags().StringVar(&props.Object, "object", "", "the (Go) name of the object being stored")
 	utils.Must(c.MarkFlagRequired("object"))

@@ -1,9 +1,9 @@
 package common
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
-	"github.com/stackrox/stackrox/pkg/compliance/msgfmt"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 )
 
 // CommandLineFileOwnership returns a check that checks the ownership of a file that is specified by the command line

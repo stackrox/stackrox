@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/compliance/compress"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/compress"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/suite"
 )
 

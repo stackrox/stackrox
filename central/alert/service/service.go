@@ -3,13 +3,13 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/alert/datastore"
-	notifierProcessor "github.com/stackrox/stackrox/central/notifier/processor"
-	baselineDatastore "github.com/stackrox/stackrox/central/processbaseline/datastore"
-	"github.com/stackrox/stackrox/central/sensor/service/connection"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/central/alert/datastore"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	baselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

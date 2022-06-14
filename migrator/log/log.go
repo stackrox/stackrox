@@ -1,7 +1,7 @@
 package log
 
 import (
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

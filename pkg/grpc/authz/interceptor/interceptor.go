@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/stackrox/stackrox/pkg/grpc/authz/deny"
+	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"google.golang.org/grpc"
 )
 

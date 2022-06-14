@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	pkgGRPC "github.com/stackrox/stackrox/pkg/grpc"
-	"github.com/stackrox/stackrox/pkg/grpc/errors"
+	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"

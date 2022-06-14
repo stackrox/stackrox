@@ -1,11 +1,11 @@
 package datastore
 
 import (
-	"github.com/stackrox/stackrox/central/globaldb"
-	"github.com/stackrox/stackrox/central/nodecomponentcveedge/datastore/search"
-	"github.com/stackrox/stackrox/central/nodecomponentcveedge/datastore/store/postgres"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/search"
+	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

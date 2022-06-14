@@ -3,7 +3,7 @@ package testutils
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stretchr/testify/assert"
 )
 

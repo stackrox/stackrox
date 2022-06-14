@@ -1,9 +1,9 @@
 package service
 
 import (
-	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
-	"github.com/stackrox/stackrox/central/clusterinit/backend"
-	"github.com/stackrox/stackrox/pkg/sync"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/clusterinit/backend"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

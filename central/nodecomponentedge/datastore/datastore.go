@@ -3,13 +3,13 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/nodecomponentedge/index"
-	"github.com/stackrox/stackrox/central/nodecomponentedge/search"
-	"github.com/stackrox/stackrox/central/nodecomponentedge/store"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/dackbox/graph"
-	searchPkg "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/central/nodecomponentedge/index"
+	"github.com/stackrox/rox/central/nodecomponentedge/search"
+	"github.com/stackrox/rox/central/nodecomponentedge/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to Node/Component edge storage.

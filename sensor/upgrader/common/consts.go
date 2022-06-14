@@ -1,6 +1,6 @@
 package common
 
-import "github.com/stackrox/stackrox/pkg/namespaces"
+import "github.com/stackrox/rox/pkg/namespaces"
 
 const (
 	// Namespace is the namespace in which the upgrader operates

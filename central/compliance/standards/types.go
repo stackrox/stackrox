@@ -3,11 +3,11 @@ package standards
 import (
 	"sort"
 
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	"github.com/stackrox/stackrox/central/compliance/standards/metadata"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/standards/metadata"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // Standard contains information about a compliance standard.

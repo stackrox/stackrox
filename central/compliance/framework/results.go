@@ -1,7 +1,7 @@
 package framework
 
 import (
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // EvidenceRecord stores the evidence from a compliance check for a single target.

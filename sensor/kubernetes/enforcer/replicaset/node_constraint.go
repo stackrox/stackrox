@@ -3,9 +3,9 @@ package replicaset
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/pkg/retry"
-	"github.com/stackrox/stackrox/sensor/kubernetes/enforcer/common"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
 	appsV1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

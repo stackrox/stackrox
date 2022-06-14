@@ -2,12 +2,12 @@ package runtime
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/stackrox/pkg/detection"
-	"github.com/stackrox/stackrox/pkg/kubernetes"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

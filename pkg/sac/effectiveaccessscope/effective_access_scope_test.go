@@ -3,9 +3,9 @@ package effectiveaccessscope
 import (
 	"testing"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	labelUtils "github.com/stackrox/stackrox/pkg/labels"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	labelUtils "github.com/stackrox/rox/pkg/labels"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"

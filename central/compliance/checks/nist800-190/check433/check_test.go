@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	"github.com/stackrox/stackrox/central/compliance/framework/mocks"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/networkgraph"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/framework/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 

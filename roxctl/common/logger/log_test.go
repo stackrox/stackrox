@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/fatih/color"
-	io2 "github.com/stackrox/stackrox/roxctl/common/io"
-	"github.com/stackrox/stackrox/roxctl/common/printer"
+	io2 "github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 )
 

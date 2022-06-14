@@ -3,8 +3,8 @@ package extensions
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/operator/pkg/types"
-	"github.com/stackrox/stackrox/operator/pkg/utils/testutils"
+	"github.com/stackrox/rox/operator/pkg/types"
+	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

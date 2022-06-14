@@ -1,15 +1,15 @@
 package manager
 
 import (
-	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
-	namespaceDataStore "github.com/stackrox/stackrox/central/namespace/datastore"
-	notifierDataStore "github.com/stackrox/stackrox/central/notifier/datastore"
-	"github.com/stackrox/stackrox/central/notifier/processor"
-	reportConfigDS "github.com/stackrox/stackrox/central/reportconfigurations/datastore"
-	"github.com/stackrox/stackrox/central/reports/scheduler"
-	roleDataStore "github.com/stackrox/stackrox/central/role/datastore"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/sync"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/notifier/processor"
+	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	"github.com/stackrox/rox/central/reports/scheduler"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

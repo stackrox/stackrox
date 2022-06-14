@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 )
 
 const (

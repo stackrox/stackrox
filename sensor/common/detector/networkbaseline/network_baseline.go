@@ -1,9 +1,9 @@
 package networkbaseline
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/networkgraph/networkbaseline"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Evaluator encapsulates the interface to the network baseline evaluator

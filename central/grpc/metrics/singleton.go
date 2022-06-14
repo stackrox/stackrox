@@ -1,8 +1,8 @@
 package metrics
 
 import (
-	"github.com/stackrox/stackrox/pkg/grpc/metrics"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/grpc/metrics"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

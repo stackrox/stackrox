@@ -2,8 +2,8 @@ package authz
 
 import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/grpc/authz/internal/permissioncheck"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
 )
 
 // GetPermissionMapForServiceMethod retrieves a PermissionMap of all permissions checked

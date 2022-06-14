@@ -6,9 +6,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/stringutils"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func parseMapQuery(label string) (string, string) {

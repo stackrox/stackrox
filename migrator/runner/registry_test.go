@@ -3,8 +3,8 @@ package runner
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/migrator/migrations"
-	pkgMigrations "github.com/stackrox/stackrox/pkg/migrations"
+	"github.com/stackrox/rox/migrator/migrations"
+	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/buildinfo"
-	"github.com/stackrox/stackrox/pkg/images/defaults"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

@@ -3,8 +3,8 @@ package blevesearch
 import (
 	"context"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // UnsafeSearcher is a searcher that does not take in a context to perform SAC enforcement.

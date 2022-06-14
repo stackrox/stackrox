@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
-	"github.com/stackrox/stackrox/pkg/buildinfo"
-	"github.com/stackrox/stackrox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/images/defaults"
 )
 
 const (

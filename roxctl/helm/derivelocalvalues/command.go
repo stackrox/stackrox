@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/pkg/errox"
-	env "github.com/stackrox/stackrox/roxctl/common/environment"
-	"github.com/stackrox/stackrox/roxctl/helm/internal/common"
+	"github.com/stackrox/rox/pkg/errox"
+	env "github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/helm/internal/common"
 )
 
 const (

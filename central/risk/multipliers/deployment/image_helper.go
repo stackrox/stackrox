@@ -3,8 +3,8 @@ package deployment
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/mathutil"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/mathutil"
 )
 
 type imageMultiplier struct {

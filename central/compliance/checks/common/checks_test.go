@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/stackrox/central/compliance/checks/testutils"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/central/compliance/checks/testutils"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func TestCheckSecretsInEnv(t *testing.T) {

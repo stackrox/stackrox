@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/stackrox/central/deployment/index"
-	"github.com/stackrox/stackrox/central/deployment/store"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/postgres/schema"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/blevesearch"
-	"github.com/stackrox/stackrox/pkg/search/paginated"
-	"github.com/stackrox/stackrox/pkg/search/scoped/postgres"
-	"github.com/stackrox/stackrox/pkg/search/sortfields"
+	"github.com/stackrox/rox/central/deployment/index"
+	"github.com/stackrox/rox/central/deployment/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/scoped/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.

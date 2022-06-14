@@ -1,6 +1,6 @@
 package bundle
 
-import "github.com/stackrox/stackrox/pkg/k8sutil"
+import "github.com/stackrox/rox/pkg/k8sutil"
 
 // upgradeContext is a trimmed version of *upgradectx.UpgradeContext to facilitate unit testing.
 // TODO: usages of *upgradectx.UpgradeContext should be converted to an interface everywhere.

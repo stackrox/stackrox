@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/stackrox/stackrox/pkg/auth"
-	"github.com/stackrox/stackrox/pkg/contextutil"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/pkg/auth"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/logging"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 

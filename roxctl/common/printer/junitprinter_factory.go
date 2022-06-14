@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/printers"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/printers"
 )
 
 // JUnitPrinterFactory holds all configuration options for a JUnit printer.

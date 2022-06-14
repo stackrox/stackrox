@@ -7,8 +7,8 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/cvss"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cvss"
 )
 
 type sortRecord struct {

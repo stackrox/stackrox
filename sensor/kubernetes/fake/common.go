@@ -3,7 +3,7 @@ package fake
 import (
 	"math/rand"
 
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/uuid"
 	"k8s.io/apimachinery/pkg/types"
 )
 

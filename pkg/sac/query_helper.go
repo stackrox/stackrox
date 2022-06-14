@@ -1,9 +1,9 @@
 package sac
 
 import (
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/sac/effectiveaccessscope"
-	"github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (

@@ -6,12 +6,12 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/node/mappings"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/scancomponent"
-	"github.com/stackrox/stackrox/pkg/search"
-	utils "github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/node/mappings"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/scancomponent"
+	"github.com/stackrox/rox/pkg/search"
+	utils "github.com/stackrox/rox/pkg/utils"
 )
 
 // Resolvers on Embedded Scan Object.

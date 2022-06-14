@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/stackrox/central/compliance/checks/testutils"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/central/compliance/checks/testutils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type alert struct {

@@ -1,17 +1,17 @@
 package dackbox
 
 import (
-	clusterMappings "github.com/stackrox/stackrox/central/cluster/index/mappings"
-	componentCVEEdgeMappings "github.com/stackrox/stackrox/central/componentcveedge/mappings"
-	cveMappings "github.com/stackrox/stackrox/central/cve/mappings"
-	componentMappings "github.com/stackrox/stackrox/central/imagecomponent/mappings"
-	imageComponentEdgeMappings "github.com/stackrox/stackrox/central/imagecomponentedge/mappings"
-	imageCVEEdgeMappings "github.com/stackrox/stackrox/central/imagecveedge/mappings"
-	nodeMappings "github.com/stackrox/stackrox/central/node/index/mappings"
-	nodeComponentEdgeMappings "github.com/stackrox/stackrox/central/nodecomponentedge/mappings"
-	"github.com/stackrox/stackrox/pkg/search"
-	deploymentMappings "github.com/stackrox/stackrox/pkg/search/options/deployments"
-	imageMappings "github.com/stackrox/stackrox/pkg/search/options/images"
+	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
+	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
+	cveMappings "github.com/stackrox/rox/central/cve/mappings"
+	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
+	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
+	imageCVEEdgeMappings "github.com/stackrox/rox/central/imagecveedge/mappings"
+	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
+	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
+	"github.com/stackrox/rox/pkg/search"
+	deploymentMappings "github.com/stackrox/rox/pkg/search/options/deployments"
+	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
 )
 
 // These options maps are used in searchers where the first match is the searcher used

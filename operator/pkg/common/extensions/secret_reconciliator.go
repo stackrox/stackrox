@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/operator/pkg/types"
-	"github.com/stackrox/stackrox/operator/pkg/utils"
-	pkgUtils "github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/operator/pkg/types"
+	"github.com/stackrox/rox/operator/pkg/utils"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	coreV1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

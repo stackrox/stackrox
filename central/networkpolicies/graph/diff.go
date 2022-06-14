@@ -4,9 +4,9 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/sliceutils"
-	"github.com/stackrox/stackrox/pkg/utils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func getAdjacentNodeIDs(adjacencies map[string]*v1.NetworkEdgePropertiesBundle) []string {

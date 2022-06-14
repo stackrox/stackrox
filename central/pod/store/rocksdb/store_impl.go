@@ -1,5 +1,5 @@
 package rocksdb
 
-import "github.com/stackrox/stackrox/central/pod/store"
+import "github.com/stackrox/rox/central/pod/store"
 
 var _ store.Store = (*storeImpl)(nil)

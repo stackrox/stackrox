@@ -10,17 +10,17 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/fileutils"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/mathutil"
-	"github.com/stackrox/stackrox/pkg/stringutils"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/roxctl/central/db/transfer"
-	"github.com/stackrox/stackrox/roxctl/common/download"
-	"github.com/stackrox/stackrox/roxctl/common/environment"
-	"github.com/stackrox/stackrox/roxctl/common/flags"
-	"github.com/stackrox/stackrox/roxctl/common/util"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/mathutil"
+	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/central/db/transfer"
+	"github.com/stackrox/rox/roxctl/common/download"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 const (

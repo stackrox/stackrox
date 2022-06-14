@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/stackrox/stackrox/central/jwt"
-	"github.com/stackrox/stackrox/pkg/certgen"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/images/defaults"
-	"github.com/stackrox/stackrox/pkg/mtls"
-	"github.com/stackrox/stackrox/pkg/renderer"
+	"github.com/stackrox/rox/central/jwt"
+	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/renderer"
 	"google.golang.org/grpc/codes"
 )
 

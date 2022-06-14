@@ -3,7 +3,7 @@ package concurrency
 import (
 	"hash/fnv"
 
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // A KeyedRWMutex allows callers to synchronize a block of code based on a key.

@@ -3,11 +3,11 @@ package common
 import (
 	"fmt"
 
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
-	"github.com/stackrox/stackrox/generated/storage"
-	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
-	"github.com/stackrox/stackrox/pkg/compliance/msgfmt"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/storage"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 )
 
 // PerNodeCheck takes a function that handles a ComplianceReturn object and writes a check around that

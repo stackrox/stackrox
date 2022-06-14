@@ -3,8 +3,8 @@ package common
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/detection/deploytime"
-	pkgKubernetes "github.com/stackrox/stackrox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/detection/deploytime"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stretchr/testify/assert"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"

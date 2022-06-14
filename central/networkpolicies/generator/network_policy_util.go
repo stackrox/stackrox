@@ -1,8 +1,8 @@
 package generator
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/labels"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/labels"
 )
 
 func checkPolicyType(policy *storage.NetworkPolicy, policyType storage.NetworkPolicyType) bool {

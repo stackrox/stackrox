@@ -1,12 +1,12 @@
 package enricher
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
-	pkgMetrics "github.com/stackrox/stackrox/pkg/metrics"
-	"github.com/stackrox/stackrox/pkg/scanners"
-	"github.com/stackrox/stackrox/pkg/scanners/clairify"
-	"github.com/stackrox/stackrox/pkg/scanners/types"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/scanners"
+	"github.com/stackrox/rox/pkg/scanners/clairify"
+	"github.com/stackrox/rox/pkg/scanners/types"
 )
 
 var (

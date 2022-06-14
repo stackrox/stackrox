@@ -1,9 +1,9 @@
 package bundle
 
 import (
-	"github.com/stackrox/stackrox/pkg/k8sutil"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
 
 var (

@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"github.com/stackrox/stackrox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 )
 
 // Modification represents a readable change to a Graph.

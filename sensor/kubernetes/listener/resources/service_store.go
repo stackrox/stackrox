@@ -2,7 +2,7 @@ package resources
 
 import (
 	routeV1 "github.com/openshift/api/route/v1"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sync"
 	v1 "k8s.io/api/core/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"

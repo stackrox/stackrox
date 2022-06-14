@@ -6,10 +6,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/sac/effectiveaccessscope"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // ScopeCheckerCoreImpl can represent a Verb, a Noun, a Cluster, or a Namespace

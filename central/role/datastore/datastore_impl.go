@@ -4,15 +4,15 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	rolePkg "github.com/stackrox/stackrox/central/role"
-	"github.com/stackrox/stackrox/central/role/resources"
-	rocksDBStore "github.com/stackrox/stackrox/central/role/store"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/sync"
+	rolePkg "github.com/stackrox/rox/central/role"
+	"github.com/stackrox/rox/central/role/resources"
+	rocksDBStore "github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

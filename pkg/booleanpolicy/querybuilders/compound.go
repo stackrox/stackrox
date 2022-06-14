@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/query"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/query"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 // ForCompound returns a custom query builder for a compound field that contains <count> values, separated by =.

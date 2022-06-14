@@ -6,12 +6,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	"github.com/stackrox/stackrox/central/compliance/standards"
-	"github.com/stackrox/stackrox/central/compliance/standards/metadata"
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/standards"
+	"github.com/stackrox/rox/central/compliance/standards/metadata"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // To run this benchmark download sample data from the Compliance Checks In Nodes design doc

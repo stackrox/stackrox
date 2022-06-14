@@ -1,6 +1,6 @@
 package crud
 
-import "github.com/stackrox/stackrox/pkg/features"
+import "github.com/stackrox/rox/pkg/features"
 
 // DeleterOption represents an option on a created Deleter.
 type DeleterOption func(*deleterImpl)

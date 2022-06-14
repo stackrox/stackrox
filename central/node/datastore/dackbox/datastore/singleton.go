@@ -1,11 +1,11 @@
 package datastore
 
 import (
-	"github.com/stackrox/stackrox/central/globaldb/dackbox"
-	"github.com/stackrox/stackrox/central/globalindex"
-	"github.com/stackrox/stackrox/central/ranking"
-	riskDS "github.com/stackrox/stackrox/central/risk/datastore"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/globaldb/dackbox"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/ranking"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

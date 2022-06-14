@@ -3,7 +3,7 @@ package tree
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/networkgraph/testutils"
+	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stretchr/testify/require"
 )
 

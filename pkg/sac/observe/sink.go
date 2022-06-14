@@ -3,8 +3,8 @@ package observe
 import (
 	"context"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/sync"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // AuthzTraceSink is a sink for authz traces which uses channels as the way of communication.

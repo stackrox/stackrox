@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stretchr/testify/assert"
 )
 

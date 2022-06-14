@@ -1,6 +1,6 @@
 package image
 
-import "github.com/stackrox/stackrox/central/risk/multipliers/component"
+import "github.com/stackrox/rox/central/risk/multipliers/component"
 
 const (
 	// VulnerabilitiesHeading is the risk result name for scores calculated by this multiplier.

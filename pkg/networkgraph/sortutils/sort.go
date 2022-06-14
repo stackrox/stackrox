@@ -3,7 +3,7 @@ package sortutils
 import (
 	"bytes"
 
-	pkgNet "github.com/stackrox/stackrox/pkg/net"
+	pkgNet "github.com/stackrox/rox/pkg/net"
 )
 
 // SortableIPv4NetworkSlice allows us to sort the IPv4 networks in ascending lexical byte order. Since, the host

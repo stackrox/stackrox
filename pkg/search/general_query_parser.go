@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/set"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // generalQueryParser provides parsing functionality for search requests.

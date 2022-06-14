@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/pkg/detection/deploytime"
 )
 
 // ApplyNodeConstraintToObj modifies some input type (Assuming it has a spec field) and updates it to have an

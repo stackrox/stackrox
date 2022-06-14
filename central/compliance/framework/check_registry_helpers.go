@@ -1,9 +1,9 @@
 package framework
 
 import (
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // RegisterChecks registers a check in the global registry.

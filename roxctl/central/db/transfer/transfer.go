@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/timestamp"
-	"github.com/stackrox/stackrox/roxctl/common"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/vbauerster/mpb/v4"
 )
 

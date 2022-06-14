@@ -1,6 +1,6 @@
 package branding
 
-import "github.com/stackrox/stackrox/pkg/env"
+import "github.com/stackrox/rox/pkg/env"
 
 const (
 	// ProductBrandingEnvName is the name of environment variable that defines product branding: commercial or open source.

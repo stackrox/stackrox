@@ -1,12 +1,12 @@
 package resources
 
 import (
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/features"
-	networkPolicyConversion "github.com/stackrox/stackrox/pkg/protoconv/networkpolicy"
-	"github.com/stackrox/stackrox/sensor/common/detector"
-	"github.com/stackrox/stackrox/sensor/common/store"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/store"
 	networkingV1 "k8s.io/api/networking/v1"
 )
 

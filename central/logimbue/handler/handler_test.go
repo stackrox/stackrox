@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/logimbue/store/mocks"
+	"github.com/stackrox/rox/central/logimbue/store/mocks"
 	"github.com/stretchr/testify/suite"
 )
 

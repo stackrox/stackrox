@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	networkBaselineDSMocks "github.com/stackrox/stackrox/central/networkbaseline/datastore/mocks"
-	networkBaselineMocks "github.com/stackrox/stackrox/central/networkbaseline/manager/mocks"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/fixtures"
-	"github.com/stackrox/stackrox/pkg/grpc/testutils"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
+	networkBaselineDSMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
+	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 

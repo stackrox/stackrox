@@ -2,8 +2,8 @@ package files
 
 import (
 	. "github.com/dave/jennifer/jen"
-	"github.com/stackrox/stackrox/tools/generate-helpers/common/packagenames"
-	"github.com/stackrox/stackrox/tools/generate-helpers/notifier/operations"
+	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
+	"github.com/stackrox/rox/tools/generate-helpers/notifier/operations"
 )
 
 // GenerateNotifierImplFile generates the implementation of the notifier: notifier_impl.go

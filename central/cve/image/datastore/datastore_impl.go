@@ -5,16 +5,16 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/cve/common"
-	"github.com/stackrox/stackrox/central/cve/image/datastore/internal/search"
-	"github.com/stackrox/stackrox/central/cve/image/datastore/internal/store"
-	"github.com/stackrox/stackrox/central/cve/index"
-	"github.com/stackrox/stackrox/central/role/resources"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/sac"
-	pkgSearch "github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/cve/common"
+	"github.com/stackrox/rox/central/cve/image/datastore/internal/search"
+	"github.com/stackrox/rox/central/cve/image/datastore/internal/store"
+	"github.com/stackrox/rox/central/cve/index"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

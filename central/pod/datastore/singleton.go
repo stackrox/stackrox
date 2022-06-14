@@ -2,14 +2,14 @@ package datastore
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/globaldb"
-	"github.com/stackrox/stackrox/central/globalindex"
-	piDS "github.com/stackrox/stackrox/central/processindicator/datastore"
-	"github.com/stackrox/stackrox/central/processindicator/filter"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/globalindex"
+	piDS "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/central/processindicator/filter"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

@@ -1,10 +1,10 @@
 package integration
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/integrationhealth"
-	"github.com/stackrox/stackrox/pkg/registries"
-	"github.com/stackrox/stackrox/pkg/scanners"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/registries"
+	"github.com/stackrox/rox/pkg/scanners"
 )
 
 // Set provides an interface for reading the active set of image integrations.

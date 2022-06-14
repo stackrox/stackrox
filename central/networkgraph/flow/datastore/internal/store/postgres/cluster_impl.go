@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore/internal/store"
+	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 )
 
 // NewClusterStore returns a new ClusterStore instance using the provided rocksdb instance.

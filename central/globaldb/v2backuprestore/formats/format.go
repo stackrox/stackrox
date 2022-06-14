@@ -2,9 +2,9 @@ package formats
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/common"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // ExportFormat describes a database export format.

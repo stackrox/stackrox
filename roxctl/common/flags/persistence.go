@@ -1,8 +1,8 @@
 package flags
 
 import (
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/renderer"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/renderer"
 )
 
 // PersistenceTypeWrapper implements the pflags.Value interface for persistence type.

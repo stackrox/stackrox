@@ -3,15 +3,15 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/processindicator/index"
-	"github.com/stackrox/stackrox/central/processindicator/store"
-	"github.com/stackrox/stackrox/central/role/resources"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/options/processindicators"
+	"github.com/stackrox/rox/central/processindicator/index"
+	"github.com/stackrox/rox/central/processindicator/store"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/options/processindicators"
 )
 
 var (

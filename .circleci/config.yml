@@ -137,7 +137,7 @@ saveGoBuildBinaryCache: &saveGoBuildBinaryCache
     name: Saving Go binary build cache
     key: go-binary-cache-v2-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
     paths:
-      - /home/circleci/go/src/github.com/stackrox/stackrox/linux-gocache
+      - /home/circleci/go/src/github.com/stackrox/rox/linux-gocache
 
 goModBinaryCacheKey: &goModBinaryCacheKey 'rox-go-binary-pkg-mod-v2-{{ checksum "go.sum" }}'
 restoreGoModBinaryCache: &restoreGoModBinaryCache
@@ -1315,7 +1315,7 @@ commands:
       - run:
           name: Save cluster config
           command: |
-            CONFIG_DIR="/go/src/github.com/stackrox/stackrox/.ci-clusters/<< parameters.cluster-id >>"
+            CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
             mkdir -p "$CONFIG_DIR"
             echo "$CLUSTER_NAME" >>"${CONFIG_DIR}/name"
             gcloud config get-value compute/zone >>"${CONFIG_DIR}/zone"
@@ -1343,7 +1343,7 @@ commands:
       - run:
           name: Restore config for << parameters.cluster-id >> cluster
           command: |
-            CONFIG_DIR="/go/src/github.com/stackrox/stackrox/.ci-clusters/<< parameters.cluster-id >>"
+            CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
             export CLUSTER_NAME="$(cat "${CONFIG_DIR}/name")"
             [[ -n "$CLUSTER_NAME" ]]
             export ZONE="$(cat "${CONFIG_DIR}/zone")"
@@ -1363,7 +1363,7 @@ commands:
       - run:
           name: Running refresh token script in the background
           command: |
-            CONFIG_DIR="/go/src/github.com/stackrox/stackrox/.ci-clusters/<< parameters.cluster-id >>"
+            CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
             if [[ ! -x "${CONFIG_DIR}/refresh-token-forever.sh" ]]; then
               exit 0
             fi

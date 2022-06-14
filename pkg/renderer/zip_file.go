@@ -3,7 +3,7 @@ package renderer
 import (
 	"path"
 
-	"github.com/stackrox/stackrox/pkg/zip"
+	"github.com/stackrox/rox/pkg/zip"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 

@@ -1,8 +1,8 @@
 package gatherers
 
 import (
-	"github.com/stackrox/stackrox/pkg/grpc/metrics"
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	"github.com/stackrox/rox/pkg/grpc/metrics"
+	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
 type grpcGatherer struct {

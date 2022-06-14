@@ -1,9 +1,9 @@
 package preflight
 
 import (
-	"github.com/stackrox/stackrox/sensor/upgrader/plan"
-	"github.com/stackrox/stackrox/sensor/upgrader/resources"
-	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/rox/sensor/upgrader/plan"
+	"github.com/stackrox/rox/sensor/upgrader/resources"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
 
 type resourcesCheck struct{}

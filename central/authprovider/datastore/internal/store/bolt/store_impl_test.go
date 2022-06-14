@@ -5,12 +5,12 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/stackrox/stackrox/central/authprovider/datastore/internal/store"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/bolthelper"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/testutils"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/central/authprovider/datastore/internal/store"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
 )

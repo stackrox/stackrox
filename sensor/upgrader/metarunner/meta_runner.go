@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/sensorupgrader"
-	"github.com/stackrox/stackrox/sensor/upgrader/runner"
-	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"github.com/stackrox/rox/sensor/upgrader/runner"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
 
 const (

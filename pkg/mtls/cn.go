@@ -8,9 +8,9 @@ import (
 	"time"
 
 	cfcsr "github.com/cloudflare/cfssl/csr"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // Identity identifies a particular certificate.

@@ -3,10 +3,10 @@ package tree
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	pkgNet "github.com/stackrox/stackrox/pkg/net"
-	"github.com/stackrox/stackrox/pkg/networkgraph"
-	"github.com/stackrox/stackrox/pkg/networkgraph/testutils"
+	"github.com/stackrox/rox/generated/storage"
+	pkgNet "github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -1,13 +1,13 @@
 package datastore
 
 import (
-	"github.com/stackrox/stackrox/central/globaldb"
-	"github.com/stackrox/stackrox/central/nodecomponent/datastore/search"
-	"github.com/stackrox/stackrox/central/nodecomponent/datastore/store/postgres"
-	"github.com/stackrox/stackrox/central/ranking"
-	riskDataStore "github.com/stackrox/stackrox/central/risk/datastore"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/nodecomponent/datastore/search"
+	"github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
+	"github.com/stackrox/rox/central/ranking"
+	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

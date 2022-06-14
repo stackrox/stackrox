@@ -9,13 +9,13 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/internalapi/sensor"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/admissioncontrol"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/fileutils"
-	"github.com/stackrox/stackrox/pkg/gziputil"
-	"github.com/stackrox/stackrox/pkg/k8scfgwatch"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/admissioncontrol"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/gziputil"
+	"github.com/stackrox/rox/pkg/k8scfgwatch"
 )
 
 const (

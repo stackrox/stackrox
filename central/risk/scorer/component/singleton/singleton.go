@@ -1,10 +1,10 @@
 package singleton
 
 import (
-	"github.com/stackrox/stackrox/central/risk/scorer/component"
-	"github.com/stackrox/stackrox/central/risk/scorer/component/image"
-	"github.com/stackrox/stackrox/central/risk/scorer/component/node"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/risk/scorer/component"
+	"github.com/stackrox/rox/central/risk/scorer/component/image"
+	"github.com/stackrox/rox/central/risk/scorer/component/node"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

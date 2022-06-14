@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // ScopeTreeCompacted is a compacted, JSON-ready representation of a ScopeTree.

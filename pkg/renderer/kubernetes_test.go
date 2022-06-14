@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/stackrox/pkg/images/defaults"
-	flavorUtils "github.com/stackrox/stackrox/pkg/images/defaults/testutils"
-	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/images/defaults"
+	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

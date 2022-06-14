@@ -3,7 +3,7 @@ package sac
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // ForResourcesHelper is a helper for querying access scopes related to multiple resources.

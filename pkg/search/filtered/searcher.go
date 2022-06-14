@@ -3,10 +3,10 @@ package filtered
 import (
 	"context"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/blevesearch"
-	"github.com/stackrox/stackrox/pkg/sliceutils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // Filter represents a process of converting from one id-space to another.

@@ -7,10 +7,10 @@ import (
 
 	. "github.com/dave/jennifer/jen"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/tools/generate-helpers/notifier/files"
-	"github.com/stackrox/stackrox/tools/generate-helpers/notifier/operations"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/tools/generate-helpers/notifier/files"
+	"github.com/stackrox/rox/tools/generate-helpers/notifier/operations"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 	}
 
 	props := operations.GeneratorProperties{}
-	c.Flags().StringVar(&props.Pkg, "package", "github.com/stackrox/stackrox/generated/storage", "the package of the object generating notifications")
+	c.Flags().StringVar(&props.Pkg, "package", "github.com/stackrox/rox/generated/storage", "the package of the object generating notifications")
 
 	c.Flags().StringVar(&props.Object, "object", "", "the (Go) name of the object sent in the notification")
 	utils.Must(c.MarkFlagRequired("object"))

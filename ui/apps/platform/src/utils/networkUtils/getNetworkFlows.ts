@@ -129,7 +129,7 @@ export function getNetworkFlows(edges: Edge[], filterState): OmnibusNetworkFlows
             const isExternal =
                 getIsExternalEntitiesNode(destNodeType) || getIsCIDRBlockNode(destNodeType);
             const connection = getConnectionText(filterState, isActive, isAllowed);
-            // See https://github.com/stackrox/stackrox/pull/7800/files#r592623997 for explanation of why we are
+            // See https://github.com/stackrox/rox/pull/7800/files#r592623997 for explanation of why we are
             // constructing traffic like this instead of from the data object
             const traffic = getTraffic(portsAndProtocols);
             directionalFlows.incrementFlows(traffic);

@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
-	"github.com/stackrox/stackrox/generated/storage"
-	pkgStandards "github.com/stackrox/stackrox/pkg/compliance/checks/standards"
-	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/framework"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/storage"
+	pkgStandards "github.com/stackrox/rox/pkg/compliance/checks/standards"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 var (

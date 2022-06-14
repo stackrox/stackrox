@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	depDatastore "github.com/stackrox/stackrox/central/deployment/datastore"
-	nsDatastore "github.com/stackrox/stackrox/central/namespace/datastore"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/telemetry"
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	depDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	nsDatastore "github.com/stackrox/rox/central/namespace/datastore"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/telemetry"
+	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
 type namespaceGatherer struct {

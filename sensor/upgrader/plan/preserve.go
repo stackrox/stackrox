@@ -2,9 +2,9 @@ package plan
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/k8sutil"
-	"github.com/stackrox/stackrox/pkg/k8sutil/k8sobjects"
-	"github.com/stackrox/stackrox/sensor/upgrader/common"
+	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
+	"github.com/stackrox/rox/sensor/upgrader/common"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"

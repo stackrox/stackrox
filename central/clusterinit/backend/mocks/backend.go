@@ -9,9 +9,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	backend "github.com/stackrox/stackrox/central/clusterinit/backend"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	requestinfo "github.com/stackrox/stackrox/pkg/grpc/requestinfo"
+	backend "github.com/stackrox/rox/central/clusterinit/backend"
+	storage "github.com/stackrox/rox/generated/storage"
+	requestinfo "github.com/stackrox/rox/pkg/grpc/requestinfo"
 )
 
 // MockBackend is a mock of Backend interface.

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/stackrox/stackrox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 var (

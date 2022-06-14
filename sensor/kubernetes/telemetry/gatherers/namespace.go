@@ -3,9 +3,9 @@ package gatherers
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/pkg/telemetry"
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
-	"github.com/stackrox/stackrox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/pkg/telemetry"
+	"github.com/stackrox/rox/pkg/telemetry/data"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )

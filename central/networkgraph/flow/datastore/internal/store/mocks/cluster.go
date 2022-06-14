@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	store "github.com/stackrox/stackrox/central/networkgraph/flow/datastore/internal/store"
+	store "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 )
 
 // MockClusterStore is a mock of ClusterStore interface.

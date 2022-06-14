@@ -1,9 +1,9 @@
 package common
 
 import (
-	"github.com/stackrox/stackrox/central/cve/converter"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/edges"
 )
 
 // Merge merges the node parts into a node.

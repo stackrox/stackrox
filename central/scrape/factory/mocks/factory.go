@@ -8,9 +8,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	framework "github.com/stackrox/stackrox/central/compliance/framework"
-	compliance "github.com/stackrox/stackrox/generated/internalapi/compliance"
-	concurrency "github.com/stackrox/stackrox/pkg/concurrency"
+	framework "github.com/stackrox/rox/central/compliance/framework"
+	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
+	concurrency "github.com/stackrox/rox/pkg/concurrency"
 )
 
 // MockScrapeFactory is a mock of ScrapeFactory interface.

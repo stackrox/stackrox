@@ -3,9 +3,9 @@ package common
 import (
 	"fmt"
 
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	"github.com/stackrox/stackrox/generated/storage"
-	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/generated/storage"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 // PerNodeNoteCheck marks every node with a NoteStatus with the evidence being the description

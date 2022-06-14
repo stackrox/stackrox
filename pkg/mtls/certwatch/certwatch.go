@@ -7,9 +7,9 @@ import (
 	"crypto/x509"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/k8scfgwatch"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/x509utils"
+	"github.com/stackrox/rox/pkg/k8scfgwatch"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/x509utils"
 )
 
 const (

@@ -9,10 +9,10 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	tree "github.com/stackrox/stackrox/pkg/networkgraph/tree"
-	set "github.com/stackrox/stackrox/pkg/set"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
+	tree "github.com/stackrox/rox/pkg/networkgraph/tree"
+	set "github.com/stackrox/rox/pkg/set"
 )
 
 // MockEvaluator is a mock of Evaluator interface.

@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type validateConfiguration struct {

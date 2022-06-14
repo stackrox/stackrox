@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/buildinfo"
-	"github.com/stackrox/stackrox/pkg/env"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/pkg/version/internal"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version/internal"
 )
 
 // GetMainVersion returns the tag of Rox.

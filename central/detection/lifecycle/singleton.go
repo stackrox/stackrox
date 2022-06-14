@@ -2,19 +2,19 @@ package lifecycle
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/activecomponent/updater/aggregator"
-	"github.com/stackrox/stackrox/central/deployment/cache"
-	deploymentDatastore "github.com/stackrox/stackrox/central/deployment/datastore"
-	"github.com/stackrox/stackrox/central/detection/alertmanager"
-	"github.com/stackrox/stackrox/central/detection/deploytime"
-	"github.com/stackrox/stackrox/central/detection/runtime"
-	policyDataStore "github.com/stackrox/stackrox/central/policy/datastore"
-	baselineDataStore "github.com/stackrox/stackrox/central/processbaseline/datastore"
-	processDatastore "github.com/stackrox/stackrox/central/processindicator/datastore"
-	"github.com/stackrox/stackrox/central/processindicator/filter"
-	"github.com/stackrox/stackrox/central/reprocessor"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
+	"github.com/stackrox/rox/central/deployment/cache"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/detection/alertmanager"
+	"github.com/stackrox/rox/central/detection/deploytime"
+	"github.com/stackrox/rox/central/detection/runtime"
+	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
+	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/central/processindicator/filter"
+	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

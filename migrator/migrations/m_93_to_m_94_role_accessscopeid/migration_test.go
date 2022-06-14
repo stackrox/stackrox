@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/migrator/migrations/rocksdbmigration"
-	"github.com/stackrox/stackrox/migrator/rockshelper"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
-	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
+	"github.com/stackrox/rox/migrator/rockshelper"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/tecbot/gorocksdb"
 )

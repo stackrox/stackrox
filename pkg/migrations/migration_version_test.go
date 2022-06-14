@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/pkg/version"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

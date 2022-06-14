@@ -5,17 +5,17 @@ import (
 	"encoding/json"
 	"time"
 
-	clusterDatastore "github.com/stackrox/stackrox/central/cluster/datastore"
-	deploymentDatastore "github.com/stackrox/stackrox/central/deployment/datastore"
-	namespaceDatastore "github.com/stackrox/stackrox/central/namespace/datastore"
-	nodeDatastore "github.com/stackrox/stackrox/central/node/globaldatastore"
-	"github.com/stackrox/stackrox/central/sensor/service/connection"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/telemetry"
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/telemetry"
+	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
 // ClusterGatherer gathers a list of telemetry info for all clusters

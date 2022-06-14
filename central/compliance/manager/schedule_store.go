@@ -2,8 +2,8 @@ package manager
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/generated/storage"
-	protoCrud "github.com/stackrox/stackrox/pkg/bolthelper/crud/proto"
+	"github.com/stackrox/rox/generated/storage"
+	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 	"go.etcd.io/bbolt"
 )
 

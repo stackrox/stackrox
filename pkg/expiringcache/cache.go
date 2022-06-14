@@ -3,8 +3,8 @@ package expiringcache
 import (
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Cache implements a cache where the elements expire after a specific time

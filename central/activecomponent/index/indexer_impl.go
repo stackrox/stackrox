@@ -4,13 +4,13 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/stackrox/central/activecomponent/index/internal"
-	"github.com/stackrox/stackrox/central/activecomponent/index/mappings"
-	"github.com/stackrox/stackrox/central/metrics"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	ops "github.com/stackrox/stackrox/pkg/metrics"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/central/activecomponent/index/internal"
+	"github.com/stackrox/rox/central/activecomponent/index/mappings"
+	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 const (

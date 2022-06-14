@@ -3,9 +3,9 @@ package postgres
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // TODO(ROX-9887): Implement SAC logic from datastore

@@ -3,7 +3,7 @@ package undostore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // UndoStore provides storage functionality for undo records.

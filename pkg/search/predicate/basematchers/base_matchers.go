@@ -8,10 +8,10 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/parse"
-	"github.com/stackrox/stackrox/pkg/protoreflect"
-	"github.com/stackrox/stackrox/pkg/regexutils"
-	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/pkg/parse"
+	"github.com/stackrox/rox/pkg/protoreflect"
+	"github.com/stackrox/rox/pkg/regexutils"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // ForString returns a matcher for a string.

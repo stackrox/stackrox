@@ -1,6 +1,6 @@
 package internal
 
-import "github.com/stackrox/stackrox/generated/storage"
+import "github.com/stackrox/rox/generated/storage"
 
 // IndexedContexts contains the collection of active contexts to be indexed.
 type IndexedContexts struct {

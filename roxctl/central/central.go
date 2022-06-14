@@ -2,17 +2,17 @@ package central
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/pkg/pointers"
-	"github.com/stackrox/stackrox/roxctl/central/backup"
-	"github.com/stackrox/stackrox/roxctl/central/cert"
-	"github.com/stackrox/stackrox/roxctl/central/db"
-	"github.com/stackrox/stackrox/roxctl/central/debug"
-	"github.com/stackrox/stackrox/roxctl/central/generate"
-	"github.com/stackrox/stackrox/roxctl/central/initbundles"
-	"github.com/stackrox/stackrox/roxctl/central/license"
-	"github.com/stackrox/stackrox/roxctl/central/userpki"
-	"github.com/stackrox/stackrox/roxctl/central/whoami"
-	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/roxctl/central/backup"
+	"github.com/stackrox/rox/roxctl/central/cert"
+	"github.com/stackrox/rox/roxctl/central/db"
+	"github.com/stackrox/rox/roxctl/central/debug"
+	"github.com/stackrox/rox/roxctl/central/generate"
+	"github.com/stackrox/rox/roxctl/central/initbundles"
+	"github.com/stackrox/rox/roxctl/central/license"
+	"github.com/stackrox/rox/roxctl/central/userpki"
+	"github.com/stackrox/rox/roxctl/central/whoami"
+	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 // Command defines the central command tree

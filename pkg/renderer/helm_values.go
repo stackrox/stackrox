@@ -4,9 +4,9 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	helmTemplate "github.com/stackrox/stackrox/pkg/helm/template"
-	"github.com/stackrox/stackrox/pkg/templates"
-	"github.com/stackrox/stackrox/pkg/zip"
+	helmTemplate "github.com/stackrox/rox/pkg/helm/template"
+	"github.com/stackrox/rox/pkg/templates"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 const (

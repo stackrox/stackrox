@@ -3,8 +3,8 @@ package gatherers
 import (
 	"os"
 
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/telemetry/data"
 	"go.etcd.io/bbolt"
 )
 

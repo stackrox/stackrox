@@ -1,6 +1,6 @@
 package m91tom92
 
-import "github.com/stackrox/stackrox/migrator/migrations/rocksdbmigration"
+import "github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 
 var (
 	cveBucket          = []byte("image_vuln")

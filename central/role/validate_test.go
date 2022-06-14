@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/stackrox/stackrox/generated/storage"
-	labelUtils "github.com/stackrox/stackrox/pkg/labels"
+	"github.com/stackrox/rox/generated/storage"
+	labelUtils "github.com/stackrox/rox/pkg/labels"
 	"github.com/stretchr/testify/assert"
 )
 

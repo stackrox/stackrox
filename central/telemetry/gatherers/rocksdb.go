@@ -1,12 +1,12 @@
 package gatherers
 
 import (
-	"github.com/stackrox/stackrox/central/option"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/fileutils"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
-	"github.com/stackrox/stackrox/pkg/rocksdb/metrics"
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	"github.com/stackrox/rox/central/option"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/rocksdb/metrics"
+	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
 type rocksdbGatherer struct {

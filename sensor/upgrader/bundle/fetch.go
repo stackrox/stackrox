@@ -1,7 +1,7 @@
 package bundle
 
 import (
-	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
 
 // FetchBundle fetches the sensor bundle from central, and returns a view of its contents.

@@ -3,7 +3,7 @@ package allow
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 )
 
 // Anonymous returns an Authorizer that allows all access, even if the client

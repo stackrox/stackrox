@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/stackrox/central/risk/multipliers"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/central/risk/multipliers"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (

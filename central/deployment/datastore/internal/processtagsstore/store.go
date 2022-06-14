@@ -1,8 +1,8 @@
 package processtagsstore
 
 import (
-	"github.com/stackrox/stackrox/central/analystnotes"
-	"github.com/stackrox/stackrox/pkg/bolthelper"
+	"github.com/stackrox/rox/central/analystnotes"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"go.etcd.io/bbolt"
 )
 

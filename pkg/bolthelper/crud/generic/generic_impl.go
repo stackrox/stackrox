@@ -5,8 +5,8 @@ import (
 	"sync/atomic"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/bolthelper"
-	"github.com/stackrox/stackrox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	bolt "go.etcd.io/bbolt"
 )
 

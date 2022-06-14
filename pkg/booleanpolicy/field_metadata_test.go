@@ -3,8 +3,8 @@ package booleanpolicy
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

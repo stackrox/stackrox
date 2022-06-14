@@ -10,11 +10,11 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/stackrox/pkg/jsonutil"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/tools/policyutil/common"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/tools/policyutil/common"
 )
 
 var (

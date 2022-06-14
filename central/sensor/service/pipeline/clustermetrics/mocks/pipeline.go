@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	central "github.com/stackrox/stackrox/generated/internalapi/central"
+	central "github.com/stackrox/rox/generated/internalapi/central"
 )
 
 // MockMetricsStore is a mock of MetricsStore interface.

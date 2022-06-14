@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/stackrox/central/alert/datastore/internal/index"
-	"github.com/stackrox/stackrox/central/alert/datastore/internal/search"
-	"github.com/stackrox/stackrox/central/alert/datastore/internal/store"
-	rocksDBStore "github.com/stackrox/stackrox/central/alert/datastore/internal/store/rocksdb"
-	"github.com/stackrox/stackrox/central/globalindex"
-	"github.com/stackrox/stackrox/pkg/fixtures"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
-	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/central/alert/datastore/internal/index"
+	"github.com/stackrox/rox/central/alert/datastore/internal/search"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	rocksDBStore "github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/require"
 )
 

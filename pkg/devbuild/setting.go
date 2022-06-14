@@ -3,8 +3,8 @@ package devbuild
 import (
 	"strconv"
 
-	"github.com/stackrox/stackrox/pkg/buildinfo"
-	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 )
 
 var (

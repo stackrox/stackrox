@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	pkgKub "github.com/stackrox/stackrox/pkg/kubernetes"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	pkgKub "github.com/stackrox/rox/pkg/kubernetes"
 	"k8s.io/client-go/kubernetes"
 )
 

@@ -1,8 +1,8 @@
 package kubernetes
 
 import (
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

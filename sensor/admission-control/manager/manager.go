@@ -1,10 +1,10 @@
 package manager
 
 import (
-	"github.com/stackrox/stackrox/generated/internalapi/sensor"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/size"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/size"
 	"google.golang.org/grpc"
 	admission "k8s.io/api/admission/v1"
 )

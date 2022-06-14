@@ -4,16 +4,16 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
-	cveFetcher "github.com/stackrox/stackrox/central/cve/fetcher"
-	"github.com/stackrox/stackrox/central/deploymentenvs"
-	"github.com/stackrox/stackrox/central/scannerdefinitions/handler"
-	"github.com/stackrox/stackrox/central/sensor/service/common"
-	"github.com/stackrox/stackrox/central/sensor/service/pipeline"
-	"github.com/stackrox/stackrox/central/sensor/service/pipeline/reconciliation"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/pkg/env"
-	"github.com/stackrox/stackrox/pkg/logging"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	cveFetcher "github.com/stackrox/rox/central/cve/fetcher"
+	"github.com/stackrox/rox/central/deploymentenvs"
+	"github.com/stackrox/rox/central/scannerdefinitions/handler"
+	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

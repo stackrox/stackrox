@@ -4,7 +4,7 @@ package resolvers
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type complianceAggregationResponseWithDomainResolver struct {

@@ -9,11 +9,11 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	central "github.com/stackrox/stackrox/generated/internalapi/central"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	networkgraph "github.com/stackrox/stackrox/pkg/networkgraph"
-	timestamp "github.com/stackrox/stackrox/pkg/timestamp"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	central "github.com/stackrox/rox/generated/internalapi/central"
+	storage "github.com/stackrox/rox/generated/storage"
+	networkgraph "github.com/stackrox/rox/pkg/networkgraph"
+	timestamp "github.com/stackrox/rox/pkg/timestamp"
 )
 
 // MockManager is a mock of Manager interface.

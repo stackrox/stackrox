@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/stackrox/central/graphql/resolvers"
-	"github.com/stackrox/stackrox/central/graphql/resolvers/loaders"
-	"github.com/stackrox/stackrox/central/metrics"
-	"github.com/stackrox/stackrox/pkg/buildinfo"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/central/graphql/resolvers"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

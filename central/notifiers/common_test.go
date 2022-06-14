@@ -6,10 +6,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	namespaceMocks "github.com/stackrox/stackrox/central/namespace/datastore/mocks"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/fixtures"
-	"github.com/stackrox/stackrox/pkg/search"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 

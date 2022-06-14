@@ -3,7 +3,7 @@ package runner
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/sensorupgrader"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stretchr/testify/assert"
 )
 

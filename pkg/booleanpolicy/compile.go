@@ -2,9 +2,9 @@ package booleanpolicy
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/query"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/query"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 func sectionToQuery(section *storage.PolicySection, stage storage.LifecycleStage) (*query.Query, error) {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/k8scfgwatch"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/osutils"
+	"github.com/stackrox/rox/pkg/k8scfgwatch"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/osutils"
 )
 
 var (

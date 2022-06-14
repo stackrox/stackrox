@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/auth/htpasswd"
+	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -3,12 +3,12 @@ package common
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/image"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/helm/charts"
-	"github.com/stackrox/stackrox/pkg/helm/util"
-	"github.com/stackrox/stackrox/pkg/images/defaults"
-	"github.com/stackrox/stackrox/pkg/version"
+	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/helm/charts"
+	"github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime/schema"

@@ -7,10 +7,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	roleMocks "github.com/stackrox/stackrox/central/rbac/k8srole/datastore/mocks"
-	bindingMocks "github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore/mocks"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
+	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
+	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 

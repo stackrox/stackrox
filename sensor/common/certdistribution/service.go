@@ -1,7 +1,7 @@
 package certdistribution
 
 import (
-	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/grpc"
 	"k8s.io/client-go/kubernetes"
 )
 

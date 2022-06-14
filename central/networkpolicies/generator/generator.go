@@ -3,14 +3,14 @@ package generator
 import (
 	"context"
 
-	dDS "github.com/stackrox/stackrox/central/deployment/datastore"
-	nsDS "github.com/stackrox/stackrox/central/namespace/datastore"
-	networkBaselineDataStore "github.com/stackrox/stackrox/central/networkbaseline/datastore"
-	"github.com/stackrox/stackrox/central/networkgraph/entity/networktree"
-	nfDS "github.com/stackrox/stackrox/central/networkgraph/flow/datastore"
-	npDS "github.com/stackrox/stackrox/central/networkpolicies/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
+	dDS "github.com/stackrox/rox/central/deployment/datastore"
+	nsDS "github.com/stackrox/rox/central/namespace/datastore"
+	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
+	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Generator encapsulates the logic of the network policy generator.

@@ -1,8 +1,8 @@
 package sac
 
 import (
-	"github.com/stackrox/stackrox/pkg/sac/client"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sac/client"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

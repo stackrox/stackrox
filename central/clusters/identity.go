@@ -3,14 +3,14 @@ package clusters
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/role/resources"
-	siDataStore "github.com/stackrox/stackrox/central/serviceidentities/datastore"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/centralsensor"
-	"github.com/stackrox/stackrox/pkg/mtls"
-	"github.com/stackrox/stackrox/pkg/namespaces"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/central/role/resources"
+	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // CertBundle contains a bundle of generated certificates for each service type

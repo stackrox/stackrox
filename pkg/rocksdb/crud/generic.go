@@ -2,8 +2,8 @@ package generic
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/pkg/db"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/db"
+	"github.com/stackrox/rox/pkg/rocksdb"
 )
 
 // Deserializer is the function that takes in a []byte value and returns a proto message

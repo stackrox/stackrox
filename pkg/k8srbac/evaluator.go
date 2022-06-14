@@ -3,8 +3,8 @@ package k8srbac
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const clusterAdmin = "cluster-admin"

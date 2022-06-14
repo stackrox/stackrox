@@ -2,7 +2,7 @@ package safe
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // RunE executes the given function, and will wrap any panic that it encountered as an error. Any error returned

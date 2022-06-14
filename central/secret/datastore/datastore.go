@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/central/secret/internal/index"
-	"github.com/stackrox/stackrox/central/secret/internal/store"
-	"github.com/stackrox/stackrox/central/secret/search"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/sac"
-	searchPkg "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/secret/internal/index"
+	"github.com/stackrox/rox/central/secret/internal/store"
+	"github.com/stackrox/rox/central/secret/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to SecretStorage.

@@ -7,14 +7,14 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/image"
-	"github.com/stackrox/stackrox/pkg/grpc/authn/basic"
-	helmUtil "github.com/stackrox/stackrox/pkg/helm/util"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/pkg/zip"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 var (

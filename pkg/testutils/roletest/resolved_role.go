@@ -1,8 +1,8 @@
 package roletest
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 // NewResolvedRole creates an instance of ResolvedRole from passed parameters.

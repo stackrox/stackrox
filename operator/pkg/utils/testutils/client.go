@@ -3,8 +3,8 @@ package testutils
 import (
 	"testing"
 
-	platform "github.com/stackrox/stackrox/operator/apis/platform/v1alpha1"
-	"github.com/stackrox/stackrox/pkg/testutils"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"

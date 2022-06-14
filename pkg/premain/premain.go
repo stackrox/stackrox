@@ -1,6 +1,6 @@
 package premain
 
-import "github.com/stackrox/stackrox/pkg/concurrency"
+import "github.com/stackrox/rox/pkg/concurrency"
 
 var (
 	hasEnteredMain concurrency.Flag

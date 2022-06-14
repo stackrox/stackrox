@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve/search/query"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

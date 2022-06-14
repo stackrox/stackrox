@@ -3,7 +3,7 @@ package compact
 import (
 	"time"
 
-	"github.com/stackrox/stackrox/migrator/log"
+	"github.com/stackrox/rox/migrator/log"
 	bolt "go.etcd.io/bbolt"
 )
 

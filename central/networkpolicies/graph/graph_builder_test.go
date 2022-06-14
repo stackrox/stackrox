@@ -3,9 +3,9 @@ package graph
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/networkgraph"
-	"github.com/stackrox/stackrox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stretchr/testify/assert"
 )
 

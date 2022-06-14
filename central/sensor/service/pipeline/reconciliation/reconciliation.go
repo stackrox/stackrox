@@ -2,10 +2,10 @@ package reconciliation
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/reflectutils"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/reflectutils"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // Store is an interface for reconciliation

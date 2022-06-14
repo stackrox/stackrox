@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/authproviders"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/grpc/authn"
-	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/mtls"
 )
 
 var _ authn.Identity = (*identity)(nil)

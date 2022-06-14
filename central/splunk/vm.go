@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stackrox/stackrox/central/deployment/datastore"
-	imageDatastore "github.com/stackrox/stackrox/central/image/datastore"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/jsonutil"
-	"github.com/stackrox/stackrox/pkg/protoconv"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/central/deployment/datastore"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type splunkDeploymentEvent struct {

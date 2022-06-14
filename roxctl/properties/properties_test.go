@@ -6,8 +6,8 @@ import (
 
 	"github.com/magiconair/properties"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/roxctl/help"
-	"github.com/stackrox/stackrox/roxctl/maincommand"
+	"github.com/stackrox/rox/roxctl/help"
+	"github.com/stackrox/rox/roxctl/maincommand"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

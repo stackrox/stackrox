@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	graph2 "github.com/stackrox/stackrox/pkg/dackbox/graph"
-	"github.com/stackrox/stackrox/pkg/dackbox/graph/testutils"
-	"github.com/stackrox/stackrox/pkg/dackbox/sortedkeys"
+	graph2 "github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/dackbox/graph/testutils"
+	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stretchr/testify/assert"
 )
 

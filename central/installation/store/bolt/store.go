@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/central/metrics"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/bolthelper/singletonstore"
-	ops "github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper/singletonstore"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	"go.etcd.io/bbolt"
 )
 

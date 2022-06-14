@@ -2,7 +2,7 @@ package maputil
 
 import (
 	"github.com/mauricelam/genny/generic"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 //go:generate genny -in=$GOFILE -out=gen-string-$GOFILE gen "KeyType=string ValueType=string"

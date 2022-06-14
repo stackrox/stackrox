@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
 // GetResourceString takes in a sensor event and returns a resource string to be used in Prometheus

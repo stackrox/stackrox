@@ -10,9 +10,9 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/protoconv"
-	instructionTypes "github.com/stackrox/stackrox/pkg/registries/types"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
+	instructionTypes "github.com/stackrox/rox/pkg/registries/types"
 )
 
 var scrubPrefixes = []string{

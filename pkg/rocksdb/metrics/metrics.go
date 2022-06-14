@@ -6,10 +6,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/metrics"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
-	generic "github.com/stackrox/stackrox/pkg/rocksdb/crud"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 )
 
 const (

@@ -1,7 +1,7 @@
 package crud
 
 import (
-	"github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox"
 )
 
 // Deleter provides the ability to delete as part of a dackbox transaction.

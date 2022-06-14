@@ -6,7 +6,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/stackrox/stackrox/pkg/debug"
+	"github.com/stackrox/rox/pkg/debug"
 )
 
 type action struct {

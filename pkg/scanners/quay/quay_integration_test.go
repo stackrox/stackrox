@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/retry"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stretchr/testify/suite"
 )
 

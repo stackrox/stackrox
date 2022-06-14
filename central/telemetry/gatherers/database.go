@@ -1,10 +1,10 @@
 package gatherers
 
 import (
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/fsutils"
-	"github.com/stackrox/stackrox/pkg/migrations"
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/fsutils"
+	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
 type databaseGatherer struct {

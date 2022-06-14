@@ -3,8 +3,8 @@ package auditlog
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/internalapi/sensor"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type auditLogSenderImpl struct {

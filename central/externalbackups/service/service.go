@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/externalbackups/datastore"
-	"github.com/stackrox/stackrox/central/externalbackups/manager"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
-	"github.com/stackrox/stackrox/pkg/integrationhealth"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/central/externalbackups/datastore"
+	"github.com/stackrox/rox/central/externalbackups/manager"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

@@ -1,7 +1,7 @@
 package tree
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // NetworkTree provides functionality to store network entities per supernet-subnet relationship.

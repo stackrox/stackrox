@@ -3,15 +3,15 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/central/serviceaccount/internal/index"
-	"github.com/stackrox/stackrox/central/serviceaccount/internal/store"
-	"github.com/stackrox/stackrox/central/serviceaccount/mappings"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/serviceaccount/internal/index"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store"
+	"github.com/stackrox/rox/central/serviceaccount/mappings"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (

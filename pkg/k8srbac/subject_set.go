@@ -3,7 +3,7 @@ package k8srbac
 import (
 	"sort"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // SubjectSet holds a deduplicated set of Subjects.

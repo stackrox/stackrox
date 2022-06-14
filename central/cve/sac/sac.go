@@ -1,11 +1,11 @@
 package sac
 
 import (
-	"github.com/stackrox/stackrox/central/dackbox"
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/search/filtered"
+	"github.com/stackrox/rox/central/dackbox"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search/filtered"
 )
 
 var (

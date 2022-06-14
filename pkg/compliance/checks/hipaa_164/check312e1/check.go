@@ -1,8 +1,8 @@
 package check312e1
 
 import (
-	"github.com/stackrox/stackrox/pkg/compliance/checks/common"
-	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/checks/common"
+	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
 func init() {

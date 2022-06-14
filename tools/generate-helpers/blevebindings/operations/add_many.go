@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	. "github.com/dave/jennifer/jen"
-	"github.com/stackrox/stackrox/tools/generate-helpers/common/packagenames"
+	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
 )
 
 func renderAddManyFunctionSignature(statement *Statement, props GeneratorProperties) *Statement {

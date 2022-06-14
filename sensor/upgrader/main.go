@@ -4,14 +4,14 @@ import (
 	"context"
 	"flag"
 
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/pkg/version"
-	"github.com/stackrox/stackrox/sensor/upgrader/config"
-	_ "github.com/stackrox/stackrox/sensor/upgrader/flags"
-	"github.com/stackrox/stackrox/sensor/upgrader/metarunner"
-	"github.com/stackrox/stackrox/sensor/upgrader/runner"
-	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/sensor/upgrader/config"
+	_ "github.com/stackrox/rox/sensor/upgrader/flags"
+	"github.com/stackrox/rox/sensor/upgrader/metarunner"
+	"github.com/stackrox/rox/sensor/upgrader/runner"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
 
 var (

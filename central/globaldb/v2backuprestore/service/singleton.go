@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/manager"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/globaldb/v2backuprestore/manager"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

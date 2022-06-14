@@ -2,7 +2,7 @@ package crud
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox"
 )
 
 type upserterImpl struct {

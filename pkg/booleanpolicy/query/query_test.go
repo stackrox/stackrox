@@ -3,7 +3,7 @@ package query
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/evaluator/mapeval"
+	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/mapeval"
 	"gotest.tools/assert"
 )
 

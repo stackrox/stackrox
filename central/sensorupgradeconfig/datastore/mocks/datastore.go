@@ -9,8 +9,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	concurrency "github.com/stackrox/stackrox/pkg/concurrency"
+	storage "github.com/stackrox/rox/generated/storage"
+	concurrency "github.com/stackrox/rox/pkg/concurrency"
 )
 
 // MockDataStore is a mock of DataStore interface.

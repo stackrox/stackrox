@@ -1,10 +1,10 @@
 package deploytime
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy"
-	"github.com/stackrox/stackrox/pkg/detection"
-	"github.com/stackrox/stackrox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/detection/deploytime"
 )
 
 // Detector provides an interface for getting and managing alerts and enforcements on deployments.

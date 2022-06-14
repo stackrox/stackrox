@@ -3,8 +3,8 @@ package framework
 import (
 	"fmt"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // Abort aborts the current compliance check, optionally setting an error.

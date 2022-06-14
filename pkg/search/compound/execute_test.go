@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/search"
-	searchMocks "github.com/stackrox/stackrox/pkg/search/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
+	searchMocks "github.com/stackrox/rox/pkg/search/mocks"
 	"github.com/stretchr/testify/suite"
 )
 

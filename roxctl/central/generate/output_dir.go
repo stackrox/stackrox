@@ -3,7 +3,7 @@ package generate
 import (
 	"os"
 
-	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 const defaultPath = "central-bundle"

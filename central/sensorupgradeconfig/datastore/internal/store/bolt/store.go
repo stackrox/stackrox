@@ -5,10 +5,10 @@ import (
 	"time"
 
 	proto "github.com/gogo/protobuf/proto"
-	metrics "github.com/stackrox/stackrox/central/metrics"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	singletonstore "github.com/stackrox/stackrox/pkg/bolthelper/singletonstore"
-	ops "github.com/stackrox/stackrox/pkg/metrics"
+	metrics "github.com/stackrox/rox/central/metrics"
+	storage "github.com/stackrox/rox/generated/storage"
+	singletonstore "github.com/stackrox/rox/pkg/bolthelper/singletonstore"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	bbolt "go.etcd.io/bbolt"
 )
 

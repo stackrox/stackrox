@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/generated/internalapi/sensor"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/concurrency"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/sensor/admission-control/common"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/admission-control/common"
 	"google.golang.org/grpc"
 )
 

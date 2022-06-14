@@ -1,9 +1,9 @@
 package manager
 
 import (
-	"github.com/stackrox/stackrox/pkg/migrations"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

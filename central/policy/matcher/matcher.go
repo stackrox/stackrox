@@ -1,6 +1,6 @@
 package matcher
 
-import "github.com/stackrox/stackrox/generated/storage"
+import "github.com/stackrox/rox/generated/storage"
 
 // Matcher provides functionality to evaluate whether or not policies are applicable to an entity.
 type Matcher interface {

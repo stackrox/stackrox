@@ -10,7 +10,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/mailru/easyjson"
-	internalTypes "github.com/stackrox/stackrox/pkg/docker/types"
+	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 )
 
 // ContainerList returns the list of containers in the docker host.

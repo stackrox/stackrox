@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	. "github.com/dave/jennifer/jen"
-	"github.com/stackrox/stackrox/tools/generate-helpers/common"
+	"github.com/stackrox/rox/tools/generate-helpers/common"
 )
 
 func renderGetFunctionSignature(statement *Statement, props *GeneratorProperties) *Statement {

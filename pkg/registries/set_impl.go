@@ -3,9 +3,9 @@ package registries
 import (
 	"sort"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/registries/types"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type setImpl struct {

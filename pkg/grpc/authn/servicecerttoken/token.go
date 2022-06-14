@@ -11,8 +11,8 @@ import (
 	"github.com/gogo/protobuf/types"
 	ctTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/pkg/cryptoutils"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 )
 
 // parseToken parses a ServiceCert token and returns the parsed x509 certificate. Note that the returned certificate is

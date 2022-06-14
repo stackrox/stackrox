@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/kubernetes"
-	"github.com/stackrox/stackrox/pkg/protoconv/resources/volumes"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
 	"github.com/stretchr/testify/assert"
 	appsV1 "k8s.io/api/apps/v1"
 	appsV1beta2 "k8s.io/api/apps/v1beta2"

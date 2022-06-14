@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/stackrox/central/notifiers"
+	"github.com/stackrox/rox/central/notifiers"
 )
 
 // Loop retries all of the failed alerts for each notifier every hour.

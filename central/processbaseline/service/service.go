@@ -3,14 +3,14 @@ package service
 import (
 	"context"
 
-	deploymentDataStore "github.com/stackrox/stackrox/central/deployment/datastore"
-	"github.com/stackrox/stackrox/central/detection/lifecycle"
-	"github.com/stackrox/stackrox/central/processbaseline/datastore"
-	"github.com/stackrox/stackrox/central/reprocessor"
-	"github.com/stackrox/stackrox/central/sensor/service/connection"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
-	"github.com/stackrox/stackrox/pkg/logging"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/detection/lifecycle"
+	"github.com/stackrox/rox/central/processbaseline/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

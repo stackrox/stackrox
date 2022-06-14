@@ -1,7 +1,7 @@
 package certgen
 
 import (
-	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/mtls"
 )
 
 // IssueScannerCerts issues a cert for the scanner and scanner DB, given a fileMap that contains a ca-cert and ca-key.

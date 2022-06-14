@@ -3,9 +3,9 @@ package rocksdb
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore/internal/store/testcommon"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
-	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/testcommon"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

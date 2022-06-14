@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/stackrox/stackrox/central/sensor/service/connection"
-	"github.com/stackrox/stackrox/central/sensorupgradeconfig/datastore"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

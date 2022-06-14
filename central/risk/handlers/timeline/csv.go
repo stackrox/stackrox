@@ -5,13 +5,13 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/stackrox/stackrox/central/graphql/resolvers"
-	"github.com/stackrox/stackrox/central/graphql/resolvers/loaders"
-	"github.com/stackrox/stackrox/pkg/csv"
-	"github.com/stackrox/stackrox/pkg/logging"
-	podUtils "github.com/stackrox/stackrox/pkg/pods/utils"
-	"github.com/stackrox/stackrox/pkg/stringutils"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/graphql/resolvers"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/logging"
+	podUtils "github.com/stackrox/rox/pkg/pods/utils"
+	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

@@ -1,8 +1,8 @@
 package standards
 
 import (
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // Repository is an interface for a collection of standards and controls

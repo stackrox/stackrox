@@ -1,8 +1,8 @@
 package execution
 
 import (
-	"github.com/stackrox/stackrox/sensor/upgrader/plan"
-	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/rox/sensor/upgrader/plan"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
 
 // ExecutePlan executes an upgrade execution plan.

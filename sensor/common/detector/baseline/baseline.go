@@ -1,10 +1,10 @@
 package baseline
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/processbaseline"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/processbaseline"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Evaluator encapsulates the interface to the baseline evaluator

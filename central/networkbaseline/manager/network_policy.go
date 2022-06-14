@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"hash/fnv"
 
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // NetworkPolicyUpdateInfo captures the relevant fields from a storage.NetworkPolicy.

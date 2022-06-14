@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/testutils"
-	"github.com/stackrox/stackrox/pkg/version"
-	"github.com/stackrox/stackrox/pkg/version/internal"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/internal"
 )
 
 // SetMainVersion sets the main version to the given string.

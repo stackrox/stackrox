@@ -5,9 +5,9 @@ import (
 	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/stackrox/pkg/errox"
-	errox_grpc "github.com/stackrox/stackrox/pkg/errox/grpc"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/pkg/errox"
+	errox_grpc "github.com/stackrox/rox/pkg/errox/grpc"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

@@ -90,7 +90,7 @@ Tests are based on the [`helmtest` testing framework](https://github.com/stackro
   define regular Go unit tests based on the standard `testing` package. `helmtest` synthesizes children tests for those,
   that can be run individually with `go test`, which is useful for quick iteration. For example the tests in
   `pkg/helm/charts/tests/securedclusterservices/testdata/helmtest/audit-logs.test.yaml` can be run with
-  `go test -v github.com/stackrox/stackrox/pkg/helm/charts/tests/securedclusterservices -run TestWithHelmtest/testdata/helmtest/audit-logs.test.yaml`.
+  `go test -v github.com/stackrox/rox/pkg/helm/charts/tests/securedclusterservices -run TestWithHelmtest/testdata/helmtest/audit-logs.test.yaml`.
 - When writing a test, replacing assertions with the [`helmtest` function](https://github.com/stackrox/helmtest/blob/main/docs/functions.md)
   `print` can be helpful to inspect the objects where assertions are applied. To get YAML formatted output use `toyaml | print`.
 - [`helmtest` documentation on World Model](https://github.com/stackrox/helmtest/blob/main/docs/world-model.md) specifies

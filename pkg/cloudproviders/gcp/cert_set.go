@@ -7,8 +7,8 @@ import (
 	"encoding/pem"
 	"net/http"
 
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (

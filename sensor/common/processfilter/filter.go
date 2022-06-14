@@ -1,8 +1,8 @@
 package processfilter
 
 import (
-	"github.com/stackrox/stackrox/pkg/process/filter"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (

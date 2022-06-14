@@ -11,15 +11,15 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/alert/datastore"
-	"github.com/stackrox/stackrox/generated/api/integrations"
-	apiV1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/violationmessages/printer"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/generated/api/integrations"
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/zap"
 )
 
@@ -167,7 +167,7 @@ func getCheckpointValue(r *http.Request) (splunkCheckpoint, error) {
 
 func queryAlerts(ctx context.Context, alertDS datastore.DataStore, checkpoint splunkCheckpoint, maxAlertsFromQuery int32) ([]*storage.Alert, error) {
 	// Alert searcher limits results to only certain (open) alert states if state query wasn't explicitly provided.
-	// See https://github.com/stackrox/stackrox/blob/fe0447b512623111b78f5f7f1eb22f39e3e70cb3/central/alert/datastore/internal/search/searcher_impl.go#L142
+	// See https://github.com/stackrox/rox/blob/fe0447b512623111b78f5f7f1eb22f39e3e70cb3/central/alert/datastore/internal/search/searcher_impl.go#L142
 	// This isn't desirable for Splunk integration because we want Splunk to know about all alerts irrespective of their
 	// current state in StackRox.
 	// The following explicitly instructs the search to return alerts in _all_ states.
@@ -181,7 +181,7 @@ func queryAlerts(ctx context.Context, alertDS datastore.DataStore, checkpoint sp
 	// before the checkpoint but violations after the checkpoint are.
 	// The downstream timestamp querying supports granularity up to a second and a peculiar timestamp format therefore
 	// we leverage what it provides.
-	// See https://github.com/stackrox/stackrox/blob/master/pkg/search/blevesearch/time_query.go
+	// See https://github.com/stackrox/rox/blob/master/pkg/search/blevesearch/time_query.go
 	query = query.AddStrings(search.ViolationTime, ">="+checkpoint.fromTimestamp.Format("01/02/2006 3:04:05 PM MST"))
 
 	pq := query.ProtoQuery()

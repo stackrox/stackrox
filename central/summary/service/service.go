@@ -3,15 +3,15 @@ package service
 import (
 	"context"
 
-	alertDataStore "github.com/stackrox/stackrox/central/alert/datastore"
-	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
-	deploymentDataStore "github.com/stackrox/stackrox/central/deployment/datastore"
-	imageDataStore "github.com/stackrox/stackrox/central/image/datastore"
-	nodeDataStore "github.com/stackrox/stackrox/central/node/globaldatastore"
-	secretDataStore "github.com/stackrox/stackrox/central/secret/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
-	"github.com/stackrox/stackrox/pkg/logging"
+	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

@@ -1,13 +1,13 @@
 package dackbox
 
 import (
-	clusterDackBox "github.com/stackrox/stackrox/central/cluster/dackbox"
-	cveDackBox "github.com/stackrox/stackrox/central/cve/dackbox"
-	componentDackBox "github.com/stackrox/stackrox/central/imagecomponent/dackbox"
-	nodeDackBox "github.com/stackrox/stackrox/central/node/dackbox"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/dackbox"
-	"github.com/stackrox/stackrox/pkg/dackbox/keys/transformation"
+	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
+	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
+	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
+	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
 )
 
 var (

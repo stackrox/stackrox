@@ -1,7 +1,7 @@
 package k8srbac
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // APIGroupsField is the apiGroups field of a PolicyRule.

@@ -5,11 +5,11 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/common"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/migrations"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/pkg/version"
+	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 )
 
 var (

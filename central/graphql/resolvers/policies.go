@@ -5,16 +5,16 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/stackrox/central/graphql/resolvers/loaders"
-	"github.com/stackrox/stackrox/central/metrics"
-	policyUtils "github.com/stackrox/stackrox/central/policy/utils"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	pkgMetrics "github.com/stackrox/stackrox/pkg/metrics"
-	"github.com/stackrox/stackrox/pkg/policyutils"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/scoped"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	"github.com/stackrox/rox/central/metrics"
+	policyUtils "github.com/stackrox/rox/central/policy/utils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/policyutils"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {

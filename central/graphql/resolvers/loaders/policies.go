@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	policyDataStore "github.com/stackrox/stackrox/central/policy/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/sync"
+	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var policyLoaderType = reflect.TypeOf(storage.Policy{})

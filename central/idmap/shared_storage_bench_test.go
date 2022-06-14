@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stackrox/stackrox/central/namespace/store/rocksdb"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/central/namespace/store/rocksdb"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
 

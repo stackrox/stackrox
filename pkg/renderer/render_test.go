@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/images/defaults/testutils"
-	"github.com/stackrox/stackrox/pkg/k8sutil"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/images/defaults/testutils"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 )
 

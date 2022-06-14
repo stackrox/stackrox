@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/group/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/rox/central/group/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
 )
 
 // Service provides the interface to the gRPC service for users.

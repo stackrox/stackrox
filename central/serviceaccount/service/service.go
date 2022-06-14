@@ -3,13 +3,13 @@ package service
 import (
 	"context"
 
-	deploymentStore "github.com/stackrox/stackrox/central/deployment/datastore"
-	namespaceStore "github.com/stackrox/stackrox/central/namespace/datastore"
-	roleDatastore "github.com/stackrox/stackrox/central/rbac/k8srole/datastore"
-	bindingDatastore "github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore"
-	saDatastore "github.com/stackrox/stackrox/central/serviceaccount/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
+	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
+	roleDatastore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	bindingDatastore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	saDatastore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
 )
 
 // Service provides the interface to the microservice that serves service account data.

@@ -3,9 +3,9 @@ package common
 import (
 	"net"
 
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
-	"github.com/stackrox/stackrox/pkg/netutil"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/netutil"
 )
 
 var (

@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/sliceutils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 )
 

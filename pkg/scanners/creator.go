@@ -1,8 +1,8 @@
 package scanners
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/scanners/types"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/scanners/types"
 )
 
 // Creator is the func stub that defines how to instantiate an image scanner.

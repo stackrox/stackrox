@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	v2 "github.com/stackrox/stackrox/pkg/cvss/cvssv2"
+	"github.com/stackrox/rox/generated/storage"
+	v2 "github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/grafeas"
 )
 

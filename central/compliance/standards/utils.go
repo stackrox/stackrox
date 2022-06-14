@@ -1,7 +1,7 @@
 package standards
 
 import (
-	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 // GetSupportedStandards returns the ids of all supported compliance standards

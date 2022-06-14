@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 const (

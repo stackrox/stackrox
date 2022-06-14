@@ -6,9 +6,9 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/signatures"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/signatures"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // signatureIntegrationIDPrefix should be prepended to every human-hostile ID of a

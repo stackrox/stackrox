@@ -57,13 +57,13 @@ Regarding defaulting, note that there exist different kinds of defaults:
 
 * Schema-level defaults: These are set via `+kubebuilder` directives, and if not set by the user, will be inserted automatically upon object creation.
   These values will be visible during translation, but only if the enclosing struct field is already present. Changing a schema-level default
-  counts as a breaking API change, but it is treated as such only semantically, nothing will fail at runtime (see [example](https://github.com/stackrox/stackrox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/apis/platform/v1alpha1/central_types.go#L188))
+  counts as a breaking API change, but it is treated as such only semantically, nothing will fail at runtime (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/apis/platform/v1alpha1/central_types.go#L188))
 
 * Translation logic-level defaults: The translation logic will recognize an absent (`nil`) value, decide on its meaning, and will set a corresponding
-  value in the Helm values (see [example](https://github.com/stackrox/stackrox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L120)).
+  value in the Helm values (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L120)).
 
 * Propagating chart-level defaults: The translation logic will set the corresponding Helm values field only for explicitly set values; for absent
-  values, it will do nothing, thus deferring to the chart's defaulting logic (see [example](https://github.com/stackrox/stackrox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L86)).
+  values, it will do nothing, thus deferring to the chart's defaulting logic (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L86)).
 
 ## Style Recommendations
 

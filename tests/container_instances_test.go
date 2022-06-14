@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/stackrox/pkg/sliceutils"
-	"github.com/stackrox/stackrox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 )
 

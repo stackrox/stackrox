@@ -3,11 +3,11 @@ package common
 import (
 	"sort"
 
-	"github.com/stackrox/stackrox/central/cve/converter"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/dackbox/edges"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/search/postgres"
+	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 // Merge merges the images parts into an image.

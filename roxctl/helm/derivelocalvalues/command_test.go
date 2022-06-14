@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/roxctl/common/environment"
-	"github.com/stackrox/stackrox/roxctl/common/io"
-	"github.com/stackrox/stackrox/roxctl/common/printer"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -3,11 +3,11 @@ package processor
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/notifiers"
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/sac"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

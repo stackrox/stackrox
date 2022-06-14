@@ -3,13 +3,13 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/cluster/index"
-	clusterStore "github.com/stackrox/stackrox/central/cluster/store/cluster"
-	"github.com/stackrox/stackrox/central/ranking"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/dackbox/graph"
-	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/central/cluster/index"
+	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
+	"github.com/stackrox/rox/central/ranking"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // Searcher encapsulates cluster search functionality.

@@ -5,7 +5,7 @@ import (
 	"math/rand"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func getVulnsPerComponent(componentIndex int, cveType storage.EmbeddedVulnerability_VulnerabilityType) []*storage.EmbeddedVulnerability {

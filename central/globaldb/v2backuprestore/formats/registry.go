@@ -4,7 +4,7 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Registry takes care of managing supported export formats.

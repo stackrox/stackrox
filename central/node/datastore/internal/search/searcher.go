@@ -3,16 +3,16 @@ package search
 import (
 	"context"
 
-	componentCVEEdgeIndexer "github.com/stackrox/stackrox/central/componentcveedge/index"
-	cveIndexer "github.com/stackrox/stackrox/central/cve/index"
-	componentIndexer "github.com/stackrox/stackrox/central/imagecomponent/index"
-	"github.com/stackrox/stackrox/central/node/datastore/internal/store"
-	nodeIndexer "github.com/stackrox/stackrox/central/node/index"
-	nodeComponentEdgeIndexer "github.com/stackrox/stackrox/central/nodecomponentedge/index"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/dackbox/graph"
-	"github.com/stackrox/stackrox/pkg/search"
+	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
+	cveIndexer "github.com/stackrox/rox/central/cve/index"
+	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
+	"github.com/stackrox/rox/central/node/datastore/internal/store"
+	nodeIndexer "github.com/stackrox/rox/central/node/index"
+	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // Searcher provides search functionality on existing nodes

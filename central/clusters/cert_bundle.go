@@ -2,8 +2,8 @@ package clusters
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/services"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/services"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // FileMap returns a map[string]string that maps individual file names for service certificates to their PEM-encoded

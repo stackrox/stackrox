@@ -6,14 +6,14 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/auth/authproviders"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	permissionsUtils "github.com/stackrox/stackrox/pkg/auth/permissions/utils"
-	"github.com/stackrox/stackrox/pkg/auth/tokens"
-	"github.com/stackrox/stackrox/pkg/grpc/authn"
-	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 var log = logging.LoggerForModule()

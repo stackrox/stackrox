@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 // HasApplicableOptions determines if a parsed user map has any applicable options to this particular options map

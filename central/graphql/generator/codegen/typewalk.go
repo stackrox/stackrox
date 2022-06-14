@@ -9,8 +9,8 @@ import (
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/golang/protobuf/protoc-gen-go/generator"
 	"github.com/pkg/errors"
-	generator2 "github.com/stackrox/stackrox/central/graphql/generator"
-	"github.com/stackrox/stackrox/pkg/protoreflect"
+	generator2 "github.com/stackrox/rox/central/graphql/generator"
+	"github.com/stackrox/rox/pkg/protoreflect"
 )
 
 type fieldData struct {

@@ -5,7 +5,7 @@
 
 package protoutils
 
-import "github.com/stackrox/stackrox/generated/storage"
+import "github.com/stackrox/rox/generated/storage"
 
 // *storage.Alert_Violation represents a generic type that we use in the function below.
 

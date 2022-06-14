@@ -3,12 +3,12 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/rbac/k8srolebinding/internal/index"
-	"github.com/stackrox/stackrox/central/rbac/k8srolebinding/internal/store"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (

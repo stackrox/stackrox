@@ -2,7 +2,7 @@
 
 package notifier
 
-import storage "github.com/stackrox/stackrox/generated/storage"
+import storage "github.com/stackrox/rox/generated/storage"
 
 type Notifier interface {
 	OnDelete(onDelete func(deployment *storage.Deployment))

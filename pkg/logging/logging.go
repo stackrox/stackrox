@@ -32,7 +32,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

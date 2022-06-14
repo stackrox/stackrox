@@ -2,7 +2,7 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/metrics"
 )
 
 func init() {

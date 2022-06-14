@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/k8sutil"
-	"github.com/stackrox/stackrox/pkg/k8sutil/k8sobjects"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/sensor/upgrader/common"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/upgrader/common"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 

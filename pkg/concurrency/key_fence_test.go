@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
 

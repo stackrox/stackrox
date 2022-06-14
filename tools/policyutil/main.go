@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/stackrox/tools/policyutil/command"
-	"github.com/stackrox/stackrox/tools/policyutil/common"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/tools/policyutil/command"
+	"github.com/stackrox/rox/tools/policyutil/common"
 )
 
 func main() {

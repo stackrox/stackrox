@@ -2,11 +2,11 @@ package booleanpolicy
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/evaluator"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/evaluator/pathutil"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/query"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
+	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 )
 
 var (

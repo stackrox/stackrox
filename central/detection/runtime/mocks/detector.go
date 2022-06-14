@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	detection "github.com/stackrox/stackrox/central/detection"
+	detection "github.com/stackrox/rox/central/detection"
 	reflect "reflect"
 )
 

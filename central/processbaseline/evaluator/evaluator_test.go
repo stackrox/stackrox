@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	processBaselineMocks "github.com/stackrox/stackrox/central/processbaseline/datastore/mocks"
-	processBaselineResultMocks "github.com/stackrox/stackrox/central/processbaselineresults/datastore/mocks"
-	processIndicatorMocks "github.com/stackrox/stackrox/central/processindicator/datastore/mocks"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/fixtures"
-	"github.com/stackrox/stackrox/pkg/protoconv"
+	processBaselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
+	processBaselineResultMocks "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
+	processIndicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

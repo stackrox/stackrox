@@ -9,8 +9,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )

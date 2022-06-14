@@ -3,7 +3,7 @@
 package store
 
 import (
-	storage "github.com/stackrox/stackrox/generated/storage"
+	storage "github.com/stackrox/rox/generated/storage"
 	bbolt "go.etcd.io/bbolt"
 )
 

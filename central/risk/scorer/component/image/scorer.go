@@ -1,9 +1,9 @@
 package image
 
 import (
-	"github.com/stackrox/stackrox/central/risk/multipliers/component/image"
-	"github.com/stackrox/stackrox/central/risk/scorer/component"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/central/risk/multipliers/component/image"
+	"github.com/stackrox/rox/central/risk/scorer/component"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // NewImageComponentScorer returns a new scorer that encompasses multipliers for evaluating image component risk

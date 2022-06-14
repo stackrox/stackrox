@@ -1,6 +1,6 @@
 package concurrency
 
-import "github.com/stackrox/stackrox/pkg/sync"
+import "github.com/stackrox/rox/pkg/sync"
 
 // RLocker is an interface for objects that allow locking for read access only (such as `sync.RWMutex`).
 type RLocker interface {

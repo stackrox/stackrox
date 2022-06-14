@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	rolesDataStore "github.com/stackrox/stackrox/central/rbac/k8srole/datastore"
-	roleBindingsDataStore "github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
+	rolesDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingsDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
 )
 
 // Service provides the interface to the microservice that serves secret data.

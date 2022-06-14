@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/auth/authproviders"
-	"github.com/stackrox/stackrox/pkg/auth/authproviders/idputil"
-	"github.com/stackrox/stackrox/pkg/cryptoutils"
-	"github.com/stackrox/stackrox/pkg/httputil"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
+	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/maputil"
 )
 
 const (

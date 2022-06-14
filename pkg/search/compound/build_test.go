@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/stackrox/pkg/search"
-	searchMocks "github.com/stackrox/stackrox/pkg/search/mocks"
+	"github.com/stackrox/rox/pkg/search"
+	searchMocks "github.com/stackrox/rox/pkg/search/mocks"
 	"github.com/stretchr/testify/suite"
 )
 

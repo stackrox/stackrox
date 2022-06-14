@@ -3,10 +3,10 @@ package localscanner
 import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/certgen"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/mtls"
 )
 
 // secretDataMap represents data stored as part of a secret.

@@ -3,14 +3,14 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/activecomponent/converter"
-	"github.com/stackrox/stackrox/central/activecomponent/datastore/internal/store"
-	"github.com/stackrox/stackrox/central/activecomponent/datastore/search"
-	"github.com/stackrox/stackrox/central/activecomponent/index"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/dackbox/graph"
-	pkgSearch "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/rox/central/activecomponent/converter"
+	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
+	"github.com/stackrox/rox/central/activecomponent/datastore/search"
+	"github.com/stackrox/rox/central/activecomponent/index"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to ActiveComponent storage.

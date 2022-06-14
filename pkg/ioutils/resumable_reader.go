@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 // NewResumableReader returns a reader that may read from various underlying readers, one at a time. A reader is

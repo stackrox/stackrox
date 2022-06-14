@@ -3,10 +3,10 @@ package plan
 import (
 	"sort"
 
-	"github.com/stackrox/stackrox/pkg/k8sutil"
-	"github.com/stackrox/stackrox/pkg/k8sutil/k8sobjects"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/sensor/upgrader/common"
+	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/upgrader/common"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 

@@ -2,9 +2,9 @@ package generic
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/dbhelper"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
 )
 

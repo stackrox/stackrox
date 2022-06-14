@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/stackrox/pkg/grpc/metrics/mocks"
-	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	"github.com/stackrox/rox/pkg/grpc/metrics/mocks"
+	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/codes"
 )

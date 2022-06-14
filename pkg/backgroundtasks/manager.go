@@ -1,7 +1,7 @@
 package backgroundtasks
 
 import (
-	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 // Task is the functional type through which this manager accepts tasks.

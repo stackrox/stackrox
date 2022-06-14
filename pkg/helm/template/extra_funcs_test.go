@@ -4,7 +4,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/stackrox/stackrox/pkg/templates"
+	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

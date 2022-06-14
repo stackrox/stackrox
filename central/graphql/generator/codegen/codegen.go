@@ -10,8 +10,8 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/proto"
-	"github.com/stackrox/stackrox/central/graphql/generator"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/central/graphql/generator"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var timestampType = reflect.TypeOf((*types.Timestamp)(nil))
@@ -25,11 +25,11 @@ import (
 	"reflect"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/stackrox/central/graphql/generator"
+	"github.com/stackrox/rox/central/graphql/generator"
 {{- range $i, $_ := .Imports }}
 	"{{$i}}"
 {{- end}} // end range imports
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func registerGeneratedTypes(builder generator.SchemaBuilder) {

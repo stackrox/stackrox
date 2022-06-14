@@ -10,9 +10,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (

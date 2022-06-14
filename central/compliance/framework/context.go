@@ -2,7 +2,7 @@ package framework
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 // ComplianceContext is the primary interface through which check implementation access compliance data. It also defines

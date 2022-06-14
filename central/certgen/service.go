@@ -5,13 +5,13 @@ import (
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
-	"github.com/stackrox/stackrox/central/role/resources"
-	siStore "github.com/stackrox/stackrox/central/serviceidentities/datastore"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	pkgGRPC "github.com/stackrox/stackrox/pkg/grpc"
-	"github.com/stackrox/stackrox/pkg/grpc/authz/user"
-	"github.com/stackrox/stackrox/pkg/grpc/routes"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/role/resources"
+	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/grpc/routes"
 	"google.golang.org/grpc"
 )
 

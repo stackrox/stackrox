@@ -3,8 +3,8 @@ package manager
 import (
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/k8sutil"
-	"github.com/stackrox/stackrox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	apps "k8s.io/api/apps/v1"
 	batchV1 "k8s.io/api/batch/v1"
 	batchV1beta1 "k8s.io/api/batch/v1beta1"

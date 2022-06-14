@@ -1,11 +1,11 @@
 package service
 
 import (
-	"github.com/stackrox/stackrox/central/alert/datastore"
-	notifierProcessor "github.com/stackrox/stackrox/central/notifier/processor"
-	baselineDatastore "github.com/stackrox/stackrox/central/processbaseline/datastore"
-	"github.com/stackrox/stackrox/central/sensor/service/connection"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/alert/datastore"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	baselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

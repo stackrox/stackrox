@@ -3,16 +3,16 @@ package service
 import (
 	"context"
 
-	clusterDatastore "github.com/stackrox/stackrox/central/cluster/datastore"
-	"github.com/stackrox/stackrox/central/enrichment"
-	"github.com/stackrox/stackrox/central/imageintegration/datastore"
-	"github.com/stackrox/stackrox/central/reprocessor"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/nodes/enricher"
-	"github.com/stackrox/stackrox/pkg/registries"
-	"github.com/stackrox/stackrox/pkg/scanners"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/enrichment"
+	"github.com/stackrox/rox/central/imageintegration/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/nodes/enricher"
+	"github.com/stackrox/rox/pkg/registries"
+	"github.com/stackrox/rox/pkg/scanners"
 )
 
 var (

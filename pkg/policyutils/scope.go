@@ -3,9 +3,9 @@ package policyutils
 import (
 	"fmt"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // ScopeToQuery generates a proto query for objects in the specified scopes.

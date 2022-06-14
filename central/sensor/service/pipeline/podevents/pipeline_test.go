@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	podMocks "github.com/stackrox/stackrox/central/pod/datastore/mocks"
-	"github.com/stackrox/stackrox/central/sensor/service/pipeline"
-	"github.com/stackrox/stackrox/central/sensor/service/pipeline/reconciliation"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/fixtures"
-	"github.com/stackrox/stackrox/pkg/search"
+	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
+	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -3,7 +3,7 @@ package policyversion
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 	"gotest.tools/assert"
 )
 

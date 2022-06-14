@@ -1,6 +1,6 @@
 package types
 
-import "github.com/stackrox/stackrox/generated/storage"
+import "github.com/stackrox/rox/generated/storage"
 
 // GenericImage is an interface that implements the common functions of Image and ContainerImage
 type GenericImage interface {

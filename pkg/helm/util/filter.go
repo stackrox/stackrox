@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/helm/util/internal/ignore"
-	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/helm/util/internal/ignore"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 

@@ -5,11 +5,11 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/document"
-	deploymentIndex "github.com/stackrox/stackrox/central/deployment/index"
-	"github.com/stackrox/stackrox/central/globalindex"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/fixtures"
-	"github.com/stackrox/stackrox/pkg/search"
+	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
+	"github.com/stackrox/rox/central/globalindex"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 

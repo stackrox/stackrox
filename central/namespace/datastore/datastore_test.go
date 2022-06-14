@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	deploymentMocks "github.com/stackrox/stackrox/central/deployment/datastore/mocks"
-	nsIndexMocks "github.com/stackrox/stackrox/central/namespace/index/mocks"
-	nsMocks "github.com/stackrox/stackrox/central/namespace/store/mocks"
-	"github.com/stackrox/stackrox/central/ranking"
-	"github.com/stackrox/stackrox/central/role/resources"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/sac"
+	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	nsIndexMocks "github.com/stackrox/rox/central/namespace/index/mocks"
+	nsMocks "github.com/stackrox/rox/central/namespace/store/mocks"
+	"github.com/stackrox/rox/central/ranking"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 

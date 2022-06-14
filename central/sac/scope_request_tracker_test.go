@@ -6,9 +6,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
-	clusterMocks "github.com/stackrox/stackrox/central/cluster/datastore/mocks"
-	"github.com/stackrox/stackrox/pkg/sac"
-	clientMocks "github.com/stackrox/stackrox/pkg/sac/client/mocks"
+	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/pkg/sac"
+	clientMocks "github.com/stackrox/rox/pkg/sac/client/mocks"
 	"github.com/stretchr/testify/suite"
 )
 

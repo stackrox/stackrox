@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/sensor/upgrader/flags"
+	"github.com/stackrox/rox/sensor/upgrader/flags"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )

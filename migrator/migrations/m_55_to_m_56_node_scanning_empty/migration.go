@@ -1,9 +1,9 @@
 package m55tom56
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/migrator/migrations"
-	"github.com/stackrox/stackrox/migrator/types"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations"
+	"github.com/stackrox/rox/migrator/types"
 )
 
 var (

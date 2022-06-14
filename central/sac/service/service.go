@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/sac/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/rox/central/sac/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
 )
 
 // Service is the service which exposed the ability to create, edit, and remove auth plugin configurations.

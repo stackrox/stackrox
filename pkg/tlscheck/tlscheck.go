@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/stackrox/pkg/httputil/proxy"
-	"github.com/stackrox/stackrox/pkg/netutil"
-	"github.com/stackrox/stackrox/pkg/urlfmt"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (

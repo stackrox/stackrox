@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	framework "github.com/stackrox/stackrox/central/compliance/framework"
+	framework "github.com/stackrox/rox/central/compliance/framework"
 )
 
 // MockComplianceContext is a mock of ComplianceContext interface.

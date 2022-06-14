@@ -1,6 +1,6 @@
 package runner
 
-import "github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
+import "github.com/stackrox/rox/sensor/upgrader/upgradectx"
 
 // Run runs the given workflow in the upgrader.
 func Run(ctx *upgradectx.UpgradeContext, workflow string) error {

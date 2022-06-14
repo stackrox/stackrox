@@ -1,7 +1,7 @@
 package plan
 
 import (
-	"github.com/stackrox/stackrox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )

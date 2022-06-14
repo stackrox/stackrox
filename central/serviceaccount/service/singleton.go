@@ -1,13 +1,13 @@
 package service
 
 import (
-	deploymentStore "github.com/stackrox/stackrox/central/deployment/datastore"
-	namespaceStore "github.com/stackrox/stackrox/central/namespace/datastore"
-	roleDatastore "github.com/stackrox/stackrox/central/rbac/k8srole/datastore"
-	bindingDatastore "github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore"
-	saDatastore "github.com/stackrox/stackrox/central/serviceaccount/datastore"
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
+	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
+	roleDatastore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	bindingDatastore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	saDatastore "github.com/stackrox/rox/central/serviceaccount/datastore"
 
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

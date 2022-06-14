@@ -1,8 +1,8 @@
 package kubernetes
 
 import (
-	"github.com/stackrox/stackrox/pkg/images/utils"
-	"github.com/stackrox/stackrox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 // GetResolvedRegistry returns the registry endpoint from the image definition

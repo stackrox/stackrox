@@ -3,11 +3,11 @@ package testutils
 import (
 	"fmt"
 
-	"github.com/stackrox/stackrox/central/compliance/framework/mocks"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/stackrox/pkg/stringutils"
-	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/rox/central/compliance/framework/mocks"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // A LightPolicy is a lightweight policy struct that is very convenient to define in tests.

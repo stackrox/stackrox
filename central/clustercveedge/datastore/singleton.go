@@ -1,14 +1,14 @@
 package datastore
 
 import (
-	"github.com/stackrox/stackrox/central/clustercveedge/index"
-	"github.com/stackrox/stackrox/central/clustercveedge/search"
-	"github.com/stackrox/stackrox/central/clustercveedge/store/dackbox"
-	cveIndexer "github.com/stackrox/stackrox/central/cve/index"
-	globaldb "github.com/stackrox/stackrox/central/globaldb/dackbox"
-	"github.com/stackrox/stackrox/central/globalindex"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/clustercveedge/index"
+	"github.com/stackrox/rox/central/clustercveedge/search"
+	"github.com/stackrox/rox/central/clustercveedge/store/dackbox"
+	cveIndexer "github.com/stackrox/rox/central/cve/index"
+	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

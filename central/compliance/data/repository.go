@@ -8,17 +8,17 @@ import (
 
 	"github.com/mailru/easyjson"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/internalapi/compliance"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/compliance/compress"
-	"github.com/stackrox/stackrox/pkg/compliance/data"
-	"github.com/stackrox/stackrox/pkg/complianceoperator/api/v1alpha1"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/compliance/framework"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/compress"
+	"github.com/stackrox/rox/pkg/compliance/data"
+	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

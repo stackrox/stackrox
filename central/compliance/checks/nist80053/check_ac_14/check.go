@@ -1,11 +1,11 @@
 package checkac14
 
 import (
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	"github.com/stackrox/stackrox/generated/storage"
-	pkgCommon "github.com/stackrox/stackrox/pkg/compliance/checks/common"
-	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/generated/storage"
+	pkgCommon "github.com/stackrox/rox/pkg/compliance/checks/common"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (

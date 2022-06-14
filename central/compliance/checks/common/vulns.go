@@ -4,9 +4,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/stackrox/stackrox/central/compliance/framework"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyfields"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // To match more than one CVE, the regex must contain

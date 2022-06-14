@@ -3,7 +3,7 @@ package permissioncheck
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 type contextKey struct{}

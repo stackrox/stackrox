@@ -10,8 +10,8 @@ import (
 
 	types "github.com/gogo/protobuf/types"
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	timestamp "github.com/stackrox/stackrox/pkg/timestamp"
+	storage "github.com/stackrox/rox/generated/storage"
+	timestamp "github.com/stackrox/rox/pkg/timestamp"
 )
 
 // MockFlowStore is a mock of FlowStore interface.

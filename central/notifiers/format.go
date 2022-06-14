@@ -7,13 +7,13 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/mitre/datastore"
-	"github.com/stackrox/stackrox/central/policy/utils"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/images/types"
-	"github.com/stackrox/stackrox/pkg/readable"
-	"github.com/stackrox/stackrox/pkg/set"
-	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/rox/central/mitre/datastore"
+	"github.com/stackrox/rox/central/policy/utils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/readable"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 type policyFormatStruct struct {

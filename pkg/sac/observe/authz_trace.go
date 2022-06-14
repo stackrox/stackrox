@@ -3,9 +3,9 @@ package observe
 import (
 	"fmt"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/timestamp"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 // ScopeCheckerCoreType is a string representation of a set of existing

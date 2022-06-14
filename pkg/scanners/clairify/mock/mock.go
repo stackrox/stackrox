@@ -1,7 +1,7 @@
 package mock
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 

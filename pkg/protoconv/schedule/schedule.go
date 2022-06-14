@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 // ConvertToCronTab validates and converts storage.Schedule to crontab format

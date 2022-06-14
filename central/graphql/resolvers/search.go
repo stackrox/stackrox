@@ -4,13 +4,13 @@ import (
 	"context"
 	"math"
 
-	"github.com/stackrox/stackrox/central/graphql/resolvers/inputtypes"
-	"github.com/stackrox/stackrox/central/rbac/service"
-	searchService "github.com/stackrox/stackrox/central/search/service"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/paginated"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
+	"github.com/stackrox/rox/central/rbac/service"
+	searchService "github.com/stackrox/rox/central/search/service"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {

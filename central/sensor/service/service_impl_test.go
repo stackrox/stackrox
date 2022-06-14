@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/grpc/authn/service"
-	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
-	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn/service"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/assert"
 )
 

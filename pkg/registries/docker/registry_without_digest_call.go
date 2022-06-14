@@ -3,8 +3,8 @@ package docker
 import (
 	"fmt"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 var manifestFuncs = []func(registry *Registry, remote, ref string) (*storage.ImageMetadata, error){

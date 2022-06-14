@@ -3,13 +3,13 @@ package auditlogstateupdate
 import (
 	"context"
 
-	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
-	"github.com/stackrox/stackrox/central/sensor/service/common"
-	"github.com/stackrox/stackrox/central/sensor/service/pipeline"
-	"github.com/stackrox/stackrox/central/sensor/service/pipeline/reconciliation"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/protoutils"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
 )
 
 var (

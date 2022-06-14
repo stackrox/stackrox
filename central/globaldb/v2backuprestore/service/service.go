@@ -3,9 +3,9 @@ package service
 import (
 	"net/http"
 
-	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/manager"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/rox/central/globaldb/v2backuprestore/manager"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
 )
 
 // Service is the interface for the v2 db backup/restore service. It provides both gRPC as well as HTTP/1.1 service

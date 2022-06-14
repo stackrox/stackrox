@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/helm/util/internal/ignore"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/pkg/helm/util/internal/ignore"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chart/loader"

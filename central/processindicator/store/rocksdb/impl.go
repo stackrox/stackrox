@@ -1,5 +1,5 @@
 package rocksdb
 
-import "github.com/stackrox/stackrox/central/processindicator/store"
+import "github.com/stackrox/rox/central/processindicator/store"
 
 var _ store.Store = (*storeImpl)(nil)

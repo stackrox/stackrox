@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // DetermineFormat determines which of the given formats is applicable for the given manifest. The first matching format

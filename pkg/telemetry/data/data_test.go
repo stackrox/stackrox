@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

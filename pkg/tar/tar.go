@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // FromPathMap writes the contents of files to a tar. The pathMap contains the map from the relative path in tar to the path of the source file/directory.

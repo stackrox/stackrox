@@ -9,9 +9,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	permissions "github.com/stackrox/stackrox/pkg/auth/permissions"
-	sac "github.com/stackrox/stackrox/pkg/sac"
-	effectiveaccessscope "github.com/stackrox/stackrox/pkg/sac/effectiveaccessscope"
+	permissions "github.com/stackrox/rox/pkg/auth/permissions"
+	sac "github.com/stackrox/rox/pkg/sac"
+	effectiveaccessscope "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 // MockScopeCheckerCore is a mock of ScopeCheckerCore interface.

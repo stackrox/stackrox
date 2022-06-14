@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store provides access and update functions for secrets.

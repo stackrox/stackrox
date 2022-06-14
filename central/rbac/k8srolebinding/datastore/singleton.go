@@ -1,16 +1,16 @@
 package datastore
 
 import (
-	"github.com/stackrox/stackrox/central/globaldb"
-	"github.com/stackrox/stackrox/central/globalindex"
-	"github.com/stackrox/stackrox/central/rbac/k8srolebinding/internal/index"
-	"github.com/stackrox/stackrox/central/rbac/k8srolebinding/internal/store"
-	"github.com/stackrox/stackrox/central/rbac/k8srolebinding/internal/store/postgres"
-	"github.com/stackrox/stackrox/central/rbac/k8srolebinding/internal/store/rocksdb"
-	"github.com/stackrox/stackrox/central/rbac/k8srolebinding/search"
-	"github.com/stackrox/stackrox/pkg/features"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store/postgres"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store/rocksdb"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/search"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

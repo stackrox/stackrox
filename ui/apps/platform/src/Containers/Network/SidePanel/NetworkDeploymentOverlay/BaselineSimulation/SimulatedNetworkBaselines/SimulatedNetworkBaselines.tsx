@@ -65,7 +65,7 @@ const columns = [
         Header: 'Namespace',
         id: 'namespace',
         accessor: (datum: SimulatedBaseline): string => {
-            // TODO: Reference https://github.com/stackrox/stackrox/pull/8005#discussion_r612485102
+            // TODO: Reference https://github.com/stackrox/rox/pull/8005#discussion_r612485102
             return datum.peer.entity.namespace || '-';
         },
         aggregate: (leafValues: string[]): string => {

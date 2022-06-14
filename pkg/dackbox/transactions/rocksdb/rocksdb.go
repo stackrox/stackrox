@@ -1,9 +1,9 @@
 package rocksdb
 
 import (
-	"github.com/stackrox/stackrox/pkg/dackbox/transactions"
-	"github.com/stackrox/stackrox/pkg/rocksdb"
-	generic "github.com/stackrox/stackrox/pkg/rocksdb/crud"
+	"github.com/stackrox/rox/pkg/dackbox/transactions"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/tecbot/gorocksdb"
 )
 

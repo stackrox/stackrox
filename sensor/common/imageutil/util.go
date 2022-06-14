@@ -1,8 +1,8 @@
 package imageutil
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/sensor/common/registry"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/registry"
 )
 
 // IsInternalImage determines if the image represented by the given name

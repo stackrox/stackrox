@@ -5,7 +5,7 @@ import (
 	"path"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/image"
+	"github.com/stackrox/rox/image"
 )
 
 var (

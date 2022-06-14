@@ -3,7 +3,7 @@ package cvss
 import (
 	"strings"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // VulnI provides functionality to get vulnerability score.

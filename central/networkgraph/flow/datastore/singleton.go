@@ -1,11 +1,11 @@
 package datastore
 
 import (
-	"github.com/stackrox/stackrox/central/deployment/cache"
-	graphConfigDS "github.com/stackrox/stackrox/central/networkgraph/config/datastore"
-	"github.com/stackrox/stackrox/central/networkgraph/entity/networktree"
-	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore/internal/store/singleton"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/deployment/cache"
+	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
+	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/singleton"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

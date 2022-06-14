@@ -3,13 +3,13 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/central/cve/image/datastore/internal/store/postgres"
-	"github.com/stackrox/stackrox/central/cve/index"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/search/blevesearch"
-	pkgPostgres "github.com/stackrox/stackrox/pkg/search/scoped/postgres"
+	"github.com/stackrox/rox/central/cve/image/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/cve/index"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
+	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 )
 
 // Searcher provides search functionality on existing cves.

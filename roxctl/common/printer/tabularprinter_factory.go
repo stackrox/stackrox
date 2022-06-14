@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/stackrox/pkg/errox"
-	"github.com/stackrox/stackrox/pkg/printers"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/printers"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // TabularPrinterFactory holds all configuration options of tabular printers, specifically CSVPrinter and TablePrinter

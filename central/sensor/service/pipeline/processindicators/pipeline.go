@@ -4,16 +4,16 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/detection/lifecycle"
-	countMetrics "github.com/stackrox/stackrox/central/metrics"
-	"github.com/stackrox/stackrox/central/sensor/service/common"
-	"github.com/stackrox/stackrox/central/sensor/service/pipeline"
-	"github.com/stackrox/stackrox/central/sensor/service/pipeline/reconciliation"
-	"github.com/stackrox/stackrox/generated/internalapi/central"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/metrics"
-	"github.com/stackrox/stackrox/pkg/process/id"
+	"github.com/stackrox/rox/central/detection/lifecycle"
+	countMetrics "github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/process/id"
 )
 
 var (

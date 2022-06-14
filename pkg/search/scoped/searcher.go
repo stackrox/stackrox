@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/dackbox/keys/transformation"
-	"github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // TransformationProvider provides a transformation.OneToMany for a given category.

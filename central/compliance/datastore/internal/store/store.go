@@ -1,9 +1,9 @@
 package store
 
 import (
-	"github.com/stackrox/stackrox/central/compliance"
-	"github.com/stackrox/stackrox/central/compliance/datastore/types"
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/central/compliance"
+	"github.com/stackrox/rox/central/compliance/datastore/types"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store is the interface for accessing stored compliance data

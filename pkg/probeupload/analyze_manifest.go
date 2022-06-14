@@ -1,8 +1,8 @@
 package probeupload
 
 import (
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // AnalyzeManifest analyzes the given manifest, checking that every contained file is valid, and returning the total

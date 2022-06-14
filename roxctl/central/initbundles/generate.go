@@ -6,12 +6,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	pkgCommon "github.com/stackrox/stackrox/pkg/roxctl/common"
-	"github.com/stackrox/stackrox/pkg/stringutils"
-	"github.com/stackrox/stackrox/pkg/utils"
-	"github.com/stackrox/stackrox/roxctl/common"
-	"github.com/stackrox/stackrox/roxctl/common/environment"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
+	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 type output struct {

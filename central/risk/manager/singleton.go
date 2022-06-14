@@ -1,17 +1,17 @@
 package manager
 
 import (
-	acUpdater "github.com/stackrox/stackrox/central/activecomponent/updater"
-	deploymentDS "github.com/stackrox/stackrox/central/deployment/datastore"
-	imageDS "github.com/stackrox/stackrox/central/image/datastore"
-	nodeDS "github.com/stackrox/stackrox/central/node/globaldatastore"
-	"github.com/stackrox/stackrox/central/ranking"
-	riskDS "github.com/stackrox/stackrox/central/risk/datastore"
-	componentScorer "github.com/stackrox/stackrox/central/risk/scorer/component/singleton"
-	deploymentScorer "github.com/stackrox/stackrox/central/risk/scorer/deployment"
-	imageScorer "github.com/stackrox/stackrox/central/risk/scorer/image"
-	nodeScorer "github.com/stackrox/stackrox/central/risk/scorer/node"
-	"github.com/stackrox/stackrox/pkg/sync"
+	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
+	nodeDS "github.com/stackrox/rox/central/node/globaldatastore"
+	"github.com/stackrox/rox/central/ranking"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	componentScorer "github.com/stackrox/rox/central/risk/scorer/component/singleton"
+	deploymentScorer "github.com/stackrox/rox/central/risk/scorer/deployment"
+	imageScorer "github.com/stackrox/rox/central/risk/scorer/image"
+	nodeScorer "github.com/stackrox/rox/central/risk/scorer/node"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

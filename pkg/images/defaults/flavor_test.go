@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/buildinfo"
-	"github.com/stackrox/stackrox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
-	"github.com/stackrox/stackrox/pkg/version/testutils"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

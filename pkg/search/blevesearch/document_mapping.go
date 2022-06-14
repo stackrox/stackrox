@@ -6,8 +6,8 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/mapping"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // DocumentMappingFromOptionsMap creates a ready-to-use document mapping from the given optionsMap

@@ -2,10 +2,10 @@ package fetcher
 
 import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
-	"github.com/stackrox/stackrox/central/cve/converter"
-	"github.com/stackrox/stackrox/central/cve/matcher"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/scanners/types"
+	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/matcher"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/scanners/types"
 )
 
 // nvdCVEWithComponents is to simulate the k8s vulnerabilities in scanner.

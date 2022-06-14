@@ -5,13 +5,13 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	deploymentDataStore "github.com/stackrox/stackrox/central/deployment/datastore"
-	"github.com/stackrox/stackrox/central/namespace/datastore"
-	npDS "github.com/stackrox/stackrox/central/networkpolicies/datastore"
-	secretDataStore "github.com/stackrox/stackrox/central/secret/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/search"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/namespace/datastore"
+	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
+	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // ResolveAll resolves all namespaces, populating volatile runtime data (like deployment and secret counts) by querying related stores.

@@ -1,8 +1,8 @@
 package store
 
 import (
-	serializePkg "github.com/stackrox/stackrox/central/group/datastore/serialize"
-	"github.com/stackrox/stackrox/generated/storage"
+	serializePkg "github.com/stackrox/rox/central/group/datastore/serialize"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Serialization

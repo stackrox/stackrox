@@ -1,9 +1,9 @@
 package formats
 
 import (
-	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/common"
-	"github.com/stackrox/stackrox/pkg/sync"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (

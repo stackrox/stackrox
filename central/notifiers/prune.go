@@ -5,8 +5,8 @@ import (
 	"sort"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
-	"github.com/stackrox/stackrox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
 /*

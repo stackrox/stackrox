@@ -1,8 +1,8 @@
 package snapshot
 
 import (
-	"github.com/stackrox/stackrox/pkg/k8sutil"
-	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
 
 // Options controls the operation of the snapshotter.

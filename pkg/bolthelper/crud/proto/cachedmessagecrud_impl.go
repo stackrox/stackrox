@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/stackrox/pkg/storecache"
+	"github.com/stackrox/rox/pkg/storecache"
 )
 
 type cachedMessageCrudImpl struct {

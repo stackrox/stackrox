@@ -6,9 +6,9 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
-	"github.com/stackrox/stackrox/pkg/docker/types"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

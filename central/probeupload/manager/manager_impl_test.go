@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stackrox/stackrox/pkg/binenc"
-	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/rox/pkg/binenc"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 

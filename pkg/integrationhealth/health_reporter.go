@@ -1,7 +1,7 @@
 package integrationhealth
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Reporter is an interface to report integration health updates and deletes

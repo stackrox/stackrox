@@ -1,8 +1,8 @@
 package reconciler
 
 import (
-	platform "github.com/stackrox/stackrox/operator/apis/platform/v1alpha1"
-	"github.com/stackrox/stackrox/operator/pkg/utils"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/utils"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"

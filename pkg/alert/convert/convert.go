@@ -3,8 +3,8 @@ package convert
 import (
 	"strings"
 
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // AlertToListAlert takes in a storage.Alert and returns a store.ListAlert

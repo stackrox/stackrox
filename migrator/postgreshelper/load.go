@@ -5,11 +5,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/stackrox/stackrox/migrator/log"
-	"github.com/stackrox/stackrox/pkg/config"
-	"github.com/stackrox/stackrox/pkg/postgres/pgutils"
-	"github.com/stackrox/stackrox/pkg/retry"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/migrator/log"
+	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

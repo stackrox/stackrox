@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func TestValidate(t *testing.T) {

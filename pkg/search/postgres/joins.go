@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/pkg/postgres/walker"
-	"github.com/stackrox/stackrox/pkg/set"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type joinTreeNode struct {

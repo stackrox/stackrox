@@ -9,11 +9,11 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	central "github.com/stackrox/stackrox/generated/internalapi/central"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	concurrency "github.com/stackrox/stackrox/pkg/concurrency"
-	search "github.com/stackrox/stackrox/pkg/search"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	central "github.com/stackrox/rox/generated/internalapi/central"
+	storage "github.com/stackrox/rox/generated/storage"
+	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	search "github.com/stackrox/rox/pkg/search"
 )
 
 // MockDataStore is a mock of DataStore interface.

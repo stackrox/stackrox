@@ -16,11 +16,11 @@ import (
 	awsS3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/central/externalbackups/plugins"
-	"github.com/stackrox/stackrox/central/externalbackups/plugins/types"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/errorhelpers"
-	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/rox/central/externalbackups/plugins"
+	"github.com/stackrox/rox/central/externalbackups/plugins/types"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (

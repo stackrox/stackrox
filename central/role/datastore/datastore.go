@@ -3,9 +3,9 @@ package datastore
 import (
 	"context"
 
-	rocksDBStore "github.com/stackrox/stackrox/central/role/store"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	rocksDBStore "github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 // DataStore is the datastore for roles.

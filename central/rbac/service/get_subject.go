@@ -4,14 +4,14 @@ import (
 	"context"
 	"math"
 
-	k8sRoleDS "github.com/stackrox/stackrox/central/rbac/k8srole/datastore"
-	k8sRoleBindingDS "github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore"
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/k8srbac"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/search"
-	"github.com/stackrox/stackrox/pkg/set"
+	k8sRoleDS "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	k8sRoleBindingDS "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (

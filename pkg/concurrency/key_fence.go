@@ -3,11 +3,11 @@ package concurrency
 import (
 	"bytes"
 
-	"github.com/stackrox/stackrox/pkg/dackbox/sortedkeys"
-	"github.com/stackrox/stackrox/pkg/dackbox/utils"
-	"github.com/stackrox/stackrox/pkg/dbhelper"
-	"github.com/stackrox/stackrox/pkg/sliceutils"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/dackbox/utils"
+	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // KeyFence provides a way of blocking set of keys from being operated on simultaneously by different processes.

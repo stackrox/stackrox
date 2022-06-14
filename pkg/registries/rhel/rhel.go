@@ -1,10 +1,10 @@
 package rhel
 
 import (
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/logging"
-	"github.com/stackrox/stackrox/pkg/registries/docker"
-	"github.com/stackrox/stackrox/pkg/registries/types"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/registries/docker"
+	"github.com/stackrox/rox/pkg/registries/types"
 )
 
 const (

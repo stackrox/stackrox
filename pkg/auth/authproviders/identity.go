@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 
-	v1 "github.com/stackrox/stackrox/generated/api/v1"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/auth/permissions"
-	"github.com/stackrox/stackrox/pkg/auth/permissions/utils"
-	"github.com/stackrox/stackrox/pkg/auth/tokens"
-	"github.com/stackrox/stackrox/pkg/auth/user"
-	"github.com/stackrox/stackrox/pkg/protoconv"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/auth/user"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 // CreateRoleBasedIdentity builds v1.AuthStatus containing identity and its role information from auth response.

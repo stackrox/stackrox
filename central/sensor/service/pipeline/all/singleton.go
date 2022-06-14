@@ -1,8 +1,8 @@
 package all
 
 import (
-	"github.com/stackrox/stackrox/central/sensor/service/pipeline"
-	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

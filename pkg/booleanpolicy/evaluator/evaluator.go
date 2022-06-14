@@ -4,9 +4,9 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/evaluator/pathutil"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/query"
-	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/booleanpolicy/query"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // An Evaluator evaluates an augmented object, and produces a result that has been filtered to linked matches.

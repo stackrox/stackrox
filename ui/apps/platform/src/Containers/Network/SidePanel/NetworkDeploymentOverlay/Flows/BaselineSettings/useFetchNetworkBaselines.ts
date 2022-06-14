@@ -88,7 +88,7 @@ function useFetchNetworkBaselines({
                 });
             });
         // TODO: Possibly use another value other than selectedDeployment to ensure this logic
-        // is executed again. See following comment: https://github.com/stackrox/stackrox/pull/7254#discussion_r555252326
+        // is executed again. See following comment: https://github.com/stackrox/rox/pull/7254#discussion_r555252326
     }, [selectedDeployment, deploymentId, filterState]);
 
     return result;

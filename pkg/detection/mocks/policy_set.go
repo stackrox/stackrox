@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/stackrox/generated/storage"
-	detection "github.com/stackrox/stackrox/pkg/detection"
+	storage "github.com/stackrox/rox/generated/storage"
+	detection "github.com/stackrox/rox/pkg/detection"
 )
 
 // MockPolicySet is a mock of PolicySet interface.

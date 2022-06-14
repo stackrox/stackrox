@@ -3,7 +3,7 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // ReadOnlyDataStore is a sub-interface of datastore with the read-only methods.

@@ -4,9 +4,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/stackrox/stackrox/roxctl/common"
-	io2 "github.com/stackrox/stackrox/roxctl/common/io"
-	"github.com/stackrox/stackrox/roxctl/common/logger"
+	"github.com/stackrox/rox/roxctl/common"
+	io2 "github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"google.golang.org/grpc"
 )
 

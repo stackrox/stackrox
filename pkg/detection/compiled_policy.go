@@ -2,12 +2,12 @@ package detection
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/stackrox/generated/storage"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy"
-	"github.com/stackrox/stackrox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/stackrox/pkg/policies"
-	"github.com/stackrox/stackrox/pkg/regexutils"
-	"github.com/stackrox/stackrox/pkg/scopecomp"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/regexutils"
+	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
 // CompiledPolicy is a compiled policy, which means it can match a policy, as well as check whether a policy is applicable.
