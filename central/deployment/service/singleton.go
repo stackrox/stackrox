@@ -1,13 +1,13 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/deployment/datastore"
-	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
-	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
-	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/deployment/datastore"
+	processBaselineDataStore "github.com/stackrox/stackrox/central/processbaseline/datastore"
+	processBaselineResultsStore "github.com/stackrox/stackrox/central/processbaselineresults/datastore"
+	processIndicatorDataStore "github.com/stackrox/stackrox/central/processindicator/datastore"
+	riskDataStore "github.com/stackrox/stackrox/central/risk/datastore"
+	"github.com/stackrox/stackrox/central/risk/manager"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

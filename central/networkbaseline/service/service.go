@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/networkbaseline/datastore"
-	"github.com/stackrox/rox/central/networkbaseline/manager"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/stackrox/central/networkbaseline/datastore"
+	"github.com/stackrox/stackrox/central/networkbaseline/manager"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc"
 )
 
 // Service provides the interface to the microservice that serves pod data.

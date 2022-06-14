@@ -1,9 +1,9 @@
 package networkpolicy
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/rox/pkg/labels"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/stackrox/pkg/labels"
 )
 
 // GenerateNetworkPoliciesAppliedObj creates an augmentedobj.NetworkPoliciesApplied object

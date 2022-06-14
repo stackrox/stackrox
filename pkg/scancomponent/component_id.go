@@ -1,10 +1,10 @@
 package scancomponent
 
 import (
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/stackrox/pkg/dackbox/edges"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/search/postgres"
 )
 
 var (

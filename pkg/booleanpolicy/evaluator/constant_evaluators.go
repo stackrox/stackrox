@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/evaluator/pathutil"
 )
 
 type alwaysTrueType struct{}

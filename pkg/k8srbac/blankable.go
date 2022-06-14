@@ -1,7 +1,7 @@
 package k8srbac
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // Blankable is a fields whos 'all values' state can be represented by not having any values.

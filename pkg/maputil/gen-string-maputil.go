@@ -6,7 +6,7 @@
 package maputil
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 // CloneStringStringMap clones a map of the given type.

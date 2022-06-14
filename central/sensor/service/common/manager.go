@@ -3,7 +3,7 @@ package common
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // ClusterManager envelopes functions that interact with clusters

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/bbolt"
 )

@@ -4,13 +4,13 @@ import (
 	"encoding/base64"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/images/defaults"
-	imageUtils "github.com/stackrox/rox/pkg/images/utils"
-	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/zip"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/image"
+	"github.com/stackrox/stackrox/pkg/images/defaults"
+	imageUtils "github.com/stackrox/stackrox/pkg/images/utils"
+	kubernetesPkg "github.com/stackrox/stackrox/pkg/kubernetes"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/zip"
 )
 
 var (

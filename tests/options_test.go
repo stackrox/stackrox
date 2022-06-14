@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	search "github.com/stackrox/rox/central/search"
-	"github.com/stackrox/rox/central/search/options"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	search "github.com/stackrox/stackrox/central/search"
+	"github.com/stackrox/stackrox/central/search/options"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

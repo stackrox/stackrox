@@ -1,11 +1,11 @@
 package common
 
 import (
-	"github.com/stackrox/rox/central/cve/converter"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/scancomponent"
-	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/central/cve/converter"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/scancomponent"
+	"github.com/stackrox/stackrox/pkg/search/postgres"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 // Split splits the input node into a set of parts.

@@ -3,7 +3,7 @@ package user
 import (
 	"sort"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
 )
 
 // ConvertAttributes converts a map of user attributes to v1.UserAttribute

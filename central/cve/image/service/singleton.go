@@ -1,9 +1,9 @@
 package service
 
 import (
-	cveDataStore "github.com/stackrox/rox/central/cve/image/datastore"
-	vulReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
-	"github.com/stackrox/rox/pkg/sync"
+	cveDataStore "github.com/stackrox/stackrox/central/cve/image/datastore"
+	vulReqMgr "github.com/stackrox/stackrox/central/vulnerabilityrequest/manager/requestmgr"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/search"
+	namespaceDataStore "github.com/stackrox/stackrox/central/namespace/datastore"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/stackrox/pkg/retry"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 const (

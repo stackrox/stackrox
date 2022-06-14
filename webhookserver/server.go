@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 type message struct {

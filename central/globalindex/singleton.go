@@ -4,9 +4,9 @@ import (
 	"path/filepath"
 
 	"github.com/blevesearch/bleve"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/sync"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/postgres"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

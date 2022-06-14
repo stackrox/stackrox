@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/rox/central/analystnotes"
-	"github.com/stackrox/rox/central/metrics"
-	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/analystnotes"
+	"github.com/stackrox/stackrox/central/metrics"
+	pkgMetrics "github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 func init() {

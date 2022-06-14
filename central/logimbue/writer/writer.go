@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/stackrox/pkg/jsonutil"
 )
 
 type safeRawMessage []byte

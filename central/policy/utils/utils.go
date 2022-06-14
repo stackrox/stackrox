@@ -4,8 +4,8 @@ import (
 	"sort"
 	"strings"
 
-	mitreDS "github.com/stackrox/rox/central/mitre/datastore"
-	"github.com/stackrox/rox/generated/storage"
+	mitreDS "github.com/stackrox/stackrox/central/mitre/datastore"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // GetFullMitreAttackVectors returns MITRE ATT&CK for policy with full data.

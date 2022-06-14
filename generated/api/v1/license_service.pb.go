@@ -8,7 +8,7 @@ import (
 	fmt "fmt"
 	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	license "github.com/stackrox/rox/generated/shared/license"
+	license "github.com/stackrox/stackrox/generated/shared/license"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

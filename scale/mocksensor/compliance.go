@@ -6,8 +6,8 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 const (

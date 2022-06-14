@@ -1,7 +1,7 @@
 package generic
 
 import (
-	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
 )
 
 // Key is an alias for a byte slice.

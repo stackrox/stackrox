@@ -3,7 +3,7 @@ package predicate
 import (
 	"strings"
 
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 type wrappedOptionsMap struct {

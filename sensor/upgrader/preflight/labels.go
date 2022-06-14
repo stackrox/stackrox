@@ -1,9 +1,9 @@
 package preflight
 
 import (
-	"github.com/stackrox/rox/sensor/upgrader/common"
-	"github.com/stackrox/rox/sensor/upgrader/plan"
-	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/stackrox/sensor/upgrader/common"
+	"github.com/stackrox/stackrox/sensor/upgrader/plan"
+	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
 )
 
 type labelsCheck struct{}

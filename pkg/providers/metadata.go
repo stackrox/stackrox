@@ -3,12 +3,12 @@ package providers
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cloudproviders/aws"
-	"github.com/stackrox/rox/pkg/cloudproviders/azure"
-	"github.com/stackrox/rox/pkg/cloudproviders/gcp"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/cloudproviders/aws"
+	"github.com/stackrox/stackrox/pkg/cloudproviders/azure"
+	"github.com/stackrox/stackrox/pkg/cloudproviders/gcp"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

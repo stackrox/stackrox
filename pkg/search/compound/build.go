@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
-	"github.com/stackrox/rox/pkg/search"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/dackbox/keys/transformation"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 // build walks the query and maps every base query field to a single SearcherSpec. This way we know which parts of the

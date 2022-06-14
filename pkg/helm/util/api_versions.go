@@ -4,7 +4,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/set"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 

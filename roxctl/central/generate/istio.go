@@ -3,8 +3,8 @@ package generate
 import (
 	"strings"
 
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/istioutils"
 )
 
 type istioSupportWrapper struct {

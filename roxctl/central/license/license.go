@@ -2,9 +2,9 @@ package license
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/central/license/add"
-	"github.com/stackrox/rox/roxctl/central/license/info"
-	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/roxctl/central/license/add"
+	"github.com/stackrox/stackrox/roxctl/central/license/info"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
 )
 
 // Command controls all of the functions in this subpackage. See usage string below for details.

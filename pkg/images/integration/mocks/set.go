@@ -8,9 +8,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/rox/generated/storage"
-	registries "github.com/stackrox/rox/pkg/registries"
-	scanners "github.com/stackrox/rox/pkg/scanners"
+	storage "github.com/stackrox/stackrox/generated/storage"
+	registries "github.com/stackrox/stackrox/pkg/registries"
+	scanners "github.com/stackrox/stackrox/pkg/scanners"
 )
 
 // MockSet is a mock of Set interface.

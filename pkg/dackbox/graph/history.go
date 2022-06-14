@@ -1,6 +1,6 @@
 package graph
 
-import "github.com/stackrox/rox/pkg/sync"
+import "github.com/stackrox/stackrox/pkg/sync"
 
 // History watches a graph's updates over time when they are applied through the tracker.
 // You can 'Watch' the graphs state at points in time

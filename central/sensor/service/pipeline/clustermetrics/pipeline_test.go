@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	metricsMocks "github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics/mocks"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/fixtures"
+	metricsMocks "github.com/stackrox/stackrox/central/sensor/service/pipeline/clustermetrics/mocks"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 )
 

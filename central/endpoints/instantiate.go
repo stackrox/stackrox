@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/tlsconfig"
-	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/stackrox/central/tlsconfig"
+	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/pkg/mtls/verifier"
 )
 
 // TLSConfigurerProvider is a slimmed-down subinterface of tlsconfig.Manager.

@@ -1,7 +1,7 @@
 package policies
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // AppliesAtBuildTime returns if a policy applies at build time.

@@ -4,11 +4,11 @@ import (
 	"context"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/postgres"
+	"github.com/stackrox/stackrox/pkg/postgres/pgutils"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	"github.com/stackrox/stackrox/pkg/set"
 	"gorm.io/gorm"
 )
 

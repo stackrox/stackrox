@@ -3,9 +3,9 @@ package check135
 import (
 	"strings"
 
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/storage"
-	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/storage"
+	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
 )
 
 const checkID = "PCI_DSS_3_2:1_3_5"

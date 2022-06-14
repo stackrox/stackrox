@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stackrox/stackrox/pkg/apiparams"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/istioutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

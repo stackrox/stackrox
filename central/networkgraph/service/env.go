@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/env"
 )
 
 var (

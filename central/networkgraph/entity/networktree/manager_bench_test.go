@@ -5,8 +5,8 @@ import (
 	"net"
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/networkgraph/externalsrcs"
 	"github.com/stretchr/testify/require"
 )
 

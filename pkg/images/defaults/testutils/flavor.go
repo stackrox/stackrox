@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/stackrox/pkg/images/defaults"
+	"github.com/stackrox/stackrox/pkg/testutils"
+	"github.com/stackrox/stackrox/pkg/version"
 )
 
 // MakeImageFlavorForTest is to be used in tests where flavor is passed as a parameter. This makes it easier to test and expect

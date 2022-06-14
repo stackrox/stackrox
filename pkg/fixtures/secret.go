@@ -1,9 +1,9 @@
 package fixtures
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac/testconsts"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/sac/testconsts"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 // GetSecret returns a mock Secret

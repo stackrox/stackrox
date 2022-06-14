@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
 )
 
 // LoadTestMTLSCerts loads test TLS certificates into the according environment variables

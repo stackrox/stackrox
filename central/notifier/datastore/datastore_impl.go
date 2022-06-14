@@ -3,14 +3,14 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/notifier/datastore/internal/store"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/secrets"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/central/notifier/datastore/internal/store"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/secrets"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 var (

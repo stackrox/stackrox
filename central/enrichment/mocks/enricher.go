@@ -9,8 +9,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/rox/generated/storage"
-	enricher "github.com/stackrox/rox/pkg/images/enricher"
+	storage "github.com/stackrox/stackrox/generated/storage"
+	enricher "github.com/stackrox/stackrox/pkg/images/enricher"
 )
 
 // MockEnricher is a mock of Enricher interface.

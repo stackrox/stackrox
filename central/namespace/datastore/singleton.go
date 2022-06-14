@@ -1,19 +1,19 @@
 package datastore
 
 import (
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/globaldb"
-	dackbox "github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/idmap"
-	"github.com/stackrox/rox/central/namespace/index"
-	"github.com/stackrox/rox/central/namespace/store"
-	"github.com/stackrox/rox/central/namespace/store/postgres"
-	"github.com/stackrox/rox/central/namespace/store/rocksdb"
-	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	deploymentDataStore "github.com/stackrox/stackrox/central/deployment/datastore"
+	"github.com/stackrox/stackrox/central/globaldb"
+	dackbox "github.com/stackrox/stackrox/central/globaldb/dackbox"
+	"github.com/stackrox/stackrox/central/globalindex"
+	"github.com/stackrox/stackrox/central/idmap"
+	"github.com/stackrox/stackrox/central/namespace/index"
+	"github.com/stackrox/stackrox/central/namespace/store"
+	"github.com/stackrox/stackrox/central/namespace/store/postgres"
+	"github.com/stackrox/stackrox/central/namespace/store/rocksdb"
+	"github.com/stackrox/stackrox/central/ranking"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

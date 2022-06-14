@@ -2,9 +2,9 @@ package store
 
 import (
 	"github.com/pkg/errors"
-	serializePkg "github.com/stackrox/rox/central/group/datastore/serialize"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
+	serializePkg "github.com/stackrox/stackrox/central/group/datastore/serialize"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errox"
 	bolt "go.etcd.io/bbolt"
 )
 

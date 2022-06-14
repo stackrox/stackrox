@@ -2,7 +2,7 @@
 
 package notifier
 
-import storage "github.com/stackrox/rox/generated/storage"
+import storage "github.com/stackrox/stackrox/generated/storage"
 
 type Notifier interface {
 	OnAdd(onAdd func(alert *storage.Alert))

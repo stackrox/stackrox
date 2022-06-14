@@ -1,10 +1,10 @@
 package check362
 
 import (
-	"github.com/stackrox/rox/central/compliance/checks/common"
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/storage"
-	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/central/compliance/checks/common"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/storage"
+	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
 )
 
 const checkID = "PCI_DSS_3_2:3_6_2"

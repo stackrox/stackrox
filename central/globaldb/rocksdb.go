@@ -3,14 +3,14 @@ package globaldb
 import (
 	"time"
 
-	"github.com/stackrox/rox/central/globaldb/metrics"
-	"github.com/stackrox/rox/central/option"
-	"github.com/stackrox/rox/pkg/fileutils"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	rocksMetrics "github.com/stackrox/rox/pkg/rocksdb/metrics"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/globaldb/metrics"
+	"github.com/stackrox/stackrox/central/option"
+	"github.com/stackrox/stackrox/pkg/fileutils"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/postgres"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	rocksMetrics "github.com/stackrox/stackrox/pkg/rocksdb/metrics"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	storage "github.com/stackrox/rox/generated/storage"
+	storage "github.com/stackrox/stackrox/generated/storage"
 )
 
 // Store defines the interface for Risk storage

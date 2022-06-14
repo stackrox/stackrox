@@ -8,13 +8,13 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators"
-	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/cas"
-	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/dbs"
-	"github.com/stackrox/rox/pkg/backup"
-	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/backup/generators"
+	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/backup/generators/cas"
+	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/backup/generators/dbs"
+	"github.com/stackrox/stackrox/pkg/backup"
+	"github.com/stackrox/stackrox/pkg/migrations"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	"github.com/stackrox/stackrox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
 )
 

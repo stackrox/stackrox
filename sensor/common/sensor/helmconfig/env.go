@@ -1,6 +1,6 @@
 package helmconfig
 
-import "github.com/stackrox/rox/pkg/env"
+import "github.com/stackrox/stackrox/pkg/env"
 
 var (
 	// HelmConfigFingerprint is the environment variable that indicates the fingerprint of the helm cluster

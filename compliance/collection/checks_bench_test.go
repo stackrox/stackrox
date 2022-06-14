@@ -6,10 +6,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/compliance/checks/standards"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // To run this benchmark download sample data from the Compliance Checks In Nodes design doc

@@ -1,6 +1,6 @@
 package permissions
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 // Resource is a string representation of an exposed set of API endpoints (services).
 type Resource string

@@ -3,8 +3,8 @@ package idcheck
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/stackrox/pkg/grpc/authn"
+	"github.com/stackrox/stackrox/pkg/grpc/authz"
 )
 
 // IdentityBasedAuthorizer is an authorizer based on identity.

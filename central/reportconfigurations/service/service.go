@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 
-	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/reportconfigurations/datastore"
-	"github.com/stackrox/rox/central/reports/manager"
-	accessScopeStore "github.com/stackrox/rox/central/role/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc"
+	notifierDataStore "github.com/stackrox/stackrox/central/notifier/datastore"
+	"github.com/stackrox/stackrox/central/reportconfigurations/datastore"
+	"github.com/stackrox/stackrox/central/reports/manager"
+	accessScopeStore "github.com/stackrox/stackrox/central/role/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc"
 )
 
 // Service provides the interface to the gRPC service for roles.

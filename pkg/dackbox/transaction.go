@@ -2,9 +2,9 @@ package dackbox
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/dackbox/transactions"
-	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph"
+	"github.com/stackrox/stackrox/pkg/dackbox/transactions"
+	"github.com/stackrox/stackrox/pkg/dbhelper"
 )
 
 var emptyByte = []byte{0}

@@ -4,8 +4,8 @@ import (
 	"crypto/x509"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/mtls"
 )
 
 // ParseClusterIDFromServiceCert parses the service cert to extract cluster id.

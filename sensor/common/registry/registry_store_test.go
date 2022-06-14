@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/docker/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

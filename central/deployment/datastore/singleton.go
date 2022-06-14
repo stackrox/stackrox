@@ -1,19 +1,19 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/deployment/cache"
-	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
-	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
-	"github.com/stackrox/rox/central/processindicator/filter"
-	"github.com/stackrox/rox/central/ranking"
-	riskDS "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/deployment/cache"
+	"github.com/stackrox/stackrox/central/deployment/datastore/internal/processtagsstore"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/globaldb/dackbox"
+	"github.com/stackrox/stackrox/central/globalindex"
+	imageDatastore "github.com/stackrox/stackrox/central/image/datastore"
+	nfDS "github.com/stackrox/stackrox/central/networkgraph/flow/datastore"
+	pbDS "github.com/stackrox/stackrox/central/processbaseline/datastore"
+	"github.com/stackrox/stackrox/central/processindicator/filter"
+	"github.com/stackrox/stackrox/central/ranking"
+	riskDS "github.com/stackrox/stackrox/central/risk/datastore"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -1,6 +1,6 @@
 package upgrade
 
-import "github.com/stackrox/rox/pkg/set"
+import "github.com/stackrox/stackrox/pkg/set"
 
 var (
 	imagePullRelatedReasons = set.NewFrozenStringSet(

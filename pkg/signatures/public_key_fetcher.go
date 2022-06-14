@@ -16,10 +16,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/pkg/cosign"
 	ociremote "github.com/sigstore/cosign/pkg/oci/remote"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
-	registryTypes "github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errox"
+	registryTypes "github.com/stackrox/stackrox/pkg/registries/types"
+	"github.com/stackrox/stackrox/pkg/retry"
 	"golang.org/x/time/rate"
 )
 

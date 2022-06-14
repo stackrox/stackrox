@@ -7,14 +7,14 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/cve/common"
-	indexMocks "github.com/stackrox/rox/central/cve/node/datastore/internal/index/mocks"
-	searchMocks "github.com/stackrox/rox/central/cve/node/datastore/internal/search/mocks"
-	storeMocks "github.com/stackrox/rox/central/cve/node/datastore/internal/store/mocks"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/sac"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/cve/common"
+	indexMocks "github.com/stackrox/stackrox/central/cve/node/datastore/internal/index/mocks"
+	searchMocks "github.com/stackrox/stackrox/central/cve/node/datastore/internal/search/mocks"
+	storeMocks "github.com/stackrox/stackrox/central/cve/node/datastore/internal/store/mocks"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/cve"
+	"github.com/stackrox/stackrox/pkg/sac"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 

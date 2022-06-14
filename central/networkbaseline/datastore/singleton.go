@@ -1,12 +1,12 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/networkbaseline/store"
-	"github.com/stackrox/rox/central/networkbaseline/store/postgres"
-	"github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/networkbaseline/store"
+	"github.com/stackrox/stackrox/central/networkbaseline/store/postgres"
+	"github.com/stackrox/stackrox/central/networkbaseline/store/rocksdb"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

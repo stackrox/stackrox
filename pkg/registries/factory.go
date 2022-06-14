@@ -1,19 +1,19 @@
 package registries
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	artifactoryFactory "github.com/stackrox/rox/pkg/registries/artifactory"
-	artifactRegistryFactory "github.com/stackrox/rox/pkg/registries/artifactregistry"
-	azureFactory "github.com/stackrox/rox/pkg/registries/azure"
-	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
-	ecrFactory "github.com/stackrox/rox/pkg/registries/ecr"
-	googleFactory "github.com/stackrox/rox/pkg/registries/google"
-	ibmFactory "github.com/stackrox/rox/pkg/registries/ibm"
-	nexusFactory "github.com/stackrox/rox/pkg/registries/nexus"
-	quayFactory "github.com/stackrox/rox/pkg/registries/quay"
-	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
+	"github.com/stackrox/stackrox/generated/storage"
+	artifactoryFactory "github.com/stackrox/stackrox/pkg/registries/artifactory"
+	artifactRegistryFactory "github.com/stackrox/stackrox/pkg/registries/artifactregistry"
+	azureFactory "github.com/stackrox/stackrox/pkg/registries/azure"
+	dockerFactory "github.com/stackrox/stackrox/pkg/registries/docker"
+	ecrFactory "github.com/stackrox/stackrox/pkg/registries/ecr"
+	googleFactory "github.com/stackrox/stackrox/pkg/registries/google"
+	ibmFactory "github.com/stackrox/stackrox/pkg/registries/ibm"
+	nexusFactory "github.com/stackrox/stackrox/pkg/registries/nexus"
+	quayFactory "github.com/stackrox/stackrox/pkg/registries/quay"
+	rhelFactory "github.com/stackrox/stackrox/pkg/registries/rhel"
 
-	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/stackrox/pkg/registries/types"
 )
 
 // Creator is the func stub that defines how to instantiate an image registry.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/stackrox/rox/central/logimbue/store"
+	"github.com/stackrox/stackrox/central/logimbue/store"
 )
 
 type handlerImpl struct {

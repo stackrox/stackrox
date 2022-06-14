@@ -5,12 +5,12 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/stackrox/rox/central/compliance/framework"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyfields"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 var (

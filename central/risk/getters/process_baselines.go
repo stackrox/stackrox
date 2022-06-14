@@ -3,8 +3,8 @@ package getters
 import (
 	"context"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // ProcessBaselines encapsulates the sub-interface of the process baselines datastore required for risk.

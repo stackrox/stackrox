@@ -3,10 +3,10 @@ package m68tom69
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/log"
-	"github.com/stackrox/rox/migrator/migrations"
-	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/migrator/log"
+	"github.com/stackrox/stackrox/migrator/migrations"
+	"github.com/stackrox/stackrox/migrator/types"
 	"go.etcd.io/bbolt"
 )
 

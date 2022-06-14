@@ -5,12 +5,12 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
-	grpcPkg "github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
-	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errox"
+	grpcPkg "github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/stackrox/sensor/common/store"
 	"google.golang.org/grpc"
 )
 

@@ -4,8 +4,8 @@ import (
 	"crypto/x509"
 
 	cTLS "github.com/google/certificate-transparency-go/tls"
-	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/x509utils"
+	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/x509utils"
 )
 
 func verifyCentralCertificateChain(x509CertChain []*x509.Certificate, rootCAs *x509.CertPool) error {

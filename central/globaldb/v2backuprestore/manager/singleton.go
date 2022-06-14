@@ -1,12 +1,12 @@
 package manager
 
 import (
-	"github.com/stackrox/rox/central/globaldb/v2backuprestore/formats"
-	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/formats"
+	"github.com/stackrox/stackrox/pkg/migrations"
+	"github.com/stackrox/stackrox/pkg/sync"
 
 	// Make sure all restore formats are registered
-	_ "github.com/stackrox/rox/central/globaldb/v2backuprestore/formats/all"
+	_ "github.com/stackrox/stackrox/central/globaldb/v2backuprestore/formats/all"
 )
 
 var (

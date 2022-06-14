@@ -1,11 +1,11 @@
 package service
 
 import (
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
-	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc"
+	deploymentDataStore "github.com/stackrox/stackrox/central/deployment/datastore"
+	baselineDataStore "github.com/stackrox/stackrox/central/processbaseline/datastore"
+	processIndicatorDataStore "github.com/stackrox/stackrox/central/processindicator/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc"
 )
 
 // Service provides the interface to the microservice that serves alert data.

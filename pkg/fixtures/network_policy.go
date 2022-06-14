@@ -1,7 +1,7 @@
 package fixtures
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // GetYAML returns a network policy yaml.

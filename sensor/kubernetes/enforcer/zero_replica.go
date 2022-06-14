@@ -5,15 +5,15 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
-	"github.com/stackrox/rox/sensor/kubernetes/enforcer/daemonset"
-	"github.com/stackrox/rox/sensor/kubernetes/enforcer/deployment"
-	"github.com/stackrox/rox/sensor/kubernetes/enforcer/deploymentconfig"
-	"github.com/stackrox/rox/sensor/kubernetes/enforcer/replicaset"
-	"github.com/stackrox/rox/sensor/kubernetes/enforcer/replicationcontroller"
-	"github.com/stackrox/rox/sensor/kubernetes/enforcer/statefulset"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	pkgKubernetes "github.com/stackrox/stackrox/pkg/kubernetes"
+	"github.com/stackrox/stackrox/sensor/kubernetes/enforcer/common"
+	"github.com/stackrox/stackrox/sensor/kubernetes/enforcer/daemonset"
+	"github.com/stackrox/stackrox/sensor/kubernetes/enforcer/deployment"
+	"github.com/stackrox/stackrox/sensor/kubernetes/enforcer/deploymentconfig"
+	"github.com/stackrox/stackrox/sensor/kubernetes/enforcer/replicaset"
+	"github.com/stackrox/stackrox/sensor/kubernetes/enforcer/replicationcontroller"
+	"github.com/stackrox/stackrox/sensor/kubernetes/enforcer/statefulset"
 )
 
 func (e *enforcerImpl) scaleToZero(ctx context.Context, enforcement *central.SensorEnforcement) (err error) {

@@ -3,7 +3,7 @@ package net
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // L4Proto represents the L4 protocol (TCP, UDP etc).

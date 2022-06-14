@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/templates"
-	"github.com/stackrox/rox/pkg/zip"
+	"github.com/stackrox/stackrox/image"
+	"github.com/stackrox/stackrox/pkg/templates"
+	"github.com/stackrox/stackrox/pkg/zip"
 )
 
 // RenderFiles takes the template files from the given FileNameMap, and instantiates them with the given values. The

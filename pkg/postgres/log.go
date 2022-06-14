@@ -3,8 +3,8 @@ package postgres
 import (
 	"runtime"
 
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var log = logging.LoggerForModule()

@@ -3,15 +3,15 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/serviceaccount/internal/index"
-	"github.com/stackrox/rox/central/serviceaccount/internal/store"
-	"github.com/stackrox/rox/central/serviceaccount/search"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sac"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/central/serviceaccount/internal/index"
+	"github.com/stackrox/stackrox/central/serviceaccount/internal/store"
+	"github.com/stackrox/stackrox/central/serviceaccount/search"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/sac"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
 )
 
 const (

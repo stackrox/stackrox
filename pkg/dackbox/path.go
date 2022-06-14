@@ -2,7 +2,7 @@ package dackbox
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/stackrox/pkg/dbhelper"
 )
 
 // Path represents path to go from one idspace to another

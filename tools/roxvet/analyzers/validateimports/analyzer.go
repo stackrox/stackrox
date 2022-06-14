@@ -8,15 +8,15 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 )
 
 const doc = `check that imports are valid`
 
-const roxPrefix = "github.com/stackrox/rox/"
+const roxPrefix = "github.com/stackrox/stackrox/"
 
 var (
 	validRoots = []string{
@@ -54,9 +54,9 @@ var (
 			replacement: "https://golang.org/doc/go1.16#ioutil",
 		},
 		"sync": {
-			replacement: "github.com/stackrox/rox/pkg/sync",
+			replacement: "github.com/stackrox/stackrox/pkg/sync",
 			allowlist: set.NewStringSet(
-				"github.com/stackrox/rox/pkg/bolthelper/crud/proto",
+				"github.com/stackrox/stackrox/pkg/bolthelper/crud/proto",
 			),
 		},
 		"github.com/magiconair/properties/assert": {
@@ -75,10 +75,10 @@ var (
 			replacement: "package from helm.sh/v3",
 		},
 		"github.com/satori/go.uuid": {
-			replacement: "github.com/stackrox/rox/pkg/uuid",
+			replacement: "github.com/stackrox/stackrox/pkg/uuid",
 		},
 		"github.com/google/uuid": {
-			replacement: "github.com/stackrox/rox/pkg/uuid",
+			replacement: "github.com/stackrox/stackrox/pkg/uuid",
 		},
 	}
 )

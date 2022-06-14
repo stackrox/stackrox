@@ -1,6 +1,6 @@
 package fixtures
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 // GetRisk returns a mock Risk.
 func GetRisk() *storage.Risk {

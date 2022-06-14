@@ -32,11 +32,11 @@ var (
 			"Sprintf": "Sprint or remove",
 			"Errorf":  "errors.New",
 		},
-		"github.com/stackrox/rox/pkg/errorhelpers": {
+		"github.com/stackrox/stackrox/pkg/errorhelpers": {
 			"(*ErrorList).AddWrapf":   "AddWrap",
 			"(*ErrorList).AddStringf": "AddString",
 		},
-		"github.com/stackrox/rox/pkg/logging": {
+		"github.com/stackrox/stackrox/pkg/logging": {
 			"(*Logger).Infof":  "Info",
 			"(*Logger).Warnf":  "Warn",
 			"(*Logger).Debugf": "Debug",

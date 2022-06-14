@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
 )
 
 // retrieveAuthToken retrieves an authentication token. Token files specified on the command line have precedence over tokens

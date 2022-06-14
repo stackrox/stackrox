@@ -1,8 +1,8 @@
 package bolt
 
 import (
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/pkg/logging"
 	bolt "go.etcd.io/bbolt"
 )
 

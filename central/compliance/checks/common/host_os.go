@@ -3,8 +3,8 @@ package common
 import (
 	"strings"
 
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 func hostOperatingSystem(ctx framework.ComplianceContext, node *storage.Node) {

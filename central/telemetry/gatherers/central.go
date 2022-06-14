@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/rox/central/installation/store"
-	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
-	"github.com/stackrox/rox/pkg/telemetry"
-	"github.com/stackrox/rox/pkg/telemetry/data"
-	"github.com/stackrox/rox/pkg/telemetry/gatherers"
+	"github.com/stackrox/stackrox/central/installation/store"
+	"github.com/stackrox/stackrox/central/sensorupgradeconfig/datastore"
+	"github.com/stackrox/stackrox/pkg/telemetry"
+	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	"github.com/stackrox/stackrox/pkg/telemetry/gatherers"
 )
 
 // CentralGatherer objects will gather and return telemetry information about this Central

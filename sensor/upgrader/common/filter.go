@@ -1,9 +1,9 @@
 package common
 
 import (
-	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
+	"github.com/stackrox/stackrox/image"
+	"github.com/stackrox/stackrox/pkg/k8sutil"
+	"github.com/stackrox/stackrox/pkg/k8sutil/k8sobjects"
 )
 
 // K8sObjectPredicateFunc represents a predicate function which takes in a k8s object.

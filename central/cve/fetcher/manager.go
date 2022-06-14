@@ -5,16 +5,16 @@ import (
 	"time"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
-	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
-	"github.com/stackrox/rox/central/cve/converter"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
-	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	pkgScanners "github.com/stackrox/rox/pkg/scanners"
-	"github.com/stackrox/rox/pkg/scanners/clairify"
-	"github.com/stackrox/rox/pkg/scanners/types"
+	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
+	clusterCVEEdgeDataStore "github.com/stackrox/stackrox/central/clustercveedge/datastore"
+	"github.com/stackrox/stackrox/central/cve/converter"
+	cveDataStore "github.com/stackrox/stackrox/central/cve/datastore"
+	cveMatcher "github.com/stackrox/stackrox/central/cve/matcher"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	pkgScanners "github.com/stackrox/stackrox/pkg/scanners"
+	"github.com/stackrox/stackrox/pkg/scanners/clairify"
+	"github.com/stackrox/stackrox/pkg/scanners/types"
 )
 
 // OrchestratorIstioCVEManager is the interface for orchestrator (k8s or openshift) and istio CVEs

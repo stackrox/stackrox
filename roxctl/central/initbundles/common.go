@@ -1,6 +1,6 @@
 package initbundles
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 func getPrettyUser(user *storage.User) string {
 	attributePrecedence := []string{"email", "name", "userid"}

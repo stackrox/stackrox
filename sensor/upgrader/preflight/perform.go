@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/sensor/upgrader/plan"
-	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/sensor/upgrader/plan"
+	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
 )
 
 var (

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/secondarykey"
+	"github.com/stackrox/stackrox/pkg/secondarykey"
 	bolt "go.etcd.io/bbolt"
 )
 

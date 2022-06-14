@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/pkg/assert"
-	"github.com/stackrox/rox/pkg/compliance/msgfmt"
-	pkgSet "github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/pkg/assert"
+	"github.com/stackrox/stackrox/pkg/compliance/msgfmt"
+	pkgSet "github.com/stackrox/stackrox/pkg/set"
 )
 
 // GetProcess returns the commandline object that matches the process name

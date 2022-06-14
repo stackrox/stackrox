@@ -1,8 +1,8 @@
 package backup
 
 import (
-	"github.com/stackrox/rox/pkg/certgen"
-	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/certgen"
+	"github.com/stackrox/stackrox/pkg/mtls"
 )
 
 // Backup bundle structure in zip archive.

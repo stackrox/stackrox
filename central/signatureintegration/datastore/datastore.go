@@ -3,9 +3,9 @@ package datastore
 import (
 	"context"
 
-	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/central/signatureintegration/store"
-	"github.com/stackrox/rox/generated/storage"
+	policyDataStore "github.com/stackrox/stackrox/central/policy/datastore"
+	"github.com/stackrox/stackrox/central/signatureintegration/store"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // DataStore for signature integrations.

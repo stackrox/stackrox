@@ -3,12 +3,12 @@ package clustermetrics
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/sensor/service/common"
-	"github.com/stackrox/rox/central/sensor/service/pipeline"
-	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/central/metrics"
+	"github.com/stackrox/stackrox/central/sensor/service/common"
+	"github.com/stackrox/stackrox/central/sensor/service/pipeline"
+	"github.com/stackrox/stackrox/central/sensor/service/pipeline/reconciliation"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var log = logging.LoggerForModule()

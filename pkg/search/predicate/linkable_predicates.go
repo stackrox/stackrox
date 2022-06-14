@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 func createLinkedStructPredicate(preds ...internalPredicate) internalPredicate {

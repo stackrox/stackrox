@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/ioutils"
-	"github.com/stackrox/rox/pkg/roxctl"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/download"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/logger"
+	"github.com/stackrox/stackrox/pkg/ioutils"
+	"github.com/stackrox/stackrox/pkg/roxctl"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/roxctl/common"
+	"github.com/stackrox/stackrox/roxctl/common/download"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/logger"
 )
 
 const (

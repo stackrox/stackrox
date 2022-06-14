@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 func atLeastOneMatches(image *storage.ImageName, integrations []framework.ImageMatcher) bool {

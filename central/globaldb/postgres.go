@@ -8,10 +8,10 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/central/globaldb/metrics"
-	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/globaldb/metrics"
+	"github.com/stackrox/stackrox/pkg/config"
+	"github.com/stackrox/stackrox/pkg/retry"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 const (

@@ -3,13 +3,13 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/imagecomponentedge/index"
-	"github.com/stackrox/rox/central/imagecomponentedge/search"
-	"github.com/stackrox/rox/central/imagecomponentedge/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/imagecomponentedge/index"
+	"github.com/stackrox/stackrox/central/imagecomponentedge/search"
+	"github.com/stackrox/stackrox/central/imagecomponentedge/store"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
 )
 
 // DataStore is an intermediary to Image/Component edge storage.

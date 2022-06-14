@@ -1,11 +1,11 @@
 package deploytime
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
-	"github.com/stackrox/rox/pkg/detection"
-	"github.com/stackrox/rox/pkg/detection/deploytime"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy"
+	"github.com/stackrox/stackrox/pkg/detection"
+	"github.com/stackrox/stackrox/pkg/detection/deploytime"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

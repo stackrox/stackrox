@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/policies"
-	"github.com/stackrox/rox/pkg/size"
-	"github.com/stackrox/rox/sensor/admission-control/manager"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/policies"
+	"github.com/stackrox/stackrox/pkg/size"
+	"github.com/stackrox/stackrox/sensor/admission-control/manager"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )

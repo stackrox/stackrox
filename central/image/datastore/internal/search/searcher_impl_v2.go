@@ -3,14 +3,14 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/image/datastore/internal/store"
-	"github.com/stackrox/rox/central/image/index"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/search/scoped/postgres"
+	"github.com/stackrox/stackrox/central/image/datastore/internal/store"
+	"github.com/stackrox/stackrox/central/image/index"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/images/types"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/blevesearch"
+	"github.com/stackrox/stackrox/pkg/search/scoped/postgres"
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.

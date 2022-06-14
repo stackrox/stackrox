@@ -1,7 +1,7 @@
 package booleanpolicy
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // ContainsOneOf returns whether the policy contains at least one group with a field of specified type.

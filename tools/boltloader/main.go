@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
 )
 
 func die(format string, args ...interface{}) {
@@ -32,6 +32,6 @@ func main() {
 	_ = db
 	// You can now use the DB to load things by doing stuff like
 	//
-	// import "github.com/stackrox/rox/deployment/store"
+	// import "github.com/stackrox/stackrox/deployment/store"
 	// deploymentStore := store.New(db)
 }

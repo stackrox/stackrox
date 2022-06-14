@@ -3,8 +3,8 @@ package rocksdbtest
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	"github.com/stackrox/stackrox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 )
 

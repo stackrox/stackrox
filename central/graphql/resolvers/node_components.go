@@ -6,11 +6,11 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/pkg/features"
-	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/metrics"
+	"github.com/stackrox/stackrox/pkg/features"
+	pkgMetrics "github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 func init() {

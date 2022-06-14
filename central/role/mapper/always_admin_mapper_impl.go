@@ -3,11 +3,11 @@ package mapper
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role"
-	roleDatastore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/role"
+	roleDatastore "github.com/stackrox/stackrox/central/role/datastore"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 type alwaysAdminMapperImpl struct {

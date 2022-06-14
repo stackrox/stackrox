@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/serviceidentities/datastore"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/serviceidentities/datastore"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

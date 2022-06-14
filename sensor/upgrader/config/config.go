@@ -5,14 +5,14 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
-	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/sensorupgrader"
-	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/upgrader/common"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/k8sutil/k8sobjects"
+	"github.com/stackrox/stackrox/pkg/netutil"
+	"github.com/stackrox/stackrox/pkg/sensorupgrader"
+	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/stackrox/sensor/upgrader/common"
 	"k8s.io/client-go/rest"
 )
 

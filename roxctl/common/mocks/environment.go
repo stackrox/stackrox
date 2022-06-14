@@ -10,9 +10,9 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	common "github.com/stackrox/rox/roxctl/common"
-	io2 "github.com/stackrox/rox/roxctl/common/io"
-	"github.com/stackrox/rox/roxctl/common/logger"
+	common "github.com/stackrox/stackrox/roxctl/common"
+	io2 "github.com/stackrox/stackrox/roxctl/common/io"
+	"github.com/stackrox/stackrox/roxctl/common/logger"
 	grpc "google.golang.org/grpc"
 )
 

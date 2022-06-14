@@ -3,13 +3,13 @@ package cache
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/deployment/store"
-	"github.com/stackrox/rox/central/deployment/store/types"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/size"
-	"github.com/stackrox/rox/pkg/sizeboundedcache"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/deployment/store"
+	"github.com/stackrox/stackrox/central/deployment/store/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/size"
+	"github.com/stackrox/stackrox/pkg/sizeboundedcache"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 const (

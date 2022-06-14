@@ -1,6 +1,6 @@
 package labels
 
-import "github.com/stackrox/rox/pkg/set"
+import "github.com/stackrox/stackrox/pkg/set"
 
 // cofiniteSet is a set that is either finite, or its complement is finite. It is realized as a set of values and
 // a flag specifying whether this is the set of values that *are* or *are not* elements of the set.

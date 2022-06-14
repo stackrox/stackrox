@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/stackrox/rox/pkg/dackbox/utils"
+	"github.com/stackrox/stackrox/pkg/dackbox/utils"
 )
 
 // SortedKeys is a helper class that is a serializable list of keys with a maximum length of 1 << 16. Optimized for a small number of keys stored together.

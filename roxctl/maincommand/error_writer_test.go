@@ -3,9 +3,9 @@ package maincommand
 import (
 	"testing"
 
-	"github.com/stackrox/rox/roxctl/common/io"
-	"github.com/stackrox/rox/roxctl/common/logger"
-	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/stackrox/roxctl/common/io"
+	"github.com/stackrox/stackrox/roxctl/common/logger"
+	"github.com/stackrox/stackrox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 )
 

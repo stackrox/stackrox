@@ -6,14 +6,14 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/stackrox/sensor/common/store"
 )
 
 /*
 Running benchmarks
-$  go test -benchmem -timeout 0 -cpu 1 -benchmem -run=^$ -bench ^Benchmark github.com/stackrox/rox/sensor/kubernetes/listener/resources
+$  go test -benchmem -timeout 0 -cpu 1 -benchmem -run=^$ -bench ^Benchmark github.com/stackrox/stackrox/sensor/kubernetes/listener/resources
 */
 const defaultNS = "default"
 

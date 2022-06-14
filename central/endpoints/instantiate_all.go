@@ -2,11 +2,11 @@ package endpoints
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/tlsconfig"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/fileutils"
-	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/central/tlsconfig"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/fileutils"
+	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

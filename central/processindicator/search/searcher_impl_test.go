@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	indexMock "github.com/stackrox/rox/central/processindicator/index/mocks"
-	storeMock "github.com/stackrox/rox/central/processindicator/store/mocks"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
+	indexMock "github.com/stackrox/stackrox/central/processindicator/index/mocks"
+	storeMock "github.com/stackrox/stackrox/central/processindicator/store/mocks"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 

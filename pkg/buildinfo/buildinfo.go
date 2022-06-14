@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/buildinfo/internal/timestamp"
+	"github.com/stackrox/stackrox/pkg/buildinfo/internal/timestamp"
 )
 
 const (

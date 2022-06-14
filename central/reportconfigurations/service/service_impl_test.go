@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
-	"github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
-	managerMocks "github.com/stackrox/rox/central/reports/manager/mocks"
-	accessScopeMocks "github.com/stackrox/rox/central/role/datastore/mocks"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/fixtures"
+	notifierMocks "github.com/stackrox/stackrox/central/notifier/datastore/mocks"
+	"github.com/stackrox/stackrox/central/reportconfigurations/datastore/mocks"
+	managerMocks "github.com/stackrox/stackrox/central/reports/manager/mocks"
+	accessScopeMocks "github.com/stackrox/stackrox/central/role/datastore/mocks"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 )
 

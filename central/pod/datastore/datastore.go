@@ -5,17 +5,17 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/pod/datastore/internal/search"
-	"github.com/stackrox/rox/central/pod/index"
-	"github.com/stackrox/rox/central/pod/store/cache"
-	"github.com/stackrox/rox/central/pod/store/postgres"
-	"github.com/stackrox/rox/central/pod/store/rocksdb"
-	piDS "github.com/stackrox/rox/central/processindicator/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/process/filter"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/pod/datastore/internal/search"
+	"github.com/stackrox/stackrox/central/pod/index"
+	"github.com/stackrox/stackrox/central/pod/store/cache"
+	"github.com/stackrox/stackrox/central/pod/store/postgres"
+	"github.com/stackrox/stackrox/central/pod/store/rocksdb"
+	piDS "github.com/stackrox/stackrox/central/processindicator/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/process/filter"
+	rocksdbBase "github.com/stackrox/stackrox/pkg/rocksdb"
+	pkgSearch "github.com/stackrox/stackrox/pkg/search"
 )
 
 // DataStore is an intermediary to PodStorage.

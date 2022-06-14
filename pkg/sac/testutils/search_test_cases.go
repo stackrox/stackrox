@@ -3,7 +3,7 @@ package testutils
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/sac/testconsts"
+	"github.com/stackrox/stackrox/pkg/sac/testconsts"
 )
 
 // SACSearchTestCase is used within SAC tests. It will yield the number of found

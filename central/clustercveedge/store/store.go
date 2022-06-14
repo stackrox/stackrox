@@ -1,8 +1,8 @@
 package store
 
 import (
-	"github.com/stackrox/rox/central/cve/converter"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/central/cve/converter"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // Store provides storage functionality for cluster-cve edges.

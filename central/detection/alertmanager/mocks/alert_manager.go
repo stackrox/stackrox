@@ -7,9 +7,9 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	alertmanager "github.com/stackrox/rox/central/detection/alertmanager"
-	storage "github.com/stackrox/rox/generated/storage"
-	set "github.com/stackrox/rox/pkg/set"
+	alertmanager "github.com/stackrox/stackrox/central/detection/alertmanager"
+	storage "github.com/stackrox/stackrox/generated/storage"
+	set "github.com/stackrox/stackrox/pkg/set"
 	reflect "reflect"
 )
 

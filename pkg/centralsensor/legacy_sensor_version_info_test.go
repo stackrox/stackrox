@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/stackrox/rox/pkg/version"
-	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/stackrox/pkg/version"
+	"github.com/stackrox/stackrox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

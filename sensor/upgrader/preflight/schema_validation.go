@@ -3,8 +3,8 @@ package preflight
 import (
 	"bytes"
 
-	"github.com/stackrox/rox/sensor/upgrader/plan"
-	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/stackrox/sensor/upgrader/plan"
+	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 

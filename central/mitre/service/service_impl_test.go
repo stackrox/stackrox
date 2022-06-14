@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/mitre/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/stackrox/central/mitre/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc/testutils"
 	"github.com/stretchr/testify/assert"
 )
 

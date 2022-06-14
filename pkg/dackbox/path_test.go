@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/stackrox/pkg/dbhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

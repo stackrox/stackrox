@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
-	"github.com/stackrox/rox/sensor/kubernetes/enforcer/pod"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/sensor/kubernetes/enforcer/common"
+	"github.com/stackrox/stackrox/sensor/kubernetes/enforcer/pod"
 )
 
 func (e *enforcerImpl) kill(ctx context.Context, enforcement *central.SensorEnforcement) error {

@@ -9,7 +9,7 @@ import (
 
 	proto "github.com/gogo/protobuf/proto"
 	gomock "github.com/golang/mock/gomock"
-	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	concurrency "github.com/stackrox/stackrox/pkg/concurrency"
 )
 
 // MockAcceptsKeyValue is a mock of AcceptsKeyValue interface.

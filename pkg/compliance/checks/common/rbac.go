@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
 )
 
 // IsRBACConfiguredCorrectlyInterpretation is the text that explains how MasterAPIServerRBACConfigurationCommandLine works.

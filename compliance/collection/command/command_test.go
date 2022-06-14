@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
 	"github.com/stretchr/testify/assert"
 )
 

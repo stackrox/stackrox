@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
-	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/logger"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/grpc/authn/basic"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/roxctl/common/logger"
 )
 
 // Auth provides an abstraction to inject authentication information within http.Request

@@ -10,15 +10,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/stackrox/rox/central/clusters"
-	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
-	"github.com/stackrox/rox/central/tlsconfig"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/image/sensor"
-	"github.com/stackrox/rox/pkg/fileutils"
-	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/zip"
+	"github.com/stackrox/stackrox/central/clusters"
+	siDataStore "github.com/stackrox/stackrox/central/serviceidentities/datastore"
+	"github.com/stackrox/stackrox/central/tlsconfig"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/image/sensor"
+	"github.com/stackrox/stackrox/pkg/fileutils"
+	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/namespaces"
+	"github.com/stackrox/stackrox/pkg/zip"
 )
 
 const (

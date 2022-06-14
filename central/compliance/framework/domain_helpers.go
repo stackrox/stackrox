@@ -1,6 +1,6 @@
 package framework
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 // Nodes returns a slice of all node objects in the domain.
 func Nodes(domain ComplianceDomain) []*storage.Node {

@@ -1,6 +1,6 @@
 package mtls
 
-import "github.com/stackrox/rox/pkg/env"
+import "github.com/stackrox/stackrox/pkg/env"
 
 const (
 	// CAFileEnvName is the env variable name for the CA file

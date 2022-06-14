@@ -5,10 +5,10 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
-	"github.com/stackrox/rox/operator/pkg/securedcluster/scanner"
-	"github.com/stackrox/rox/pkg/features"
+	platform "github.com/stackrox/stackrox/operator/apis/platform/v1alpha1"
+	commonExtensions "github.com/stackrox/stackrox/operator/pkg/common/extensions"
+	"github.com/stackrox/stackrox/operator/pkg/securedcluster/scanner"
+	"github.com/stackrox/stackrox/pkg/features"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 

@@ -4,13 +4,13 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/central/cve/image/datastore/internal/store"
-	"github.com/stackrox/rox/central/cve/index"
-	"github.com/stackrox/rox/central/cve/search"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/cve/common"
+	"github.com/stackrox/stackrox/central/cve/image/datastore/internal/store"
+	"github.com/stackrox/stackrox/central/cve/index"
+	"github.com/stackrox/stackrox/central/cve/search"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
 )
 
 // DataStore is an intermediary to CVE storage.

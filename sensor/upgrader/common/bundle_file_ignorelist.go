@@ -3,7 +3,7 @@ package common
 import (
 	"path"
 
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 var (

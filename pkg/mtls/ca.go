@@ -9,7 +9,7 @@ import (
 	cfsslSigner "github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 )
 
 // CA represents a StackRox service certificate authority.

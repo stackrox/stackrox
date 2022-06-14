@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	pkgTar "github.com/stackrox/rox/pkg/tar"
+	pkgTar "github.com/stackrox/stackrox/pkg/tar"
 )
 
 // TarGenerator writes a backup directly to a writer.

@@ -7,11 +7,11 @@ import (
 	"reflect"
 	"testing"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/search"
-	mappings "github.com/stackrox/rox/pkg/search/options/deployments"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	"github.com/stackrox/stackrox/pkg/search"
+	mappings "github.com/stackrox/stackrox/pkg/search/options/deployments"
 	"github.com/stretchr/testify/assert"
 )
 

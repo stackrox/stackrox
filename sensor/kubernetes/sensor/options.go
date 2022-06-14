@@ -4,9 +4,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/stackrox/rox/sensor/common/centralclient"
-	"github.com/stackrox/rox/sensor/kubernetes/client"
-	"github.com/stackrox/rox/sensor/kubernetes/fake"
+	"github.com/stackrox/stackrox/sensor/common/centralclient"
+	"github.com/stackrox/stackrox/sensor/kubernetes/client"
+	"github.com/stackrox/stackrox/sensor/kubernetes/fake"
 )
 
 // CreateOptions represents the custom configuration that can be provided when creating sensor

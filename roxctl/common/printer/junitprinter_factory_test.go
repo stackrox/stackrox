@@ -3,8 +3,8 @@ package printer
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/printers"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/printers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

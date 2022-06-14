@@ -17,7 +17,7 @@ func isRuntimeFunc(funcName string) bool {
 
 func isStackRoxPackage(function string) bool {
 	// The frame function should be package-qualified
-	return strings.HasPrefix(function, "github.com/stackrox/rox/")
+	return strings.HasPrefix(function, "github.com/stackrox/stackrox/")
 }
 
 func getPanicLocation(skip int) string {

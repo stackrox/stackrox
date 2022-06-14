@@ -6,9 +6,9 @@ import (
 
 	"github.com/docker/docker/pkg/ioutils"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/version"
 	"gopkg.in/yaml.v3"
 )
 

@@ -2,7 +2,7 @@ package renderer
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/zip"
+	"github.com/stackrox/stackrox/pkg/zip"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 

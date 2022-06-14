@@ -11,10 +11,10 @@ import (
 
 	. "github.com/dave/jennifer/jen"
 	"github.com/spf13/cobra"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/tools/generate-helpers/blevebindings/operations"
-	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/tools/generate-helpers/blevebindings/operations"
+	"github.com/stackrox/stackrox/tools/generate-helpers/common/packagenames"
 )
 
 const (
@@ -160,7 +160,7 @@ func main() {
 	}
 
 	props := operations.GeneratorProperties{}
-	c.Flags().StringVar(&props.Pkg, "package", "github.com/stackrox/rox/generated/storage", "the package of the object being indexed")
+	c.Flags().StringVar(&props.Pkg, "package", "github.com/stackrox/stackrox/generated/storage", "the package of the object being indexed")
 
 	c.Flags().StringVar(&props.Object, "object", "", "the (Go) name of the object being indexed")
 	utils.Must(c.MarkFlagRequired("object"))

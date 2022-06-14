@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/concurrency"
 )
 
 func watchdog(errSig *concurrency.ErrorSignal, earliestDeadline time.Time, lastActivity func() time.Time, idleTimeout time.Duration) {

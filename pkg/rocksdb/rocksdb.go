@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/rox/pkg/devbuild"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/devbuild"
+	"github.com/stackrox/stackrox/pkg/logging"
 	"github.com/tecbot/gorocksdb"
 	"go.uber.org/atomic"
 )

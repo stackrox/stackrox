@@ -3,8 +3,8 @@ package sortfields
 import (
 	"context"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/search"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 // TransformSortFields applies transformation to specially handled sort fields e.g. multi-word fields.

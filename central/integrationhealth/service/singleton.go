@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/imageintegration"
-	"github.com/stackrox/rox/central/integrationhealth/datastore"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/imageintegration"
+	"github.com/stackrox/stackrox/central/integrationhealth/datastore"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

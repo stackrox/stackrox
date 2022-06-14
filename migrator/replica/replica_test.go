@@ -5,9 +5,9 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
-	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
-	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/stackrox/pkg/buildinfo"
+	migrationtestutils "github.com/stackrox/stackrox/pkg/migrations/testutils"
+	"github.com/stackrox/stackrox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 )
 

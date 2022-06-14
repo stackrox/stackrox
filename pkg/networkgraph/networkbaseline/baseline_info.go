@@ -1,8 +1,8 @@
 package networkbaseline
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/timestamp"
 )
 
 // BaselineInfo is a in-memory representation of a network baseline

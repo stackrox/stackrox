@@ -6,15 +6,15 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/clusters"
-	"github.com/stackrox/rox/central/clusters/zip"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/renderer"
-	pkgZip "github.com/stackrox/rox/pkg/zip"
+	"github.com/stackrox/stackrox/central/clusters"
+	"github.com/stackrox/stackrox/central/clusters/zip"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/apiparams"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/stackrox/pkg/images/defaults"
+	"github.com/stackrox/stackrox/pkg/renderer"
+	pkgZip "github.com/stackrox/stackrox/pkg/zip"
 )
 
 func (s *serviceImpl) getSensorCerts(r *http.Request) ([]byte, *storage.Cluster, error) {

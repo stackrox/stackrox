@@ -5,17 +5,17 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	acDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
-	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
-	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
-	"github.com/stackrox/rox/central/metrics"
-	namespaceDackBox "github.com/stackrox/rox/central/namespace/dackbox"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
-	ops "github.com/stackrox/rox/pkg/metrics"
+	acDackBox "github.com/stackrox/stackrox/central/activecomponent/dackbox"
+	clusterDackBox "github.com/stackrox/stackrox/central/cluster/dackbox"
+	deploymentDackBox "github.com/stackrox/stackrox/central/deployment/dackbox"
+	imageDackBox "github.com/stackrox/stackrox/central/image/dackbox"
+	"github.com/stackrox/stackrox/central/metrics"
+	namespaceDackBox "github.com/stackrox/stackrox/central/namespace/dackbox"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/stackrox/pkg/dackbox/sortedkeys"
+	ops "github.com/stackrox/stackrox/pkg/metrics"
 )
 
 // StoreImpl provides an implementation of the Store interface using dackbox.

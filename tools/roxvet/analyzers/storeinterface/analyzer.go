@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/set"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -36,7 +36,7 @@ in the storage folder, this analyzer will report it.'`,
 	Run: run,
 }
 
-// Return all imports from the generated path except github.com/stackrox/rox/generated/storage
+// Return all imports from the generated path except github.com/stackrox/stackrox/generated/storage
 // It returns whatever the import will be referenced as locally.
 func localPackageNamesForGeneratedImports(typeInfo *types.Info, f *ast.File) set.StringSet {
 	packageNames := set.NewStringSet()

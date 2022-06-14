@@ -1,7 +1,7 @@
 package fixtures
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // GetScopedK8SRole returns a mock K8SRole belonging to the input scope.

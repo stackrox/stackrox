@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/dave/jennifer/jen"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

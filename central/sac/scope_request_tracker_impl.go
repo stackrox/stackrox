@@ -5,12 +5,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
-	"github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/client"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/cluster/datastore"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/sac/client"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

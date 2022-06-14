@@ -3,9 +3,9 @@ package testutils
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/helm/charts"
-	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/stackrox/pkg/helm/charts"
+	flavorUtils "github.com/stackrox/stackrox/pkg/images/defaults/testutils"
+	"github.com/stackrox/stackrox/pkg/testutils"
 )
 
 // MakeMetaValuesForTest creates pre-populated charts.MetaValues for use in tests.

@@ -3,10 +3,10 @@ package compliance
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/sensor/common/orchestrator"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/sensor/common/orchestrator"
 )
 
 // Service is an interface to receiving ComplianceReturns from launched daemons.

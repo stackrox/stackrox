@@ -1,8 +1,8 @@
 package docker
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	internalTypes "github.com/stackrox/rox/pkg/docker/types"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	internalTypes "github.com/stackrox/stackrox/pkg/docker/types"
 )
 
 func toStandardizedInfo(dockerData *internalTypes.Data) *compliance.ContainerRuntimeInfo {

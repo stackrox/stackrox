@@ -1,6 +1,6 @@
 package objects
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 // ToListDeployment converts a deployment to a list deployment.
 func ToListDeployment(d *storage.Deployment) *storage.ListDeployment {

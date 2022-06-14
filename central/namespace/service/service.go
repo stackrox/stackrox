@@ -1,13 +1,13 @@
 package service
 
 import (
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/namespace/datastore"
-	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
-	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
+	deploymentDataStore "github.com/stackrox/stackrox/central/deployment/datastore"
+	"github.com/stackrox/stackrox/central/namespace/datastore"
+	npDS "github.com/stackrox/stackrox/central/networkpolicies/datastore"
+	secretDataStore "github.com/stackrox/stackrox/central/secret/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

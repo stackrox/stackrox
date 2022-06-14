@@ -9,16 +9,16 @@ import (
 	"path/filepath"
 	"time"
 
-	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
-	"github.com/stackrox/rox/central/cve/converter"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
-	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/sac"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/throttle"
+	clusterCVEEdgeDataStore "github.com/stackrox/stackrox/central/clustercveedge/datastore"
+	"github.com/stackrox/stackrox/central/cve/converter"
+	cveDataStore "github.com/stackrox/stackrox/central/cve/datastore"
+	cveMatcher "github.com/stackrox/stackrox/central/cve/matcher"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/sac"
+	pkgSearch "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/throttle"
 )
 
 var (

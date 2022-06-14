@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 
-	"github.com/stackrox/rox/central/cve/fetcher"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/cve/fetcher"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

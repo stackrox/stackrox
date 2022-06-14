@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/pkg/telemetry/data"
+	"github.com/stackrox/stackrox/pkg/telemetry/data"
 )
 
 var (

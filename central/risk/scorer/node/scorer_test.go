@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	nodeMultiplier "github.com/stackrox/rox/central/risk/multipliers/node"
-	pkgScorer "github.com/stackrox/rox/central/risk/scorer"
-	"github.com/stackrox/rox/generated/storage"
+	nodeMultiplier "github.com/stackrox/stackrox/central/risk/multipliers/node"
+	pkgScorer "github.com/stackrox/stackrox/central/risk/scorer"
+	"github.com/stackrox/stackrox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 

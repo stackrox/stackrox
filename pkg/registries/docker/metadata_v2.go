@@ -3,7 +3,7 @@ package docker
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // HandleV2ManifestList takes in a v2 manifest list ref and returns the image metadata

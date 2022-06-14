@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // Store is the (bolt-backed) store for API tokens.

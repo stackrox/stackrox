@@ -6,15 +6,15 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
-	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
-	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cvss"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/sync"
+	legacyImageCVEDataStore "github.com/stackrox/stackrox/central/cve/datastore"
+	imageCVEDataStore "github.com/stackrox/stackrox/central/cve/image/datastore"
+	distroctx "github.com/stackrox/stackrox/central/graphql/resolvers/distroctx"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/cvss"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var cveLoaderType = reflect.TypeOf(storage.CVE{})

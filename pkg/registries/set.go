@@ -1,8 +1,8 @@
 package registries
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/registries/types"
 )
 
 // Set provides an interface for reading the active set of image integrations.

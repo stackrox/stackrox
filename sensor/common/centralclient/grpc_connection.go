@@ -7,11 +7,11 @@ import (
 
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/grpc/util"
-	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/clientconn"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/grpc/util"
+	"github.com/stackrox/stackrox/pkg/mtls"
 )
 
 // CentralConnectionFactory is responsible for establishing a gRPC connection between sensor

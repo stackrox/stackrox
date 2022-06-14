@@ -1,7 +1,7 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/grpc"
 )
 
 // Service is the interface for the development connection service.

@@ -3,7 +3,7 @@ package timeutil
 import (
 	"time"
 
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // MustParse parses the given value into a `time.Time` according to the layout, or panics if there is a parse error.

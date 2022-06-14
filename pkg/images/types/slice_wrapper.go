@@ -3,7 +3,7 @@ package types
 import (
 	"strings"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // SliceWrapper provides helper functions for a slice of images.

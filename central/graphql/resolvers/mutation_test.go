@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/set"
 	"github.com/stretchr/testify/suite"
 )
 

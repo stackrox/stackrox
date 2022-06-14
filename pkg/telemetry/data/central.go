@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
 	"google.golang.org/grpc/codes"
 )
 

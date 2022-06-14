@@ -3,7 +3,7 @@ package testutils
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph"
 )
 
 type fixedGraphProvider struct {

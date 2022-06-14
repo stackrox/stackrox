@@ -2,19 +2,19 @@ package main
 
 import (
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/compliance/collection/command"
-	"github.com/stackrox/rox/compliance/collection/containerruntimes/crio"
-	"github.com/stackrox/rox/compliance/collection/containerruntimes/docker"
-	"github.com/stackrox/rox/compliance/collection/file"
-	"github.com/stackrox/rox/compliance/collection/kubernetes/collection/kubelet"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	_ "github.com/stackrox/rox/pkg/compliance/checks" // Make sure all checks are available
-	"github.com/stackrox/rox/pkg/compliance/checks/common"
-	"github.com/stackrox/rox/pkg/compliance/checks/standards"
-	"github.com/stackrox/rox/pkg/compliance/data"
-	"github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/compliance/collection/command"
+	"github.com/stackrox/stackrox/compliance/collection/containerruntimes/crio"
+	"github.com/stackrox/stackrox/compliance/collection/containerruntimes/docker"
+	"github.com/stackrox/stackrox/compliance/collection/file"
+	"github.com/stackrox/stackrox/compliance/collection/kubernetes/collection/kubelet"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/storage"
+	_ "github.com/stackrox/stackrox/pkg/compliance/checks" // Make sure all checks are available
+	"github.com/stackrox/stackrox/pkg/compliance/checks/common"
+	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
+	"github.com/stackrox/stackrox/pkg/compliance/data"
+	"github.com/stackrox/stackrox/pkg/compliance/framework"
 )
 
 func runChecks(client sensor.ComplianceService_CommunicateClient, scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, run *sensor.MsgToCompliance_TriggerRun) error {

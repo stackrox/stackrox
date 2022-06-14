@@ -5,16 +5,16 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/role"
-	roleDatastore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/mapper"
-	"github.com/stackrox/rox/pkg/auth/authproviders"
-	basicAuthProvider "github.com/stackrox/rox/pkg/auth/authproviders/basic"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	basicAuthn "github.com/stackrox/rox/pkg/grpc/authn/basic"
-	"github.com/stackrox/rox/pkg/k8scfgwatch"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/stackrox/central/role"
+	roleDatastore "github.com/stackrox/stackrox/central/role/datastore"
+	"github.com/stackrox/stackrox/central/role/mapper"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders"
+	basicAuthProvider "github.com/stackrox/stackrox/pkg/auth/authproviders/basic"
+	"github.com/stackrox/stackrox/pkg/grpc/authn"
+	basicAuthn "github.com/stackrox/stackrox/pkg/grpc/authn/basic"
+	"github.com/stackrox/stackrox/pkg/k8scfgwatch"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/sac"
 )
 
 const (

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/image"
-	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
-	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/stackrox/image"
+	metaUtil "github.com/stackrox/stackrox/pkg/helm/charts/testutils"
+	helmUtil "github.com/stackrox/stackrox/pkg/helm/util"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"

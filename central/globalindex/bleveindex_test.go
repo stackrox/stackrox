@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	bleveMapping "github.com/blevesearch/bleve/mapping"
-	"github.com/stackrox/rox/central/globalindex/mapping"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/stackrox/central/globalindex/mapping"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

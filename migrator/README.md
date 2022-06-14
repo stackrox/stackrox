@@ -10,11 +10,11 @@ Here are the steps to write migration script:
 `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migration}`
     1. Ensure that the `summary_of_migration` follows the naming convention of previous migrations, i.e., postfix `_policy` if it modifies policies
 3. Create at least two files: `migration.go` and `migration_test.go`. These files should belong to package `m{currentDBVersion}tom{currentDBVersion+1}`
-4. To better understand how to write these two files, look at existing examples: [#1](https://github.com/stackrox/rox/pull/8609) [#2](https://github.com/stackrox/rox/pull/7581) [#3](https://github.com/stackrox/rox/pull/7921) in `migrations` directory. Avoid depending on code that might change in the future as **migration should produce consistent results**.
+4. To better understand how to write these two files, look at existing examples: [#1](https://github.com/stackrox/stackrox/pull/8609) [#2](https://github.com/stackrox/stackrox/pull/7581) [#3](https://github.com/stackrox/stackrox/pull/7921) in `migrations` directory. Avoid depending on code that might change in the future as **migration should produce consistent results**.
 5. Add to `migrator/runner/all.go` line
 
     ```go
-    _ "github.com/stackrox/rox/migrator/migrations/m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migration}"
+    _ "github.com/stackrox/stackrox/migrator/migrations/m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migration}"
     ```
 
 6. Increment the currentDBVersion to currentDBVersion+1

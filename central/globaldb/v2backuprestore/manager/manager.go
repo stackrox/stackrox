@@ -9,14 +9,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
-	"github.com/stackrox/rox/central/globaldb/v2backuprestore/formats"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/fsutils"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/osutils"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/common"
+	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/formats"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/fsutils"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/osutils"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 const (

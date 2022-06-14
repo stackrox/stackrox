@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/enumregistry"
+	pkgSearch "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/enumregistry"
 )
 
 func enumEquality(columnName string, enumValues []int32) (WhereClause, error) {

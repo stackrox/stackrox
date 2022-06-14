@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stackrox/rox/compliance/collection/file"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/compliance/collection/file"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 var commandsToRetrieve = []string{

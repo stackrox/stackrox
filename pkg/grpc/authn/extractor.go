@@ -3,7 +3,7 @@ package authn
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
 )
 
 // ValidateCertChain can be implemented to provide cert chain validation callbacks
