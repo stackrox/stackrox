@@ -1,7 +1,9 @@
 package resources
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -62,6 +64,7 @@ func NewDispatcherRegistry(
 	detector detector.Detector,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces,
 	credentialsManager awscredentials.RegistryCredentialsManager,
+	traceWriter io.Writer,
 ) DispatcherRegistry {
 	serviceStore := newServiceStore()
 	deploymentStore := DeploymentStoreSingleton()
@@ -88,6 +91,8 @@ func NewDispatcherRegistry(
 		serviceAccountDispatcher:  newServiceAccountDispatcher(),
 		clusterOperatorDispatcher: newClusterOperatorDispatcher(namespaces),
 
+		traceWriter: traceWriter,
+
 		complianceOperatorResultDispatcher:              complianceOperatorDispatchers.NewResultDispatcher(),
 		complianceOperatorRulesDispatcher:               complianceOperatorDispatchers.NewRulesDispatcher(),
 		complianceOperatorProfileDispatcher:             complianceOperatorDispatchers.NewProfileDispatcher(),
@@ -109,6 +114,7 @@ type registryImpl struct {
 	nodeDispatcher            *nodeDispatcher
 	serviceAccountDispatcher  *serviceAccountDispatcher
 	clusterOperatorDispatcher *clusterOperatorDispatcher
+	traceWriter               io.Writer
 
 	complianceOperatorResultDispatcher              *complianceOperatorDispatchers.ResultDispatcher
 	complianceOperatorProfileDispatcher             *complianceOperatorDispatchers.ProfileDispatcher
@@ -116,6 +122,50 @@ type registryImpl struct {
 	complianceOperatorRulesDispatcher               *complianceOperatorDispatchers.RulesDispatcher
 	complianceOperatorScanDispatcher                *complianceOperatorDispatchers.ScanDispatcher
 	complianceOperatorTailoredProfileDispatcher     *complianceOperatorDispatchers.TailoredProfileDispatcher
+}
+
+func wrapWithDumpingDispatcher(d Dispatcher, w io.Writer) Dispatcher {
+	return dumpingDispatcher{
+		writer:     w,
+		Dispatcher: d,
+	}
+}
+
+type dumpingDispatcher struct {
+	writer io.Writer
+	Dispatcher
+}
+
+// InformerK8sMsg is a message being recorded/replayed when collecting the traces with K8s events
+type InformerK8sMsg struct {
+	ObjectType string
+	Action     string
+	Timestamp  int64
+	Payload    interface{}
+}
+
+func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	now := time.Now().Unix()
+	dispType := strings.Trim(fmt.Sprintf("%T", obj), "*")
+	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
+	if m.writer == nil {
+		return events
+	}
+
+	jsonLine, err := json.Marshal(InformerK8sMsg{
+		ObjectType: dispType,
+		Timestamp:  now,
+		Action:     action.String(),
+		Payload:    obj,
+	})
+	if err != nil {
+		log.Infof("Error marshaling msg: %s\n", err.Error())
+		return events
+	}
+	if _, err := m.writer.Write(jsonLine); err != nil {
+		log.Infof("Error writing msg: %s\n", err.Error())
+	}
+	return events
 }
 
 func wrapWithMetricDispatcher(d Dispatcher) Dispatcher {
@@ -145,70 +195,77 @@ func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.R
 	return events
 }
 
+func wrapDispatcher(dispatcher Dispatcher, w io.Writer) Dispatcher {
+	if w == nil {
+		return wrapWithMetricDispatcher(dispatcher)
+	}
+	return wrapWithMetricDispatcher(wrapWithDumpingDispatcher(dispatcher, w))
+}
+
 func (d *registryImpl) ForDeployments(deploymentType string) Dispatcher {
-	return wrapWithMetricDispatcher(newDeploymentDispatcher(deploymentType, d.deploymentHandler))
+	return wrapDispatcher(newDeploymentDispatcher(deploymentType, d.deploymentHandler), d.traceWriter)
 }
 
 func (d *registryImpl) ForJobs() Dispatcher {
-	return wrapWithMetricDispatcher(newJobDispatcherImpl(d.deploymentHandler))
+	return wrapDispatcher(newJobDispatcherImpl(d.deploymentHandler), d.traceWriter)
 }
 
 func (d *registryImpl) ForNamespaces() Dispatcher {
-	return wrapWithMetricDispatcher(d.namespaceDispatcher)
+	return wrapDispatcher(d.namespaceDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForNetworkPolicies() Dispatcher {
-	return wrapWithMetricDispatcher(d.networkPolicyDispatcher)
+	return wrapDispatcher(d.networkPolicyDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForNodes() Dispatcher {
-	return wrapWithMetricDispatcher(d.nodeDispatcher)
+	return wrapDispatcher(d.nodeDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForSecrets() Dispatcher {
-	return wrapWithMetricDispatcher(d.secretDispatcher)
+	return wrapDispatcher(d.secretDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForServices() Dispatcher {
-	return wrapWithMetricDispatcher(d.serviceDispatcher)
+	return wrapDispatcher(d.serviceDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForOpenshiftRoutes() Dispatcher {
-	return wrapWithMetricDispatcher(d.osRouteDispatcher)
+	return wrapDispatcher(d.osRouteDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForServiceAccounts() Dispatcher {
-	return wrapWithMetricDispatcher(d.serviceAccountDispatcher)
+	return wrapDispatcher(d.serviceAccountDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForRBAC() Dispatcher {
-	return wrapWithMetricDispatcher(d.rbacDispatcher)
+	return wrapDispatcher(d.rbacDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForClusterOperators() Dispatcher {
-	return wrapWithMetricDispatcher(d.clusterOperatorDispatcher)
+	return wrapDispatcher(d.clusterOperatorDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorResults() Dispatcher {
-	return wrapWithMetricDispatcher(d.complianceOperatorResultDispatcher)
+	return wrapDispatcher(d.complianceOperatorResultDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorProfiles() Dispatcher {
-	return wrapWithMetricDispatcher(d.complianceOperatorProfileDispatcher)
+	return wrapDispatcher(d.complianceOperatorProfileDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorTailoredProfiles() Dispatcher {
-	return wrapWithMetricDispatcher(d.complianceOperatorTailoredProfileDispatcher)
+	return wrapDispatcher(d.complianceOperatorTailoredProfileDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorRules() Dispatcher {
-	return wrapWithMetricDispatcher(d.complianceOperatorRulesDispatcher)
+	return wrapDispatcher(d.complianceOperatorRulesDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorScanSettingBindings() Dispatcher {
-	return wrapWithMetricDispatcher(d.complianceOperatorScanSettingBindingsDispatcher)
+	return wrapDispatcher(d.complianceOperatorScanSettingBindingsDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorScans() Dispatcher {
-	return wrapWithMetricDispatcher(d.complianceOperatorScanDispatcher)
+	return wrapDispatcher(d.complianceOperatorScanDispatcher, d.traceWriter)
 }
