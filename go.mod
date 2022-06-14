@@ -1,4 +1,4 @@
-module github.com/stackrox/rox
+module github.com/stackrox/stackrox
 
 go 1.16
 
@@ -183,7 +183,7 @@ replace (
 // and the module cache.
 // If you upgrade the scanner version, you MUST change this line as well to refer to the rox version included
 // from the given scanner version.
-exclude github.com/stackrox/rox v0.0.0-20210914215712-9ac265932e28
+exclude github.com/stackrox/stackrox v0.0.0-20210914215712-9ac265932e28
 
 exclude k8s.io/client-go v12.0.0+incompatible
 

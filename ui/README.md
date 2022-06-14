@@ -62,7 +62,7 @@ Ensure the following fields are correctly set in `package.json`:
 "name": "@stackrox/{package-name}",
 "repository": {
     "type": "git",
-    "url": "https://github.com/stackrox/rox.git",
+    "url": "https://github.com/stackrox/stackrox.git",
     "directory": "ui/packages/{package-dir-name}"
 },
 "license": "UNLICENSED"
@@ -124,7 +124,7 @@ In this case ensure the following fields are correctly set in `package.json`:
 "private": true,
 "repository": {
     "type": "git",
-    "url": "https://github.com/stackrox/rox.git",
+    "url": "https://github.com/stackrox/stackrox.git",
     "directory": "ui/apps/{app-dir-name}"
 },
 "license": "UNLICENSED"

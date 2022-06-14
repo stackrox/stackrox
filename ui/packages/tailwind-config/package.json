@@ -5,7 +5,7 @@
     "main": "tailwind.config.js",
     "repository": {
         "type": "git",
-        "url": "https://github.com/stackrox/rox.git",
+        "url": "https://github.com/stackrox/stackrox.git",
         "directory": "ui/packages/tailwind-config"
     },
     "license": "UNLICENSED",

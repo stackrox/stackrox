@@ -486,7 +486,7 @@ executors:
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
-    working_directory: /go/src/github.com/stackrox/rox
+    working_directory: /go/src/github.com/stackrox/stackrox
 
   kubectl-client-1-23:
     parameters:
@@ -499,7 +499,7 @@ executors:
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
-    working_directory: /go/src/github.com/stackrox/rox
+    working_directory: /go/src/github.com/stackrox/stackrox
 
 commands:
   collect-k8s-logs:
@@ -894,7 +894,7 @@ commands:
     steps:
       - checkout
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
       - restore-npm-deps-cache
       - fetch-ui-deps
 
@@ -932,7 +932,7 @@ commands:
             mv ui ui-<< parameters.branding >>
 
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: /go/src/github.com/stackrox/stackrox
           paths:
             - ui-<< parameters.branding >>/build # Copied directly into the image downstream.
             - ui-<< parameters.branding >>/deps
@@ -956,7 +956,7 @@ commands:
           docker-login: true
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - run:
           name: Ensure product branding is set
@@ -1102,7 +1102,7 @@ commands:
           when: on_fail
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *loginToGCR
       - run:
@@ -1330,7 +1330,7 @@ commands:
           when: on_fail
 
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: /go/src/github.com/stackrox/stackrox
           paths:
             - .ci-clusters/<< parameters.cluster-id >>
 
@@ -1480,7 +1480,7 @@ commands:
       - setup_remote_docker
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - restore-go-mod-cache
 
@@ -1625,7 +1625,7 @@ commands:
       - checkout
       - check-backend-changes
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
       - run:
           name: QA Automation Platform
           command: echo "there are no tests defined since this is a fake"
@@ -1788,7 +1788,7 @@ commands:
           docker-login: true
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - when:
           condition: << parameters.suffix >>
@@ -2585,7 +2585,7 @@ jobs:
             make --quiet tag | tee CI_TAG_TMP
             mv CI_TAG_TMP CI_TAG
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: /go/src/github.com/stackrox/stackrox
           paths:
             - CI_TAG
             - COLLECTOR_VERSION
@@ -2617,7 +2617,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
       - restore-go-mod-cache
       - setup-go-build-env
       - *restoreGoBuildCache
@@ -2635,7 +2635,7 @@ jobs:
       - *saveGoBuildCache
 
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: /go/src/github.com/stackrox/stackrox
           paths:
             - bin/linux/roxctl
             - bin/darwin/roxctl
@@ -2646,7 +2646,7 @@ jobs:
   pre-build-go-binaries:
     machine:
       image: << pipeline.parameters.ci_machine_image >>
-    working_directory: ~/go/src/github.com/stackrox/rox
+    working_directory: ~/go/src/github.com/stackrox/stackrox
     environment:
       GOPATH: /home/circleci/go
       EKS_AUTOMATION_VERSION: 0.2.17
@@ -2654,7 +2654,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: ~/go/src/github.com/stackrox/rox
+          at: ~/go/src/github.com/stackrox/stackrox
       - run:
           name: Create cci-export utility and setup env
           command: |
@@ -2691,7 +2691,7 @@ jobs:
           command: make swagger-docs
 
       - persist_to_workspace:
-          root: ~/go/src/github.com/stackrox/rox
+          root: ~/go/src/github.com/stackrox/stackrox
           paths:
             - bin/linux/central
             - bin/linux/migrator
@@ -2788,7 +2788,7 @@ jobs:
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "quay.io/rhacs-eng/collector-slim:${MAIN_TAG}"
 
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: /go/src/github.com/stackrox/stackrox
           paths:
             - CI_TAG
             - bin/linux/roxctl
@@ -2809,7 +2809,7 @@ jobs:
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - restore-go-mod-cache
       - setup-go-build-env
@@ -3015,7 +3015,7 @@ jobs:
       - setup_remote_docker
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *loginToGCR
       - run:
@@ -3069,7 +3069,7 @@ jobs:
       - setup_remote_docker
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *loginToGCR
       - run:
@@ -3122,7 +3122,7 @@ jobs:
       - setup_remote_docker
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *loginToGCR
       - create-openshift-4-cluster:
@@ -3171,7 +3171,7 @@ jobs:
     - setup_remote_docker
 
     - attach_workspace:
-        at: /go/src/github.com/stackrox/rox
+        at: /go/src/github.com/stackrox/stackrox
 
     - *loginToGCR
     - create-openshift-4-cluster:
@@ -3215,7 +3215,7 @@ jobs:
     - setup_remote_docker
 
     - attach_workspace:
-        at: /go/src/github.com/stackrox/rox
+        at: /go/src/github.com/stackrox/stackrox
 
     - *loginToGCR
     - create-openshift-4-cluster:
@@ -3272,7 +3272,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
       - restore-go-mod-cache
       - *setupRoxctl
       - run:
@@ -3310,7 +3310,7 @@ jobs:
           label: ci-no-api-tests
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - restore-go-mod-cache
       - setup-go-build-env
@@ -3464,7 +3464,7 @@ jobs:
           label: ci-no-ui-tests
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *setupRoxctl
       - setup_remote_docker
@@ -3578,7 +3578,7 @@ jobs:
           run-on-master: false
       - setup_remote_docker
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *setupRoxctl
       - setup-gcp
@@ -3657,7 +3657,7 @@ jobs:
         run-on-tags: false
     - setup_remote_docker
     - attach_workspace:
-        at: /go/src/github.com/stackrox/rox
+        at: /go/src/github.com/stackrox/stackrox
 
     - *setupRoxctl
     - setup-gcp
@@ -3772,7 +3772,7 @@ jobs:
           docker-login: true
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - run:
           name: Sanity check KUBECONFIG
@@ -3932,7 +3932,7 @@ jobs:
     - setup_remote_docker
 
     - attach_workspace:
-        at: /go/src/github.com/stackrox/rox
+        at: /go/src/github.com/stackrox/stackrox
 
     - run:
         name: Restore KUBECONFIG
@@ -4003,7 +4003,7 @@ jobs:
     - setup_remote_docker
 
     - attach_workspace:
-        at: /go/src/github.com/stackrox/rox
+        at: /go/src/github.com/stackrox/stackrox
 
     - run:
         name: Restore KUBECONFIG
@@ -4061,7 +4061,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - run:
           name: "Generate K8s/OpenShift bundles using roxctl.exe"
@@ -4069,7 +4069,7 @@ jobs:
           command: |
             # In Windows, the workspace ends up getting attached relative to the current working directory
             # so we need to do this cd every time.
-            cd go/src/github.com/stackrox/rox
+            cd go/src/github.com/stackrox/stackrox
             ./bin/windows/roxctl.exe central generate k8s none --output-dir rox-k8s-bundle
             ./bin/windows/roxctl.exe central generate openshift none --output-dir rox-openshift-bundle
 
@@ -4079,7 +4079,7 @@ jobs:
           command: |
             # In Windows, the workspace ends up getting attached relative to the current working directory
             # so we need to do this cd every time.
-            cd go/src/github.com/stackrox/rox
+            cd go/src/github.com/stackrox/stackrox
             dir --recursive rox-k8s-bundle
             test -f rox-k8s-bundle/README
             dir --recursive rox-openshift-bundle
@@ -4091,7 +4091,7 @@ jobs:
           command: |
             # In Windows, the workspace ends up getting attached relative to the current working directory
             # so we need to do this cd every time.
-            cd go/src/github.com/stackrox/rox
+            cd go/src/github.com/stackrox/stackrox
             version_from_yaml="$(grep -rnw -e 'image.*main' rox-k8s-bundle/central | sed -E 's/.*main.*:([^" ]+).*/\1/g')"
             version_from_roxctl="$(./bin/windows/roxctl.exe version)"
             printf "Versions:\n  from YAML: %s\nfrom roxctl: %s\n" "${version_from_yaml}" "${version_from_roxctl}"
@@ -4147,7 +4147,7 @@ jobs:
       - checkout
       - setup_remote_docker
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - run:
           name: Retag docs image with release-version tag in Docker Hub

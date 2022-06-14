@@ -43,7 +43,7 @@ const (
 	defaultDestination = "stderr"
 
 	// Our project prefix. For all subpackages of this, we strip this prefix.
-	projectPrefix = "github.com/stackrox/rox"
+	projectPrefix = "github.com/stackrox/stackrox"
 
 	// LoggingPath is the common log file so we can export it.
 	LoggingPath = "/var/log/stackrox/log.txt"

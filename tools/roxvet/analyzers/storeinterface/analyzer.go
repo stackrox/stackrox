@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	roxPrefix             = "github.com/stackrox/rox"
+	roxPrefix             = "github.com/stackrox/stackrox"
 	generatedImportPrefix = roxPrefix + "/generated"
 	storageImportPrefix   = generatedImportPrefix + "/storage"
 )

@@ -63,7 +63,7 @@ report: $(GO_JUNIT_REPORT_BIN)
 	@echo "Test pass/fail summary:"
 	@grep failures report.xml
 	@echo
-	@echo "`grep 'FAIL	github.com/stackrox/rox' test.log | wc -l` package(s) detected with compilation or test failures."
-	@-grep 'FAIL	github.com/stackrox/rox' test.log || true
+	@echo "`grep 'FAIL	github.com/stackrox/stackrox' test.log | wc -l` package(s) detected with compilation or test failures."
+	@-grep 'FAIL	github.com/stackrox/stackrox' test.log || true
 	@echo
-	@testerror="$$(grep -e 'can.t load package' -e '^# github.com/stackrox/stackrox/' -e 'FAIL	github.com/stackrox/rox' test.log | wc -l)" && test $$testerror -eq 0
+	@testerror="$$(grep -e 'can.t load package' -e '^# github.com/stackrox/stackrox/' -e 'FAIL	github.com/stackrox/stackrox' test.log | wc -l)" && test $$testerror -eq 0
