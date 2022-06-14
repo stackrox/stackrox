@@ -58,7 +58,7 @@ func (s *groupDataStoreTestSuite) TearDownTest() {
 func (s *groupDataStoreTestSuite) TestEnforcesGet() {
 	s.storage.EXPECT().Get(gomock.Any()).Times(0)
 
-	group, err := s.dataStore.Get(s.hasNoneCtx, &storage.GroupProperties{})
+	group, err := s.dataStore.Get(s.hasNoneCtx, "")
 	s.NoError(err, "expected no error, should return nil without access")
 	s.Nil(group, "expected return value to be nil")
 }
@@ -66,15 +66,15 @@ func (s *groupDataStoreTestSuite) TestEnforcesGet() {
 func (s *groupDataStoreTestSuite) TestAllowsGet() {
 	s.storage.EXPECT().Get(gomock.Any()).Return(nil, nil)
 
-	_, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{})
+	_, err := s.dataStore.Get(s.hasReadCtx, "")
 	s.NoError(err, "expected no error trying to read with permissions")
 
 	s.storage.EXPECT().Get(gomock.Any()).Return(nil, nil).Times(2)
 
-	_, err = s.dataStore.Get(s.hasWriteCtx, &storage.GroupProperties{})
+	_, err = s.dataStore.Get(s.hasWriteCtx, "")
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	_, err = s.dataStore.Get(s.hasWriteAccessCtx, &storage.GroupProperties{})
+	_, err = s.dataStore.Get(s.hasWriteAccessCtx, "")
 	s.NoError(err, "expected no error trying to read with Access permissions")
 }
 
@@ -207,19 +207,19 @@ func (s *groupDataStoreTestSuite) TestAllowsMutate() {
 func (s *groupDataStoreTestSuite) TestEnforcesRemove() {
 	s.storage.EXPECT().Remove(gomock.Any()).Times(0)
 
-	err := s.dataStore.Remove(s.hasNoneCtx, &storage.GroupProperties{})
+	err := s.dataStore.Remove(s.hasNoneCtx, "")
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.Remove(s.hasReadCtx, &storage.GroupProperties{})
+	err = s.dataStore.Remove(s.hasReadCtx, "")
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsRemove() {
 	s.storage.EXPECT().Remove(gomock.Any()).Return(nil).Times(2)
 
-	err := s.dataStore.Remove(s.hasWriteCtx, &storage.GroupProperties{})
+	err := s.dataStore.Remove(s.hasWriteCtx, "")
 	s.NoError(err, "expected no error trying to write with permissions")
 
-	err = s.dataStore.Remove(s.hasWriteAccessCtx, &storage.GroupProperties{})
+	err = s.dataStore.Remove(s.hasWriteAccessCtx, "")
 	s.NoError(err, "expected no error trying to write with Access permissions")
 }

@@ -50,18 +50,18 @@ func (mr *MockDataStoreMockRecorder) Add(ctx, group interface{}) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockDataStore) Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
+func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.Group, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, props)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.Group)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockDataStoreMockRecorder) Get(ctx, props interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataStore)(nil).Get), ctx, props)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataStore)(nil).Get), ctx, id)
 }
 
 // GetAll mocks base method.
@@ -109,17 +109,17 @@ func (mr *MockDataStoreMockRecorder) Mutate(ctx, remove, update, add interface{}
 }
 
 // Remove mocks base method.
-func (m *MockDataStore) Remove(ctx context.Context, props *storage.GroupProperties) error {
+func (m *MockDataStore) Remove(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Remove", ctx, props)
+	ret := m.ctrl.Call(m, "Remove", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Remove indicates an expected call of Remove.
-func (mr *MockDataStoreMockRecorder) Remove(ctx, props interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Remove(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockDataStore)(nil).Remove), ctx, props)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockDataStore)(nil).Remove), ctx, id)
 }
 
 // RemoveAllWithAuthProviderID mocks base method.

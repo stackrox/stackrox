@@ -44,6 +44,7 @@ func (s *GroupStoreTestSuite) TestAdd() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsCaptain",
+				Id:             "1",
 			},
 			RoleName: "captain",
 		},
@@ -52,6 +53,7 @@ func (s *GroupStoreTestSuite) TestAdd() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsAlsoCaptain",
+				Id:             "2",
 			},
 			RoleName: "captain",
 		},
@@ -60,6 +62,7 @@ func (s *GroupStoreTestSuite) TestAdd() {
 				AuthProviderId: "authProvider1",
 				Key:            "DifferentAttribute",
 				Value:          "IsCaptain",
+				Id:             "3",
 			},
 			RoleName: "captain",
 		},
@@ -74,7 +77,7 @@ func (s *GroupStoreTestSuite) TestAdd() {
 	}
 
 	for _, a := range groups {
-		full, err := s.sto.Get(a.GetProps())
+		full, err := s.sto.Get(a.GetProps().GetId())
 		s.NoError(err)
 		s.Equal(a, full)
 	}
@@ -84,8 +87,12 @@ func (s *GroupStoreTestSuite) TestAdd() {
 	s.ElementsMatch(groups, retrievedGroups)
 
 	for _, a := range groups {
-		s.NoError(s.sto.Remove(a.GetProps()))
+		s.NoError(s.sto.Remove(a.GetProps().GetId()))
 	}
+
+	groupsAfterDelete, err := s.sto.GetAll()
+	s.NoError(err)
+	s.Empty(groupsAfterDelete)
 }
 
 func (s *GroupStoreTestSuite) TestUpdate() {
@@ -95,6 +102,7 @@ func (s *GroupStoreTestSuite) TestUpdate() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsCaptain",
+				Id:             "1",
 			},
 			RoleName: "captain",
 		},
@@ -103,6 +111,7 @@ func (s *GroupStoreTestSuite) TestUpdate() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsAlsoCaptain",
+				Id:             "2",
 			},
 			RoleName: "captain",
 		},
@@ -111,6 +120,7 @@ func (s *GroupStoreTestSuite) TestUpdate() {
 				AuthProviderId: "authProvider1",
 				Key:            "DifferentAttribute",
 				Value:          "IsCaptain",
+				Id:             "3",
 			},
 			RoleName: "captain",
 		},
@@ -129,7 +139,7 @@ func (s *GroupStoreTestSuite) TestUpdate() {
 	}
 
 	for _, a := range groups {
-		full, err := s.sto.Get(a.GetProps())
+		full, err := s.sto.Get(a.GetProps().GetId())
 		s.NoError(err)
 		s.Equal(a, full)
 	}
@@ -139,8 +149,12 @@ func (s *GroupStoreTestSuite) TestUpdate() {
 	s.ElementsMatch(groups, retrievedGroups)
 
 	for _, a := range groups {
-		s.NoError(s.sto.Remove(a.GetProps()))
+		s.NoError(s.sto.Remove(a.GetProps().GetId()))
 	}
+
+	groupsAfterDelete, err := s.sto.GetAll()
+	s.NoError(err)
+	s.Empty(groupsAfterDelete)
 }
 
 func (s *GroupStoreTestSuite) TestUpsert() {
@@ -150,6 +164,7 @@ func (s *GroupStoreTestSuite) TestUpsert() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsCaptain",
+				Id:             "1",
 			},
 			RoleName: "captain",
 		},
@@ -158,6 +173,7 @@ func (s *GroupStoreTestSuite) TestUpsert() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsAlsoCaptain",
+				Id:             "2",
 			},
 			RoleName: "captain",
 		},
@@ -166,6 +182,7 @@ func (s *GroupStoreTestSuite) TestUpsert() {
 				AuthProviderId: "authProvider1",
 				Key:            "DifferentAttribute",
 				Value:          "IsCaptain",
+				Id:             "3",
 			},
 			RoleName: "captain",
 		},
@@ -180,7 +197,7 @@ func (s *GroupStoreTestSuite) TestUpsert() {
 	}
 
 	for _, a := range groups {
-		full, err := s.sto.Get(a.GetProps())
+		full, err := s.sto.Get(a.GetProps().GetId())
 		s.NoError(err)
 		s.Equal(a, full)
 	}
@@ -190,8 +207,12 @@ func (s *GroupStoreTestSuite) TestUpsert() {
 	s.ElementsMatch(groups, retrievedGroups)
 
 	for _, a := range groups {
-		s.NoError(s.sto.Remove(a.GetProps()))
+		s.NoError(s.sto.Remove(a.GetProps().GetId()))
 	}
+
+	groupsAfterDelete, err := s.sto.GetAll()
+	s.NoError(err)
+	s.Empty(groupsAfterDelete)
 }
 
 func (s *GroupStoreTestSuite) TestMutate() {
@@ -201,6 +222,7 @@ func (s *GroupStoreTestSuite) TestMutate() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsCaptain",
+				Id:             "1",
 			},
 			RoleName: "captain",
 		},
@@ -209,6 +231,7 @@ func (s *GroupStoreTestSuite) TestMutate() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsAlsoCaptain",
+				Id:             "2",
 			},
 			RoleName: "captain",
 		},
@@ -217,6 +240,7 @@ func (s *GroupStoreTestSuite) TestMutate() {
 				AuthProviderId: "authProvider1",
 				Key:            "DifferentAttribute",
 				Value:          "IsCaptain",
+				Id:             "3",
 			},
 			RoleName: "captain",
 		},
@@ -232,6 +256,7 @@ func (s *GroupStoreTestSuite) TestMutate() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsCaptain",
+				Id:             "1",
 			},
 			RoleName: "captain",
 		},
@@ -243,6 +268,7 @@ func (s *GroupStoreTestSuite) TestMutate() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsAlsoCaptain",
+				Id:             "2",
 			},
 			RoleName: "notcaptain",
 		},
@@ -254,6 +280,7 @@ func (s *GroupStoreTestSuite) TestMutate() {
 				AuthProviderId: "authProvider1",
 				Key:            "DifferentAttribute",
 				Value:          "IsNotCaptain",
+				Id:             "4",
 			},
 			RoleName: "notcaptain",
 		},
@@ -262,27 +289,27 @@ func (s *GroupStoreTestSuite) TestMutate() {
 	s.NoError(s.sto.Mutate(toRemove, toUpdate, toAdd))
 
 	// Last starting state should be untouched.
-	remainingStart, err := s.sto.Get(startingState[2].GetProps())
+	remainingStart, err := s.sto.Get(startingState[2].GetProps().GetId())
 	s.NoError(err)
 	s.Equal(startingState[2], remainingStart)
 
 	// Removed starting state should not be present.
 	for _, a := range toRemove {
-		full, err := s.sto.Get(a.GetProps())
+		full, err := s.sto.Get(a.GetProps().GetId())
 		s.NoError(err)
 		s.Equal((*storage.Group)(nil), full)
 	}
 
 	// Updated value check.
 	for _, a := range toUpdate {
-		full, err := s.sto.Get(a.GetProps())
+		full, err := s.sto.Get(a.GetProps().GetId())
 		s.NoError(err)
 		s.Equal(a, full)
 	}
 
 	// Added value check.
 	for _, a := range toAdd {
-		full, err := s.sto.Get(a.GetProps())
+		full, err := s.sto.Get(a.GetProps().GetId())
 		s.NoError(err)
 		s.Equal(a, full)
 	}
@@ -292,18 +319,22 @@ func (s *GroupStoreTestSuite) TestMutate() {
 	s.NoError(err)
 	s.Equal(3, len(retrievedGroups))
 	for _, a := range retrievedGroups {
-		s.NoError(s.sto.Remove(a.GetProps()))
+		s.NoError(s.sto.Remove(a.GetProps().GetId()))
 	}
 }
 
 func (s *GroupStoreTestSuite) TestWalk() {
 	groups := []*storage.Group{
 		{
+			Props: &storage.GroupProperties{
+				Id: "0",
+			},
 			RoleName: "role1",
 		},
 		{
 			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
+				Id:             "1",
 			},
 			RoleName: "role2",
 		},
@@ -311,6 +342,7 @@ func (s *GroupStoreTestSuite) TestWalk() {
 			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute1",
+				Id:             "2",
 			},
 			RoleName: "role3",
 		},
@@ -319,6 +351,7 @@ func (s *GroupStoreTestSuite) TestWalk() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute1",
 				Value:          "Value1",
+				Id:             "3",
 			},
 			RoleName: "role4",
 		},
@@ -327,6 +360,7 @@ func (s *GroupStoreTestSuite) TestWalk() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute2",
 				Value:          "Value1",
+				Id:             "4",
 			},
 			RoleName: "role5",
 		},
@@ -335,6 +369,7 @@ func (s *GroupStoreTestSuite) TestWalk() {
 				AuthProviderId: "authProvide2",
 				Key:            "Attribute1",
 				Value:          "Value1",
+				Id:             "5",
 			},
 			RoleName: "role6",
 		},
@@ -343,6 +378,7 @@ func (s *GroupStoreTestSuite) TestWalk() {
 				AuthProviderId: "authProvide2",
 				Key:            "Attribute2",
 				Value:          "Value1",
+				Id:             "6",
 			},
 			RoleName: "role7",
 		},
@@ -370,18 +406,22 @@ func (s *GroupStoreTestSuite) TestWalk() {
 	s.ElementsMatch(expectedGroups, actualGroups)
 
 	for _, a := range groups {
-		s.NoError(s.sto.Remove(a.GetProps()))
+		s.NoError(s.sto.Remove(a.GetProps().GetId()))
 	}
 }
 
 func (s *GroupStoreTestSuite) TestGetAll() {
 	groups := []*storage.Group{
 		{
+			Props: &storage.GroupProperties{
+				Id: "0",
+			},
 			RoleName: "role1",
 		},
 		{
 			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
+				Id:             "1",
 			},
 			RoleName: "role2",
 		},
@@ -389,6 +429,7 @@ func (s *GroupStoreTestSuite) TestGetAll() {
 			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute1",
+				Id:             "2",
 			},
 			RoleName: "role3",
 		},
@@ -397,6 +438,7 @@ func (s *GroupStoreTestSuite) TestGetAll() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute1",
 				Value:          "Value1",
+				Id:             "3",
 			},
 			RoleName: "role4",
 		},
@@ -405,6 +447,7 @@ func (s *GroupStoreTestSuite) TestGetAll() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute2",
 				Value:          "Value1",
+				Id:             "4",
 			},
 			RoleName: "role5",
 		},
@@ -413,6 +456,7 @@ func (s *GroupStoreTestSuite) TestGetAll() {
 				AuthProviderId: "authProvide2",
 				Key:            "Attribute1",
 				Value:          "Value1",
+				Id:             "5",
 			},
 			RoleName: "role6",
 		},
@@ -421,6 +465,7 @@ func (s *GroupStoreTestSuite) TestGetAll() {
 				AuthProviderId: "authProvide2",
 				Key:            "Attribute2",
 				Value:          "Value1",
+				Id:             "7",
 			},
 			RoleName: "role7",
 		},
@@ -446,11 +491,15 @@ func (s *GroupStoreTestSuite) TestGetAll() {
 func (s *GroupStoreTestSuite) TestGetFiltered() {
 	groups := []*storage.Group{
 		{
+			Props: &storage.GroupProperties{
+				Id: "0",
+			},
 			RoleName: "role1",
 		},
 		{
 			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
+				Id:             "1",
 			},
 			RoleName: "role2",
 		},
@@ -458,6 +507,7 @@ func (s *GroupStoreTestSuite) TestGetFiltered() {
 			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute1",
+				Id:             "2",
 			},
 			RoleName: "role3",
 		},
@@ -466,6 +516,7 @@ func (s *GroupStoreTestSuite) TestGetFiltered() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute1",
 				Value:          "Value1",
+				Id:             "3",
 			},
 			RoleName: "role4",
 		},
@@ -474,6 +525,7 @@ func (s *GroupStoreTestSuite) TestGetFiltered() {
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute2",
 				Value:          "Value1",
+				Id:             "4",
 			},
 			RoleName: "role5",
 		},
@@ -482,6 +534,7 @@ func (s *GroupStoreTestSuite) TestGetFiltered() {
 				AuthProviderId: "authProvide2",
 				Key:            "Attribute1",
 				Value:          "Value1",
+				Id:             "5",
 			},
 			RoleName: "role6",
 		},
@@ -490,6 +543,7 @@ func (s *GroupStoreTestSuite) TestGetFiltered() {
 				AuthProviderId: "authProvide2",
 				Key:            "Attribute2",
 				Value:          "Value1",
+				Id:             "6",
 			},
 			RoleName: "role7",
 		},

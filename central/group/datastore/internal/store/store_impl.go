@@ -1,8 +1,8 @@
 package store
 
 import (
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	serializePkg "github.com/stackrox/rox/central/group/datastore/serialize"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	bolt "go.etcd.io/bbolt"
@@ -15,16 +15,17 @@ type storeImpl struct {
 }
 
 // Get returns a group matching the given properties if it exists from the store.
-func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err error) {
+func (s *storeImpl) Get(id string) (grp *storage.Group, err error) {
 	err = s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
-		k := serializePkg.PropsKey(props)
-		v := buc.Get(k)
+		v := buc.Get([]byte(id))
 		if v == nil {
 			return nil
 		}
 		var err error
-		grp, err = deserialize(k, v)
+		var marshalledGroup storage.Group
+		err = proto.Unmarshal(v, &marshalledGroup)
+		grp = &marshalledGroup
 		return err
 	})
 	return
@@ -35,12 +36,13 @@ func (s *storeImpl) GetFiltered(filter func(*storage.GroupProperties) bool) ([]*
 	err := s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
 		return buc.ForEach(func(k, v []byte) error {
-			grp, err := deserialize(k, v)
+			var grp storage.Group
+			err := proto.Unmarshal(v, &grp)
 			if err != nil {
 				return err
 			}
 			if filter == nil || filter(grp.GetProps()) {
-				grps = append(grps, grp)
+				grps = append(grps, &grp)
 			}
 			return nil
 		})
@@ -61,16 +63,23 @@ func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) 
 
 	// Search for groups in the list.
 	err = s.db.View(func(tx *bolt.Tx) error {
-		buc := tx.Bucket(groupsBucket)
 		for _, check := range toSearch {
-			serializedKey := serializePkg.PropsKey(check)
-			if serializedVal := buc.Get(serializedKey); serializedVal != nil {
-				grp, err := deserialize(serializedKey, serializedVal)
-				if err != nil {
-					return err
+			grpss, err := s.GetFiltered(func(props *storage.GroupProperties) bool {
+				if check.GetAuthProviderId() != props.GetAuthProviderId() {
+					return false
 				}
-				grps = append(grps, grp)
+				if check.GetKey() != props.GetKey() {
+					return false
+				}
+				if check.GetValue() != props.GetValue() {
+					return false
+				}
+				return true
+			})
+			if err != nil {
+				return err
 			}
+			grps = append(grps, grpss...)
 		}
 		return nil
 	})
@@ -80,40 +89,37 @@ func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) 
 // Add adds a group to the store.
 // Returns an error if a group with the same properties already exists.
 func (s *storeImpl) Add(group *storage.Group) error {
-	key, value := serialize(group)
-
 	return s.db.Update(func(tx *bolt.Tx) error {
-		return addInTransaction(tx, key, value)
+		return addInTransaction(tx, group)
 	})
 }
 
 // Update updates a group in the store.
 // Returns an error if a group with the same properties does not already exist.
 func (s *storeImpl) Update(group *storage.Group) error {
-	key, value := serialize(group)
-
 	return s.db.Update(func(tx *bolt.Tx) error {
-		return updateInTransaction(tx, key, value)
+		return updateInTransaction(tx, group)
 	})
 }
 
 // Upsert adds or updates a group in the store.
 func (s *storeImpl) Upsert(group *storage.Group) error {
-	key, value := serialize(group)
-
 	return s.db.Update(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
-		return buc.Put(key, value)
+		id := group.GetProps().GetId()
+		bytes, err := proto.Marshal(group)
+		if err != nil {
+			return errox.InvariantViolation.CausedBy(err)
+		}
+		return buc.Put([]byte(id), bytes)
 	})
 }
 
 // Remove removes the group with matching properties from the store.
 // Returns an error if no such group exists.
-func (s *storeImpl) Remove(props *storage.GroupProperties) error {
-	key := serializePkg.PropsKey(props)
-
+func (s *storeImpl) Remove(id string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		return removeInTransaction(tx, key)
+		return removeInTransaction(tx, id)
 	})
 }
 
@@ -122,20 +128,17 @@ func (s *storeImpl) Remove(props *storage.GroupProperties) error {
 func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		for _, group := range toRemove {
-			key := serializePkg.PropsKey(group.GetProps())
-			if err := removeInTransaction(tx, key); err != nil {
+			if err := removeInTransaction(tx, group.GetProps().GetId()); err != nil {
 				return errors.Wrap(err, "error removing during mutation")
 			}
 		}
 		for _, group := range toUpdate {
-			key, value := serialize(group)
-			if err := updateInTransaction(tx, key, value); err != nil {
+			if err := updateInTransaction(tx, group); err != nil {
 				return errors.Wrap(err, "error updating during mutation")
 			}
 		}
 		for _, group := range toAdd {
-			key, value := serialize(group)
-			if err := addInTransaction(tx, key, value); err != nil {
+			if err := addInTransaction(tx, group); err != nil {
 				return errors.Wrap(err, "error adding during mutation")
 			}
 		}
@@ -146,28 +149,44 @@ func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 // Helpers
 //////////
 
-func addInTransaction(tx *bolt.Tx, key, value []byte) error {
+func addInTransaction(tx *bolt.Tx, group *storage.Group) error {
+	id := group.GetProps().GetId()
+
 	buc := tx.Bucket(groupsBucket)
-	if buc.Get(key) != nil {
-		return errox.AlreadyExists.Newf("group config for %q already exists", key)
+	if buc.Get([]byte(id)) != nil {
+		return errox.AlreadyExists.Newf("group config for %q already exists", id)
 	}
-	return buc.Put(key, value)
+
+	bytes, err := proto.Marshal(group)
+	if err != nil {
+		return errox.InvariantViolation.CausedBy(err)
+	}
+
+	return buc.Put([]byte(id), bytes)
 }
 
-func updateInTransaction(tx *bolt.Tx, key, value []byte) error {
+func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
+	id := group.GetProps().GetId()
+
 	buc := tx.Bucket(groupsBucket)
-	if buc.Get(key) == nil {
-		return errox.NotFound.Newf("group config for %q does not exist", key)
+	if buc.Get([]byte(id)) == nil {
+		return errox.NotFound.Newf("group config for %q does not exist", id)
 	}
-	return buc.Put(key, value)
+
+	bytes, err := proto.Marshal(group)
+	if err != nil {
+		return errox.InvariantViolation.CausedBy(err)
+	}
+
+	return buc.Put([]byte(id), bytes)
 }
 
-func removeInTransaction(tx *bolt.Tx, key []byte) error {
+func removeInTransaction(tx *bolt.Tx, id string) error {
 	buc := tx.Bucket(groupsBucket)
-	if buc.Get(key) == nil {
-		return errox.NotFound.Newf("group config for %q does not exist", key)
+	if buc.Get([]byte(id)) == nil {
+		return errox.NotFound.Newf("group config for %q does not exist", id)
 	}
-	return buc.Delete(key)
+	return buc.Delete([]byte(id))
 }
 
 // When given an auth provider and attributes, we will look for all keys and

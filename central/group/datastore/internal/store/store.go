@@ -3,15 +3,23 @@ package store
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
 )
 
 var groupsBucket = []byte("groups2")
 
+var getAllEmptyGroupProperties = func(props *storage.GroupProperties) bool {
+	if props.GetAuthProviderId() == "" && props.GetKey() == "" && props.GetValue() == "" {
+		return true
+	}
+	return false
+}
+
 // Store updates and utilizes groups, which are attribute to role mappings.
 //go:generate mockgen-wrapper
 type Store interface {
-	Get(props *storage.GroupProperties) (*storage.Group, error)
+	Get(id string) (*storage.Group, error)
 	GetFiltered(func(*storage.GroupProperties) bool) ([]*storage.Group, error)
 	GetAll() ([]*storage.Group, error)
 
@@ -21,7 +29,7 @@ type Store interface {
 	Update(*storage.Group) error
 	Upsert(*storage.Group) error
 	Mutate(remove, update, add []*storage.Group) error
-	Remove(props *storage.GroupProperties) error
+	Remove(id string) error
 }
 
 // New returns a new instance of a Store.
@@ -31,9 +39,12 @@ func New(db *bolt.DB) Store {
 	store := &storeImpl{
 		db: db,
 	}
-
-	allEmptyGroupProperty := storage.GroupProperties{AuthProviderId: "", Key: "", Value: ""}
-	_ = store.Remove(&allEmptyGroupProperty) // ignore error to suppress warning
+	grps, err := store.GetFiltered(getAllEmptyGroupProperties)
+	utils.Should(err)
+	for _, grp := range grps {
+		err = store.Remove(grp.GetProps().GetId())
+		utils.Should(err)
+	}
 
 	return store
 }
