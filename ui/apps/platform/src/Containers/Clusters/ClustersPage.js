@@ -61,7 +61,6 @@ const ClustersPage = ({
                     searchCategory="CLUSTERS"
                     placeholder="Add one or more filters"
                     handleChangeSearchFilter={setSearchFilter}
-                    autoFocus={!selectedClusterId}
                 />
                 <div className="flex items-center ml-4 mr-3">
                     <HashLink
