@@ -285,7 +285,7 @@ class FinalPost(StoreArtifacts):
         if self._store_qa_spock_results:
             self.data_to_store.append(PostTestsConstants.QA_SPOCK_RESULTS)
 
-    def run(self):
+    def run(self, test_output_dirs=None):
         self.store_artifacts()
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()
