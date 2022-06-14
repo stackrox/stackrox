@@ -55,7 +55,7 @@ From here you can install stackrox-central-services to get Central and Scanner c
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="$(cat stackrox-admin-password.txt)"
 ```
 
-If you're deploying StackRox on a small node like a local development cluster, run the following command to reduce StackRox resource requirements. Please keep in mind that these reduced resource settings are not suited for a production setup.
+If you're deploying StackRox on a small node like a local development cluster, run the following command to reduce StackRox resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 ```sh
 helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-services \
   --set central.resources.requests.memory=1Gi \
@@ -87,7 +87,7 @@ helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-sec
 ```
 When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services are deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
-When deploying StackRox on a small node, you can install with additional options. This should reduce stackrox-secured-cluster-services resource requirements. Please keep in mind that these reduced resource settings are not recommended for a production setup.
+When deploying StackRox on a small node, you can install with additional options. This should reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not recommended for a production setup.
 ```sh
 helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
   -f stackrox-init-bundle.yaml \
@@ -113,13 +113,13 @@ kubectl -n stackrox port-forward deploy/central 8000:8443
 
 2.Open <https://localhost:8000> in your browser.
 
-3.Accept certificate warnings and proceed.
+3.If a certificate warning is displayed, you can accept the warnings to install the default self-signed certificate. To configure custom certificates, see the section on "Adding Custom Certificates" in <https://docs.openshift.com/acs/configuration/add-custom-certificates.html>.
 
 4.Log in as `admin` using the password in `stackrox-admin-password.txt`
 
 ## Manual Deployment
 
-To manually deploy the latest development version of StackRox to your kubernetes
+To manually deploy the latest development version of StackRox to your Kubernetes
 cluster in the stackrox namespace:
 
 ```
@@ -139,9 +139,9 @@ to https://localhost:8000/. Credentials for the 'admin' user can be found in
 
 ## Development
 
-**UI Dev Docs**: please refer to [ui/README.md](./ui/README.md)
+**UI Dev Docs**: Refer to [ui/README.md](./ui/README.md)
 
-**E2E Dev Docs**: please refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
+**E2E Dev Docs**: Refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
 
 ### Quickstart
 
@@ -225,7 +225,7 @@ $ export STORAGE=pvc
 # To save time on rebuilds by skipping UI builds, set:
 $ export SKIP_UI_BUILD=1
 
-# When you deploy locally make sure your kube context points to the desired kubernetes cluster,
+# When you deploy locally make sure your kube context points to the desired Kubernetes cluster,
 # for example Docker Desktop.
 # To check the current context you can call a workflow script:
 $ roxkubectx
