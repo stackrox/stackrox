@@ -54,6 +54,7 @@ class SummaryTest extends BaseSpecification {
     }
 
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify node details"() {
         given:
         "fetch the list of nodes"
