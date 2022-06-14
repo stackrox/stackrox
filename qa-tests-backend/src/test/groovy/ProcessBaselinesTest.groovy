@@ -476,7 +476,6 @@ class ProcessBaselinesTest extends BaseSpecification {
         sleep 5000
         orchestrator.execInContainer(deployment, "pwd")
 
-
         then:
         "verify for suspicious process in risk indicator"
         RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 240)
