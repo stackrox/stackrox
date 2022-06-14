@@ -47,12 +47,16 @@ export const selectors = {
  */
 const axisLabel = (axisIndex, labelIndex) => `#chart-axis-${axisIndex}-tickLabels-${labelIndex}`;
 
+const legendLabel = (labelIndex) => `#legend-labels-${labelIndex}`;
+
 // TODO Make `pfSelectors` the default once phase one of the PF Dashboard is enabled
 export const pfSelectors = {
     pageHeader: 'h1:contains("Dashboard")',
     violationsByCategory: scopeSelectors('article:contains("Policy violations by category")', {
         chart: '.pf-c-chart',
         optionsToggle: 'button:contains("Options")',
+        volumeOption: 'button:contains("Volume")',
         axisLabel,
+        legendLabel,
     }),
 };

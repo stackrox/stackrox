@@ -40,7 +40,7 @@ describe('Dashboard security metrics phase one action widgets', () => {
         cy.get(selectors.pageHeader);
     });
 
-    it('should render a policy violations by category widget', () => {
+    it('should sort a policy violations by category widget by severity and volume of violations', () => {
         visitMainDashboardPF();
 
         cy.intercept('GET', api.alerts.countsByCategory, {
@@ -59,7 +59,7 @@ describe('Dashboard security metrics phase one action widgets', () => {
 
         // Switch to sort-by-volume, which orders the chart by total violations per category
         cy.get(widgetSelectors.optionsToggle).click();
-        cy.get("button:contains('Volume')").click();
+        cy.get(widgetSelectors.volumeOption).click();
         cy.get(widgetSelectors.optionsToggle).click();
 
         cy.get(`${widgetSelectors.axisLabel(0, 4)}:contains('Anomalous Activity')`);
@@ -67,5 +67,31 @@ describe('Dashboard security metrics phase one action widgets', () => {
         cy.get(`${widgetSelectors.axisLabel(0, 2)}:contains('Privileges')`);
         cy.get(`${widgetSelectors.axisLabel(0, 1)}:contains('Network Tools')`);
         cy.get(`${widgetSelectors.axisLabel(0, 0)}:contains('Vulnerability Management')`);
+    });
+
+    it('should allow toggling of severities for a policy violations by category widget', () => {
+        visitMainDashboardPF();
+
+        cy.intercept('GET', api.alerts.countsByCategory, {
+            body: policyViolationsByCategory,
+        }).as('getPolicyViolationsByCategory');
+        cy.wait('@getPolicyViolationsByCategory');
+
+        const widgetSelectors = selectors.violationsByCategory;
+
+        // Sort by volume, so that disabling lower severity bars changes the order of the chart
+        cy.get(widgetSelectors.optionsToggle).click();
+        cy.get(widgetSelectors.volumeOption).click();
+        cy.get(widgetSelectors.optionsToggle).click();
+
+        // Toggle off low and medium violations
+        cy.get(widgetSelectors.legendLabel(0)).click();
+        cy.get(widgetSelectors.legendLabel(1)).click();
+
+        cy.get(`${widgetSelectors.axisLabel(0, 4)}:contains('Network Tools')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 3)}:contains('Privileges')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 2)}:contains('Anomalous Activity')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 1)}:contains('Vulnerability Management')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 0)}:contains('Security Best Practices')`);
     });
 });
