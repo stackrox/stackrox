@@ -10,7 +10,7 @@ from runners import ClusterTestSetsRunner
 
 
 def make_qa_e2e_test_runner(cluster):
-    ClusterTestSetsRunner(
+    return ClusterTestSetsRunner(
         cluster=cluster,
         sets=[
             {
