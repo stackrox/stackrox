@@ -19,8 +19,8 @@ import util.Env
 class SummaryTest extends BaseSpecification {
 
     @Category([BAT])
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
-    @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") ||
+                System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
         expect:
         "Counts API should match orchestrator details"
