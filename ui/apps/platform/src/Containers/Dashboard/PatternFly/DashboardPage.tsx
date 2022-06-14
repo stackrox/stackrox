@@ -1,6 +1,16 @@
 import React from 'react';
-import { Divider, Grid, GridItem, PageSection, Text, Title } from '@patternfly/react-core';
+import {
+    Divider,
+    Flex,
+    FlexItem,
+    Grid,
+    GridItem,
+    PageSection,
+    Text,
+    Title,
+} from '@patternfly/react-core';
 import SummaryCounts from './SummaryCounts';
+import ScopeBar from './ScopeBar';
 
 import ViolationsByPolicyCategory from './Widgets/ViolationsByPolicyCategory';
 
@@ -12,8 +22,21 @@ function DashboardPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <Title headingLevel="h1">Dashboard</Title>
-                <Text>Review security metrics across all or select resources</Text>
+                <Flex
+                    direction={{ default: 'column', lg: 'row' }}
+                    alignItems={{ default: 'alignItemsFlexStart', lg: 'alignItemsCenter' }}
+                >
+                    <FlexItem>
+                        <Title headingLevel="h1">Dashboard</Title>
+                        <Text>Review security metrics across all or select resources</Text>
+                    </FlexItem>
+                    <FlexItem
+                        grow={{ default: 'grow' }}
+                        className="pf-u-display-flex pf-u-justify-content-flex-end"
+                    >
+                        <ScopeBar />
+                    </FlexItem>
+                </Flex>
             </PageSection>
             <Divider component="div" />
             <PageSection>

@@ -32,7 +32,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
 )
 
 func TestIndicatorDatastore(t *testing.T) {
@@ -47,7 +46,6 @@ type IndicatorDataStoreTestSuite struct {
 	searcher  processSearch.Searcher
 
 	rocksDB *rocksdb.RocksDB
-	boltDB  *bolt.DB
 
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
