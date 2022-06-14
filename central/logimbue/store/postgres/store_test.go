@@ -29,7 +29,7 @@ func TestLogImbuesStore(t *testing.T) {
 	suite.Run(t, new(LogImbuesStoreSuite))
 }
 
-func (s *LogImbuesStoreSuite) SetupTest() {
+func (s *LogImbuesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *LogImbuesStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *LogImbuesStoreSuite) TearDownTest() {
+func (s *LogImbuesStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE log_imbues CASCADE")
+	s.T().Log("log_imbues", tag)
+	s.NoError(err)
+}
+
+func (s *LogImbuesStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
