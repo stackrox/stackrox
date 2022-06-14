@@ -100,6 +100,7 @@ jobs:
       - name: Check open PRs
         id: check
         run: |
+          set -u
           PRs=$(gh pr list -s open \
           --repo "${{github.repository}}" \
           --search "milestone:${{needs.variables.outputs.milestone}}" \
@@ -112,12 +113,12 @@ jobs:
       - name: Create next milestone
         if: github.event.inputs.dry-run != 'true' && steps.check.outputs.open-issues != ''
         run: |
-          http_code=$(gh api --silent -X POST \
+          set -u
+          if ! http_code=$(gh api --silent -X POST \
             "repos/${{github.repository}}/milestones" \
             -f "title"="${{needs.variables.outputs.next-milestone}}" \
-            2>&1)
+            2>&1); then
 
-          if ! $?; then
             if grep "HTTP 422" <<< "$http_code"; then
               echo "Milestone ${{needs.variables.outputs.next-milestone}} already exists." >> $GITHUB_STEP_SUMMARY
             else
@@ -130,6 +131,7 @@ jobs:
 
       - name: Move open PRs
         run: |
+          set -u
           PRS=$(gh pr list -s open \
             --repo "${{github.repository}}" \
             --search "milestone:${{needs.variables.outputs.milestone}}" \
@@ -168,6 +170,7 @@ jobs:
         name: Cherry-pick commits from the main branch
         id: cherry-pick
         run: |
+          set -u
           SLACK_MESSAGE_FILE=$(mktemp)
           EMPTY=""
           PR_COMMITS=$(gh pr list -s closed \
@@ -247,16 +250,19 @@ jobs:
             cat << EOF >> $GITHUB_STEP_SUMMARY
 
           As some of the PRs could not be cherry-picked, please help the authors to merge their changes to the release branch via opening PRs.
-          The commands may look like the following:
+          The commands may look like the following (mind the placeholders):
 
+              # In the directory of the ${{github.repository}} clone:
+              git switch "${{env.main_branch}}"
               git pull
               git switch --create <AUTHOR>/merge-pr-<PR NUMBER>-"${{needs.variables.outputs.release-patch}}" \\
                 "${{needs.variables.outputs.branch}}"
               git cherry-pick -x <MERGE COMMIT SHA>
-              # Proceed to resolve merge conflicts. Once done:
-              git push --set-upstream origin $(git branch --show-current)
 
-              # Create PR to the release branch:
+              # Proceed to resolve merge conflicts. Once done:
+              git push --set-upstream origin \$(git branch --show-current)
+
+              # Create PR to the release branch (assuming 'gh' is installed):
               gh create pr --base "${{needs.variables.outputs.branch}}" --fill \\
                 --milestone "${{needs.variables.outputs.milestone}}"
 
@@ -271,11 +277,27 @@ jobs:
         with:
           channel-id: ${{env.slack_channel}}
           payload: >-
-            { "blocks": [ {
-              "type": "section", "text": { "type": "mrkdwn",
-                "text": "*Couldn't cherry-pick the following PRs
-            to the release branch:*\n\n${{steps.cherry-pick.outputs.bad-cherries}}"
-            }}]}
+            { "blocks": [
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":red_circle: *Upstream release milestone ${{needs.variables.outputs.milestone}} on <${{github.repositoryUrl}}|${{github.repository}}>*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            "*Couldn't cherry-pick the following PRs
+            to the release branch:*\n\n${{steps.cherry-pick.outputs.bad-cherries}}" }},
+
+            { "type": "divider" },
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":arrow_right: *Please assist the PR assignees in merging their changes to `${{needs.variables.outputs.branch}}` branch
+            and then close the <${{github.event.milestone.html_url}}|${{needs.variables.outputs.milestone}}> milestone again.*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ">
+            Repository: <${{github.repositoryUrl}}|${{github.repository}}>\n>
+            Milestone: <${{github.event.milestone.html_url}}|${{needs.variables.outputs.milestone}}>\n>
+            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
+            ]}
 
   cut-rc:
     name: Tag RC for milestone ${{needs.variables.outputs.milestone}}
@@ -349,20 +371,23 @@ jobs:
         with:
           channel-id: ${{env.slack_channel}}
           payload: >-
-            { "blocks": [ {
-              "type": "header", "text": { "type": "plain_text",
-                "text": "${{needs.variables.outputs.milestone}}"
-              }},{
-              "type": "section", "text": { "type": "mrkdwn",
-                "text":
-            "<${{steps.pre-release.outputs.url}}|Release candidate ${{needs.variables.outputs.rc}}>
-            has been published on GitHub.\n\nConvert it to the final release
+            { "blocks": [
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":white_check_mark: *Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.rc}}>
+            of <${{github.repositoryUrl}}|${{github.repository}}> has been published on GitHub*" }},
+
+            { "type": "divider" },
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":white_check_mark: Once all checks pass, convert it to the final release
             with:\n\n```gh release edit
             \"${{needs.variables.outputs.milestone}}\"
             --prerelease=false
             --tag \"${{needs.variables.outputs.release-patch}}\"
-            --title \"${{needs.variables.outputs.release-patch}}\"```\n"
-            }}]}
+            --title \"${{needs.variables.outputs.release-patch}}\"```\nOtherwise
+            create next milestone `${{needs.variables.outputs.next-milestone}}`." }}
+            ]}
 
   create-k8s-cluster:
     name: Create k8s cluster
@@ -532,8 +557,19 @@ jobs:
 
   notify-failed-clusters:
     name: Notify about failed cluster creation
-    needs: [variables, create-k8s-cluster, create-os4-cluster, create-long-running-cluster]
-    if: failure()
+    needs:
+      [
+        variables,
+        create-k8s-cluster,
+        create-os4-cluster,
+        create-long-running-cluster,
+      ]
+    if: >- # Required as create-*-cluster jobs could be skipped while other jobs could fail.
+      always() && (
+        needs.create-k8s-cluster.status == 'failure' ||
+        needs.create-os4-cluster.status == 'failure' ||
+        needs.create-long-running-cluster.status == 'failure'
+      )
     runs-on: ubuntu-latest
     steps:
       - name: Post to Slack
@@ -542,8 +578,21 @@ jobs:
         uses: slackapi/slack-github-action@v1.19.0
         with:
           channel-id: ${{env.slack_channel}}
-          payload: |
+          payload: >-
             { "blocks": [
               { "type": "section", "text": { "type": "mrkdwn", "text":
-              "Couldn't create test clusters for ${{needs.variables.outputs.milestone}}" }}
+              ":red_circle: *Couldn't create test clusters for ${{needs.variables.outputs.milestone}} milestone of <${{github.repositoryUrl}}|${{github.repository}}>.*" }},
+
+            { "type": "divider" },
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":arrow_right: *Please investigate the output of the
+            <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>
+            workflow run and then restart the workflow.*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ">
+            Repository: <${{github.repositoryUrl}}|${{github.repository}}>\n>
+            Milestone: ${{needs.variables.outputs.milestone}}\n>
+            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}

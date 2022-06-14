@@ -4,7 +4,7 @@ on:
     types: [released]
 
 env:
-  slack_channel: C03D78P4RFF
+  slack_channel: C03D78P4RFF #epic-release-improvements
 
 jobs:
   notify:
@@ -17,19 +17,12 @@ jobs:
         uses: slackapi/slack-github-action@v1.19.0
         with:
           channel-id: ${{env.slack_channel}}
-          payload: |
-            {
-              "blocks": [
-                {
-                  "type": "header", "text": {
-                    "type": "plain_text",
-                    "text": "${{github.event.release.name}} has been published on GitHub"
-                  }
-                }, {
-                  "type": "section", "text": {
-                    "type": "mrkdwn",
-                    "text": "<${{github.event.release.url}} | ${{github.event.release.name}}> has been published on GitHub.\n\nLet's trigger the downstream release!"
-                  }
-                }
-              ]
-            }
+          payload: >-
+            { "blocks": [
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":white_check_mark: *<${{github.event.release.url}} | ${{github.event.release.name}}> has been published on GitHub.*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":arrow_right: Let's trigger the downstream release!" }}
+            ]}

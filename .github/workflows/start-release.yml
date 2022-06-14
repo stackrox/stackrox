@@ -21,7 +21,7 @@ on:
 env:
   docs_repository: openshift/openshift-docs
   slack_channel: C03D78P4RFF #epic-release-improvements
-  main_branch: main
+  main_branch: master
   jira_project: ROX
 
 jobs:
@@ -36,6 +36,7 @@ jobs:
       - name: Check that Jira release ${{github.event.inputs.version}} is not released
         id: check-jira-release
         run: |
+          set -u
           JIRA_RELEASE_DATE="$(curl --fail -sSL \
             -H "Authorization: Bearer $JIRA_TOKEN" \
             "https://issues.redhat.com/rest/api/2/project/${{env.jira_project}}/versions" \
@@ -73,12 +74,28 @@ jobs:
         with:
           channel-id: ${{env.slack_channel}}
           payload: >-
-            { "blocks": [ { "type": "section", "text": { "type": "mrkdwn",
-            "text": "Upstream release ${{needs.variables.outputs.release}} has been initiated,
-            but there has been no documentation branch created
-            in `${{needs.variables.outputs.docs_repository}}` repository.\n\n*Please
-            create branch `${{needs.variables.outputs.docs-branch}}` from the `rhacs-docs` branch.*"
-            }}]}
+            { "blocks": [
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":red_circle: *Cannot proceed with upstream release ${{needs.variables.outputs.release-patch}} on <${{github.repositoryUrl}}|${{github.repository}}>.*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            "There has been no documentation branch created in
+            `${{env.docs_repository}}` repository." }},
+
+            { "type": "divider" },
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":arrow_right: *Please create branch
+            `${{needs.variables.outputs.docs-branch}}` from the `rhacs-docs`
+            branch in `${{env.docs_repository}}` repository and then restart the workflow.*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ">
+            Repository: <${{github.repositoryUrl}}|${{github.repository}}>\n>
+            Release: ${{needs.variables.outputs.release-patch}}\n>
+            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
+            ]}
 
   branch:
     name: Prepare release branch
@@ -148,6 +165,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -u
           CHANGELOG_BRANCH="automation/changelog-${{github.event.inputs.version}}"
           if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"; then
             echo "Branch \`$CHANGELOG_BRANCH\` already exists."
@@ -182,11 +200,12 @@ jobs:
       - name: Create ${{needs.variables.outputs.milestone}} milestone
         if: github.event.inputs.dry-run != 'true'
         run: |
-          http_code=$(gh api --silent -X POST \
+          set -u
+          if ! http_code=$(gh api --silent -X POST \
             "repos/${{github.repository}}/milestones" \
             -f "title"="${{needs.variables.outputs.milestone}}" \
-            2>&1)
-          if ! $?; then
+            2>&1); then
+
             if grep "HTTP 422" <<< "$http_code"; then
               echo "Milestone ${{needs.variables.outputs.milestone}} already exists." >> $GITHUB_STEP_SUMMARY
             else
