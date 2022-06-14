@@ -118,6 +118,11 @@
   {{ include "srox.note" (list $ (printf "To have openshift-monitoring include metrics from the %s namespace a label metadata is required. Run: oc label namespace/%s openshift.io/cluster-monitoring=true." .Release.Namespace .Release.Namespace)) }}
 {{ end }}
 
+[<- if .AutoSensePodSecurityPolicies >]
+{{/* Detect enablePodSecurityPolicies */}}
+{{ include "srox.autoSensePodSecurityPolicies" (list $) }}
+[<- end >]
+
 {{ include "srox.applyDefaults" $ }}
 
 {{/* Expand applicable config values */}}

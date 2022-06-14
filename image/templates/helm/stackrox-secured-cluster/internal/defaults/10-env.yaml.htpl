@@ -8,3 +8,7 @@ env:
   istio: false
   {{- end }}
 {{- end }}
+system:
+  [<- if not .AutoSensePodSecurityPolicies >]
+  enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]
+  [<- end >]
