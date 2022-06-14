@@ -616,6 +616,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"project: String!",
 	}))
 	utils.Must(builder.AddType("Group", []string{
+		"id: ID!",
 		"props: GroupProperties",
 		"roleName: String!",
 	}))
@@ -6050,6 +6051,11 @@ func (resolver *Resolver) wrapGroups(values []*storage.Group, err error) ([]*gro
 		output[i] = &groupResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *groupResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
 }
 
 func (resolver *groupResolver) Props(ctx context.Context) (*groupPropertiesResolver, error) {

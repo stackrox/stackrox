@@ -7,11 +7,13 @@ package storage;
 
 // Group is a GroupProperties : Role mapping.
 message Group {
-    // GroupProperties uniquely identifies a group.
+    // GroupProperties define the properties of a group, applying to users when their properties match..
     GroupProperties props = 1;
 
     // This is the name of the role that will apply to users in this group.
     string role_name = 3;
+    // This is the unique identifier for a group.
+    string id        = 4;
 }
 
 // GroupProperties defines the properties of a group. Groups apply to users when

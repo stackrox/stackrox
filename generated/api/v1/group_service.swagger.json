@@ -270,11 +270,15 @@
       "properties": {
         "props": {
           "$ref": "#/definitions/storageGroupProperties",
-          "description": "GroupProperties uniquely identifies a group."
+          "description": "GroupProperties define the properties of a group, applying to users when their properties match.."
         },
         "roleName": {
           "type": "string",
           "description": "This is the name of the role that will apply to users in this group."
+        },
+        "id": {
+          "type": "string",
+          "description": "This is the unique identifier for a group."
         }
       },
       "description": "Group is a GroupProperties : Role mapping."
