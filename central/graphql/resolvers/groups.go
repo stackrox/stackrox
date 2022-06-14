@@ -14,7 +14,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("groups: [Group!]!"),
-		schema.AddQuery("group(authProviderId: String, key: String, value: String): Group"),
+		schema.AddQuery("group(authProviderId: String, key: String, value: String, id: String): Group"),
 	)
 }
 
@@ -30,7 +30,7 @@ func (resolver *Resolver) Groups(ctx context.Context) ([]*groupResolver, error) 
 }
 
 // Group returns a GraphQL resolver for the matching group, if it exists
-func (resolver *Resolver) Group(ctx context.Context, args struct{ AuthProviderID, Key, Value *string }) (*groupResolver, error) {
+func (resolver *Resolver) Group(ctx context.Context, args struct{ AuthProviderID, Key, Value, ID *string }) (*groupResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Group")
 
 	err := readGroups(ctx)
@@ -47,6 +47,9 @@ func (resolver *Resolver) Group(ctx context.Context, args struct{ AuthProviderID
 	if args.Value != nil {
 		props.Value = *args.Value
 	}
-	grp, err := resolver.GroupDataStore.Get(ctx, props)
+	if args.ID != nil {
+		props.Id = *args.ID
+	}
+	grp, err := resolver.GroupDataStore.Get(ctx, props.GetId())
 	return resolver.wrapGroup(grp, grp != nil, err)
 }
