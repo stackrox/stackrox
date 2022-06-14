@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/node/globaldatastore"
-	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/node/globaldatastore"
+	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

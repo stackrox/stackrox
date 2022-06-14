@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/notifiers/cscc/findings"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/notifiers"
+	"github.com/stackrox/stackrox/central/notifiers/cscc/findings"
+	"github.com/stackrox/stackrox/pkg/httputil/proxy"
+	"github.com/stackrox/stackrox/pkg/utils"
 	"golang.org/x/oauth2/google"
 )
 

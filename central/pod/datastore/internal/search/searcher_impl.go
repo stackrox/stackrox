@@ -3,16 +3,16 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/pod/mappings"
-	"github.com/stackrox/rox/central/pod/store"
-	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/stackrox/central/pod/mappings"
+	"github.com/stackrox/stackrox/central/pod/store"
+	"github.com/stackrox/stackrox/central/role/resources"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/blevesearch"
+	"github.com/stackrox/stackrox/pkg/search/paginated"
 )
 
 var (

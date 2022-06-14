@@ -8,16 +8,16 @@ import (
 	"strings"
 	"time"
 
-	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/notifiers/cscc/client"
-	"github.com/stackrox/rox/central/notifiers/cscc/findings"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/sac"
+	clusterDatastore "github.com/stackrox/stackrox/central/cluster/datastore"
+	"github.com/stackrox/stackrox/central/notifiers"
+	"github.com/stackrox/stackrox/central/notifiers/cscc/client"
+	"github.com/stackrox/stackrox/central/notifiers/cscc/findings"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/protoconv"
+	"github.com/stackrox/stackrox/pkg/retry"
+	"github.com/stackrox/stackrox/pkg/sac"
 )
 
 var (

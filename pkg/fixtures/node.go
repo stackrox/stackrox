@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // GetNode returns a mock *storage.Node

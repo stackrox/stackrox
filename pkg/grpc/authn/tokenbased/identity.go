@@ -3,11 +3,11 @@ package tokenbased
 import (
 	"time"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/auth/permissions/utils"
-	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/auth/permissions/utils"
+	"github.com/stackrox/stackrox/pkg/grpc/authn"
 )
 
 var _ authn.Identity = (*roleBasedIdentity)(nil)

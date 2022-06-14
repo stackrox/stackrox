@@ -1,7 +1,7 @@
 package concurrency
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 // WaitGroup is an improved implementation of sync.WaitGroup, with similar semantics, but allowing to wait for the

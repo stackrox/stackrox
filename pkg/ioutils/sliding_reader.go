@@ -6,8 +6,8 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/ringbuffer"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/ringbuffer"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 type marshallableHash interface {

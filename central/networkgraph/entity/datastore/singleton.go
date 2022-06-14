@@ -1,16 +1,16 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
-	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
-	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
-	"github.com/stackrox/rox/central/sensor/service/connection"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/globaldb"
+	graphConfigDS "github.com/stackrox/stackrox/central/networkgraph/config/datastore"
+	"github.com/stackrox/stackrox/central/networkgraph/entity/datastore/internal/store"
+	"github.com/stackrox/stackrox/central/networkgraph/entity/datastore/internal/store/postgres"
+	"github.com/stackrox/stackrox/central/networkgraph/entity/datastore/internal/store/rocksdb"
+	"github.com/stackrox/stackrox/central/networkgraph/entity/networktree"
+	"github.com/stackrox/stackrox/central/sensor/service/connection"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

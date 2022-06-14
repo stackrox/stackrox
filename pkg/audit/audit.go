@@ -3,7 +3,7 @@ package audit
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
+	"github.com/stackrox/stackrox/pkg/grpc/authz/interceptor"
 	"google.golang.org/grpc"
 )
 

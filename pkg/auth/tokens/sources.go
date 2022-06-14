@@ -3,7 +3,7 @@ package tokens
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 type sourceStore struct {

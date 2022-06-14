@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/dackbox/keys"
+	"github.com/stackrox/stackrox/pkg/dackbox/keys"
 )
 
 type edgeFilter struct {

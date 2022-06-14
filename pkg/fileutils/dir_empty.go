@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // DirExistsAndIsEmpty returns whether the given path is an existing directory, and exists.

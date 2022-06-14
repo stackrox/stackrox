@@ -7,15 +7,15 @@ import (
 	"regexp"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fileutils"
-	"github.com/stackrox/rox/pkg/fsutils"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/fileutils"
+	"github.com/stackrox/stackrox/pkg/fsutils"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/migrations"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/stackrox/pkg/version"
 )
 
 const (

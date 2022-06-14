@@ -1,11 +1,11 @@
 package resources
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/containerid"
-	"github.com/stackrox/rox/pkg/net"
-	podUtils "github.com/stackrox/rox/pkg/pods/utils"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/containerid"
+	"github.com/stackrox/stackrox/pkg/net"
+	podUtils "github.com/stackrox/stackrox/pkg/pods/utils"
+	"github.com/stackrox/stackrox/sensor/common/clusterentities"
 	v1 "k8s.io/api/core/v1"
 )
 

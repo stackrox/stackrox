@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/rox/generated/storage"
-	set "github.com/stackrox/rox/pkg/set"
+	storage "github.com/stackrox/stackrox/generated/storage"
+	set "github.com/stackrox/stackrox/pkg/set"
 )
 
 // MockFilter is a mock of Filter interface.

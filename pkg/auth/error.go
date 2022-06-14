@@ -1,6 +1,6 @@
 package auth
 
-import "github.com/stackrox/rox/pkg/errox"
+import "github.com/stackrox/stackrox/pkg/errox"
 
 var (
 	// ErrNoValidRole indicates that though user credentials have been

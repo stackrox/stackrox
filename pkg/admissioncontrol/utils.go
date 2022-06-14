@@ -2,8 +2,8 @@ package admissioncontrol
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
 )
 
 // SensorEventToAdmCtrlReq converts a sensor event request into a admission control request.

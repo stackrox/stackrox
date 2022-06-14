@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"

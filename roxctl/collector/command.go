@@ -2,8 +2,8 @@ package collector
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/collector/supportpackages"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/collector/supportpackages"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
 )
 
 // Command defines the collector command tree

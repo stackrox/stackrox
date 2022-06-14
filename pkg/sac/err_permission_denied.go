@@ -1,7 +1,7 @@
 package sac
 
 import (
-	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/errox"
 )
 
 var (

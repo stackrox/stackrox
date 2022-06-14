@@ -6,9 +6,9 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/helm/charts"
-	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/helm/charts"
+	helmUtil "github.com/stackrox/stackrox/pkg/helm/util"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )

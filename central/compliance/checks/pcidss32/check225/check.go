@@ -1,10 +1,10 @@
 package check225
 
 import (
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/storage"
-	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/storage"
+	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 const checkID = "PCI_DSS_3_2:2_2_5"

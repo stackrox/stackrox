@@ -1,9 +1,9 @@
 package resources
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/kubernetes"
+	"github.com/stackrox/stackrox/pkg/set"
 	v1 "k8s.io/api/batch/v1"
 )
 

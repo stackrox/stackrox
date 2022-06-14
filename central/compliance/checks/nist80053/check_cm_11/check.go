@@ -3,11 +3,11 @@ package checkcm11
 import (
 	"strings"
 
-	"github.com/stackrox/rox/central/compliance/checks/common"
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
-	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/central/compliance/checks/common"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyfields"
+	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 const (

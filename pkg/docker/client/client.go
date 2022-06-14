@@ -62,7 +62,7 @@ import (
 	"github.com/docker/docker/api/types/versions"
 	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-connections/tlsconfig"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/stackrox/pkg/httputil/proxy"
 )
 
 // DefaultDockerHost defines os specific default if DOCKER_HOST is unset

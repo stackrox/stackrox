@@ -17,12 +17,12 @@ import (
 	"github.com/cloudflare/cfssl/initca"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/certgen"
-	"github.com/stackrox/rox/pkg/cryptoutils/mocks"
-	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/centralsensor"
+	"github.com/stackrox/stackrox/pkg/certgen"
+	"github.com/stackrox/stackrox/pkg/cryptoutils/mocks"
+	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -6,11 +6,11 @@ import (
 
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/netutil"
+	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/urlfmt"
 )
 
 // Validate validates a cluster object

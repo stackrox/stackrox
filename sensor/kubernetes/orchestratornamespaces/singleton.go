@@ -1,9 +1,9 @@
 package orchestratornamespaces
 
 import (
-	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/kubernetes"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

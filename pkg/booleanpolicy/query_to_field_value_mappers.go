@@ -3,11 +3,11 @@ package booleanpolicy
 import (
 	"strings"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/predicate/basematchers"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 var (

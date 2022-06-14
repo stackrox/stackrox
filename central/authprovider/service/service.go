@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	groupDataStore "github.com/stackrox/rox/central/group/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
+	groupDataStore "github.com/stackrox/stackrox/central/group/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders"
+	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

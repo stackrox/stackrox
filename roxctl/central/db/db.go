@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/central/db/backup"
-	"github.com/stackrox/rox/roxctl/central/db/restore"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/roxctl/central/db/backup"
+	"github.com/stackrox/stackrox/roxctl/central/db/restore"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
 )
 
 // Command controls all of the functions being applied to a sensor

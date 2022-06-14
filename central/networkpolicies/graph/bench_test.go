@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 func getMockDeployment(id string) *storage.Deployment {

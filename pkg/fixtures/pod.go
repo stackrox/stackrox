@@ -2,7 +2,7 @@ package fixtures
 
 import (
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // GetPod returns a mock Pod

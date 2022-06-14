@@ -2,7 +2,7 @@ package clustertype
 
 import (
 	"github.com/spf13/pflag"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 var (

@@ -1,6 +1,6 @@
 package store
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 // DeploymentStore provides functionality to fetch all deployments from underlying store.
 //go:generate mockgen-wrapper

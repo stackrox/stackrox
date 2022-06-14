@@ -3,8 +3,8 @@ package generate
 import (
 	"strings"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/errox"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/errox"
 )
 
 type fileFormatWrapper struct {

@@ -3,12 +3,12 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/index"
-	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/search"
-	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/nodecomponentcveedge/datastore/index"
+	"github.com/stackrox/stackrox/central/nodecomponentcveedge/datastore/search"
+	"github.com/stackrox/stackrox/central/nodecomponentcveedge/datastore/store/postgres"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
 )
 
 type datastoreImpl struct {

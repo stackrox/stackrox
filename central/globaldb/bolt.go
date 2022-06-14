@@ -1,10 +1,10 @@
 package globaldb
 
 import (
-	"github.com/stackrox/rox/central/option"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/option"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/pkg/postgres"
+	"github.com/stackrox/stackrox/pkg/sync"
 	bolt "go.etcd.io/bbolt"
 )
 

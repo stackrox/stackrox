@@ -1,7 +1,7 @@
 package derivelocalvalues
 
 import (
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 func filterMap(m map[string]interface{}, keysToDelete []string) map[string]interface{} {

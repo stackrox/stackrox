@@ -13,8 +13,8 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/stackrox/pkg/netutil"
 )
 
 // readHeaderBytes reads from the given reader byte by byte(!) until the end of header sequence (\r\n\r\n) is found.

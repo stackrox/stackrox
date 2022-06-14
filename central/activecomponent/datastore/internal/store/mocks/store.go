@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	converter "github.com/stackrox/rox/central/activecomponent/converter"
-	storage "github.com/stackrox/rox/generated/storage"
+	converter "github.com/stackrox/stackrox/central/activecomponent/converter"
+	storage "github.com/stackrox/stackrox/generated/storage"
 )
 
 // MockStore is a mock of Store interface.

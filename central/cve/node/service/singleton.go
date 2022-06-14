@@ -1,8 +1,8 @@
 package service
 
 import (
-	cveDataStore "github.com/stackrox/rox/central/cve/node/datastore"
-	"github.com/stackrox/rox/pkg/sync"
+	cveDataStore "github.com/stackrox/stackrox/central/cve/node/datastore"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

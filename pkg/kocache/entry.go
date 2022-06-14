@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/ioutils"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/ioutils"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/timestamp"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 type entry struct {

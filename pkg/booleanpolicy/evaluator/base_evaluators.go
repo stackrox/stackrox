@@ -10,16 +10,16 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/mapeval"
-	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
-	"github.com/stackrox/rox/pkg/booleanpolicy/query"
-	"github.com/stackrox/rox/pkg/protoreflect"
-	"github.com/stackrox/rox/pkg/readable"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/evaluator/mapeval"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/query"
+	"github.com/stackrox/stackrox/pkg/protoreflect"
+	"github.com/stackrox/stackrox/pkg/readable"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/predicate/basematchers"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

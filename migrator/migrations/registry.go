@@ -3,7 +3,7 @@ package migrations
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/stackrox/migrator/types"
 )
 
 var (

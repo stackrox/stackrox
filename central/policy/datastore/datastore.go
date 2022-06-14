@@ -3,15 +3,15 @@ package datastore
 import (
 	"context"
 
-	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/index"
-	"github.com/stackrox/rox/central/policy/search"
-	"github.com/stackrox/rox/central/policy/store"
-	"github.com/stackrox/rox/central/policy/store/boltdb"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	clusterDS "github.com/stackrox/stackrox/central/cluster/datastore"
+	notifierDS "github.com/stackrox/stackrox/central/notifier/datastore"
+	"github.com/stackrox/stackrox/central/policy/index"
+	"github.com/stackrox/stackrox/central/policy/search"
+	"github.com/stackrox/stackrox/central/policy/store"
+	"github.com/stackrox/stackrox/central/policy/store/boltdb"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
 )
 
 // DataStore is an intermediary to PolicyStorage.

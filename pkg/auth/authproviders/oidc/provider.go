@@ -6,8 +6,8 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/auth/authproviders/oidc/internal/endpoint"
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders/oidc/internal/endpoint"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 )
 
 // In the go-oidc library the check for the issuer is done strictly, not even tolerating a trailing slash

@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/deployment/store/mocks"
-	"github.com/stackrox/rox/central/deployment/store/types"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/stackrox/central/deployment/store/mocks"
+	"github.com/stackrox/stackrox/central/deployment/store/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/fixtures"
+	"github.com/stackrox/stackrox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 )
 

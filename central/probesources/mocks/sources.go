@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	probeupload "github.com/stackrox/rox/pkg/probeupload"
+	probeupload "github.com/stackrox/stackrox/pkg/probeupload"
 )
 
 // MockProbeSources is a mock of ProbeSources interface.

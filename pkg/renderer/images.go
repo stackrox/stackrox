@@ -3,9 +3,9 @@ package renderer
 import (
 	"strings"
 
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/images/defaults"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 )
 
 // ComputeImageOverrides takes in a full image reference as well as default registries, names,

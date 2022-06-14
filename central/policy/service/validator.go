@@ -8,16 +8,16 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/pkg/errors"
-	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
-	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/policies"
-	"github.com/stackrox/rox/pkg/scopecomp"
+	notifierDataStore "github.com/stackrox/stackrox/central/notifier/datastore"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/policies"
+	"github.com/stackrox/stackrox/pkg/scopecomp"
 )
 
 var (

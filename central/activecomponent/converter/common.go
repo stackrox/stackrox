@@ -1,6 +1,6 @@
 package converter
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 // CompleteActiveComponent includes explicit ComponentID and DeploymentID.
 type CompleteActiveComponent struct {

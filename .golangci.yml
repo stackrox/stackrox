@@ -69,8 +69,8 @@ linters-settings:
           - Warnf
           - Error
           - Errorf
-          - github.com/stackrox/rox/migrator/log.WritetoStderr
-          - github.com/stackrox/rox/migrator/log.WritetoStderrf     -
+          - github.com/stackrox/stackrox/migrator/log.WritetoStderr
+          - github.com/stackrox/stackrox/migrator/log.WritetoStderrf     -
   gocritic:
     enabled-checks:
       - commentFormatting

@@ -4,15 +4,15 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/installation/store/bolt"
-	"github.com/stackrox/rox/central/installation/store/postgres"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/installation/store/bolt"
+	"github.com/stackrox/stackrox/central/installation/store/postgres"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 var (

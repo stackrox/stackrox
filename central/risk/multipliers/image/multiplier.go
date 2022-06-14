@@ -3,7 +3,7 @@ package image
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // Multiplier is the interface that all image risk calculations must implement

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/concurrency"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
 	"golang.org/x/crypto/ssh/terminal"

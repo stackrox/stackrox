@@ -6,10 +6,10 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/auth/user"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/auth/user"
+	"github.com/stackrox/stackrox/pkg/grpc/authn"
+	"github.com/stackrox/stackrox/pkg/grpc/authz/allow"
 	"google.golang.org/grpc"
 )
 

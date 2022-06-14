@@ -2,10 +2,10 @@ package fixtures
 
 import (
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/sac/testconsts"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/images/types"
+	"github.com/stackrox/stackrox/pkg/sac/testconsts"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 // GetScopedDeploymentAlert returns a Mock alert attached to a deployment belonging to the input scope

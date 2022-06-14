@@ -3,8 +3,8 @@ package testutils
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/migrations/internal"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/stackrox/pkg/migrations/internal"
+	"github.com/stackrox/stackrox/pkg/testutils"
 )
 
 // SetCurrentDBSequenceNumber is used in unit test only

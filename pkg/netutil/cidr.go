@@ -3,7 +3,7 @@ package netutil
 import (
 	"net"
 
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // MustParseCIDR parses the given CIDR string and returns the corresponding IPNet. If the string is invalid, this

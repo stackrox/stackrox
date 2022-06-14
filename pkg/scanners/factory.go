@@ -1,13 +1,13 @@
 package scanners
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/registries"
-	clairScanner "github.com/stackrox/rox/pkg/scanners/clair"
-	clairifyScanner "github.com/stackrox/rox/pkg/scanners/clairify"
-	googleScanner "github.com/stackrox/rox/pkg/scanners/google"
-	quayScanner "github.com/stackrox/rox/pkg/scanners/quay"
-	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/registries"
+	clairScanner "github.com/stackrox/stackrox/pkg/scanners/clair"
+	clairifyScanner "github.com/stackrox/stackrox/pkg/scanners/clairify"
+	googleScanner "github.com/stackrox/stackrox/pkg/scanners/google"
+	quayScanner "github.com/stackrox/stackrox/pkg/scanners/quay"
+	"github.com/stackrox/stackrox/pkg/scanners/types"
 )
 
 // Factory provides a centralized location for creating Scanner from v1.ImageIntegrations.

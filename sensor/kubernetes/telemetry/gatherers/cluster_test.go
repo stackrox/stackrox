@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/stackrox/sensor/kubernetes/listener/resources"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	k8sMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"

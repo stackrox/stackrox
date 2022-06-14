@@ -6,14 +6,14 @@ import (
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/externalbackups/plugins/types"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globaldb/export"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/integrationhealth"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/externalbackups/plugins/types"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/globaldb/export"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/integrationhealth"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/sync"
 	"gopkg.in/robfig/cron.v2"
 )
 

@@ -1,11 +1,11 @@
 package check455
 
 import (
-	"github.com/stackrox/rox/central/compliance/checks/common"
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
-	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/central/compliance/checks/common"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyfields"
+	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
 )
 
 const (

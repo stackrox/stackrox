@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

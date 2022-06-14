@@ -9,12 +9,12 @@ import (
 	"github.com/blevesearch/bleve/search"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mathutil"
-	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
-	"github.com/stackrox/rox/pkg/utils"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/mathutil"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/blevesearch/validpositions"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // Don't limit the max search responses because then functionality can go wonky as we rely on the indexer for correctness

@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	vulnDackBox "github.com/stackrox/rox/central/cve/dackbox"
-	"github.com/stackrox/rox/central/cve/store"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox"
-	ops "github.com/stackrox/rox/pkg/metrics"
+	vulnDackBox "github.com/stackrox/stackrox/central/cve/dackbox"
+	"github.com/stackrox/stackrox/central/cve/store"
+	"github.com/stackrox/stackrox/central/metrics"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/batcher"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/dackbox"
+	ops "github.com/stackrox/stackrox/pkg/metrics"
 )
 
 const batchSize = 100

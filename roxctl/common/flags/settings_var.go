@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/roxctl/common/logger"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/roxctl/common/logger"
 )
 
 // SettingVarOpts specifies options for a settings flag variable.

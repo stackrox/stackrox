@@ -8,9 +8,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	central "github.com/stackrox/rox/generated/internalapi/central"
-	storage "github.com/stackrox/rox/generated/storage"
-	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
+	central "github.com/stackrox/stackrox/generated/internalapi/central"
+	storage "github.com/stackrox/stackrox/generated/storage"
+	centralsensor "github.com/stackrox/stackrox/pkg/centralsensor"
 	grpc "google.golang.org/grpc"
 )
 

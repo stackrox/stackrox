@@ -7,7 +7,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/k8scfgwatch"
+	"github.com/stackrox/stackrox/pkg/k8scfgwatch"
 )
 
 type reloadProxyConfigHandler struct {

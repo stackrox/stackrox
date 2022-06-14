@@ -1,12 +1,12 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/authprovider/datastore/internal/store/bolt"
-	"github.com/stackrox/rox/central/authprovider/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/authprovider/datastore/internal/store/bolt"
+	"github.com/stackrox/stackrox/central/authprovider/datastore/internal/store/postgres"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -3,8 +3,8 @@ package maputil
 import (
 	"reflect"
 
-	"github.com/stackrox/rox/pkg/reflectutils"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/reflectutils"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 // DiffLeaf contains the information for a diff found within untyped maps.

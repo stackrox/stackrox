@@ -3,7 +3,7 @@ package manager
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // Manager implements the interface for scheduled reports

@@ -5,9 +5,9 @@ import (
 	"sync/atomic"
 
 	lru "github.com/hashicorp/golang-lru"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 type httpMetricsImpl struct {

@@ -1,19 +1,19 @@
 package service
 
 import (
-	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
-	"github.com/stackrox/rox/central/detection/lifecycle"
-	"github.com/stackrox/rox/central/enrichment"
-	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
-	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
-	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/central/reprocessor"
-	"github.com/stackrox/rox/central/sensor/service/connection"
-	"github.com/stackrox/rox/pkg/sync"
+	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/stackrox/central/deployment/datastore"
+	buildTimeDetection "github.com/stackrox/stackrox/central/detection/buildtime"
+	"github.com/stackrox/stackrox/central/detection/lifecycle"
+	"github.com/stackrox/stackrox/central/enrichment"
+	mitreDataStore "github.com/stackrox/stackrox/central/mitre/datastore"
+	networkPolicyDS "github.com/stackrox/stackrox/central/networkpolicies/datastore"
+	notifierDataStore "github.com/stackrox/stackrox/central/notifier/datastore"
+	notifierProcessor "github.com/stackrox/stackrox/central/notifier/processor"
+	"github.com/stackrox/stackrox/central/policy/datastore"
+	"github.com/stackrox/stackrox/central/reprocessor"
+	"github.com/stackrox/stackrox/central/sensor/service/connection"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

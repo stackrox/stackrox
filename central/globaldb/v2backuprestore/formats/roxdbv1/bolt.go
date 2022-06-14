@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/odirect"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/globaldb/v2backuprestore/common"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/pkg/odirect"
+	"github.com/stackrox/stackrox/pkg/utils"
 	"go.etcd.io/bbolt"
 )
 

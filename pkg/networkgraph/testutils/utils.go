@@ -6,11 +6,11 @@ import (
 	"strconv"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/storage"
-	pkgNet "github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/storage"
+	pkgNet "github.com/stackrox/stackrox/pkg/net"
+	"github.com/stackrox/stackrox/pkg/networkgraph"
+	"github.com/stackrox/stackrox/pkg/networkgraph/externalsrcs"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // GetDeploymentNetworkEntity returns a deployment type network entity.

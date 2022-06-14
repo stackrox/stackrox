@@ -1,10 +1,10 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/probesources"
-	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/cluster/datastore"
+	"github.com/stackrox/stackrox/central/probesources"
+	"github.com/stackrox/stackrox/central/risk/manager"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

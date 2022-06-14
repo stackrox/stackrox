@@ -8,9 +8,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	aggregator "github.com/stackrox/rox/central/activecomponent/updater/aggregator"
-	storage "github.com/stackrox/rox/generated/storage"
-	set "github.com/stackrox/rox/pkg/set"
+	aggregator "github.com/stackrox/stackrox/central/activecomponent/updater/aggregator"
+	storage "github.com/stackrox/stackrox/generated/storage"
+	set "github.com/stackrox/stackrox/pkg/set"
 )
 
 // MockProcessAggregator is a mock of ProcessAggregator interface.

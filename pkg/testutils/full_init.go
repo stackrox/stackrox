@@ -9,7 +9,7 @@ import (
 	"unicode"
 	"unsafe"
 
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 // BasicTypeInitializer prescribes how to initialize a struct field with a given type.

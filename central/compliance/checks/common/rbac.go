@@ -4,10 +4,10 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/k8srbac"
-	setPkg "github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/k8srbac"
+	setPkg "github.com/stackrox/stackrox/pkg/set"
 )
 
 // EffectiveAdmin is the access level of cluster admin.

@@ -7,7 +7,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/stackrox/pkg/kubernetes"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 

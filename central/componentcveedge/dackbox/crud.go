@@ -2,10 +2,10 @@ package dackbox
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/crud"
-	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/dackbox/crud"
+	"github.com/stackrox/stackrox/pkg/dbhelper"
 )
 
 var (

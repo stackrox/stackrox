@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/branding"
-	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/branding"
+	"github.com/stackrox/stackrox/pkg/fixtures"
+	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 

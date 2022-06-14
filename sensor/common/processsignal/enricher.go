@@ -4,9 +4,9 @@ import (
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/sensor/common/clusterentities"
+	"github.com/stackrox/stackrox/sensor/common/metrics"
 )
 
 const (

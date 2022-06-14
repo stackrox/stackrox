@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/notifiers/mocks"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/central/notifiers"
+	"github.com/stackrox/stackrox/central/notifiers/mocks"
+	"github.com/stackrox/stackrox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 

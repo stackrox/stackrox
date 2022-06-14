@@ -3,12 +3,12 @@ package integration
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/integrationhealth"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/registries"
-	"github.com/stackrox/rox/pkg/scanners"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/integrationhealth"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/registries"
+	"github.com/stackrox/stackrox/pkg/scanners"
 )
 
 var (

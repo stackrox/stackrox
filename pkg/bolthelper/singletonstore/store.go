@@ -2,7 +2,7 @@ package singletonstore
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
 	"go.etcd.io/bbolt"
 )
 

@@ -6,8 +6,8 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/netutil"
+	"github.com/stackrox/stackrox/pkg/utils"
 	"golang.org/x/net/proxy"
 )
 

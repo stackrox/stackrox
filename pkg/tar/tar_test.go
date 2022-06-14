@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 )
 

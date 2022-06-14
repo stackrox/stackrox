@@ -1,11 +1,11 @@
 package matcher
 
 import (
-	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
+	imageDataStore "github.com/stackrox/stackrox/central/image/datastore"
+	nsDataStore "github.com/stackrox/stackrox/central/namespace/datastore"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

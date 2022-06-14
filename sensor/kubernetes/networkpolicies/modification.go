@@ -2,10 +2,10 @@ package networkpolicies
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/k8sutil"
+	"github.com/stackrox/stackrox/pkg/protoconv/networkpolicy"
 	networkingV1 "k8s.io/api/networking/v1"
 )
 

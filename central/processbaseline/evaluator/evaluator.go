@@ -1,10 +1,10 @@
 package evaluator
 
 import (
-	baselinesStore "github.com/stackrox/rox/central/processbaseline/datastore"
-	baselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
-	indicatorsStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/generated/storage"
+	baselinesStore "github.com/stackrox/stackrox/central/processbaseline/datastore"
+	baselineResultsStore "github.com/stackrox/stackrox/central/processbaselineresults/datastore"
+	indicatorsStore "github.com/stackrox/stackrox/central/processindicator/datastore"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // An Evaluator evaluates process baselines, and stores their cached results.

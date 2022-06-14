@@ -3,8 +3,8 @@ package tokens
 import (
 	"crypto/rsa"
 
-	"github.com/stackrox/rox/pkg/jwt"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/jwt"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

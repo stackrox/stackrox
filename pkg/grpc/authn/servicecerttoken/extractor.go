@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authn/service"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/grpc/authn"
+	"github.com/stackrox/stackrox/pkg/grpc/authn/service"
+	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/mtls"
 )
 
 var (

@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/require"
 )
 

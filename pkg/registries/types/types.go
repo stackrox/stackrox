@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // Config is the config of the registry, which can be utilized by 3rd party scanners

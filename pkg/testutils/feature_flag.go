@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
 )
 
 // RunWithAndWithoutFeatureFlag runs the given subtest both with and without the given feature flag set.

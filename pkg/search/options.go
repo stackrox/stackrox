@@ -3,7 +3,7 @@ package search
 import (
 	"strings"
 
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 // A FieldLabel is the label we use to refer to a search field, as a human-readable shortcut.

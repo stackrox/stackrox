@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	central "github.com/stackrox/rox/generated/internalapi/central"
-	resources "github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	central "github.com/stackrox/stackrox/generated/internalapi/central"
+	resources "github.com/stackrox/stackrox/sensor/kubernetes/listener/resources"
 )
 
 // MockDispatcher is a mock of Dispatcher interface.

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/graphql/resolvers"
+	"github.com/stackrox/stackrox/central/graphql/resolvers"
 	"github.com/stretchr/testify/require"
 )
 

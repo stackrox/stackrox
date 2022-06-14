@@ -5,7 +5,7 @@ import (
 
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/utils"
 	"google.golang.org/grpc"
 )
 

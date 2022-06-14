@@ -10,10 +10,10 @@ import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
-	"github.com/stackrox/rox/central/cve/converter"
-	"github.com/stackrox/rox/pkg/fileutils"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/stackrox/central/cve/converter"
+	"github.com/stackrox/stackrox/pkg/fileutils"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/migrations"
 )
 
 const (

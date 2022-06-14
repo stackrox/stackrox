@@ -3,7 +3,7 @@ package renderer
 import (
 	"testing"
 
-	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
+	flavorUtils "github.com/stackrox/stackrox/pkg/images/defaults/testutils"
 	"github.com/stretchr/testify/assert"
 )
 

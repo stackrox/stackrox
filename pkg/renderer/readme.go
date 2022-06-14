@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	helmTemplate "github.com/stackrox/rox/pkg/helm/template"
-	"github.com/stackrox/rox/pkg/roxctl"
-	"github.com/stackrox/rox/pkg/templates"
-	"github.com/stackrox/rox/pkg/utils"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	helmTemplate "github.com/stackrox/stackrox/pkg/helm/template"
+	"github.com/stackrox/stackrox/pkg/roxctl"
+	"github.com/stackrox/stackrox/pkg/templates"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // generateReadme generates a README file.

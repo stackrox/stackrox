@@ -1,7 +1,7 @@
 package generator
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 var allowAllIngress = &storage.NetworkPolicyIngressRule{

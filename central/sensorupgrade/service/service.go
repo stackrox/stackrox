@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/sensor/service/connection"
-	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/stackrox/central/sensor/service/connection"
+	"github.com/stackrox/stackrox/central/sensorupgradeconfig/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc"
 )
 
 // Service is the v1.SensorUpgrade service.

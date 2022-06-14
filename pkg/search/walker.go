@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strings"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/protoreflect"
-	"github.com/stackrox/rox/pkg/search/enumregistry"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/protoreflect"
+	"github.com/stackrox/stackrox/pkg/search/enumregistry"
 )
 
 type searchWalker struct {

@@ -1,7 +1,7 @@
 package authn
 
 import (
-	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
 )
 
 // NoneRole identifies default role with no permissions.

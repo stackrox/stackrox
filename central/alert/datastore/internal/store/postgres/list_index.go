@@ -1,6 +1,6 @@
 package postgres
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 func (b *indexerImpl) AddListAlert(listalert *storage.ListAlert) error {
 	return nil

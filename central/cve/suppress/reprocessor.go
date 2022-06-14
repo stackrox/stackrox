@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
-	cveDataStore "github.com/stackrox/rox/central/cve/image/datastore"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/sync"
+	legacyImageCVEDataStore "github.com/stackrox/stackrox/central/cve/datastore"
+	cveDataStore "github.com/stackrox/stackrox/central/cve/image/datastore"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

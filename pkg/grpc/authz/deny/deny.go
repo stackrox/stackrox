@@ -3,8 +3,8 @@ package deny
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/grpc/authz"
 )
 
 // AuthFunc denies all access. It is meant to be used as a default gRPC AuthFunc

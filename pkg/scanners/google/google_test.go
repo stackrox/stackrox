@@ -7,10 +7,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/registries/google"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/images/types"
+	"github.com/stackrox/stackrox/pkg/images/utils"
+	"github.com/stackrox/stackrox/pkg/registries/google"
 	"github.com/stretchr/testify/require"
 )
 

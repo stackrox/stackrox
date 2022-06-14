@@ -2,10 +2,10 @@ package userpki
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/central/userpki/create"
-	"github.com/stackrox/rox/roxctl/central/userpki/delete"
-	"github.com/stackrox/rox/roxctl/central/userpki/list"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/central/userpki/create"
+	"github.com/stackrox/stackrox/roxctl/central/userpki/delete"
+	"github.com/stackrox/stackrox/roxctl/central/userpki/list"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
 )
 
 // Command adds the userpki command

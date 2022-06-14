@@ -1,12 +1,12 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/watchedimage/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/watchedimage/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/watchedimage/datastore/internal/store/postgres"
+	"github.com/stackrox/stackrox/central/watchedimage/datastore/internal/store/rocksdb"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

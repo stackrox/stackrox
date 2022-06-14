@@ -1,15 +1,15 @@
 package service
 
 import (
-	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
-	cveDataStore "github.com/stackrox/rox/central/cve/image/datastore"
-	"github.com/stackrox/rox/central/enrichment"
-	"github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/sensor/service/connection"
-	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sync"
+	legacyImageCVEDataStore "github.com/stackrox/stackrox/central/cve/datastore"
+	cveDataStore "github.com/stackrox/stackrox/central/cve/image/datastore"
+	"github.com/stackrox/stackrox/central/enrichment"
+	"github.com/stackrox/stackrox/central/image/datastore"
+	"github.com/stackrox/stackrox/central/risk/manager"
+	"github.com/stackrox/stackrox/central/sensor/service/connection"
+	watchedImageDataStore "github.com/stackrox/stackrox/central/watchedimage/datastore"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

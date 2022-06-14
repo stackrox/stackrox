@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
 	"github.com/stretchr/testify/suite"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

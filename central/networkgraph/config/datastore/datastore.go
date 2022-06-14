@@ -3,7 +3,7 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // DataStore provides functionality to interact with network graph configuration.

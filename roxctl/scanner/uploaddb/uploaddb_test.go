@@ -10,11 +10,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
-	io2 "github.com/stackrox/rox/roxctl/common/io"
-	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
+	io2 "github.com/stackrox/stackrox/roxctl/common/io"
+	"github.com/stackrox/stackrox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

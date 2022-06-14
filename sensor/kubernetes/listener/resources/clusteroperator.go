@@ -2,8 +2,8 @@ package resources
 
 import (
 	v1 "github.com/openshift/api/config/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/sensor/kubernetes/orchestratornamespaces"
 )
 
 // clusterOperatorDispatcher handles cluster operator events

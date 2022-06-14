@@ -5,16 +5,16 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/clusterinit/backend/access"
-	"github.com/stackrox/rox/central/clusterinit/backend/certificate"
-	"github.com/stackrox/rox/central/clusterinit/store"
-	"github.com/stackrox/rox/central/clusters"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/stackrox/central/clusterinit/backend/access"
+	"github.com/stackrox/stackrox/central/clusterinit/backend/certificate"
+	"github.com/stackrox/stackrox/central/clusterinit/store"
+	"github.com/stackrox/stackrox/central/clusters"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/centralsensor"
+	"github.com/stackrox/stackrox/pkg/grpc/authn"
+	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
+	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/sac"
 )
 
 var _ authn.ValidateCertChain = (*backendImpl)(nil)

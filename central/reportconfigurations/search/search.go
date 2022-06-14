@@ -3,12 +3,12 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/reportconfigurations/index"
-	"github.com/stackrox/rox/central/reportconfigurations/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/reportconfigurations/index"
+	"github.com/stackrox/stackrox/central/reportconfigurations/store"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 var (

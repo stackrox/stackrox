@@ -6,12 +6,12 @@ import (
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	storeMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/mocks"
-	undoDeploymentStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
-	undoStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
+	storeMocks "github.com/stackrox/stackrox/central/networkpolicies/datastore/internal/store/mocks"
+	undoDeploymentStoreMocks "github.com/stackrox/stackrox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
+	undoStoreMocks "github.com/stackrox/stackrox/central/networkpolicies/datastore/internal/undostore/mocks"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 

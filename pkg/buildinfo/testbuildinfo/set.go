@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/buildinfo/internal/timestamp"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/stackrox/pkg/buildinfo/internal/timestamp"
+	"github.com/stackrox/stackrox/pkg/testutils"
 )
 
 // TestBuildTimestampRestorer restores previous build timestamp settings.

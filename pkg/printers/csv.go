@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/stackrox/rox/pkg/gjson"
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/gjson"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 )
 
 // CSVPrinterOption is a functional option for the CSVPrinter.

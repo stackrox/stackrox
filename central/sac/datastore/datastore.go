@@ -3,9 +3,9 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/sac"
-	"github.com/stackrox/rox/central/sac/datastore/internal/store"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/central/sac"
+	"github.com/stackrox/stackrox/central/sac/datastore/internal/store"
+	"github.com/stackrox/stackrox/generated/storage"
 	"go.etcd.io/bbolt"
 )
 

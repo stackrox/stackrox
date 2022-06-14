@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
 )
 
 type object struct {

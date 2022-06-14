@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/concurrency"
 	"k8s.io/client-go/rest"
 )
 

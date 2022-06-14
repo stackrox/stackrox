@@ -3,8 +3,8 @@ package generate
 import (
 	"crypto/tls"
 
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/renderer"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/renderer"
 )
 
 var (

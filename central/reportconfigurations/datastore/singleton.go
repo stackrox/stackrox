@@ -1,16 +1,16 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/reportconfigurations/index"
-	"github.com/stackrox/rox/central/reportconfigurations/search"
-	"github.com/stackrox/rox/central/reportconfigurations/store"
-	"github.com/stackrox/rox/central/reportconfigurations/store/postgres"
-	reportConfigStore "github.com/stackrox/rox/central/reportconfigurations/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/globalindex"
+	"github.com/stackrox/stackrox/central/reportconfigurations/index"
+	"github.com/stackrox/stackrox/central/reportconfigurations/search"
+	"github.com/stackrox/stackrox/central/reportconfigurations/store"
+	"github.com/stackrox/stackrox/central/reportconfigurations/store/postgres"
+	reportConfigStore "github.com/stackrox/stackrox/central/reportconfigurations/store/rocksdb"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

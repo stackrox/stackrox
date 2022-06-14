@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/networkbaseline/datastore"
-	"github.com/stackrox/rox/central/networkbaseline/manager"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/networkbaseline/datastore"
+	"github.com/stackrox/stackrox/central/networkbaseline/manager"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -1,10 +1,10 @@
 package admissioncontroller
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/centralsensor"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/sensor/common"
 )
 
 // AdmCtrlMsgForwarder returns a wrapper that intercepts messages from sensor components and forwards

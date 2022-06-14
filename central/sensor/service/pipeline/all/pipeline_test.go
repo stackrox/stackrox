@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/sensor/service/pipeline"
-	"github.com/stackrox/rox/central/sensor/service/pipeline/mocks"
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/central/sensor/service/pipeline"
+	"github.com/stackrox/stackrox/central/sensor/service/pipeline/mocks"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
 	"github.com/stretchr/testify/suite"
 )
 

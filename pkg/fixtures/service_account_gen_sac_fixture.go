@@ -6,9 +6,9 @@
 package fixtures
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac/testconsts"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/sac/testconsts"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 // *storage.ServiceAccount represents a generic type that we use in the function below.

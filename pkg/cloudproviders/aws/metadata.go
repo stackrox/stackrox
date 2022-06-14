@@ -3,8 +3,8 @@ package aws
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
 )
 
 // GetMetadata tries to obtain the AWS instance metadata.

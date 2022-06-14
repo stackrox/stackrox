@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/stackrox/rox/pkg/grpc/authz"
-	"github.com/stackrox/rox/pkg/grpc/authz/deny"
-	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/stackrox/pkg/grpc/authz"
+	"github.com/stackrox/stackrox/pkg/grpc/authz/deny"
+	"github.com/stackrox/stackrox/pkg/httputil"
 )
 
 func authorizerHandler(h http.Handler, authorizer authz.Authorizer, postAuthInterceptor httputil.HTTPInterceptor, route string) http.Handler {

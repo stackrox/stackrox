@@ -1,9 +1,9 @@
 package check308a4iib
 
 import (
-	"github.com/stackrox/rox/central/compliance/checks/common"
-	"github.com/stackrox/rox/central/compliance/framework"
-	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/central/compliance/checks/common"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
 )
 
 const checkID = "HIPAA_164:308_a_4_ii_b"

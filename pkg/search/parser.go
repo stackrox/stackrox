@@ -3,9 +3,9 @@ package search
 import (
 	"strings"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/set"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 var (

@@ -1,11 +1,11 @@
 package service
 
 import (
-	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
-	"github.com/stackrox/rox/central/reports/manager"
-	accessScopeStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/pkg/sync"
+	notifierDataStore "github.com/stackrox/stackrox/central/notifier/datastore"
+	reportConfigDS "github.com/stackrox/stackrox/central/reportconfigurations/datastore"
+	"github.com/stackrox/stackrox/central/reports/manager"
+	accessScopeStore "github.com/stackrox/stackrox/central/role/datastore"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

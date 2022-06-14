@@ -1,8 +1,8 @@
 package standards
 
 import (
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 func gatherDataDependencies(checks []framework.Check) set.StringSet {

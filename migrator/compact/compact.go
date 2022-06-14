@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/migrator/bolthelpers"
-	"github.com/stackrox/rox/migrator/log"
-	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/fsutils"
-	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/stackrox/migrator/bolthelpers"
+	"github.com/stackrox/stackrox/migrator/log"
+	"github.com/stackrox/stackrox/pkg/config"
+	"github.com/stackrox/stackrox/pkg/fsutils"
+	"github.com/stackrox/stackrox/pkg/migrations"
 	bolt "go.etcd.io/bbolt"
 )
 

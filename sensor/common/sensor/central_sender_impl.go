@@ -3,11 +3,11 @@ package sensor
 import (
 	"errors"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/deduper"
-	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/sensor/common"
+	"github.com/stackrox/stackrox/sensor/common/deduper"
+	"github.com/stackrox/stackrox/sensor/common/metrics"
 )
 
 type centralSenderImpl struct {

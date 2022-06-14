@@ -5,15 +5,15 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/signatureintegration/store"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
+	policyDatastore "github.com/stackrox/stackrox/central/policy/datastore"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/central/signatureintegration/store"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

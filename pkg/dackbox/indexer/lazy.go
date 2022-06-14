@@ -6,9 +6,9 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 const (

@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/db"
-	"github.com/stackrox/rox/pkg/db/mapcache"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/metrics"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/logging"
+	ops "github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/stackrox/pkg/db"
+	"github.com/stackrox/stackrox/pkg/db/mapcache"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	generic "github.com/stackrox/stackrox/pkg/rocksdb/crud"
 )
 
 var (

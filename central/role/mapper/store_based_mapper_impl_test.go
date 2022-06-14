@@ -6,14 +6,14 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	groupMocks "github.com/stackrox/rox/central/group/datastore/mocks"
-	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
-	userMocks "github.com/stackrox/rox/central/user/datastore/mocks"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/auth/permissions/utils"
-	"github.com/stackrox/rox/pkg/testutils/roletest"
+	groupMocks "github.com/stackrox/stackrox/central/group/datastore/mocks"
+	roleMocks "github.com/stackrox/stackrox/central/role/datastore/mocks"
+	"github.com/stackrox/stackrox/central/role/resources"
+	userMocks "github.com/stackrox/stackrox/central/user/datastore/mocks"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/auth/permissions/utils"
+	"github.com/stackrox/stackrox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/suite"
 )
 

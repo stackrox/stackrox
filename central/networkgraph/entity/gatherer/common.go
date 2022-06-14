@@ -4,11 +4,11 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/networkgraph/entity/datastore"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/networkgraph/defaultexternalsrcs"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 func writeChecksumLocally(checksum []byte) error {

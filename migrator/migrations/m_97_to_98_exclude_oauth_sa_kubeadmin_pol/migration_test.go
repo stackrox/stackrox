@@ -3,7 +3,7 @@ package m97to98
 import (
 	"testing"
 
-	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
+	"github.com/stackrox/stackrox/migrator/migrations/policymigrationhelper"
 	"github.com/stretchr/testify/suite"
 )
 

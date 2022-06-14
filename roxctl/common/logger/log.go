@@ -3,8 +3,8 @@ package logger
 import (
 	"fmt"
 
-	io2 "github.com/stackrox/rox/roxctl/common/io"
-	"github.com/stackrox/rox/roxctl/common/printer"
+	io2 "github.com/stackrox/stackrox/roxctl/common/io"
+	"github.com/stackrox/stackrox/roxctl/common/printer"
 )
 
 // Logger is a struct responsible for printing messages. It should be preferred over fmt functions.

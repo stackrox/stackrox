@@ -1,6 +1,6 @@
 package tlsconfig
 
-import "github.com/stackrox/rox/pkg/env"
+import "github.com/stackrox/stackrox/pkg/env"
 
 // defaultAdditionalCAsDir is where the additional CAs are stored.
 const defaultAdditionalCAsDir = "/usr/local/share/ca-certificates"

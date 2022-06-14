@@ -8,17 +8,17 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/pointers"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
-	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/ternary"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/pointers"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/postgres/mapping"
+	pgsearch "github.com/stackrox/stackrox/pkg/search/postgres/query"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/ternary"
 )
 
 var (

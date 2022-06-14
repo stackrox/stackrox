@@ -1,8 +1,8 @@
 package graph
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv/k8s"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/protoconv/k8s"
 )
 
 // namedPort identifies a port that is referenced by name.

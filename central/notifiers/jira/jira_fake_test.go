@@ -13,9 +13,9 @@ import (
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
-	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	"github.com/stackrox/rox/generated/storage"
+	mitreMocks "github.com/stackrox/stackrox/central/mitre/datastore/mocks"
+	namespaceMocks "github.com/stackrox/stackrox/central/namespace/datastore/mocks"
+	"github.com/stackrox/stackrox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -4,8 +4,8 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/fsutils"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/pkg/fsutils"
 )
 
 const (

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/stackrox/rox/central/processindicator"
+	"github.com/stackrox/stackrox/central/processindicator"
 )
 
 const (

@@ -10,8 +10,8 @@ import (
 
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
 )
 
 const (

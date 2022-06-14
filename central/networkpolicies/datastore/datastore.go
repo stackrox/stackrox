@@ -3,11 +3,11 @@ package store
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/central/networkpolicies/datastore/internal/store"
+	"github.com/stackrox/stackrox/central/networkpolicies/datastore/internal/undodeploymentstore"
+	"github.com/stackrox/stackrox/central/networkpolicies/datastore/internal/undostore"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

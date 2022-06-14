@@ -1,10 +1,10 @@
 package networkflowupdate
 
 import (
-	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
-	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	"github.com/stackrox/rox/central/sensor/service/pipeline"
-	"github.com/stackrox/rox/pkg/sync"
+	networkBaselineManager "github.com/stackrox/stackrox/central/networkbaseline/manager"
+	nfDS "github.com/stackrox/stackrox/central/networkgraph/flow/datastore"
+	"github.com/stackrox/stackrox/central/sensor/service/pipeline"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/probeupload"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 const (

@@ -7,8 +7,8 @@ import (
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
-	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
-	storage "github.com/stackrox/rox/generated/storage"
+	compliance "github.com/stackrox/stackrox/generated/internalapi/compliance"
+	storage "github.com/stackrox/stackrox/generated/storage"
 )
 
 // suppress unused package warning

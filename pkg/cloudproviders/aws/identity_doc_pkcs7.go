@@ -12,8 +12,8 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/fullsailor/pkcs7"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 const (

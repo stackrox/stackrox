@@ -6,10 +6,10 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/sensor/admission-control/common"
-	"github.com/stackrox/rox/sensor/admission-control/manager"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/sensor/admission-control/common"
+	"github.com/stackrox/stackrox/sensor/admission-control/manager"
 )
 
 const (

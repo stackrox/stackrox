@@ -3,9 +3,9 @@ package common
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/compliance/checks/standards"
-	"github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
+	"github.com/stackrox/stackrox/pkg/compliance/framework"
 )
 
 // NoteCheck marks every node with a NoteStatus with the evidence being the description

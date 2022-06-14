@@ -2,7 +2,7 @@ package common
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/errox"
 )
 
 // ExactArgsWithCustomErrMessage returns an error with a custom message

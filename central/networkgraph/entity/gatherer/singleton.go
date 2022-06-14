@@ -1,8 +1,8 @@
 package gatherer
 
 import (
-	networkEntityDatastore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
-	"github.com/stackrox/rox/pkg/sync"
+	networkEntityDatastore "github.com/stackrox/stackrox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -1,11 +1,11 @@
 package store
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/logimbue/store/bolt"
-	"github.com/stackrox/rox/central/logimbue/store/postgres"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/logimbue/store/bolt"
+	"github.com/stackrox/stackrox/central/logimbue/store/postgres"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	"github.com/stackrox/rox/pkg/uuid"
+	platform "github.com/stackrox/stackrox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/stackrox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"

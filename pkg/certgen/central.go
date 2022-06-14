@@ -1,7 +1,7 @@
 package certgen
 
 import (
-	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/mtls"
 )
 
 // IssueCentralCert issues a central cert, given a fileMap that contains a ca-cert and ca-key.

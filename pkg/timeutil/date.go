@@ -3,7 +3,7 @@ package timeutil
 import (
 	"time"
 
-	"github.com/stackrox/rox/pkg/mathutil"
+	"github.com/stackrox/stackrox/pkg/mathutil"
 )
 
 const (

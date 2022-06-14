@@ -3,13 +3,13 @@ package manager
 import (
 	"testing"
 
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/central/compliance/standards"
-	"github.com/stackrox/rox/central/compliance/standards/metadata"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/generated/storage"
-	pkgStandards "github.com/stackrox/rox/pkg/compliance/checks/standards"
-	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/central/compliance/standards"
+	"github.com/stackrox/stackrox/central/compliance/standards/metadata"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/generated/storage"
+	pkgStandards "github.com/stackrox/stackrox/pkg/compliance/checks/standards"
+	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
 	"github.com/stretchr/testify/suite"
 )
 

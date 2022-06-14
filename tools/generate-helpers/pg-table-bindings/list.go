@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 var typeRegistry = make(map[string]string)

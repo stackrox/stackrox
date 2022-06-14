@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"net"
 
-	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/stackrox/pkg/netutil"
 )
 
 // Family represents the address family of an IP address.

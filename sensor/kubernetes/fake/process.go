@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 var (

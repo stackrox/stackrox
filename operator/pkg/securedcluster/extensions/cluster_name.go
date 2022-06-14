@@ -6,7 +6,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/stackrox/operator/apis/platform/v1alpha1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 

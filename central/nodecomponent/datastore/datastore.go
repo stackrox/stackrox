@@ -3,14 +3,14 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/nodecomponent/datastore/index"
-	"github.com/stackrox/rox/central/nodecomponent/datastore/search"
-	"github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
-	"github.com/stackrox/rox/central/ranking"
-	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/nodecomponent/datastore/index"
+	"github.com/stackrox/stackrox/central/nodecomponent/datastore/search"
+	"github.com/stackrox/stackrox/central/nodecomponent/datastore/store/postgres"
+	"github.com/stackrox/stackrox/central/ranking"
+	riskDataStore "github.com/stackrox/stackrox/central/risk/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
 )
 
 // DataStore is an intermediary to NodeComponent storage.

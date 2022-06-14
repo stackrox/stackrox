@@ -3,7 +3,7 @@ package predicate
 import (
 	"reflect"
 
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 // internal predicates

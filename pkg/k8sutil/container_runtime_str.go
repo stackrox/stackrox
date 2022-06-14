@@ -3,7 +3,7 @@ package k8sutil
 import (
 	"strings"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 var (

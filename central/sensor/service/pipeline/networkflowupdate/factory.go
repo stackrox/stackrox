@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	networkBaselineManager "github.com/stackrox/stackrox/central/networkbaseline/manager"
+	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore"
+	"github.com/stackrox/stackrox/central/sensor/service/pipeline"
 )
 
 // NewFactory returns a new instance of a FragmentFactory that returns Fragments handling NetworkFlowUpdate messages

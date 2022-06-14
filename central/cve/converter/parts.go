@@ -1,9 +1,9 @@
 package converter
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/dackbox/edges"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

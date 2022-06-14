@@ -3,7 +3,7 @@ package deploymentenvs
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // GetDeploymentEnvFromProviderMetadata returns a deployment environment ID string from the given provider

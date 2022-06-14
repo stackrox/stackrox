@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/cloudflare/cfssl/helpers"
-	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders"
+	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
 	"github.com/stretchr/testify/assert"
 )
 

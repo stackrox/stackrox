@@ -2,8 +2,8 @@ package operations
 
 import (
 	. "github.com/dave/jennifer/jen"
-	"github.com/stackrox/rox/tools/generate-helpers/common"
-	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
+	"github.com/stackrox/stackrox/tools/generate-helpers/common"
+	"github.com/stackrox/stackrox/tools/generate-helpers/common/packagenames"
 )
 
 // ConditionalCode represents a list of Jen Codes and the condition under which they will be included in a code block.

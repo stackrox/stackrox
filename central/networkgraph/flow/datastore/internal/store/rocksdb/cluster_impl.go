@@ -3,9 +3,9 @@ package rocksdb
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/common"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore/internal/store"
+	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore/internal/store/common"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
 )
 
 // NewClusterStore returns a new ClusterStore instance using the provided rocksdb instance.

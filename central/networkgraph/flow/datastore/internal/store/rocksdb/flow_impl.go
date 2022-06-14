@@ -7,14 +7,14 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/common"
-	"github.com/stackrox/rox/generated/storage"
-	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
-	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/stackrox/central/metrics"
+	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore/internal/store/common"
+	"github.com/stackrox/stackrox/generated/storage"
+	ops "github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/stackrox/pkg/networkgraph"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	generic "github.com/stackrox/stackrox/pkg/rocksdb/crud"
+	"github.com/stackrox/stackrox/pkg/timestamp"
 	"github.com/tecbot/gorocksdb"
 )
 

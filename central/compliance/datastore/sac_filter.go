@@ -4,13 +4,13 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/compliance"
-	"github.com/stackrox/rox/central/compliance/datastore/types"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/compliance"
+	"github.com/stackrox/stackrox/central/compliance/datastore/types"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

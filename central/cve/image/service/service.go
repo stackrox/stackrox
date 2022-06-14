@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	cveDataStore "github.com/stackrox/rox/central/cve/image/datastore"
-	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
+	cveDataStore "github.com/stackrox/stackrox/central/cve/image/datastore"
+	vulnReqMgr "github.com/stackrox/stackrox/central/vulnerabilityrequest/manager/requestmgr"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
-	flowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/timestamp"
+	networkBaselineManager "github.com/stackrox/stackrox/central/networkbaseline/manager"
+	flowDataStore "github.com/stackrox/stackrox/central/networkgraph/flow/datastore"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/networkgraph"
+	"github.com/stackrox/stackrox/pkg/timestamp"
 )
 
 type flowPersisterImpl struct {

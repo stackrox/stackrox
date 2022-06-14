@@ -10,15 +10,15 @@ import (
 
 	"github.com/dexidp/dex/connector"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
-	"github.com/stackrox/rox/pkg/auth/authproviders/openshift/internal/dexconnector"
-	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/satoken"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders/idputil"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders/openshift/internal/dexconnector"
+	"github.com/stackrox/stackrox/pkg/auth/tokens"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
+	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/stackrox/pkg/netutil"
+	"github.com/stackrox/stackrox/pkg/satoken"
 )
 
 const (

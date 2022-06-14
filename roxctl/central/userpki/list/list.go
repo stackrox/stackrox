@@ -8,14 +8,14 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
-	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/logger"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders/userpki"
+	pkgCommon "github.com/stackrox/stackrox/pkg/roxctl/common"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/roxctl/common/logger"
 )
 
 type centralUserPkiListCommand struct {

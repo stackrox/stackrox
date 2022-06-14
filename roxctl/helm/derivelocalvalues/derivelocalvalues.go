@@ -9,11 +9,11 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/maputil"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/logger"
-	"github.com/stackrox/rox/roxctl/helm/internal/common"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/maputil"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/logger"
+	"github.com/stackrox/stackrox/roxctl/helm/internal/common"
 	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/chartutil"
 )

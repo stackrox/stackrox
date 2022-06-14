@@ -156,6 +156,6 @@ const clickOutsideConfig = {
 
 /*
  * If more than one SidePanel is rendered, this Pure Functional Component will need to be converted to
- * a Class Component in order to work correctly. See https://github.com/stackrox/rox/pull/3090#pullrequestreview-274948849
+ * a Class Component in order to work correctly. See https://github.com/stackrox/stackrox/pull/3090#pullrequestreview-274948849
  */
 export default onClickOutside(withRouter(SidePanel), clickOutsideConfig);

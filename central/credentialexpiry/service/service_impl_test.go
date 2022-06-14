@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/stackrox/pkg/grpc/testutils"
 	"github.com/stretchr/testify/assert"
 )
 

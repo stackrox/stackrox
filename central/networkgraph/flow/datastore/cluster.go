@@ -3,10 +3,10 @@ package datastore
 import (
 	"context"
 
-	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
-	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
-	"github.com/stackrox/rox/pkg/expiringcache"
+	graphConfigDS "github.com/stackrox/stackrox/central/networkgraph/config/datastore"
+	"github.com/stackrox/stackrox/central/networkgraph/entity/networktree"
+	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore/internal/store"
+	"github.com/stackrox/stackrox/pkg/expiringcache"
 )
 
 // ClusterDataStore stores the network edges per cluster.

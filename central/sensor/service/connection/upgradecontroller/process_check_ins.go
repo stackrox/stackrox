@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller/stateutils"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"github.com/stackrox/stackrox/central/sensor/service/connection/upgradecontroller/stateutils"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/protoconv"
+	"github.com/stackrox/stackrox/pkg/sensorupgrader"
 )
 
 var (

@@ -8,12 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/helm/charts"
-	"github.com/stackrox/rox/pkg/images/defaults"
-	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
-	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/stackrox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/helm/charts"
+	"github.com/stackrox/stackrox/pkg/images/defaults"
+	flavorUtils "github.com/stackrox/stackrox/pkg/images/defaults/testutils"
+	"github.com/stackrox/stackrox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 )

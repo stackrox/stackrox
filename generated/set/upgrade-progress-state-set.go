@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // If you want to add a set for your custom type, simply add another go generate line along with the

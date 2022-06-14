@@ -3,8 +3,8 @@ package translation
 import (
 	"testing"
 
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	"github.com/stackrox/rox/operator/pkg/values/translation"
+	platform "github.com/stackrox/stackrox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/stackrox/operator/pkg/values/translation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
