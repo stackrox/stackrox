@@ -9,17 +9,17 @@ import { actions as globalSearchActions } from 'reducers/globalSearch';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import Notifications from 'Containers/Notifications';
-import NavigationSideBar from 'Containers/Navigation/NavigationSideBar';
 import SearchModal from 'Containers/Search/SearchModal';
 import UnreachableWarning from 'Containers/UnreachableWarning';
 import AppWrapper from 'Containers/AppWrapper';
 import VersionOutOfDate from 'Containers/VersionOutOfDate';
 import Body from 'Containers/MainPage/Body';
-import Masthead from 'Containers/MainPage/Masthead';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 
 import CredentialExpiryBanner from './CredentialExpiryBanner';
+import Masthead from './Header/Masthead';
+import NavigationSidebar from './Sidebar/NavigationSidebar';
 
 const mainPageSelector = createStructuredSelector({
     isGlobalSearchView: selectors.getGlobalSearchView,
@@ -77,7 +77,7 @@ function MainPage(): ReactElement {
                     header={<Masthead />}
                     isManagedSidebar
                     sidebar={
-                        <NavigationSideBar
+                        <NavigationSidebar
                             hasReadAccess={hasReadAccess}
                             isFeatureFlagEnabled={isFeatureFlagEnabled}
                         />

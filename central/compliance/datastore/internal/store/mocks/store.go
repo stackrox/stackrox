@@ -112,21 +112,6 @@ func (mr *MockStoreMockRecorder) GetLatestRunResultsBatch(clusterIDs, standardID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsBatch", reflect.TypeOf((*MockStore)(nil).GetLatestRunResultsBatch), clusterIDs, standardIDs, flags)
 }
 
-// GetLatestRunResultsByClusterAndStandard mocks base method.
-func (m *MockStore) GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestRunResultsByClusterAndStandard", clusterIDs, standardIDs, flags)
-	ret0, _ := ret[0].(map[compliance.ClusterStandardPair]types.ResultsWithStatus)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLatestRunResultsByClusterAndStandard indicates an expected call of GetLatestRunResultsByClusterAndStandard.
-func (mr *MockStoreMockRecorder) GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs, flags interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsByClusterAndStandard", reflect.TypeOf((*MockStore)(nil).GetLatestRunResultsByClusterAndStandard), clusterIDs, standardIDs, flags)
-}
-
 // GetSpecificRunResults mocks base method.
 func (m *MockStore) GetSpecificRunResults(clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()

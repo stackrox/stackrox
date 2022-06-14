@@ -13,16 +13,3 @@ func resourceWithAccess(access storage.Access, resource permissions.Resource) pe
 		},
 	}
 }
-
-func resourceWithAccessAndReplacingResource(access storage.Access, resource permissions.Resource,
-	replacingResource permissions.Resource) permissions.ResourceWithAccess {
-	return permissions.ResourceWithAccess{
-		Access: access,
-		Resource: permissions.ResourceMetadata{
-			Resource: resource,
-			ReplacingResource: &permissions.ResourceMetadata{
-				Resource: replacingResource,
-			},
-		},
-	}
-}

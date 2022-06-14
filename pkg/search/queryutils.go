@@ -1,10 +1,13 @@
 package search
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ApplyFnToAllBaseQueries walks recursively over the query, applying fn to all the base queries.
@@ -22,10 +25,17 @@ func ApplyFnToAllBaseQueries(q *v1.Query, fn func(*v1.BaseQuery)) {
 		for _, subQ := range typedQ.Conjunction.GetQueries() {
 			ApplyFnToAllBaseQueries(subQ, fn)
 		}
+	case *v1.Query_BooleanQuery:
+		for _, subQ := range typedQ.BooleanQuery.GetMust().GetQueries() {
+			ApplyFnToAllBaseQueries(subQ, fn)
+		}
+		for _, subQ := range typedQ.BooleanQuery.GetMustNot().GetQueries() {
+			ApplyFnToAllBaseQueries(subQ, fn)
+		}
 	case *v1.Query_BaseQuery:
 		fn(typedQ.BaseQuery)
 	default:
-		log.Errorf("Unhandled query type: %T; query was %s", q, proto.MarshalTextString(q))
+		utils.Should(fmt.Errorf("unhandled query type: %T; query was %s", q, proto.MarshalTextString(q)))
 	}
 }
 

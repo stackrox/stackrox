@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -36,9 +37,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
+func New(store store.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
 	d := &datastoreImpl{
-		storage:               storage,
+		storage:               store,
 		indexer:               indexer,
 		searcher:              searcher,
 		prunerFactory:         prunerFactory,
@@ -46,7 +47,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, p
 		stopSig:               concurrency.NewSignal(),
 		stoppedSig:            concurrency.NewSignal(),
 	}
-	ctx := context.TODO()
+	ctx := sac.WithAllAccess(context.Background())
 	if err := d.buildIndex(ctx); err != nil {
 		return nil, err
 	}

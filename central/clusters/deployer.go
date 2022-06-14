@@ -26,6 +26,8 @@ type RenderOptions struct {
 	CreateUpgraderSA bool
 	SlimCollector    bool
 	IstioVersion     string
+
+	DisablePodSecurityPolicies bool
 }
 
 // FieldsFromClusterAndRenderOpts gets the template values for values.yaml
@@ -37,6 +39,7 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 
 	baseValues := getBaseMetaValues(c, imageFlavor.Versions, &opts)
 	setMainOverride(mainImage, baseValues)
+	baseValues.EnablePodSecurityPolicies = !opts.DisablePodSecurityPolicies
 
 	collectorFull, collectorSlim := determineCollectorImages(mainImage, collectorImage, imageFlavor)
 	setCollectorOverrideToMetaValues(collectorFull, collectorSlim, baseValues)
@@ -175,5 +178,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *Rend
 		AdmissionControllerEnabled:       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		AdmissionControlEnforceOnUpdates: c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
 		ReleaseBuild:                     buildinfo.ReleaseBuild,
+
+		EnablePodSecurityPolicies: true,
 	}
 }

@@ -16,7 +16,6 @@ import policies, { selectors as policySelectors } from './policies/reducer';
 import roles, { selectors as roleSelectors } from './roles';
 import searchAutoComplete, { selectors as searchAutoCompleteSelectors } from './searchAutocomplete';
 import serverError, { selectors as serverErrorSelectors } from './serverError';
-import secrets, { selectors as secretSelectors } from './secrets';
 import metadata, { selectors as metadataSelectors } from './metadata';
 import loading, { selectors as loadingSelectors } from './loading';
 import { selectors as routeSelectors } from './routes';
@@ -26,7 +25,6 @@ import groups, { selectors as groupsSelectors } from './groups';
 import attributes, { selectors as attributesSelectors } from './attributes';
 import pdfDownload, { selectors as pdfDownloadSelectors } from './pdfDownload';
 import systemConfig, { selectors as systemConfigSelectors } from './systemConfig';
-import telemetryConfig, { selectors as telemetryConfigSelectors } from './telemetryConfig';
 
 // Reducers
 
@@ -44,7 +42,6 @@ const appReducer = combineReducers({
     roles,
     searchAutoComplete,
     serverError,
-    secrets,
     loading,
     metadata,
     network,
@@ -53,7 +50,6 @@ const appReducer = combineReducers({
     attributes,
     pdfDownload,
     systemConfig,
-    telemetryConfig,
 });
 
 const createRootReducer = (history) => {
@@ -83,7 +79,6 @@ const getPolicies = (state) => getApp(state).policies;
 const getRoles = (state) => getApp(state).roles;
 const getSearchAutocomplete = (state) => getApp(state).searchAutoComplete;
 const getServerError = (state) => getApp(state).serverError;
-const getSecrets = (state) => getApp(state).secrets;
 const getLoadingStatus = (state) => getApp(state).loading;
 const getMetadata = (state) => getApp(state).metadata;
 const getNetwork = (state) => getApp(state).network;
@@ -92,7 +87,6 @@ const getRuleGroups = (state) => getApp(state).groups;
 const getAttributes = (state) => getApp(state).attributes;
 const getPdfDownload = (state) => getApp(state).pdfDownload;
 const getSystemConfig = (state) => getApp(state).systemConfig;
-const getTelemetryConfig = (state) => getApp(state).telemetryConfig;
 
 const boundSelectors = {
     ...bindSelectors(getAPITokens, apiTokenSelectors),
@@ -109,7 +103,6 @@ const boundSelectors = {
     ...bindSelectors(getRoute, routeSelectors),
     ...bindSelectors(getSearchAutocomplete, searchAutoCompleteSelectors),
     ...bindSelectors(getServerError, serverErrorSelectors),
-    ...bindSelectors(getSecrets, secretSelectors),
     ...bindSelectors(getLoadingStatus, loadingSelectors),
     ...bindSelectors(getMetadata, metadataSelectors),
     ...bindSelectors(getNetwork, networkSelectors),
@@ -118,7 +111,6 @@ const boundSelectors = {
     ...bindSelectors(getAttributes, attributesSelectors),
     ...bindSelectors(getPdfDownload, pdfDownloadSelectors),
     ...bindSelectors(getSystemConfig, systemConfigSelectors),
-    ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors),
 };
 
 export const selectors = {

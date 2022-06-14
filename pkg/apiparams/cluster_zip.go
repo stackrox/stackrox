@@ -6,4 +6,6 @@ type ClusterZip struct {
 	CreateUpgraderSA *bool  `json:"createUpgraderSA"`
 	SlimCollector    *bool  `json:"slimCollector"`
 	IstioVersion     string `json:"istioVersion"`
+
+	DisablePodSecurityPolicies bool `json:"disablePodSecurityPolicies"`
 }

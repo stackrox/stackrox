@@ -1,5 +1,6 @@
 import static Services.getViolationsWithTimeout
 
+import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.apps.Deployment as OrchestratorDeployment
 
 import io.stackrox.proto.storage.AlertOuterClass
@@ -51,6 +52,23 @@ class ReconciliationTest extends BaseSpecification {
         // We create and delete an entire namespace, so we may see a lot of secrets being deleted, esp in OpenShift.
         "*central.SensorEvent_Secret": 5,
     ]
+
+    private Set<String> getPodsInCluster() {
+        Set<String> result = [] as Set
+        for (namespace in orchestrator.getNamespaces()) {
+            List<Pod> allPods = orchestrator.getPodsByLabel(namespace, new HashMap<String, String>())
+            for (pod in allPods) {
+                result.add(namespace + ":" + pod.metadata.getName())
+            }
+        }
+        return result
+    }
+
+    private Set<String> getDifference(Set<String> list1, Set<String> list2) {
+        Set<String> result = list1.clone() as Set<String>
+        result.removeAll(list2)
+        return result
+    }
 
     private void verifyReconciliationStats(boolean verifyMin) {
         // Cannot verify this on a release build, since the API is not exposed.
@@ -112,6 +130,8 @@ class ReconciliationTest extends BaseSpecification {
         def namespaceID = orchestrator.createNamespace(ns)
         NamespaceService.waitForNamespace(namespaceID, 10)
 
+        Set<String> podsBeforeDeleting
+
         try {
             addStackroxImagePullSecret(ns)
 
@@ -143,6 +163,12 @@ class ReconciliationTest extends BaseSpecification {
             networkPolicyID = orchestrator.applyNetworkPolicy(policy)
             assert NetworkPolicyService.waitForNetworkPolicy(networkPolicyID)
 
+            podsBeforeDeleting = podsInCluster
+            log.info "Pods in cluster before deleting:"
+            for (pod in podsBeforeDeleting) {
+                log.info pod
+            }
+
             orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
 
             orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"])
@@ -157,6 +183,16 @@ class ReconciliationTest extends BaseSpecification {
             orchestrator.deleteNamespace(ns)
             // Just wait for the namespace to be deleted which is indicative that all of them have been deleted
             orchestrator.waitForNamespaceDeletion(ns)
+        }
+
+        Set<String> podsBeforeRestarting = podsInCluster
+        log.info "Pods in cluster before restarting:"
+        for (pod in podsBeforeRestarting) {
+            log.info pod
+        }
+        log.info "Pods that were likely deleted while sensor was down:"
+        for (pod in getDifference(podsBeforeDeleting, podsBeforeRestarting)) {
+            log.info pod
         }
 
         // Recreate sensor

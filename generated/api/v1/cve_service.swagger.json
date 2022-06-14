@@ -79,7 +79,7 @@
     },
     "/v1/imagecves/suppress": {
       "patch": {
-        "summary": "SuppressCVE suppresses cves.",
+        "summary": "SuppressCVE suppresses image cves.",
         "operationId": "ImageCVEService_SuppressCVEs",
         "responses": {
           "200": {
@@ -112,7 +112,7 @@
     },
     "/v1/imagecves/unsuppress": {
       "patch": {
-        "summary": "UnsuppressCVE unsuppresse    s cves.",
+        "summary": "UnsuppressCVE unsuppresses image cves.",
         "operationId": "ImageCVEService_UnsuppressCVEs",
         "responses": {
           "200": {
@@ -140,6 +140,72 @@
         ],
         "tags": [
           "ImageCVEService"
+        ]
+      }
+    },
+    "/v1/nodecves/suppress": {
+      "patch": {
+        "summary": "SuppressCVE suppresses node cves.",
+        "operationId": "NodeCVEService_SuppressCVEs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1SuppressCVERequest"
+            }
+          }
+        ],
+        "tags": [
+          "NodeCVEService"
+        ]
+      }
+    },
+    "/v1/nodecves/unsuppress": {
+      "patch": {
+        "summary": "UnsuppressCVE unsuppresses node cves.",
+        "operationId": "NodeCVEService_UnsuppressCVEs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UnsuppressCVERequest"
+            }
+          }
+        ],
+        "tags": [
+          "NodeCVEService"
         ]
       }
     }

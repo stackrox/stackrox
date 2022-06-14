@@ -75,7 +75,7 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 		// Iterate over the cluster-standard pairs to minimize memory pressure
 		for _, clusterID := range clusterIDs {
 			for _, standardID := range standardIDs {
-				data, err := complianceDS.GetLatestRunResultsForClustersAndStandards(r.Context(), []string{clusterID}, []string{standardID}, types.RequireMessageStrings)
+				data, err := complianceDS.GetLatestRunResultsBatch(r.Context(), []string{clusterID}, []string{standardID}, types.RequireMessageStrings)
 				if err != nil {
 					httputil.WriteError(w, err)
 					return

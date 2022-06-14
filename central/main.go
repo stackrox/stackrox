@@ -38,6 +38,7 @@ import (
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
+	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
 	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
@@ -347,6 +348,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 	}
 	if features.PostgresDatastore.Enabled() {
 		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
+		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
 	}
 
 	if features.ImageSignatureVerification.Enabled() {

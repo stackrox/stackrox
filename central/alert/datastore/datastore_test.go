@@ -16,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -57,12 +58,13 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
-
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
-	s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
+
+	if !features.PostgresDatastore.Enabled() {
+		s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
+		s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+	}
 
 	var err error
 	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
@@ -213,10 +215,12 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
-
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
-	s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+
+	if !features.PostgresDatastore.Enabled() {
+		s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
+		s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+	}
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 	var err error
 	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
@@ -335,6 +339,10 @@ func (suite *AlertReindexSuite) SetupTest() {
 }
 
 func (suite *AlertReindexSuite) TestReconciliationFullReindex() {
+	if features.PostgresDatastore.Enabled() {
+		return
+	}
+
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(true, nil)
 
 	fullAlert1 := fixtures.GetAlertWithID("A")
@@ -359,9 +367,11 @@ func (suite *AlertReindexSuite) TestReconciliationFullReindex() {
 }
 
 func (suite *AlertReindexSuite) TestReconciliationPartialReindex() {
+	if features.PostgresDatastore.Enabled() {
+		return
+	}
 	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-
 	fullAlert1 := fixtures.GetAlertWithID("A")
 	fullAlert2 := fixtures.GetAlertWithID("B")
 	fullAlert3 := fixtures.GetAlertWithID("C")

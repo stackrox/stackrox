@@ -1,10 +1,5 @@
 import './commands';
 
-if (Cypress.env('COLLECT_COVERAGE')) {
-    // eslint-disable-next-line global-require
-    require('@cypress/code-coverage/support');
-}
-
 // fix a long-standing problem in Cypress where elements that are otherwise clickable
 //   get scrolled out of view, and thus cause false positives
 //   See: https://github.com/cypress-io/cypress/issues/871,

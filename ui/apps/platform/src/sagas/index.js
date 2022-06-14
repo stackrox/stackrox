@@ -10,14 +10,12 @@ import globalSearch from './globalSearchSagas';
 import roles from './roleSagas';
 import searches from './searchSagas';
 import searchAutoComplete from './searchAutocompleteSagas';
-import secrets from './secretSagas';
 import network from './networkSagas';
 import metadata from './metadataSagas';
 import processes from './processSagas';
 import groups from './groupSagas';
 import attributes from './attributesSagas';
 import systemConfig from './systemConfig';
-import telemetryConfig from './telemetryConfig';
 
 export default function* root() {
     yield all([
@@ -31,13 +29,11 @@ export default function* root() {
         fork(roles),
         fork(searches),
         fork(searchAutoComplete),
-        fork(secrets),
         fork(network),
         fork(metadata),
         fork(processes),
         fork(groups),
         fork(attributes),
         fork(systemConfig),
-        fork(telemetryConfig),
     ]);
 }

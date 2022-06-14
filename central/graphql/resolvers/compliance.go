@@ -434,21 +434,6 @@ func (resolver *complianceAggregationResultWithDomainResolver) Keys(ctx context.
 	return output, nil
 }
 
-// ComplianceResults returns graphql resolvers for all matching compliance results
-func (resolver *Resolver) ComplianceResults(ctx context.Context, query RawQuery) ([]*complianceControlResultResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Compliance, "ComplianceResults")
-
-	if err := readCompliance(ctx); err != nil {
-		return nil, err
-	}
-	q, err := query.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-	return resolver.wrapComplianceControlResults(
-		resolver.ComplianceDataStore.QueryControlResults(ctx, q))
-}
-
 func (resolver *complianceStandardMetadataResolver) Controls(ctx context.Context) ([]*complianceControlResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err

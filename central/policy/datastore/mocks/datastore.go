@@ -97,14 +97,13 @@ func (mr *MockDataStoreMockRecorder) GetAllPolicies(ctx interface{}) *gomock.Cal
 }
 
 // GetPolicies mocks base method.
-func (m *MockDataStore) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, []error, error) {
+func (m *MockDataStore) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPolicies", ctx, ids)
 	ret0, _ := ret[0].([]*storage.Policy)
 	ret1, _ := ret[1].([]int)
-	ret2, _ := ret[2].([]error)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetPolicies indicates an expected call of GetPolicies.

@@ -22,7 +22,7 @@ var (
                    NodeId varchar,
                    NodeComponentId varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, NodeId, NodeComponentId),
+                   PRIMARY KEY(Id),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (NodeId) REFERENCES nodes(Id) ON DELETE CASCADE
                )
                `,
@@ -59,8 +59,8 @@ const (
 // NodeComponentEdges holds the Gorm model for Postgres table `node_component_edges`.
 type NodeComponentEdges struct {
 	Id              string `gorm:"column:id;type:varchar;primaryKey"`
-	NodeId          string `gorm:"column:nodeid;type:varchar;primaryKey"`
-	NodeComponentId string `gorm:"column:nodecomponentid;type:varchar;primaryKey"`
+	NodeId          string `gorm:"column:nodeid;type:varchar"`
+	NodeComponentId string `gorm:"column:nodecomponentid;type:varchar"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 	NodesRef        Nodes  `gorm:"foreignKey:nodeid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

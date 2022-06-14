@@ -50,7 +50,7 @@ func (b *indexerImpl) Add{{.TrimmedType}}(deployment *{{.Type}}) error {
 	return nil
 }
 
-func (b *indexerImpl) Add{{.TrimmedType}}s(_ []*{{.Type}}) error {
+func (b *indexerImpl) Add{{pluralType .TrimmedType}}(_ []*{{.Type}}) error {
 	return nil
 }
 
@@ -58,7 +58,7 @@ func (b *indexerImpl) Delete{{.TrimmedType}}(id string) error {
 	return nil
 }
 
-func (b *indexerImpl) Delete{{.TrimmedType}}s(_ []string) error {
+func (b *indexerImpl) Delete{{pluralType .TrimmedType}}(_ []string) error {
 	return nil
 }
 

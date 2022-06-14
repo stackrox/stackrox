@@ -146,6 +146,8 @@ type Config struct {
 
 	RenderOpts *helmUtil.Options // additional render options, if any (only legal in non-Helm mode).
 	HelmImage  *image.Image
+
+	EnablePodSecurityPolicies bool
 }
 
 func generateReadmeFile(c *Config, mode mode) (*zip.File, error) {

@@ -32,7 +32,7 @@ func New(dacky *dackbox.DackBox) (store.Store, error) {
 	}, nil
 }
 
-func (b *storeImpl) Exists(_ context.Context, id string, _ string, _ string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -64,7 +64,7 @@ func (b *storeImpl) Count(_ context.Context) (int, error) {
 	return count, nil
 }
 
-func (b *storeImpl) Get(_ context.Context, id string, _ string, _ string) (edges *storage.ComponentCVEEdge, exists bool, err error) {
+func (b *storeImpl) Get(_ context.Context, id string) (edges *storage.ComponentCVEEdge, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ComponentCVEEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()

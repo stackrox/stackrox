@@ -60,7 +60,7 @@ export function fetchAlertsByTimeseries(
 
 export type AlertCountBySeverity = {
     severity: Severity;
-    count: number;
+    count: string;
 };
 
 export type AlertGroup = {
@@ -68,15 +68,41 @@ export type AlertGroup = {
     counts: AlertCountBySeverity[];
 };
 
+export type AlertQueryGroupBy = 'UNSET' | 'CATEGORY' | 'CLUSTER';
+
 type SummaryAlertCountsFilters = {
     'request.query': string;
-    group_by: string;
+    group_by: AlertQueryGroupBy;
 };
 
 /*
  * Fetch severity counts.
  */
-export function fetchSummaryAlertCounts(filters: SummaryAlertCountsFilters): Promise<AlertGroup[]> {
+export function fetchSummaryAlertCounts(
+    filters: SummaryAlertCountsFilters
+): CancellableRequest<AlertGroup[]> {
+    const params = queryString.stringify(filters);
+
+    // set higher timeout for this call to handle known backend scale issues with dashboard
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .get<{ groups: AlertGroup[] }>(`${baseUrl}/summary/counts?${params}`, {
+                timeout: 59999,
+                signal,
+            })
+            .then((response) => response.data.groups)
+    );
+}
+
+/**
+ * Fetch severity counts.
+ *
+ * TODO Delete once Action Widgets Dashboard (ROX-10650) becomes the default homepage
+ * dashboard view
+ */
+export function fetchSummaryAlertCountsLegacy(
+    filters: SummaryAlertCountsFilters
+): Promise<AlertGroup[]> {
     const params = queryString.stringify(filters);
 
     // set higher timeout for this call to handle known backend scale issues with dashboard

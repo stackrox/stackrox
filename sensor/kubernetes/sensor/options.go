@@ -1,6 +1,7 @@
 package sensor
 
 import (
+	"io"
 	"time"
 
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -16,6 +17,7 @@ type CreateOptions struct {
 	localSensor        bool
 	resyncPeriod       time.Duration
 	k8sClient          client.Interface
+	traceWriter        io.Writer
 }
 
 // ConfigWithDefaults creates a new config object with default properties.
@@ -31,6 +33,7 @@ func ConfigWithDefaults() *CreateOptions {
 		k8sClient:          nil,
 		localSensor:        false,
 		resyncPeriod:       1 * time.Minute,
+		traceWriter:        nil,
 	}
 }
 
@@ -67,5 +70,12 @@ func (cfg *CreateOptions) WithLocalSensor(flag bool) *CreateOptions {
 // Default: 1 minute
 func (cfg *CreateOptions) WithResyncPeriod(duration time.Duration) *CreateOptions {
 	cfg.resyncPeriod = duration
+	return cfg
+}
+
+// WithTraceWriter sets the trace writer.
+// Default: nil
+func (cfg *CreateOptions) WithTraceWriter(trWriter io.Writer) *CreateOptions {
+	cfg.traceWriter = trWriter
 	return cfg
 }

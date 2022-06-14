@@ -380,34 +380,6 @@ func (r *rocksdbStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string
 	return results, nil
 }
 
-func (r *rocksdbStore) GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs []string, flags dsTypes.GetFlags) (map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus, error) {
-	results := make(map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus)
-	for _, clusterID := range clusterIDs {
-		for _, standardID := range standardIDs {
-			func() {
-				keyMaker := getKeyMaker(clusterID, standardID)
-				iterator := r.db.NewIterator(readOptions)
-				defer iterator.Close()
-				iterator.Seek(keyMaker.getMetadataIterationPrefix())
-				if !iterator.ValidForPrefix(keyMaker.getMetadataIterationPrefix()) {
-					// Might want to record missing instead of just returning
-					return
-				}
-				getArgs := &getLatestResultsArgs{
-					db:       r.db,
-					iterator: iterator,
-					keyMaker: keyMaker,
-					flags:    flags,
-				}
-				resultsWithStatus := getLatestRunResultsRocksdb(getArgs)
-				results[compliance.ClusterStandardPair{ClusterID: clusterID, StandardID: standardID}] = resultsWithStatus
-			}()
-		}
-	}
-
-	return results, nil
-}
-
 func (r *rocksdbStore) getLatestRunMetadata(keyMaker *keyMaker) dsTypes.ComplianceRunsMetadata {
 	var results dsTypes.ComplianceRunsMetadata
 

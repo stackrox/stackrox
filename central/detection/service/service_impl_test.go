@@ -379,44 +379,6 @@ spec:
     type: Rolling
 `
 
-const unregisteredType = `
-apiVersion: apps/v1
-kind: DeploymentConfig
-metadata:
-  name: frontend
-  namespace: frontend
-  labels:
-    app: frontend
-spec:
-  replicas: 5
-  selector:
-    app: frontend
-  template:
-    metadata:
-      labels:
-        app: frontend
-    spec:
-      containers:
-      - image: hello-openshift:latest
-        name: helloworld
-        ports:
-        - containerPort: 8080
-          protocol: TCP
-        restartPolicy: Always
-  triggers:
-  - type: ConfigChange
-  - imageChangeParams:
-      automatic: true
-      containerNames:
-      - helloworld
-      from:
-        kind: ImageStreamTag
-        name: hello-ogpenshift:latest
-    type: ImageChange
-  strategy:
-    type: Rolling
-`
-
 const openshiftDeployConfMultiYaml = `
 apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig

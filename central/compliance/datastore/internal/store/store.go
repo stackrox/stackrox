@@ -12,7 +12,6 @@ type Store interface {
 	GetSpecificRunResults(clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error)
 	GetLatestRunResults(clusterID, standardID string, flags types.GetFlags) (types.ResultsWithStatus, error)
 	GetLatestRunResultsBatch(clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error)
-	GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error)
 	GetLatestRunMetadataBatch(clusterID string, standardIDs []string) (map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata, error)
 	StoreRunResults(results *storage.ComplianceRunResults) error
 	StoreFailure(metadata *storage.ComplianceRunMetadata) error
