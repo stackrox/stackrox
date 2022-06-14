@@ -3,7 +3,10 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"testing"
 
+	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"
@@ -14,20 +17,27 @@ import (
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/namespace/store"
+	postgresStorage "github.com/stackrox/rox/central/namespace/store/postgres"
+	rocksdbStorage "github.com/stackrox/rox/central/namespace/store/rocksdb"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	dackboxPkg "github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/sorted"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 //go:generate mockgen-wrapper
@@ -68,6 +78,24 @@ func New(nsStore store.Store, graphProvider graph.Provider, indexer index.Indexe
 		return nil, err
 	}
 	return ds, nil
+}
+
+// GetTestPostgresDataStore provides a deploymen datastore hooked on postgres for testing purposes.
+func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB, dacky *dackboxPkg.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index) (DataStore, error) {
+	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(ctx, t, pool, gormDB, dacky, keyFence, bleveIndex)
+	assert.NoError(t, err)
+	dbstore := postgresStorage.CreateTableAndNewStore(ctx, pool, gormDB)
+	indexer := postgresStorage.NewIndexer(pool)
+	return New(dbstore, dacky, indexer, deploymentStore, ranking.NamespaceRanker(), idmap.StorageSingleton())
+}
+
+// GetTestRocksBleveDataStore provides a processbaseline datastore hooked on rocksDB and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksEngine *rocksdb.RocksDB, bleveIndex bleve.Index, dacky *dackboxPkg.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Pool) (DataStore, error) {
+	deploymentStore, err := deploymentDataStore.GetTestRocksBleveDataStore(t, rocksEngine, bleveIndex, dacky, keyFence, pool)
+	assert.NoError(t, err)
+	dbstore := rocksdbStorage.New(rocksEngine)
+	indexer := index.New(bleveIndex)
+	return New(dbstore, dacky, indexer, deploymentStore, ranking.NamespaceRanker(), idmap.StorageSingleton())
 }
 
 var (

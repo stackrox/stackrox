@@ -283,14 +283,14 @@ func GetDeploymentCoreDNS_1_8_0(id string) *storage.Deployment {
 	}
 }
 
-func GetScopedDeploymentNginX_1_14_2(ID string, clusterID string, namespace string) *storage.Deployment {
+func GetScopedDeploymentNginX_1_14_2(ID string, namespaceID string, clusterID string, namespace string) *storage.Deployment {
 	return &storage.Deployment{
 		Id:            ID,
-		Name:          "nginc-deployment",
+		Name:          "nginx-deployment",
 		Hash:          1362104289343785658,
 		Type:          "Deployment",
 		Namespace:     namespace,
-		NamespaceId:   "67a01249-5e0a-4f7f-c785-cce2d69aa327",
+		NamespaceId:   namespaceID,
 		Replicas:      2,
 		PodLabels:     map[string]string{"app": "nginx"},
 		LabelSelector: &storage.LabelSelector{MatchLabels: map[string]string{"app": "nginx"}},

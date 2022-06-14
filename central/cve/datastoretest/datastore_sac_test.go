@@ -31,6 +31,7 @@ import (
 	imageComponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
 	imageCVEEdgeDackbox "github.com/stackrox/rox/central/imagecveedge/dackbox"
 	imageCVEEdgeIndex "github.com/stackrox/rox/central/imagecveedge/index"
+	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeIndex "github.com/stackrox/rox/central/node/index"
 	nodecomponentedgeIndex "github.com/stackrox/rox/central/nodecomponentedge/index"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
@@ -67,6 +68,8 @@ type cveDatastoreSACTestSuite struct {
 	pool *pgxpool.Pool
 
 	// cluster datastore to inject data
+	// namespace datastore to inject data
+	namespaceStore namespaceStore.DataStore
 	// deployment datastore to inject data
 	deploymentStore deploymentStore.DataStore
 	// node datastore to inject data
@@ -147,6 +150,20 @@ func getRocksBleveDeploymentStore(dacky *dackbox.DackBox, keyFence concurrency.K
 	return deploymentDataStore
 }
 
+func getPostgresNamespaceStore(ctx context.Context, dacky *dackbox.DackBox, keyFence concurrency.KeyFence,
+	pgPool *pgxpool.Pool, gormDB *gorm.DB, bleveIndex bleve.Index, s *suite.Suite) namespaceStore.DataStore {
+	namespaceDataStore, err := namespaceStore.GetTestPostgresDataStore(ctx, s.T(), pgPool, gormDB, dacky, keyFence, bleveIndex)
+	s.Require().NoError(err)
+	return namespaceDataStore
+}
+
+func getRocksBleveNamespaceStore(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pgPool *pgxpool.Pool,
+	rocksEngine *rocksdb.RocksDB, bleveIndex bleve.Index, s *suite.Suite) namespaceStore.DataStore {
+	namespaceDataStore, err := namespaceStore.GetTestRocksBleveDataStore(s.T(), rocksEngine, bleveIndex, dacky, keyFence, pgPool)
+	s.Require().NoError(err)
+	return namespaceDataStore
+}
+
 func getBleveCVESearcher(storage cveStorage.Store, graphProvider graph.Provider, genericCVEIndexer cveIndex.Indexer, bleveIndex bleve.Index) cveSearch.Searcher {
 	clusterCVEEdgeIndexer := clustercveedgeIndex.New(bleveIndex)
 	componentCVEEdgeIndexer := componentCVEEdgeIndex.New(bleveIndex)
@@ -188,6 +205,7 @@ func (s *cveDatastoreSACTestSuite) SetupSuite() {
 		riskStore := getRocksBleveRiskStore(&s.Suite, s.engine, s.index)
 		s.imageStore = getRocksBleveImageStore(&s.Suite, dacky, keyFence, s.index, riskStore)
 		s.deploymentStore = getRocksBleveDeploymentStore(dacky, keyFence, s.pool, s.engine, s.index, &s.Suite)
+		s.namespaceStore = getRocksBleveNamespaceStore(dacky, keyFence, s.pool, s.engine, s.index, &s.Suite)
 		genericCVEStorage := cveDackboxStorage.New(dacky, keyFence)
 		genericCVEIndexer := cveIndex.New(s.index)
 		genericCVESearcher := getBleveCVESearcher(genericCVEStorage, dacky, genericCVEIndexer, s.index)
@@ -208,10 +226,11 @@ func (s *cveDatastoreSACTestSuite) TearDownSuite() {
 }
 
 func (s *cveDatastoreSACTestSuite) TestGetImageCVEs() {
+	testNamespace := fixtures.GetNamespace(testconsts.Cluster2, testconsts.Cluster2, testconsts.NamespaceB)
+	// testDeployment1 := fixtures.GetDeploymentCoreDNS_1_8_0(uuid.NewV4().String())
+	testDeployment2 := fixtures.GetScopedDeploymentNginX_1_14_2(uuid.NewV4().String(), testNamespace.GetId(), testconsts.Cluster2, testconsts.NamespaceB)
 	testImage1 := fixtures.GetPartialImageKubeProxy_1_21_5()
 	testImage2 := fixtures.GetPartialImageNginX_1_14_2()
-	// testDeployment1 := fixtures.GetDeploymentCoreDNS_1_8_0(uuid.NewV4().String())
-	testDeployment2 := fixtures.GetScopedDeploymentNginX_1_14_2(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	writeAllCtx := sac.WithAllAccess(context.Background())
 	testCtx := s.testContexts[testutils.Cluster2NamespaceBReadWriteCtx]
 	// testCVEID1 := "CVE-2011-4116"
@@ -219,6 +238,7 @@ func (s *cveDatastoreSACTestSuite) TestGetImageCVEs() {
 	var cve *storage.CVE
 	var found bool
 	var err error
+	s.Require().NoError(s.namespaceStore.AddNamespace(writeAllCtx, testNamespace))
 	s.Require().NoError(s.imageStore.UpsertImage(writeAllCtx, testImage1))
 	s.Require().NoError(s.imageStore.UpsertImage(writeAllCtx, testImage2))
 	// s.Require().NoError(s.deploymentStore.UpsertDeployment(writeAllCtx, testDeployment1))
@@ -238,7 +258,7 @@ func (s *cveDatastoreSACTestSuite) TestGetImageCVEs() {
 	s.Equal(testCVEID2, cve.GetId())
 	cve, found, err = s.imageCVEStore.Get(testCtx, testCVEID2)
 	s.NoError(err)
-	// s.True(found)
-	// s.NotNil(cve)
-	// s.Equal(testCVEID2, cve.GetId())
+	s.True(found)
+	s.NotNil(cve)
+	s.Equal(testCVEID2, cve.GetId())
 }
