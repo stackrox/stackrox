@@ -223,44 +223,6 @@ func (s *RocksDBStoreTestSuite) TestGetSpecificRun() {
 	s.Empty(dbResults.FailedRuns)
 }
 
-func (s *RocksDBStoreTestSuite) TestGetLatestRunResultsByClusterAndStandard() {
-	filterIn, domain := store.GetMockResult()
-	s.Require().NoError(s.store.StoreComplianceDomain(domain))
-	s.Require().NoError(s.store.StoreRunResults(filterIn.Clone()))
-
-	filterInOld, _ := store.GetMockResult()
-	filterInOld.RunMetadata.FinishTimestamp.Seconds = filterInOld.RunMetadata.FinishTimestamp.Seconds - 600
-	s.Require().NoError(s.store.StoreRunResults(filterInOld))
-
-	filterOutCluster, _ := store.GetMockResult()
-	filterOutCluster.RunMetadata.ClusterId = "Not this cluster!"
-	s.Require().NoError(s.store.StoreRunResults(filterOutCluster))
-
-	filterOutStandard, _ := store.GetMockResult()
-	filterOutStandard.RunMetadata.StandardId = "Not this standard!"
-	s.Require().NoError(s.store.StoreRunResults(filterOutStandard))
-
-	filterOutClusterAndStandard, _ := store.GetMockResult()
-	filterOutClusterAndStandard.RunMetadata.ClusterId = "Another bad cluster"
-	filterOutClusterAndStandard.RunMetadata.StandardId = "Another bad standard"
-	s.Require().NoError(s.store.StoreRunResults(filterOutClusterAndStandard))
-
-	clusterIDs := []string{filterIn.RunMetadata.ClusterId}
-	standardIDs := []string{filterIn.RunMetadata.StandardId}
-
-	resultMap, err := s.store.GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs, dsTypes.WithMessageStrings)
-	s.Require().NoError(err)
-	expectedPair := compliance.ClusterStandardPair{
-		ClusterID:  filterIn.RunMetadata.ClusterId,
-		StandardID: filterIn.RunMetadata.StandardId,
-	}
-	s.Len(resultMap, 1)
-	s.Require().Contains(resultMap, expectedPair)
-	result := resultMap[expectedPair]
-	s.Equal(filterIn, result.LastSuccessfulResults)
-	s.Empty(result.FailedRuns)
-}
-
 func (s *RocksDBStoreTestSuite) TestGetLatestRunMetadataBatch() {
 	standardOne, _ := store.GetMockResult()
 	s.Require().NoError(s.store.StoreRunResults(standardOne))
@@ -308,14 +270,6 @@ func (s *RocksDBStoreTestSuite) TestGetOnEmpty() {
 
 func (s *RocksDBStoreTestSuite) TestBatchGetOnEmpty() {
 	results, err := s.store.GetLatestRunResultsBatch([]string{"cluster1"}, []string{"standard1, standard2"}, 0)
-	s.NoError(err)
-	s.Len(results, 0)
-}
-
-func (s *RocksDBStoreTestSuite) TestGetLatestRunResultsByClusterAndStandardEmpty() {
-	clusterIDs := []string{"some ID"}
-	standardIDs := []string{"some ID"}
-	results, err := s.store.GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs, 0)
 	s.NoError(err)
 	s.Len(results, 0)
 }

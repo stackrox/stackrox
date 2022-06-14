@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,9 +21,6 @@ var (
 	complianceSAC = sac.ForResource(resources.Compliance)
 
 	log = logging.LoggerForModule()
-
-	// ErrNotAvailable is returned by the aggregation storage/retrieval methods when SAC is enabled.  Those methods cannot be used under SAC.
-	ErrNotAvailable = errors.New("precomputed compliance is not available when SAC is enabled")
 )
 
 type datastoreImpl struct {
@@ -33,11 +29,6 @@ type datastoreImpl struct {
 
 	storedAggregationMutex    sync.RWMutex
 	aggregationSequenceNumber uint64
-}
-
-func (ds *datastoreImpl) QueryControlResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceControlResult, error) {
-	// TODO(ROX-2575): this might need implementing.
-	return nil, errors.New("not yet implemented")
 }
 
 func (ds *datastoreImpl) GetSpecificRunResults(ctx context.Context, clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
@@ -95,18 +86,6 @@ func (ds *datastoreImpl) GetLatestRunResultsBatch(ctx context.Context, clusterID
 	}
 
 	results, err := ds.storage.GetLatestRunResultsBatch(clusterIDs, standardIDs, flags)
-	if err != nil {
-		return nil, err
-	}
-	filteredResults, err := ds.filter.FilterBatchResults(ctx, results)
-	if err != nil {
-		return nil, err
-	}
-	return filteredResults, err
-}
-
-func (ds *datastoreImpl) GetLatestRunResultsForClustersAndStandards(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
-	results, err := ds.storage.GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs, flags)
 	if err != nil {
 		return nil, err
 	}
