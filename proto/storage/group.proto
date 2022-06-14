@@ -7,13 +7,12 @@ package storage;
 
 // Group is a GroupProperties : Role mapping.
 message Group {
-    // GroupProperties define the properties of a group, applying to users when their properties match..
+    // GroupProperties define the properties of a group, applying to users when their properties match.
+    // They also uniquely identify the group with the props.id field.
     GroupProperties props = 1;
 
     // This is the name of the role that will apply to users in this group.
     string role_name = 3;
-    // This is the unique identifier for a group.
-    string id        = 4;
 }
 
 // GroupProperties defines the properties of a group. Groups apply to users when
@@ -23,7 +22,10 @@ message Group {
 //   * If GroupProperties in addition has a claim key, then it applies to all
 //     users with that auth provider and the claim key, etc.
 message GroupProperties {
+    // Unique identifier for group properties and respectively the group.
+    string id               = 4;
+
     string auth_provider_id = 1;
-    string key = 2;
-    string value = 3;
+    string key              = 2;
+    string value            = 3;
 }

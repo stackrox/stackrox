@@ -20,6 +20,9 @@ message GetGroupsRequest {
     oneof value_opt {
         string value = 3;
     }
+    oneof id_opt {
+        string id = 4;
+    }
 }
 
 // API for updating Groups and getting users.
