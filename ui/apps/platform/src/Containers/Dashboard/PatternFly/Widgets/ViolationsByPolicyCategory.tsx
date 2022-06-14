@@ -161,7 +161,8 @@ function ViolationsByPolicyCategoryChart({
         const targetSeverity = policySeverities[index];
         if (newHidden.has(targetSeverity)) {
             newHidden.delete(targetSeverity);
-        } else {
+            // Do not allow the user to disable all severities
+        } else if (hiddenSeverities.size < 3) {
             newHidden.add(targetSeverity);
         }
         setHiddenSeverities(newHidden);
