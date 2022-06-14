@@ -13,7 +13,7 @@ kubectl create ns proxies --dry-run -o yaml | kubectl apply -f -
 kubectl label ns proxies --overwrite stackrox-proxies=true
 
 kubectl -n proxies create cm nginx-proxy-plain-http-conf \
-    --from-file <(server_name="${server_name}" envsubst <"${dir}/nginx-proxy-plain-http.conf") \
+	--from-file <(server_name="${server_name}" envsubst <"${dir}/nginx-proxy-plain-http.conf") \
 	--dry-run -o yaml | kubectl apply -f -
 
 kubectl apply -f "${dir}/nginx-proxy-plain-http.yaml"
