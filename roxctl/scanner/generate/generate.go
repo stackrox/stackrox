@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -62,13 +63,9 @@ func (cmd *scannerGenerateCommand) validate() error {
 
 func (cmd *scannerGenerateCommand) generate(logger logger.Logger) error {
 	if cmd.enablePodSecurityPolicies {
-		logger.InfofLn("Scanner deployment bundle includes PodSecurityPolicies (PSPs). This is incompatible with Kubernetes >= v1.25.")
-		logger.InfofLn("Use --enable-pod-security-policies=false for disabling PodSecurityPolicies.")
-		logger.InfofLn("For the time being PodSecurityPolicies remain enabled by default in deployment bundles and need to be disabled explicitly for Kubernetes >= v1.25.")
+		common.LogInfoPspEnabled(logger)
 	} else {
-		logger.InfofLn("Scanner deployment bundle does not include PodSecurityPolicies (PSPs).")
-		logger.InfofLn("This is incompatible with pre-v1.25 Kubernetes installations having the PodSecurityPolicy Admission Controller plugin enabled.")
-		logger.InfofLn("Use --enable-pod-security-policies if PodSecurityPolicies are required for your Kubernetes environment.")
+		common.LogInfoPspDisabled(logger)
 	}
 
 	cmd.apiParams.ClusterType = clustertype.Get().String()

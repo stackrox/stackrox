@@ -204,13 +204,9 @@ func OutputZip(logger logger.Logger, config renderer.Config) error {
 	logger.InfofLn("Generating deployment bundle...")
 
 	if config.EnablePodSecurityPolicies {
-		logger.InfofLn("Central deployment bundle includes PodSecurityPolicies (PSPs). This is incompatible with Kubernetes >= v1.25.")
-		logger.InfofLn("Use --enable-pod-security-policies=false for disabling PodSecurityPolicies.")
-		logger.InfofLn("For the time being PodSecurityPolicies remain enabled by default in deployment bundles and need to be disabled explicitly for Kubernetes >= v1.25.")
+		common.LogInfoPspEnabled(logger)
 	} else {
-		logger.InfofLn("Central deployment bundle does not include PodSecurityPolicies (PSPs).")
-		logger.InfofLn("This is incompatible with pre-v1.25 Kubernetes installations having the PodSecurityPolicy Admission Controller plugin enabled.")
-		logger.InfofLn("Use --enable-pod-security-policies if PodSecurityPolicies are required for your Kubernetes environment.")
+		common.LogInfoPspDisabled(logger)
 	}
 	wrapper, err := createBundle(logger, config)
 	if err != nil {

@@ -131,13 +131,9 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	s.setClusterDefaults(env)
 
 	if s.enablePodSecurityPolicies {
-		s.env.Logger().InfofLn("Sensor deployment bundle includes PodSecurityPolicies (PSPs). This is incompatible with Kubernetes >= v1.25.")
-		s.env.Logger().InfofLn("Use --enable-pod-security-policies=false for disabling PodSecurityPolicies.")
-		s.env.Logger().InfofLn("For the time being PodSecurityPolicies remain enabled by default in deployment bundles and need to be disabled explicitly for Kubernetes >= v1.25.")
+		common.LogInfoPspEnabled(s.env.Logger())
 	} else {
-		s.env.Logger().InfofLn("Sensor deployment bundle does not include PodSecurityPolicies (PSPs).")
-		s.env.Logger().InfofLn("This is incompatible with pre-v1.25 Kubernetes installations having the PodSecurityPolicy Admission Controller plugin enabled.")
-		s.env.Logger().InfofLn("Use --enable-pod-security-policies if PodSecurityPolicies are required for your Kubernetes environment.")
+		common.LogInfoPspDisabled(s.env.Logger())
 	}
 
 	id, err := s.createCluster(ctx, service)
