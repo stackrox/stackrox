@@ -2,6 +2,7 @@ package rocksdb
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -152,7 +153,7 @@ func (r *rocksdbResultsFuture) Get(getArgs *getLatestResultsArgs) dsTypes.Result
 	return r.resultsWithStatus
 }
 
-func (r *rocksdbStore) GetSpecificRunResults(clusterID, standardID, runID string, flags dsTypes.GetFlags) (dsTypes.ResultsWithStatus, error) {
+func (r *rocksdbStore) GetSpecificRunResults(_ context.Context, clusterID, standardID, runID string, flags dsTypes.GetFlags) (dsTypes.ResultsWithStatus, error) {
 	var results dsTypes.ResultsWithStatus
 
 	runIDBytes := []byte(runID)
@@ -188,8 +189,8 @@ func (r *rocksdbStore) GetSpecificRunResults(clusterID, standardID, runID string
 	return dsTypes.ResultsWithStatus{}, errors.Errorf("compliance results for run ID %q not found", runID)
 }
 
-func (r *rocksdbStore) GetLatestRunResults(clusterID, standardID string, flags dsTypes.GetFlags) (dsTypes.ResultsWithStatus, error) {
-	allResults, err := r.GetLatestRunResultsBatch([]string{clusterID}, []string{standardID}, flags)
+func (r *rocksdbStore) GetLatestRunResults(ctx context.Context, clusterID, standardID string, flags dsTypes.GetFlags) (dsTypes.ResultsWithStatus, error) {
+	allResults, err := r.GetLatestRunResultsBatch(ctx, []string{clusterID}, []string{standardID}, flags)
 	if err != nil {
 		return dsTypes.ResultsWithStatus{}, err
 	}
@@ -336,7 +337,7 @@ func getDomainKey(clusterID, domainID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s:%s", string(domainKey), clusterID, domainID))
 }
 
-func (r *rocksdbStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string, flags dsTypes.GetFlags) (map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus, error) {
+func (r *rocksdbStore) GetLatestRunResultsBatch(_ context.Context, clusterIDs, standardIDs []string, flags dsTypes.GetFlags) (map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus, error) {
 	if err := r.db.IncRocksDBInProgressOps(); err != nil {
 		return nil, err
 	}
@@ -403,7 +404,7 @@ func (r *rocksdbStore) getLatestRunMetadata(keyMaker *keyMaker) dsTypes.Complian
 	return results
 }
 
-func (r *rocksdbStore) GetLatestRunMetadataBatch(clusterID string, standardIDs []string) (map[compliance.ClusterStandardPair]dsTypes.ComplianceRunsMetadata, error) {
+func (r *rocksdbStore) GetLatestRunMetadataBatch(_ context.Context, clusterID string, standardIDs []string) (map[compliance.ClusterStandardPair]dsTypes.ComplianceRunsMetadata, error) {
 	results := make(map[compliance.ClusterStandardPair]dsTypes.ComplianceRunsMetadata)
 	for _, standardID := range standardIDs {
 		keyMaker := getKeyMaker(clusterID, standardID)
@@ -414,7 +415,7 @@ func (r *rocksdbStore) GetLatestRunMetadataBatch(clusterID string, standardIDs [
 	return results, nil
 }
 
-func (r *rocksdbStore) StoreRunResults(runResults *storage.ComplianceRunResults) error {
+func (r *rocksdbStore) StoreRunResults(_ context.Context, runResults *storage.ComplianceRunResults) error {
 	metadata := runResults.GetRunMetadata()
 	if metadata == nil {
 		return errors.New("run results have no metadata")
@@ -482,7 +483,7 @@ func (r *rocksdbStore) StoreRunResults(runResults *storage.ComplianceRunResults)
 	return nil
 }
 
-func (r *rocksdbStore) StoreFailure(metadata *storage.ComplianceRunMetadata) error {
+func (r *rocksdbStore) StoreFailure(_ context.Context, metadata *storage.ComplianceRunMetadata) error {
 	if metadata.Success || metadata.ErrorMessage == "" {
 		return errors.New("metadata passed to StoreFailure must indicate failure and have an error message set")
 	}
@@ -504,7 +505,7 @@ func (r *rocksdbStore) StoreFailure(metadata *storage.ComplianceRunMetadata) err
 	return errors.Wrap(err, "storing metadata")
 }
 
-func (r *rocksdbStore) StoreComplianceDomain(domain *storage.ComplianceDomain) error {
+func (r *rocksdbStore) StoreComplianceDomain(_ context.Context, domain *storage.ComplianceDomain) error {
 	serializedDomain, err := domain.Marshal()
 	if err != nil {
 		return errors.Wrap(err, "serializing domain")
@@ -515,7 +516,7 @@ func (r *rocksdbStore) StoreComplianceDomain(domain *storage.ComplianceDomain) e
 	return errors.Wrap(err, "storing domain")
 }
 
-func (r *rocksdbStore) GetAggregationResult(queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+func (r *rocksdbStore) GetAggregationResult(_ context.Context, queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
 	key := r.getAggregationKeyForQuery(queryString, groupBy, unit)
 	resSlice, err := r.db.Get(readOptions, key)
 	if err != nil {
@@ -557,7 +558,7 @@ func (r *rocksdbStore) GetAggregationResult(queryString string, groupBy []storag
 	return res.GetResults(), res.GetSources(), domains, nil
 }
 
-func (r *rocksdbStore) StoreAggregationResult(queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope, results []*storage.ComplianceAggregation_Result, sources []*storage.ComplianceAggregation_Source, domainMap map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain) error {
+func (r *rocksdbStore) StoreAggregationResult(_ context.Context, queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope, results []*storage.ComplianceAggregation_Result, sources []*storage.ComplianceAggregation_Source, domainMap map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain) error {
 	preComputedResult := &storage.PreComputedComplianceAggregation{
 		Results: results,
 		Sources: sources,
@@ -605,7 +606,7 @@ func commaSeparatedScopes(scopes []storage.ComplianceAggregation_Scope) string {
 	return strings.Join(stringScopes, ",")
 }
 
-func (r *rocksdbStore) ClearAggregationResults() error {
+func (r *rocksdbStore) ClearAggregationResults(_ context.Context) error {
 	if err := r.db.IncRocksDBInProgressOps(); err != nil {
 		return errors.Wrap(err, "communicating with RocksDB")
 	}
