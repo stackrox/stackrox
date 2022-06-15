@@ -1,6 +1,7 @@
 package rocksdb
 
 import (
+	"context"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,9 +25,13 @@ type RocksDBStoreTestSuite struct {
 
 	db    *rocksdb.RocksDB
 	store store.Store
+
+	ctx context.Context
 }
 
 func (s *RocksDBStoreTestSuite) SetupTest() {
+	s.ctx = context.Background()
+
 	db, err := rocksdb.NewTemp("compliance_db_test")
 	s.Require().NoError(err)
 	s.db = db
@@ -51,7 +56,7 @@ func readFromDB(db *rocksdb.RocksDB, key []byte, protoObject proto.Message) erro
 }
 
 func (s *RocksDBStoreTestSuite) validateLatestResults(results *storage.ComplianceRunResults, flags dsTypes.GetFlags, failedRuns ...*storage.ComplianceRunMetadata) {
-	dbResult, err := s.store.GetLatestRunResults(results.RunMetadata.ClusterId, results.RunMetadata.StandardId, flags)
+	dbResult, err := s.store.GetLatestRunResults(s.ctx, results.RunMetadata.ClusterId, results.RunMetadata.StandardId, flags)
 	s.Require().NoError(err)
 	s.Equal(results, dbResult.LastSuccessfulResults)
 	s.Len(dbResult.FailedRuns, len(failedRuns))
@@ -73,7 +78,7 @@ func (s *RocksDBStoreTestSuite) storeAggregationResult() ([]*storage.ComplianceA
 		RunId:           runID,
 		FinishTimestamp: types.TimestampNow(),
 	}
-	s.Require().NoError(s.store.StoreRunResults(&storage.ComplianceRunResults{
+	s.Require().NoError(s.store.StoreRunResults(s.ctx, &storage.ComplianceRunResults{
 		RunMetadata: metadata,
 	}))
 
@@ -83,7 +88,7 @@ func (s *RocksDBStoreTestSuite) storeAggregationResult() ([]*storage.ComplianceA
 			Id: clusterID,
 		},
 	}
-	s.Require().NoError(s.store.StoreComplianceDomain(domain))
+	s.Require().NoError(s.store.StoreComplianceDomain(s.ctx, domain))
 
 	results := []*storage.ComplianceAggregation_Result{
 		{
@@ -104,14 +109,14 @@ func (s *RocksDBStoreTestSuite) storeAggregationResult() ([]*storage.ComplianceA
 		results[0]: domain,
 	}
 
-	s.Require().NoError(s.store.StoreAggregationResult(queryString, groupBy, unit, results, sources, domainMap))
+	s.Require().NoError(s.store.StoreAggregationResult(s.ctx, queryString, groupBy, unit, results, sources, domainMap))
 
 	return results, sources, domainMap, queryString, groupBy, unit
 }
 
 func (s *RocksDBStoreTestSuite) TestStoreComplianceResult() {
 	result, _ := store.GetMockResult()
-	err := s.store.StoreRunResults(result)
+	err := s.store.StoreRunResults(s.ctx, result)
 	s.Require().NoError(err)
 	keyMaker := getKeyMaker(result.RunMetadata.ClusterId, result.RunMetadata.StandardId)
 
@@ -137,13 +142,13 @@ func (s *RocksDBStoreTestSuite) TestStoreComplianceResult() {
 func (s *RocksDBStoreTestSuite) TestStoreDomain() {
 	result, domain := store.GetMockResult()
 
-	s.Require().NoError(s.store.StoreRunResults(result))
-	_, err := s.store.GetSpecificRunResults(result.GetRunMetadata().GetClusterId(), result.GetRunMetadata().GetStandardId(), result.GetRunMetadata().GetRunId(), dsTypes.WithMessageStrings)
+	s.Require().NoError(s.store.StoreRunResults(s.ctx, result))
+	_, err := s.store.GetSpecificRunResults(s.ctx, result.GetRunMetadata().GetClusterId(), result.GetRunMetadata().GetStandardId(), result.GetRunMetadata().GetRunId(), dsTypes.WithMessageStrings)
 	// Run results without a domain are invalid
 	s.Require().Error(err)
 
-	s.Require().NoError(s.store.StoreComplianceDomain(domain))
-	dbResult, err := s.store.GetSpecificRunResults(result.GetRunMetadata().GetClusterId(), result.GetRunMetadata().GetStandardId(), result.GetRunMetadata().GetRunId(), dsTypes.WithMessageStrings)
+	s.Require().NoError(s.store.StoreComplianceDomain(s.ctx, domain))
+	dbResult, err := s.store.GetSpecificRunResults(s.ctx, result.GetRunMetadata().GetClusterId(), result.GetRunMetadata().GetStandardId(), result.GetRunMetadata().GetRunId(), dsTypes.WithMessageStrings)
 	s.Require().NoError(err)
 	s.Equal(domain, dbResult.LastSuccessfulResults.Domain)
 }
@@ -151,11 +156,11 @@ func (s *RocksDBStoreTestSuite) TestStoreDomain() {
 func (s *RocksDBStoreTestSuite) TestStoreFailedComplianceResult() {
 	result, _ := store.GetMockResult()
 	result.RunMetadata.Success = false
-	s.Error(s.store.StoreRunResults(result))
+	s.Error(s.store.StoreRunResults(s.ctx, result))
 
 	result, _ = store.GetMockResult()
 	result.RunMetadata = nil
-	s.Error(s.store.StoreRunResults(result))
+	s.Error(s.store.StoreRunResults(s.ctx, result))
 }
 
 func (s *RocksDBStoreTestSuite) TestGetLatest() {
@@ -166,14 +171,14 @@ func (s *RocksDBStoreTestSuite) TestGetLatest() {
 	expectedNewerResult := newerResult.Clone()
 	expectedOlderResult := olderResult.Clone()
 
-	err := s.store.StoreComplianceDomain(domain)
+	err := s.store.StoreComplianceDomain(s.ctx, domain)
 	s.Require().NoError(err)
 
-	err = s.store.StoreRunResults(olderResult)
+	err = s.store.StoreRunResults(s.ctx, olderResult)
 	s.Require().NoError(err)
 	s.validateLatestResults(expectedOlderResult, dsTypes.WithMessageStrings)
 
-	err = s.store.StoreRunResults(newerResult)
+	err = s.store.StoreRunResults(s.ctx, newerResult)
 	s.Require().NoError(err)
 	s.validateLatestResults(expectedNewerResult, dsTypes.WithMessageStrings)
 }
@@ -185,13 +190,13 @@ func (s *RocksDBStoreTestSuite) TestStoreFailure() {
 	failedResult.FinishTimestamp.Seconds = failedResult.FinishTimestamp.Seconds + 600
 	failedResult.ErrorMessage = "Test error message"
 
-	err := s.store.StoreRunResults(oldResult.Clone())
+	err := s.store.StoreRunResults(s.ctx, oldResult.Clone())
 	s.Require().NoError(err)
-	err = s.store.StoreComplianceDomain(domain)
+	err = s.store.StoreComplianceDomain(s.ctx, domain)
 	s.Require().NoError(err)
 	s.validateLatestResults(oldResult, dsTypes.WithMessageStrings)
 
-	err = s.store.StoreFailure(failedResult)
+	err = s.store.StoreFailure(s.ctx, failedResult)
 	s.Require().NoError(err)
 	s.validateLatestResults(oldResult, dsTypes.WithMessageStrings, failedResult)
 }
@@ -205,19 +210,19 @@ func (s *RocksDBStoreTestSuite) TestGetSpecificRun() {
 	tooLate.RunMetadata.RunId = "Too late"
 	tooLate.RunMetadata.FinishTimestamp.Seconds = tooLate.RunMetadata.FinishTimestamp.Seconds + 600
 
-	err := s.store.StoreComplianceDomain(domain)
+	err := s.store.StoreComplianceDomain(s.ctx, domain)
 	s.Require().NoError(err)
 
-	err = s.store.StoreRunResults(tooEarly)
+	err = s.store.StoreRunResults(s.ctx, tooEarly)
 	s.Require().NoError(err)
 
-	err = s.store.StoreRunResults(justRight.Clone())
+	err = s.store.StoreRunResults(s.ctx, justRight.Clone())
 	s.Require().NoError(err)
 
-	err = s.store.StoreRunResults(tooLate)
+	err = s.store.StoreRunResults(s.ctx, tooLate)
 	s.Require().NoError(err)
 
-	dbResults, err := s.store.GetSpecificRunResults(justRight.RunMetadata.ClusterId, justRight.RunMetadata.StandardId, justRight.RunMetadata.RunId, dsTypes.WithMessageStrings)
+	dbResults, err := s.store.GetSpecificRunResults(s.ctx, justRight.RunMetadata.ClusterId, justRight.RunMetadata.StandardId, justRight.RunMetadata.RunId, dsTypes.WithMessageStrings)
 	s.Require().NoError(err)
 	s.Equal(justRight, dbResults.LastSuccessfulResults)
 	s.Empty(dbResults.FailedRuns)
@@ -225,21 +230,21 @@ func (s *RocksDBStoreTestSuite) TestGetSpecificRun() {
 
 func (s *RocksDBStoreTestSuite) TestGetLatestRunMetadataBatch() {
 	standardOne, _ := store.GetMockResult()
-	s.Require().NoError(s.store.StoreRunResults(standardOne))
+	s.Require().NoError(s.store.StoreRunResults(s.ctx, standardOne))
 
 	standardTwo, _ := store.GetMockResult()
 	standardTwo.RunMetadata.StandardId = "Bla bla bla"
-	s.Require().NoError(s.store.StoreRunResults(standardTwo))
+	s.Require().NoError(s.store.StoreRunResults(s.ctx, standardTwo))
 
 	standardFilterOut, _ := store.GetMockResult()
 	standardFilterOut.RunMetadata.StandardId = "Joseph Rules"
-	s.Require().NoError(s.store.StoreRunResults(standardFilterOut))
+	s.Require().NoError(s.store.StoreRunResults(s.ctx, standardFilterOut))
 
 	clusterFilterOut, _ := store.GetMockResult()
 	clusterFilterOut.RunMetadata.ClusterId = "Agdjklgrkjl"
-	s.Require().NoError(s.store.StoreRunResults(clusterFilterOut))
+	s.Require().NoError(s.store.StoreRunResults(s.ctx, clusterFilterOut))
 
-	resultsMap, err := s.store.GetLatestRunMetadataBatch(standardOne.RunMetadata.ClusterId, []string{standardOne.RunMetadata.StandardId, standardTwo.RunMetadata.StandardId})
+	resultsMap, err := s.store.GetLatestRunMetadataBatch(s.ctx, standardOne.RunMetadata.ClusterId, []string{standardOne.RunMetadata.StandardId, standardTwo.RunMetadata.StandardId})
 	s.Require().NoError(err)
 	s.Len(resultsMap, 2)
 
@@ -263,13 +268,13 @@ func (s *RocksDBStoreTestSuite) TestGetLatestRunMetadataBatch() {
 }
 
 func (s *RocksDBStoreTestSuite) TestGetOnEmpty() {
-	results, err := s.store.GetLatestRunResults("foo", "bar", 0)
+	results, err := s.store.GetLatestRunResults(s.ctx, "foo", "bar", 0)
 	s.Zero(results)
 	s.Error(err)
 }
 
 func (s *RocksDBStoreTestSuite) TestBatchGetOnEmpty() {
-	results, err := s.store.GetLatestRunResultsBatch([]string{"cluster1"}, []string{"standard1, standard2"}, 0)
+	results, err := s.store.GetLatestRunResultsBatch(s.ctx, []string{"cluster1"}, []string{"standard1, standard2"}, 0)
 	s.NoError(err)
 	s.Len(results, 0)
 }
@@ -316,8 +321,8 @@ func (s *RocksDBStoreTestSuite) TestStoreAndRetrieveExternalizedStrings() {
 		},
 	}
 
-	s.Require().NoError(s.store.StoreRunResults(results))
-	s.Require().NoError(s.store.StoreComplianceDomain(domain))
+	s.Require().NoError(s.store.StoreRunResults(s.ctx, results))
+	s.Require().NoError(s.store.StoreComplianceDomain(s.ctx, domain))
 	s.validateLatestResults(expectedResultsWithoutExternalizedStrings, 0)
 	s.validateLatestResults(expectedResultsWithExternalizedStrings, dsTypes.WithMessageStrings)
 }
@@ -327,11 +332,11 @@ func (s *RocksDBStoreTestSuite) TestSameDomain() {
 	testRunTwo, _ := store.GetMockResult()
 	testRunTwo.RunMetadata.RunId = "some other run ID"
 	testRunTwo.RunMetadata.StandardId = "Joseph Rules"
-	s.Require().NoError(s.store.StoreRunResults(testRunOne.Clone()))
-	s.Require().NoError(s.store.StoreRunResults(testRunTwo.Clone()))
-	s.Require().NoError(s.store.StoreComplianceDomain(domainOne))
+	s.Require().NoError(s.store.StoreRunResults(s.ctx, testRunOne.Clone()))
+	s.Require().NoError(s.store.StoreRunResults(s.ctx, testRunTwo.Clone()))
+	s.Require().NoError(s.store.StoreComplianceDomain(s.ctx, domainOne))
 
-	latest, err := s.store.GetLatestRunResultsBatch(
+	latest, err := s.store.GetLatestRunResultsBatch(s.ctx,
 		[]string{
 			testRunOne.RunMetadata.ClusterId,
 			testRunTwo.RunMetadata.ClusterId,
@@ -358,7 +363,7 @@ func (s *RocksDBStoreTestSuite) TestSameDomain() {
 func (s *RocksDBStoreTestSuite) TestStoreAggregationResult() {
 	results, sources, domainMap, queryString, groupBy, unit := s.storeAggregationResult()
 
-	dbResults, dbSources, dbDomainMap, err := s.store.GetAggregationResult(queryString, groupBy, unit)
+	dbResults, dbSources, dbDomainMap, err := s.store.GetAggregationResult(s.ctx, queryString, groupBy, unit)
 	s.Require().NoError(err)
 	s.Equal(results, dbResults)
 	s.Equal(sources, dbSources)
@@ -376,14 +381,14 @@ func (s *RocksDBStoreTestSuite) TestStoreAggregationResult() {
 
 func (s *RocksDBStoreTestSuite) TestClearAggregations() {
 	_, _, _, queryString, groupBy, unit := s.storeAggregationResult()
-	dbResults, dbSources, dbDomainMap, err := s.store.GetAggregationResult(queryString, groupBy, unit)
+	dbResults, dbSources, dbDomainMap, err := s.store.GetAggregationResult(s.ctx, queryString, groupBy, unit)
 	s.Require().NoError(err)
 	s.Require().NotNil(dbResults)
 	s.Require().NotNil(dbSources)
 	s.Require().NotNil(dbDomainMap)
 
-	s.Require().NoError(s.store.ClearAggregationResults())
-	dbResults, dbSources, dbDomainMap, err = s.store.GetAggregationResult(queryString, groupBy, unit)
+	s.Require().NoError(s.store.ClearAggregationResults(s.ctx))
+	dbResults, dbSources, dbDomainMap, err = s.store.GetAggregationResult(s.ctx, queryString, groupBy, unit)
 	s.Require().NoError(err)
 	s.Require().Nil(dbResults)
 	s.Require().Nil(dbSources)
