@@ -160,7 +160,7 @@ const DeploymentDetails = ({ deployment }) => {
                         <Card isFlat data-testid="network-policy">
                             <CardBody>
                                 {namespacePoliciesList?.length > 0 ? (
-                                    <TableComposable aria-label="Simple table" variant="compact">
+                                    <TableComposable variant="compact">
                                         <Caption>
                                             <Title headingLevel="h3">All network policies</Title>
                                             in &quot;{deploymentObj.namespace}&quot; namespace
@@ -183,8 +183,8 @@ const DeploymentDetails = ({ deployment }) => {
                                     </TableComposable>
                                 ) : (
                                     <>
-                                        No network policies found in namespace &quot;
-                                        {deploymentObj.namespace}&quot;
+                                        No network policies found in &quot;
+                                        {deploymentObj.namespace}&quot; namespace
                                     </>
                                 )}
                             </CardBody>
