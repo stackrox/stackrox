@@ -27,7 +27,7 @@ function DeploymentsAtMostRisk() {
                 </Flex>
             }
         >
-            <DeploymentsAtMostRiskTable deployments={deployments} />
+            <DeploymentsAtMostRiskTable deployments={deployments} searchFilter={searchFilter} />
         </WidgetCard>
     );
 }

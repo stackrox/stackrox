@@ -4,13 +4,8 @@ import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-tab
 
 import { ListDeployment } from 'types/deployment.proto';
 import { networkBasePath, riskBasePath } from 'routePaths';
-import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
-
-type DeploymentsAtMostRiskTableProps = {
-    deployments: ListDeployment[];
-};
 
 const columnNames = {
     deployment: 'Deployment',
@@ -26,8 +21,15 @@ function linkToDeployment(id: string, name: string, searchFilter: SearchFilter):
     return `${riskBasePath}/${id}?${query}`;
 }
 
-function DeploymentsAtMostRiskTable({ deployments }: DeploymentsAtMostRiskTableProps) {
-    const { searchFilter } = useURLSearch();
+type DeploymentsAtMostRiskTableProps = {
+    deployments: ListDeployment[];
+    searchFilter: SearchFilter;
+};
+
+function DeploymentsAtMostRiskTable({
+    deployments,
+    searchFilter,
+}: DeploymentsAtMostRiskTableProps) {
     return (
         <TableComposable
             aria-label="Deployments at most risk"
