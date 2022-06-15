@@ -4,7 +4,7 @@ workdir="$(mktemp -d)"
 
 echo "Workdir is ${workdir}"
 
-git -C "$workdir" clone git@github.com:stackrox/rox.git .
+git -C "$workdir" clone git@github.com:stackrox/stackrox.git .
 
 for tag in $(git -C "$workdir" tag | egrep '^3\.(6[3-9]|0\.62)\.\d+$' | sort -V); do
 	version="$(echo "$tag" | sed -E 's@^3.0.([[:digit:]]+\.[[:digit:]]+)(-)?@3.\1\2@g')"

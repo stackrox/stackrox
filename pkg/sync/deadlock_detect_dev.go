@@ -23,7 +23,7 @@ const (
 var (
 	// panicOnTimeoutRegex finds invocations of panicOnTimeoutMarked on the stack, which allow figuring out since
 	// when an action is waiting to complete.
-	panicOnTimeoutRegex = regexp.MustCompile(`\ngithub\.com/stackrox/rox/pkg/sync\.panicOnTimeoutMarked\([^\n]*, 0x([0-9a-f]+), 0x([0-9a-f]+)\)\n`)
+	panicOnTimeoutRegex = regexp.MustCompile(`\ngithub.com/stackrox/stackrox/pkg/sync\.panicOnTimeoutMarked\([^\n]*, 0x([0-9a-f]+), 0x([0-9a-f]+)\)\n`)
 )
 
 func init() {

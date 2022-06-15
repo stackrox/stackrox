@@ -17,7 +17,7 @@ const (
 	wildcard         = `_`
 )
 
-var roxctlPkgPattern = regexp.MustCompile(`^github\.com/stackrox/rox/roxctl(/|$)`)
+var roxctlPkgPattern = regexp.MustCompile(`^github.com/stackrox/stackrox/roxctl(/|$)`)
 
 // Analyzer is the analyzer.
 var Analyzer = &analysis.Analyzer{
