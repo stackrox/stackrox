@@ -279,7 +279,9 @@ func dumpMessages(messages []*central.MsgFromSensor, start, end time.Time, outfi
 		utils.CrashOnError(os.WriteFile(outfile, data, 0644))
 	case rawFormat:
 		file, err := os.OpenFile(outfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		defer file.Close()
+		defer func() {
+			utils.CrashOnError(file.Close())
+		}()
 		utils.CrashOnError(err)
 		for _, m := range messages {
 			d, err := m.Marshal()
