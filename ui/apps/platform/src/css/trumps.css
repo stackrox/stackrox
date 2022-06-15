@@ -99,13 +99,18 @@ button.pf-c-tree-view__node {
     height: calc(100% - 112px) !important;
 }
 
-/* For classic components to equal or exceed z-index of PatternFly elements. */
+/* Overrides Tailwind bolding of PF ToggleGroup buttons */
+.pf-c-toggle-group__button {
+    font-weight: var(--pf-global--FontWeight--normal);
+}
 
 /* override PatternFly DescriptionList horizontal variant to allow long keys and values to wrap */
 .pf-c-description-list__term,
 .pf-c-description-list__description{
     word-break: break-all;
 }
+
+/* For classic components to equal or exceed z-index of PatternFly elements. */
 
 .z-xs-100 {
     z-index: 100; /* --pf-global--ZIndex--xs */
