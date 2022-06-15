@@ -287,7 +287,7 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 // It converts all the fields except except Fixed By which gets set depending on the CVE
 func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVulnerability {
 	embeddedCVE := &storage.EmbeddedVulnerability{
-		Cve:                   vuln.GetId(),
+		Cve:                   vuln.GetCveBaseInfo().GetCve(),
 		Cvss:                  vuln.GetCvss(),
 		Summary:               vuln.GetCveBaseInfo().GetSummary(),
 		Link:                  vuln.GetCveBaseInfo().GetLink(),

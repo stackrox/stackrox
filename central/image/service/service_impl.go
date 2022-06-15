@@ -8,7 +8,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
@@ -82,9 +81,8 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	datastore    datastore.DataStore
-	cveDatastore cveDataStore.DataStore
-	riskManager  manager.Manager
+	datastore   datastore.DataStore
+	riskManager manager.Manager
 
 	metadataCache expiringcache.Cache
 
