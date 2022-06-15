@@ -3,7 +3,7 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
 
-set -u
+set -euo pipefail
 
 go mod tidy
 
