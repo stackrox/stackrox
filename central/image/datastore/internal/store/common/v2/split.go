@@ -3,9 +3,9 @@ package common
 import (
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/scancomponent"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -16,8 +16,6 @@ func Split(image *storage.Image, withComponents bool) ImageParts {
 		ImageCVEEdges: make(map[string]*storage.ImageCVEEdge),
 	}
 
-	// These need to be called in order.
-	parts.ListImage = splitListImage(parts)
 	if withComponents {
 		parts.Children = splitComponents(parts)
 	}
@@ -57,15 +55,15 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
 	addedCVEs := set.NewStringSet()
 	for _, cve := range embedded.GetVulns() {
-		convertedCVE := converter.EmbeddedCVEToProtoCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
+		convertedCVE := converter.EmbeddedVulnerabilityToImageCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
 		if !addedCVEs.Add(convertedCVE.GetId()) {
 			continue
 		}
 		cp := CVEParts{}
-		cp.Cve = convertedCVE
-		cp.Edge = generateComponentCVEEdge(component.Component, cp.Cve, cve)
-		if _, ok := parts.ImageCVEEdges[cp.Cve.GetId()]; !ok {
-			parts.ImageCVEEdges[cp.Cve.GetId()] = generateImageCVEEdge(parts.Image.GetId(), cp.Cve, cve)
+		cp.CVE = convertedCVE
+		cp.Edge = generateComponentCVEEdge(component.Component, cp.CVE, cve)
+		if _, ok := parts.ImageCVEEdges[cp.CVE.GetId()]; !ok {
+			parts.ImageCVEEdges[cp.CVE.GetId()] = generateImageCVEEdge(parts.Image.GetId(), cp.CVE, cve)
 		}
 		ret = append(ret, cp)
 	}
@@ -73,9 +71,9 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 	return ret
 }
 
-func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, convertedCVE *storage.CVE, embedded *storage.EmbeddedVulnerability) *storage.ComponentCVEEdge {
+func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, convertedCVE *storage.ImageCVE, embedded *storage.EmbeddedVulnerability) *storage.ComponentCVEEdge {
 	ret := &storage.ComponentCVEEdge{
-		Id:               edges.EdgeID{ParentID: convertedComponent.GetId(), ChildID: convertedCVE.GetId()}.ToString(),
+		Id:               postgres.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}),
 		IsFixable:        embedded.GetFixedBy() != "",
 		ImageCveId:       convertedCVE.GetId(),
 		ImageComponentId: convertedComponent.GetId(),
@@ -110,12 +108,11 @@ func generateImageComponent(os string, from *storage.EmbeddedImageScanComponent)
 
 func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.ImageComponent, embedded *storage.EmbeddedImageScanComponent) *storage.ImageComponentEdge {
 	ret := &storage.ImageComponentEdge{
-		Id:               edges.EdgeID{ParentID: image.GetId(), ChildID: convImgComponent.GetId()}.ToString(),
+		Id:               postgres.IDFromPks([]string{image.GetId(), convImgComponent.GetId()}),
 		ImageId:          image.GetId(),
 		ImageComponentId: convImgComponent.GetId(),
 		Location:         embedded.GetLocation(),
 	}
-
 	if embedded.HasLayerIndex != nil {
 		ret.HasLayerIndex = &storage.ImageComponentEdge_LayerIndex{
 			LayerIndex: embedded.GetLayerIndex(),
@@ -124,14 +121,13 @@ func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.
 	return ret
 }
 
-func generateImageCVEEdge(imageID string, convertedCVE *storage.CVE, embedded *storage.EmbeddedVulnerability) *storage.ImageCVEEdge {
+func generateImageCVEEdge(imageID string, convertedCVE *storage.ImageCVE, embedded *storage.EmbeddedVulnerability) *storage.ImageCVEEdge {
 	ret := &storage.ImageCVEEdge{
-		Id:         edges.EdgeID{ParentID: imageID, ChildID: convertedCVE.GetId()}.ToString(),
+		Id:         postgres.IDFromPks([]string{imageID, convertedCVE.GetId()}),
 		State:      embedded.GetState(),
 		ImageId:    imageID,
 		ImageCveId: convertedCVE.GetId(),
 	}
-
 	if ret.GetState() != storage.VulnerabilityState_OBSERVED {
 		return ret
 	}

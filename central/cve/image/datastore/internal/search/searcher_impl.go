@@ -3,8 +3,8 @@ package search
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/cve/image/datastore/internal/index"
 	"github.com/stackrox/rox/central/cve/image/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/cve/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -33,11 +33,11 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.getCount(ctx, q)
 }
 
-func (ds *searcherImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
+func (ds *searcherImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVE, error) {
 	return ds.searchCVEs(ctx, q)
 }
 
-func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
+func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return ds.searcher.Search(ctx, q)
 }
 
@@ -45,7 +45,7 @@ func (ds *searcherImpl) getCount(ctx context.Context, q *v1.Query) (count int, e
 	return ds.searcher.Count(ctx, q)
 }
 
-func (ds *searcherImpl) resultsToCVEs(ctx context.Context, results []search.Result) ([]*storage.CVE, []int, error) {
+func (ds *searcherImpl) resultsToCVEs(ctx context.Context, results []search.Result) ([]*storage.ImageCVE, []int, error) {
 	return ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 }
 
@@ -58,7 +58,7 @@ func (ds *searcherImpl) resultsToSearchResults(ctx context.Context, results []se
 	return convertMany(cves, results), nil
 }
 
-func convertMany(cves []*storage.CVE, results []search.Result) []*v1.SearchResult {
+func convertMany(cves []*storage.ImageCVE, results []search.Result) []*v1.SearchResult {
 	outputResults := make([]*v1.SearchResult, len(cves))
 	for index, sar := range cves {
 		outputResults[index] = convertOne(sar, &results[index])
@@ -66,17 +66,17 @@ func convertMany(cves []*storage.CVE, results []search.Result) []*v1.SearchResul
 	return outputResults
 }
 
-func convertOne(cve *storage.CVE, result *search.Result) *v1.SearchResult {
+func convertOne(cve *storage.ImageCVE, result *search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
-		Category:       v1.SearchCategory_VULNERABILITIES,
+		Category:       v1.SearchCategory_IMAGE_VULNERABILITIES,
 		Id:             cve.GetId(),
-		Name:           cve.GetCve(),
+		Name:           cve.GetCveBaseInfo().GetCve(),
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}
 }
 
-func (ds *searcherImpl) searchCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
+func (ds *searcherImpl) searchCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVE, error) {
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err

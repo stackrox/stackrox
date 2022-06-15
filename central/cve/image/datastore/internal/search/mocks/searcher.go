@@ -83,10 +83,10 @@ func (mr *MockSearcherMockRecorder) SearchCVEs(arg0, arg1 interface{}) *gomock.C
 }
 
 // SearchRawCVEs mocks base method.
-func (m *MockSearcher) SearchRawCVEs(ctx context.Context, query *v1.Query) ([]*storage.CVE, error) {
+func (m *MockSearcher) SearchRawCVEs(ctx context.Context, query *v1.Query) ([]*storage.ImageCVE, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchRawCVEs", ctx, query)
-	ret0, _ := ret[0].([]*storage.CVE)
+	ret0, _ := ret[0].([]*storage.ImageCVE)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

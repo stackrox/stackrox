@@ -5,8 +5,6 @@ import (
 
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
@@ -26,22 +24,13 @@ func mergeComponents(parts *NodeParts, node *storage.Node) {
 	// Use the edges to combine into the parent node.
 	for _, cp := range parts.Children {
 		var nodeID string
-		if features.PostgresDatastore.Enabled() {
-			parts := postgres.IDToParts(cp.Edge.GetId())
-			if len(parts) == 0 {
-				log.Error("node to component edge does not have primary keys")
-				continue
-			}
-			nodeID = parts[0]
-		} else {
-			// Parse the IDs of the edge.
-			imageComponentEdgeID, err := edges.FromString(cp.Edge.GetId())
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-			nodeID = imageComponentEdgeID.ParentID
+		parts := postgres.IDToParts(cp.Edge.GetId())
+		if len(parts) == 0 {
+			log.Error("node to component edge does not have primary keys")
+			continue
 		}
+		nodeID = parts[0]
+
 		if nodeID != node.GetId() {
 			log.Error("node to component edge does not match node")
 			continue

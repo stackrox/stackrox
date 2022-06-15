@@ -29,7 +29,7 @@ var (
 	// Administration is the new resource grouping all administration-like resources.
 	Administration = newResourceMetadata("Administration", permissions.GlobalScope)
 	Alert          = newResourceMetadata("Alert", permissions.NamespaceScope)
-	// SAC check is not performed directly on CVE resource. It exists here for postgres sac generation to pass.
+	// SAC check is not performed directly using CVE resource. It exists here for postgres sac generation to pass.
 	CVE        = newResourceMetadata("CVE", permissions.NamespaceScope)
 	Cluster    = newResourceMetadata("Cluster", permissions.ClusterScope)
 	Compliance = newResourceMetadata("Compliance", permissions.ClusterScope)
@@ -38,8 +38,10 @@ var (
 	DeploymentExtension = newResourceMetadata("DeploymentExtension", permissions.NamespaceScope)
 	Detection           = newResourceMetadata("Detection", permissions.GlobalScope)
 	Image               = newResourceMetadata("Image", permissions.NamespaceScope)
-	// SAC check is not performed directly on ImageComponent resource. It exists here for postgres sac generation to pass.
+	// SAC check is not performed directly using ImageComponent resource. It exists here for postgres sac generation to pass.
 	ImageComponent = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
+	// SAC check is not performed directly using ImageCVE resource. It exists here for postgres sac generation to pass.
+	ImageCVE = newResourceMetadata("ImageCVE", permissions.NamespaceScope)
 
 	InstallationInfo = newResourceMetadata("InstallationInfo", permissions.GlobalScope)
 
@@ -52,9 +54,9 @@ var (
 	NetworkGraph   = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
 	NetworkPolicy  = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
 	Node           = newResourceMetadata("Node", permissions.ClusterScope)
-	// SAC check is not performed directly on NodeComponent resource. It exists here for postgres sac generation to pass.
+	// SAC check is not performed directly using NodeComponent resource. It exists here for postgres sac generation to pass.
 	NodeComponent = newResourceMetadata("NodeComponent", permissions.ClusterScope)
-	// SAC check is not performed directly on NodeCVE resource. It exists here for postgres sac generation to pass.
+	// SAC check is not performed directly using NodeCVE resource. It exists here for postgres sac generation to pass.
 	NodeCVE                          = newResourceMetadata("NodeCVE", permissions.ClusterScope)
 	Policy                           = newResourceMetadata("Policy", permissions.GlobalScope)
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
