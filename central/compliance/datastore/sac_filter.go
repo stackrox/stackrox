@@ -36,6 +36,9 @@ type sacFilterImpl struct{}
 // FilterRunResults filters the deployments and nodes contained in a single ComplianceRunResults to only those that
 // the input context has access to.
 func (ds *sacFilterImpl) FilterRunResults(ctx context.Context, runResults *storage.ComplianceRunResults) (*storage.ComplianceRunResults, error) {
+	if runResults == nil {
+		return nil, nil
+	}
 	filteredDomain, filtered, err := ds.filterDomain(ctx, runResults.Domain)
 	if err != nil {
 		return nil, err

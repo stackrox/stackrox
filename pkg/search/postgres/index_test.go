@@ -1268,82 +1268,57 @@ func (s *IndexSuite) TestPagination() {
 
 	for _, testCase := range []struct {
 		desc                   string
-		pagination             *v1.QueryPagination
+		pagination             *search.Pagination
 		orderedExpectedMatches []int
 	}{
 		{
 			"sort ascending",
-			&v1.QueryPagination{
-				Limit:       0,
-				Offset:      0,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
-			},
+			search.NewPagination().AddSortOption(search.TestString, false),
 			[]int{1, 2, 4, 5, 7},
 		},
 		{
 			"sort descending",
-			&v1.QueryPagination{
-				Limit:       0,
-				Offset:      0,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
-			},
+			search.NewPagination().AddSortOption(search.TestString, true),
 			[]int{7, 5, 4, 2, 1},
 		},
 		{
 			"limit",
-			&v1.QueryPagination{
-				Limit:       3,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
-			},
+			search.NewPagination().AddSortOption(search.TestString, false).Limit(3),
 			[]int{1, 2, 4},
 		},
 		{
 			"limit descending",
-			&v1.QueryPagination{
-				Limit:       3,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
-			},
+			search.NewPagination().AddSortOption(search.TestString, true).Limit(3),
 			[]int{7, 5, 4},
 		},
 		{
 			"offset",
-			&v1.QueryPagination{
-				Limit:       0,
-				Offset:      2,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
-			},
+			search.NewPagination().AddSortOption(search.TestString, false).Offset(2),
 			[]int{4, 5, 7},
 		},
 		{
 			"offset descending",
-			&v1.QueryPagination{
-				Offset:      2,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
-			},
+			search.NewPagination().AddSortOption(search.TestString, true).Offset(2),
 			[]int{4, 2, 1},
 		},
 		{
 			"limit + offset",
-			&v1.QueryPagination{
-				Limit:       2,
-				Offset:      2,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
-			},
+			search.NewPagination().AddSortOption(search.TestString, false).Offset(2).Limit(2),
 			[]int{4, 5},
 		},
 		{
 			"limit + offset descending",
-			&v1.QueryPagination{
-				Limit:       2,
-				Offset:      2,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
-			},
+			search.NewPagination().AddSortOption(search.TestString, true).Offset(2).Limit(2),
 			[]int{4, 2},
+		},
+		{
+			"invalid",
+			search.NewPagination().AddSortOption(search.TestString, true).Offset(10).Limit(2),
+			[]int{},
 		},
 	} {
 		s.Run(testCase.desc, func() {
-			q := search.NewQueryBuilder().AddBools(search.TestBool, true).ProtoQuery()
-			q.Pagination = testCase.pagination
+			q := search.NewQueryBuilder().AddBools(search.TestBool, true).WithPagination(testCase.pagination).ProtoQuery()
 			results, err := s.indexer.Search(q)
 			s.Require().NoError(err)
 

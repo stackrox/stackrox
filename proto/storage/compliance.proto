@@ -67,20 +67,21 @@ message ComplianceControlResult {
 
 // Next available tag: 5
 message ComplianceDomain {
-    string id = 4;
-    Cluster cluster = 1;
+    string id = 4 [(gogoproto.moretags) = 'sql:"pk" search:"Compliance Domain ID,hidden"'];
+
+    Cluster cluster = 1 [(gogoproto.moretags) = 'sql:"ignore_pk,ignore_unique"'];
     map<string, Node> nodes = 2;
     map<string, Deployment> deployments = 3;
 }
 
 // Next available tag: 5
 message ComplianceRunMetadata {
-    string run_id = 1;
-    string standard_id = 2;
-    string cluster_id = 3 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
+    string run_id      = 1 [(gogoproto.moretags) = 'sql:"pk" search:"Compliance Run ID,hidden"'];
+    string standard_id = 2 [(gogoproto.moretags) = 'search:"Standard ID,hidden,store"'];
+    string cluster_id  = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store"'];
 
     google.protobuf.Timestamp start_timestamp  = 4;
-    google.protobuf.Timestamp finish_timestamp = 5;
+    google.protobuf.Timestamp finish_timestamp = 5 [(gogoproto.moretags) = 'search:"Compliance Run Finished Timestamp,hidden,store"'];
 
     bool success = 6;
     string error_message = 7;
@@ -94,7 +95,7 @@ message ComplianceRunResults {
         map<string, ComplianceResultValue> control_results = 1;
     }
 
-    ComplianceDomain domain            = 1;
+    ComplianceDomain domain            = 1 [(gogoproto.moretags) = 'sql:"-"'];
     ComplianceRunMetadata run_metadata = 2;
 
     EntityResults cluster_results                     = 3;
@@ -105,6 +106,7 @@ message ComplianceRunResults {
 
 // Next available tag: 2
 message ComplianceStrings {
+    string          id      = 2 [(gogoproto.moretags) = 'sql:"pk"'];
     repeated string strings = 1;
 }
 
