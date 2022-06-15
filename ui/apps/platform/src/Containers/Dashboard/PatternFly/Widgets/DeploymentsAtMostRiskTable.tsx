@@ -13,7 +13,7 @@ const columnNames = {
     riskPriority: 'Risk priority',
 };
 
-function linkToDeployment(id: string, name: string, searchFilter: SearchFilter): string {
+function riskPageLinkToDeployment(id: string, name: string, searchFilter: SearchFilter): string {
     const query = getUrlQueryStringForSearchFilter({
         ...searchFilter,
         Deployment: name,
@@ -45,7 +45,9 @@ function DeploymentsAtMostRiskTable({
                 {deployments.map(({ id, name, cluster, namespace, priority }) => (
                     <Tr key={name}>
                         <Td className="pf-u-pl-0" dataLabel={columnNames.deployment}>
-                            <Link to={linkToDeployment(id, name, searchFilter)}>{name}</Link>
+                            <Link to={riskPageLinkToDeployment(id, name, searchFilter)}>
+                                {name}
+                            </Link>
                         </Td>
                         <Td dataLabel={columnNames.resourceLocation}>
                             <span>

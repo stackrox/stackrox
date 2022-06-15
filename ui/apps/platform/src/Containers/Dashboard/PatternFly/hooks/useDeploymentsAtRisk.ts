@@ -10,7 +10,8 @@ export type UseDeploymentsAtRiskReturn = {
 };
 
 export default function useDeploymentsAtRisk(
-    searchFilter: SearchFilter
+    searchFilter: SearchFilter,
+    numberOfResults = 6
 ): UseDeploymentsAtRiskReturn {
     const [deployments, setDeployments] = useState<ListDeployment[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -21,7 +22,7 @@ export default function useDeploymentsAtRisk(
             searchFilter,
             { field: 'Deployment Risk Priority', reversed: 'false' },
             0,
-            6
+            numberOfResults
         );
 
         setError(null);
@@ -38,7 +39,7 @@ export default function useDeploymentsAtRisk(
             });
 
         return cancel;
-    }, [searchFilter]);
+    }, [searchFilter, numberOfResults]);
 
     return { deployments, loading, error };
 }
