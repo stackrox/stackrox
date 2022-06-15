@@ -21,7 +21,7 @@ env:
   main_branch: master
   docs_repository: openshift/openshift-docs
   jira_projects: ROX, RS, RTOOLS
-  slack_channel: C03D78P4RFF #epic-release-improvements
+  slack_channel: C03KSV3N6N8 #test-release-automation
 
 jobs:
   variables:

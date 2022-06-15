@@ -4,7 +4,7 @@ on:
     types: [released]
 
 env:
-  slack_channel: C03D78P4RFF #epic-release-improvements
+  slack_channel: C03KSV3N6N8 #test-release-automation
 
 jobs:
   notify:
