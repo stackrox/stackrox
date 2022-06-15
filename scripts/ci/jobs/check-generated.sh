@@ -12,7 +12,7 @@ go mod tidy
 echo 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
 function generated_files-are-up-to-date() {
 
-    find /go/src/github.com/stackrox -type d
+    ln -s /go/src/github.com/stackrox /go/src/github.com/rox
 
     git ls-files --others --exclude-standard >/tmp/untracked
     make proto-generated-srcs
