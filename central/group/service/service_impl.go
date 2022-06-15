@@ -93,9 +93,6 @@ func (s *serviceImpl) GetGroups(ctx context.Context, req *v1.GetGroupsRequest) (
 }
 
 func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
-	if err := datastore.ValidateProps(props); err != nil {
-		return nil, err
-	}
 	group, err := s.groups.Get(ctx, props.GetId())
 	if err != nil {
 		return nil, err

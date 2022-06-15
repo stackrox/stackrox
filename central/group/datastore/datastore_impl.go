@@ -26,6 +26,10 @@ func (ds *dataStoreImpl) Get(ctx context.Context, id string) (*storage.Group, er
 		return nil, nil
 	}
 
+	if id == "" {
+		return nil, errox.InvalidArgs.New("id must be set when retrieving group")
+	}
+
 	return ds.storage.Get(id)
 }
 
