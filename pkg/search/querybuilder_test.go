@@ -7,6 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestEmptyQuery(t *testing.T) {
+	assert.Equal(t, &v1.Query{}, NewQueryBuilder().ProtoQuery())
+}
+
 func TestDocIDs(t *testing.T) {
 	cases := []struct {
 		desc   string
