@@ -212,5 +212,5 @@ export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): str
     if (defaultRoleGroups.length) {
         return defaultRoleGroups[0].roleName;
     }
-    return 'Admin';
+    return 'None';
 }

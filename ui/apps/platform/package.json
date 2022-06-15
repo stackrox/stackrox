@@ -102,9 +102,9 @@
     },
     "scripts": {
         "clean": "rm -rf ./src/index.css ./cypress/test-results",
-        "start": "yarn tailwind && HTTPS=true react-scripts start",
+        "start": "yarn tailwind && HTTPS=true react-scripts --openssl-legacy-provider start",
         "start:watch": "npm-run-all --parallel watch:tailwind watch:react",
-        "build": "yarn tailwind && CI=false GENERATE_SOURCEMAP=false react-scripts build",
+        "build": "yarn tailwind && CI=false GENERATE_SOURCEMAP=false react-scripts --openssl-legacy-provider build",
         "test": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports react-scripts test --coverage --reporters=default --reporters=jest-junit",
         "test-watch": "react-scripts test",
         "lint": "yarn tailwind && NODE_PATH=src eslint --quiet --ext .js,.ts,.tsx src cypress tailwind.config.js .prettierrc.js .eslintrc.js",
