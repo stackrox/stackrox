@@ -21,6 +21,7 @@ func init() {
 		&storage.ClusterCVEEdge{}:                               resources.Cluster,
 		&storage.ComplianceControlResult{}:                      resources.Compliance,
 		&storage.ComplianceDomain{}:                             resources.Compliance,
+		&storage.ComplianceStrings{}:                            resources.Compliance,
 		&storage.ComplianceOperatorCheckResult{}:                resources.ComplianceOperator,
 		&storage.ComplianceOperatorProfile{}:                    resources.ComplianceOperator,
 		&storage.ComplianceOperatorRule{}:                       resources.ComplianceOperator,

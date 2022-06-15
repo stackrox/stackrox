@@ -83,7 +83,10 @@
                 "VULN_REQUEST",
                 "NETWORK_BASELINE",
                 "NETWORK_POLICIES",
-                "PROCESS_BASELINE_RESULTS"
+                "PROCESS_BASELINE_RESULTS",
+                "COMPLIANCE_METADATA",
+                "COMPLIANCE_RESULTS",
+                "COMPLIANCE_DOMAIN"
               ]
             },
             "collectionFormat": "multi"
@@ -166,7 +169,10 @@
                 "VULN_REQUEST",
                 "NETWORK_BASELINE",
                 "NETWORK_POLICIES",
-                "PROCESS_BASELINE_RESULTS"
+                "PROCESS_BASELINE_RESULTS",
+                "COMPLIANCE_METADATA",
+                "COMPLIANCE_RESULTS",
+                "COMPLIANCE_DOMAIN"
               ]
             },
             "collectionFormat": "multi"
@@ -243,7 +249,10 @@
                 "VULN_REQUEST",
                 "NETWORK_BASELINE",
                 "NETWORK_POLICIES",
-                "PROCESS_BASELINE_RESULTS"
+                "PROCESS_BASELINE_RESULTS",
+                "COMPLIANCE_METADATA",
+                "COMPLIANCE_RESULTS",
+                "COMPLIANCE_DOMAIN"
               ]
             },
             "collectionFormat": "multi"
@@ -369,10 +378,13 @@
         "VULN_REQUEST",
         "NETWORK_BASELINE",
         "NETWORK_POLICIES",
-        "PROCESS_BASELINE_RESULTS"
+        "PROCESS_BASELINE_RESULTS",
+        "COMPLIANCE_METADATA",
+        "COMPLIANCE_RESULTS",
+        "COMPLIANCE_DOMAIN"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 42"
+      "title": "Next available tag: 45"
     },
     "v1SearchOptionsResponse": {
       "type": "object",
