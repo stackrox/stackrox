@@ -79,11 +79,42 @@ const (
 	rawFormat  string = "raw"
 )
 
-func isValidOutputFormat(format string) bool {
-	var validFormats = map[string]struct{}{
-		jsonFormat: {},
-		rawFormat:  {},
+func writeOutputInJSONFormat(messages []*central.MsgFromSensor, start, end time.Time, outfile string) {
+	dateFormat := "02.01.15 11:06:39"
+	data, err := json.Marshal(&sensorMessagesJSONOutput{
+		ScenarioStart:      start.Format(dateFormat),
+		ScenarioEnd:        end.Format(dateFormat),
+		MessagesFromSensor: messages,
+	})
+	utils.CrashOnError(err)
+	utils.CrashOnError(os.WriteFile(outfile, data, 0644))
+}
+
+func writeOutputInBinaryFormat(messages []*central.MsgFromSensor, _, _ time.Time, outfile string) {
+	file, err := os.OpenFile(outfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	defer func() {
+		utils.CrashOnError(file.Close())
+	}()
+	utils.CrashOnError(err)
+	for _, m := range messages {
+		d, err := m.Marshal()
+		utils.CrashOnError(err)
+		buf := make([]byte, 4)
+		binary.LittleEndian.PutUint32(buf, uint32(len(d)))
+		_, err = file.Write(buf)
+		utils.CrashOnError(err)
+		_, err = file.Write(d)
+		utils.CrashOnError(err)
 	}
+	utils.CrashOnError(file.Sync())
+}
+
+var validFormats = map[string]func([]*central.MsgFromSensor, time.Time, time.Time, string){
+	jsonFormat: writeOutputInJSONFormat,
+	rawFormat:  writeOutputInBinaryFormat,
+}
+
+func isValidOutputFormat(format string) bool {
 	_, ok := validFormats[format]
 	return ok
 }
@@ -267,32 +298,9 @@ type sensorMessagesJSONOutput struct {
 
 func dumpMessages(messages []*central.MsgFromSensor, start, end time.Time, outfile string, outputFormat string) {
 	log.Printf("Dumping all sensor messages to file: %s\n", outfile)
-	switch outputFormat {
-	case jsonFormat:
-		dateFormat := "02.01.15 11:06:39"
-		data, err := json.Marshal(&sensorMessagesJSONOutput{
-			ScenarioStart:      start.Format(dateFormat),
-			ScenarioEnd:        end.Format(dateFormat),
-			MessagesFromSensor: messages,
-		})
-		utils.CrashOnError(err)
-		utils.CrashOnError(os.WriteFile(outfile, data, 0644))
-	case rawFormat:
-		file, err := os.OpenFile(outfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		defer func() {
-			utils.CrashOnError(file.Close())
-		}()
-		utils.CrashOnError(err)
-		for _, m := range messages {
-			d, err := m.Marshal()
-			utils.CrashOnError(err)
-			buf := make([]byte, 4)
-			binary.LittleEndian.PutUint32(buf, uint32(len(d)))
-			_, err = file.Write(buf)
-			utils.CrashOnError(err)
-			_, err = file.Write(d)
-			utils.CrashOnError(err)
-		}
-		utils.CrashOnError(file.Sync())
+	f, ok := validFormats[outputFormat]
+	if !ok {
+		log.Fatalf("invalid format '%s'", outputFormat)
 	}
+	f(messages, start, end, outfile)
 }
