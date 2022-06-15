@@ -65,7 +65,7 @@
         "react-helmet": "^6.1.0",
         "react-modal": "^3.12.1",
         "react-numeric-input": "^2.2.3",
-        "react-onclickoutside": "^6.10.0",
+        "react-onclickoutside": "^6.12.2",
         "react-popper": "0.9.0",
         "react-redux": "^7.2.6",
         "react-responsive": "^8.2.0",
