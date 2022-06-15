@@ -44,6 +44,7 @@ func init() {
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!",
 			"latestViolation(query: String): Time",
 			"namespaceObject: Namespace",
+			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"podCount: Int!",
 			"policies(query: String, pagination: Pagination): [Policy!]!",
 			"policyCount(query: String): Int!",
@@ -54,8 +55,6 @@ func init() {
 			"serviceAccountID: String!",
 			"serviceAccountObject: ServiceAccount",
 			"unusedVarSink(query: String): Int",
-
-			"plottedVulns(query: String): PlottedVulnerabilities!", // TODO
 		}),
 		// deprecated fields
 		schema.AddExtraResolvers("Deployment", []string{
@@ -69,6 +68,8 @@ func init() {
 				"@deprecated(reason: \"use 'imageComponentCount'\")",
 			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!" +
 				"@deprecated(reason: \"use 'imageComponents'\")",
+			"plottedVulns(query: String): PlottedVulnerabilities!" +
+				"@deprecated(reason: \"use 'plottedImageVulnerabilities'\")",
 		}),
 		schema.AddQuery("deployment(id: ID): Deployment"),
 		schema.AddQuery("deployments(query: String, pagination: Pagination): [Deployment!]!"),
@@ -788,6 +789,12 @@ func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args Ra
 func (resolver *deploymentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
+}
+
+// PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
+func (resolver *deploymentResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PlottedImageVulnerabilities")
+	return newPlottedImageVulnerabilitiesResolver(resolver.withDeploymentScope(ctx), resolver.root, args)
 }
 
 func (resolver *deploymentResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

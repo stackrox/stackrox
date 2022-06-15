@@ -74,6 +74,7 @@ func init() {
 			"openShiftClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!",
 			"openShiftClusterVulnerabilityCount(query: String): Int!",
 			"passingControls(query: String): [ComplianceControl!]!",
+			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!",
 			"policies(query: String, pagination: Pagination): [Policy!]!",
 			"policyCount(query: String): Int!",
@@ -1134,6 +1135,12 @@ func (resolver *clusterResolver) PlottedNodeVulnerabilities(ctx context.Context,
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver PlottedNodeVulnerabilities in Cluster does not support postgres yet")
+}
+
+// PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
+func (resolver *clusterResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlottedImageVulnerabilities")
+	return newPlottedImageVulnerabilitiesResolver(resolver.withClusterScope(ctx), resolver.root, args)
 }
 
 func (resolver *clusterResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
