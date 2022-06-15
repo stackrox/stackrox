@@ -67,15 +67,15 @@ func generateOptionsFile(props operations.GeneratorProperties) error {
 	remainingWorkingDir := workingDir
 	var centralFilePath string
 	for {
-		if len(remainingWorkingDir) == 0 {
+		if remainingWorkingDir == string(os.PathSeparator) {
 			return fmt.Errorf("couldn't find central path in working directory %q", workingDir)
 		}
-		firstComponent, lastComponent := filepath.Split(remainingWorkingDir)
+		lastComponent := filepath.Base(remainingWorkingDir)
 		if lastComponent == "central" {
 			centralFilePath = remainingWorkingDir
 			break
 		}
-		remainingWorkingDir = firstComponent
+		remainingWorkingDir = filepath.Dir(remainingWorkingDir)
 	}
 	return f.Save(filepath.Join(centralFilePath, goSubPackage, "options.go"))
 }
