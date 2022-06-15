@@ -2,14 +2,18 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -61,6 +65,7 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 
 type localSensorConfig struct {
 	Duration           time.Duration
+	BinaryOutput       bool
 	CentralOutput      string
 	RecordK8sEnabled   bool
 	RecordK8sFile      string
@@ -76,6 +81,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	sensorConfig := localSensorConfig{
 		Verbose:            false,
 		Duration:           0,
+		BinaryOutput:       false,
 		CentralOutput:      "central-out.json",
 		RecordK8sEnabled:   false,
 		RecordK8sFile:      "k8s-trace.jsonl",
@@ -88,6 +94,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.BoolVar(&sensorConfig.Verbose, "verbose", sensorConfig.Verbose, "prints all messages to stdout as well as to the output file")
 	flag.DurationVar(&sensorConfig.Duration, "duration", sensorConfig.Duration, "duration that the scenario should run (leave it empty to run it without timeout)")
 	flag.StringVar(&sensorConfig.CentralOutput, "central-out", sensorConfig.CentralOutput, "file to store the events that would be sent to central")
+	flag.BoolVar(&sensorConfig.BinaryOutput, "binary", sensorConfig.BinaryOutput, "store all the events that would be sent to central in binary format")
 	flag.BoolVar(&sensorConfig.RecordK8sEnabled, "record", sensorConfig.RecordK8sEnabled, "whether to record a trace with k8s events")
 	flag.StringVar(&sensorConfig.RecordK8sFile, "record-out", sensorConfig.RecordK8sFile, "a file where recorded trace would be stored")
 	flag.BoolVar(&sensorConfig.ReplayK8sEnabled, "replay", sensorConfig.ReplayK8sEnabled, "whether to reply recorded a trace with k8s events")
@@ -114,7 +121,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	return sensorConfig
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string, cancelFunc context.CancelFunc) {
+func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string, binary bool, cancelFunc context.CancelFunc) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
@@ -122,7 +129,7 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 	cancelFunc()
 	endTime := time.Now()
 	allMessages := fakeCentral.GetAllMessages()
-	dumpMessages(allMessages, startTime, endTime, outfile)
+	dumpMessages(allMessages, startTime, endTime, outfile, binary)
 	os.Exit(0)
 }
 
@@ -160,7 +167,7 @@ func main() {
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	go registerHostKillSignals(startTime, fakeCentral, localConfig.CentralOutput, cancelFunc)
+	go registerHostKillSignals(startTime, fakeCentral, localConfig.CentralOutput, localConfig.BinaryOutput, cancelFunc)
 
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	defer shutdownFakeServer()
@@ -232,7 +239,7 @@ func main() {
 	<-time.Tick(localConfig.Duration)
 	endTime := time.Now()
 	allMessages := fakeCentral.GetAllMessages()
-	dumpMessages(allMessages, startTime, endTime, localConfig.CentralOutput)
+	dumpMessages(allMessages, startTime, endTime, localConfig.CentralOutput, localConfig.BinaryOutput)
 
 	spyCentral.KillSwitch.Signal()
 }
@@ -243,9 +250,24 @@ type sensorMessagesJSONOutput struct {
 	MessagesFromSensor []*central.MsgFromSensor `json:"messages_from_sensor"`
 }
 
-func dumpMessages(messages []*central.MsgFromSensor, start, end time.Time, outfile string) {
+func dumpMessages(messages []*central.MsgFromSensor, start, end time.Time, outfile string, binaryOutput bool) {
 	dateFormat := "02.01.15 11:06:39"
 	log.Printf("Dumping all sensor messages to file: %s\n", outfile)
+	if binaryOutput {
+		fname := strings.TrimSuffix(outfile, filepath.Ext(outfile))
+		file, err := os.OpenFile(fmt.Sprintf("%s.bin", fname), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		utils.CrashOnError(err)
+		for _, m := range messages {
+			d, err := m.Marshal()
+			utils.CrashOnError(err)
+			buf := make([]byte, 4)
+			binary.LittleEndian.PutUint32(buf, uint32(len(d)))
+			_, err = file.Write(buf)
+			utils.CrashOnError(err)
+			_, err = file.Write(d)
+			utils.CrashOnError(err)
+		}
+	}
 	data, err := json.Marshal(&sensorMessagesJSONOutput{
 		ScenarioStart:      start.Format(dateFormat),
 		ScenarioEnd:        end.Format(dateFormat),
