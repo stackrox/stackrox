@@ -164,6 +164,9 @@ func New() *Resolver {
 		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
 		resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()
 		resolver.NodeComponentDataStore = nodeComponentDataStore.Singleton()
+
+		// Stick it in for cluster CVEs and E2E tests.
+		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
 	} else {
 		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
 	}

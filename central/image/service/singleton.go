@@ -21,8 +21,7 @@ func initialize() {
 	if features.PostgresDatastore.Enabled() {
 		return
 	}
-	imageCVEDataStore := cveDataStore.Singleton()
-	as = New(datastore.Singleton(), imageCVEDataStore, watchedImageDataStore.Singleton(), manager.Singleton(), connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.ImageMetadataCacheSingleton())
+	as = New(datastore.Singleton(), cveDataStore.Singleton(), watchedImageDataStore.Singleton(), manager.Singleton(), connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.ImageMetadataCacheSingleton())
 }
 
 // Singleton provides the instance of the Service interface to register.
