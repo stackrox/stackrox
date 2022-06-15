@@ -13,6 +13,7 @@ import SummaryCounts from './SummaryCounts';
 import ScopeBar from './ScopeBar';
 
 import ViolationsByPolicyCategory from './Widgets/ViolationsByPolicyCategory';
+import DeploymentsAtMostRisk from './Widgets/DeploymentsAtMostRisk';
 
 function DashboardPage() {
     return (
@@ -41,6 +42,9 @@ function DashboardPage() {
             <Divider component="div" />
             <PageSection>
                 <Grid hasGutter>
+                    <GridItem lg={6}>
+                        <DeploymentsAtMostRisk />
+                    </GridItem>
                     <GridItem lg={6}>
                         <ViolationsByPolicyCategory />
                     </GridItem>
