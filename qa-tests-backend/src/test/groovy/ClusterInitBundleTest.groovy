@@ -15,7 +15,6 @@ class ClusterInitBundleTest extends BaseSpecification {
     private ApiTokenService.GenerateTokenResponse adminToken
 
     def setupSpec() {
-        disableAuthzPlugin()
         adminToken = services.ApiTokenService.generateToken(randomUUID().toString(), "Admin")
     }
 

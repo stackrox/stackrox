@@ -269,7 +269,6 @@ class BaseSpecification extends Specification {
             log.error("Failed to clean up orchestrator", e)
             throw e
         }
-        disableAuthzPlugin()
 
         // https://issues.redhat.com/browse/ROX-9950 -- fails on OSD-on-AWS
         if (orchestrator.isGKE()) {

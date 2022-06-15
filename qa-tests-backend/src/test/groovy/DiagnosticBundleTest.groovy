@@ -28,8 +28,6 @@ class DiagnosticBundleTest extends BaseSpecification {
     private Role noAccessRole
 
     def setupSpec() {
-        disableAuthzPlugin()
-
         adminToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "Admin")
         debugLogsReaderRoleName = UUID.randomUUID()
         RoleService.createRoleWithScopeAndPermissionSet(debugLogsReaderRoleName,

@@ -43,11 +43,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private SplunkDeployment splunkDeployment
 
     def setupSpec() {
-        // when using "Analyst" api token to access central Splunk violations endpoint
-        // authorisation plugin prevents violations from being returned
-        // this leads to no violations being propagated to Splunk
-        disableAuthzPlugin()
-
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
