@@ -1,6 +1,6 @@
 import com.jayway.restassured.RestAssured
 import common.Constants
-import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
@@ -22,11 +22,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import services.BaseService
 import services.ClusterService
-import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
-import services.SACService
+
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Specification
@@ -179,16 +178,6 @@ class BaseSpecification extends Specification {
     @Shared
     private long testStartTimeMillis
 
-    @Shared
-    private String pluginConfigID
-
-    def disableAuthzPlugin() {
-        if (pluginConfigID != null) {
-            SACService.deleteAuthPluginConfig(pluginConfigID)
-        }
-        pluginConfigID = null
-    }
-
     def setupSpec() {
         log.info("Starting testsuite")
 
@@ -205,17 +194,6 @@ class BaseSpecification extends Specification {
         }
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-        if (FeatureFlagService.isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE')) {
-            log.info("Postgres datastore enabled. Do not enable authz plugin. Use built in plugin instead.")
-        } else {
-            try {
-                def response = SACService.addAuthPlugin()
-                pluginConfigID = response.getId()
-                log.info response.toString()
-            } catch (StatusRuntimeException e) {
-                log.error("Unable to enable the authz plugin, defaulting to basic auth", e)
-            }
-        }
 
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
                 Constants.CORE_IMAGE_INTEGRATION_NAME)

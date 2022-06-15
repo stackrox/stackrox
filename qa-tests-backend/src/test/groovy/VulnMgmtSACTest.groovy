@@ -9,7 +9,7 @@ import services.GraphQLService
 import services.ImageIntegrationService
 import services.ImageService
 import services.RoleService
-import services.SACService
+
 import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Unroll
@@ -163,7 +163,6 @@ class VulnMgmtSACTest extends BaseSpecification {
         when:
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
-        SACService.addAuthPlugin()
 
         def gqlService = new GraphQLService()
         def baseVulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: baseQuery])
