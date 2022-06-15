@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Dropdown,
@@ -42,6 +42,7 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { LifecycleStage, policySeverities, PolicySeverity } from 'types/policy.proto';
 
+import { SearchFilter } from 'types/search';
 import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 
@@ -109,9 +110,9 @@ function getCountsBySeverity(groups: AlertGroup[]): CountsBySeverity {
     return result;
 }
 
-function linkForViolationsCategory(category: string) {
+function linkForViolationsCategory(category: string, searchFilter: SearchFilter) {
     const queryString = getQueryString({
-        s: { Category: category },
+        s: { ...searchFilter, Category: category },
         sortOption: { field: 'Severity', direction: 'desc' },
     });
     return `${violationsBasePath}${queryString}`;
@@ -122,9 +123,8 @@ type SortTypeOption = 'Severity' | 'Volume';
 type ViolationsByPolicyCategoryChartProps = {
     alertGroups: AlertGroup[];
     sortType: SortTypeOption;
+    searchFilter: SearchFilter;
 };
-
-const labelLinkCallback = ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text));
 
 function tooltipForCategory(
     category: string,
@@ -141,12 +141,18 @@ function tooltipForCategory(
 function ViolationsByPolicyCategoryChart({
     alertGroups,
     sortType,
+    searchFilter,
 }: ViolationsByPolicyCategoryChartProps) {
     const history = useHistory();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
     const [hiddenSeverities, setHiddenSeverities] = useState<Set<PolicySeverity>>(new Set());
+
+    const labelLinkCallback = useCallback(
+        ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text), searchFilter),
+        [searchFilter]
+    );
 
     const filteredAlertGroups = zeroOutFilteredSeverities(alertGroups, hiddenSeverities);
     const sortedAlertGroups =
@@ -175,7 +181,7 @@ function ViolationsByPolicyCategoryChart({
                 events={[
                     navigateOnClickEvent(history, (targetProps) => {
                         const category = targetProps?.datum?.xName;
-                        return linkForViolationsCategory(category);
+                        return linkForViolationsCategory(category, searchFilter);
                     }),
                 ]}
             />
@@ -328,7 +334,11 @@ function ViolationsByPolicyCategory() {
                 </Flex>
             }
         >
-            <ViolationsByPolicyCategoryChart alertGroups={alertGroups ?? []} sortType={sortType} />
+            <ViolationsByPolicyCategoryChart
+                alertGroups={alertGroups ?? []}
+                sortType={sortType}
+                searchFilter={searchFilter}
+            />
         </WidgetCard>
     );
 }
