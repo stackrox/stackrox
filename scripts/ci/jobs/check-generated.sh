@@ -13,12 +13,15 @@ echo 'Ensure that generated files are up to date. (If this fails, run `make prot
 function generated_files-are-up-to-date() {
 
     find /go/src/github.com/stackrox -type d
+    date +%s
+    curl "https://api.github.com/rate_limit"
 
     git ls-files --others --exclude-standard >/tmp/untracked
     make proto-generated-srcs
     # Print the timestamp along with each new line of output, so we can track how long each command takes
     make go-generated-srcs 2>&1 | while IFS= read -r line; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
     git diff --exit-code HEAD
+    echo "git diff exit code: $?"
     { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
 
     store_test_results /tmp/untracked-new untracked-new
