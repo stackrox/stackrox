@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 	"unicode"
 
@@ -53,13 +53,31 @@ func generateOptionsFile(props operations.GeneratorProperties) error {
 		Lit(tagString),
 		Parens(Op("*").Qual(props.Pkg, props.Object)).Parens(Nil()),
 	)
-	goPackage := operations.GenerateMappingGoPackage(props)
+	goSubPackage := operations.GenerateMappingGoSubPackageWithinCentral(props)
 
-	goPath := os.Getenv("GOPATH")
-	if goPath == "" {
-		return errors.New("no GOPATH found")
+	// Hack to figure out the real directory corresponding to the central package.
+	// It's fine for this to be hacky since bleve is going away soon.
+	// First, get the working directory. We know this will be inside central
+	// since all go generate commands for bleve indexes as inside central.
+	// Then, strip out paths from the end until we're in the central directory.
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("couldn't determine working directory: %w", err)
 	}
-	return f.Save(path.Join(os.Getenv("GOPATH"), "src", goPackage, "options.go"))
+	remainingWorkingDir := workingDir
+	var centralFilePath string
+	for {
+		if len(remainingWorkingDir) == 0 {
+			return fmt.Errorf("couldn't find central path in working directory %q", workingDir)
+		}
+		firstComponent, lastComponent := filepath.Split(remainingWorkingDir)
+		if lastComponent == "central" {
+			centralFilePath = remainingWorkingDir
+			break
+		}
+		remainingWorkingDir = firstComponent
+	}
+	return f.Save(filepath.Join(centralFilePath, goSubPackage, "options.go"))
 }
 
 func generateIndexImplementationFile(props operations.GeneratorProperties, implementations []Code) error {
