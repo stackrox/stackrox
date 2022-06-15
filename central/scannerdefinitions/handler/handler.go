@@ -165,11 +165,6 @@ func writeErrorForFile(w http.ResponseWriter, err error, path string) {
 	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read file %s: %v", filepath.Base(path), err)
 }
 
-func serveFile(w http.ResponseWriter, r *http.Request, name string) {
-	log.Debugf("Serving vulnerability definitions from %s", filepath.Base(name))
-	http.ServeFile(w, r, name)
-}
-
 func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime time.Time, content io.ReadSeeker) {
 	log.Debugf("Serving vulnerability definitions from %s", filepath.Base(name))
 	http.ServeContent(w, r, name, modTime, content)

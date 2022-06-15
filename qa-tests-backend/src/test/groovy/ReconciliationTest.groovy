@@ -70,7 +70,7 @@ class ReconciliationTest extends BaseSpecification {
         return result
     }
 
-    private void verifyReconciliationStats(boolean verifyMin) {
+    private void verifyReconciliationStats() {
         // Cannot verify this on a release build, since the API is not exposed.
         if (MetadataService.isReleaseBuild()) {
             return
@@ -88,10 +88,8 @@ class ReconciliationTest extends BaseSpecification {
             def expectedMinDeletions = EXPECTED_MIN_DELETIONS_BY_KEY.get(entry.getKey())
             assert expectedMinDeletions != null : "Please add object type " +
                 "${entry.getKey()} to the map of known reconciled resources in ReconciliationTest.groovy"
-            if (verifyMin) {
-                assert entry.getValue() >= expectedMinDeletions: "Number of deletions too low for " +
+            assert entry.getValue() >= expectedMinDeletions: "Number of deletions too low for " +
                     "object type ${entry.getKey()} (got ${entry.getValue()})"
-            }
             def maxAllowedDeletions = MAX_ALLOWED_DELETIONS_BY_KEY.getOrDefault(
                 entry.getKey(), DEFAULT_MAX_ALLOWED_DELETIONS)
             assert entry.getValue() <= maxAllowedDeletions: "Overly aggressive reconciliation for " +
@@ -107,10 +105,6 @@ class ReconciliationTest extends BaseSpecification {
 
         when:
         "Get Sensor and counts"
-
-        // Verify initial reconciliation stats (from the reconciliation that must have happened
-        // whenever the sensor first connected).
-        verifyReconciliationStats(false)
 
         OrchestratorDeployment sensorOrchestratorDeployment =
                 orchestrator.getOrchestratorDeployment("stackrox", "sensor")
@@ -231,7 +225,7 @@ class ReconciliationTest extends BaseSpecification {
         assert numNetworkPolicies == 0
         assert numSecrets == 0
 
-        verifyReconciliationStats(true)
+        verifyReconciliationStats()
 
         // Verify Latest Tag alert is marked as stale
         def violation = AlertService.getViolation(violations[0].getId())

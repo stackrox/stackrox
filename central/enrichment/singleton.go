@@ -6,6 +6,7 @@ import (
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
+	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
@@ -35,18 +36,20 @@ var (
 )
 
 func initialize() {
-	var imageCVEDS imageCVEDataStore.DataStore
+	var imageCVESuppressor imageEnricher.CVESuppressor
+	var nodeCVESuppressor nodeEnricher.CVESuppressor
 	if features.PostgresDatastore.Enabled() {
-		imageCVEDS = imageCVEDataStore.Singleton()
+		imageCVESuppressor = imageCVEDataStore.Singleton()
+		nodeCVESuppressor = nodeCVEDataStore.Singleton()
 	} else {
-		imageCVEDS = cveDataStore.Singleton()
+		imageCVESuppressor = cveDataStore.Singleton()
+		nodeCVESuppressor = cveDataStore.Singleton()
 	}
 
-	ie = imageEnricher.New(imageCVEDS, suppressor.Singleton(), imageintegration.Set(),
+	ie = imageEnricher.New(imageCVESuppressor, suppressor.Singleton(), imageintegration.Set(),
 		metrics.CentralSubsystem, ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),
 		signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations)
-	// TODO: Attach node cve datastore.
-	ne = nodeEnricher.New(cveDataStore.Singleton(), metrics.CentralSubsystem)
+	ne = nodeEnricher.New(nodeCVESuppressor, metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
 	cf = fetcher.SingletonManager()
 	manager = newManager(imageintegration.Set(), ne, cf)

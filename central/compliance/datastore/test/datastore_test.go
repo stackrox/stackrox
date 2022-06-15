@@ -72,7 +72,7 @@ func (s *complianceDataStoreTestSuite) TestGetLatestRunResults() {
 	s.mockFilter.EXPECT().FilterRunResults(s.hasReadCtx, expectedReturn.LastSuccessfulResults).Return(expectedReturn.LastSuccessfulResults, nil)
 
 	// Expect storage fetch.
-	s.mockStorage.EXPECT().GetLatestRunResults(clusterID, standardID, types.WithMessageStrings).Return(expectedReturn, nil)
+	s.mockStorage.EXPECT().GetLatestRunResults(s.hasReadCtx, clusterID, standardID, types.WithMessageStrings).Return(expectedReturn, nil)
 
 	// Call tested.
 	result, err := s.dataStore.GetLatestRunResults(s.hasReadCtx, clusterID, standardID, types.WithMessageStrings)
@@ -105,7 +105,7 @@ func (s *complianceDataStoreTestSuite) TestGetLatestRunResultsBatch() {
 	s.mockFilter.EXPECT().FilterBatchResults(s.hasReadCtx, expectedReturn).Return(expectedReturn, nil)
 
 	// Expect storage fetch.
-	s.mockStorage.EXPECT().GetLatestRunResultsBatch(clusterIDs, standardIDs, types.WithMessageStrings).Return(expectedReturn, nil)
+	s.mockStorage.EXPECT().GetLatestRunResultsBatch(s.hasReadCtx, clusterIDs, standardIDs, types.WithMessageStrings).Return(expectedReturn, nil)
 
 	// Call tested.
 	result, err := s.dataStore.GetLatestRunResultsBatch(s.hasReadCtx, clusterIDs, standardIDs, types.WithMessageStrings)
@@ -118,8 +118,8 @@ func (s *complianceDataStoreTestSuite) TestGetLatestRunResultsBatch() {
 
 func (s *complianceDataStoreTestSuite) TestStoreRunResults() {
 	rr := &storage.ComplianceRunResults{}
-	s.mockStorage.EXPECT().ClearAggregationResults()
-	s.mockStorage.EXPECT().StoreRunResults(rr).Return(errFake)
+	s.mockStorage.EXPECT().ClearAggregationResults(s.hasWriteCtx)
+	s.mockStorage.EXPECT().StoreRunResults(s.hasWriteCtx, rr).Return(errFake)
 
 	err := s.dataStore.StoreRunResults(s.hasWriteCtx, rr)
 
@@ -128,7 +128,7 @@ func (s *complianceDataStoreTestSuite) TestStoreRunResults() {
 
 func (s *complianceDataStoreTestSuite) TestStoreFailure() {
 	md := &storage.ComplianceRunMetadata{}
-	s.mockStorage.EXPECT().StoreFailure(md).Return(errFake)
+	s.mockStorage.EXPECT().StoreFailure(s.hasWriteCtx, md).Return(errFake)
 
 	err := s.dataStore.StoreFailure(s.hasWriteCtx, md)
 
@@ -173,7 +173,7 @@ func (s *complianceDataStoreWithSACTestSuite) TearDownTest() {
 
 func (s *complianceDataStoreWithSACTestSuite) TestEnforceGetLatestRunResults() {
 	// Expect no storage fetch.
-	s.mockStorage.EXPECT().GetLatestRunResults(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	s.mockStorage.EXPECT().GetLatestRunResults(s.hasNoneCtx, gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	// Call tested.
 	clusterID := "cid"
@@ -185,7 +185,7 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceGetLatestRunResults() {
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreRunResults() {
-	s.mockStorage.EXPECT().StoreRunResults(gomock.Any()).Times(0)
+	s.mockStorage.EXPECT().StoreRunResults(s.hasReadCtx, gomock.Any()).Times(0)
 
 	err := s.dataStore.StoreRunResults(s.hasReadCtx, &storage.ComplianceRunResults{})
 
@@ -193,7 +193,7 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreRunResults() {
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreFailure() {
-	s.mockStorage.EXPECT().StoreFailure(gomock.Any()).Times(0)
+	s.mockStorage.EXPECT().StoreFailure(s.hasReadCtx, gomock.Any()).Times(0)
 
 	err := s.dataStore.StoreFailure(s.hasReadCtx, &storage.ComplianceRunMetadata{})
 
@@ -222,7 +222,7 @@ func (s *complianceDataStoreWithSACTestSuite) TestUsesStoredAggregationsWithoutS
 	results := []*storage.ComplianceAggregation_Result{}
 	sources := []*storage.ComplianceAggregation_Source{}
 	domainMap := map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain{}
-	s.mockStorage.EXPECT().GetAggregationResult(queryString, gomock.Nil(), testUnit).Return(results, sources, domainMap, nil)
+	s.mockStorage.EXPECT().GetAggregationResult(s.hasReadCtx, queryString, gomock.Nil(), testUnit).Return(results, sources, domainMap, nil)
 	noop := func() ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
 		s.True(false, "The aggregation method should not be called when we find a stored result")
 		return nil, nil, nil, nil

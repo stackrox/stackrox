@@ -143,7 +143,11 @@ func TestComplianceOperatorResults(t *testing.T) {
 }
 
 func getDynamicClientGenerator(t *testing.T) dynamic.Interface {
-	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube/config"))
+	kubeconfig := os.Getenv("KUBECONFIG")
+	if len(kubeconfig) == 0 {
+		kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube/config")
+	}
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	require.NoError(t, err)
 
 	dynamicClientGenerator, err := dynamic.NewForConfig(config)

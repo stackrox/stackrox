@@ -767,12 +767,34 @@ openshift_ci_mods() {
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
+}
 
-    # NAMESPACE is injected by OpenShift CI for the cluster running tests but
-    # can have side effects for stackrox tests e.g. with helm.
+openshift_ci_e2e_mods() {
+    # NAMESPACE is injected by OpenShift CI for the cluster that is running the
+    # tests but this can have side effects for stackrox tests due to its use as
+    # the default namespace e.g. with helm.
     if [[ -n "${NAMESPACE:-}" ]]; then
         export OPENSHIFT_CI_NAMESPACE="$NAMESPACE"
         unset NAMESPACE
+    fi
+
+    # Similarly the incoming KUBECONFIG is best avoided.
+    if [[ -n "${KUBECONFIG:-}" ]]; then
+        info "There is an incoming KUBECONFIG in ${KUBECONFIG}"
+        export OPENSHIFT_CI_KUBECONFIG="$KUBECONFIG"
+    fi
+    KUBECONFIG="$(mktemp)"
+    info "KUBECONFIG set: ${KUBECONFIG}"
+    export KUBECONFIG
+
+    # KUBERNETES_{PORT,SERVICE} env values also interact with commandline kubectl tests
+    if env | grep -e ^KUBERNETES_; then
+        local envfile
+        envfile="$(mktemp)"
+        info "Will clear ^KUBERNETES_ env"
+        env | grep -e ^KUBERNETES_ | cut -d= -f1 | awk '{ print "unset", $1 }' > "$envfile"
+        # shellcheck disable=SC1090
+        source "$envfile"
     fi
 }
 

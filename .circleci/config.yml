@@ -3386,14 +3386,14 @@ jobs:
           name: Setup for proxy tests
           command: |
             source tests/e2e/run.sh
-            setup_proxy_tests
+            setup_proxy_tests "central-proxy.stackrox.local"
             cci-export PROXY_CERTS_DIR "$PROXY_CERTS_DIR"
 
       - run:
           name: Run proxy tests
           command: |
             source tests/e2e/run.sh
-            run_proxy_tests
+            run_proxy_tests "central-proxy.stackrox.local"
 
       - collect-k8s-logs
       - get-and-store-debug-dump

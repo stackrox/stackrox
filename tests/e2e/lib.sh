@@ -250,7 +250,7 @@ collect_and_check_stackrox_logs() {
 
     info "Will collect stackrox logs to $dir and check them"
 
-    ./scripts/ci/collect-service-logs.sh stackrox "$dir"
+    "$TEST_ROOT/scripts/ci/collect-service-logs.sh" stackrox "$dir"
 
     check_stackrox_logs "$dir"
 }

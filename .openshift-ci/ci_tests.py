@@ -105,3 +105,21 @@ class UIE2eTest(BaseTest):
             ],
             UIE2eTest.TEST_TIMEOUT,
         )
+
+
+class NonGroovyE2e(BaseTest):
+    TEST_TIMEOUT = 90 * 60
+    TEST_OUTPUT_DIR = "/tmp/e2e-test-logs"
+
+    def run(self):
+        print("Executing the E2e Test")
+
+        def set_dirs_after_start():
+            # let post test know where logs are
+            self.test_output_dirs = [NonGroovyE2e.TEST_OUTPUT_DIR]
+
+        self.run_with_graceful_kill(
+            ["tests/e2e/run.sh", NonGroovyE2e.TEST_OUTPUT_DIR],
+            NonGroovyE2e.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
