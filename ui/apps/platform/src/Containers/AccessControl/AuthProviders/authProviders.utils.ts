@@ -191,6 +191,7 @@ export function mergeGroupsWithAuthProviders(
             }
         });
     }
+
     return Object.values(authProvidersWithGroupsDict);
 }
 
