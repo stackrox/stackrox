@@ -29,7 +29,7 @@ function WidgetCard({ isLoading, error, header, children }: WidgetCardProps) {
     }
 
     return (
-        <Card>
+        <Card className="pf-u-p-md">
             {header}
             {cardContent}
         </Card>
