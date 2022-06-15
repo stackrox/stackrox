@@ -42,7 +42,7 @@ func (ds *datastoreImpl) GetSpecificRunResults(ctx context.Context, clusterID, s
 		return types.ResultsWithStatus{}, errox.NotFound
 	}
 
-	res, err := ds.storage.GetSpecificRunResults(clusterID, standardID, runID, flags)
+	res, err := ds.storage.GetSpecificRunResults(ctx, clusterID, standardID, runID, flags)
 	if err != nil {
 		return types.ResultsWithStatus{}, err
 	}
@@ -66,7 +66,7 @@ func (ds *datastoreImpl) GetLatestRunResults(ctx context.Context, clusterID, sta
 		return types.ResultsWithStatus{}, errox.NotFound
 	}
 
-	res, err := ds.storage.GetLatestRunResults(clusterID, standardID, flags)
+	res, err := ds.storage.GetLatestRunResults(ctx, clusterID, standardID, flags)
 	if err != nil {
 		return types.ResultsWithStatus{}, err
 	}
@@ -85,7 +85,7 @@ func (ds *datastoreImpl) GetLatestRunResultsBatch(ctx context.Context, clusterID
 		return nil, standards.UnSupportedStandardsErr(unsupported...)
 	}
 
-	results, err := ds.storage.GetLatestRunResultsBatch(clusterIDs, standardIDs, flags)
+	results, err := ds.storage.GetLatestRunResultsBatch(ctx, clusterIDs, standardIDs, flags)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (ds *datastoreImpl) IsComplianceRunSuccessfulOnCluster(ctx context.Context,
 	} else if !ok {
 		return false, errors.Wrapf(errox.NotFound, "ClusterID %s", clusterID)
 	}
-	results, err := ds.storage.GetLatestRunMetadataBatch(clusterID, standardIDs)
+	results, err := ds.storage.GetLatestRunMetadataBatch(ctx, clusterID, standardIDs)
 	if err != nil || len(results) == 0 {
 		return false, err
 	}
@@ -134,11 +134,11 @@ func (ds *datastoreImpl) StoreRunResults(ctx context.Context, results *storage.C
 		atomic.AddUint64(&ds.aggregationSequenceNumber, 1)
 	}()
 
-	if err := ds.storage.ClearAggregationResults(); err != nil {
+	if err := ds.storage.ClearAggregationResults(ctx); err != nil {
 		log.Errorf("unable to clear old stored aggregations: %v", err)
 	}
 
-	return ds.storage.StoreRunResults(results)
+	return ds.storage.StoreRunResults(ctx, results)
 }
 
 func (ds *datastoreImpl) StoreFailure(ctx context.Context, metadata *storage.ComplianceRunMetadata) error {
@@ -147,7 +147,7 @@ func (ds *datastoreImpl) StoreFailure(ctx context.Context, metadata *storage.Com
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return ds.storage.StoreFailure(metadata)
+	return ds.storage.StoreFailure(ctx, metadata)
 }
 
 func (ds *datastoreImpl) StoreComplianceDomain(ctx context.Context, domain *storage.ComplianceDomain) error {
@@ -156,7 +156,7 @@ func (ds *datastoreImpl) StoreComplianceDomain(ctx context.Context, domain *stor
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return ds.storage.StoreComplianceDomain(domain)
+	return ds.storage.StoreComplianceDomain(ctx, domain)
 }
 
 func (ds *datastoreImpl) PerformStoredAggregation(ctx context.Context, args *StoredAggregationArgs) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
@@ -166,7 +166,7 @@ func (ds *datastoreImpl) PerformStoredAggregation(ctx context.Context, args *Sto
 	}
 
 	// Check for a pre-computed aggregation for this query
-	results, sources, domainMap, err := ds.storage.GetAggregationResult(args.QueryString, args.GroupBy, args.Unit)
+	results, sources, domainMap, err := ds.storage.GetAggregationResult(ctx, args.QueryString, args.GroupBy, args.Unit)
 	if err != nil {
 		// Log the error and continue.  We can skip this optimization and do the aggregation
 		log.Errorf("error getting pre-computed compliance aggregation: %v", err)
@@ -195,7 +195,7 @@ func (ds *datastoreImpl) PerformStoredAggregation(ctx context.Context, args *Sto
 			return
 		}
 
-		err = ds.storage.StoreAggregationResult(args.QueryString, args.GroupBy, args.Unit, results, sources, domainMap)
+		err = ds.storage.StoreAggregationResult(ctx, args.QueryString, args.GroupBy, args.Unit, results, sources, domainMap)
 		if err != nil {
 			// Log the error and continue.  We can skip this optimization without issue
 			log.Errorf("error storing compliance aggregation: %v", err)
@@ -211,5 +211,5 @@ func (ds *datastoreImpl) ClearAggregationResults(ctx context.Context) error {
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return ds.storage.ClearAggregationResults()
+	return ds.storage.ClearAggregationResults(ctx)
 }

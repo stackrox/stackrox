@@ -29,8 +29,10 @@ var (
                )
                `,
 		GormModel: (*ImageComponentCveEdges)(nil),
-		Indexes:   []string{},
-		Children:  []*postgres.CreateStmts{},
+		Indexes: []string{
+			"create index if not exists imageComponentCveEdges_ImageComponentId on image_component_cve_edges using hash(ImageComponentId)",
+		},
+		Children: []*postgres.CreateStmts{},
 	}
 
 	// ImageComponentCveEdgesSchema is the go schema for table `image_component_cve_edges`.
@@ -63,7 +65,7 @@ type ImageComponentCveEdges struct {
 	Id                 string          `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable          bool            `gorm:"column:isfixable;type:bool"`
 	FixedBy            string          `gorm:"column:fixedby;type:varchar"`
-	ImageComponentId   string          `gorm:"column:imagecomponentid;type:varchar"`
+	ImageComponentId   string          `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentcveedges_imagecomponentid,type:hash"`
 	ImageCveId         string          `gorm:"column:imagecveid;type:varchar"`
 	Serialized         []byte          `gorm:"column:serialized;type:bytea"`
 	ImageComponentsRef ImageComponents `gorm:"foreignKey:imagecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

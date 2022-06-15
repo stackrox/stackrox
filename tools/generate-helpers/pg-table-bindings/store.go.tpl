@@ -579,7 +579,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
 	if err != nil {
@@ -752,7 +752,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
     scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
     if err != nil {

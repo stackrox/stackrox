@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Divider, Flex } from '@patternfly/react-core';
+import { Flex } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
 
@@ -27,11 +27,9 @@ export default function WidgetErrorEmptyState({
 }: WidgetErrorEmptyStateProps) {
     return (
         <>
-            <Divider component="div" />
             <Flex
                 alignContent={{ default: 'alignContentCenter' }}
                 justifyContent={{ default: 'justifyContentCenter' }}
-                className="pf-u-px-sm"
                 style={{ height }}
             >
                 <EmptyStateTemplate icon={ErrorIcon} title={title} headingLevel="h3">
