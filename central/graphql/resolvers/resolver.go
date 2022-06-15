@@ -77,7 +77,8 @@ type Resolver struct {
 	ComplianceManager           complianceManager.ComplianceManager
 	clusterCVEEdgeDataStore     clusterCVEEdgeDataStore.DataStore
 	ComponentCVEEdgeDataStore   componentCVEEdgeDataStore.DataStore
-	CVEDataStore                imageCVEDataStore.DataStore
+	CVEDataStore                legacyImageCVEDataStore.DataStore
+	ImageCVEDataStore           imageCVEDataStore.DataStore
 	NodeCVEDataStore            nodeCVEDataStore.DataStore
 	DeploymentDataStore         deploymentDatastore.DataStore
 	PodDataStore                podDatastore.DataStore
@@ -115,17 +116,6 @@ type Resolver struct {
 
 // New returns a Resolver wired into the relevant data stores
 func New() *Resolver {
-	var imageCVEDS imageCVEDataStore.DataStore
-	var nodeCVEDS nodeCVEDataStore.DataStore
-	var nodeComponentDS nodeComponentDataStore.DataStore
-	if features.PostgresDatastore.Enabled() {
-		imageCVEDS = imageCVEDataStore.Singleton()
-		nodeCVEDS = nodeCVEDataStore.Singleton()
-		nodeComponentDS = nodeComponentDataStore.Singleton()
-	} else {
-		imageCVEDS = legacyImageCVEDataStore.Singleton()
-	}
-
 	resolver := &Resolver{
 		ActiveComponent:             activeComponent.Singleton(),
 		ComplianceAggregator:        aggregation.Singleton(),
@@ -138,13 +128,10 @@ func New() *Resolver {
 		ClusterDataStore:            clusterDatastore.Singleton(),
 		clusterCVEEdgeDataStore:     clusterCVEEdgeDataStore.Singleton(),
 		ComponentCVEEdgeDataStore:   componentCVEEdgeDataStore.Singleton(),
-		CVEDataStore:                imageCVEDS,
-		NodeCVEDataStore:            nodeCVEDS,
 		DeploymentDataStore:         deploymentDatastore.Singleton(),
 		PodDataStore:                podDatastore.Singleton(),
 		ImageDataStore:              imageDatastore.Singleton(),
 		ImageComponentDataStore:     imageComponentDataStore.Singleton(),
-		NodeComponentDataStore:      nodeComponentDS,
 		ImageComponentEdgeDataStore: imageComponentEdgeDataStore.Singleton(),
 		ImageCVEEdgeDataStore:       imageCVEEdgeDataStore.Singleton(),
 		GroupDataStore:              groupDataStore.Singleton(),
@@ -173,6 +160,14 @@ func New() *Resolver {
 		vulnReqStore:                vulnReqDataStore.Singleton(),
 		AuditLogger:                 audit.New(processor.Singleton()),
 	}
+	if features.PostgresDatastore.Enabled() {
+		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
+		resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()
+		resolver.NodeComponentDataStore = nodeComponentDataStore.Singleton()
+	} else {
+		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
+	}
+
 	return resolver
 }
 
