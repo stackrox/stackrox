@@ -27,6 +27,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Use `/v1/nodecves/suppress` and `/v1/nodecves/unsuppress` to snooze and unsnooze node/host vulnerabilities.
   - Use `/v1/platformcves/suppress` and `/v1/platformcves/unsuppress` to snooze and unsnooze platform (k8s, istio, and openshift) vulnerabilities.
 - /v1/compliance/results was never implemented and will be removed in this release
+- In release 73.0, the /v1/compliance/runresults endpoint will contain a slimmed down version of the ComplianceDomain object. This allows for greater scalability and reduced memory usage.
 
 ## [70.0]
 
