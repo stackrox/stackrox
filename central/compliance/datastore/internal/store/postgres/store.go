@@ -135,7 +135,7 @@ func (s *storeImpl) GetSpecificRunResults(ctx context.Context, _, _, runID strin
 func (s *storeImpl) GetLatestRunResults(ctx context.Context, clusterID, standardID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
 	metadataBatch, err := s.getLatestRunMetadata(ctx, clusterID, standardID)
 	if err != nil {
-		return types.ResultsWithStatus{}, nil
+		return types.ResultsWithStatus{}, err
 	}
 	if metadataBatch.LastSuccessfulRunMetadata == nil {
 		return types.ResultsWithStatus{
@@ -144,7 +144,7 @@ func (s *storeImpl) GetLatestRunResults(ctx context.Context, clusterID, standard
 	}
 	results, err := s.getResultsFromMetadata(ctx, metadataBatch.LastSuccessfulRunMetadata, flags)
 	if err != nil {
-		return types.ResultsWithStatus{}, nil
+		return types.ResultsWithStatus{}, err
 	}
 	return types.ResultsWithStatus{
 		LastSuccessfulResults: results,
