@@ -160,7 +160,7 @@ func (s *storeImpl) GetLatestRunResultsBatch(ctx context.Context, clusterIDs, st
 			if err != nil {
 				return nil, err
 			}
-			pairsToResults[compliance.ClusterStandardPair{ClusterID: clusterID, StandardID: standardID}] = results
+			pairsToResults[compliance.NewPair(clusterID, standardID)] = results
 		}
 	}
 	return pairsToResults, nil
