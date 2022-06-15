@@ -575,10 +575,9 @@ func RunDeleteRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 		return err
 	}
 
-	queryStr := query.AsSQL()
-	_, err = db.Exec(context.Background(), queryStr, query.Data...)
+	_, err = db.Exec(context.Background(), query.AsSQL(), query.Data...)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not delete from %q", schema.Table)
 	}
 	return nil
 }
