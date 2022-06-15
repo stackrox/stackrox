@@ -44,11 +44,10 @@ func init() {
 			"imageVulnerabilityCount(query: String): Int!",
 			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
+			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"topImageVulnerability(query: String): ImageVulnerability",
 			"unusedVarSink(query: String): Int",
 			"watchStatus: ImageWatchStatus!",
-
-			"plottedVulns(query: String): PlottedVulnerabilities!", // TODO
 		}),
 		// deprecated fields
 		schema.AddExtraResolvers("Image", []string{
@@ -64,6 +63,8 @@ func init() {
 				"@deprecated(reason: \"use 'imageComponentCount'\")",
 			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!" +
 				"@deprecated(reason: \"use 'imageComponentCount'\")",
+			"plottedVulns(query: String): PlottedVulnerabilities!" +
+				"@deprecated(reason: \"use 'plottedImageVulnerabilities'\")",
 		}),
 		schema.AddQuery("image(id: ID!): Image"),
 		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
@@ -151,7 +152,11 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuer
 func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopImageVulnerability")
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.topVulnV2(ctx, args)
+		vulnResolver, err := resolver.topVulnV2(ctx, args)
+		if err != nil || vulnResolver == nil {
+			return nil, err
+		}
+		return vulnResolver, nil
 	}
 	// TODO postgres support
 	return nil, errors.New("Sub-resolver TopVulnerability in image does not support postgres")
@@ -377,6 +382,12 @@ func (resolver *imageResolver) getImageQuery() *v1.Query {
 func (resolver *imageResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
+}
+
+// PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
+func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "PlottedImageVulnerabilities")
+	return newPlottedImageVulnerabilitiesResolver(resolver.imageScopeContext(ctx), resolver.root, args)
 }
 
 func (resolver *imageResolver) WatchStatus(ctx context.Context) (string, error) {
