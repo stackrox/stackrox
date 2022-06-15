@@ -31,12 +31,7 @@ function DeploymentsAtMostRiskTable({
     searchFilter,
 }: DeploymentsAtMostRiskTableProps) {
     return (
-        <TableComposable
-            aria-label="Deployments at most risk"
-            variant="compact"
-            borders={false}
-            gridBreakPoint="grid-md"
-        >
+        <TableComposable aria-label="Deployments at most risk" variant="compact" borders={false}>
             <Thead>
                 <Tr>
                     <Th className="pf-u-pl-0">{columnNames.deployment}</Th>
