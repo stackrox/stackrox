@@ -41,6 +41,7 @@ assign_env_variables() {
     fi
 
     local cluster_name="rox-ci-${cluster_id}-${build_num}"
+    cluster_name="${cluster_name:0:40}" # (for GKE name limit)
     ci_export CLUSTER_NAME "$cluster_name"
     echo "Assigned cluster name is $cluster_name"
 
