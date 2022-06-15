@@ -13,10 +13,8 @@ kubectl create ns proxies --dry-run -o yaml | kubectl apply -f -
 kubectl label ns proxies --overwrite stackrox-proxies=true
 
 kubectl -n proxies create cm nginx-proxy-plain-http-conf \
-	--from-file <(server_name="${server_name}" envsubst <"${dir}/nginx-proxy-plain-http.conf") \
+	--from-file=nginx-proxy-plain-http.conf=<(server_name="${server_name}" envsubst <"${dir}/nginx-proxy-plain-http.conf") \
 	--dry-run -o yaml | kubectl apply -f -
-
-kubectl -n proxies get cm nginx-proxy-plain-http-conf -o yaml
 
 kubectl apply -f "${dir}/nginx-proxy-plain-http.yaml"
 
@@ -34,7 +32,7 @@ for proxy_type in http1 http1-plain http2 http2-plain multiplexed multiplexed-tl
 	proxy_name="nginx-proxy-tls-${proxy_type}"
 
 	kubectl -n proxies create cm "${proxy_name}-conf" \
-		--from-file <(server_name="${server_name}" envsubst <"${dir}/${proxy_name}.conf") \
+		--from-file="${proxy_name}.conf"=<(server_name="${server_name}" envsubst <"${dir}/${proxy_name}.conf") \
 		--dry-run -o yaml | kubectl apply -f -
 
 	kubectl apply -n proxies -f <(name="${proxy_name}" envsubst <"${dir}/nginx-proxy-tls.yaml.template")
