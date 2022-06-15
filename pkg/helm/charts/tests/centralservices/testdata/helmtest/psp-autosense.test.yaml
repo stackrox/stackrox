@@ -3,7 +3,8 @@ tests:
     values:
       meta:
         apiServer:
-          overrideAPIResources: ["policy/v1beta"]
+          overrideAPIResources:
+            - "policy/v1beta1"
       system:
         enablePodSecurityPolicies: null
     expect: |
