@@ -6,8 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
-	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
+	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,19 +19,16 @@ import (
 var cveLoaderType = reflect.TypeOf(storage.CVE{})
 
 func init() {
+	if features.PostgresDatastore.Enabled() {
+		return
+	}
 	RegisterTypeFactory(reflect.TypeOf(storage.CVE{}), func() interface{} {
-		var imageCVEDS imageCVEDataStore.DataStore
-		if features.PostgresDatastore.Enabled() {
-			imageCVEDS = imageCVEDataStore.Singleton()
-		} else {
-			imageCVEDS = legacyImageCVEDataStore.Singleton()
-		}
-		return NewCVELoader(imageCVEDS)
+		return NewCVELoader(cveDataStore.Singleton())
 	})
 }
 
 // NewCVELoader creates a new loader for cve data.
-func NewCVELoader(ds imageCVEDataStore.DataStore) CVELoader {
+func NewCVELoader(ds cveDataStore.DataStore) CVELoader {
 	return &cveLoaderImpl{
 		loaded: make(map[string]*storage.CVE),
 		ds:     ds,
@@ -63,7 +59,7 @@ type cveLoaderImpl struct {
 	lock   sync.RWMutex
 	loaded map[string]*storage.CVE
 
-	ds imageCVEDataStore.DataStore
+	ds cveDataStore.DataStore
 }
 
 func enrich(distro string, value *storage.CVE) {
