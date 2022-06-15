@@ -7,9 +7,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -29,10 +31,9 @@ func init() {
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
 			"lastScanned: Time",
 			"location(query: String): String!",
+			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"topImageVulnerability: ImageVulnerability",
 			"unusedVarSink(query: String): Int",
-
-			"plottedVulns(query: String): PlottedVulnerabilities!", // TODO
 		}),
 		schema.AddQuery("imageComponent(id: ID): ImageComponent"),
 		schema.AddQuery("imageComponents(query: String, scopeQuery: String, pagination: Pagination): [ImageComponent!]!"),
@@ -65,14 +66,13 @@ type ImageComponentResolver interface {
 	Location(ctx context.Context, args RawQuery) (string, error)
 	Name(ctx context.Context) string
 	OperatingSystem(ctx context.Context) string
+	PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error)
 	Priority(ctx context.Context) int32
 	RiskScore(ctx context.Context) float64
 	Source(ctx context.Context) string
 	TopImageVulnerability(ctx context.Context) (ImageVulnerabilityResolver, error)
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 	Version(ctx context.Context) string
-
-	PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) // TODO
 }
 
 // ImageComponent returns an image component based on an input id (name:version)
@@ -107,6 +107,19 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 	}
 	// TODO : Add postgres support
 	return 0, errors.New("Resolver ImageComponentCount does not support postgres yet")
+}
+
+// PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
+func (resolver *imageComponentResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "PlottedImageVulnerabilities")
+	return newPlottedImageVulnerabilitiesResolver(resolver.withImageComponentScope(ctx), resolver.root, args)
+}
+
+func (resolver *imageComponentResolver) withImageComponentScope(ctx context.Context) context.Context {
+	return scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGE_COMPONENTS,
+		ID:    resolver.data.GetId(),
+	})
 }
 
 func queryWithImageIDRegexFilter(q string) string {
