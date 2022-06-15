@@ -45,12 +45,12 @@ fi
 echo "StackRox scanner image set to $SCANNER_IMAGE"
 
 function curl_central() {
-  cmd=(curl -k)
-  local admin_user="${ROX_ADMIN_USER:-admin}"
-  if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
-    cmd+=(-u "${admin_user}:${ROX_ADMIN_PASSWORD}")
-  fi
-  "${cmd[@]}" "$@"
+	cmd=(curl -k)
+	local admin_user="${ROX_ADMIN_USER:-admin}"
+	if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
+		cmd+=(-u "${admin_user}:${ROX_ADMIN_PASSWORD}")
+	fi
+	"${cmd[@]}" "$@"
 }
 
 # generate_ca
@@ -226,8 +226,8 @@ function setup_license() {
 
     local status
     status="$(curl_central \
-        -s \
-        -o /dev/null \
+	    -s \
+	    -o /dev/null \
         "https://${local_api_endpoint}/v1/licenses/list" \
         -w "%{http_code}\n" || true)"
     if [[ "$status" == "404" ]]; then
@@ -241,8 +241,8 @@ function setup_license() {
     local tmp="$(mktemp)"
 
     status=$(curl_central \
-        -s \
-        -o "$tmp" \
+	    -s \
+	    -o "$tmp" \
         "https://${local_api_endpoint}/v1/licenses/add" \
         -w "%{http_code}\n" \
         -X POST \
@@ -260,29 +260,29 @@ function setup_license() {
 function setup_auth0() {
     local LOCAL_API_ENDPOINT="$1"
     local LOCAL_CLIENT_SECRET="$2"
-  echo "Setting up Dev Auth0 login"
+	echo "Setting up Dev Auth0 login"
 
-  TMP=$(mktemp)
-  STATUS=$(curl_central \
-        -s \
+	TMP=$(mktemp)
+	STATUS=$(curl_central \
+	    -s \
         -o "$TMP" \
         "https://${LOCAL_API_ENDPOINT}/v1/authProviders" \
         -w "%{http_code}\n" \
         -X POST \
         -d @- <<-EOF
 {
-  "name": "StackRox Dev (Auth0)",
-  "type": "oidc",
-  "uiEndpoint": "${LOCAL_API_ENDPOINT}",
-  "enabled": true,
-  "validated": true,
-  "config": {
-    "issuer": "https://sr-dev.auth0.com",
-    "client_id": "bu63HaVAuVPEgMUeRVfL5PzrqTXaedA2",
-    "client_secret": "${LOCAL_CLIENT_SECRET}",
-    "mode": "post"
-  },
-  "extraUiEndpoints": ["localhost:8000", "localhost:3000", "localhost:8001", "prevent.stackrox.com"]
+	"name": "StackRox Dev (Auth0)",
+	"type": "oidc",
+	"uiEndpoint": "${LOCAL_API_ENDPOINT}",
+	"enabled": true,
+	"validated": true,
+	"config": {
+		"issuer": "https://sr-dev.auth0.com",
+		"client_id": "bu63HaVAuVPEgMUeRVfL5PzrqTXaedA2",
+		"client_secret": "${LOCAL_CLIENT_SECRET}",
+		"mode": "post"
+	},
+	"extraUiEndpoints": ["localhost:8000", "localhost:3000", "localhost:8001", "prevent.stackrox.com"]
 }
 EOF
     )
