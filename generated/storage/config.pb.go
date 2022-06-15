@@ -5,6 +5,7 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	io "io"
 	math "math"
@@ -388,25 +389,177 @@ func (m *AlertRetentionConfig) Clone() *AlertRetentionConfig {
 	return cloned
 }
 
+// next available tag: 4
+type DecommissionedClusterRetentionConfig struct {
+	RetentionDurationDays int32                                                    `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays,proto3" json:"retention_duration_days,omitempty"`
+	IgnoreLabel           *DecommissionedClusterRetentionConfig_IgnoreClusterLabel `protobuf:"bytes,2,opt,name=ignore_label,json=ignoreLabel,proto3" json:"ignore_label,omitempty"`
+	LastUpdated           *types.Timestamp                                         `protobuf:"bytes,3,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	XXX_NoUnkeyedLiteral  struct{}                                                 `json:"-"`
+	XXX_unrecognized      []byte                                                   `json:"-"`
+	XXX_sizecache         int32                                                    `json:"-"`
+}
+
+func (m *DecommissionedClusterRetentionConfig) Reset()         { *m = DecommissionedClusterRetentionConfig{} }
+func (m *DecommissionedClusterRetentionConfig) String() string { return proto.CompactTextString(m) }
+func (*DecommissionedClusterRetentionConfig) ProtoMessage()    {}
+func (*DecommissionedClusterRetentionConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_33903d79f8815efc, []int{4}
+}
+func (m *DecommissionedClusterRetentionConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DecommissionedClusterRetentionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DecommissionedClusterRetentionConfig.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DecommissionedClusterRetentionConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DecommissionedClusterRetentionConfig.Merge(m, src)
+}
+func (m *DecommissionedClusterRetentionConfig) XXX_Size() int {
+	return m.Size()
+}
+func (m *DecommissionedClusterRetentionConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_DecommissionedClusterRetentionConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DecommissionedClusterRetentionConfig proto.InternalMessageInfo
+
+func (m *DecommissionedClusterRetentionConfig) GetRetentionDurationDays() int32 {
+	if m != nil {
+		return m.RetentionDurationDays
+	}
+	return 0
+}
+
+func (m *DecommissionedClusterRetentionConfig) GetIgnoreLabel() *DecommissionedClusterRetentionConfig_IgnoreClusterLabel {
+	if m != nil {
+		return m.IgnoreLabel
+	}
+	return nil
+}
+
+func (m *DecommissionedClusterRetentionConfig) GetLastUpdated() *types.Timestamp {
+	if m != nil {
+		return m.LastUpdated
+	}
+	return nil
+}
+
+func (m *DecommissionedClusterRetentionConfig) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DecommissionedClusterRetentionConfig) Clone() *DecommissionedClusterRetentionConfig {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DecommissionedClusterRetentionConfig)
+	*cloned = *m
+
+	cloned.IgnoreLabel = m.IgnoreLabel.Clone()
+	cloned.LastUpdated = m.LastUpdated.Clone()
+	return cloned
+}
+
+// next available tag: 3
+type DecommissionedClusterRetentionConfig_IgnoreClusterLabel struct {
+	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) Reset() {
+	*m = DecommissionedClusterRetentionConfig_IgnoreClusterLabel{}
+}
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) String() string {
+	return proto.CompactTextString(m)
+}
+func (*DecommissionedClusterRetentionConfig_IgnoreClusterLabel) ProtoMessage() {}
+func (*DecommissionedClusterRetentionConfig_IgnoreClusterLabel) Descriptor() ([]byte, []int) {
+	return fileDescriptor_33903d79f8815efc, []int{4, 0}
+}
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DecommissionedClusterRetentionConfig_IgnoreClusterLabel.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DecommissionedClusterRetentionConfig_IgnoreClusterLabel.Merge(m, src)
+}
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) XXX_Size() int {
+	return m.Size()
+}
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) XXX_DiscardUnknown() {
+	xxx_messageInfo_DecommissionedClusterRetentionConfig_IgnoreClusterLabel.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DecommissionedClusterRetentionConfig_IgnoreClusterLabel proto.InternalMessageInfo
+
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) GetValue() string {
+	if m != nil {
+		return m.Value
+	}
+	return ""
+}
+
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) Clone() *DecommissionedClusterRetentionConfig_IgnoreClusterLabel {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DecommissionedClusterRetentionConfig_IgnoreClusterLabel)
+	*cloned = *m
+
+	return cloned
+}
+
 // next available tag: 6
 type PrivateConfig struct {
 	// Types that are valid to be assigned to AlertRetention:
 	//	*PrivateConfig_DEPRECATEDAlertRetentionDurationDays
 	//	*PrivateConfig_AlertConfig
-	AlertRetention                             isPrivateConfig_AlertRetention `protobuf_oneof:"alert_retention"`
-	ImageRetentionDurationDays                 int32                          `protobuf:"varint,2,opt,name=image_retention_duration_days,json=imageRetentionDurationDays,proto3" json:"image_retention_duration_days,omitempty"`
-	ExpiredVulnReqRetentionDurationDays        int32                          `protobuf:"varint,4,opt,name=expired_vuln_req_retention_duration_days,json=expiredVulnReqRetentionDurationDays,proto3" json:"expired_vuln_req_retention_duration_days,omitempty"`
-	DecommissionedClusterRetentionDurationDays int32                          `protobuf:"varint,5,opt,name=decommissioned_cluster_retention_duration_days,json=decommissionedClusterRetentionDurationDays,proto3" json:"decommissioned_cluster_retention_duration_days,omitempty"`
-	XXX_NoUnkeyedLiteral                       struct{}                       `json:"-"`
-	XXX_unrecognized                           []byte                         `json:"-"`
-	XXX_sizecache                              int32                          `json:"-"`
+	AlertRetention                      isPrivateConfig_AlertRetention        `protobuf_oneof:"alert_retention"`
+	ImageRetentionDurationDays          int32                                 `protobuf:"varint,2,opt,name=image_retention_duration_days,json=imageRetentionDurationDays,proto3" json:"image_retention_duration_days,omitempty"`
+	ExpiredVulnReqRetentionDurationDays int32                                 `protobuf:"varint,4,opt,name=expired_vuln_req_retention_duration_days,json=expiredVulnReqRetentionDurationDays,proto3" json:"expired_vuln_req_retention_duration_days,omitempty"`
+	DecommissionedClusterRetention      *DecommissionedClusterRetentionConfig `protobuf:"bytes,5,opt,name=decommissioned_cluster_retention,json=decommissionedClusterRetention,proto3" json:"decommissioned_cluster_retention,omitempty"`
+	XXX_NoUnkeyedLiteral                struct{}                              `json:"-"`
+	XXX_unrecognized                    []byte                                `json:"-"`
+	XXX_sizecache                       int32                                 `json:"-"`
 }
 
 func (m *PrivateConfig) Reset()         { *m = PrivateConfig{} }
 func (m *PrivateConfig) String() string { return proto.CompactTextString(m) }
 func (*PrivateConfig) ProtoMessage()    {}
 func (*PrivateConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_33903d79f8815efc, []int{4}
+	return fileDescriptor_33903d79f8815efc, []int{5}
 }
 func (m *PrivateConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -506,11 +659,11 @@ func (m *PrivateConfig) GetExpiredVulnReqRetentionDurationDays() int32 {
 	return 0
 }
 
-func (m *PrivateConfig) GetDecommissionedClusterRetentionDurationDays() int32 {
+func (m *PrivateConfig) GetDecommissionedClusterRetention() *DecommissionedClusterRetentionConfig {
 	if m != nil {
-		return m.DecommissionedClusterRetentionDurationDays
+		return m.DecommissionedClusterRetention
 	}
-	return 0
+	return nil
 }
 
 // XXX_OneofWrappers is for the internal use of the proto package.
@@ -534,6 +687,7 @@ func (m *PrivateConfig) Clone() *PrivateConfig {
 	if m.AlertRetention != nil {
 		cloned.AlertRetention = m.AlertRetention.Clone()
 	}
+	cloned.DecommissionedClusterRetention = m.DecommissionedClusterRetention.Clone()
 	return cloned
 }
 
@@ -549,7 +703,7 @@ func (m *Config) Reset()         { *m = Config{} }
 func (m *Config) String() string { return proto.CompactTextString(m) }
 func (*Config) ProtoMessage()    {}
 func (*Config) Descriptor() ([]byte, []int) {
-	return fileDescriptor_33903d79f8815efc, []int{5}
+	return fileDescriptor_33903d79f8815efc, []int{6}
 }
 func (m *Config) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -613,6 +767,8 @@ func init() {
 	proto.RegisterType((*BannerConfig)(nil), "storage.BannerConfig")
 	proto.RegisterType((*PublicConfig)(nil), "storage.PublicConfig")
 	proto.RegisterType((*AlertRetentionConfig)(nil), "storage.AlertRetentionConfig")
+	proto.RegisterType((*DecommissionedClusterRetentionConfig)(nil), "storage.DecommissionedClusterRetentionConfig")
+	proto.RegisterType((*DecommissionedClusterRetentionConfig_IgnoreClusterLabel)(nil), "storage.DecommissionedClusterRetentionConfig.IgnoreClusterLabel")
 	proto.RegisterType((*PrivateConfig)(nil), "storage.PrivateConfig")
 	proto.RegisterType((*Config)(nil), "storage.Config")
 }
@@ -620,50 +776,58 @@ func init() {
 func init() { proto.RegisterFile("storage/config.proto", fileDescriptor_33903d79f8815efc) }
 
 var fileDescriptor_33903d79f8815efc = []byte{
-	// 674 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x95, 0xcb, 0x4e, 0xdb, 0x4c,
-	0x14, 0xc7, 0x63, 0x72, 0xe1, 0xe3, 0x24, 0x40, 0x3e, 0x2b, 0xad, 0x52, 0x24, 0x52, 0x14, 0xa8,
-	0x1a, 0x2a, 0x35, 0x95, 0xa0, 0x52, 0xa5, 0x56, 0x5d, 0xe4, 0xa6, 0x52, 0x29, 0x20, 0x34, 0x5c,
-	0x84, 0xba, 0xb1, 0x26, 0xf6, 0x21, 0x1d, 0x31, 0xf1, 0x98, 0xf1, 0x04, 0x01, 0xdb, 0xbe, 0x44,
-	0x5f, 0xa0, 0xaf, 0xd1, 0x45, 0x57, 0x5d, 0xf6, 0x11, 0xaa, 0xf4, 0x45, 0x2a, 0x8f, 0xed, 0xc4,
-	0xa0, 0x90, 0xa8, 0xbb, 0x99, 0xa3, 0xff, 0xf9, 0xf9, 0xdc, 0x7c, 0x06, 0x4a, 0xbe, 0x12, 0x92,
-	0xf6, 0xf1, 0x95, 0x2d, 0xdc, 0x73, 0xd6, 0xaf, 0x7b, 0x52, 0x28, 0x61, 0x2e, 0x46, 0xd6, 0xea,
-	0x3b, 0xc8, 0x77, 0x45, 0x9f, 0xb9, 0x07, 0x42, 0x31, 0x1b, 0xcd, 0x32, 0x2c, 0xa2, 0x4b, 0x7b,
-	0x1c, 0x9d, 0xb2, 0xb1, 0x61, 0xd4, 0xfe, 0x23, 0xf1, 0xd5, 0x34, 0x21, 0xa3, 0xf0, 0x5a, 0x95,
-	0x17, 0x36, 0x8c, 0xda, 0x12, 0xd1, 0xe7, 0xea, 0xc8, 0x80, 0x42, 0x93, 0xba, 0x2e, 0xca, 0x96,
-	0x86, 0xff, 0x9b, 0xbb, 0x59, 0x87, 0x8c, 0xcf, 0x6e, 0xb1, 0x9c, 0xde, 0x30, 0x6a, 0x2b, 0x3b,
-	0x6b, 0xf5, 0x28, 0xa6, 0x7a, 0x12, 0x59, 0x3f, 0x62, 0xb7, 0x48, 0xb4, 0xce, 0x2c, 0x41, 0xd6,
-	0x16, 0x5c, 0xc8, 0x72, 0x46, 0x43, 0xc2, 0x8b, 0xb9, 0x0d, 0xc5, 0x1e, 0xb5, 0x2f, 0xfa, 0x52,
-	0x0c, 0x5d, 0xc7, 0x0a, 0x05, 0x59, 0x2d, 0x58, 0x9d, 0xd8, 0x5b, 0x81, 0xb9, 0xba, 0x0b, 0x99,
-	0x00, 0x67, 0x2e, 0x41, 0xf6, 0xe4, 0xe0, 0xa8, 0x73, 0x5c, 0x4c, 0x05, 0xc7, 0xa3, 0xfd, 0x46,
-	0xb7, 0x5b, 0x34, 0x4c, 0x80, 0xdc, 0x7e, 0xa7, 0xfd, 0xf1, 0x64, 0xbf, 0xb8, 0x10, 0x98, 0xbb,
-	0x0d, 0xf2, 0xa1, 0x53, 0x4c, 0x57, 0xbf, 0x19, 0x50, 0x38, 0x1c, 0xf6, 0x38, 0xb3, 0xa3, 0x24,
-	0xdf, 0x40, 0x81, 0x07, 0x25, 0xb3, 0x5c, 0x5d, 0x33, 0x9d, 0x69, 0x7e, 0xa7, 0x34, 0x0e, 0x3f,
-	0x51, 0x4f, 0x92, 0xe7, 0x89, 0xe2, 0xbe, 0x84, 0xdc, 0x67, 0xa4, 0x0e, 0x4a, 0x5d, 0x85, 0xfc,
-	0xce, 0xa3, 0xa9, 0x19, 0x93, 0x48, 0x14, 0xc8, 0xcf, 0x85, 0x50, 0x28, 0x75, 0x81, 0x1e, 0x96,
-	0x87, 0xa2, 0xea, 0x8f, 0x34, 0x94, 0x1a, 0x1c, 0xa5, 0x22, 0xa8, 0xd0, 0x55, 0x4c, 0xb8, 0x51,
-	0xbc, 0xc7, 0xf0, 0x5c, 0xa2, 0x2f, 0xf8, 0x15, 0x3a, 0x96, 0x83, 0x1e, 0x17, 0x37, 0x96, 0x8c,
-	0x25, 0x96, 0x33, 0x94, 0x34, 0x3c, 0xd0, 0x1b, 0x5f, 0xa7, 0x92, 0x25, 0x9b, 0xb1, 0xbc, 0xad,
-	0xd5, 0x63, 0x5e, 0x3b, 0xd2, 0xb6, 0xe9, 0x8d, 0x1f, 0x50, 0x1d, 0xe4, 0xa8, 0xd0, 0xb1, 0xe4,
-	0xd0, 0x55, 0x6c, 0x80, 0x0f, 0x52, 0x17, 0x42, 0x6a, 0x24, 0x27, 0xa1, 0x7a, 0x3a, 0xb5, 0x0b,
-	0x9b, 0x94, 0xf3, 0xb9, 0xc4, 0xb4, 0x26, 0x3e, 0xa5, 0x9c, 0xcf, 0xa4, 0x9d, 0x42, 0x8d, 0x2a,
-	0x85, 0x03, 0x4f, 0xcd, 0x4f, 0x3d, 0xa3, 0x91, 0x5b, 0x63, 0xfd, 0xac, 0xdc, 0xcf, 0x60, 0x7b,
-	0xc2, 0x9d, 0x17, 0x6b, 0x56, 0x83, 0x9f, 0x8d, 0x1d, 0x66, 0x45, 0x5c, 0xfd, 0x9e, 0x86, 0xe5,
-	0x43, 0xc9, 0xae, 0xa8, 0xc2, 0xa8, 0x7b, 0x67, 0x50, 0x6b, 0x77, 0x0e, 0x49, 0xa7, 0xd5, 0x38,
-	0xee, 0xb4, 0x2d, 0x1a, 0x34, 0x78, 0x76, 0xfb, 0xf6, 0x52, 0x64, 0x6b, 0xe2, 0x71, 0x77, 0x22,
-	0xee, 0x64, 0xd1, 0x84, 0x42, 0x88, 0x0b, 0x37, 0x43, 0x34, 0x65, 0xeb, 0xe3, 0x29, 0x9b, 0x36,
-	0x4c, 0x7b, 0x29, 0x92, 0xd7, 0x4e, 0x51, 0x74, 0x0d, 0x58, 0x67, 0x03, 0xda, 0x9f, 0xd7, 0xfb,
-	0x35, 0x2d, 0x9a, 0x1e, 0xc6, 0x09, 0xd4, 0xf0, 0xda, 0x63, 0x12, 0x1d, 0xeb, 0x6a, 0xc8, 0x5d,
-	0x4b, 0xe2, 0xe5, 0x9c, 0x26, 0x6d, 0x46, 0xfa, 0xd3, 0x21, 0x77, 0x09, 0x5e, 0x4e, 0xc7, 0xf6,
-	0xa0, 0xee, 0xa0, 0x2d, 0x06, 0x03, 0xe6, 0xfb, 0x4c, 0xb8, 0xe8, 0x58, 0x36, 0x1f, 0xfa, 0x0a,
-	0xe5, 0x9c, 0x46, 0xbd, 0xb8, 0xeb, 0xd5, 0x0a, 0x9d, 0xa6, 0x7e, 0xa3, 0xf9, 0x3f, 0xac, 0xde,
-	0x6b, 0x48, 0xf5, 0x8b, 0x01, 0xb9, 0xa8, 0x36, 0x6f, 0x61, 0xd9, 0xd3, 0x7b, 0x23, 0x2e, 0xb0,
-	0x71, 0xef, 0x37, 0x4e, 0x6e, 0x15, 0x52, 0xf0, 0x92, 0x3b, 0xe6, 0x3d, 0xac, 0x78, 0xe1, 0x18,
-	0xc4, 0xce, 0xe1, 0xca, 0x78, 0x3c, 0x71, 0x4e, 0x4e, 0x09, 0x59, 0xf6, 0x92, 0xd7, 0xe6, 0xeb,
-	0x9f, 0xa3, 0x8a, 0xf1, 0x6b, 0x54, 0x31, 0x7e, 0x8f, 0x2a, 0xc6, 0xd7, 0x3f, 0x95, 0x14, 0x3c,
-	0x61, 0xa2, 0xee, 0x2b, 0x6a, 0x5f, 0x48, 0x71, 0x1d, 0xbe, 0x01, 0x31, 0xe9, 0x53, 0xfc, 0x16,
-	0xf4, 0x72, 0xda, 0xbe, 0xfb, 0x37, 0x00, 0x00, 0xff, 0xff, 0x12, 0x47, 0x40, 0x3f, 0x33, 0x06,
-	0x00, 0x00,
+	// 816 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0xc1, 0x6e, 0xdb, 0x46,
+	0x10, 0x35, 0x2d, 0xc9, 0xa9, 0x87, 0x72, 0xa2, 0x12, 0x4e, 0xab, 0x0a, 0x88, 0x62, 0xd0, 0x2e,
+	0xaa, 0x1c, 0x42, 0x03, 0x4e, 0xd1, 0x02, 0x6d, 0x03, 0x54, 0xb6, 0x84, 0x26, 0x80, 0x1c, 0x18,
+	0x6b, 0x3b, 0x08, 0x7a, 0x21, 0x56, 0xe4, 0x98, 0x25, 0xbc, 0xe2, 0x32, 0xcb, 0xa5, 0x6b, 0xe5,
+	0xda, 0x9f, 0xe8, 0x0f, 0xf4, 0x3f, 0x8a, 0x9e, 0x7a, 0x2c, 0xd0, 0x1f, 0x28, 0xd4, 0x1f, 0x29,
+	0xb8, 0xbb, 0x94, 0x64, 0x57, 0x91, 0xe2, 0xdb, 0xee, 0xe8, 0xcd, 0xe3, 0xcc, 0xdb, 0x37, 0x23,
+	0xd8, 0xce, 0x24, 0x17, 0x34, 0xc2, 0xfd, 0x80, 0x27, 0x17, 0x71, 0xe4, 0xa5, 0x82, 0x4b, 0xee,
+	0xdc, 0x33, 0xd1, 0xd6, 0xe3, 0x88, 0xf3, 0x88, 0xe1, 0xbe, 0x0a, 0x0f, 0xf3, 0x8b, 0x7d, 0x19,
+	0x8f, 0x30, 0x93, 0x74, 0x94, 0x6a, 0xa4, 0xfb, 0x2d, 0xd8, 0x03, 0x1e, 0xc5, 0xc9, 0x2b, 0x2e,
+	0xe3, 0x00, 0x9d, 0x26, 0xdc, 0xc3, 0x84, 0x0e, 0x19, 0x86, 0x4d, 0x6b, 0xc7, 0xea, 0x7c, 0x44,
+	0xca, 0xab, 0xe3, 0x40, 0x55, 0xe2, 0xb5, 0x6c, 0xae, 0xef, 0x58, 0x9d, 0x4d, 0xa2, 0xce, 0xee,
+	0xc4, 0x82, 0xfa, 0x21, 0x4d, 0x12, 0x14, 0x47, 0xea, 0xeb, 0x77, 0x4b, 0x77, 0x3c, 0xa8, 0x66,
+	0xf1, 0x3b, 0x6c, 0x56, 0x76, 0xac, 0xce, 0xfd, 0x83, 0x96, 0x67, 0x8a, 0xf6, 0xe6, 0x29, 0xbd,
+	0xd3, 0xf8, 0x1d, 0x12, 0x85, 0x73, 0xb6, 0xa1, 0x16, 0x70, 0xc6, 0x45, 0xb3, 0xaa, 0x48, 0xf4,
+	0xc5, 0x79, 0x02, 0x8d, 0x21, 0x0d, 0x2e, 0x23, 0xc1, 0xf3, 0x24, 0xf4, 0x35, 0xa0, 0xa6, 0x00,
+	0x0f, 0x66, 0xf1, 0xa3, 0x22, 0xec, 0x3e, 0x83, 0x6a, 0x41, 0xe7, 0x6c, 0x42, 0xed, 0xfc, 0xd5,
+	0x69, 0xff, 0xac, 0xb1, 0x56, 0x1c, 0x4f, 0x8f, 0xbb, 0x83, 0x41, 0xc3, 0x72, 0x00, 0x36, 0x8e,
+	0xfb, 0xbd, 0x97, 0xe7, 0xc7, 0x8d, 0xf5, 0x22, 0x3c, 0xe8, 0x92, 0x1f, 0xfa, 0x8d, 0x8a, 0xfb,
+	0x9b, 0x05, 0xf5, 0x93, 0x7c, 0xc8, 0xe2, 0xc0, 0x34, 0xf9, 0x35, 0xd4, 0x59, 0x21, 0x99, 0x9f,
+	0x28, 0xcd, 0x54, 0xa7, 0xf6, 0xc1, 0xf6, 0xb4, 0xfc, 0x39, 0x3d, 0x89, 0xcd, 0xe6, 0xc4, 0x7d,
+	0x0a, 0x1b, 0x3f, 0x21, 0x0d, 0x51, 0x28, 0x15, 0xec, 0x83, 0x87, 0x0b, 0x3b, 0x26, 0x06, 0x54,
+	0xc0, 0x2f, 0x38, 0x97, 0x28, 0x94, 0x40, 0xef, 0x87, 0x6b, 0x90, 0xfb, 0x47, 0x05, 0xb6, 0xbb,
+	0x0c, 0x85, 0x24, 0x28, 0x31, 0x91, 0x31, 0x4f, 0x4c, 0xbd, 0x67, 0xf0, 0x85, 0xc0, 0x8c, 0xb3,
+	0x2b, 0x0c, 0xfd, 0x10, 0x53, 0xc6, 0xc7, 0xbe, 0x28, 0x21, 0x7e, 0x98, 0x0b, 0xaa, 0x0f, 0x74,
+	0x9c, 0xa9, 0x56, 0x6a, 0x64, 0xb7, 0x84, 0xf7, 0x14, 0x7a, 0xca, 0xd7, 0x33, 0xd8, 0x1e, 0x1d,
+	0x67, 0x05, 0x6b, 0x88, 0x0c, 0x25, 0x86, 0xbe, 0xc8, 0x93, 0xc2, 0x56, 0xef, 0x65, 0x5d, 0xd7,
+	0xac, 0x06, 0x4e, 0x34, 0x7a, 0x31, 0xeb, 0x00, 0x76, 0x29, 0x63, 0x2b, 0x19, 0x2b, 0x8a, 0xf1,
+	0x31, 0x65, 0x6c, 0x29, 0xdb, 0x6b, 0xe8, 0x50, 0x29, 0x71, 0x94, 0xca, 0xd5, 0xad, 0x57, 0x15,
+	0xe5, 0xde, 0x14, 0xbf, 0xac, 0xf7, 0x37, 0xf0, 0x64, 0xc6, 0xbb, 0xaa, 0xd6, 0x9a, 0x22, 0xfe,
+	0x7c, 0x9a, 0xb0, 0xac, 0x62, 0xf7, 0xf7, 0x75, 0xd8, 0xeb, 0x61, 0xc0, 0x47, 0xa3, 0x38, 0xcb,
+	0x62, 0x9e, 0x60, 0x78, 0xc4, 0xf2, 0x4c, 0xa2, 0xb8, 0xfd, 0xa8, 0x5f, 0xc1, 0xa7, 0xcb, 0x1f,
+	0xf1, 0xa1, 0x58, 0x58, 0x7a, 0x00, 0xf5, 0x38, 0x4a, 0xb8, 0x40, 0x9f, 0xd1, 0x21, 0x32, 0xe3,
+	0xc4, 0xef, 0xa7, 0xd6, 0xfa, 0x90, 0x8f, 0x7b, 0x2f, 0x15, 0x83, 0xf9, 0x71, 0x50, 0xf0, 0x10,
+	0x5b, 0xb3, 0xaa, 0x8b, 0xf3, 0x1c, 0xea, 0x8c, 0x66, 0xd2, 0xcf, 0xd3, 0x90, 0x4a, 0x0c, 0x8d,
+	0x7f, 0x5b, 0x9e, 0x5e, 0x46, 0x5e, 0xb9, 0x8c, 0xbc, 0xb3, 0x72, 0x19, 0x11, 0xbb, 0xc0, 0x9f,
+	0x6b, 0x78, 0xeb, 0x3b, 0x70, 0xfe, 0xff, 0x05, 0xa7, 0x01, 0x95, 0x4b, 0x1c, 0xab, 0xee, 0x36,
+	0x49, 0x71, 0x2c, 0xf6, 0xc1, 0x15, 0x65, 0x39, 0x9a, 0xa5, 0xa2, 0x2f, 0xee, 0xdf, 0x15, 0xd8,
+	0x3a, 0x11, 0xf1, 0x15, 0x95, 0x68, 0xb4, 0x7a, 0x03, 0x9d, 0x5e, 0xff, 0x84, 0xf4, 0x8f, 0xba,
+	0x67, 0xfd, 0x9e, 0x4f, 0x8b, 0x19, 0x59, 0x3e, 0x01, 0x2f, 0xd6, 0xc8, 0xde, 0x2c, 0xe3, 0xe6,
+	0x50, 0xdd, 0x50, 0xf3, 0x10, 0xea, 0x9a, 0x4e, 0x6f, 0x5f, 0xd3, 0xe8, 0xa3, 0xa9, 0x9a, 0x8b,
+	0xe6, 0xf1, 0xc5, 0x1a, 0xb1, 0x55, 0x92, 0xa9, 0xae, 0x0b, 0x8f, 0xe2, 0x11, 0x8d, 0x56, 0x8d,
+	0x4f, 0x4b, 0x81, 0x16, 0x97, 0x71, 0x0e, 0x1d, 0xbc, 0x4e, 0x63, 0x81, 0xa1, 0x7f, 0x95, 0xb3,
+	0xc4, 0x17, 0xf8, 0x76, 0x85, 0xcf, 0x77, 0x0d, 0xfe, 0x75, 0xce, 0x12, 0x82, 0x6f, 0x17, 0xd3,
+	0xfe, 0x0c, 0x3b, 0xe1, 0x0d, 0x3b, 0xf8, 0x81, 0x7e, 0x90, 0x19, 0xb9, 0x72, 0xb7, 0x7d, 0xf0,
+	0xf4, 0x4e, 0xfe, 0x21, 0xed, 0x70, 0x29, 0xea, 0xf0, 0x63, 0x78, 0x70, 0xeb, 0x95, 0xdc, 0x5f,
+	0x2c, 0xd8, 0x30, 0x82, 0x7d, 0x03, 0x5b, 0xa9, 0xda, 0xc7, 0xa5, 0xea, 0xd6, 0xad, 0xf5, 0x38,
+	0xbf, 0xad, 0x49, 0x3d, 0x9d, 0xdf, 0xdd, 0xcf, 0xe1, 0x7e, 0xaa, 0xbd, 0x51, 0x26, 0xeb, 0x01,
+	0xf8, 0x64, 0x96, 0x3c, 0x6f, 0x1d, 0xb2, 0x95, 0xce, 0x5f, 0x0f, 0xbf, 0xfc, 0x73, 0xd2, 0xb6,
+	0xfe, 0x9a, 0xb4, 0xad, 0x7f, 0x26, 0x6d, 0xeb, 0xd7, 0x7f, 0xdb, 0x6b, 0xf0, 0x59, 0xcc, 0xbd,
+	0x4c, 0xd2, 0xe0, 0x52, 0xf0, 0x6b, 0x6d, 0xec, 0x92, 0xe9, 0xc7, 0xf2, 0x4f, 0x78, 0xb8, 0xa1,
+	0xe2, 0xcf, 0xfe, 0x0b, 0x00, 0x00, 0xff, 0xff, 0xad, 0x88, 0x0d, 0xdd, 0xac, 0x07, 0x00, 0x00,
 }
 
 func (m *LoginNotice) Marshal() (dAtA []byte, err error) {
@@ -888,6 +1052,103 @@ func (m *AlertRetentionConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *DecommissionedClusterRetentionConfig) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DecommissionedClusterRetentionConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DecommissionedClusterRetentionConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.LastUpdated != nil {
+		{
+			size, err := m.LastUpdated.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfig(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.IgnoreLabel != nil {
+		{
+			size, err := m.IgnoreLabel.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfig(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.RetentionDurationDays != 0 {
+		i = encodeVarintConfig(dAtA, i, uint64(m.RetentionDurationDays))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Value) > 0 {
+		i -= len(m.Value)
+		copy(dAtA[i:], m.Value)
+		i = encodeVarintConfig(dAtA, i, uint64(len(m.Value)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Key) > 0 {
+		i -= len(m.Key)
+		copy(dAtA[i:], m.Key)
+		i = encodeVarintConfig(dAtA, i, uint64(len(m.Key)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *PrivateConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -912,10 +1173,17 @@ func (m *PrivateConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.DecommissionedClusterRetentionDurationDays != 0 {
-		i = encodeVarintConfig(dAtA, i, uint64(m.DecommissionedClusterRetentionDurationDays))
+	if m.DecommissionedClusterRetention != nil {
+		{
+			size, err := m.DecommissionedClusterRetention.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfig(dAtA, i, uint64(size))
+		}
 		i--
-		dAtA[i] = 0x28
+		dAtA[i] = 0x2a
 	}
 	if m.ExpiredVulnReqRetentionDurationDays != 0 {
 		i = encodeVarintConfig(dAtA, i, uint64(m.ExpiredVulnReqRetentionDurationDays))
@@ -1134,6 +1402,49 @@ func (m *AlertRetentionConfig) Size() (n int) {
 	return n
 }
 
+func (m *DecommissionedClusterRetentionConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.RetentionDurationDays != 0 {
+		n += 1 + sovConfig(uint64(m.RetentionDurationDays))
+	}
+	if m.IgnoreLabel != nil {
+		l = m.IgnoreLabel.Size()
+		n += 1 + l + sovConfig(uint64(l))
+	}
+	if m.LastUpdated != nil {
+		l = m.LastUpdated.Size()
+		n += 1 + l + sovConfig(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Key)
+	if l > 0 {
+		n += 1 + l + sovConfig(uint64(l))
+	}
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovConfig(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *PrivateConfig) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1149,8 +1460,9 @@ func (m *PrivateConfig) Size() (n int) {
 	if m.ExpiredVulnReqRetentionDurationDays != 0 {
 		n += 1 + sovConfig(uint64(m.ExpiredVulnReqRetentionDurationDays))
 	}
-	if m.DecommissionedClusterRetentionDurationDays != 0 {
-		n += 1 + sovConfig(uint64(m.DecommissionedClusterRetentionDurationDays))
+	if m.DecommissionedClusterRetention != nil {
+		l = m.DecommissionedClusterRetention.Size()
+		n += 1 + l + sovConfig(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1799,6 +2111,263 @@ func (m *AlertRetentionConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *DecommissionedClusterRetentionConfig) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowConfig
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DecommissionedClusterRetentionConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DecommissionedClusterRetentionConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RetentionDurationDays", wireType)
+			}
+			m.RetentionDurationDays = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RetentionDurationDays |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IgnoreLabel", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfig
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.IgnoreLabel == nil {
+				m.IgnoreLabel = &DecommissionedClusterRetentionConfig_IgnoreClusterLabel{}
+			}
+			if err := m.IgnoreLabel.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastUpdated", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfig
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastUpdated == nil {
+				m.LastUpdated = &types.Timestamp{}
+			}
+			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipConfig(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DecommissionedClusterRetentionConfig_IgnoreClusterLabel) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowConfig
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: IgnoreClusterLabel: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: IgnoreClusterLabel: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthConfig
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Key = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthConfig
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Value = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipConfig(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1922,10 +2491,10 @@ func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
 				}
 			}
 		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DecommissionedClusterRetentionDurationDays", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DecommissionedClusterRetention", wireType)
 			}
-			m.DecommissionedClusterRetentionDurationDays = 0
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowConfig
@@ -1935,11 +2504,28 @@ func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.DecommissionedClusterRetentionDurationDays |= int32(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfig
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.DecommissionedClusterRetention == nil {
+				m.DecommissionedClusterRetention = &DecommissionedClusterRetentionConfig{}
+			}
+			if err := m.DecommissionedClusterRetention.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipConfig(dAtA[iNdEx:])

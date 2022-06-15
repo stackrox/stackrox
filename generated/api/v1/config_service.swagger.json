@@ -119,6 +119,18 @@
       ],
       "default": "UNSET"
     },
+    "DecommissionedClusterRetentionConfigIgnoreClusterLabel": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "title": "next available tag: 3"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -214,6 +226,23 @@
         }
       }
     },
+    "storageDecommissionedClusterRetentionConfig": {
+      "type": "object",
+      "properties": {
+        "retentionDurationDays": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ignoreLabel": {
+          "$ref": "#/definitions/DecommissionedClusterRetentionConfigIgnoreClusterLabel"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "next available tag: 4"
+    },
     "storageLoginNotice": {
       "type": "object",
       "properties": {
@@ -244,9 +273,8 @@
           "type": "integer",
           "format": "int32"
         },
-        "decommissionedClusterRetentionDurationDays": {
-          "type": "integer",
-          "format": "int32"
+        "decommissionedClusterRetention": {
+          "$ref": "#/definitions/storageDecommissionedClusterRetentionConfig"
         }
       },
       "title": "next available tag: 6"

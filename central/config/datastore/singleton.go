@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/gogo/protobuf/types"
 	configStore "github.com/stackrox/rox/central/config/store"
 	"github.com/stackrox/rox/central/config/store/bolt"
 	"github.com/stackrox/rox/central/config/store/postgres"
@@ -39,6 +40,11 @@ var (
 
 	d DataStore
 
+	defaultClusterRetentionConfig = storage.DecommissionedClusterRetentionConfig{
+		RetentionDurationDays: DefaultDecommissionedClusterRetention,
+		LastUpdated:           types.TimestampNow(),
+	}
+
 	defaultPrivateConfig = storage.PrivateConfig{
 		ImageRetentionDurationDays: DefaultImageRetention,
 		AlertRetention: &storage.PrivateConfig_AlertConfig{
@@ -50,8 +56,8 @@ var (
 				AttemptedRuntimeRetentionDurationDays: DefaultAttemptedRuntimeAlertRetention,
 			},
 		},
-		ExpiredVulnReqRetentionDurationDays:        DefaultExpiredVulnReqRetention,
-		DecommissionedClusterRetentionDurationDays: DefaultDecommissionedClusterRetention,
+		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
+		DecommissionedClusterRetention:      &defaultClusterRetentionConfig,
 	}
 )
 
@@ -78,6 +84,16 @@ func initialize() {
 		utils.Must(d.UpsertConfig(ctx, &storage.Config{
 			PublicConfig:  config.GetPublicConfig(),
 			PrivateConfig: &defaultPrivateConfig,
+		}))
+		return
+	}
+
+	if config.GetPrivateConfig().GetDecommissionedClusterRetention() == nil {
+		privateConfig := config.GetPrivateConfig()
+		privateConfig.DecommissionedClusterRetention = &defaultClusterRetentionConfig
+		utils.Must(d.UpsertConfig(ctx, &storage.Config{
+			PublicConfig:  config.GetPublicConfig(),
+			PrivateConfig: privateConfig,
 		}))
 	}
 }
