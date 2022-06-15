@@ -16,6 +16,8 @@ kubectl -n proxies create cm nginx-proxy-plain-http-conf \
 	--from-file <(server_name="${server_name}" envsubst <"${dir}/nginx-proxy-plain-http.conf") \
 	--dry-run -o yaml | kubectl apply -f -
 
+kubectl -n proxies get cm nginx-proxy-plain-http-conf -o yaml
+
 kubectl apply -f "${dir}/nginx-proxy-plain-http.yaml"
 
 cert_dir="${PROXY_CERTS_DIR:-$(mktemp -d)}"

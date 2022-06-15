@@ -194,6 +194,9 @@ run_proxy_tests() {
 
     local server_name="$1"
 
+    curl http://"${server_name}":10080/v1/metadata || true
+    curl http://central-proxy.stackrox.local:10080/v1/metadata || true
+
     info "Test HTTP access to plain HTTP proxy"
     # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
     local license_status
