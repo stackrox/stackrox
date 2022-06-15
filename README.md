@@ -19,7 +19,9 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
 
 ## Table of contents
 
-* [Deployment](#deployment)
+* [Quick Installation via Helm](#quick-installation-via-helm)
+    + [First use](#first-use)
+* [Manual Deployment](#manual-deployment)
 * [Development](#development)
     + [Quickstart](#quickstart)
       - [Build Tooling](#build-tooling)
@@ -32,9 +34,92 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
     + [How to Deploy](#how-to-deploy)
 * [Generating portable installers](#generating-portable-installers)
 
-## Deployment
+## Quick Installation via Helm
 
-To quickly deploy the latest development version of StackRox to your kubernetes
+StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
+First, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
+```sh
+helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
+```
+To see all available Helm charts in the repo run (you may add the option `--devel` to show non-release builds as well)
+```sh
+helm search repo stackrox
+```
+In order to install stackrox-central-services you will need a secure password. This password will be needed later when creating an init bundle.
+```sh
+openssl rand -base64 20 | tr -d '/=+' > stackrox-admin-password.txt
+```
+
+From here you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
+```sh
+helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="$(cat stackrox-admin-password.txt)"
+```
+
+If you're deploying StackRox on a small node like a local development cluster, run the following command to reduce StackRox resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
+```sh
+helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-services \
+  --set central.resources.requests.memory=1Gi \
+  --set central.resources.requests.cpu=1 \
+  --set central.resources.limits.memory=4Gi \
+  --set central.resources.limits.cpu=1 \
+  --set scanner.autoscaling.disable=true \
+  --set scanner.replicas=1 \
+  --set scanner.resources.requests.memory=500Mi \
+  --set scanner.resources.requests.cpu=500m \
+  --set scanner.resources.limits.memory=2500Mi \
+  --set scanner.resources.limits.cpu=2000m
+```
+To create a secured cluster, you first need to generate an init bundle containing initialization secrets. The init bundle will be saved in `stackrox-init-bundle.yaml`, and you will use it to provision secured clusters as shown below.
+```sh
+kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
+  --password "$(cat stackrox-admin-password.txt)" \
+  central init-bundles generate stackrox-init-bundle --output - > stackrox-init-bundle.yaml
+```
+Set a meaningful cluster name for your secured cluster in the `CLUSTER_NAME` environment variable. The cluster will be identified by this name in the clusters list of the StackRox UI.
+```sh
+CLUSTER_NAME="my-secured-cluster"
+```
+Then install stackrox-secured-cluster-services (with the init bundle you generated earlier) using this command:
+```sh
+helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+  -f stackrox-init-bundle.yaml \
+  --set clusterName="$CLUSTER_NAME"
+```
+When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services are deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
+
+When deploying StackRox on a small node, you can install with additional options. This should reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not recommended for a production setup.
+```sh
+helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+  -f stackrox-init-bundle.yaml \
+  --set clusterName="$CLUSTER_NAME" \
+  --set sensor.resources.requests.memory=500Mi \
+  --set sensor.resources.requests.cpu=500m \
+  --set sensor.resources.limits.memory=500Mi \
+  --set sensor.resources.limits.cpu=500m
+```
+
+To further customize your Helm installation consult these documents:
+* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html>
+* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-customization.html>
+
+### First use
+
+Follow these steps to get to StackRox UI
+
+1.Setup port forward to central:
+```
+kubectl -n stackrox port-forward deploy/central 8000:8443
+```
+
+2.Open <https://localhost:8000> in your browser.
+
+3.If a certificate warning is displayed, you can accept the warnings to install the default self-signed certificate. To configure custom certificates, see the section on "Adding Custom Certificates" in <https://docs.openshift.com/acs/configuration/add-custom-certificates.html>.
+
+4.Log in as `admin` using the password in `stackrox-admin-password.txt`
+
+## Manual Deployment
+
+To manually deploy the latest development version of StackRox to your Kubernetes
 cluster in the stackrox namespace:
 
 ```
@@ -54,9 +139,9 @@ to https://localhost:8000/. Credentials for the 'admin' user can be found in
 
 ## Development
 
-**UI Dev Docs**: please refer to [ui/README.md](./ui/README.md)
+**UI Dev Docs**: Refer to [ui/README.md](./ui/README.md)
 
-**E2E Dev Docs**: please refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
+**E2E Dev Docs**: Refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
 
 ### Quickstart
 
@@ -140,7 +225,7 @@ $ export STORAGE=pvc
 # To save time on rebuilds by skipping UI builds, set:
 $ export SKIP_UI_BUILD=1
 
-# When you deploy locally make sure your kube context points to the desired kubernetes cluster,
+# When you deploy locally make sure your kube context points to the desired Kubernetes cluster,
 # for example Docker Desktop.
 # To check the current context you can call a workflow script:
 $ roxkubectx
