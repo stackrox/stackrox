@@ -8,13 +8,13 @@ server_name="${1:-central-proxy.stackrox.local}"
 
 kubectl apply -f "${dir}/central-plaintext.yaml"
 
-kubectl create ns proxies --dry-run -o yaml | kubectl apply -f -
+kubectl create ns proxies --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl label ns proxies --overwrite stackrox-proxies=true
 
 kubectl -n proxies create cm nginx-proxy-plain-http-conf \
 	--from-file=nginx-proxy-plain-http.conf=<(server_name="${server_name}" envsubst <"${dir}/nginx-proxy-plain-http.conf") \
-	--dry-run -o yaml | kubectl apply -f -
+	--dry-run=client -o yaml | kubectl apply -f -
 
 kubectl apply -f "${dir}/nginx-proxy-plain-http.yaml"
 
@@ -26,14 +26,14 @@ echo "Cert directory: ${cert_dir}"
 kubectl -n proxies create secret tls nginx-proxy-tls-certs \
 	--cert="${cert_dir}/tls.crt" \
 	--key="${cert_dir}/tls.key" \
-	--dry-run -o yaml | kubectl apply -f -
+	--dry-run=client -o yaml | kubectl apply -f -
 
 for proxy_type in http1 http1-plain http2 http2-plain multiplexed multiplexed-tls-be grpc; do
 	proxy_name="nginx-proxy-tls-${proxy_type}"
 
 	kubectl -n proxies create cm "${proxy_name}-conf" \
 		--from-file="${proxy_name}.conf"=<(server_name="${server_name}" envsubst <"${dir}/${proxy_name}.conf") \
-		--dry-run -o yaml | kubectl apply -f -
+		--dry-run=client -o yaml | kubectl apply -f -
 
 	kubectl apply -n proxies -f <(name="${proxy_name}" envsubst <"${dir}/nginx-proxy-tls.yaml.template")
 done
