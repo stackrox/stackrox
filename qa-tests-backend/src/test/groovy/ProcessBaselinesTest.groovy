@@ -398,7 +398,6 @@ class ProcessBaselinesTest extends BaseSpecification {
         DEPLOYMENTNGINX_REMOVEPROCESS           |   "nginx"
     }
 
-    @Unroll
     @Category(BAT)
     def "Delete process baselines via API"() {
         given:
