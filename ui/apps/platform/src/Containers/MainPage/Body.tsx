@@ -248,11 +248,7 @@ function Body({ isFeatureFlagEnabled, isRenderedRoutePath }: BodyProps): ReactEl
                 <Switch>
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
-                    <Route
-                        path={deprecatedPoliciesPath}
-                        exact
-                        render={() => <Redirect to={policiesPath} />}
-                    />
+                    <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
                     {routeComponents
                         .filter(({ basePath }) => isRenderedRoutePath(basePath))
                         .map((routeComponent) => {
