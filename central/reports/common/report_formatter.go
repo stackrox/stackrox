@@ -35,7 +35,7 @@ var (
 	}
 )
 
-type vulnObj struct {
+type ImageVulnerabilityObj struct {
 	Cve               string        `json:"cve,omitempty"`
 	Severity          string        `json:"severity,omitempty"`
 	FixedByVersion    string        `json:"fixedByVersion,omitempty"`
@@ -44,14 +44,14 @@ type vulnObj struct {
 	Link              string        `json:"link,omitempty"`
 }
 
-type compObj struct {
-	Name  string     `json:"name,omitempty"`
-	Vulns []*vulnObj `json:"vulns,omitempty"`
+type ImageComponentObj struct {
+	Name                 string                   `json:"name,omitempty"`
+	ImageVulnerabilities []*ImageVulnerabilityObj `json:"imageVulnerabilities,omitempty"`
 }
 
 type imgObj struct {
-	Name       *storage.ImageName `json:"name,omitempty"`
-	Components []*compObj         `json:"components,omitempty"`
+	Name            *storage.ImageName   `json:"name,omitempty"`
+	ImageComponents []*ImageComponentObj `json:"imageComponents,omitempty"`
 }
 
 type depObj struct {
@@ -73,8 +73,8 @@ func Format(results []Result) (*bytes.Buffer, error) {
 	for _, r := range results {
 		for _, d := range r.Deployments {
 			for _, i := range d.Images {
-				for _, c := range i.Components {
-					for _, v := range c.Vulns {
+				for _, c := range i.ImageComponents {
+					for _, v := range c.ImageVulnerabilities {
 						discoveredTs := "Not Available"
 						if v.DiscoveredAtImage != nil {
 							discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
