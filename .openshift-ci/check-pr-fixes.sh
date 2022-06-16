@@ -8,18 +8,21 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
+check-pr-fixes() {
+    is_in_PR_context || { echo "Not on a PR, nothing to do!"; exit 0; }
 
-is_in_PR_context || { echo "Not on a PR, nothing to do!"; exit 0; }
+    IFS=$'\n' read -d '' -r -a tickets < <(
+        get_pr_details | jq -r '.title' | grep -Eio '\brox-[[:digit:]]+\b' | sort | uniq)
 
-IFS=$'\n' read -d '' -r -a tickets < <(
-    get_pr_details | jq -r '.title' | grep -Eio '\brox-[[:digit:]]+\b' | sort | uniq)
+    if [[ "${#tickets[@]}" == 0 ]]; then
+        echo "This PR does not claim to fix any tickets!"
+        exit 0
+    fi
 
-if [[ "${#tickets[@]}" == 0 ]]; then
-	echo "This PR does not claim to fix any tickets!"
-	exit 0
-fi
+    echo "Tickets this PR claims to fix:"
+    printf " - %s\n" "${tickets[@]}"
 
-echo "Tickets this PR claims to fix:"
-printf " - %s\n" "${tickets[@]}"
+    "$(dirname "$0")/../scripts/check-todos.sh" "${tickets[@]}"
+}
 
-"$(dirname "$0")/../scripts/check-todos.sh" "${tickets[@]}"
+check-pr-fixes
