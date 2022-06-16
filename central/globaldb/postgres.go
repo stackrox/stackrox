@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	dbPasswordFile = "/run/secrets/stackrox.io/db-password/password"
+	DBPasswordFile = "/run/secrets/stackrox.io/db-password/password"
 
 	tableQuery = `WITH RECURSIVE pg_inherit(inhrelid, inhparent) AS
     (select inhrelid, inhparent
@@ -103,9 +103,9 @@ func GetPostgres() *pgxpool.Pool {
 // GetPostgresConfig - gets the configuration used to connect to Postgres
 func GetPostgresConfig() (map[string]string, *pgxpool.Config, error) {
 	centralConfig := config.GetConfig()
-	password, err := os.ReadFile(dbPasswordFile)
+	password, err := os.ReadFile(DBPasswordFile)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "pgsql: could not load password file %q", dbPasswordFile)
+		return nil, nil, errors.Wrapf(err, "pgsql: could not load password file %q", DBPasswordFile)
 	}
 	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
 
