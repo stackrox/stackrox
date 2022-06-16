@@ -95,9 +95,10 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
 
     function navItemMapper(routePath: string): ReactElement {
         const isActive = isActiveFilter(routePath);
+        // Delete nullish coalescing and empty string if we replace string with RoutePath string union type.
         return (
             <NavItem key={routePath} to={routePath} isActive={isActive} component={LinkShim}>
-                {basePathToLabelMap[routePath]}
+                {basePathToLabelMap[routePath] ?? ''}
             </NavItem>
         );
     }
