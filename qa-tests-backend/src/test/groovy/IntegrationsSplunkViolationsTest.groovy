@@ -42,6 +42,15 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         // authorisation plugin prevents violations from being returned
         // this leads to no violations being propagated to Splunk
         disableAuthzPlugin()
+
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
+
+        orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
+        addStackroxImagePullSecret(TEST_NAMESPACE)
+    }
+
+    def cleanupSpec() {
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
 
     private void configureSplunkTA(SplunkUtil.SplunkDeployment splunkDeployment, String centralHost) {
@@ -85,9 +94,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
-        orchestrator.deleteNamespace(TEST_NAMESPACE)
-        orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
-        addStackroxImagePullSecret(TEST_NAMESPACE)
         String centralHost = orchestrator.getServiceIP("central", "stackrox")
         def splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE, false)
         configureSplunkTA(splunkDeployment, centralHost)
@@ -137,7 +143,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         if (splunkDeployment) {
             tearDownSplunk(orchestrator, splunkDeployment)
         }
-        orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
 
     private static void validateCimMappings(Map<String, String> result) {
