@@ -36,7 +36,7 @@ function DeploymentsAtMostRiskTable({
                 <Tr>
                     <Th className="pf-u-pl-0">{columnNames.deployment}</Th>
                     <Th>{columnNames.resourceLocation}</Th>
-                    <Th className="pf-u-pr-0" textCenter>
+                    <Th className="pf-u-pr-0 pf-u-text-align-center-on-md">
                         {columnNames.riskPriority}
                     </Th>
                 </Tr>
@@ -58,7 +58,10 @@ function DeploymentsAtMostRiskTable({
                                 &rdquo;
                             </span>
                         </Td>
-                        <Td className="pf-u-pr-0" textCenter dataLabel={columnNames.riskPriority}>
+                        <Td
+                            className="pf-u-pr-0 pf-u-text-align-center-on-md"
+                            dataLabel={columnNames.riskPriority}
+                        >
                             {priority}
                         </Td>
                     </Tr>
