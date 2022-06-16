@@ -43,7 +43,7 @@ func getFieldMap(query string) map[FieldLabel][]string {
 	fieldMap := make(map[FieldLabel][]string, len(pairs))
 	for _, pair := range pairs {
 		key, commaSeparatedValues, valid := parsePair(pair, false)
-		if !valid || !FieldLabelSet.Contains(strings.ToLower(key)) {
+		if !valid || !IsValidFieldLabel(key) {
 			continue
 		}
 		values := strings.Split(commaSeparatedValues, ",")
