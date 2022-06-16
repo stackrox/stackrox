@@ -51,16 +51,15 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	if privateConf := config.GetPrivateConfig(); privateConf != nil {
-		if clusterRetentionConf := privateConf.GetDecommissionedClusterRetention(); clusterRetentionConf != nil {
-			hasUpdate, err := d.hasClusterRetentionConfigUpdate(ctx, clusterRetentionConf)
-			if err != nil {
-				return err
-			}
 
-			if hasUpdate {
-				clusterRetentionConf.LastUpdated = types.TimestampNow()
-			}
+	if clusterRetentionConf := config.GetPrivateConfig().GetDecommissionedClusterRetention(); clusterRetentionConf != nil {
+		hasUpdate, err := d.hasClusterRetentionConfigUpdate(ctx, clusterRetentionConf)
+		if err != nil {
+			return err
+		}
+
+		if hasUpdate {
+			clusterRetentionConf.LastUpdated = types.TimestampNow()
 		}
 	}
 	return d.store.Upsert(ctx, config)
@@ -80,10 +79,7 @@ func (d *datastoreImpl) getClusterRetentionConfig(ctx context.Context) (*storage
 	if err != nil {
 		return nil, err
 	}
-	if privateConf := conf.GetPrivateConfig(); privateConf != nil {
-		return privateConf.GetDecommissionedClusterRetention(), nil
-	}
-	return nil, nil
+	return conf.GetPrivateConfig().GetDecommissionedClusterRetention(), nil
 }
 
 func clusterRetentionConfigsEqual(c1 *storage.DecommissionedClusterRetentionConfig,
@@ -95,10 +91,10 @@ func clusterRetentionConfigsEqual(c1 *storage.DecommissionedClusterRetentionConf
 		return false
 	}
 	return c1.GetRetentionDurationDays() == c2.GetRetentionDurationDays() &&
-		ignoreLabelsEqual(c1.GetIgnoreLabel(), c2.GetIgnoreLabel())
+		labelsEqual(c1.GetIgnoreLabel(), c2.GetIgnoreLabel())
 }
 
-func ignoreLabelsEqual(l1 *storage.DecommissionedClusterRetentionConfig_IgnoreClusterLabel,
+func labelsEqual(l1 *storage.DecommissionedClusterRetentionConfig_IgnoreClusterLabel,
 	l2 *storage.DecommissionedClusterRetentionConfig_IgnoreClusterLabel) bool {
 	if l1 == nil && l2 == nil {
 		return true
