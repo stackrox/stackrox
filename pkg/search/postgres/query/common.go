@@ -87,7 +87,6 @@ func MatchFieldQuery(dbField *walker.Field, value string, highlight bool) (*Quer
 	}
 	field, ok := dbField.Schema.OptionsMap.Get(dbField.Search.FieldName)
 	if !ok {
-		log.Infof("Options Map for %s does not have field: %v", dbField.Schema.Table, dbField.Search.FieldName)
 		return nil, nil
 	}
 	return matchFieldQuery(dbField, field, value, highlight)
