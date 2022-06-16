@@ -30,10 +30,14 @@ function generated_files-are-up-to-date() {
         exit 1
     fi
 }
-generated_files-are-up-to-date #|| { echo "Failed, waiting for prow to wind down"; sleep 300; exit 1; }
+generated_files-are-up-to-date
 
 echo 'Ensure that all TODO references to fixed tickets are gone'
-.circleci/check-pr-fixes.sh
+if is_CIRCLECI; then
+    "$SCRIPTS_ROOT/.circleci/check-pr-fixes.sh"
+else
+    "$SCRIPTS_ROOT/.openshift-ci/check-pr-fixes.sh"
+fi
 
 echo 'Ensure that there are no TODO references that the developer has marked as blocking a merge'
 echo "Matches comments of the form TODO(x), where x can be \"DO NOT MERGE/don't-merge\"/\"dont-merge\"/similar"
@@ -41,7 +45,7 @@ echo "Matches comments of the form TODO(x), where x can be \"DO NOT MERGE/don't-
 
 # shellcheck disable=SC2016
 echo 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
-function check-generated-files-up-to-date() {
+function check-operator-generated-files-up-to-date() {
     set -e
     make -C operator/ generate
     make -C operator/ manifests
@@ -53,4 +57,4 @@ function check-generated-files-up-to-date() {
     echo 'needs to change due to formatting changes in the generated files.'
     git diff --exit-code HEAD
 }
-check-generated-files-up-to-date
+check-operator-generated-files-up-to-date
