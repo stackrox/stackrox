@@ -6,7 +6,8 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
 
-set -euo pipefail
+#set -euo pipefail
+set -x
 
 check-pr-fixes() {
     echo 'Ensure that all TODO references to fixed tickets are gone'
