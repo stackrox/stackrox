@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { matchPath, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Nav, NavExpandable, NavItem, NavList, PageSidebar } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -61,20 +61,9 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
     const { pathname } = useLocation();
 
     function isActiveFilter(routePath: string): boolean {
-        // React Router 5
-        return matchPath(pathname, {
-            path: routePath,
-            strict: true,
-            exact: routePath === vulnManagementPath,
-        }) as boolean;
-        /*
-        // React Router 6
-        return matchPath({
-            path: routePath,
-            caseSensitive: true,
-            end: routePath === vulnManagementPath
-        }, pathname);
-        */
+        return routePath === vulnManagementPath
+            ? pathname === routePath
+            : (pathname as string).startsWith(routePath);
     }
 
     const filteredPathsUnexpandable1 = unfilteredPathsUnexpandable1.filter(isRenderedRoutePath);
@@ -86,11 +75,7 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
 
     // Special case because nested nav items match only a subset of sub-routes.
     // React Router 5 see isActiveFilter above for args in React Router 6
-    const isActiveVulnerabilityManagement = matchPath(pathname, {
-        path: vulnManagementPath,
-        strict: true,
-        exact: false,
-    }) as boolean;
+    const isActiveVulnerabilityManagement = pathname.startsWith(vulnManagementPath);
     const isActivePlatformConfiguration = filteredPathsPlatformConfiguration.some(isActiveFilter);
 
     function navItemMapper(routePath: string): ReactElement {
