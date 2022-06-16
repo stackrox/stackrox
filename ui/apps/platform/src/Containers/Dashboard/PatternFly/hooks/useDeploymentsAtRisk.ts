@@ -1,23 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { fetchDeployments } from 'services/DeploymentsService';
-import { ListDeployment } from 'types/deployment.proto';
 import { SearchFilter } from 'types/search';
+import useRestQuery from './useRestQuery';
 
-export type UseDeploymentsAtRiskReturn = {
-    deployments: ListDeployment[];
-    loading: boolean;
-    error: Error | null;
-};
-
-export default function useDeploymentsAtRisk(
-    searchFilter: SearchFilter,
-    numberOfResults = 6
-): UseDeploymentsAtRiskReturn {
-    const [deployments, setDeployments] = useState<ListDeployment[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<Error | null>(null);
-
-    useEffect(() => {
+export default function useDeploymentsAtRisk(searchFilter: SearchFilter, numberOfResults = 6) {
+    const restQuery = useCallback(() => {
         const { request, cancel } = fetchDeployments(
             searchFilter,
             { field: 'Deployment Risk Priority', reversed: 'false' },
@@ -25,21 +12,11 @@ export default function useDeploymentsAtRisk(
             numberOfResults
         );
 
-        setError(null);
-
-        request
-            .then((results) => {
-                setDeployments(results.map(({ deployment }) => deployment));
-                setLoading(false);
-                setError(null);
-            })
-            .catch((err) => {
-                setLoading(true);
-                setError(err);
-            });
-
-        return cancel;
+        return {
+            request: request.then((results) => results.map(({ deployment }) => deployment)),
+            cancel,
+        };
     }, [searchFilter, numberOfResults]);
 
-    return { deployments, loading, error };
+    return useRestQuery(restQuery);
 }

@@ -111,8 +111,6 @@ type ViolationsByPolicyCategoryChartProps = {
 
 const labelLinkCallback = ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text));
 
-const height = `${chartHeight}px` as const;
-
 function ViolationsByPolicyCategoryChart({
     alertGroups,
     sortType,
@@ -201,7 +199,7 @@ function ViolationsByPolicyCategory() {
         queryFilter['Lifecycle Stage'] = LIFECYCLE_STAGES.RUNTIME;
     }
     const query = getRequestQueryStringForSearchFilter(queryFilter);
-    const { alertGroups, loading, error } = useAlertGroups('CATEGORY', query);
+    const { data: alertGroups, loading, error } = useAlertGroups('CATEGORY', query);
 
     return (
         <WidgetCard
@@ -275,7 +273,7 @@ function ViolationsByPolicyCategory() {
                 </Flex>
             }
         >
-            <ViolationsByPolicyCategoryChart alertGroups={alertGroups} sortType={sortType} />
+            <ViolationsByPolicyCategoryChart alertGroups={alertGroups ?? []} sortType={sortType} />
         </WidgetCard>
     );
 }

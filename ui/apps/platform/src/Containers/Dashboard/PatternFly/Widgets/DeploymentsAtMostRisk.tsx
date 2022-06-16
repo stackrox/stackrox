@@ -11,7 +11,7 @@ import useDeploymentsAtRisk from '../hooks/useDeploymentsAtRisk';
 
 function DeploymentsAtMostRisk() {
     const { searchFilter } = useURLSearch();
-    const { deployments, loading, error } = useDeploymentsAtRisk(searchFilter);
+    const { data: deployments, loading, error } = useDeploymentsAtRisk(searchFilter);
     const urlQueryString = getUrlQueryStringForSearchFilter(searchFilter);
     return (
         <WidgetCard
@@ -34,7 +34,10 @@ function DeploymentsAtMostRisk() {
                 </Flex>
             }
         >
-            <DeploymentsAtMostRiskTable deployments={deployments} searchFilter={searchFilter} />
+            <DeploymentsAtMostRiskTable
+                deployments={deployments ?? []}
+                searchFilter={searchFilter}
+            />
         </WidgetCard>
     );
 }
