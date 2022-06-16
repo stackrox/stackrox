@@ -126,7 +126,7 @@ export type RouteDescriptor = {
     readAccessPredicate: ReadAccessPredicate;
 };
 
-// Evaluates resource requirements gives user permissions via hasReadAccess function.
+// Evaluate resource requirements given user permissions via hasReadAccess function.
 type ReadAccessPredicate = (hasReadAccess: HasReadAccess) => boolean;
 
 /*
