@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	cveDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -31,11 +30,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore, cveDatastore cveDataStore.DataStore, watchedImages watchedImageDataStore.DataStore, riskManager manager.Manager,
+func New(datastore datastore.DataStore, watchedImages watchedImageDataStore.DataStore, riskManager manager.Manager,
 	connManager connection.Manager, enricher enricher.ImageEnricher, metadataCache expiringcache.Cache) Service {
 	return &serviceImpl{
 		datastore:     datastore,
-		cveDatastore:  cveDatastore,
 		watchedImages: watchedImages,
 		riskManager:   riskManager,
 		enricher:      enricher,
