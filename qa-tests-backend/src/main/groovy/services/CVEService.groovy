@@ -5,6 +5,8 @@ import io.stackrox.proto.api.v1.CVEServiceGrpc
 import io.stackrox.proto.api.v1.CveService
 import io.stackrox.proto.api.v1.ImageCVEServiceGrpc
 
+import util.Env
+
 class CVEService extends BaseService {
     static getCVEClient() {
         return CVEServiceGrpc.newBlockingStub(getChannel())
@@ -26,13 +28,19 @@ class CVEService extends BaseService {
     }
 
     static suppressImageCVE(String cve) {
-        return getImageCVEClient().suppressCVEs(CveService.SuppressCVERequest.newBuilder()
-                .addIds(cve)
-                .setDuration(Duration.newBuilder().setSeconds(1000).build())
-                .build())
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            return getImageCVEClient().suppressCVEs(CveService.SuppressCVERequest.newBuilder()
+                    .addIds(cve)
+                    .setDuration(Duration.newBuilder().setSeconds(1000).build())
+                    .build())
+        }
+        suppressCVE(cve)
     }
 
     static unsuppressImageCVE(String cve) {
-        return getImageCVEClient().unsuppressCVEs(CveService.UnsuppressCVERequest.newBuilder().addIds(cve).build())
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            return getImageCVEClient().unsuppressCVEs(CveService.UnsuppressCVERequest.newBuilder().addIds(cve).build())
+        }
+        unsuppressCVE(cve)
     }
 }

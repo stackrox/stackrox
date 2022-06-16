@@ -173,22 +173,15 @@ class ImageManagementTest extends BaseSpecification {
         "Suppress CVE and check that it violates"
 
         def cve = "CVE-2019-14697"
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            CVEService.suppressImageCVE(cve)
-        } else {
-            CVEService.suppressCVE(cve)
-        }
+        CVEService.suppressImageCVE(cve)
 
         scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
         assert scanResults.alertsList.find { x -> x.policy.id == policy.id } == null
 
         and:
         "Unsuppress CVE"
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            CVEService.unsuppressImageCVE(cve)
-        } else {
-            CVEService.unsuppressCVE(cve)
-        }
+        CVEService.unsuppressImageCVE(cve)
+
         scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
 
         then:
@@ -261,11 +254,8 @@ class ImageManagementTest extends BaseSpecification {
         assert hasOpenSSLVuln(image)
 
         def cve = "CVE-2010-0928"
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            CVEService.suppressImageCVE(cve)
-        } else {
-            CVEService.suppressCVE(cve)
-        }
+
+       CVEService.suppressImageCVE(cve)
 
         when:
         def scanIncludeSnoozed = ImageService.scanImage("library/nginx:1.10", true)
@@ -280,11 +270,7 @@ class ImageManagementTest extends BaseSpecification {
         def getExcludeSnoozed  = ImageService.getImage(image.id, false)
         assert !hasOpenSSLVuln(getExcludeSnoozed)
 
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            CVEService.unsuppressImageCVE(cve)
-        } else {
-            CVEService.unsuppressCVE(cve)
-        }
+        CVEService.unsuppressImageCVE(cve)
 
         def unsuppressedScan = ImageService.scanImage("library/nginx:1.10", false)
         def unsuppressedGet  = ImageService.getImage(image.id, false)
@@ -296,11 +282,7 @@ class ImageManagementTest extends BaseSpecification {
 
         cleanup:
         // Should be able to call this multiple times safely in case of any failures previously
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            CVEService.unsuppressImageCVE(cve)
-        } else {
-            CVEService.unsuppressCVE(cve)
-        }
+        CVEService.unsuppressImageCVE(cve)
     }
 
     @Category([BAT, Integration])
