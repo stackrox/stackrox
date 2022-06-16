@@ -115,8 +115,6 @@ func init() {
 				"@deprecated(reason: \"use 'openShiftClusterVulnerabilities'\")",
 			"openShiftVulnCount(query: String): Int! " +
 				"@deprecated(reason: \"use 'openShiftClusterVulnerabilityCount'\")",
-			"plottedVulns(query: String): PlottedVulnerabilities!" +
-				"@deprecated(reason: \"use 'plottedNodeVulnerabilities' or 'plottedImageVulnerabilities'\")",
 		}),
 		schema.AddQuery("clusters(query: String, pagination: Pagination): [Cluster!]!"),
 		schema.AddQuery("clusterCount(query: String): Int!"),
@@ -1118,11 +1116,6 @@ func (resolver *clusterResolver) LatestViolation(ctx context.Context, args RawQu
 	}
 
 	return getLatestViolationTime(ctx, resolver.root, q)
-}
-
-func (resolver *clusterResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }
 
 // PlottedNodeVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
