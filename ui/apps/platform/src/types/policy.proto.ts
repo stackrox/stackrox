@@ -12,11 +12,13 @@ export type ListPolicy = {
 };
 
 // TODO supersedes src/Containers/Violations/PatternFly/types/violationTypes.ts
-export type PolicySeverity =
-    | 'LOW_SEVERITY'
-    | 'MEDIUM_SEVERITY'
-    | 'HIGH_SEVERITY'
-    | 'CRITICAL_SEVERITY';
+export const policySeverities = [
+    'LOW_SEVERITY',
+    'MEDIUM_SEVERITY',
+    'HIGH_SEVERITY',
+    'CRITICAL_SEVERITY',
+] as const;
+export type PolicySeverity = typeof policySeverities[number];
 
 // TODO supersedes src/Containers/Violations/PatternFly/types/violationTypes.ts
 export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
