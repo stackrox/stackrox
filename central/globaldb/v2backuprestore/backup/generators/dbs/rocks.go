@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	"github.com/stackrox/rox/central/option"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -61,7 +62,7 @@ func findScratchPath() (string, error) {
 		return "", err
 	}
 
-	return findTmpPath(dbSize, tmpPath)
+	return common.FindTmpPath(dbSize, tmpPath)
 }
 
 // Get the number of bytes used by files stored for the db.
