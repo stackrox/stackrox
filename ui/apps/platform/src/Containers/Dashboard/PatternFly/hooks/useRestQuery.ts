@@ -20,8 +20,8 @@ export default function useRestQuery<ReturnType>(
         setError(null);
 
         request
-            .then((groups) => {
-                setData(groups);
+            .then((result) => {
+                setData(result);
                 setLoading(false);
                 setError(null);
             })
