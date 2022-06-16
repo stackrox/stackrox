@@ -385,9 +385,10 @@ restoreDB: &restoreDB
   run:
     name: Restore DB
     command: |
-      # TODO ROX-10087 figure out how to make it work for rocks and postgres
       if [ -z "${ROX_POSTGRES_DATASTORE}" ] || [ "${ROX_POSTGRES_DATASTORE}" == "false" ]; then
         roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore `ls -t central-backup/stackrox_db_* |head -n1`
+      else
+        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore `ls -t central-backup/postgres_db_* |head -n1`
       fi
 
 getPrometheusMetricParser: &getPrometheusMetricParser
