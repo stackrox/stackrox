@@ -206,7 +206,7 @@ export const routeDescriptorMap: Record<string, RouteDescriptor> = {
     },
     /*
     [clustersListPath]: {
-        featureFlagDependency: 'ROX_TODO', // replace conditional developmentA scenario rendering with backend feature flag
+        featureFlagDependency: 'ROX_TODO', // replace conditional development rendering with backend feature flag
         readAccessPredicate: readAccessResourceNames([]), // Cluster
     },
     */
