@@ -14,6 +14,8 @@ import groups.Integration
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
+import spock.lang.IgnoreIf
+import util.Env
 import util.SplunkUtil
 import util.Timer
 
@@ -82,6 +84,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     @Category(Integration)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") }) // TODO(ROX-11405) implement search after for Postgres
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
