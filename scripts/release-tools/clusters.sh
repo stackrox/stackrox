@@ -77,6 +77,10 @@ exec_option() {
   esac
 }
 
+check_docker_login() {
+  docker system info | grep Username
+}
+
 cluster_ready() {
   local cluster_name="$1"
   infractl get "$cluster_name" | grep -xq "Status:      READY"
@@ -141,7 +145,7 @@ fetch_artifacts() {
 }
 
 get_cluster_postfix() {
-  echo "${RELEASE//./-}-${PATCH_NUMBER}-rc${RC_NUMBER}" # Change before merging
+  echo "${RELEASE//./-}-${PATCH_NUMBER}-rc${RC_NUMBER}-test-1" # Change before merging
 }
 
 get_cluster_prefix() {
@@ -231,6 +235,11 @@ create_qa_gke_cluster() {
 
 create_long_running_cluster() {
 
+  [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
+  [[ -n "$RELEASE" ]] || die "RELEASE undefined"
+  [[ -n "$PATCH_NUMBER" ]] || die "PATCH_NUMBER undefined"
+  check_docker_login || die "Run docker login"
+
   CLUSTER_NAME="$(get_cluster_name long-running)"
   export CLUSTER_NAME
 
@@ -239,7 +248,7 @@ create_long_running_cluster() {
   status="$(check_cluster_status "$CLUSTER_NAME")"
   
   if does_cluster_exist "$CLUSTER_NAME"; then
-      echo "Unable to create cluster"
+      echo "Unable to create cluster, it exists already"
   else
       infractl create gke-default $CLUSTER_NAME --lifespan 168h --arg nodes=5 --wait --slack-me
   fi
@@ -250,7 +259,7 @@ create_long_running_cluster() {
   kubectl -n stackrox get pod
   
   
-  export MAIN_IMAGE_TAG=$(git describe --tags --abbrev=0) # Release version, e.g. 3.63.0-rc.2.
+  export MAIN_IMAGE_TAG="${RELEASE}.${PATCH_NUMBER}-rc.${RC_NUMBER}"
   export API_ENDPOINT="localhost:8000"
   
   export STORAGE=pvc # Backing storage
