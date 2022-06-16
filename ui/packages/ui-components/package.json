@@ -51,7 +51,7 @@
         "@stackrox/tailwind-config": "^0.2.0",
         "@testing-library/jest-dom": "^5.15.0",
         "@testing-library/react": "^12.1.2",
-        "@testing-library/user-event": "^13.5.0",
+        "@testing-library/user-event": "^14.2.1",
         "@types/lodash": "^4.14.176",
         "@types/node": "^17.0.16",
         "@types/react": "^17.0.34",
