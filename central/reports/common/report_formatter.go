@@ -35,7 +35,7 @@ var (
 	}
 )
 
-type ImageVulnerabilityObj struct {
+type imageVulnerability struct {
 	Cve               string        `json:"cve,omitempty"`
 	Severity          string        `json:"severity,omitempty"`
 	FixedByVersion    string        `json:"fixedByVersion,omitempty"`
@@ -44,26 +44,26 @@ type ImageVulnerabilityObj struct {
 	Link              string        `json:"link,omitempty"`
 }
 
-type ImageComponentObj struct {
-	Name                 string                   `json:"name,omitempty"`
-	ImageVulnerabilities []*ImageVulnerabilityObj `json:"imageVulnerabilities,omitempty"`
+type imageComponent struct {
+	Name                 string                `json:"name,omitempty"`
+	ImageVulnerabilities []*imageVulnerability `json:"imageVulnerabilities,omitempty"`
 }
 
-type imgObj struct {
-	Name            *storage.ImageName   `json:"name,omitempty"`
-	ImageComponents []*ImageComponentObj `json:"imageComponents,omitempty"`
+type image struct {
+	Name            *storage.ImageName `json:"name,omitempty"`
+	ImageComponents []*imageComponent  `json:"imageComponents,omitempty"`
 }
 
-type depObj struct {
+type deployment struct {
 	Cluster        *storage.Cluster `json:"cluster,omitempty"`
 	Namespace      string           `json:"namespace,omitempty"`
 	DeploymentName string           `json:"name,omitempty"`
-	Images         []*imgObj        `json:"images,omitempty"`
+	Images         []*image         `json:"images,omitempty"`
 }
 
 // Result is the query results of running a single cvefields query and scope query combination
 type Result struct {
-	Deployments []*depObj `json:"deployments,omitempty"`
+	Deployments []*deployment `json:"deployments,omitempty"`
 }
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
