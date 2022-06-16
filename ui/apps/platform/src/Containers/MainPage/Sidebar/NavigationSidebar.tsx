@@ -1,11 +1,11 @@
 import React, { ReactElement } from 'react';
-import { useLocation, Location } from 'react-router-dom';
-import { Nav, NavList, NavExpandable, PageSidebar } from '@patternfly/react-core';
+import { matchPath, useLocation } from 'react-router-dom';
+import { Nav, NavExpandable, NavItem, NavList, PageSidebar } from '@patternfly/react-core';
 
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { HasReadAccess } from 'hooks/usePermissions';
+import LinkShim from 'Components/PatternFly/LinkShim';
 
 import {
+    IsRenderedRoutePath,
     basePathToLabelMap,
     dashboardPath,
     networkBasePath,
@@ -24,9 +24,27 @@ import {
     systemHealthPath,
 } from 'routePaths';
 
-import LeftNavItem from './LeftNavItem';
+/*
+ * Nav item path like violationsBasePath = '/main/violations' is key of routeDescriptorMap and basePathToLabelMap in routePaths.ts
+ * not including parameters in path prop of some Route elements like path="/main/violations/:alertId?"
+ */
 
-const platformConfigurationPaths = [
+const unfilteredPathsUnexpandable1: string[] = [
+    dashboardPath,
+    networkBasePath,
+    violationsBasePath,
+    complianceBasePath,
+];
+
+const unfilteredPathsVulnerabilityManagement: string[] = [
+    vulnManagementPath,
+    vulnManagementRiskAcceptancePath,
+    vulnManagementReportsPath,
+];
+
+const unfilteredPathsUnexpandable2: string[] = [configManagementPath, riskBasePath];
+
+const unfilteredPathsPlatformConfiguration: string[] = [
     clustersBasePath,
     policiesBasePath,
     integrationsPath,
@@ -36,103 +54,77 @@ const platformConfigurationPaths = [
 ];
 
 type NavigationSidebarProps = {
-    hasReadAccess: HasReadAccess;
-    // eslint-disable-next-line react/no-unused-prop-types
-    isFeatureFlagEnabled: IsFeatureFlagEnabled;
+    isRenderedRoutePath: IsRenderedRoutePath;
 };
 
-function NavigationSidebar({ hasReadAccess }: NavigationSidebarProps): ReactElement {
-    const location: Location = useLocation();
+function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): ReactElement {
+    const { pathname } = useLocation();
 
-    const vulnerabilityManagementPaths = [vulnManagementPath];
-    if (
-        hasReadAccess('VulnerabilityManagementRequests') ||
-        hasReadAccess('VulnerabilityManagementApprovals')
-    ) {
-        vulnerabilityManagementPaths.push(vulnManagementRiskAcceptancePath);
+    function isActiveFilter(routePath: string): boolean {
+        // React Router 5
+        return matchPath(pathname, {
+            path: routePath,
+            strict: true,
+            exact: routePath === vulnManagementPath,
+        }) as boolean;
+        /*
+        // React Router 6
+        return matchPath({
+            path: routePath,
+            caseSensitive: true,
+            end: routePath === vulnManagementPath
+        }, pathname);
+        */
     }
-    if (hasReadAccess('VulnerabilityReports')) {
-        vulnerabilityManagementPaths.push(vulnManagementReportsPath);
+
+    const filteredPathsUnexpandable1 = unfilteredPathsUnexpandable1.filter(isRenderedRoutePath);
+    const filteredPathsVulnerabilityManagement =
+        unfilteredPathsVulnerabilityManagement.filter(isRenderedRoutePath);
+    const filteredPathsUnexpandable2 = unfilteredPathsUnexpandable2.filter(isRenderedRoutePath);
+    const filteredPathsPlatformConfiguration =
+        unfilteredPathsPlatformConfiguration.filter(isRenderedRoutePath);
+
+    // Special case because nested nav items match only a subset of sub-routes.
+    // React Router 5 see isActiveFilter above for args in React Router 6
+    const isActiveVulnerabilityManagement = matchPath(pathname, {
+        path: vulnManagementPath,
+        strict: true,
+        exact: false,
+    }) as boolean;
+    const isActivePlatformConfiguration = filteredPathsPlatformConfiguration.some(isActiveFilter);
+
+    function navItemMapper(routePath: string): ReactElement {
+        const isActive = isActiveFilter(routePath);
+        return (
+            <NavItem key={routePath} to={routePath} isActive={isActive} component={LinkShim}>
+                {basePathToLabelMap[routePath]}
+            </NavItem>
+        );
     }
 
     const Navigation = (
         <Nav id="nav-primary-simple">
             <NavList id="nav-list-simple">
-                <LeftNavItem
-                    isActive={location.pathname.includes(dashboardPath)}
-                    path={dashboardPath}
-                    title={basePathToLabelMap[dashboardPath]}
-                />
-                <LeftNavItem
-                    isActive={location.pathname.includes(networkBasePath)}
-                    path={networkBasePath}
-                    title={basePathToLabelMap[networkBasePath]}
-                />
-                <LeftNavItem
-                    isActive={location.pathname.includes(violationsBasePath)}
-                    path={violationsBasePath}
-                    title={basePathToLabelMap[violationsBasePath]}
-                />
-                <LeftNavItem
-                    isActive={location.pathname.includes(complianceBasePath)}
-                    path={complianceBasePath}
-                    title={basePathToLabelMap[complianceBasePath]}
-                />
-                <NavExpandable
-                    id="VulnerabilityManagement"
-                    title="Vulnerability Management"
-                    isActive={vulnerabilityManagementPaths.some((path) =>
-                        location.pathname.includes(path)
-                    )}
-                    isExpanded={vulnerabilityManagementPaths.some((path) =>
-                        location.pathname.includes(path)
-                    )}
-                >
-                    {vulnerabilityManagementPaths.map((path) => {
-                        const isActive =
-                            path === vulnManagementPath ? false : location.pathname.includes(path);
-                        return (
-                            <LeftNavItem
-                                key={path}
-                                isActive={isActive}
-                                path={path}
-                                title={basePathToLabelMap[path]}
-                            />
-                        );
-                    })}
-                </NavExpandable>
-                <LeftNavItem
-                    isActive={location.pathname.includes(configManagementPath)}
-                    path={configManagementPath}
-                    title={basePathToLabelMap[configManagementPath]}
-                />
-                <LeftNavItem
-                    isActive={location.pathname.includes(riskBasePath)}
-                    path={riskBasePath}
-                    title={basePathToLabelMap[riskBasePath]}
-                />
-                <NavExpandable
-                    id="PlatformConfiguration"
-                    title="Platform Configuration"
-                    isActive={platformConfigurationPaths.some((path) =>
-                        location.pathname.includes(path)
-                    )}
-                    isExpanded={platformConfigurationPaths.some((path) =>
-                        location.pathname.includes(path)
-                    )}
-                >
-                    {platformConfigurationPaths.map((path) => {
-                        const isActive = location.pathname.includes(path);
-                        return (
-                            <LeftNavItem
-                                key={path}
-                                isActive={isActive}
-                                path={path}
-                                title={basePathToLabelMap[path]}
-                            />
-                        );
-                    })}
-                </NavExpandable>
+                {filteredPathsUnexpandable1.map(navItemMapper)}
+                {filteredPathsVulnerabilityManagement.length !== 0 && (
+                    <NavExpandable
+                        title="Vulnerability Management"
+                        isActive={isActiveVulnerabilityManagement}
+                        isExpanded={isActiveVulnerabilityManagement}
+                    >
+                        {filteredPathsVulnerabilityManagement.map(navItemMapper)}
+                    </NavExpandable>
+                )}
+                {filteredPathsUnexpandable2.map(navItemMapper)}
+                {filteredPathsPlatformConfiguration.length !== 0 && (
+                    <NavExpandable
+                        title="Platform Configuration"
+                        isActive={isActivePlatformConfiguration}
+                        isExpanded={isActivePlatformConfiguration}
+                    >
+                        {filteredPathsPlatformConfiguration.map(navItemMapper)}
+                    </NavExpandable>
+                )}
             </NavList>
         </Nav>
     );

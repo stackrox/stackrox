@@ -3,6 +3,10 @@
  */
 
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
+import useFeatureFlags, { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import usePermissions, { HasReadAccess } from 'hooks/usePermissions';
+import { FeatureFlagEnvVar } from 'types/featureFlag';
+import { ResourceName } from 'types/roleResources';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -112,6 +116,181 @@ export const urlEntityTypes = {
     [rbacConfigTypes.SUBJECT]: 'subject',
     [rbacConfigTypes.ROLE]: 'role',
 };
+
+/*
+ * Declare feature flags and resource requirements for route paths.
+ */
+
+export type RouteDescriptor = {
+    featureFlagDependency?: FeatureFlagEnvVar;
+    readAccessPredicate: ReadAccessPredicate;
+};
+
+// Evaluates resource requirements gives user permissions via hasReadAccess function.
+type ReadAccessPredicate = (hasReadAccess: HasReadAccess) => boolean;
+
+/*
+ * Simplified resources like Access might remove need for the following:
+ *
+ * Evaluate routes like access-control that render alternative sub-routes,
+ * like auth-providers or roles, which have different resource requirements.
+ * Export the sub-route predicates so container can render permitted subset of sub-routes.
+ */
+/*
+function readAccessAlternatives(readAccessPredicates: ReadAccessPredicate[]): ReadAccessPredicate {
+    return (hasReadAccess) =>
+        readAccessPredicates.some((readAccessPredicate) => readAccessPredicate(hasReadAccess));
+}
+*/
+
+/*
+ * Call with 0 resource names to render route like dashboard unconditionally.
+ * Call with 1 or more resource names to require read access for all of them.
+ */
+function readAccessResourceNames(resourceNames: ResourceName[]): ReadAccessPredicate {
+    return (hasReadAccess) => resourceNames.every(hasReadAccess);
+}
+
+const readAccessNoResourceRequirements = readAccessResourceNames([]);
+
+/*
+ * Map key is base path of route like violationsBasePath = '/main/violations'
+ * not including parameters in path prop of some Route elements like path="/main/violations/:alertId?"
+ *
+ * Specify only resource requirements for primary requests of containers.
+ * Rendered containers are responsible for conditional rendering of elements:
+ * data might depend on resource requirements for secondary requests
+ * buttons might depend on hasReadWriteAccess instead of hasReadAccess
+ */
+export const routeDescriptorMap: Record<string, RouteDescriptor> = {
+    // Sidebar Unexpandable1
+    [dashboardPath]: {
+        readAccessPredicate: readAccessNoResourceRequirements,
+    },
+    [dashboardPathPF]: {
+        featureFlagDependency: 'ROX_SECURITY_METRICS_PHASE_ONE',
+        readAccessPredicate: readAccessNoResourceRequirements,
+    },
+    [networkBasePath]: {
+        readAccessPredicate: readAccessResourceNames([]), // NetworkGraph, and NetworkPolicy?
+    },
+    [violationsBasePath]: {
+        readAccessPredicate: readAccessResourceNames([]), // Alert
+    },
+    [complianceBasePath]: {
+        readAccessPredicate: readAccessResourceNames([]), // Compliance
+    },
+
+    // Sidebar VulnerabilityManagement
+    [vulnManagementPath]: {
+        readAccessPredicate: readAccessResourceNames([]),
+    },
+    [vulnManagementRiskAcceptancePath]: {
+        readAccessPredicate: readAccessResourceNames([]), // VulnerabilityManagementApprovals and/or VulnerabilityManagementRequests?
+    },
+    [vulnManagementReportsPath]: {
+        readAccessPredicate: readAccessResourceNames(['VulnerabilityReports']),
+    },
+
+    // Sidebar Unexpandable2
+    [configManagementPath]: {
+        readAccessPredicate: readAccessResourceNames([]),
+    },
+    [riskBasePath]: {
+        readAccessPredicate: readAccessResourceNames([]), // Deployment, and DeploymentExtension?
+    },
+
+    // Sidebar PlatformConfiguration
+    [clustersBasePath]: {
+        readAccessPredicate: readAccessResourceNames([]), // Cluster
+    },
+    /*
+    [clustersListPath]: {
+        featureFlagDependency: 'ROX_TODO', // replace conditional developmentA scenario rendering with backend feature flag
+        readAccessPredicate: readAccessResourceNames([]), // Cluster
+    },
+    */
+    [policiesBasePath]: {
+        readAccessPredicate: readAccessResourceNames([]), // Policy
+    },
+    [integrationsPath]: {
+        readAccessPredicate: readAccessResourceNames([]), // AuthPlugin is obsolete? APIToken; BackupPlugins, ImageIntegration, Notifier, SignatureIntegration; superseded by Integration?
+    },
+    [accessControlBasePathV2]: {
+        readAccessPredicate: readAccessResourceNames([]), // Access
+    },
+    [systemConfigPath]: {
+        readAccessPredicate: readAccessResourceNames(['Config']),
+    },
+    [systemHealthPath]: {
+        readAccessPredicate: readAccessResourceNames([]),
+    },
+    [systemHealthPathPF]: {
+        featureFlagDependency: 'ROX_SYSTEM_HEALTH_PF',
+        readAccessPredicate: readAccessResourceNames([]),
+    },
+
+    // Header
+    [apidocsPath]: {
+        readAccessPredicate: readAccessResourceNames([]),
+    },
+    // Help Center is an external link to /docs/product
+    [userBasePath]: {
+        readAccessPredicate: readAccessResourceNames([]),
+    },
+};
+
+/*
+ * Evaluate feature flags and resource requirements for route paths.
+ */
+
+export type IsRenderedRoutePath = (routePath: string) => boolean;
+
+/*
+ * Higher-order function if caller needs to have predicate functions in its scope.
+ * For example, MainPath because:
+ * Body needs both isFeatureFlagEnabled and isRenderedRoutePath.
+ * NaviationSidebar needs only isRenderedRoutePath.
+ */
+export function getIsRenderedRoutePath(
+    hasReadAccess: HasReadAccess,
+    isFeatureFlagEnabled: IsFeatureFlagEnabled
+): IsRenderedRoutePath {
+    return (routePath: string) => {
+        const routeDescriptor = routeDescriptorMap[routePath];
+
+        // Delete if we replace string with RoutePath string union type.
+        if (routeDescriptor === undefined) {
+            return true;
+        }
+
+        const { featureFlagDependency, readAccessPredicate } = routeDescriptor;
+
+        if (typeof featureFlagDependency === 'string') {
+            if (!isFeatureFlagEnabled(featureFlagDependency)) {
+                return false;
+            }
+        }
+
+        return readAccessPredicate(hasReadAccess);
+    };
+}
+
+/*
+ * Hook if caller does not need to have predicate functions in its scope.
+ * It might be a moot point if pages need usePermissions and hasReadWriteAccess for conditional rendering of buttons.
+ */
+export function useRenderedRoutePaths(): IsRenderedRoutePath {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const { hasReadAccess } = usePermissions();
+
+    return getIsRenderedRoutePath(hasReadAccess, isFeatureFlagEnabled);
+}
+
+/*
+ * Labels for route paths.
+ * Map key is base path like routeDescriptorMap above.
+ */
 
 const vulnManagementPathToLabelMap = {
     [vulnManagementPath]: 'Dashboard',

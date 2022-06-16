@@ -16,6 +16,7 @@ import VersionOutOfDate from 'Containers/VersionOutOfDate';
 import Body from 'Containers/MainPage/Body';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+import { getIsRenderedRoutePath } from 'routePaths';
 
 import CredentialExpiryBanner from './CredentialExpiryBanner';
 import Masthead from './Header/Masthead';
@@ -57,6 +58,7 @@ function MainPage(): ReactElement {
     }
 
     const hasServiceIdentityWritePermission = hasReadWriteAccess('ServiceIdentity');
+    const isRenderedRoutePath = getIsRenderedRoutePath(hasReadAccess, isFeatureFlagEnabled);
 
     return (
         <AppWrapper publicConfig={publicConfig}>
@@ -76,16 +78,11 @@ function MainPage(): ReactElement {
                     mainContainerId="main-page-container"
                     header={<Masthead />}
                     isManagedSidebar
-                    sidebar={
-                        <NavigationSidebar
-                            hasReadAccess={hasReadAccess}
-                            isFeatureFlagEnabled={isFeatureFlagEnabled}
-                        />
-                    }
+                    sidebar={<NavigationSidebar isRenderedRoutePath={isRenderedRoutePath} />}
                 >
                     <Body
-                        hasReadAccess={hasReadAccess}
                         isFeatureFlagEnabled={isFeatureFlagEnabled}
+                        isRenderedRoutePath={isRenderedRoutePath}
                     />
                 </Page>
                 {isGlobalSearchView && <SearchModal onClose={onCloseGlobalSearchModal} />}

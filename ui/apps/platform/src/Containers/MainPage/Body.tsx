@@ -1,21 +1,29 @@
-import React, { ReactElement } from 'react';
+import React, { ElementType, ReactElement } from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
 import { PageSection } from '@patternfly/react-core';
 
 import {
+    IsRenderedRoutePath,
     mainPath,
     dashboardPath,
     dashboardPathPF,
+    networkBasePath,
     networkPath,
+    violationsBasePath,
     violationsPath,
+    complianceBasePath,
     compliancePath,
+    clustersBasePath,
     clustersPathWithParam,
-    clustersListPath,
+    // clustersListPath,
     integrationsPath,
+    policiesBasePath,
     policiesPath,
     deprecatedPoliciesPath,
+    riskBasePath,
     riskPath,
     apidocsPath,
+    accessControlBasePathV2,
     accessControlPathV2,
     userBasePath,
     systemConfigPath,
@@ -28,12 +36,13 @@ import {
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
-import asyncComponent from 'Components/AsyncComponent';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Containers/ErrorBoundary';
-import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import { FeatureFlagEnvVar } from 'types/featureFlag';
+
+import asyncComponent from './AsyncComponent';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -53,7 +62,7 @@ const AsyncDashboardPagePF = asyncComponent(
 );
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
 const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/ClustersPage'));
-const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/ClustersPage'));
+// const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/ClustersPage'));
 const AsyncIntegrationsPage = asyncComponent(
     () => import('Containers/Integrations/IntegrationsPage')
 );
@@ -83,18 +92,151 @@ const AsyncSystemHealthPagePF = asyncComponent(
     () => import('Containers/SystemHealth/PatternFly/SystemHealthDashboard')
 );
 
-type BodyProps = {
-    hasReadAccess: HasReadAccess;
-    isFeatureFlagEnabled: IsFeatureFlagEnabled;
+/*
+ * basePath like violationsBasePath = '/main/violations' is key of routeDescriptorMap in routePaths.ts
+ * propPath includes parameters like path="/main/violations/:alertId?"
+ */
+type BaseRouteComponent = {
+    basePath: string;
+    propPath?: string;
 };
 
-function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
+/*
+ * Specify featureFlagDependency property of routeDescriptorMap in routePaths.ts
+ * for a brand new route like /main/vulnerability-management/risk-acceptance
+ * for a temporary route like /main/dashboard-pf for superseding conponent
+ */
+type IndependentRouteComponent = {
+    component: ElementType;
+} & BaseRouteComponent;
+
+/*
+ * At transition from development to release:
+ * Delete temporary route like /main/dashboard-pf from routeDescriptorMap in routePaths.ts
+ * Replace pair of independent route components for original and temporary route in routeComponents
+ * with dependent route component with disabled superseded component and enabled superseding component.
+ *
+ * In case of emergency, patch release turns off feature flag which reverts to superseded component.
+ * When feature flag is deleted, replace dependent route component with independent route component.
+ */
+type DependentRouteComponent = {
+    featureFlagDependency: FeatureFlagEnvVar;
+    componentDisabled: ElementType;
+    componentEnabled: ElementType;
+} & BaseRouteComponent;
+
+type RouteComponent = IndependentRouteComponent | DependentRouteComponent;
+
+const routeComponents: RouteComponent[] = [
+    // Sidebar Unexpandable1
+    {
+        basePath: dashboardPath,
+        component: AsyncDashboardPage,
+    },
+    {
+        basePath: dashboardPathPF,
+        component: AsyncDashboardPagePF,
+    },
+    {
+        basePath: networkBasePath,
+        propPath: networkPath,
+        component: AsyncNetworkPage,
+    },
+    {
+        basePath: violationsBasePath,
+        propPath: violationsPath,
+        component: AsyncViolationsPage,
+    },
+    {
+        basePath: complianceBasePath,
+        propPath: compliancePath,
+        component: AsyncCompliancePage,
+    },
+
+    // Sidebar VulnerabilityManagement
+    // More specific paths must precede more generic path in React Router 5.1 but not in 6
+    {
+        basePath: vulnManagementRiskAcceptancePath,
+        component: AsyncVulnMgmtRiskAcceptancePage,
+    },
+    {
+        basePath: vulnManagementReportsPath,
+        component: AsyncVulnMgmtReports,
+    },
+    {
+        basePath: vulnManagementPath,
+        component: AsyncVulnMgmtPage,
+    },
+
+    // Sidebar Unexpandable2
+    {
+        basePath: configManagementPath,
+        component: AsyncConfigManagementPage,
+    },
+    {
+        basePath: riskBasePath,
+        propPath: riskPath,
+        component: AsyncRiskPage,
+    },
+
+    // Sidebar PlatformConfiguration
+    {
+        basePath: clustersBasePath,
+        propPath: clustersPathWithParam,
+        component: AsyncClustersPage,
+    },
+    /*
+    {
+        basePath: clustersListPath,
+        component: AsyncPFClustersPage,
+    },
+    */
+    {
+        basePath: policiesBasePath,
+        propPath: policiesPath,
+        component: AsyncPolicyManagementPage,
+    },
+    {
+        basePath: integrationsPath,
+        component: AsyncIntegrationsPage,
+    },
+    {
+        basePath: accessControlBasePathV2,
+        propPath: accessControlPathV2,
+        component: AsyncAccessControlPageV2,
+    },
+    {
+        basePath: systemConfigPath,
+        component: AsyncSystemConfigPage,
+    },
+    {
+        basePath: systemHealthPath,
+        component: AsyncSystemHealthPage,
+    },
+    {
+        basePath: systemHealthPathPF,
+        component: AsyncSystemHealthPagePF,
+    },
+
+    // Header
+    {
+        basePath: apidocsPath,
+        component: AsyncApiDocsPage,
+    },
+    // Help Center is an external link to /docs/product
+    {
+        basePath: userBasePath,
+        component: AsyncUserPage,
+    },
+];
+
+type BodyProps = {
+    isFeatureFlagEnabled: IsFeatureFlagEnabled;
+    isRenderedRoutePath: IsRenderedRoutePath;
+};
+
+function Body({ isFeatureFlagEnabled, isRenderedRoutePath }: BodyProps): ReactElement {
     const { isDarkMode } = useTheme();
-
-    const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
-    const isDashboardPatternFlyEnabled = isFeatureFlagEnabled('ROX_SECURITY_METRICS_PHASE_ONE');
-
-    const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
 
     return (
         <div
@@ -106,38 +248,32 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                 <Switch>
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
-                    <Route path={dashboardPath} component={AsyncDashboardPage} />
-                    {isDashboardPatternFlyEnabled && (
-                        <Route path={dashboardPathPF} component={AsyncDashboardPagePF} />
-                    )}
-                    <Route path={networkPath} component={AsyncNetworkPage} />
-                    <Route path={violationsPath} component={AsyncViolationsPage} />
-                    <Route path={compliancePath} component={AsyncCompliancePage} />
-                    <Route path={integrationsPath} component={AsyncIntegrationsPage} />
-                    <Route path={policiesPath} component={AsyncPolicyManagementPage} />
-                    <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
-                    <Route path={riskPath} component={AsyncRiskPage} />
-                    <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
-                    <Route path={apidocsPath} component={AsyncApiDocsPage} />
-                    <Route path={userBasePath} component={AsyncUserPage} />
-                    <Route path={systemConfigPath} component={AsyncSystemConfigPage} />
-                    {hasVulnerabilityReportsPermission && (
-                        <Route path={vulnManagementReportsPath} component={AsyncVulnMgmtReports} />
-                    )}
                     <Route
-                        path={vulnManagementRiskAcceptancePath}
-                        component={AsyncVulnMgmtRiskAcceptancePage}
+                        path={deprecatedPoliciesPath}
+                        exact
+                        render={() => <Redirect to={policiesPath} />}
                     />
-                    <Route path={vulnManagementPath} component={AsyncVulnMgmtPage} />
-                    <Route path={configManagementPath} component={AsyncConfigManagementPage} />
-                    <Route path={clustersPathWithParam} component={AsyncClustersPage} />
-                    {process.env.NODE_ENV === 'development' && (
-                        <Route path={clustersListPath} component={AsyncPFClustersPage} />
-                    )}
-                    <Route path={systemHealthPath} component={AsyncSystemHealthPage} />
-                    {isSystemHealthPatternFlyEnabled && (
-                        <Route path={systemHealthPathPF} component={AsyncSystemHealthPagePF} />
-                    )}
+                    {routeComponents
+                        .filter(({ basePath }) => isRenderedRoutePath(basePath))
+                        .map((routeComponent) => {
+                            const { basePath, propPath } = routeComponent;
+                            const path = propPath ?? basePath;
+
+                            if ('featureFlagDependency' in routeComponent) {
+                                const {
+                                    componentDisabled,
+                                    componentEnabled,
+                                    featureFlagDependency,
+                                } = routeComponent;
+                                const component = isFeatureFlagEnabled(featureFlagDependency)
+                                    ? componentEnabled
+                                    : componentDisabled;
+                                return <Route key={basePath} path={path} component={component} />;
+                            }
+
+                            const { component } = routeComponent;
+                            return <Route key={basePath} path={path} component={component} />;
+                        })}
                     <Route component={NotFoundPage} />
                 </Switch>
             </ErrorBoundary>
