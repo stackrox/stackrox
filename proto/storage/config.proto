@@ -48,12 +48,12 @@ message AlertRetentionConfig {
 // next available tag: 4
 message DecommissionedClusterRetentionConfig {
     // next available tag: 3
-    message IgnoreClusterLabel {
+    message ClusterLabel {
         string key    = 1;
         string value  = 2;
     }
     int32 retention_duration_days           = 1;
-    IgnoreClusterLabel ignore_label         = 2;
+    ClusterLabel ignore_cluster_label       = 2;
     google.protobuf.Timestamp last_updated  = 3;
 }
 

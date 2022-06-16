@@ -91,11 +91,11 @@ func clusterRetentionConfigsEqual(c1 *storage.DecommissionedClusterRetentionConf
 		return false
 	}
 	return c1.GetRetentionDurationDays() == c2.GetRetentionDurationDays() &&
-		labelsEqual(c1.GetIgnoreLabel(), c2.GetIgnoreLabel())
+		labelsEqual(c1.GetIgnoreClusterLabel(), c2.GetIgnoreClusterLabel())
 }
 
-func labelsEqual(l1 *storage.DecommissionedClusterRetentionConfig_IgnoreClusterLabel,
-	l2 *storage.DecommissionedClusterRetentionConfig_IgnoreClusterLabel) bool {
+func labelsEqual(l1 *storage.DecommissionedClusterRetentionConfig_ClusterLabel,
+	l2 *storage.DecommissionedClusterRetentionConfig_ClusterLabel) bool {
 	if l1 == nil && l2 == nil {
 		return true
 	}
