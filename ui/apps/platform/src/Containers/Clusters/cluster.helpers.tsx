@@ -61,7 +61,7 @@ export const clusterTablePollingInterval = 5000; // milliseconds
 export const clusterDetailPollingInterval = 3000; // milliseconds
 
 const defaultNewClusterType = 'KUBERNETES_CLUSTER';
-const defaultCollectionMethod = 'KERNEL_MODULE';
+const defaultCollectionMethod = 'EBPF';
 
 export const newClusterDefault = {
     id: undefined,

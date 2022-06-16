@@ -44,7 +44,7 @@ admissionControl:
     enforceOnUpdates: false
 
 collector:
-  collectionMethod: "KERNEL_MODULE"
+  collectionMethod: "EBPF"
   disableTaintTolerations: false
 
 auditLogs:
