@@ -37,12 +37,12 @@ case "$ci_job" in
 esac
 
 case "$ci_job" in
-    style-checks)
-        make style
-        ;;
     policy-checks)
         "$ROOT/scripts/ci/jobs/check-policy-files.sh"
         ;;
+    style-checks)
+        make style
+        ;&  # fallthrough for testing from PR
     grouped-static-checks)
         ;&  # fallthrough
     generated-checks)
