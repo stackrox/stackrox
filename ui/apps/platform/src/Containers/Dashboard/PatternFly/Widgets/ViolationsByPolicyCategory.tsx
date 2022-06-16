@@ -64,7 +64,7 @@ function zeroOutFilteredSeverities(
 
 function pluckSeverityCount(severity: PolicySeverity): (group: AlertGroup) => number {
     return ({ counts }) => {
-        const severityCount = counts.find((ct) => ct.severity === severity)?.count || '0';
+        const severityCount = counts.find((ct) => ct.severity === severity)?.count ?? '0';
         return -parseInt(severityCount, 10);
     };
 }
