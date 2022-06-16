@@ -151,7 +151,7 @@ function readAccessResourceNames(resourceNames: ResourceName[]): ReadAccessPredi
     return (hasReadAccess) => resourceNames.every(hasReadAccess);
 }
 
-const readAccessNoResourceRequirements = readAccessResourceNames([]);
+const renderUnconditionally = readAccessResourceNames([]);
 
 /*
  * Map key is base path of route like violationsBasePath = '/main/violations'
@@ -165,11 +165,11 @@ const readAccessNoResourceRequirements = readAccessResourceNames([]);
 export const routeDescriptorMap: Record<string, RouteDescriptor> = {
     // Sidebar Unexpandable1
     [dashboardPath]: {
-        readAccessPredicate: readAccessNoResourceRequirements,
+        readAccessPredicate: renderUnconditionally,
     },
     [dashboardPathPF]: {
         featureFlagDependency: 'ROX_SECURITY_METRICS_PHASE_ONE',
-        readAccessPredicate: readAccessNoResourceRequirements,
+        readAccessPredicate: renderUnconditionally,
     },
     [networkBasePath]: {
         readAccessPredicate: readAccessResourceNames([]), // NetworkGraph, and NetworkPolicy?
