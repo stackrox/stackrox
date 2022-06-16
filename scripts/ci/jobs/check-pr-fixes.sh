@@ -9,6 +9,7 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 
 check-pr-fixes() {
+    echo "JOB_SPEC=[${JOB_SPEC:-MISSING JOB_SPEC}]"
     is_in_PR_context || { echo "Not on a PR, nothing to do!"; exit 0; }
 
     IFS=$'\n' read -d '' -r -a tickets < <(

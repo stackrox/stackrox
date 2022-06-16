@@ -43,8 +43,16 @@ case "$ci_job" in
     policy-checks)
         "$ROOT/scripts/ci/jobs/check-policy-files.sh"
         ;;
+    grouped-static-checks)
+        ;&  # fallthrough
     generated-checks)
         "$ROOT/scripts/ci/jobs/check-generated.sh"
+        ;&  # fallthrough
+    todo-checks)
+        "$ROOT/scripts/ci/jobs/check-todos.sh"
+        ;&  # fallthrough
+    pr-fixes-checks)
+        "$ROOT/scripts/ci/jobs/check-pr-fixes.sh"
         ;;
     mitre-bundles-checks)
         "$ROOT/scripts/ci/jobs/check-mitre-bundles.sh"
