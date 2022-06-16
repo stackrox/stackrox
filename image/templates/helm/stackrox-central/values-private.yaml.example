@@ -128,7 +128,7 @@
 #   # pre-shared secret. If this setting is omitted, a password will be automatically generated
 #   # upon initial deployment, and the existing password will be used upon upgrades.
 #   dbPassword:
-#     value: <scanner database password value>
+#     value: <central database password value>
 #
 # # Secret configuration options for the StackRox Central deployment.
 # scanner:
