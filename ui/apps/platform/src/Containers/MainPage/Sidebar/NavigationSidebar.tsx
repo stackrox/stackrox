@@ -74,7 +74,6 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
         unfilteredPathsPlatformConfiguration.filter(isRenderedRoutePath);
 
     // Special case because nested nav items match only a subset of sub-routes.
-    // React Router 5 see isActiveFilter above for args in React Router 6
     const isActiveVulnerabilityManagement = pathname.startsWith(vulnManagementPath);
     const isActivePlatformConfiguration = filteredPathsPlatformConfiguration.some(isActiveFilter);
 
