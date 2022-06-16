@@ -229,9 +229,10 @@ func getSearchOptions(ctx context, searchTag string) (SearchField, []DerivedSear
 			Ignored: ignored,
 		}, nil
 	}
-	field, _ := stringutils.Split2(searchTag, ",")
-	derivedSearchFieldsMap := search.GetFieldsDerivedFrom(field)
+	field := stringutils.GetUpTo(searchTag, ",")
+
 	var derivedSearchFields []DerivedSearchField
+	derivedSearchFieldsMap := search.GetFieldsDerivedFrom(field)
 	if len(derivedSearchFieldsMap) > 0 {
 		derivedSearchFields = make([]DerivedSearchField, 0, len(derivedSearchFieldsMap))
 		for fieldName, derivationType := range derivedSearchFieldsMap {

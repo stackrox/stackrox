@@ -149,8 +149,9 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(replaceVars(q.Where))
 	}
 	if q.GroupByPrimaryKey {
-		var primaryKeyPaths []string
-		for _, pk := range q.Schema.PrimaryKeys() {
+		primaryKeys := q.Schema.PrimaryKeys()
+		primaryKeyPaths := make([]string, 0, len(primaryKeys))
+		for _, pk := range primaryKeys {
 			primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName))
 		}
 		querySB.WriteString(" group by ")

@@ -384,7 +384,7 @@ type DerivedFieldLabelMetadata struct {
 // DerivationType represents a type of derivation.
 type DerivationType int
 
-// THis block enumerates all supported derivation types.
+// This block enumerates all supported derivation types.
 const (
 	CountDerivationType DerivationType = iota
 )
