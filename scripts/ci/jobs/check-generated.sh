@@ -7,11 +7,9 @@ set -euo pipefail
 
 go mod tidy
 
-
 # shellcheck disable=SC2016
 echo 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
 function generated_files-are-up-to-date() {
-
     ln -s /go/src/github.com/stackrox /go/src/github.com/rox
 
     git ls-files --others --exclude-standard >/tmp/untracked
@@ -31,17 +29,6 @@ function generated_files-are-up-to-date() {
     fi
 }
 generated_files-are-up-to-date
-
-echo 'Ensure that all TODO references to fixed tickets are gone'
-if is_CIRCLECI; then
-    "$SCRIPTS_ROOT/.circleci/check-pr-fixes.sh"
-else
-    "$SCRIPTS_ROOT/.openshift-ci/check-pr-fixes.sh"
-fi
-
-echo 'Ensure that there are no TODO references that the developer has marked as blocking a merge'
-echo "Matches comments of the form TODO(x), where x can be \"DO NOT MERGE/don't-merge\"/\"dont-merge\"/similar"
-./scripts/check-todos.sh 'do\s?n.*merge'
 
 # shellcheck disable=SC2016
 echo 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
