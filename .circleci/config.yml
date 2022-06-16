@@ -2690,7 +2690,6 @@ jobs:
     resource_class: large
     steps:
       - checkout
-      - continue-when-in-a-pr-or-nightly-context
       - attach_workspace:
           at: ~/go/src/github.com/stackrox/rox
       - run:
