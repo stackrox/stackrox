@@ -152,7 +152,7 @@ function ViolationsByPolicyCategoryChart({
     });
 
     return (
-        <div ref={setWidgetContainer} style={{ height }}>
+        <div ref={setWidgetContainer}>
             <Chart
                 ariaDesc="Number of violation by policy category, grouped by severity"
                 ariaTitle="Policy Violations by Category"

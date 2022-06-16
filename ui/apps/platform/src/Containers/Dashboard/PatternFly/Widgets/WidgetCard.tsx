@@ -29,7 +29,7 @@ function WidgetCard({ isLoading, error, header, children }: WidgetCardProps) {
     }
 
     return (
-        <Card>
+        <Card className="pf-u-h-100">
             <CardHeader>
                 <div className="pf-u-flex-grow-1">{header}</div>
             </CardHeader>

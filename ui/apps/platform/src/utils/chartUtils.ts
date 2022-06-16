@@ -9,7 +9,7 @@ const severityColorScale = Object.values(severityColors);
 // Clone default PatternFly chart themes
 const defaultTheme = getTheme(ChartThemeColor.multi);
 
-export const defaultChartHeight = 264;
+export const defaultChartHeight = 260;
 
 export const defaultChartBarWidth = 18;
 

@@ -41,7 +41,7 @@ function DashboardPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection>
-                <Grid hasGutter>
+                <Grid hasGutter style={{ gridAutoRows: 'max-content' }}>
                     <GridItem lg={6}>
                         <DeploymentsAtMostRisk />
                     </GridItem>
