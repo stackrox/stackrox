@@ -15,6 +15,7 @@ import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
 import util.SplunkUtil
+import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
 import org.junit.Rule
@@ -37,6 +38,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static final String TEST_NAMESPACE = "qa-splunk-violation"
     private static final String SPLUNK_INPUT_NAME = "stackrox-violations-input"
 
+    private SplunkDeployment splunkDeployment
+
     def setupSpec() {
         // when using "Analyst" api token to access central Splunk violations endpoint
         // authorisation plugin prevents violations from being returned
@@ -51,6 +54,16 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
     def cleanupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
+    }
+
+    def setup() {
+        splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE, false)
+    }
+
+    def cleanup() {
+        if (splunkDeployment) {
+            tearDownSplunk(orchestrator, splunkDeployment)
+        }
     }
 
     private void configureSplunkTA(SplunkUtil.SplunkDeployment splunkDeployment, String centralHost) {
@@ -95,7 +108,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
         String centralHost = orchestrator.getServiceIP("central", "stackrox")
-        def splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE, false)
+
         configureSplunkTA(splunkDeployment, centralHost)
         triggerProcessViolation(splunkDeployment)
         triggerNetworkFlowViolation(splunkDeployment, centralHost)
@@ -136,12 +149,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         assert hasProcessViolation
         for (result in results) {
             validateCimMappings(result)
-        }
-
-        cleanup:
-        "remove splunk"
-        if (splunkDeployment) {
-            tearDownSplunk(orchestrator, splunkDeployment)
         }
     }
 
