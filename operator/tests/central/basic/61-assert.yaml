@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+spec:
+  template:
+    spec:
+      containers:
+      - name: central
+        ports:
+        - containerPort: 9090
+          name: monitoring
+status:
+  availableReplicas: 1
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: central-monitoring
+spec:
+  ingress:
+  - ports:
+    - port: 9090
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central
+  policyTypes:
+  - Ingress

@@ -183,6 +183,11 @@ spec:
       - description: Allows you to specify additional trusted Root CAs.
         displayName: TLS
         path: tls
+      - description: Enable necessary components for provisioning of monitoring metrics
+          for Central and other components of ACS stack. This is required if metrics
+          are collected by Observability Operator.
+        displayName: Expose Monitoring
+        path: central.exposeMonitoring
       - description: Additional image pull secrets to be taken into account for pulling
           images.
         displayName: Image Pull Secrets

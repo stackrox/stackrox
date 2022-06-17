@@ -109,6 +109,12 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Persistence *Persistence `json:"persistence,omitempty"`
 
+	// Enable necessary components for provisioning of monitoring metrics for
+	// Central and other components of ACS stack. This is required if metrics
+	// are collected by Observability Operator.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
+	ExposeMonitoring *bool `json:"exposeMonitoring,omitempty"`
+
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
 }

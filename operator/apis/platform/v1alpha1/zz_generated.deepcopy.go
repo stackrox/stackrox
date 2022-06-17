@@ -182,6 +182,11 @@ func (in *CentralComponentSpec) DeepCopyInto(out *CentralComponentSpec) {
 		*out = new(Persistence)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ExposeMonitoring != nil {
+		in, out := &in.ExposeMonitoring, &out.ExposeMonitoring
+		*out = new(bool)
+		**out = **in
+	}
 	in.DeploymentSpec.DeepCopyInto(&out.DeploymentSpec)
 }
 
