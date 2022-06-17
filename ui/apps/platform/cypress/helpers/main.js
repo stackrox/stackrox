@@ -1,5 +1,5 @@
 import * as api from '../constants/apiEndpoints';
-import { url } from '../constants/DashboardPage';
+import { pfUrl, url } from '../constants/DashboardPage';
 import navSelectors from '../selectors/navigation';
 
 import { visit } from './visit';
@@ -22,6 +22,11 @@ export function visitMainDashboard() {
 
     cy.wait('@riskyDeployments');
     cy.get('h1:contains("Dashboard")');
+}
+
+// TODO Make this the default once phase one of the PF Dashboard is enabled
+export function visitMainDashboardPF() {
+    visit(pfUrl);
 }
 
 export function visitMainDashboardViaRedirectFromUrl(redirectFromUrl) {
