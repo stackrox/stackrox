@@ -164,7 +164,7 @@ fetch_artifacts() {
 }
 
 get_cluster_postfix() {
-  echo "${RELEASE//./-}-${PATCH_NUMBER}-rc${RC_NUMBER}" # Change before merging
+  echo "${RELEASE//./-}-${PATCH_NUMBER}-rc${RC_NUMBER}"
 }
 
 get_cluster_prefix() {
