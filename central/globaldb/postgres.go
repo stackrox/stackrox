@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	// DBPasswordFile - location of secret
 	DBPasswordFile = "/run/secrets/stackrox.io/db-password/password"
 
 	tableQuery = `WITH RECURSIVE pg_inherit(inhrelid, inhparent) AS

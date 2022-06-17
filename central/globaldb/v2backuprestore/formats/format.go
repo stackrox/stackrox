@@ -72,6 +72,7 @@ func (l ExportFormatList) ToProtos() []*v1.DBExportFormat {
 	return protos
 }
 
+// Discard - discards the contents of the reader.
 func Discard(_ common.RestoreFileContext, fileReader io.Reader, _ int64) error {
 	if _, err := io.Copy(io.Discard, fileReader); err != nil {
 		return errors.Wrap(err, "could not discard data file")
