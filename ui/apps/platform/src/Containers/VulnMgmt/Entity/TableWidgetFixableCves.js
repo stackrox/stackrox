@@ -6,7 +6,11 @@ import { Message } from '@stackrox/ui-components';
 
 import Loader from 'Components/Loader';
 import { getCveTableColumns, defaultCveSort } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
-import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import {
+    NODE_CVE_LIST_FRAGMENT,
+    IMAGE_CVE_LIST_FRAGMENT,
+    VULN_CVE_LIST_FRAGMENT,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import entityTypes from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
@@ -16,12 +20,39 @@ import FixableCveExportButton from '../VulnMgmtComponents/FixableCveExportButton
 import TableWidget from './TableWidget';
 import { getScopeQuery } from './VulnMgmtPolicyQueryUtil';
 
+const queryFieldNames = {
+    [entityTypes.CLUSTER]: 'cluster',
+    [entityTypes.NODE]: 'node',
+    [entityTypes.NAMESPACE]: 'namespace',
+    [entityTypes.DEPLOYMENT]: 'deployment',
+    [entityTypes.COMPONENT]: 'component',
+    [entityTypes.NODE_COMPONENT]: 'nodeComponent',
+    [entityTypes.IMAGE_COMPONENT]: 'imageComponent',
+};
+
 const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name, id }) => {
     const [fixableCvesPage, setFixableCvesPage] = useState(0);
     const [cveSort, setCveSort] = useState(defaultCveSort);
 
     const displayedEntityType = resourceLabels[entityType];
-    const idFieldName = 'id';
+
+    const queryFieldName = queryFieldNames[entityType];
+    let queryVulnCounterFieldName = 'vulnCounter';
+    let queryVulnsFieldName = 'vulns';
+    let queryCVEFieldsName = 'cveFields';
+    let queryFragment = VULN_CVE_LIST_FRAGMENT;
+
+    if (entityType === entityTypes.NODE_COMPONENT) {
+        queryVulnCounterFieldName = 'nodeVulnerabilityCounter';
+        queryVulnsFieldName = 'nodeVulnerabilities';
+        queryCVEFieldsName = 'nodeCVEFields';
+        queryFragment = NODE_CVE_LIST_FRAGMENT;
+    } else if (entityType === entityTypes.IMAGE_COMPONENT) {
+        queryVulnCounterFieldName = 'imageVulnerabilityCounter';
+        queryVulnsFieldName = 'imageVulnerabilities';
+        queryCVEFieldsName = 'imageCVEFields';
+        queryFragment = IMAGE_CVE_LIST_FRAGMENT;
+    }
 
     // `id` field is not needed in result,
     //   but is needed to keep apollo-client from throwing an error with certain entities,
@@ -29,29 +60,33 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
     const fixableCvesQuery = gql`
         query getFixableCvesForEntity(
             $id: ID!
-            $query: String
+            ${
+                entityType !== entityTypes.NODE_COMPONENT &&
+                entityType !== entityTypes.IMAGE_COMPONENT
+                    ? '$query: String'
+                    : ''
+            }
             $scopeQuery: String
             $vulnQuery: String
             $vulnPagination: Pagination
         ) {
-            result: ${displayedEntityType}(${idFieldName}: $id) {
+            result: ${queryFieldName}(id: $id) {
                 ${entityType !== entityTypes.NAMESPACE ? 'id' : ''}
-                vulnCounter {
+                vulnCounter: ${queryVulnCounterFieldName} {
                     all {
                         fixable
                     }
                 }
-                vulnerabilities: vulns(query: $vulnQuery, scopeQuery: $scopeQuery, pagination: $vulnPagination) {
-                    ...cveFields
+                vulnerabilities:  ${queryVulnsFieldName}(query: $vulnQuery, scopeQuery: $scopeQuery, pagination: $vulnPagination) {
+                    ... ${queryCVEFieldsName}
                 }
             }
         }
-        ${VULN_CVE_LIST_FRAGMENT}
+        ${queryFragment}
     `;
     const queryOptions = {
         variables: {
             id,
-            query: '',
             scopeQuery: getScopeQuery(entityContext),
             vulnQuery: queryService.objectToWhereClause({ Fixable: true }),
             vulnPagination: queryService.getPagination(cveSort, fixableCvesPage, LIST_PAGE_SIZE),

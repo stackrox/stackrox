@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 
+import entityLabels from 'messages/entity';
 import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getEntityTypesByRelationship } from 'utils/entityRelationships';
@@ -33,9 +34,10 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
         .map((containEntity) => {
             const count = data[countKeyMap[containEntity]];
+            const entityLabel = entityLabels[containEntity];
             return {
                 count,
-                label: pluralize(containEntity, count),
+                label: pluralize(entityLabel, count),
                 entity: containEntity,
                 url: workflowState.pushList(containEntity).setSearch('').toUrl(),
             };
@@ -46,7 +48,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
     }
     return (
         <div
-            className={` h-full relative border-base-100 border-l w-32 ${
+            className={` h-full relative border-base-100 border-l w-43 ${
                 !isDarkMode ? 'bg-primary-300' : 'bg-base-100'
             }`}
         >

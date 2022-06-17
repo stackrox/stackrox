@@ -27,7 +27,8 @@ const entityMenuTypes = [
     entityTypes.CLUSTER,
     entityTypes.NAMESPACE,
     entityTypes.DEPLOYMENT,
-    entityTypes.COMPONENT,
+    entityTypes.NODE_COMPONENT,
+    entityTypes.IMAGE_COMPONENT,
 ];
 
 const VulnDashboardPage = ({ history }) => {

@@ -274,7 +274,7 @@ export const IMAGE_CVE_LIST_FRAGMENT = gql`
 `;
 
 export const CLUSTER_CVE_LIST_FRAGMENT = gql`
-    fragment cveFields on ClusterVulnerability {
+    fragment clusterCVEFields on ClusterVulnerability {
         createdAt
         cve
         cvss
@@ -300,7 +300,7 @@ export const CLUSTER_CVE_LIST_FRAGMENT = gql`
 `;
 
 export const NODE_CVE_LIST_FRAGMENT = gql`
-    fragment cveFields on NodeVulnerability {
+    fragment nodeCVEFields on NodeVulnerability {
         createdAt
         cve
         cvss
@@ -322,6 +322,33 @@ export const NODE_CVE_LIST_FRAGMENT = gql`
         vulnerabilityState
         componentCount: nodeComponentCount(query: $query)
         nodeCount(query: $query)
+    }
+`;
+
+export const VULN_IMAGE_CVE_LIST_FRAGMENT = gql`
+    fragment imageCVEFields on ImageVulnerability {
+        createdAt
+        cve
+        cvss
+        envImpact
+        fixedByVersion
+        id
+        impactScore
+        isFixable(query: $scopeQuery)
+        lastModified
+        lastScanned
+        link
+        publishedOn
+        scoreVersion
+        severity
+        summary
+        suppressActivation
+        suppressExpiry
+        suppressed
+        vulnerabilityState
+        componentCount: imageComponentCount
+        imageCount
+        deploymentCount
     }
 `;
 
@@ -506,6 +533,85 @@ export const VULN_COMPONENT_LIST_FRAGMENT = gql`
         imageCount(query: $query)
         deploymentCount(query: $query)
         nodeCount(query: $query)
+        priority
+    }
+`;
+
+export const VULN_NODE_COMPONENT_LIST_FRAGMENT = gql`
+    fragment nodeComponentFields on NodeComponent {
+        id
+        name
+        version
+        location
+        source
+        fixedIn
+        vulnCounter: nodeVulnerabilityCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            moderate {
+                total
+                fixable
+            }
+            important {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        topVuln: topNodeVulnerability {
+            cvss
+            scoreVersion
+        }
+        nodeCount(query: $query)
+        priority
+    }
+`;
+
+export const VULN_IMAGE_COMPONENT_LIST_FRAGMENT = gql`
+    fragment imageComponentFields on ImageComponent {
+        id
+        name
+        version
+        location
+        source
+        fixedIn
+        vulnCounter: imageVulnerabilityCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            moderate {
+                total
+                fixable
+            }
+            important {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        topVuln: topImageVulnerability {
+            cvss
+            scoreVersion
+        }
+        imageCount(query: $query)
+        deploymentCount(query: $query)
         priority
     }
 `;

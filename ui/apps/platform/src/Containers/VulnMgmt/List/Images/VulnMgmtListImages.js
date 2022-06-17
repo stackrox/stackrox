@@ -191,12 +191,12 @@ export function getCurriedImageTableColumns(watchedImagesTrigger) {
             },
             {
                 Header: `Components`,
-                entityType: entityTypes.COMPONENT,
+                entityType: entityTypes.IMAGE_COMPONENT,
                 headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => (
                     <TableCountLink
-                        entityType={entityTypes.COMPONENT}
+                        entityType={entityTypes.IMAGE_COMPONENT}
                         count={original.componentCount}
                         textOnly={pdf}
                         selectedRowId={original.id}
