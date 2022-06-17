@@ -430,7 +430,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Processes come in after baseline deleted by API"() {
+    def "Processes come in after baseline deleted by API for #deploymentName"() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
