@@ -310,7 +310,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		complianceService.Singleton(),
 		configService.Singleton(),
 		credentialExpiryService.Singleton(),
-		cveService.Singleton(),
 		debugService.New(
 			clusterDataStore.Singleton(),
 			connection.ManagerSingleton(),
@@ -366,6 +365,8 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 	if features.PostgresDatastore.Enabled() {
 		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
+	} else {
+		servicesToRegister = append(servicesToRegister, cveService.Singleton())
 	}
 
 	if features.ImageSignatureVerification.Enabled() {

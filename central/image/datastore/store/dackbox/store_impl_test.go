@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	cveStore "github.com/stackrox/rox/central/cve/store"
 	cveDackBoxStore "github.com/stackrox/rox/central/cve/store/dackbox"
-	"github.com/stackrox/rox/central/image/datastore/internal/store"
+	"github.com/stackrox/rox/central/image/datastore/store"
 	imageCVEEdgeStore "github.com/stackrox/rox/central/imagecveedge/store"
 	imageCVEEdgeDackBox "github.com/stackrox/rox/central/imagecveedge/store/dackbox"
 	"github.com/stackrox/rox/generated/storage"
