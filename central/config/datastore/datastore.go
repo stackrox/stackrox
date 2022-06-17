@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/config/store"
@@ -91,16 +92,5 @@ func clusterRetentionConfigsEqual(c1 *storage.DecommissionedClusterRetentionConf
 		return false
 	}
 	return c1.GetRetentionDurationDays() == c2.GetRetentionDurationDays() &&
-		labelsEqual(c1.GetIgnoreClusterLabel(), c2.GetIgnoreClusterLabel())
-}
-
-func labelsEqual(l1 *storage.DecommissionedClusterRetentionConfig_ClusterLabel,
-	l2 *storage.DecommissionedClusterRetentionConfig_ClusterLabel) bool {
-	if l1 == nil && l2 == nil {
-		return true
-	}
-	if l1 == nil || l2 == nil {
-		return false
-	}
-	return l1.GetKey() == l2.GetKey() && l1.GetValue() == l2.GetValue()
+		reflect.DeepEqual(c1.GetIgnoreClusterLabels(), c2.GetIgnoreClusterLabels())
 }

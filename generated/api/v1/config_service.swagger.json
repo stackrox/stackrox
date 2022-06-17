@@ -119,18 +119,6 @@
       ],
       "default": "UNSET"
     },
-    "DecommissionedClusterRetentionConfigClusterLabel": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        }
-      },
-      "title": "next available tag: 3"
-    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -233,8 +221,11 @@
           "type": "integer",
           "format": "int32"
         },
-        "ignoreClusterLabel": {
-          "$ref": "#/definitions/DecommissionedClusterRetentionConfigClusterLabel"
+        "ignoreClusterLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "lastUpdated": {
           "type": "string",

@@ -47,14 +47,9 @@ message AlertRetentionConfig {
 
 // next available tag: 4
 message DecommissionedClusterRetentionConfig {
-    // next available tag: 3
-    message ClusterLabel {
-        string key    = 1;
-        string value  = 2;
-    }
-    int32 retention_duration_days           = 1;
-    ClusterLabel ignore_cluster_label       = 2;
-    google.protobuf.Timestamp last_updated  = 3;
+    int32 retention_duration_days              = 1;
+    map<string, string> ignore_cluster_labels  = 2;
+    google.protobuf.Timestamp last_updated     = 3;
 }
 
 // next available tag: 6

@@ -57,7 +57,6 @@ var (
 			},
 		},
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
-		DecommissionedClusterRetention:      &defaultClusterRetentionConfig,
 	}
 )
 
@@ -80,17 +79,14 @@ func initialize() {
 		panic(err)
 	}
 
-	if config.GetPrivateConfig() == nil {
-		utils.Must(d.UpsertConfig(ctx, &storage.Config{
-			PublicConfig:  config.GetPublicConfig(),
-			PrivateConfig: &defaultPrivateConfig,
-		}))
-		return
-	}
-
 	if config.GetPrivateConfig().GetDecommissionedClusterRetention() == nil {
 		privateConfig := config.GetPrivateConfig()
+		if privateConfig == nil {
+			privateConfig = &defaultPrivateConfig
+		}
+
 		privateConfig.DecommissionedClusterRetention = &defaultClusterRetentionConfig
+
 		utils.Must(d.UpsertConfig(ctx, &storage.Config{
 			PublicConfig:  config.GetPublicConfig(),
 			PrivateConfig: privateConfig,
