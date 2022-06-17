@@ -8,6 +8,7 @@ source "$ROOT/scripts/ci/lib.sh"
 
 #set -euo pipefail
 set -x
+set +eo pipefail
 
 check-pr-fixes() {
     echo 'Ensure that all TODO references to fixed tickets are gone'
