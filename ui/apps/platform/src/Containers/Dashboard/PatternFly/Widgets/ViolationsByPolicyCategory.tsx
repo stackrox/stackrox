@@ -126,8 +126,6 @@ type ViolationsByPolicyCategoryChartProps = {
 
 const labelLinkCallback = ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text));
 
-const height = `${chartHeight}px` as const;
-
 function ViolationsByPolicyCategoryChart({
     alertGroups,
     sortType,
@@ -194,7 +192,7 @@ function ViolationsByPolicyCategoryChart({
     }
 
     return (
-        <div ref={setWidgetContainer} style={{ height }}>
+        <div ref={setWidgetContainer}>
             <Chart
                 ariaDesc="Number of violation by policy category, grouped by severity"
                 ariaTitle="Policy Violations by Category"
@@ -244,14 +242,14 @@ function ViolationsByPolicyCategory() {
         queryFilter['Lifecycle Stage'] = LIFECYCLE_STAGES.RUNTIME;
     }
     const query = getRequestQueryStringForSearchFilter(queryFilter);
-    const { alertGroups, loading, error } = useAlertGroups('CATEGORY', query);
+    const { data: alertGroups, loading, error } = useAlertGroups('CATEGORY', query);
 
     return (
         <WidgetCard
             isLoading={loading}
             error={error}
             header={
-                <Flex direction={{ default: 'row' }} className="pf-u-pb-md">
+                <Flex direction={{ default: 'row' }}>
                     <FlexItem grow={{ default: 'grow' }}>
                         <Title headingLevel="h2">Policy violations by category</Title>
                     </FlexItem>
@@ -318,7 +316,7 @@ function ViolationsByPolicyCategory() {
                 </Flex>
             }
         >
-            <ViolationsByPolicyCategoryChart alertGroups={alertGroups} sortType={sortType} />
+            <ViolationsByPolicyCategoryChart alertGroups={alertGroups ?? []} sortType={sortType} />
         </WidgetCard>
     );
 }
