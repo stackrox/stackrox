@@ -926,8 +926,8 @@ commands:
         type: string
         default: stackrox
     steps:
-      - continue-when-in-a-pr-or-nightly-context
       - checkout
+      - continue-when-in-a-pr-or-nightly-context
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-npm-deps-cache
