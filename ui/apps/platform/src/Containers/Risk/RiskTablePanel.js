@@ -11,7 +11,10 @@ import TablePagination from 'Components/TablePagination';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { fetchDeployments, fetchDeploymentsCount } from 'services/DeploymentsService';
+import {
+    fetchDeploymentsLegacy as fetchDeployments,
+    fetchDeploymentsCount,
+} from 'services/DeploymentsService';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import {
     filterAllowedSearch,
