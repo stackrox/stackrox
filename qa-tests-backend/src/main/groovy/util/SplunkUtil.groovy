@@ -120,7 +120,7 @@ class SplunkUtil {
 
     static String createSearch(int port, String search = "search") {
         Response response = null
-        withRetry(20, 3) {
+        withRetry(6, 15) {
             response = given()
                     .auth()
                     .basic("admin", SPLUNK_ADMIN_PASSWORD)
