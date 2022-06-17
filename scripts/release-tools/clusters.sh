@@ -125,13 +125,32 @@ ensure_cluster_exists() {
 
 wait_for_pods_to_be_ready() {
   while true; do
-    sleep 5
     ready_containers="$(kubectl -n stackrox get pod -o jsonpath='{.items[*].status.containerStatuses[?(@.ready == true)]}')"
     not_ready_containers="$(kubectl -n stackrox get pod -o jsonpath='{.items[*].status.containerStatuses[?(@.ready == false)]}')"
     if [[ -n "$ready_containers" && -z "$not_ready_containers" ]]; then
       break
     fi
+    sleep 5
   done
+}
+
+wait_for_pods_with_name() {
+  local name=$1
+
+  while true; do
+    npod="$({ kubectl -n stackrox get pod | grep "$name" || true; } | wc -l)"
+    if ((npod > 0)); then
+      break
+    fi
+    sleep 5
+  done
+}
+
+wait_for_pods_with_names() {
+  for name in "$@"; do
+    wait_for_pods_with_name "$name"
+  done
+  wait_for_pods_to_be_ready
 }
 
 fetch_artifacts() {
@@ -145,7 +164,7 @@ fetch_artifacts() {
 }
 
 get_cluster_postfix() {
-  echo "${RELEASE//./-}-${PATCH_NUMBER}-rc${RC_NUMBER}-test-1" # Change before merging
+  echo "${RELEASE//./-}-${PATCH_NUMBER}-rc${RC_NUMBER}" # Change before merging
 }
 
 get_cluster_prefix() {
@@ -256,8 +275,7 @@ create_long_running_cluster() {
   # Set your local kubectl context to the remote cluster once the above completes successfully.
   infractl get $CLUSTER_NAME --json | jq '.Connect' -r | bash
 
-  kubectl -n stackrox get pod
-  
+  echo "Connected to cluster"
   
   export MAIN_IMAGE_TAG="${RELEASE}.${PATCH_NUMBER}-rc.${RC_NUMBER}"
   export API_ENDPOINT="localhost:8000"
@@ -270,7 +288,8 @@ create_long_running_cluster() {
   
   toplevel_dir="$(git rev-parse --show-toplevel)"
   "$toplevel_dir/deploy/k8s/central.sh" # Launches central
-  wait_for_pods_to_be_ready
+  wait_for_pods_with_names central scanner
+  echo "Launched central"
   
   # Open port-forward to central, e.g. with
   kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
@@ -278,11 +297,12 @@ create_long_running_cluster() {
   
   export ROX_ADMIN_USERNAME=admin
   
-  export ROX_ADMIN_PASSWORD="$(cat deploy/k8s/central-deploy/password)"
+  export ROX_ADMIN_PASSWORD="$(cat "$toplevel_dir"/deploy/k8s/central-deploy/password)"
   export ROX_PASSWORD="$ROX_ADMIN_PASSWORD"
 
   "$toplevel_dir/deploy/k8s/sensor.sh"
-  wait_for_pods_to_be_ready
+  wait_for_pods_with_names collector sensor
+  echo "Launched sensor"
 
   kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
   kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD=long-running
@@ -291,7 +311,9 @@ create_long_running_cluster() {
   kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
   wait_for_pods_to_be_ready
 
-  "$($toplevel_dir/scale/launch_workload.sh np-load)"
+  cd "$toplevel_dir"
+
+  "$(scale/launch_workload.sh np-load)"
 }
 
 cleanup_artifacts() {
