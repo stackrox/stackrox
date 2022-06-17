@@ -217,6 +217,8 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 		}
 	}
 
+	options = append(options, booleanpolicy.ValidateNoFromInDockerfileLine())
+
 	if err := s.convertAndValidate(ctx, request, options...); err != nil {
 		return nil, err
 	}
