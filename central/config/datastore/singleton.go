@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -80,10 +81,20 @@ func initialize() {
 	}
 
 	privateConfig := config.GetPrivateConfig()
+	needsUpsert := false
 	if privateConfig == nil {
 		privateConfig = &defaultPrivateConfig
+		needsUpsert = true
 	} else if config.GetPrivateConfig().GetDecommissionedClusterRetention() == nil {
 		privateConfig.DecommissionedClusterRetention = &defaultClusterRetentionConfig
+		needsUpsert = true
+	}
+
+	if needsUpsert {
+		utils.Must(d.UpsertConfig(ctx, &storage.Config{
+			PublicConfig:  config.GetPublicConfig(),
+			PrivateConfig: privateConfig,
+		}))
 	}
 }
 
