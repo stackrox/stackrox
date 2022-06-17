@@ -26,7 +26,7 @@ check-pr-fixes() {
     echo "Tickets this PR claims to fix:"
     printf " - %s\n" "${tickets[@]}"
 
-    "$(dirname "$0")/../scripts/check-todos.sh" "${tickets[@]}"
+    "$ROOT/scripts/check-todos.sh" "${tickets[@]}"
 }
 
 check-pr-fixes
