@@ -8,7 +8,7 @@ import (
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/dackbox"
 	deploymentSAC "github.com/stackrox/rox/central/deployment/sac"
-	"github.com/stackrox/rox/central/image/datastore/internal/store"
+	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/index"
 	imageSAC "github.com/stackrox/rox/central/image/sac"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"

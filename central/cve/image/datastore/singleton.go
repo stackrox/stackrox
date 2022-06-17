@@ -1,8 +1,8 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/cve/image/datastore/internal/search"
-	"github.com/stackrox/rox/central/cve/image/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/cve/image/datastore/search"
+	"github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
