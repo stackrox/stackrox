@@ -126,6 +126,18 @@ type ViolationsByPolicyCategoryChartProps = {
 
 const labelLinkCallback = ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text));
 
+function tooltipForCategory(
+    category: string,
+    countsBySeverity: CountsBySeverity,
+    hiddenSeverities: Set<PolicySeverity>
+): string {
+    return policySeverities
+        .filter((severity) => !hiddenSeverities.has(severity))
+        .reverse()
+        .map((severity) => `${severityLabels[severity]}: ${countsBySeverity[severity][category]}`)
+        .join('\n');
+}
+
 function ViolationsByPolicyCategoryChart({
     alertGroups,
     sortType,
@@ -151,7 +163,7 @@ function ViolationsByPolicyCategoryChart({
             name: severity,
             x: group,
             y: count,
-            label: `${severityLabels[severity]}: ${count}`,
+            label: tooltipForCategory(group, countsBySeverity, hiddenSeverities),
         }));
 
         return (
