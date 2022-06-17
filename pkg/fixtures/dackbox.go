@@ -720,3 +720,410 @@ func GetImageDoctorJekyll_2() *storage.Image {
 		},
 	}
 }
+
+// GetDeploymentSherlockHolmes_1 provides a pseudo-realistic deployment for dackbox integration testing.
+func GetDeploymentSherlockHolmes_1(id, namespace *storage.NamespaceMetadata) *storage.Deployment {
+	return &storage.Deployment{
+		Id:                            id,
+		Name:                          "sherlock-holmes-deployment",
+		Hash:                          0,
+		Type:                          "Deployment",
+		Namespace:                     namespace.GetName(),
+		NamespaceId:                   namespace.GetId(),
+		OrchestratorComponent:         false,
+		Replicas:                      2,
+		Labels:                        map[string]string{"k8s-app": "sherlock-holmes"},
+		PodLabels:                     map[string]string{"k8s-app": "sherlock-holmes"},
+		LabelSelector:                 &storage.LabelSelector{MatchLabels: map[string]string{"k8s-app": "sherlock-holmes"}},
+		Created:                       &types.Timestamp{Seconds: 1643589436},
+		ClusterId:                     namespace.GetClusterId(),
+		ClusterName:                   namespace.GetClusterName(),
+		Containers:                    []*storage.Container{
+			{
+				Id:                   "2edd1e07-2b5a-4f04-8582-42db7fbc9ce7",
+				Config:               &storage.ContainerConfig{
+					Args: "--investigate-dubious-story",
+				},
+				Image:                &storage.ContainerImage{
+					Id:                   GetImageSherlockHolmes_1().GetId(),
+					Name:                 GetImageSherlockHolmes_1().GetName(),
+					NotPullable:          false,
+					IsClusterLocal:       false,
+				},
+				SecurityContext:      &storage.SecurityContext{
+					Privileged:               false,
+					Selinux:                  nil,
+					DropCapabilities:         []string{"all"},
+					AddCapabilities:          []string{"strong_talent_for_observation"},
+					ReadOnlyRootFilesystem:   true,
+					SeccompProfile:           nil,
+					AllowPrivilegeEscalation: false,
+				},
+				Volumes:              nil,
+				Ports:                nil,
+				Secrets:              nil,
+				Resources:            nil,
+				Name:                 "sherlockholmes",
+				LivenessProbe:        &storage.LivenessProbe{Defined: true},
+				ReadinessProbe:       &storage.ReadinessProbe{Defined: true},
+			},
+		},
+		Annotations:                   nil,
+		Priority:                      3,
+		Inactive:                      false,
+		ImagePullSecrets:              nil,
+		ServiceAccount:                "",
+		ServiceAccountPermissionLevel: storage.PermissionLevel_DEFAULT,
+		AutomountServiceAccountToken:  true,
+		HostNetwork:                   false,
+		HostPid:                       false,
+		HostIpc:                       false,
+		RuntimeClass:                  "",
+		Tolerations:                   nil,
+		Ports:                         nil,
+		StateTimestamp:                1654762976894737,
+		RiskScore:                     1.9846836,
+		ProcessTags:                   nil,
+	}
+}
+
+// GetDeploymentDoctorJekyll_2 provides a pseudo-realistic deployment for dackbox integration testing.
+func GetDeploymentDoctorJekyll_2(id string, namespace *storage.NamespaceMetadata) *storage.Deployment {
+	return &storage.Deployment{
+		Id:                            id,
+		Name:                          "doctor-jekyll-deployment",
+		Hash:                          0,
+		Type:                          "Deployment",
+		Namespace:                     namespace.GetName(),
+		NamespaceId:                   namespace.GetId(),
+		OrchestratorComponent:         false,
+		Replicas:                      2,
+		Labels:                        map[string]string{"k8s-app": "mr-hyde"},
+		PodLabels:                     map[string]string{"k8s-app": "mr-hyde"},
+		LabelSelector:                 &storage.LabelSelector{MatchLabels: map[string]string{"k8s-app": "mr-hyde"}},
+		Created:                       &types.Timestamp{Seconds: 1643589436},
+		ClusterId:                     namespace.GetClusterId(),
+		ClusterName:                   namespace.GetClusterName(),
+		Containers:                    []*storage.Container{
+			{
+				Id:                   "2edd1e07-2b5a-4f04-8582-42db7fbc9ce7",
+				Config:               &storage.ContainerConfig{
+					Args: "--tries-to-find-refined-special-crystals",
+				},
+				Image:                &storage.ContainerImage{
+					Id:                   GetImageDoctorJekyll_2().GetId(),
+					Name:                 GetImageDoctorJekyll_2().GetName(),
+					NotPullable:          false,
+					IsClusterLocal:       false,
+				},
+				SecurityContext:      &storage.SecurityContext{
+					Privileged:               false,
+					Selinux:                  nil,
+					DropCapabilities:         []string{"all"},
+					AddCapabilities:          []string{"strong_talent_for_observation"},
+					ReadOnlyRootFilesystem:   true,
+					SeccompProfile:           nil,
+					AllowPrivilegeEscalation: false,
+				},
+				Volumes:              nil,
+				Ports:                nil,
+				Secrets:              nil,
+				Resources:            nil,
+				Name:                 "doctorjekyll",
+				LivenessProbe:        &storage.LivenessProbe{Defined: true},
+				ReadinessProbe:       &storage.ReadinessProbe{Defined: true},
+			},
+		},
+		Annotations:                   nil,
+		Priority:                      3,
+		Inactive:                      false,
+		ImagePullSecrets:              nil,
+		ServiceAccount:                "",
+		ServiceAccountPermissionLevel: storage.PermissionLevel_DEFAULT,
+		AutomountServiceAccountToken:  true,
+		HostNetwork:                   false,
+		HostPid:                       false,
+		HostIpc:                       false,
+		RuntimeClass:                  "",
+		Tolerations:                   nil,
+		Ports:                         nil,
+		StateTimestamp:                1654762976894737,
+		RiskScore:                     1.9846836,
+		ProcessTags:                   nil,
+	}
+}
+
+// namespace for deployment can be fetched using the namespace fixture GetNamespace(clusterID, clusterName, namespace)
+
+// TODO - document properly node to CVE storage management.
+//
+//
+// For testing purposes, a graph of objects like the one below could be used.
+//
+// Cluster1 -- Node1 --+--> NodeComponent1 --+--> NodeCVE1
+//                     |                     |
+//                     |                     +-------+
+//                     |                             |
+//                     |                             v
+//                     |                          NodeCVE2
+//                     |                             ^
+//                     |                             |
+//                     |                             +--------+
+//                     |                                      |
+//                     +--> NodeComponent2 -----> NodeCVE3    |
+//                     |                                      |
+//                     +----------+                           |
+//                                |          +--> NodeCVE4    |
+//                                v          |                |
+//                          NodeComponent3 --+                |
+//                                ^          |                |
+//                                |          +--> NodeCVE5    |
+//                     +----------+                           |
+//                     |                                      |
+//                     +--> NodeComponent4                    |
+//                     |                                      |
+//                     |                     +----------------+
+//                     |                     |
+// Cluster2 -- Node2 --+--> NodeComponent5 --+--> NodeCVE6
+//                                           |
+//                                           +--> NodeCVE7
+
+// GetEmbeddedNodeCVE_1234_0001 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE_1234_0001() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE_1234_0001()
+	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+	vulnerability.VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+	}
+	return vulnerability
+}
+
+// GetEmbeddedNodeCVE_4567_0002 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE_4567_0002() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE_4567_0002()
+	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+		vulnerability.VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+	}
+	return vulnerability
+}
+
+// GetEmbeddedNodeCVE_1234_0003 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE_1234_0003() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE_1234_0003()
+	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+		vulnerability.VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+	}
+	return vulnerability
+}
+
+// GetEmbeddedNodeCVE_3456_0004 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE_3456_0004() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE_3456_0004()
+	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+		vulnerability.VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+	}
+	return vulnerability
+}
+
+// GetEmbeddedNodeCVE_3456_0005 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE_3456_0005() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE_3456_0005()
+	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+		vulnerability.VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+	}
+	return vulnerability
+}
+
+// GetEmbeddedNodeCVE_2345_0006 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE_2345_0006() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE_2345_0006()
+	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+		vulnerability.VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+	}
+	return vulnerability
+}
+
+// GetEmbeddedNodeCVE_2345_0007 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE_2345_0007() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE_2345_0007()
+	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+		vulnerability.VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+	}
+	return vulnerability
+}
+
+// GetEmbeddedNodeComponent_1_1 provides a pseudo-realistic node component for dackbox integration testing.
+func GetEmbeddedNodeComponent_1_1() *storage.EmbeddedNodeScanComponent {
+	return &storage.EmbeddedNodeScanComponent{
+		Name:            "scarlet",
+		Version:         "1.1",
+		Vulns:           []*storage.EmbeddedVulnerability{
+			GetEmbeddedNodeCVE_1234_0001(),
+			GetEmbeddedNodeCVE_4567_0002(),
+		},
+		Vulnerabilities: nil,
+		Priority:        0,
+		SetTopCvss:      &storage.NodeComponent_TopCvss{TopCvss: 7.5},
+		RiskScore:       0,
+	}
+}
+
+// GetEmbeddedNodeComponent_1_2 provides a pseudo-realistic node component for dackbox integration testing.
+func GetEmbeddedNodeComponent_1_2() *storage.EmbeddedNodeScanComponent {
+	return &storage.EmbeddedNodeScanComponent{
+		Name:            "baskerville",
+		Version:         "1.2",
+		Vulns:           []*storage.EmbeddedVulnerability{
+			GetEmbeddedNodeCVE_1234_0003(),
+		},
+		Vulnerabilities: nil,
+		Priority:        0,
+		SetTopCvss:      &storage.NodeComponent_TopCvss{TopCvss: 7.5},
+		RiskScore:       0,
+	}
+}
+
+// GetEmbeddedNodeComponent_1s2_3 provides a pseudo-realistic node component for dackbox integration testing.
+func GetEmbeddedNodeComponent_1s2_3() *storage.EmbeddedNodeScanComponent {
+	return &storage.EmbeddedNodeScanComponent{
+		Name:            "downtown-london",
+		Version:         "1s.2-3",
+		Vulns:           []*storage.EmbeddedVulnerability{
+			GetEmbeddedNodeCVE_3456_0004(),
+			GetEmbeddedNodeCVE_3456_0005(),
+		},
+		Vulnerabilities: nil,
+		Priority:        0,
+		SetTopCvss:      &storage.NodeComponent_TopCvss{TopCvss: 7.5},
+		RiskScore:       0,
+	}
+}
+
+// GetEmbeddedNodeComponent_2_4 provides a pseudo-realistic node component for dackbox integration testing.
+func GetEmbeddedNodeComponent_2_4() *storage.EmbeddedNodeScanComponent {
+	return &storage.EmbeddedNodeScanComponent{
+		Name:            "dr-jekyll-medecine-practice",
+		Version:         "2.4",
+		Vulns:           []*storage.EmbeddedVulnerability{
+		},
+		Vulnerabilities: nil,
+		Priority:        0,
+		SetTopCvss:      &storage.NodeComponent_TopCvss{TopCvss: 0.0},
+		RiskScore:       0,
+	}
+}
+
+// GetEmbeddedNodeComponent_2_5 provides a pseudo-realistic node component for dackbox integration testing.
+func GetEmbeddedNodeComponent_2_5() *storage.EmbeddedNodeScanComponent {
+	return &storage.EmbeddedNodeScanComponent{
+		Name:            "mr-hyde-secret-entrance",
+		Version:         "2.5",
+		Vulns:           []*storage.EmbeddedVulnerability{
+			GetEmbeddedNodeCVE_4567_0002(),
+			GetEmbeddedNodeCVE_2345_0006(),
+			GetEmbeddedNodeCVE_2345_0007(),
+		},
+		Vulnerabilities: nil,
+		Priority:        0,
+		SetTopCvss:      &storage.NodeComponent_TopCvss{TopCvss: 7.8},
+		RiskScore:       0,
+	}
+}
+
+// GetScopedNode_1 provides a pseudo-realistic node with scoping information matching the input for
+// dackbox integration testing.
+func GetScopedNode_1(nodeID string, clusterID string) *storage.Node {
+	return &storage.Node{
+		Id:                      nodeID,
+		Name:                    "sherlock-holmes",
+		Taints:                  nil,
+		ClusterId:               clusterID,
+		ClusterName:             "test-cluster",
+		Labels:                  nil,
+		Annotations:             nil,
+		JoinedAt:                &types.Timestamp{Seconds: 1643789433},
+		InternalIpAddresses:     nil,
+		ExternalIpAddresses:     nil,
+		ContainerRuntimeVersion: "",
+		ContainerRuntime:        &storage.ContainerRuntimeInfo{
+			Type:                 storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+			Version:              "20.10.10",
+		},
+		KernelVersion:           "",
+		OperatingSystem:         "Docker Desktop",
+		OsImage:                 "",
+		KubeletVersion:          "",
+		KubeProxyVersion:        "",
+		LastUpdated:             nil,
+		K8SUpdated:              nil,
+		Scan:                    &storage.NodeScan{
+			ScanTime:             &types.Timestamp{Seconds: 1654154292, Nanos: 870002400},
+			OperatingSystem:      "Linux",
+			Components:           []*storage.EmbeddedNodeScanComponent{
+				GetEmbeddedNodeComponent_1_1(),
+				GetEmbeddedNodeComponent_1_2(),
+				GetEmbeddedNodeComponent_1s2_3(),
+			},
+			Notes:                nil,
+		},
+		SetComponents:           &storage.Node_Components{Components: 3},
+		SetCves:                 &storage.Node_Cves{Cves: 5},
+		SetFixable:              &storage.Node_FixableCves{FixableCves: 2},
+		Priority:                0,
+		RiskScore:               1.275,
+		SetTopCvss:              &storage.Node_TopCvss{TopCvss: 7.5},
+		Notes:                   nil,
+	}
+}
+
+// GetScopedNode_2 provides a pseudo-realistic node with scoping information matching the input for
+// dackbox integration testing.
+func GetScopedNode_2(nodeID string, clusterID string) *storage.Node {
+	return &storage.Node{
+		Id:                      nodeID,
+		Name:                    "dr-jekyll",
+		Taints:                  nil,
+		ClusterId:               clusterID,
+		ClusterName:             "test-cluster",
+		Labels:                  nil,
+		Annotations:             nil,
+		JoinedAt:                &types.Timestamp{Seconds: 1643789433},
+		InternalIpAddresses:     nil,
+		ExternalIpAddresses:     nil,
+		ContainerRuntimeVersion: "",
+		ContainerRuntime:        &storage.ContainerRuntimeInfo{
+			Type:                 storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+			Version:              "20.10.10",
+		},
+		KernelVersion:           "",
+		OperatingSystem:         "Docker Desktop",
+		OsImage:                 "",
+		KubeletVersion:          "",
+		KubeProxyVersion:        "",
+		LastUpdated:             nil,
+		K8SUpdated:              nil,
+		Scan:                    &storage.NodeScan{
+			ScanTime:             &types.Timestamp{Seconds: 1654154292, Nanos: 870002400},
+			OperatingSystem:      "Linux",
+			Components:           []*storage.EmbeddedNodeScanComponent{
+				GetEmbeddedNodeComponent_1_1(),
+				GetEmbeddedNodeComponent_1_2(),
+				GetEmbeddedNodeComponent_1s2_3(),
+			},
+			Notes:                nil,
+		},
+		SetComponents:           &storage.Node_Components{Components: 3},
+		SetCves:                 &storage.Node_Cves{Cves: 5},
+		SetFixable:              &storage.Node_FixableCves{FixableCves: 2},
+		Priority:                0,
+		RiskScore:               1.275,
+		SetTopCvss:              &storage.Node_TopCvss{TopCvss: 7.5},
+		Notes:                   nil,
+	}
+}
