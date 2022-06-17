@@ -5,7 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/central/cve/image/datastore/internal/store"
+	"github.com/stackrox/rox/central/cve/image/datastore/store"
 	"github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/cve/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"

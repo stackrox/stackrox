@@ -9,7 +9,7 @@ import (
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
 	image "github.com/stackrox/rox/central/image/dackbox"
-	imageStore "github.com/stackrox/rox/central/image/datastore/internal/store/dackbox"
+	imageStore "github.com/stackrox/rox/central/image/datastore/store/dackbox"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

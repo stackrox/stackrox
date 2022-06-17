@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/image/datastore/internal/store"
+	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

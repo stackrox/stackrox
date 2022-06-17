@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/image/datastore/internal/search"
-	"github.com/stackrox/rox/central/image/datastore/internal/store"
+	"github.com/stackrox/rox/central/image/datastore/search"
+	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
