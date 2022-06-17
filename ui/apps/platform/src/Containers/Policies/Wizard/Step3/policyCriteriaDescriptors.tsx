@@ -317,7 +317,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             {
                 type: 'select',
                 options: [
-                    { label: 'FROM', value: 'FROM' },
                     { label: 'LABEL', value: 'LABEL' },
                     { label: 'RUN', value: 'RUN' },
                     { label: 'CMD', value: 'CMD' },

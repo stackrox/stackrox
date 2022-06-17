@@ -10,10 +10,10 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -864,10 +864,57 @@ func (s *PolicyValidatorTestSuite) TestValidateAuditEventSource() {
 	}))
 }
 
-func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
-	if buildinfo.ReleaseBuild {
-		s.T().Skipf("Skipping this test for release build since the feature flag %s is not enabled", features.NetworkPolicySystemPolicy.EnvVar())
+func (s *PolicyValidatorTestSuite) TestValidateNoDockerfileLineFrom() {
+	validator := newPolicyValidator(s.nStorage)
+
+	goodPolicy := booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NOT_APPLICABLE, map[string]string{
+		fieldnames.DockerfileLine: "COPY=",
+	})
+	goodPolicy.Name = "GOOD"
+	badPolicy := booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NOT_APPLICABLE, map[string]string{
+		fieldnames.DockerfileLine: "FROM=",
+	})
+	badPolicy.Name = "BAD"
+
+	for _, testCase := range []struct {
+		p             *storage.Policy
+		includeOption bool
+		errExpected   bool
+	}{
+		{
+			p:             goodPolicy,
+			includeOption: false,
+			errExpected:   false,
+		},
+		{
+			p:             badPolicy,
+			includeOption: false,
+			errExpected:   false,
+		},
+		{
+			p:             goodPolicy,
+			includeOption: true,
+			errExpected:   false,
+		},
+		{
+			p:             badPolicy,
+			includeOption: true,
+			errExpected:   true,
+		},
+	} {
+		s.Run(fmt.Sprintf("%s_%v", testCase.p.GetName(), testCase.includeOption), func() {
+			var options []booleanpolicy.ValidateOption
+			if testCase.includeOption {
+				options = append(options, booleanpolicy.ValidateNoFromInDockerfileLine())
+			}
+			err := validator.validateCompilableForLifecycle(testCase.p, options...)
+			s.Equal(testCase.errExpected, err != nil, "Result didn't match expectations (got error: %v)", err)
+		})
 	}
+
+}
+
+func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
 	s.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
 	defer s.envIsolator.RestoreAll()
 
