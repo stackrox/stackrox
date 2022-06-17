@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -31,8 +30,8 @@ const (
 	DefaultAttemptedRuntimeAlertRetention = 7
 	// DefaultExpiredVulnReqRetention is the number of days to retain expired vulnerability requests.
 	DefaultExpiredVulnReqRetention = 90
-	// DefaultDecommissionedClusterRetention is the number of days to retain a cluster that is unreachable.
-	DefaultDecommissionedClusterRetention = 90
+	// DefaultDecommissionedClusterRetentionDays is the number of days to retain a cluster that is unreachable.
+	DefaultDecommissionedClusterRetentionDays = 90
 )
 
 var (
@@ -41,7 +40,7 @@ var (
 	d DataStore
 
 	defaultClusterRetentionConfig = storage.DecommissionedClusterRetentionConfig{
-		RetentionDurationDays: DefaultDecommissionedClusterRetention,
+		RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
 		LastUpdated:           types.TimestampNow(),
 	}
 
@@ -57,6 +56,7 @@ var (
 			},
 		},
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
+		DecommissionedClusterRetention:      &defaultClusterRetentionConfig,
 	}
 )
 
@@ -79,18 +79,11 @@ func initialize() {
 		panic(err)
 	}
 
-	if config.GetPrivateConfig().GetDecommissionedClusterRetention() == nil {
-		privateConfig := config.GetPrivateConfig()
-		if privateConfig == nil {
-			privateConfig = &defaultPrivateConfig
-		}
-
+	privateConfig := config.GetPrivateConfig()
+	if privateConfig == nil {
+		privateConfig = &defaultPrivateConfig
+	} else if config.GetPrivateConfig().GetDecommissionedClusterRetention() == nil {
 		privateConfig.DecommissionedClusterRetention = &defaultClusterRetentionConfig
-
-		utils.Must(d.UpsertConfig(ctx, &storage.Config{
-			PublicConfig:  config.GetPublicConfig(),
-			PrivateConfig: privateConfig,
-		}))
 	}
 }
 
