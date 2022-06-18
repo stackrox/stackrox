@@ -1,10 +1,12 @@
 package pgtest
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
@@ -41,4 +43,11 @@ func CloseGormDB(t *testing.T, db *gorm.DB) {
 	if err == nil {
 		_ = genericDB.Close()
 	}
+}
+
+func CleanUpDB(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
+	_, err := pool.Exec(ctx, "DROP SCHEMA public CASCADE")
+	require.NoError(t, err)
+	_, err = pool.Exec(ctx, "CREATE SCHEMA public")
+	require.NoError(t, err)
 }
