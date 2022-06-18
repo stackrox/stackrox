@@ -2,6 +2,7 @@
 {{- $name := .TrimmedType|lowerCamelCase }}
 package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 {{define "getterParamList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $idx, $pk := .Schema.PrimaryKeys}}{{if $idx}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
+{{ $rocksDB := eq .Migration.MigrateFromDB "rocksdb" }}
 
 import (
 	"context"
@@ -10,6 +11,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -22,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/tecbot/gorocksdb"
+	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"
 )
 
@@ -34,10 +37,14 @@ type postgresMigrationSuite struct {
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
 
+    {{- if $rocksDB}}
 	// RocksDB
-	rocksDB *rocksdb.RocksDB
+	legacyDB *rocksdb.RocksDB
 	db      *gorocksdb.DB
-
+	{{- else}}
+	// Bolt DB
+    legacyDB *bolt.DB
+    {{- end}}
 	// PostgresDB
 	pool   *pgxpool.Pool
 	gormDB *gorm.DB
@@ -54,10 +61,15 @@ func (s *postgresMigrationSuite) SetupTest() {
 	}
 
 	var err error
-	s.rocksDB, err = rocksdb.NewTemp(s.T().Name())
+    {{- if $rocksDB}}
+	s.legacyDB, err = rocksdb.NewTemp(s.T().Name())
 	s.NoError(err)
-
-	s.db = s.rocksDB.DB
+	s.db = s.legacyDB.DB
+	{{- else}}
+    s.legacyDB, err = bolthelper.NewTemp(s.T().Name() + ".db")
+    s.NoError(err)
+    bolthelper.RegisterBucketOrPanic(s.legacyDB, {{$name}}Bucket)
+	{{- end}}
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -66,40 +78,69 @@ func (s *postgresMigrationSuite) SetupTest() {
 	s.ctx = context.Background()
 	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
 	s.Require().NoError(err)
-
+	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	_ = s.gormDB.Migrator().DropTable({{template "createTableStmtVar" .Schema}}.GormModel)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(s.rocksDB)
+    {{- if $rocksDB}}
+	rocksdbtest.TearDownRocksDB(s.legacyDB)
+	{{- else}}
+    testutils.TearDownDB(s.legacyDB)
+	{{- end}}
 	_ = s.gormDB.Migrator().DropTable({{template "createTableStmtVar" .Schema}}.GormModel)
+	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
 	pgtest.CloseGormDB(s.T(), s.gormDB)
+    s.pool.Close()
 }
 
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
+	var {{$name}}s []*{{.Type}}
+	{{- if $rocksDB}}
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
-	var {{$name}}s []*{{.Type}}
+	{{- else}}
+    store := newStore(s.pool, s.legacyDB)
+	{{- end}}
 	for i := 0; i < 200; i++ {
 		{{$name}} := &{{.Type}}{}
 		s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		{{- if $rocksDB}}
 		bytes, err := proto.Marshal({{$name}})
 		s.NoError(err, "failed to marshal data")
-		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, keyFunc({{$name}})), bytes)
+		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey({{$name}}Bucket, keyFunc({{$name}})), bytes)
+		{{- else}}
+        s.NoError(store.Upsert(s.ctx, {{$name}}))
+		{{- end}}
 		{{$name}}s = append({{$name}}s, {{$name}})
 	}
 
+    {{- if $rocksDB}}
 	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
-	s.NoError(move{{.Table|upperCamelCase}}(s.rocksDB, s.gormDB, s.pool))
+	{{- end}}
+	s.NoError(move{{.Table|upperCamelCase}}(s.legacyDB, s.gormDB, s.pool))
 	var count int64
 	s.gormDB.Model({{template  "createTableStmtVar" .Schema}}.GormModel).Count(&count)
 	s.Equal(int64(len({{$name}}s)), count)
+
+    {{- if $rocksDB}}
 	for _, {{$name}} := range {{$name}}s {
 		s.Equal({{$name}}, s.get({{ template "getterParamList" $ }}))
 	}
+	{{- else}}
+		sort.Slice({{$name}}s, func(i, j int) bool {
+            return {{$name}}s[i].Id < {{$name}}s[j].Id
+    })
+	all, err := store.GetAll(s.ctx)
+    s.Require().NoError(err)
+    sort.Slice(all, func(i, j int) bool {
+        return all[i].Id < all[j].Id
+    })
+
+    s.Equal({{$name}}s, all)
+	{{- end}}
 }
 
 func (s *postgresMigrationSuite) get({{template "paramList" $pks}}) *{{.Type}} {
@@ -131,4 +172,3 @@ func (s *postgresMigrationSuite) get({{template "paramList" $pks}}) *{{.Type}} {
 	s.NoError(proto.Unmarshal(data, &msg))
 	return &msg
 }
-

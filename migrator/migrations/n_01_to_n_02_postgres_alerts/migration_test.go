@@ -32,11 +32,9 @@ type postgresMigrationSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
-
 	// RocksDB
-	rocksDB *rocksdb.RocksDB
-	db      *gorocksdb.DB
-
+	legacyDB *rocksdb.RocksDB
+	db       *gorocksdb.DB
 	// PostgresDB
 	pool   *pgxpool.Pool
 	gormDB *gorm.DB
@@ -53,10 +51,9 @@ func (s *postgresMigrationSuite) SetupTest() {
 	}
 
 	var err error
-	s.rocksDB, err = rocksdb.NewTemp(s.T().Name())
+	s.legacyDB, err = rocksdb.NewTemp(s.T().Name())
 	s.NoError(err)
-
-	s.db = s.rocksDB.DB
+	s.db = s.legacyDB.DB
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -70,7 +67,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(s.rocksDB)
+	rocksdbtest.TearDownRocksDB(s.legacyDB)
 	_ = s.gormDB.Migrator().DropTable(pkgSchema.CreateTableAlertsStmt.GormModel)
 	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
 	pgtest.CloseGormDB(s.T(), s.gormDB)
@@ -79,21 +76,20 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
+	var alerts []*storage.Alert
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
-	var alerts []*storage.Alert
 	for i := 0; i < 200; i++ {
 		alert := &storage.Alert{}
 		s.NoError(testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		bytes, err := proto.Marshal(alert)
 		s.NoError(err, "failed to marshal data")
-		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, keyFunc(alert)), bytes)
+		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(alertBucket, keyFunc(alert)), bytes)
 		alerts = append(alerts, alert)
 	}
-
 	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
-	s.NoError(moveAlerts(s.rocksDB, s.gormDB, s.pool))
+	s.NoError(moveAlerts(s.legacyDB, s.gormDB, s.pool))
 	var count int64
 	s.gormDB.Model(pkgSchema.CreateTableAlertsStmt.GormModel).Count(&count)
 	s.Equal(int64(len(alerts)), count)

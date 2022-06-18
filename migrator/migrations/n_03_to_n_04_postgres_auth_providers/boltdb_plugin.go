@@ -11,10 +11,6 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-var (
-	authProviderBucket = []byte("authProviders")
-)
-
 func addUniqueCheck(tx *bolt.Tx, authProvider *storage.AuthProvider) error {
 	if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, authProviderBucket, authProvider.GetId(), authProvider.GetName()); err != nil {
 		return errors.Wrap(err, "Could not add AuthProvider due to name validation")
@@ -31,8 +27,27 @@ func updateUniqueCheck(tx *bolt.Tx, authProvider *storage.AuthProvider) error {
 	return nil
 }
 
+// GetAll retrieves authProviders from bolt
+func (s *storeImpl) GetAll(_ context.Context) ([]*storage.AuthProvider, error) {
+	var authProviders []*storage.AuthProvider
+	err := s.legacyDB.View(func(tx *bolt.Tx) error {
+		provB := tx.Bucket(authProviderBucket)
+
+		return provB.ForEach(func(k, v []byte) error {
+			var authProvider storage.AuthProvider
+			if err := proto.Unmarshal(v, &authProvider); err != nil {
+				return err
+			}
+
+			authProviders = append(authProviders, &authProvider)
+			return nil
+		})
+	})
+	return authProviders, err
+}
+
 func (s *storeImpl) Upsert(_ context.Context, authProvider *storage.AuthProvider) error {
-	return s.boltDB.Update(func(tx *bolt.Tx) error {
+	return s.legacyDB.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(authProviderBucket)
 		if bolthelper.Exists(bucket, authProvider.GetId()) {
 			// If it exists, then we are updating

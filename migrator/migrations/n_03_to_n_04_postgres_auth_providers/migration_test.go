@@ -4,23 +4,22 @@ package n3ton4
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
+	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"
 )
 
@@ -32,11 +31,8 @@ type postgresMigrationSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
-
-	// RocksDB
-	rocksDB *rocksdb.RocksDB
-	db      *gorocksdb.DB
-
+	// Bolt DB
+	legacyDB *bolt.DB
 	// PostgresDB
 	pool   *pgxpool.Pool
 	gormDB *gorm.DB
@@ -53,10 +49,9 @@ func (s *postgresMigrationSuite) SetupTest() {
 	}
 
 	var err error
-	s.rocksDB, err = rocksdb.NewTemp(s.T().Name())
+	s.legacyDB, err = bolthelper.NewTemp(s.T().Name() + ".db")
 	s.NoError(err)
-
-	s.db = s.rocksDB.DB
+	bolthelper.RegisterBucketOrPanic(s.legacyDB, authProviderBucket)
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -70,7 +65,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(s.rocksDB)
+	testutils.TearDownDB(s.legacyDB)
 	_ = s.gormDB.Migrator().DropTable(pkgSchema.CreateTableAuthProvidersStmt.GormModel)
 	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
 	pgtest.CloseGormDB(s.T(), s.gormDB)
@@ -79,27 +74,28 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
-	batchSize = 48
-	rocksWriteBatch := gorocksdb.NewWriteBatch()
-	defer rocksWriteBatch.Destroy()
 	var authProviders []*storage.AuthProvider
+	store := newStore(s.pool, s.legacyDB)
 	for i := 0; i < 200; i++ {
 		authProvider := &storage.AuthProvider{}
 		s.NoError(testutils.FullInit(authProvider, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		bytes, err := proto.Marshal(authProvider)
-		s.NoError(err, "failed to marshal data")
-		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, keyFunc(authProvider)), bytes)
+		s.NoError(store.Upsert(s.ctx, authProvider))
 		authProviders = append(authProviders, authProvider)
 	}
-
-	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
-	s.NoError(moveAuthProviders(s.rocksDB, s.gormDB, s.pool))
+	s.NoError(moveAuthProviders(s.legacyDB, s.gormDB, s.pool))
 	var count int64
 	s.gormDB.Model(pkgSchema.CreateTableAuthProvidersStmt.GormModel).Count(&count)
 	s.Equal(int64(len(authProviders)), count)
-	for _, authProvider := range authProviders {
-		s.Equal(authProvider, s.get(authProvider.GetId()))
-	}
+	sort.Slice(authProviders, func(i, j int) bool {
+		return authProviders[i].Id < authProviders[j].Id
+	})
+	all, err := store.GetAll(s.ctx)
+	s.Require().NoError(err)
+	sort.Slice(all, func(i, j int) bool {
+		return all[i].Id < all[j].Id
+	})
+
+	s.Equal(authProviders, all)
 }
 
 func (s *postgresMigrationSuite) get(id string) *storage.AuthProvider {

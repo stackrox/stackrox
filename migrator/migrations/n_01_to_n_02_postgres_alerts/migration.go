@@ -32,18 +32,19 @@ var (
 			return nil
 		},
 	}
-	rocksdbBucket = []byte("alerts")
-	batchSize     = 10000
-	schema        = pkgSchema.AlertsSchema
-	log           = loghelper.LogWrapper{}
+	alertBucket = []byte("alerts")
+	batchSize   = 10000
+	schema      = pkgSchema.AlertsSchema
+	log         = loghelper.LogWrapper{}
 )
 
-func moveAlerts(rocksDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
+func moveAlerts(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
 	ctx := context.Background()
-	store := newStore(postgresDB, generic.NewCRUD(rocksDB, rocksdbBucket, keyFunc, alloc, false))
+	store := newStore(postgresDB, generic.NewCRUD(legacyDB, alertBucket, keyFunc, alloc, false))
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 
 	var alerts []*storage.Alert
+	var err error
 	store.Walk(ctx, func(obj *storage.Alert) error {
 		alerts = append(alerts, obj)
 		if len(alerts) == 10*batchSize {
@@ -56,7 +57,7 @@ func moveAlerts(rocksDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.P
 		return nil
 	})
 	if len(alerts) > 0 {
-		if err := store.copyFrom(ctx, alerts...); err != nil {
+		if err = store.copyFrom(ctx, alerts...); err != nil {
 			log.WriteToStderrf("failed to persist alerts to store %v", err)
 			return err
 		}
@@ -72,8 +73,7 @@ type storeImpl struct {
 // newStore returns a new Store instance using the provided sql instance.
 func newStore(db *pgxpool.Pool, crud db.Crud) *storeImpl {
 	return &storeImpl{
-		db:   db,
-		crud: crud,
+		db: db, crud: crud,
 	}
 }
 

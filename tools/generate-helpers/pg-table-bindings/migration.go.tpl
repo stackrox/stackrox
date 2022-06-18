@@ -10,6 +10,8 @@ package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 {{- else if .Schema.ID.ColumnName}}
 {{ $singlePK = .Schema.ID }}
 {{- end }}
+{{- $name := .TrimmedType|lowerCamelCase }}
+{{ $rocksDB := eq .Migration.MigrateFromDB "rocksdb" }}
 
 import (
 	"context"
@@ -27,6 +29,7 @@ import (
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
+	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"
 )
 
@@ -35,25 +38,28 @@ var (
 		StartingSeqNum: 100,
 		VersionAfter:   storage.Version{SeqNum: 101},
 		Run: func(databases *types.Databases) error {
-			if err := move{{.Table|upperCamelCase}}(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB); err != nil {
+			if err := move{{.Table|upperCamelCase}}({{if $rocksDB}}databases.PkgRocksDB{{else}}databases.BoltDB{{- end}}, databases.GormDB, databases.PostgresDB); err != nil {
 				return errors.Wrap(err,
 					"moving {{.Table|lowerCase}} from rocksdb to postgres")
 			}
 			return nil
 		},
 	}
-	rocksdbBucket = []byte("{{.Migration.MigrateFromBucket}}")
+	{{$name}}Bucket = []byte("{{.Migration.MigrateFromBucket}}")
 	batchSize     = 10000
 	schema        = {{template "schemaVar" .Schema}}
 	log           = loghelper.LogWrapper{}
 )
 
-func move{{.Table|upperCamelCase}}(rocksDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
+{{$rocksDB :=  eq .Migration.MigrateFromDB "rocksdb" }}
+func move{{.Table|upperCamelCase}}(legacyDB {{if $rocksDB}}*rocksdb.RocksDB{{else}}*bolt.DB{{end}}, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
 	ctx := context.Background()
-	store := newStore(postgresDB, generic.NewCRUD(rocksDB, rocksdbBucket, keyFunc, alloc, false))
+	store := newStore(postgresDB, {{if $rocksDB}}generic.NewCRUD(legacyDB, {{$name}}Bucket, keyFunc, alloc, false){{else}}legacyDB{{end}})
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 
 	var {{.Table|lowerCamelCase}} []*{{.Type}}
+	var err error
+	{{- if $rocksDB}}
 	store.Walk(ctx, func(obj *{{.Type}}) error {
 		{{.Table|lowerCamelCase}} = append({{.Table|lowerCamelCase}}, obj)
 		if len({{.Table|lowerCamelCase}}) == 10*batchSize {
@@ -65,8 +71,15 @@ func move{{.Table|upperCamelCase}}(rocksDB *rocksdb.RocksDB, gormDB *gorm.DB, po
 		}
 		return nil
 	})
+	{{- else}}
+	{{.Table|lowerCamelCase}}, err = store.GetAll(ctx)
+    if err != nil {
+        log.WriteToStderr("failed to fetch all {{.Table|lowerCamelCase}}")
+        return err
+    }
+	{{- end}}
 	if len({{.Table|lowerCamelCase}}) > 0 {
-		if err := store.copyFrom(ctx, {{.Table|lowerCamelCase}}...); err != nil {
+		if err = store.copyFrom(ctx, {{.Table|lowerCamelCase}}...); err != nil {
 			log.WriteToStderrf("failed to persist {{.Table|lowerCase}} to store %v", err)
 			return err
 		}
@@ -76,14 +89,18 @@ func move{{.Table|upperCamelCase}}(rocksDB *rocksdb.RocksDB, gormDB *gorm.DB, po
 
 type storeImpl struct {
 	db   *pgxpool.Pool // Postgres DB
+	{{- if $rocksDB}}
 	crud db.Crud // Rocksdb DB crud
+	{{- else}}
+	legacyDB *bolt.DB
+	{{- end}}
 }
 
 // newStore returns a new Store instance using the provided sql instance.
-func newStore(db *pgxpool.Pool, crud db.Crud) *storeImpl {
+func newStore(db *pgxpool.Pool, {{if $rocksDB}}crud db.Crud{{else}}legacyDB *bolt.DB{{end}}) *storeImpl {
 	return &storeImpl{
 		db:   db,
-		crud: crud,
+		{{- if $rocksDB}}crud: crud{{else}}legacyDB: legacyDB{{end}},
 	}
 }
 
