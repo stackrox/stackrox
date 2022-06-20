@@ -118,9 +118,6 @@ class SACv2Test extends SACTest {
         def result = DeploymentService.listDeployments()
         assert result.find { it.name == DEPLOYMENT_QA2.name }
         assert !result.find { it.name == DEPLOYMENT_QA1.name }
-
-        cleanup:
-        BaseService.useBasicAuth()
     }
 
 }
