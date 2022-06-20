@@ -94,6 +94,9 @@ func (s *PodsStoreSuite) TestStore() {
 	podCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, podCount)
+	podCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(podCount)
 
 	podExists, err := store.Exists(ctx, pod.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *PodsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundPod)
+	s.NoError(store.Delete(withNoAccessCtx, pod.GetId()))
 
 	var pods []*storage.Pod
 	for i := 0; i < 200; i++ {

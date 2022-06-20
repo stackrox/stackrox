@@ -94,6 +94,9 @@ func (s *ClustersStoreSuite) TestStore() {
 	clusterCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, clusterCount)
+	clusterCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(clusterCount)
 
 	clusterExists, err := store.Exists(ctx, cluster.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *ClustersStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundCluster)
+	s.NoError(store.Delete(withNoAccessCtx, cluster.GetId()))
 
 	var clusters []*storage.Cluster
 	for i := 0; i < 200; i++ {

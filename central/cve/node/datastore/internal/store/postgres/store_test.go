@@ -81,6 +81,8 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNodeCVE)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, nodeCVE))
 	foundNodeCVE, exists, err = store.Get(ctx, nodeCVE.GetId())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	nodeCVECount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, nodeCVECount)
+	nodeCVECount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(nodeCVECount)
 
 	nodeCVEExists, err := store.Exists(ctx, nodeCVE.GetId())
 	s.NoError(err)
 	s.True(nodeCVEExists)
 	s.NoError(store.Upsert(ctx, nodeCVE))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, nodeCVE), sac.ErrResourceAccessDenied)
 
 	foundNodeCVE, exists, err = store.Get(ctx, nodeCVE.GetId())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNodeCVE)
+	s.NoError(store.Delete(withNoAccessCtx, nodeCVE.GetId()))
 
 	var nodeCVEs []*storage.NodeCVE
 	for i := 0; i < 200; i++ {
