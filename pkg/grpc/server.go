@@ -68,6 +68,7 @@ func maxResponseMsgSize() int {
 
 type server interface {
 	Serve(l net.Listener) error
+	Close() error
 }
 
 type serverAndListener struct {
@@ -93,6 +94,8 @@ type APIServiceWithCustomRoutes interface {
 type API interface {
 	// Start runs the API in a goroutine, and returns a signal that can be checked for when the API server is started.
 	Start() *concurrency.Signal
+	// Stop tears down the server and returns a signal that can be checked for whe the API server is completely stoppped.
+	Stop() *concurrency.Signal
 	// Register adds a new APIService to the list of API services
 	Register(services ...APIService)
 }
@@ -101,6 +104,9 @@ type apiImpl struct {
 	apiServices        []APIService
 	config             Config
 	requestInfoHandler *requestinfo.Handler
+	srvAndListeners    []serverAndListener
+	server             *grpc.Server
+	stopRequested      bool
 }
 
 // A Config configures the server.
@@ -136,6 +142,12 @@ func (a *apiImpl) Start() *concurrency.Signal {
 	startedSig := concurrency.NewSignal()
 	go a.run(&startedSig)
 	return &startedSig
+}
+
+func (a *apiImpl) Stop() *concurrency.Signal {
+	stoppedSig := concurrency.NewSignal()
+	go a.stop(&stoppedSig)
+	return &stoppedSig
 }
 
 func (a *apiImpl) Register(services ...APIService) {
@@ -215,7 +227,9 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 		if err := server.Serve(lis); err != nil {
 			log.Fatal(err)
 		}
-		log.Fatal("The local API server should never terminate")
+		if !a.stopRequested {
+			log.Fatal("The local API server should never terminate without explicitly requested")
+		}
 	}()
 	return dialContext
 }
@@ -315,12 +329,28 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	return mux
 }
 
+func (a *apiImpl) stop(stoppedSig *concurrency.Signal) {
+	a.stopRequested = true
+	for _, s := range a.srvAndListeners {
+		err := s.listener.Close()
+		if err != nil {
+			log.Warnf("error when closing endpoint listener: %s: %s", s.endpoint.ListenEndpoint, err)
+		}
+		err = s.srv.Close()
+		if err != nil {
+			log.Warnf("error when closing server for endpoint: %s: %s", s.endpoint.ListenEndpoint, err)
+		}
+	}
+	a.server.GracefulStop()
+	stoppedSig.Signal()
+}
+
 func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	if len(a.config.Endpoints) == 0 {
 		panic(errors.New("server has no endpoints"))
 	}
 
-	grpcServer := grpc.NewServer(
+	a.server = grpc.NewServer(
 		grpc.Creds(credsFromConn{}),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(a.streamInterceptors()...),
@@ -339,10 +369,10 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	)
 
 	for _, service := range a.apiServices {
-		service.RegisterServiceServer(grpcServer)
+		service.RegisterServiceServer(a.server)
 	}
 
-	dialCtxFunc := a.listenOnLocalEndpoint(grpcServer)
+	dialCtxFunc := a.listenOnLocalEndpoint(a.server)
 	localConn, err := a.connectToLocalEndpoint(dialCtxFunc)
 	if err != nil {
 		log.Panicf("Could not connect to local endpoint: %v", err)
@@ -350,9 +380,8 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 
 	httpHandler := a.muxer(localConn)
 
-	var allSrvAndLiss []serverAndListener
 	for _, endpointCfg := range a.config.Endpoints {
-		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, grpcServer)
+		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, a.server)
 		if err != nil {
 			if endpointCfg.Optional {
 				log.Errorf("Failed to instantiate endpoint config of kind %s: %v", endpointCfg.Kind(), err)
@@ -361,14 +390,14 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 			}
 		} else {
 			log.Infof("%s server listening on %s", endpointCfg.Kind(), addr.String())
-			allSrvAndLiss = append(allSrvAndLiss, srvAndLiss...)
+			a.srvAndListeners = append(a.srvAndListeners, srvAndLiss...)
 		}
 	}
 
-	errC := make(chan error, len(allSrvAndLiss))
+	errC := make(chan error, len(a.srvAndListeners))
 
-	for _, srvAndLis := range allSrvAndLiss {
-		go serveBlocking(srvAndLis, errC)
+	for _, srvAndLis := range a.srvAndListeners {
+		go a.serveBlocking(srvAndLis, errC)
 	}
 
 	if startedSig != nil {
@@ -380,8 +409,11 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	}
 }
 
-func serveBlocking(srvAndLis serverAndListener, errC chan<- error) {
+func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) {
 	if err := srvAndLis.srv.Serve(srvAndLis.listener); err != nil {
+		if a.stopRequested {
+			return
+		}
 		if srvAndLis.endpoint.Optional {
 			log.Errorf("Error serving optional endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
 		} else {

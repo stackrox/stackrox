@@ -120,6 +120,19 @@ func denyMisdirectedRequest(next http.Handler) http.Handler {
 	})
 }
 
+type grpcServerWrapper struct {
+	grpcServer *grpc.Server
+}
+
+func (w *grpcServerWrapper) Serve(l net.Listener) error {
+	return w.grpcServer.Serve(l)
+}
+
+func (w *grpcServerWrapper) Close() error {
+	w.grpcServer.GracefulStop()
+	return nil
+}
+
 func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Server) (net.Addr, []serverAndListener, error) {
 	lis, err := net.Listen("tcp", asEndpoint(c.ListenEndpoint))
 	if err != nil {
@@ -200,7 +213,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 	}
 	if grpcLis != nil {
 		result = append(result, serverAndListener{
-			srv:      grpcSrv,
+			srv:      &grpcServerWrapper{grpcServer: grpcSrv},
 			listener: grpcLis,
 			endpoint: c,
 		})
