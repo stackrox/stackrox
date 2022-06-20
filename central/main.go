@@ -282,7 +282,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
 		authService.New(),
-		authProviderService.New(registry, groupDataStore.Singleton()),
+		authProviderService.NewWithDefaultProvider(registry, groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
 		centralHealthService.Singleton(),

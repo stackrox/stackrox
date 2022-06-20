@@ -85,10 +85,18 @@ func (c *CentralDB) applyDefaults() {
 	}
 }
 
+type ProviderConfig struct {
+	ClientId    string `yaml:"clientId"`
+	UiEndpoint  string `yaml:"uiEndpoint"`
+	OwnerUserId string `yaml:"ownerUserId"`
+	OrgId       string `yaml:"orgId"`
+}
+
 // Config defines the configuration for Central
 type Config struct {
-	Maintenance Maintenance `yaml:"maintenance"`
-	CentralDB   CentralDB   `yaml:"centralDB"`
+	Maintenance Maintenance    `yaml:"maintenance"`
+	CentralDB   CentralDB      `yaml:"centralDB"`
+	RhSso       ProviderConfig `yaml:"rhSso"`
 }
 
 func (c *Config) applyDefaults() {

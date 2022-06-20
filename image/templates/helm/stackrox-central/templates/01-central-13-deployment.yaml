@@ -127,6 +127,9 @@ spec:
         - name: central-jwt-volume
           mountPath: /run/secrets/stackrox.io/jwt/
           readOnly: true
+        - name: central-rhsso-client-secret-volume
+          mountPath: /run/secrets/stackrox.io/rhsso/
+          readOnly: true
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
@@ -182,6 +185,9 @@ spec:
         secret:
           secretName: additional-ca
           optional: true
+      - name: central-rhsso-client-secret-volume
+        secret:
+          secretName: central-rhsso-client-secret
       - name: central-license-volume
         secret:
           secretName: central-license
