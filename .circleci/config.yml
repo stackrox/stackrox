@@ -2503,7 +2503,7 @@ jobs:
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: ebpf
       - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
+      - POD_SECURITY_POLICIES: "false"
       - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
@@ -2920,7 +2920,7 @@ jobs:
     resource_class: small
     environment:
       - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
+      - POD_SECURITY_POLICIES: "false"
     steps:
       - checkout
       - check-backend-changes
@@ -3289,7 +3289,7 @@ jobs:
     resource_class: small
     environment:
       GCP_IMAGE_TYPE: "COS"
-      POD_SECURITY_POLICIES: "true"
+      POD_SECURITY_POLICIES: "false"
     steps:
       - checkout
       - check-backend-changes

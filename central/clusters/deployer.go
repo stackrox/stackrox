@@ -179,6 +179,6 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *Rend
 		AdmissionControlEnforceOnUpdates: c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
 		ReleaseBuild:                     buildinfo.ReleaseBuild,
 
-		EnablePodSecurityPolicies: true,
+		EnablePodSecurityPolicies: false,
 	}
 }

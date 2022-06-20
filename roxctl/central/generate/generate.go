@@ -203,6 +203,8 @@ func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, e
 func OutputZip(logger logger.Logger, config renderer.Config) error {
 	logger.InfofLn("Generating deployment bundle...")
 
+	common.LogInfoPsp(logger, config.EnablePodSecurityPolicies)
+
 	wrapper, err := createBundle(logger, config)
 	if err != nil {
 		return err

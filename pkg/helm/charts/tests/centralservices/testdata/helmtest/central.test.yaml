@@ -12,9 +12,6 @@ values:
 tests:
 - name: "central with default settings"
   expect: |
-    .podsecuritypolicys["stackrox-central"] | assertThat(. != null)
-    .rolebindings["stackrox-central-psp"] | assertThat(. != null)
-    .clusterroles["stackrox-central-psp"] | assertThat(. != null)
     .serviceaccounts["central"] | assertThat(. != null)
     .secrets["central-htpasswd"].stringData.htpasswd | assertThat(length != 0)
     .configmaps["central-config"].data.["central-config.yaml"] | assertThat(length != 0)
@@ -23,14 +20,14 @@ tests:
     .deployments["central"] | assertThat(. != null)
     .services["central"] | assertThat(. != null)
 
-- name: "central with deprecated PodSecurityPolicies disabled"
+- name: "central with deprecated PodSecurityPolicies enabled"
   values:
     system:
-      enablePodSecurityPolicies: false
+      enablePodSecurityPolicies: true
   expect: |
-    .podsecuritypolicys["stackrox-central"] | assertThat(. == null)
-    .rolebindings["stackrox-central-psp"] | assertThat(. == null)
-    .clusterroles["stackrox-central-psp"] | assertThat(. == null)
+    .podsecuritypolicys["stackrox-central"] | assertThat(. != null)
+    .rolebindings["stackrox-central-psp"] | assertThat(. != null)
+    .clusterroles["stackrox-central-psp"] | assertThat(. != null)
 
 - name: "central with OpenShift 3 and enabled SCCs"
   server:
