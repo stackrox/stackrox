@@ -94,6 +94,9 @@ func (s *NamespacesStoreSuite) TestStore() {
 	namespaceMetadataCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, namespaceMetadataCount)
+	namespaceMetadataCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(namespaceMetadataCount)
 
 	namespaceMetadataExists, err := store.Exists(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNamespaceMetadata)
+	s.NoError(store.Delete(withNoAccessCtx, namespaceMetadata.GetId()))
 
 	var namespaceMetadatas []*storage.NamespaceMetadata
 	for i := 0; i < 200; i++ {

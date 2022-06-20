@@ -94,6 +94,9 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 	complianceDomainCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, complianceDomainCount)
+	complianceDomainCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(complianceDomainCount)
 
 	complianceDomainExists, err := store.Exists(ctx, complianceDomain.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceDomain)
+	s.NoError(store.Delete(withNoAccessCtx, complianceDomain.GetId()))
 
 	var complianceDomains []*storage.ComplianceDomain
 	for i := 0; i < 200; i++ {

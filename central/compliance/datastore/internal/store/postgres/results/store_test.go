@@ -94,6 +94,9 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 	complianceRunResultsCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, complianceRunResultsCount)
+	complianceRunResultsCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(complianceRunResultsCount)
 
 	complianceRunResultsExists, err := store.Exists(ctx, complianceRunResults.GetRunMetadata().GetRunId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceRunResults)
+	s.NoError(store.Delete(withNoAccessCtx, complianceRunResults.GetRunMetadata().GetRunId()))
 
 	var complianceRunResultss []*storage.ComplianceRunResults
 	for i := 0; i < 200; i++ {

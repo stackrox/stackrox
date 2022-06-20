@@ -81,6 +81,8 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNetworkPolicyApplicationUndoDeploymentRecord)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, networkPolicyApplicationUndoDeploymentRecord))
 	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	networkPolicyApplicationUndoDeploymentRecordCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, networkPolicyApplicationUndoDeploymentRecordCount)
+	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(networkPolicyApplicationUndoDeploymentRecordCount)
 
 	networkPolicyApplicationUndoDeploymentRecordExists, err := store.Exists(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
 	s.NoError(err)
 	s.True(networkPolicyApplicationUndoDeploymentRecordExists)
 	s.NoError(store.Upsert(ctx, networkPolicyApplicationUndoDeploymentRecord))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, networkPolicyApplicationUndoDeploymentRecord), sac.ErrResourceAccessDenied)
 
 	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkPolicyApplicationUndoDeploymentRecord)
+	s.NoError(store.Delete(withNoAccessCtx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId()))
 
 	var networkPolicyApplicationUndoDeploymentRecords []*storage.NetworkPolicyApplicationUndoDeploymentRecord
 	for i := 0; i < 200; i++ {

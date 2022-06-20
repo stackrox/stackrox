@@ -81,6 +81,8 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNetworkEntity)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, networkEntity))
 	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	networkEntityCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, networkEntityCount)
+	networkEntityCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(networkEntityCount)
 
 	networkEntityExists, err := store.Exists(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
 	s.True(networkEntityExists)
 	s.NoError(store.Upsert(ctx, networkEntity))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, networkEntity), sac.ErrResourceAccessDenied)
 
 	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkEntity)
+	s.NoError(store.Delete(withNoAccessCtx, networkEntity.GetInfo().GetId()))
 
 	var networkEntitys []*storage.NetworkEntity
 	for i := 0; i < 200; i++ {
