@@ -8,8 +8,12 @@ spec:
       containers:
       - name: central
         ports:
+        - containerPort: 8443
+          name: api
+          protocol: TCP
         - containerPort: 9090
           name: monitoring
+          protocol: TCP
 status:
   availableReplicas: 1
 ---
