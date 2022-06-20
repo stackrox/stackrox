@@ -117,7 +117,7 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/postgres v1.3.5
+	gorm.io/driver/postgres v1.3.7
 	gorm.io/gorm v1.23.6
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.2
