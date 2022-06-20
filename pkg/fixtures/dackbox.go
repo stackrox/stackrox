@@ -855,8 +855,32 @@ func GetDeploymentDoctorJekyll_2(id string, namespace *storage.NamespaceMetadata
 
 // namespace for deployment can be fetched using the namespace fixture GetNamespace(clusterID, clusterName, namespace)
 
-// TODO - document properly node to CVE storage management.
+////////////////////
+// Node with CVEs //
+
+// Data relationships
 //
+//       Cluster
+//          ^ 1
+//          |
+//          v *
+//         Node   <---------------------------+ *
+//          ^ *                               |
+//          |                                 |
+//  NodeComponentEdge                         |
+//          |                                 |
+//          v *                               |
+//    NodeComponent                           |
+// (note: in rocksdb+bleve dackbox,      NodeCVEEdge
+// this is actually ImageComponent)       (removed)
+//          ^ *                               |
+//          |                                 |
+// NodeComponentCVEEdge                       |
+// (note: in rocksdb+bleve dackbox,           |
+// this is actually ComponentCVEEdge)         |
+//          |                                 |
+//          v *                               |
+//         CVE   <----------------------------+ *
 //
 // For testing purposes, a graph of objects like the one below could be used.
 //
