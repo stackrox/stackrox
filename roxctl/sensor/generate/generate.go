@@ -130,11 +130,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	}
 	s.setClusterDefaults(env)
 
-	if s.enablePodSecurityPolicies {
-		common.LogInfoPspEnabled(s.env.Logger())
-	} else {
-		common.LogInfoPspDisabled(s.env.Logger())
-	}
+	common.LogInfoPsp(s.env.Logger(), s.enablePodSecurityPolicies)
 
 	id, err := s.createCluster(ctx, service)
 

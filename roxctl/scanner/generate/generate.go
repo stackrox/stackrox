@@ -62,11 +62,7 @@ func (cmd *scannerGenerateCommand) validate() error {
 }
 
 func (cmd *scannerGenerateCommand) generate(logger logger.Logger) error {
-	if cmd.enablePodSecurityPolicies {
-		common.LogInfoPspEnabled(logger)
-	} else {
-		common.LogInfoPspDisabled(logger)
-	}
+	common.LogInfoPsp(logger, cmd.enablePodSecurityPolicies)
 
 	cmd.apiParams.ClusterType = clustertype.Get().String()
 	cmd.apiParams.DisablePodSecurityPolicies = !cmd.enablePodSecurityPolicies
