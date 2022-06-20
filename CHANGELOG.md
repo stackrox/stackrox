@@ -30,6 +30,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - /v1/compliance/results was never implemented and will be removed in this release
 - In release 73.0, the /v1/compliance/runresults endpoint will contain a slimmed down version of the ComplianceDomain object. This allows for greater scalability and reduced memory usage.
 - When the underlying database changes to Postgres the api `/db/restore` will no longer be a supported means for database restores.  At that time using `roxctl` will be the supported mechanism for database restores.
+- PodSecurityPolicies can be disabled when generating deployment bundles and when configuring the Helm charts. The Helm charts also support auto-sensing
+  availability of the PodSecurityPolicies API. PodSecurityPolicies must be disabled when deploying to Kubernetes >= v1.25.
 
 ## [70.0]
 
