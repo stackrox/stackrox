@@ -588,3 +588,11 @@ func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatT
 		})
 	}
 }
+
+func (s *imageScanTestSuite) TestScan_IncludeSnoozed() {
+	s.Run("disabled by default", func() {
+		envMock, _, _ := s.newTestMockEnvironmentWithConn(nil)
+		cobraCommand := Command(envMock)
+		s.Equal(false, cobraCommand.Flag("include-snoozed").Value)
+	})
+}
