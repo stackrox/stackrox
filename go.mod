@@ -132,6 +132,18 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
+// To bump the version of a replacement package, use:
+//
+//   $ go mod edit -replace <package>=<replacement>@<branch or commit reference>
+//   $ go mod tidy
+//
+// For example:
+//
+//   $ go mod edit -replace github.com/operator-framework/helm-operator-plugins=github.com/stackrox/helm-operator@main
+//   $ go mod tidy
+//
+// The `go mod tidy` takes care of normalizing the symbol version information (e.g. branch name) which is required
+// for Go build tools to accept the `go.mod`.
 replace (
 	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20200807170555-6c4fa9f5e726
 
@@ -151,7 +163,10 @@ replace (
 
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
-	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.8-0.20220506091602-3764c49abfb3
+
+	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
+	// we currently depend on.
+	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.8-0.20220608072809-e51d0173f4f0
 	// github.com/sigstore/rekor is a transitive dep pulled in by cosign. The version pulled in by cosign is using
 	// a vulnerable go-tuf version
 	// (https://github.com/theupdateframework/go-tuf/security/advisories/GHSA-66x3-6cw3-v5gj).
