@@ -6,7 +6,7 @@ FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
 COPY bundle.tar.gz /
 WORKDIR /bundle
-RUN microdnf install tar gzip && tar -zxf /bundle.tar.gz
+RUN microdnf install -y tar gzip && tar -zxf /bundle.tar.gz
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -49,7 +49,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     rpm -i /tmp/snappy.rpm && \
     rpm -i --nodeps /tmp/postgres-libs.rpm && \
     rpm -i --nodeps /tmp/postgres.rpm && \
-    microdnf install lz4 bzip2 util-linux && \
+    microdnf install -y lz4 bzip2 util-linux && \
     microdnf clean all && \
     rm /tmp/snappy.rpm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
