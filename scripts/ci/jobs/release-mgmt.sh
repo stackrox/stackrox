@@ -8,12 +8,16 @@ set -euo pipefail
 release_mgmt() {
     info "Release management steps"
 
-    local release_issues=()
-
     local tag
     tag="$(make --quiet tag)"
 
     slack_build_notice "$tag"
+
+    if is_release_version "$tag"; then
+        mark_collector_release "$tag"
+    fi
+
+    local release_issues=()
 
     if is_RC_version "${tag}" && ! check_docs "${tag}"; then
         release_issues+=("docs/ is not valid for a release.")
