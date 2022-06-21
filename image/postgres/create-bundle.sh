@@ -30,9 +30,9 @@ chmod -R 755 "${bundle_root}"
 # =============================================================================
 # Get latest postgres minor version
 
-postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
 postgres_major="14"
-pg_rhel_version="8.5"
+pg_rhel_version="9"
 
 if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
     dnf install --disablerepo='*' -y "${postgres_repo_url}"
@@ -41,7 +41,7 @@ if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
 else
     build_dir="$(mktemp -d)"
     docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
-FROM registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
+FROM registry.access.redhat.com/ubi9/ubi:9.0.0
 RUN dnf install --disablerepo='*' -y "${postgres_repo_url}"
 ENTRYPOINT dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.x86_64 | tail -n 1 | awk '{print \$2}'
 EOF

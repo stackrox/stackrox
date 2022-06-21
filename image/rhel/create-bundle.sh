@@ -109,7 +109,7 @@ else
 fi
 
 # Install all the required compression packages for RocksDB to compile
-rpm_base_url="http://mirror.stream.centos.org/centos/9-stream/BaseOS/x86_64/os/Packages"
+rpm_base_url="http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages"
 rpm_suffix="el9.x86_64.rpm"
 
 curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-8.${rpm_suffix}"
