@@ -816,28 +816,6 @@ commands:
         command: |
           git submodule update --init
 
-  check-docs-step:
-    parameters:
-      only-on-release:
-        type: boolean
-    steps:
-    - run:
-        name: Verify that docs are up to date
-        command: |
-          source scripts/ci/lib.sh
-          check_docs "${CIRCLE_TAG:-}" "<< parameters.only-on-release >>"
-
-  check-scanner-and-collector-release-step:
-    parameters:
-      fail-on-rc:
-        type: boolean
-    steps:
-    - run:
-        name: Check on release builds that COLLECTOR_VERSION and SCANNER_VERSION are release
-        command: |
-          source scripts/ci/lib.sh
-          check_scanner_and_collector "<< parameters.fail-on-rc >>"
-
   setup-go-build-env:
     steps:
       - run:
@@ -982,10 +960,6 @@ commands:
       - checkout-with-submodules
       - poll-for-builds-when-not-in-a-pr-or-nightly-context
       - continue-when-in-a-pr-or-nightly-context
-      - check-docs-step:
-          only-on-release: true
-      - check-scanner-and-collector-release-step:
-          fail-on-rc: false
 
       - setup_remote_docker:
           version: << pipeline.parameters.docker_version >>
@@ -2305,8 +2279,6 @@ jobs:
             # Cannot use .circleci/is-nightly-tag.sh because this job doesn't have access to git
             if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
               webhook_url="$NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK"
-            elif [[ "$CIRCLE_TAG" =~ << pipeline.parameters.release_rc_tag_bash_regex >> ]]; then
-              webhook_url="$RELEASE_WORKFLOW_NOTIFY_WEBHOOK"
             else
               exit 0
             fi
@@ -2337,26 +2309,6 @@ jobs:
           make go-postgres-unit-tests
     - post-go-unit-tests:
         path: go-unit-release-junit-reports
-
-  # This job checks that the docs/content submodule is pointing to the correct branch in the openshift-docs repo,
-  # and that it is up-to-date. It only runs on RC builds, and is primarily intended as a reminder for the release
-  # manager to inquire about docs and, if available, update the submodule pointer.
-  check-docs-job:
-    executor: custom
-    resource_class: small
-    steps:
-    - checkout-with-submodules
-    - check-docs-step:
-        only-on-release: false
-
-  # This serves as a reminder for the release manager to make sure Scanner and Collector versions are set to release.
-  check-scanner-and-collector-release-job:
-    executor: custom
-    resource_class: small
-    steps:
-    - checkout
-    - check-scanner-and-collector-release-step:
-        fail-on-rc: true
 
   check-generated-files-up-to-date:
     executor: custom
@@ -4872,15 +4824,6 @@ workflows:
           context:
             - osd-cluster-manager
             - quay-rhacs-eng-readonly
-
-      - check-docs-job:
-          <<: *runOnlyOnReleaseCandidateBuilds
-          context:
-          - custom-executor-pull
-      - check-scanner-and-collector-release-job:
-          <<: *runOnlyOnReleaseCandidateBuilds
-          context:
-          - custom-executor-pull
 
       - provision-openshift-aro-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
