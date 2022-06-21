@@ -104,8 +104,9 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="User-facing TLS certificate secret",order=3
 	DefaultTLSSecret *LocalSecretReference `json:"defaultTLSSecret,omitempty"`
 
-	// Configures monitoring endpoint for central. Monitoring endpoint allows
-	// other services, like Prometheus, to collect metrics provided by central.
+	// Configures monitoring endpoint for Central. The monitoring endpoint
+	// allows other services to collect metrics from Central, provided in
+	// Prometheus compatible format.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 
@@ -167,9 +168,9 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 
 // Monitoring defines settings for monitoring endpoint.
 type Monitoring struct {
-	// Exposes monitoring endpoint by adding port 9090 with the name
-	// "monitoring" to the deployment, creating service with the same port,
-	// and adding the required network policy.
+	// Expose Central's monitoring endpoint. A new service, "monitoring",
+	// with port 9090, will be created as well as a network policy allowing
+	// inbound connections to the port.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	ExposeEndpoint *ExposeEndpoint `json:"exposeEndpoint,omitempty"`
 }

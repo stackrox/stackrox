@@ -94,8 +94,9 @@ spec:
           and private key here.
         displayName: User-facing TLS certificate secret
         path: central.defaultTLSSecret
-      - description: Configures monitoring endpoint for central. Monitoring endpoint
-          allows other services, like Prometheus, to collect metrics provided by central.
+      - description: Configures monitoring endpoint for Central. The monitoring endpoint
+          allows other services to collect metrics from Central, provided in Prometheus
+          compatible format.
         displayName: Monitoring
         path: central.monitoring
       - description: Configures how Central should store its persistent data. You
@@ -169,9 +170,9 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.nodePort.enabled:true
       - displayName: Enabled
         path: central.exposure.route.enabled
-      - description: Exposes monitoring endpoint by adding port 9090 with the name
-          "monitoring" to the deployment, creating service with the same port, and
-          adding the required network policy.
+      - description: Expose Central's monitoring endpoint. A new service, "monitoring",
+          with port 9090, will be created as well as a network policy allowing inbound
+          connections to the port.
         displayName: Expose Endpoint
         path: central.monitoring.exposeEndpoint
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the

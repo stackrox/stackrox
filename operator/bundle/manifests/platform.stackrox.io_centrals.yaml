@@ -117,14 +117,14 @@ spec:
                         type: object
                     type: object
                   monitoring:
-                    description: Configures monitoring endpoint for central. Monitoring
-                      endpoint allows other services, like Prometheus, to collect
-                      metrics provided by central.
+                    description: Configures monitoring endpoint for Central. The monitoring
+                      endpoint allows other services to collect metrics from Central,
+                      provided in Prometheus compatible format.
                     properties:
                       exposeEndpoint:
-                        description: Exposes monitoring endpoint by adding port 9090
-                          with the name "monitoring" to the deployment, creating service
-                          with the same port, and adding the required network policy.
+                        description: Expose Central's monitoring endpoint. A new service,
+                          "monitoring", with port 9090, will be created as well as
+                          a network policy allowing inbound connections to the port.
                         enum:
                         - Enabled
                         - Disabled
