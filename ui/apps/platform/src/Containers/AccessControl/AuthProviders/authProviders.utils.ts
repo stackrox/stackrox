@@ -207,10 +207,5 @@ export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): str
     if (defaultRoleGroups.length) {
         return defaultRoleGroups[0].roleName;
     }
-    // if there is no default role specified for this auth provider then use the global default role
-    defaultRoleGroups = groups.filter((group) => !group.props);
-    if (defaultRoleGroups.length) {
-        return defaultRoleGroups[0].roleName;
-    }
-    return id ? 'Undefined, assuming None' : 'Admin';
+    return id ? 'None' : 'Admin';
 }
