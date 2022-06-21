@@ -405,6 +405,7 @@ mark_collector_release() {
     gitbot push origin "${branch_name}"
 
     export CIRCLE_USERNAME=roxbot
+    export CIRCLE_PULL_REQUEST="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_NUMBER}"
     export GITHUB_TOKEN_FOR_PRS="${GITHUB_TOKEN}"
     /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
 }
