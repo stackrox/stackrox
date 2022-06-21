@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/gogo/protobuf/types"
 	configStore "github.com/stackrox/rox/central/config/store"
 	"github.com/stackrox/rox/central/config/store/bolt"
 	"github.com/stackrox/rox/central/config/store/postgres"
@@ -30,14 +31,19 @@ const (
 	DefaultAttemptedRuntimeAlertRetention = 7
 	// DefaultExpiredVulnReqRetention is the number of days to retain expired vulnerability requests.
 	DefaultExpiredVulnReqRetention = 90
-	// DefaultDecommissionedClusterRetention is the number of days to retain a cluster that is unreachable.
-	DefaultDecommissionedClusterRetention = 90
+	// DefaultDecommissionedClusterRetentionDays is the number of days to retain a cluster that is unreachable.
+	DefaultDecommissionedClusterRetentionDays = 90
 )
 
 var (
 	once sync.Once
 
 	d DataStore
+
+	defaultClusterRetentionConfig = storage.DecommissionedClusterRetentionConfig{
+		RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
+		LastUpdated:           types.TimestampNow(),
+	}
 
 	defaultPrivateConfig = storage.PrivateConfig{
 		ImageRetentionDurationDays: DefaultImageRetention,
@@ -50,8 +56,8 @@ var (
 				AttemptedRuntimeRetentionDurationDays: DefaultAttemptedRuntimeAlertRetention,
 			},
 		},
-		ExpiredVulnReqRetentionDurationDays:        DefaultExpiredVulnReqRetention,
-		DecommissionedClusterRetentionDurationDays: DefaultDecommissionedClusterRetention,
+		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
+		DecommissionedClusterRetention:      &defaultClusterRetentionConfig,
 	}
 )
 
@@ -74,10 +80,20 @@ func initialize() {
 		panic(err)
 	}
 
-	if config.GetPrivateConfig() == nil {
+	privateConfig := config.GetPrivateConfig()
+	needsUpsert := false
+	if privateConfig == nil {
+		privateConfig = &defaultPrivateConfig
+		needsUpsert = true
+	} else if config.GetPrivateConfig().GetDecommissionedClusterRetention() == nil {
+		privateConfig.DecommissionedClusterRetention = &defaultClusterRetentionConfig
+		needsUpsert = true
+	}
+
+	if needsUpsert {
 		utils.Must(d.UpsertConfig(ctx, &storage.Config{
 			PublicConfig:  config.GetPublicConfig(),
-			PrivateConfig: &defaultPrivateConfig,
+			PrivateConfig: privateConfig,
 		}))
 	}
 }
