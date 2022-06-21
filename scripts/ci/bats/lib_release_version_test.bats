@@ -51,6 +51,30 @@ function setup() {
     assert_failure 1
 }
 
+@test "get_release_stream() gives major.minor I" {
+    run get_release_stream "3.67.2-rc.2"
+    assert_success
+    assert_output "3.67"
+}
+
+@test "get_release_stream() gives major.minor II" {
+    run get_release_stream "3.68.x-23-g8a2e05d0ec"
+    assert_success
+    assert_output "3.68"
+}
+
+@test "is_release_test_stream() is" {
+    run is_release_test_stream "0.0.1-rc2"
+    assert_success
+    assert_output ""
+}
+
+@test "is_release_test_stream() is not" {
+    run is_release_test_stream "1.0.1"
+    assert_failure
+    assert_output ""
+}
+
 # check_scanner_and_collector_versions() tests
 
 function make() {
