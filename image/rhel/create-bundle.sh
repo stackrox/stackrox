@@ -109,17 +109,17 @@ else
 fi
 
 # Install all the required compression packages for RocksDB to compile
-rpm_base_url="http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages"
-rpm_suffix="el8.x86_64.rpm"
+rpm_base_url="http://mirror.stream.centos.org/centos/9-stream/BaseOS/x86_64/os/Packages"
+rpm_suffix="el9.x86_64.rpm"
 
-curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_suffix}"
+curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-8.${rpm_suffix}"
 
 # Install Postgres Client so central can initiate backups/restores
 # Get postgres RPMs directly
 postgres_major="14"
-pg_rhel_version="8.5"
+pg_rhel_version="9"
 postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-x86_64"
-postgres_minor="14.2-1PGDG.rhel8.x86_64"
+postgres_minor="14.2-1PGDG.rhel9.x86_64"
 
 curl -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
