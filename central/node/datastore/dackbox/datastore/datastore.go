@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"gorm.io/gorm"
 )
 
 // DataStore is an intermediary to NodeStorage.
@@ -99,4 +100,24 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	nodeRanker := ranking.NodeRanker()
 	nodeComponentRanker := ranking.NodeComponentRanker()
 	return New(dacky, keyFence, bleveIndex, riskStore, nodeRanker, nodeComponentRanker), nil
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) DataStore {
+	postgresStore.Destroy(ctx, pool)
+	dbstore := postgresStore.CreateTableAndNewStore(ctx, t, pool, gormDB, false)
+	indexer := postgresStore.NewIndexer(pool)
+	searcher := search.NewV2(dbstore, indexer)
+	riskStore := riskDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
+	nodeRanker := ranking.NodeRanker()
+	nodeComponentRanker := ranking.NodeComponentRanker()
+	return NewWithPostgres(dbstore, indexer, searcher, riskStore, nodeRanker, nodeComponentRanker)
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) DataStore {
+	riskStore := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
+	nodeRanker := ranking.NodeRanker()
+	nodeComponentRanker := ranking.NodeComponentRanker()
+	return New(dacky, keyFence, bleveIndex, riskStore, nodeRanker, nodeComponentRanker)
 }
