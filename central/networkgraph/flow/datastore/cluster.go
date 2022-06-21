@@ -2,11 +2,17 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
+	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
+	"gorm.io/gorm"
 )
 
 // ClusterDataStore stores the network edges per cluster.
@@ -24,4 +30,20 @@ func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.D
 		networkTreeMgr:          networkTreeMgr,
 		deletedDeploymentsCache: deletedDeploymentsCache,
 	}
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) ClusterDataStore {
+	dbstore := postgres.NewClusterStore(pool)
+	configStore := graphConfigDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
+	networkTreeMgr := networktree.Singleton()
+	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil)
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) ClusterDataStore {
+	dbstore := rocksdb.NewClusterStore(rocksengine)
+	configStore := graphConfigDS.GetTestRocksBleveDataStore(t, rocksengine)
+	networkTreeMgr := networktree.Singleton()
+	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil)
 }
