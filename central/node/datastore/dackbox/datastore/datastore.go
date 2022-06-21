@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"gorm.io/gorm"
 )
 
 // DataStore is an intermediary to NodeStorage.
