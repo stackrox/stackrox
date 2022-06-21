@@ -225,6 +225,10 @@ push_matching_collector_scanner_images() {
         die "missing arg. usage: push_matching_collector_scanner_images <brand>"
     fi
 
+    if is_OPENSHIFT_CI; then
+        oc registry login
+    fi
+
     local brand="$1"
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
@@ -250,6 +254,14 @@ push_matching_collector_scanner_images() {
         die "$brand is not a supported brand"
     fi
 
+    _retag_or_mirror() {
+        if is_OPENSHIFT_CI; then
+            oc image mirror "$1" "$2"
+        else
+            "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
+        fi
+    }
+
     local main_tag
     main_tag="$(make --quiet tag)"
     local scanner_version
@@ -258,13 +270,13 @@ push_matching_collector_scanner_images() {
     collector_version="$(make --quiet collector-tag)"
 
     for target_registry in "${target_registries[@]}"; do
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}"
 
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
+        _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
+        _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
     done
 }
 
