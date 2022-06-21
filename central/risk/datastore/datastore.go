@@ -2,17 +2,25 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
+	"github.com/stackrox/rox/central/risk/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/risk/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 // DataStore is an intermediary to RiskStorage.
@@ -53,4 +61,25 @@ func New(riskStore store.Store, indexer index.Indexer, searcher search.Searcher)
 	}
 	return d, nil
 
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) DataStore {
+	postgres.Destroy(ctx, pool)
+	dbstore := postgres.CreateTableAndNewStore(ctx, pool, gormDB)
+	indexer := postgres.NewIndexer(pool)
+	searcher := search.New(dbstore, indexer)
+	datastore, err := New(dbstore, indexer, searcher)
+	assert.NoError(t, err)
+	return datastore
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) DataStore {
+	dbstore := rocksdb.New(rocksengine)
+	indexer := index.New(bleveIndex)
+	searcher := search.New(dbstore, indexer)
+	datastore, err := New(dbstore, indexer, searcher)
+	assert.NoError(t, err)
+	return datastore
 }
