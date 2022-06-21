@@ -107,6 +107,7 @@ type apiImpl struct {
 	srvAndListeners    []serverAndListener
 	server             *grpc.Server
 	stopRequested      bool
+	startedSig         concurrency.Signal
 }
 
 // A Config configures the server.
@@ -139,12 +140,14 @@ func NewAPI(config Config) API {
 }
 
 func (a *apiImpl) Start() *concurrency.Signal {
-	startedSig := concurrency.NewSignal()
-	go a.run(&startedSig)
-	return &startedSig
+	a.startedSig = concurrency.NewSignal()
+	go a.run(&a.startedSig)
+	return &a.startedSig
 }
 
 func (a *apiImpl) Stop() *concurrency.Signal {
+	// Make sure Stop() only gets called after Sensor finished setting up
+	a.startedSig.Wait()
 	stoppedSig := concurrency.NewSignal()
 	go a.stop(&stoppedSig)
 	return &stoppedSig
@@ -228,7 +231,7 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 			log.Fatal(err)
 		}
 		if !a.stopRequested {
-			log.Fatal("The local API server should never terminate without explicitly requested")
+			log.Fatal("The local API server should never terminate unless explicitly requested")
 		}
 	}()
 	return dialContext

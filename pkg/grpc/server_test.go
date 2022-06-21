@@ -85,6 +85,7 @@ var _ suite.TearDownTestSuite = &serverSuite{}
 
 func (s *serverSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	// TODO(ROX-11015): remove dependency to local-sensor's certificates
 	s.envIsolator.Setenv("ROX_MTLS_CERT_FILE", fromRoot("tools/local-sensor/certs/cert.pem"))
 	s.envIsolator.Setenv("ROX_MTLS_KEY_FILE", fromRoot("tools/local-sensor/certs/key.pem"))
 	s.envIsolator.Setenv("ROX_MTLS_CA_FILE", fromRoot("tools/local-sensor/certs/caCert.pem"))
