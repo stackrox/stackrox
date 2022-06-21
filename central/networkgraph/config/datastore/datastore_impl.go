@@ -15,6 +15,7 @@ import (
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
+	"gorm.io/gorm"
 )
 
 const (
