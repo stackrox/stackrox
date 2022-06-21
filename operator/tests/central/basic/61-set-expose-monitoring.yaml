@@ -4,4 +4,5 @@ metadata:
   name: stackrox-central-services
 spec:
   central:
-    exposeMonitoring: true
+    monitoring:
+      exposeEndpoint: Enabled

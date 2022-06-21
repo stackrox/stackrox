@@ -94,16 +94,15 @@ spec:
           and private key here.
         displayName: User-facing TLS certificate secret
         path: central.defaultTLSSecret
+      - description: Configures monitoring endpoint for central. Monitoring endpoint
+          allows other services, like Prometheus, to collect metrics provided by central.
+        displayName: Monitoring
+        path: central.monitoring
       - description: Configures how Central should store its persistent data. You
           can choose between using a persistent volume claim (recommended default),
           and a host path.
         displayName: Persistence
         path: central.persistence
-      - description: Enable necessary components for provisioning of monitoring metrics
-          for Central and other components of ACS stack. This is required if metrics
-          are collected by Observability Operator.
-        displayName: Expose Monitoring
-        path: central.exposeMonitoring
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
@@ -170,6 +169,11 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.nodePort.enabled:true
       - displayName: Enabled
         path: central.exposure.route.enabled
+      - description: Exposes monitoring endpoint by adding port 9090 with the name
+          "monitoring" to the deployment, creating service with the same port, and
+          adding the required network policy.
+        displayName: Expose Endpoint
+        path: central.monitoring.exposeEndpoint
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
           storage location of persistent data. Recommended for most users.
         displayName: Persistent volume claim

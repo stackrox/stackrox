@@ -104,16 +104,15 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="User-facing TLS certificate secret",order=3
 	DefaultTLSSecret *LocalSecretReference `json:"defaultTLSSecret,omitempty"`
 
+	// Configures monitoring endpoint for central. Monitoring endpoint allows
+	// other services, like Prometheus, to collect metrics provided by central.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	Monitoring *Monitoring `json:"monitoring,omitempty"`
+
 	// Configures how Central should store its persistent data. You can choose between using a persistent
 	// volume claim (recommended default), and a host path.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
-	Persistence *Persistence `json:"persistence,omitempty"`
-
-	// Enable necessary components for provisioning of monitoring metrics for
-	// Central and other components of ACS stack. This is required if metrics
-	// are collected by Observability Operator.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
-	ExposeMonitoring *bool `json:"exposeMonitoring,omitempty"`
+	Persistence *Persistence `json:"persistence,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
@@ -165,6 +164,36 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 	}
 	return pointer.BoolPtrDerefOr(c.AdminPasswordGenerationDisabled, false)
 }
+
+// Monitoring defines settings for monitoring endpoint.
+type Monitoring struct {
+	// Exposes monitoring endpoint by adding port 9090 with the name
+	// "monitoring" to the deployment, creating service with the same port,
+	// and adding the required network policy.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	ExposeEndpoint *ExposeEndpoint `json:"exposeEndpoint,omitempty"`
+}
+
+// IsEnabled checks whether exposing of endpoint is enabled.
+// This method is safe to be used with nil receivers.
+func (s *Monitoring) IsEnabled() bool {
+	if s == nil || s.ExposeEndpoint == nil {
+		return false // disabled by default
+	}
+
+	return *s.ExposeEndpoint == ExposeEndpointEnabled
+}
+
+// ExposeEndpoint is a type for monitoring sub-struct.
+//+kubebuilder:validation:Enum=Enabled;Disabled
+type ExposeEndpoint string
+
+const (
+	// ExposeEndpointEnabled means that component should expose monitoring port.
+	ExposeEndpointEnabled ExposeEndpoint = "Enabled"
+	// ExposeEndpointDisabled means that component should not expose monitoring port.
+	ExposeEndpointDisabled ExposeEndpoint = "Disabled"
+)
 
 // Persistence defines persistence settings for central.
 type Persistence struct {

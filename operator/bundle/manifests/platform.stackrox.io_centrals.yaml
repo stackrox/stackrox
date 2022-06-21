@@ -72,11 +72,6 @@ spec:
                     required:
                     - name
                     type: object
-                  exposeMonitoring:
-                    description: Enable necessary components for provisioning of monitoring
-                      metrics for Central and other components of ACS stack. This
-                      is required if metrics are collected by Observability Operator.
-                    type: boolean
                   exposure:
                     description: Here you can configure if you want to expose central
                       through a node port, a load balancer, or an OpenShift route.
@@ -120,6 +115,20 @@ spec:
                             default: false
                             type: boolean
                         type: object
+                    type: object
+                  monitoring:
+                    description: Configures monitoring endpoint for central. Monitoring
+                      endpoint allows other services, like Prometheus, to collect
+                      metrics provided by central.
+                    properties:
+                      exposeEndpoint:
+                        description: Exposes monitoring endpoint by adding port 9090
+                          with the name "monitoring" to the deployment, creating service
+                          with the same port, and adding the required network policy.
+                        enum:
+                        - Enabled
+                        - Disabled
+                        type: string
                     type: object
                   nodeSelector:
                     additionalProperties:

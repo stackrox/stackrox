@@ -106,7 +106,10 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 		cv.SetMap("defaultTLS", map[string]interface{}{"reference": c.DefaultTLSSecret.Name})
 	}
 
-	cv.SetBool("exposeMonitoring", c.ExposeMonitoring)
+	if c.Monitoring.IsEnabled() {
+		cv.SetBoolValue("exposeMonitoring", c.Monitoring.IsEnabled())
+	}
+
 	cv.SetStringMap("nodeSelector", c.NodeSelector)
 	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
 
