@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8-minimal:latest AS certs
+FROM registry.access.redhat.com/ubi9-minimal:latest AS certs
 
 FROM scratch
 COPY ./roxctl-linux /roxctl

@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/nodejs-16:latest AS builder
+FROM registry.access.redhat.com/ubi9/nodejs-16:latest AS builder
 
 USER 0:0
 
@@ -10,7 +10,7 @@ COPY Makefile ./
 RUN npm install -g npm@8.10.0 && npm install -g yarn@1.22.18
 RUN make
 
-FROM registry.access.redhat.com/ubi8/nginx-120:latest
+FROM registry.access.redhat.com/ubi9/nginx-120:latest
 
 RUN echo "$(id -u):$(id -g)" > /tmp/container-uid
 
