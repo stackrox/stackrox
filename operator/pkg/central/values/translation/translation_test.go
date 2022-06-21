@@ -54,6 +54,7 @@ func TestTranslate(t *testing.T) {
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
+					"exposeMonitoring": false,
 					"persistence": map[string]interface{}{
 						"persistentVolumeClaim": map[string]interface{}{
 							"createClaim": false,
@@ -385,6 +386,7 @@ func TestTranslate(t *testing.T) {
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
+					"exposeMonitoring": false,
 					"persistence": map[string]interface{}{
 						"persistentVolumeClaim": map[string]interface{}{
 							"claimName":   "stackrox-db-test",
@@ -409,6 +411,7 @@ func TestTranslate(t *testing.T) {
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
+					"exposeMonitoring": false,
 					"persistence": map[string]interface{}{
 						"persistentVolumeClaim": map[string]interface{}{
 							"createClaim": false,
