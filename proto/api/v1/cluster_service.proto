@@ -23,8 +23,19 @@ enum LoadBalancerType {
     ROUTE         = 3;
 }
 
+// next available tag: 3
+message DecommissionedClusterRetentionInfo {
+    oneof RetentionInfo {
+        // indicates whether a cluster is protected from deletion
+        bool is_protected_cluster    = 1;
+        // days after which cluster will be deleted if sensor health remains UNHEALTHY
+        int32 days_until_deletion  = 2;
+    }
+}
+
 message ClusterResponse {
-    storage.Cluster cluster            = 1;
+    storage.Cluster cluster                                       = 1;
+    DecommissionedClusterRetentionInfo cluster_retention_metadata = 2;
 }
 
 message ClusterDefaultsResponse {
@@ -34,7 +45,8 @@ message ClusterDefaultsResponse {
 }
 
 message ClustersList {
-    repeated storage.Cluster clusters = 1;
+    repeated storage.Cluster clusters                                           = 1;
+    map<string, DecommissionedClusterRetentionInfo> cluster_retention_metadatas = 2;
 }
 
 message GetClustersRequest {

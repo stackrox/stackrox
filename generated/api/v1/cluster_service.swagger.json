@@ -858,6 +858,9 @@
       "properties": {
         "cluster": {
           "$ref": "#/definitions/storageCluster"
+        },
+        "clusterRetentionMetadata": {
+          "$ref": "#/definitions/v1DecommissionedClusterRetentionInfo"
         }
       }
     },
@@ -869,8 +872,29 @@
           "items": {
             "$ref": "#/definitions/storageCluster"
           }
+        },
+        "clusterRetentionMetadatas": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1DecommissionedClusterRetentionInfo"
+          }
         }
       }
+    },
+    "v1DecommissionedClusterRetentionInfo": {
+      "type": "object",
+      "properties": {
+        "isProtectedCluster": {
+          "type": "boolean",
+          "title": "indicates whether a cluster is protected from deletion"
+        },
+        "daysUntilDeletion": {
+          "type": "integer",
+          "format": "int32",
+          "title": "days after which cluster will be deleted if sensor health remains UNHEALTHY"
+        }
+      },
+      "title": "next available tag: 3"
     },
     "v1Empty": {
       "type": "object"
