@@ -7,23 +7,6 @@ source "$SCRIPTS_ROOT/scripts/lib.sh"
 
 set -euo pipefail
 
-# Caution when editing: make sure groups would correspond to BASH_REMATCH use.
-RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
-
-is_release_version() {
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: is_release_version <version>"
-    fi
-    [[ "$1" =~ $RELEASE_RC_TAG_BASH_REGEX && -z "${BASH_REMATCH[3]}" ]]
-}
-
-is_RC_version() {
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: is_RC_version <version>"
-    fi
-    [[ "$1" =~ $RELEASE_RC_TAG_BASH_REGEX && -n "${BASH_REMATCH[3]}" ]]
-}
-
 ensure_CI() {
     if ! is_CI; then
         die "A CI environment is required."
