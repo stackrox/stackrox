@@ -358,32 +358,30 @@ check_scanner_and_collector_versions() {
 mark_collector_release() {
     info "Create a PR for collector to add this release to its RELEASED_VERSIONS file"
 
-    if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: mark_collector_release <tag> <username>"
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: mark_collector_release <tag>"
     fi
 
-    ensure_CI
-
     local tag="$1"
-    local username="$2"
+    local username="roxbot"
 
     if ! is_release_version "$tag"; then
         die "A release version is required. Got $tag"
     fi
 
-    ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-
     info "Check out collector source code"
 
     mkdir -p /tmp/collector
-    git -C /tmp clone --depth=2 --no-single-branch git@github.com:stackrox/collector.git
+    git -C /tmp clone --depth=2 --no-single-branch https://github.com/stackrox/collector.git
 
     info "Create a branch for the PR"
 
     collector_version="$(cat COLLECTOR_VERSION)"
     cd /tmp/collector || exit
     gitbot(){
-        git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" "${@}"
+        git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" \
+            -c "url.https://${GITHUB_TOKEN}:x-oauth-basic@github.com/.insteadOf=https://github.com/" \
+            "${@}"
     }
     gitbot checkout master && gitbot pull
 
@@ -406,8 +404,8 @@ mark_collector_release() {
     gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
     gitbot push origin "${branch_name}"
 
-    # RS-487: create_update_pr.sh needs to be fixed so it is not Circle CI dependent.
-    require_environment "CIRCLE_USERNAME"
+    export CIRCLE_USERNAME=roxbot
+    export GITHUB_TOKEN_FOR_PRS="${GITHUB_TOKEN}"
     /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
 }
 
