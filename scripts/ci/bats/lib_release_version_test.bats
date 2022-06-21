@@ -51,7 +51,7 @@ function setup() {
     assert_failure 1
 }
 
-# check_scanner_and_collector() tests
+# check_scanner_and_collector_versions() tests
 
 function make() {
     echo "${tags[$2]}"
@@ -59,55 +59,39 @@ function make() {
 
 @test "spots unreleased collector tags when an RC" {
     declare -A tags=( [tag]="3.67.2-rc.2" [collector-tag]="3.68.x-23-g8a2e05d0ec" [scanner-tag]="3.45.1")
-    run check_scanner_and_collector "false"
-    assert_success
+    run check_scanner_and_collector_versions
+    assert_failure
     assert_output --partial 'Collector tag does not look like a release tag'
     refute_output --partial 'Scanner tag does not look like a release tag'
 }
 
 @test "spots unreleased scanner tags when an RC" {
     declare -A tags=( [tag]="3.67.2-rc.2" [collector-tag]="3.68.1" [scanner-tag]="3.45.1-rc.2")
-    run check_scanner_and_collector "false"
-    assert_success
-    refute_output --partial 'Collector tag does not look like a release tag'
-    assert_output --partial 'Scanner tag does not look like a release tag'
-}
-
-@test "spots unreleased collector tags when an RC and can fail" {
-    declare -A tags=( [tag]="3.67.2-rc.2" [collector-tag]="3.68.x-23-g8a2e05d0ec" [scanner-tag]="3.45.1")
-    run check_scanner_and_collector "true"
-    assert_failure
-    assert_output --partial 'Collector tag does not look like a release tag'
-    refute_output --partial 'Scanner tag does not look like a release tag'
-}
-
-@test "spots unreleased scanner tags when an RC and can fail" {
-    declare -A tags=( [tag]="3.67.2-rc.2" [collector-tag]="3.68.1" [scanner-tag]="3.45.1-rc.2")
-    run check_scanner_and_collector "true"
+    run check_scanner_and_collector_versions
     assert_failure
     refute_output --partial 'Collector tag does not look like a release tag'
     assert_output --partial 'Scanner tag does not look like a release tag'
 }
 
-@test "spots unreleased collector tags when a release and fails" {
+@test "spots unreleased collector tags when a release" {
     declare -A tags=( [tag]="3.67.2" [collector-tag]="3.68.23-rc.8" [scanner-tag]="3.45.1")
-    run check_scanner_and_collector "false"
+    run check_scanner_and_collector_versions
     assert_failure
     assert_output --partial 'Collector tag does not look like a release tag'
     refute_output --partial 'Scanner tag does not look like a release tag'
 }
 
-@test "spots unreleased scanner tags when a release and fails" {
+@test "spots unreleased scanner tags when a release" {
     declare -A tags=( [tag]="3.67.2" [collector-tag]="3.68.1" [scanner-tag]="3.45.x-23-g8a2e05d0ec")
-    run check_scanner_and_collector "false"
+    run check_scanner_and_collector_versions
     assert_failure
     refute_output --partial 'Collector tag does not look like a release tag'
     assert_output --partial 'Scanner tag does not look like a release tag'
 }
 
-@test "spots both unreleased tags when a release and fails" {
+@test "spots both unreleased tags when a release" {
     declare -A tags=( [tag]="3.67.2" [collector-tag]="3.68.23-rc.8" [scanner-tag]="3.45.x-23-g8a2e05d0ec")
-    run check_scanner_and_collector "false"
+    run check_scanner_and_collector_versions
     assert_failure
     assert_output --partial 'Collector tag does not look like a release tag'
     assert_output --partial 'Scanner tag does not look like a release tag'
