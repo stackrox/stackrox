@@ -196,7 +196,7 @@ export function mergeGroupsWithAuthProviders(
 }
 
 export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): string {
-    let defaultRoleGroups = groups.filter(
+    const defaultRoleGroups = groups.filter(
         (group) =>
             group.props &&
             group.props.authProviderId &&
