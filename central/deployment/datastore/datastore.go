@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"gorm.io/gorm"
 )
 
 // DataStore is an intermediary to AlertStorage.
@@ -166,4 +167,38 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	return New(dacky, keyFence, nil, nil, bleveIndex, bleveIndex, imageStore,
 		processBaselineStore, networkFlowClusterStore, riskStore, nil,
 		processFilter, clusterRanker, namespaceRanker, deploymentRanker), nil
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) DataStore {
+	postgres.Destroy(ctx, pool)
+	dbstore := postgres.CreateTableAndNewStore(ctx, pool, gormDB)
+	indexer := postgres.NewIndexer(pool)
+	searcher := search.NewV2(dbstore, indexer)
+	imageStore := imageDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
+	processBaselineStore := pbDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
+	networkFlowClusterStore := nfDS.GetTestPostgresClusterDataStore(ctx, t, pool, gormDB)
+	riskStore := riskDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
+	processFilter := processIndicatorFilter.Singleton()
+	clusterRanker := ranking.ClusterRanker()
+	namespaceRanker := ranking.NamespaceRanker()
+	deploymentRanker := ranking.DeploymentRanker()
+	return newDatastoreImpl(dbstore, nil, indexer, searcher, imageStore, processBaselineStore,
+		networkFlowClusterStore, riskStore, nil, processFilter, clusterRanker,
+		namespaceRanker, deploymentRanker)
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) DataStore {
+	imageStore := imageDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
+	processBaselineStore := pbDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
+	networkFlowClusterStore := nfDS.GetTestRocksBleveClusterDataStore(t, rocksengine, bleveIndex)
+	riskStore := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
+	processFilter := processIndicatorFilter.Singleton()
+	clusterRanker := ranking.ClusterRanker()
+	namespaceRanker := ranking.NamespaceRanker()
+	deploymentRanker := ranking.DeploymentRanker()
+	return New(dacky, keyFence, nil, nil, bleveIndex, bleveIndex, imageStore,
+		processBaselineStore, networkFlowClusterStore, riskStore, nil,
+		processFilter, clusterRanker, namespaceRanker, deploymentRanker)
 }
