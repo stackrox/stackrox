@@ -53,7 +53,7 @@ func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query)
 	return deployments, err
 }
 
-// SearchRawDeployments retrieves deployments from the indexer and storage
+// SearchListDeployments retrieves deployments from the indexer and storage
 func (ds *searcherImplV2) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
 	deployments, _, err := ds.searchListDeployments(ctx, q)
 	if err != nil {

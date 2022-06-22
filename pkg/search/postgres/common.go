@@ -69,14 +69,17 @@ type innerJoin struct {
 }
 
 type query struct {
-	Schema            *walker.Schema
-	QueryType         QueryType
-	SelectedFields    []pgsearch.SelectQueryField
-	From              string
-	Where             string
+	Schema         *walker.Schema
+	QueryType      QueryType
+	SelectedFields []pgsearch.SelectQueryField
+	From           string
+	Where          string
+	Data           []interface{}
+
+	Having string
+
 	Pagination        parsedPaginationQuery
 	InnerJoins        []innerJoin
-	Data              []interface{}
 	GroupByPrimaryKey bool
 }
 
@@ -170,6 +173,10 @@ func (q *query) AsSQL() string {
 		}
 		querySB.WriteString(" group by ")
 		querySB.WriteString(strings.Join(primaryKeyPaths, ", "))
+	}
+	if q.Having != "" {
+		querySB.WriteString(" having ")
+		querySB.WriteString(replaceVars(q.Having))
 	}
 	if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
 		querySB.WriteString(" ")
@@ -323,6 +330,11 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryTy
 		query.Where = queryEntry.Where.Query
 		query.Data = queryEntry.Where.Values
 		query.SelectedFields = queryEntry.SelectedFields
+		query.GroupByPrimaryKey = queryEntry.GroupByPrimaryKey
+		if queryEntry.Having != nil {
+			query.Having = queryEntry.Having.Query
+			query.Data = append(query.Data, queryEntry.Having.Values...)
+		}
 	}
 	if err := populatePagination(query, q.GetPagination(), schema, dbFields); err != nil {
 		return nil, err
@@ -340,19 +352,33 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 	if len(entries) == 1 {
 		return entries[0]
 	}
-	var queryStrings []string
+	var whereQueryStrings []string
+	var havingQueryStrings []string
 	seenSelectFields := set.NewStringSet()
 	newQE := &pgsearch.QueryEntry{}
 	for _, entry := range entries {
-		queryStrings = append(queryStrings, entry.Where.Query)
+		whereQueryStrings = append(whereQueryStrings, entry.Where.Query)
 		newQE.Where.Values = append(newQE.Where.Values, entry.Where.Values...)
 		for _, selectedField := range entry.SelectedFields {
 			if seenSelectFields.Add(selectedField.SelectPath) {
 				newQE.SelectedFields = append(newQE.SelectedFields, selectedField)
 			}
 		}
+		if entry.GroupByPrimaryKey {
+			newQE.GroupByPrimaryKey = true
+		}
+		if entry.Having != nil {
+			if newQE.Having == nil {
+				newQE.Having = &pgsearch.WhereClause{}
+			}
+			newQE.Having.Values = append(newQE.Having.Values, entry.Having.Values...)
+			havingQueryStrings = append(havingQueryStrings, entry.Having.Query)
+		}
 	}
-	newQE.Where.Query = fmt.Sprintf("(%s)", strings.Join(queryStrings, separator))
+	newQE.Where.Query = fmt.Sprintf("(%s)", strings.Join(whereQueryStrings, separator))
+	if newQE.Having != nil {
+		newQE.Having.Query = fmt.Sprintf("(%s)", strings.Join(havingQueryStrings, separator))
+	}
 	return newQE
 }
 
@@ -386,8 +412,10 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 				Values: []interface{}{subBQ.DocIdQuery.GetIds()},
 			}}, nil
 		case *v1.BaseQuery_MatchFieldQuery:
+			queryFieldMetadata := queryFields[subBQ.MatchFieldQuery.GetField()]
 			qe, err := pgsearch.MatchFieldQuery(
-				queryFields[subBQ.MatchFieldQuery.GetField()].baseField,
+				queryFieldMetadata.baseField,
+				queryFieldMetadata.derivedMetadata,
 				subBQ.MatchFieldQuery.GetValue(),
 				subBQ.MatchFieldQuery.GetHighlight(),
 				nowForQuery,
@@ -401,15 +429,14 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
 			var entries []*pgsearch.QueryEntry
 			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
-				qe, err := pgsearch.MatchFieldQuery(queryFields[q.GetField()].baseField, q.GetValue(), q.GetHighlight(), nowForQuery)
+				queryFieldMetadata := queryFields[q.GetField()]
+				qe, err := pgsearch.MatchFieldQuery(queryFieldMetadata.baseField, queryFieldMetadata.derivedMetadata, q.GetValue(), q.GetHighlight(), nowForQuery)
 				if err != nil {
 					return nil, err
 				}
-				if qe == nil {
-					continue
+				if qe != nil {
+					entries = append(entries, qe)
 				}
-
-				entries = append(entries, qe)
 			}
 			return combineQueryEntries(entries, " and "), nil
 		default:
