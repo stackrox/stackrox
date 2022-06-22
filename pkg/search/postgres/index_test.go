@@ -405,6 +405,26 @@ func (s *IndexSuite) TestFloat() {
 			q:               search.NewQueryBuilder().AddStrings(search.TestFloat, ">=-2").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
 		},
+		{
+			desc:            "range (none matching)",
+			q:               search.NewQueryBuilder().AddStrings(search.TestFloat, "-2-5").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{},
+		},
+		{
+			desc:            "range + exact match",
+			q:               search.NewQueryBuilder().AddStrings(search.TestFloat, "-2-5", "-2").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
+		},
+		{
+			desc:            "range matches one",
+			q:               search.NewQueryBuilder().AddStrings(search.TestFloat, "5-8").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc:            "range matches both",
+			q:               search.NewQueryBuilder().AddStrings(search.TestFloat, "-5-8").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
+		},
 	})
 }
 
