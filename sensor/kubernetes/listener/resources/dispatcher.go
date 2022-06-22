@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	metricsPkg "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -138,10 +139,11 @@ type dumpingDispatcher struct {
 
 // InformerK8sMsg is a message being recorded/replayed when collecting the traces with K8s events
 type InformerK8sMsg struct {
-	ObjectType string
-	Action     string
-	Timestamp  int64
-	Payload    interface{}
+	ObjectType   string
+	Action       string
+	Timestamp    int64
+	Payload      interface{}
+	EventsOutput []string
 }
 
 func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent {
@@ -152,11 +154,23 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 		return events
 	}
 
+	var eventsOutput []string
+	marshaler := jsonpb.Marshaler{}
+	for _, e := range events {
+		ev, err := marshaler.MarshalToString(e)
+		if err != nil {
+			log.Infof("Error marshaling msg: %s\n", err.Error())
+			return events
+		}
+		eventsOutput = append(eventsOutput, ev)
+	}
+
 	jsonLine, err := json.Marshal(InformerK8sMsg{
-		ObjectType: dispType,
-		Timestamp:  now,
-		Action:     action.String(),
-		Payload:    obj,
+		ObjectType:   dispType,
+		Timestamp:    now,
+		Action:       action.String(),
+		Payload:      obj,
+		EventsOutput: eventsOutput,
 	})
 	if err != nil {
 		log.Infof("Error marshaling msg: %s\n", err.Error())
