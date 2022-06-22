@@ -13,10 +13,11 @@ push_images() {
     fi
 
     info "Images from OpenShift CI builds:"
-    set -x
     env | grep IMAGE || true
 
     [[ "${OPENSHIFT_CI:-false}" == "true" ]] || { die "Only supported in OpenShift CI"; }
+
+    make --debug=all tag
 
     local tag
     tag="$(make --quiet tag)"
@@ -45,7 +46,6 @@ push_images() {
     if [[ -n "${DOCS_IMAGE:-}" ]]; then
         push_docs_image
     fi
-    set +x
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]]; then
         comment_on_pr
