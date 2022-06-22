@@ -97,12 +97,44 @@ func (p *Pagination) Offset(offset int32) *Pagination {
 	return p
 }
 
+// SortOption describes the way to sort the query
+type SortOption struct {
+	field       FieldLabel
+	reversed    bool
+	searchAfter string
+}
+
+// NewSortOption creates a new sort option
+func NewSortOption(field FieldLabel) *SortOption {
+	return &SortOption{
+		field: field,
+	}
+}
+
+// Reversed describes if the sort should be reversed
+func (s *SortOption) Reversed(reversed bool) *SortOption {
+	s.reversed = reversed
+	return s
+}
+
+// SearchAfter starts from the passed value instead of using limit/offset pagination
+func (s *SortOption) SearchAfter(searchAfter string) *SortOption {
+	s.searchAfter = searchAfter
+	return s
+}
+
 // AddSortOption adds the sort option to the pagination object
-func (p *Pagination) AddSortOption(option FieldLabel, reversed bool) *Pagination {
-	p.qp.SortOptions = append(p.qp.SortOptions, &v1.QuerySortOption{
-		Field:    string(option),
-		Reversed: reversed,
-	})
+func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
+	opt := &v1.QuerySortOption{
+		Field:    string(so.field),
+		Reversed: so.reversed,
+	}
+	if so.searchAfter != "" {
+		opt.SearchAfterOpt = &v1.QuerySortOption_SearchAfter{
+			SearchAfter: so.searchAfter,
+		}
+	}
+	p.qp.SortOptions = append(p.qp.SortOptions, opt)
 	return p
 }
 
