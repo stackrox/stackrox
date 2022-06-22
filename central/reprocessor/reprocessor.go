@@ -61,9 +61,13 @@ var (
 // Singleton returns the singleton reprocessor loop
 func Singleton() Loop {
 	once.Do(func() {
+		var dackboxIndexQueue queue.WaitableQueue
+		if !features.PostgresDatastore.Enabled() {
+			dackboxIndexQueue = dackbox.GetIndexQueue()
+		}
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
 			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
-			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton(), dackbox.GetIndexQueue())
+			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton(), dackboxIndexQueue)
 	})
 	return loop
 }
@@ -293,7 +297,9 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 			defer wg.Add(-1)
 			if individualReprocessFunc(id) {
 				nReprocessed.Inc()
-				l.waitForIndexing()
+				if !features.PostgresDatastore.Enabled() {
+					l.waitForIndexing()
+				}
 			}
 		}(id)
 	}
@@ -333,7 +339,9 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		}
 	}
 
-	l.waitForIndexing()
+	if !features.PostgresDatastore.Enabled() {
+		l.waitForIndexing()
+	}
 
 	return image, true
 }
