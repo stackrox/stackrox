@@ -3,7 +3,10 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"testing"
 
+	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"
@@ -14,20 +17,27 @@ import (
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/namespace/store"
+	"github.com/stackrox/rox/central/namespace/store/postgres"
+	"github.com/stackrox/rox/central/namespace/store/rocksdb"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	dackboxPkg "github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/sorted"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 //go:generate mockgen-wrapper
@@ -68,6 +78,31 @@ func New(nsStore store.Store, graphProvider graph.Provider, indexer index.Indexe
 		return nil, err
 	}
 	return ds, nil
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) DataStore {
+	postgres.Destroy(ctx, pool)
+	dbstore := postgres.CreateTableAndNewStore(ctx, pool, gormDB)
+	indexer := postgres.NewIndexer(pool)
+	deploymentStore := deploymentDataStore.GetTestPostgresDataStore(ctx, t, pool, gormDB)
+	namespaceRanker := ranking.NamespaceRanker()
+	idMapStore := idmap.StorageSingleton()
+	datastore, err := New(dbstore, nil, indexer, deploymentStore, namespaceRanker, idMapStore)
+	assert.NoError(t, err)
+	return datastore
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackboxPkg.DackBox, keyFence concurrency.KeyFence) DataStore {
+	dbstore := rocksdb.New(rocksengine)
+	indexer := index.New(bleveIndex)
+	deploymentStore := deploymentDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
+	namespaceRanker := ranking.NamespaceRanker()
+	idMapStore := idmap.StorageSingleton()
+	datastore, err := New(dbstore, dacky, indexer, deploymentStore, namespaceRanker, idMapStore)
+	assert.NoError(t, err)
+	return datastore
 }
 
 var (
