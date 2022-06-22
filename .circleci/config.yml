@@ -4559,10 +4559,6 @@ workflows:
           context: custom-executor-pull
       - check-generated-files-up-to-date:
           <<: *runOnAllTagsWithQuayIOPullCtx
-      - check-policy-files-up-to-date:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - check-mitre-attack-bundle-up-to-date:
-          <<: *runOnAllTagsWithQuayIOPullCtx
       - go-postgres-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-create-parameters:
