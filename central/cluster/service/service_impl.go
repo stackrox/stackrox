@@ -107,6 +107,14 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 	}, nil
 }
 
+func (s *serviceImpl) getClusterRetentionInfo(cluster *storage.Cluster) *v1.DecommissionedClusterRetentionInfo {
+
+	if cluster.GetHealthStatus().GetSensorHealthStatus() != storage.ClusterHealthStatus_UNHEALTHY {
+		return nil
+	}
+
+}
+
 // GetClusters returns the currently defined clusters.
 func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersRequest) (*v1.ClustersList, error) {
 	q, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())

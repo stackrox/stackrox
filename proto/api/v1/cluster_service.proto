@@ -34,8 +34,8 @@ message DecommissionedClusterRetentionInfo {
 }
 
 message ClusterResponse {
-    storage.Cluster cluster                                       = 1;
-    DecommissionedClusterRetentionInfo cluster_retention_metadata = 2;
+    storage.Cluster cluster                                    = 1;
+    DecommissionedClusterRetentionInfo cluster_retention_info  = 2;
 }
 
 message ClusterDefaultsResponse {
@@ -45,8 +45,9 @@ message ClusterDefaultsResponse {
 }
 
 message ClustersList {
-    repeated storage.Cluster clusters                                           = 1;
-    map<string, DecommissionedClusterRetentionInfo> cluster_retention_metadatas = 2;
+    repeated storage.Cluster clusters                                            = 1;
+    // Maps 'UNHEALTHY' clusters' IDs to their retention info
+    map<string, DecommissionedClusterRetentionInfo> cluster_id_to_retention_info = 2;
 }
 
 message GetClustersRequest {

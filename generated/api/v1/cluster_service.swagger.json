@@ -859,7 +859,7 @@
         "cluster": {
           "$ref": "#/definitions/storageCluster"
         },
-        "clusterRetentionMetadata": {
+        "clusterRetentionInfo": {
           "$ref": "#/definitions/v1DecommissionedClusterRetentionInfo"
         }
       }
@@ -873,11 +873,12 @@
             "$ref": "#/definitions/storageCluster"
           }
         },
-        "clusterRetentionMetadatas": {
+        "clusterIdToRetentionInfo": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/v1DecommissionedClusterRetentionInfo"
-          }
+          },
+          "title": "Maps 'UNHEALTHY' clusters' IDs to their retention info"
         }
       }
     },
