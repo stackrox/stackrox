@@ -40,7 +40,10 @@ push_images() {
 
     push_main_image_set "$push_context" "$brand"
     push_matching_collector_scanner_images "$brand"
-    push_docs_image
+    # TODO(RS-509) - remove this check after the openshift/release master CI PR merges
+    if [[ -n "${DOCS_IMAGE:-}" ]]; then
+        push_docs_image
+    fi
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]]; then
         comment_on_pr
