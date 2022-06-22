@@ -214,6 +214,8 @@ registry_login() {
         die "missing arg. usage: registry_login <registry>"
     fi
 
+    local registry="$1"
+
     case "$registry" in
         docker.io/stackrox)        
             docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
