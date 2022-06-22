@@ -5,6 +5,7 @@ Available tests
 """
 
 import subprocess
+import sys
 
 from common import popen_graceful_kill
 
@@ -14,7 +15,7 @@ class BaseTest:
         self.test_output_dirs = []
 
     def run_with_graceful_kill(self, args, timeout, post_start_hook=None):
-        with subprocess.Popen(args) as cmd:
+        with subprocess.Popen(args, stderr=sys.stderr, stdout=sys.stdout) as cmd:
             if post_start_hook is not None:
                 post_start_hook()
             try:
