@@ -66,10 +66,10 @@ func (mr *MockStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.ImageCVE, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.CVE)
+	ret0, _ := ret[0].(*storage.ImageCVE)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -82,10 +82,10 @@ func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 }
 
 // GetMany mocks base method.
-func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVE, []int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
-	ret0, _ := ret[0].([]*storage.CVE)
+	ret0, _ := ret[0].([]*storage.ImageCVE)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -98,7 +98,7 @@ func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 }
 
 // UpsertMany mocks base method.
-func (m *MockStore) UpsertMany(ctx context.Context, cves []*storage.CVE) error {
+func (m *MockStore) UpsertMany(ctx context.Context, cves []*storage.ImageCVE) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertMany", ctx, cves)
 	ret0, _ := ret[0].(error)

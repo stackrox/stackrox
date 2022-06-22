@@ -10,10 +10,9 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/image/datastore/store"
-	"github.com/stackrox/rox/central/image/datastore/store/common"
+	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -137,20 +136,20 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUp
 	return copyFromImageCVERelations(ctx, tx, iTime, imageCVERelations...)
 }
 
-func getPartsAsSlice(parts common.ImageParts) ([]*storage.ImageComponent, []*storage.CVE, []*storage.ImageComponentEdge, []*storage.ComponentCVEEdge, []*storage.ImageCVEEdge) {
+func getPartsAsSlice(parts common.ImageParts) ([]*storage.ImageComponent, []*storage.ImageCVE, []*storage.ImageComponentEdge, []*storage.ComponentCVEEdge, []*storage.ImageCVEEdge) {
 	components := make([]*storage.ImageComponent, 0, len(parts.Children))
 	imageComponentRelations := make([]*storage.ImageComponentEdge, 0, len(parts.Children))
-	vulnMap := make(map[string]*storage.CVE)
+	vulnMap := make(map[string]*storage.ImageCVE)
 	var componentCVERelations []*storage.ComponentCVEEdge
 	for _, child := range parts.Children {
 		components = append(components, child.Component)
 		imageComponentRelations = append(imageComponentRelations, child.Edge)
 		for _, gChild := range child.Children {
 			componentCVERelations = append(componentCVERelations, gChild.Edge)
-			vulnMap[gChild.Cve.GetId()] = gChild.Cve
+			vulnMap[gChild.CVE.GetId()] = gChild.CVE
 		}
 	}
-	vulns := make([]*storage.CVE, 0, len(vulnMap))
+	vulns := make([]*storage.ImageCVE, 0, len(vulnMap))
 	for _, vuln := range vulnMap {
 		vulns = append(vulns, vuln)
 	}
@@ -295,7 +294,7 @@ func copyFromImageComponentRelations(ctx context.Context, tx pgx.Tx, objs ...*st
 	return err
 }
 
-func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.CVE) error {
+func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.ImageCVE) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -305,14 +304,13 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 
 	copyCols := []string{
 		"id",
-		"cve",
-		"cvss",
-		"impactscore",
-		"publishedon",
-		"createdat",
-		"suppressed",
-		"suppressexpiry",
-		"severity",
+		"CveBaseInfo_Cve",
+		"CveBaseInfo_PublishedOn",
+		"CveBaseInfo_CreatedAt",
+		"Cvss",
+		"Severity",
+		"Snoozed",
+		"SnoozeExpiry",
 		"serialized",
 	}
 
@@ -323,15 +321,13 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 	existingCVEs, err := getCVEs(ctx, tx, ids.AsSlice())
 
 	for idx, obj := range objs {
-		obj.Type = storage.CVE_IMAGE_CVE
-		obj.Types = []storage.CVE_CVEType{storage.CVE_IMAGE_CVE}
 		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
-			obj.Suppressed = storedCVE.GetSuppressed()
-			obj.CreatedAt = storedCVE.GetCreatedAt()
-			obj.SuppressActivation = storedCVE.GetSuppressActivation()
-			obj.SuppressExpiry = storedCVE.GetSuppressExpiry()
+			obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
+			obj.Snoozed = storedCVE.GetSnoozed()
+			obj.SnoozeStart = storedCVE.GetSnoozeStart()
+			obj.SnoozeExpiry = storedCVE.GetSnoozeExpiry()
 		} else {
-			obj.CreatedAt = iTime
+			obj.CveBaseInfo.CreatedAt = iTime
 		}
 
 		serialized, marshalErr := obj.Marshal()
@@ -341,14 +337,13 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			obj.GetCve(),
+			obj.GetCveBaseInfo().GetCve(),
+			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+			pgutils.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetCvss(),
-			obj.GetImpactScore(),
-			pgutils.NilOrTime(obj.GetPublishedOn()),
-			pgutils.NilOrTime(obj.GetCreatedAt()),
-			obj.GetSuppressed(),
-			pgutils.NilOrTime(obj.GetSuppressExpiry()),
 			obj.GetSeverity(),
+			obj.GetSnoozed(),
+			pgutils.NilOrTime(obj.GetSnoozeExpiry()),
 			serialized,
 		})
 
@@ -688,7 +683,6 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx pgx.Tx, imageID string)
 
 	imageParts := common.ImageParts{
 		Image:         &image,
-		ListImage:     types.ConvertImageToListImage(&image),
 		Children:      []common.ComponentParts{},
 		ImageCVEEdges: imageCVEEdgeMap,
 	}
@@ -702,7 +696,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx pgx.Tx, imageID string)
 		for _, edge := range componentCVEEdgeMap[componentID] {
 			child.Children = append(child.Children, common.CVEParts{
 				Edge: edge,
-				Cve:  cveMap[edge.GetImageCveId()],
+				CVE:  cveMap[edge.GetImageCveId()],
 			})
 		}
 		imageParts.Children = append(imageParts.Children, child)
@@ -830,7 +824,7 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 	return componentIDToEdgeMap, nil
 }
 
-func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.CVE, error) {
+func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.ImageCVE, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageCVEs")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageCVEsTable+" WHERE id = ANY($1::text[])", cveIDs)
@@ -838,13 +832,13 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 		return nil, err
 	}
 	defer rows.Close()
-	idToCVEMap := make(map[string]*storage.CVE)
+	idToCVEMap := make(map[string]*storage.ImageCVE)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, err
 		}
-		msg := &storage.CVE{}
+		msg := &storage.ImageCVE{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
