@@ -173,11 +173,11 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 		EventsOutput: eventsOutput,
 	})
 	if err != nil {
-		log.Infof("Error marshaling msg: %s\n", err.Error())
+		log.Warnf("Error marshaling msg: %s\n", err.Error())
 		return events
 	}
 	if _, err := m.writer.Write(jsonLine); err != nil {
-		log.Infof("Error writing msg: %s\n", err.Error())
+		log.Warnf("Error writing msg: %s\n", err.Error())
 	}
 	return events
 }
