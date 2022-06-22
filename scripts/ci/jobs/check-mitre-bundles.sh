@@ -10,6 +10,7 @@ if ! is_tagged; then
     exit 0
 fi
 
+# TODO(ROX-8486) - remove block when updating mitre bundle
 echo 'Skipping until ROX-8486 is resolved' && exit 0
 
 # shellcheck disable=SC2016
