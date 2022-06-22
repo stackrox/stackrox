@@ -11,7 +11,7 @@ import (
 	healthRocksDB "github.com/stackrox/rox/central/cluster/store/clusterhealth/rocksdb"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globaldb/dackbox"
+	globalDackBox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
@@ -26,6 +26,7 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -38,6 +39,7 @@ var (
 )
 
 func initialize() {
+	var dackbox *dackbox.DackBox
 	var clusterStorage clusterStore.Store
 	var clusterHealthStorage clusterHealthStatusStore.Store
 	var indexer index.Indexer
@@ -48,6 +50,7 @@ func initialize() {
 		clusterHealthStorage = clusterHealthPostgres.New(globaldb.GetPostgres())
 		indexer = clusterPostgres.NewIndexer(globaldb.GetPostgres())
 	} else {
+		dackbox = globalDackBox.GetGlobalDackBox()
 		clusterStorage, err = clusterRocksDB.New(globaldb.GetRocksDB())
 		utils.CrashOnError(err)
 		clusterHealthStorage, err = healthRocksDB.New(globaldb.GetRocksDB())
@@ -71,7 +74,7 @@ func initialize() {
 		roleBindingDataStore.Singleton(),
 		connection.ManagerSingleton(),
 		notifierProcessor.Singleton(),
-		dackbox.GetGlobalDackBox(),
+		dackbox,
 		ranking.ClusterRanker(),
 		networkBaselineManager.Singleton())
 
