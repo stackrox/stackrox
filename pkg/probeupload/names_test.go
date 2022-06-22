@@ -39,6 +39,8 @@ func TestIsValidModuleVersion_Invalid(t *testing.T) {
 		"10.5.155.123",
 		"1.0.0-rc",
 		"2.0.0-invalid",
+		"1.0.0-rc1-rc4",
+		"2.0.0-rc1invalid",
 		"latest",
 		"1123dde0458e72a49880b06922e135dbcd36fb784fed530ab84ddfa8924e5c050",
 		"95eb0815c4e7b59e0e5d0e53adb1a4",
