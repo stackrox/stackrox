@@ -6,7 +6,6 @@ import (
 	cveDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -27,12 +26,10 @@ type Service interface {
 // New returns a new Service instance using the given DataStore.
 func New(
 	cveDataStore cveDataStore.DataStore,
-	indexQ queue.WaitableQueue,
 	vulnReqMgr vulnReqMgr.Manager,
 ) Service {
 	return &serviceImpl{
 		cves:       cveDataStore,
-		indexQ:     indexQ,
 		vulnReqMgr: vulnReqMgr,
 	}
 }

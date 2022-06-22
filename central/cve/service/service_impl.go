@@ -11,7 +11,6 @@ import (
 	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/and"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -36,7 +35,6 @@ var (
 type serviceImpl struct {
 	cves       datastore.DataStore
 	vulnReqMgr vulnReqMgr.Manager
-	indexQ     queue.WaitableQueue
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
