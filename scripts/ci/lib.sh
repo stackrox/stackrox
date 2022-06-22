@@ -404,6 +404,7 @@ mark_collector_release() {
     gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
     gitbot push origin "${branch_name}"
 
+    # RS-487: create_update_pr.sh needs to be fixed so it is not Circle CI dependent.
     export CIRCLE_USERNAME=roxbot
     export CIRCLE_PULL_REQUEST="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
     export GITHUB_TOKEN_FOR_PRS="${GITHUB_TOKEN}"
