@@ -49,7 +49,7 @@ func (s *TestG2GrandChild1StoreSuite) SetupSuite() {
 	Destroy(ctx, pool)
 
 	s.pool = pool
-	gormDB := pgtest.OpenGormDB(s.T(), source)
+	gormDB := pgtest.OpenGormDB(s.T(), source, false)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }

@@ -89,7 +89,7 @@ func (s *GraphQueriesTestSuite) SetupTest() {
 	pool, err := pgxpool.ConnectConfig(testCtx, config)
 	s.Require().NoError(err)
 
-	gormDB := pgtest.OpenGormDB(s.T(), source)
+	gormDB := pgtest.OpenGormDB(s.T(), source, false)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	s.pool = pool
 	s.testGrandparentStore = testGrandparent.CreateTableAndNewStore(testCtx, pool, gormDB)

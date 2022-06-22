@@ -57,7 +57,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
 	s.Require().NoError(err)
 	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
+	s.gormDB = pgtest.OpenGormDB(s.T(), source, true)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {

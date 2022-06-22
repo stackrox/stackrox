@@ -27,8 +27,14 @@ func GetConnectionString(_ *testing.T) string {
 }
 
 // OpenGormDB opens a Gorm DB to the Postgres DB
-func OpenGormDB(t *testing.T, source string) *gorm.DB {
-	gormDB, err := gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+func OpenGormDB(t *testing.T, source string, disableConstraint bool) *gorm.DB {
+	gormDB, err := gorm.Open(
+		postgres.Open(source),
+		&gorm.Config{
+			NamingStrategy:                           pgutils.NamingStrategy,
+			DisableForeignKeyConstraintWhenMigrating: disableConstraint,
+		},
+	)
 	require.NoError(t, err, "failed to connect to connect with gorm db")
 	return gormDB
 }
