@@ -33,8 +33,6 @@ func alloc() proto.Message {
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.PermissionSet).GetId())
 }
-
-
 func uniqKeyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.PermissionSet).GetName())
 }

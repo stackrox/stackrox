@@ -29,6 +29,7 @@ type storeImpl struct {
 func alloc() proto.Message {
 	return &storage.ClusterHealthStatus{}
 }
+
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.ClusterHealthStatus).GetId())
 }

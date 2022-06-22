@@ -28,11 +28,10 @@ type storeImpl struct {
 func alloc() proto.Message {
 	return &storage.Secret{}
 }
+
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.Secret).GetId())
 }
-
-
 
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {

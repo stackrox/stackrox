@@ -28,6 +28,7 @@ type storeImpl struct {
 func alloc() proto.Message {
 	return &storage.NetworkBaseline{}
 }
+
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.NetworkBaseline).GetDeploymentId())
 }

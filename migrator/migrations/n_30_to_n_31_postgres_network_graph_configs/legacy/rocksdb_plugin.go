@@ -28,6 +28,7 @@ type storeImpl struct {
 func alloc() proto.Message {
 	return &storage.NetworkGraphConfig{}
 }
+
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.NetworkGraphConfig).GetId())
 }

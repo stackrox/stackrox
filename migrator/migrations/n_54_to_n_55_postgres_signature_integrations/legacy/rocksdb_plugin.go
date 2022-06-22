@@ -29,11 +29,10 @@ type storeImpl struct {
 func alloc() proto.Message {
 	return &storage.SignatureIntegration{}
 }
+
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.SignatureIntegration).GetId())
 }
-
-
 func uniqKeyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.SignatureIntegration).GetName())
 }

@@ -29,11 +29,10 @@ type storeImpl struct {
 func alloc() proto.Message {
 	return &storage.SimpleAccessScope{}
 }
+
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.SimpleAccessScope).GetId())
 }
-
-
 func uniqKeyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.SimpleAccessScope).GetName())
 }
