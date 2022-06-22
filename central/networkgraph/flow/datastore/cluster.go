@@ -33,7 +33,7 @@ func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.D
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) ClusterDataStore {
+func GetTestPostgresClusterDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) ClusterDataStore {
 	dbstore := postgres.NewClusterStore(pool)
 	configStore := graphConfigDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
 	networkTreeMgr := networktree.Singleton()
@@ -41,7 +41,7 @@ func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.P
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) ClusterDataStore {
+func GetTestRocksBleveClusterDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) ClusterDataStore {
 	dbstore := rocksdb.NewClusterStore(rocksengine)
 	configStore := graphConfigDS.GetTestRocksBleveDataStore(t, rocksengine)
 	networkTreeMgr := networktree.Singleton()

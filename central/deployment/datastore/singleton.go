@@ -40,6 +40,7 @@ func initialize() {
 	}
 	ad = New(dackBox,
 		keyFence,
+		globaldb.GetPostgres(),
 		// Process Tag store will be removed in 72.0
 		processtagsstore.New(globaldb.GetGlobalDB()),
 		bleveIndex,
