@@ -13,8 +13,7 @@ FROM registry.access.redhat.com/ubi8-minimal:latest
 # utils because our own policies don't recommend having them in the image. For that we need to be root.
 RUN microdnf upgrade && \
     microdnf install \
-        python39 \
-        findutils && \
+        python39 && \
     microdnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
