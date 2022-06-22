@@ -2,17 +2,25 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
+	"github.com/stackrox/rox/central/processbaseline/store/postgres"
+	"github.com/stackrox/rox/central/processbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 // DataStore wraps storage, indexer, and searcher for ProcessBaselines.
@@ -49,4 +57,28 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, p
 		processesDataStore:     processIndicators,
 	}
 	return d
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) DataStore {
+	postgres.Destroy(ctx, pool)
+	dbstore := postgres.CreateTableAndNewStore(ctx, pool, gormDB)
+	indexer := postgres.NewIndexer(pool)
+	searcher, err := search.New(dbstore, indexer)
+	assert.NoError(t, err)
+	resultsStore := datastore.GetTestPostgresDataStore(ctx, t, pool, gormDB)
+	indicatorStore := processIndicatorDatastore.GetTestPostgresDataStore(ctx, t, pool, gormDB)
+	return New(dbstore, indexer, searcher, resultsStore, indicatorStore)
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) DataStore {
+	dbstore, err := rocksdb.New(rocksengine)
+	assert.NoError(t, err)
+	indexer := index.New(bleveIndex)
+	searcher, err := search.New(dbstore, indexer)
+	assert.NoError(t, err)
+	resultsStore := datastore.GetTestRocksBleveDataStore(t, rocksengine)
+	indicatorStore := processIndicatorDatastore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
+	return New(dbstore, indexer, searcher, resultsStore, indicatorStore)
 }
