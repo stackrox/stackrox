@@ -304,13 +304,13 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 
 	copyCols := []string{
 		"id",
-		"CveBaseInfo_Cve",
-		"CveBaseInfo_PublishedOn",
-		"CveBaseInfo_CreatedAt",
-		"Cvss",
-		"Severity",
-		"Snoozed",
-		"SnoozeExpiry",
+		"cvebaseinfo_cve",
+		"cvebaseinfo_publishedon",
+		"cvebaseinfo_createdat",
+		"cvss",
+		"severity",
+		"snoozed",
+		"snoozeexpiry",
 		"serialized",
 	}
 

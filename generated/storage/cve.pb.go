@@ -3965,7 +3965,7 @@ func (m *CVE) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 22:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CVE", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Cve", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -4335,7 +4335,7 @@ func (m *CVEInfo) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CVE", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Cve", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
