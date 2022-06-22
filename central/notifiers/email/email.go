@@ -131,9 +131,6 @@ func validate(email *storage.Email) error {
 	if email.GetUsername() == "" {
 		errorList.AddString("Username must be specified")
 	}
-	if email.GetPassword() == "" {
-		errorList.AddString("Password must be specified")
-	}
 	if !email.GetDisableTLS() && email.GetStartTLSAuthMethod() != storage.Email_DISABLED {
 		errorList.AddString("TLS must be disabled to use a StartTLS Auth Method")
 	}
