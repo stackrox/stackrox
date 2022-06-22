@@ -159,7 +159,7 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	for _, e := range events {
 		ev, err := marshaler.MarshalToString(e)
 		if err != nil {
-			log.Infof("Error marshaling msg: %s\n", err.Error())
+			log.Warnf("Error marshaling msg: %s\n", err.Error())
 			return events
 		}
 		eventsOutput = append(eventsOutput, ev)
