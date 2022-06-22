@@ -90,7 +90,7 @@ func NewWithPostgres(storage store.Store, index imageIndexer.Indexer, risks risk
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) DataStore {
 	postgresStore.Destroy(ctx, pool)
-	dbstore := postgresStore.CreateTableAndNewStore(ctx, pool, gormDB)
+	dbstore := postgresStore.CreateTableAndNewStore(ctx, pool, gormDB, false)
 	indexer := postgresStore.NewIndexer(pool)
 	riskStore := riskDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
 	imageRanker := ranking.ImageRanker()
