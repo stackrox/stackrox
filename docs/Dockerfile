@@ -19,7 +19,7 @@ RUN microdnf upgrade && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
-WORKDIR /docs
+WORKDIR /public
 COPY --from=builder /workspace/build/ ./
 EXPOSE 8080
 CMD python -m http.server 8080
