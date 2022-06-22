@@ -2358,70 +2358,6 @@ jobs:
             echo 'needs to change due to formatting changes in the generated files.'
             git diff --exit-code HEAD
 
-  check-policy-files-up-to-date:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-
-      - restore-go-mod-cache
-      - setup-go-build-env
-
-      - run:
-          name: Ensure all JSON policies in "./pkg/defaults/policies/" are of latest version. (If this fails, run `policyutil` on failed policies and commit the result.)
-          command: |
-            make deps
-            make policyutil
-            policyutil upgrade -d pkg/defaults/policies/files -o /tmp/policies-in-standard-form --ensure-read-only mitre --ensure-read-only criteria
-            diff pkg/defaults/policies/files /tmp/policies-in-standard-form > /tmp/policies-diff
-            if [[ -s /tmp/policies-diff ]]; then
-              echo 'Found policies that are not in standard form. Check "policies-diff" for affected policies; use "policyutil" to fix them.'
-              cat /tmp/policies-diff
-              exit 1
-            fi
-
-      - ci-artifacts/store:
-          path: /tmp/policies-diff
-          destination: policies-diff
-
-  check-mitre-attack-bundle-up-to-date:
-    executor: custom
-    resource_class: small
-    steps:
-      - run:
-          name: Skipping until ROX-8486 is resolved
-          command: |
-            echo "Skipping until ROX-8486 is resolved"
-            circleci step halt
-
-      - run:
-          name: Determine whether to skip MITRE ATT&CK bundle check
-          command: |
-            if [[ -z "${CIRCLE_TAG}" ]]; then
-              echo "Not a tagged build, skipping MITRE ATT&CK bundle check"
-              circleci step halt
-            fi
-
-      - checkout
-      - restore-go-mod-cache
-      - setup-go-build-env
-
-      - run:
-          name: Ensure MITRE ATT&CK bundle at "./pkg/mitre/files/mitre.json" is up-to-date. (If this fails, run `mitreutil fetch` and commit the result.)
-          command: |
-            make deps
-            make mitre
-            mitre fetch --domain enterprise --out /tmp/enterprise-mitre.json
-            diff pkg/mitre/files/mitre.json /tmp/enterprise-mitre.json > /tmp/mitre-diff
-            if [[ -s /tmp/mitre-diff ]]; then
-              echo 'MITRE ATT&CK bundle at 'pkg/mitre/files/mitre.json' is not up-to-date. Check "mitre-diff" for more informtaion.'
-              cat /tmp/mitre-diff
-              exit 1
-            fi
-      - ci-artifacts/store:
-          path: /tmp/mitre-diff
-          destination: mitre-diff
-
   designated-image-tests:
 
     ###
@@ -4609,10 +4545,6 @@ workflows:
           <<: *runOnTagsOnly
           context: custom-executor-pull
       - check-generated-files-up-to-date:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - check-policy-files-up-to-date:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - check-mitre-attack-bundle-up-to-date:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - go-postgres-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
