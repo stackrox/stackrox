@@ -108,7 +108,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
-	sacService "github.com/stackrox/rox/central/sac/service"
 	"github.com/stackrox/rox/central/sac/transitional"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
@@ -349,7 +348,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		reportConfigurationService.Singleton(),
 		reportService.Singleton(),
 		roleService.Singleton(),
-		sacService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
