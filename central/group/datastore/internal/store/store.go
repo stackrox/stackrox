@@ -19,7 +19,7 @@ var getAllEmptyGroupProperties = func(props *storage.GroupProperties) bool {
 // Store updates and utilizes groups, which are attribute to role mappings.
 //go:generate mockgen-wrapper
 type Store interface {
-	Get(id string) (*storage.Group, error)
+	Get(props *storage.GroupProperties) (*storage.Group, error)
 	GetFiltered(func(*storage.GroupProperties) bool) ([]*storage.Group, error)
 	GetAll() ([]*storage.Group, error)
 
@@ -27,9 +27,8 @@ type Store interface {
 
 	Add(*storage.Group) error
 	Update(*storage.Group) error
-	Upsert(*storage.Group) error
 	Mutate(remove, update, add []*storage.Group) error
-	Remove(id string) error
+	Remove(props *storage.GroupProperties) error
 }
 
 // New returns a new instance of a Store.
@@ -42,7 +41,7 @@ func New(db *bolt.DB) Store {
 	grps, err := store.GetFiltered(getAllEmptyGroupProperties)
 	utils.Should(err)
 	for _, grp := range grps {
-		err = store.Remove(grp.GetProps().GetId())
+		err = store.Remove(grp.GetProps())
 		utils.Should(err)
 	}
 

@@ -77,7 +77,7 @@ func (s *GroupStoreTestSuite) TestAdd() {
 	}
 
 	for _, a := range groups {
-		full, err := s.sto.Get(a.GetProps().GetId())
+		full, err := s.sto.Get(a.GetProps())
 		s.NoError(err)
 		s.Equal(a, full)
 	}
@@ -87,7 +87,7 @@ func (s *GroupStoreTestSuite) TestAdd() {
 	s.ElementsMatch(groups, retrievedGroups)
 
 	for _, a := range groups {
-		s.NoError(s.sto.Remove(a.GetProps().GetId()))
+		s.NoError(s.sto.Remove(a.GetProps()))
 	}
 
 	groupsAfterDelete, err := s.sto.GetAll()
@@ -139,7 +139,7 @@ func (s *GroupStoreTestSuite) TestUpdate() {
 	}
 
 	for _, a := range groups {
-		full, err := s.sto.Get(a.GetProps().GetId())
+		full, err := s.sto.Get(a.GetProps())
 		s.NoError(err)
 		s.Equal(a, full)
 	}
@@ -149,65 +149,7 @@ func (s *GroupStoreTestSuite) TestUpdate() {
 	s.ElementsMatch(groups, retrievedGroups)
 
 	for _, a := range groups {
-		s.NoError(s.sto.Remove(a.GetProps().GetId()))
-	}
-
-	groupsAfterDelete, err := s.sto.GetAll()
-	s.NoError(err)
-	s.Empty(groupsAfterDelete)
-}
-
-func (s *GroupStoreTestSuite) TestUpsert() {
-	groups := []*storage.Group{
-		{
-			Props: &storage.GroupProperties{
-				AuthProviderId: "authProvider1",
-				Key:            "Attribute",
-				Value:          "IsCaptain",
-				Id:             "1",
-			},
-			RoleName: "captain",
-		},
-		{
-			Props: &storage.GroupProperties{
-				AuthProviderId: "authProvider1",
-				Key:            "Attribute",
-				Value:          "IsAlsoCaptain",
-				Id:             "2",
-			},
-			RoleName: "captain",
-		},
-		{
-			Props: &storage.GroupProperties{
-				AuthProviderId: "authProvider1",
-				Key:            "DifferentAttribute",
-				Value:          "IsCaptain",
-				Id:             "3",
-			},
-			RoleName: "captain",
-		},
-	}
-
-	for _, a := range groups {
-		s.NoError(s.sto.Upsert(a))
-	}
-
-	for _, a := range groups {
-		s.NoError(s.sto.Upsert(a))
-	}
-
-	for _, a := range groups {
-		full, err := s.sto.Get(a.GetProps().GetId())
-		s.NoError(err)
-		s.Equal(a, full)
-	}
-
-	retrievedGroups, err := s.sto.GetAll()
-	s.NoError(err)
-	s.ElementsMatch(groups, retrievedGroups)
-
-	for _, a := range groups {
-		s.NoError(s.sto.Remove(a.GetProps().GetId()))
+		s.NoError(s.sto.Remove(a.GetProps()))
 	}
 
 	groupsAfterDelete, err := s.sto.GetAll()
@@ -289,27 +231,27 @@ func (s *GroupStoreTestSuite) TestMutate() {
 	s.NoError(s.sto.Mutate(toRemove, toUpdate, toAdd))
 
 	// Last starting state should be untouched.
-	remainingStart, err := s.sto.Get(startingState[2].GetProps().GetId())
+	remainingStart, err := s.sto.Get(startingState[2].GetProps())
 	s.NoError(err)
 	s.Equal(startingState[2], remainingStart)
 
 	// Removed starting state should not be present.
 	for _, a := range toRemove {
-		full, err := s.sto.Get(a.GetProps().GetId())
+		full, err := s.sto.Get(a.GetProps())
 		s.NoError(err)
 		s.Equal((*storage.Group)(nil), full)
 	}
 
 	// Updated value check.
 	for _, a := range toUpdate {
-		full, err := s.sto.Get(a.GetProps().GetId())
+		full, err := s.sto.Get(a.GetProps())
 		s.NoError(err)
 		s.Equal(a, full)
 	}
 
 	// Added value check.
 	for _, a := range toAdd {
-		full, err := s.sto.Get(a.GetProps().GetId())
+		full, err := s.sto.Get(a.GetProps())
 		s.NoError(err)
 		s.Equal(a, full)
 	}
@@ -319,7 +261,7 @@ func (s *GroupStoreTestSuite) TestMutate() {
 	s.NoError(err)
 	s.Equal(3, len(retrievedGroups))
 	for _, a := range retrievedGroups {
-		s.NoError(s.sto.Remove(a.GetProps().GetId()))
+		s.NoError(s.sto.Remove(a.GetProps()))
 	}
 }
 
@@ -391,7 +333,7 @@ func (s *GroupStoreTestSuite) TestWalk() {
 	}
 
 	for _, a := range groups {
-		s.NoError(s.sto.Upsert(a))
+		s.NoError(s.sto.Add(a))
 	}
 
 	actualGroups, err := s.sto.Walk("authProvider1", map[string][]string{
@@ -406,7 +348,7 @@ func (s *GroupStoreTestSuite) TestWalk() {
 	s.ElementsMatch(expectedGroups, actualGroups)
 
 	for _, a := range groups {
-		s.NoError(s.sto.Remove(a.GetProps().GetId()))
+		s.NoError(s.sto.Remove(a.GetProps()))
 	}
 }
 
@@ -472,7 +414,7 @@ func (s *GroupStoreTestSuite) TestGetAll() {
 	}
 
 	for _, a := range groups {
-		s.NoError(s.sto.Upsert(a))
+		s.NoError(s.sto.Add(a))
 	}
 
 	actualGroups, err := s.sto.GetAll()
@@ -550,7 +492,7 @@ func (s *GroupStoreTestSuite) TestGetFiltered() {
 	}
 
 	for _, a := range groups {
-		s.NoError(s.sto.Upsert(a))
+		s.NoError(s.sto.Add(a))
 	}
 
 	actualGroups, err := s.sto.GetFiltered(func(*storage.GroupProperties) bool { return false })

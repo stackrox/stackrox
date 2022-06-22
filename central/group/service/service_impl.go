@@ -93,7 +93,7 @@ func (s *serviceImpl) GetGroups(ctx context.Context, req *v1.GetGroupsRequest) (
 }
 
 func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
-	group, err := s.groups.Get(ctx, props.GetId())
+	group, err := s.groups.Get(ctx, props)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (s *serviceImpl) DeleteGroup(ctx context.Context, props *storage.GroupPrope
 	if err := datastore.ValidateProps(props); err != nil {
 		return nil, err
 	}
-	err := s.groups.Remove(ctx, props.GetId())
+	err := s.groups.Remove(ctx, props)
 	if err != nil {
 		return nil, err
 	}

@@ -15,10 +15,13 @@ type storeImpl struct {
 }
 
 // Get returns a group matching the given properties if it exists from the store.
-func (s *storeImpl) Get(id string) (grp *storage.Group, err error) {
+func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err error) {
+	if props.GetId() == "" {
+		return s.getByProps(props)
+	}
 	err = s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
-		v := buc.Get([]byte(id))
+		v := buc.Get([]byte(props.GetId()))
 		if v == nil {
 			return nil
 		}
@@ -31,23 +34,46 @@ func (s *storeImpl) Get(id string) (grp *storage.Group, err error) {
 	return
 }
 
-func (s *storeImpl) GetFiltered(filter func(*storage.GroupProperties) bool) ([]*storage.Group, error) {
-	var grps []*storage.Group
-	err := s.db.View(func(tx *bolt.Tx) error {
-		buc := tx.Bucket(groupsBucket)
-		return buc.ForEach(func(k, v []byte) error {
-			var grp storage.Group
-			err := proto.Unmarshal(v, &grp)
-			if err != nil {
-				return err
+// getByProps returns a group matching the given properties if it exists from the store.
+// If more than one group is found matching the properties, an error will be returned.
+// TODO: This can be removed once retrieving the group by its properties is fully deprecated.
+func (s *storeImpl) getByProps(props *storage.GroupProperties) (grp *storage.Group, err error) {
+	err = s.db.View(func(tx *bolt.Tx) error {
+		var groups []*storage.Group
+		groups, err = filterInTransaction(tx, func(p *storage.GroupProperties) bool {
+			if props.GetAuthProviderId() != p.GetAuthProviderId() {
+				return false
 			}
-			if filter == nil || filter(grp.GetProps()) {
-				grps = append(grps, &grp)
+			if props.GetKey() != p.GetKey() {
+				return false
 			}
-			return nil
+			if props.GetValue() != p.GetValue() {
+				return false
+			}
+			return true
 		})
+
+		if len(groups) > 1 {
+			return errox.InvalidArgs.Newf("multiple groups found for properties (auth provider id=%s, key=%s, "+
+				"value=%s), provide an ID to retrieve a group unambiguously",
+				props.GetAuthProviderId(), props.GetKey(), props.GetValue())
+		}
+		// If no groups are found, return nil, mimicking the behavior of Get().
+		if len(groups) == 0 {
+			return nil
+		}
+		grp = groups[0]
+		return nil
 	})
-	return grps, err
+	return grp, err
+}
+
+func (s *storeImpl) GetFiltered(filter func(*storage.GroupProperties) bool) (groups []*storage.Group, err error) {
+	err = s.db.View(func(tx *bolt.Tx) error {
+		groups, err = filterInTransaction(tx, filter)
+		return err
+	})
+	return groups, err
 }
 
 // GetAll return all groups currently in the store.
@@ -64,7 +90,7 @@ func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) 
 	// Search for groups in the list.
 	err = s.db.View(func(tx *bolt.Tx) error {
 		for _, check := range toSearch {
-			grpss, err := s.GetFiltered(func(props *storage.GroupProperties) bool {
+			grpss, err := filterInTransaction(tx, func(props *storage.GroupProperties) bool {
 				if check.GetAuthProviderId() != props.GetAuthProviderId() {
 					return false
 				}
@@ -102,24 +128,11 @@ func (s *storeImpl) Update(group *storage.Group) error {
 	})
 }
 
-// Upsert adds or updates a group in the store.
-func (s *storeImpl) Upsert(group *storage.Group) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		buc := tx.Bucket(groupsBucket)
-		id := group.GetProps().GetId()
-		bytes, err := proto.Marshal(group)
-		if err != nil {
-			return errox.InvariantViolation.CausedBy(err)
-		}
-		return buc.Put([]byte(id), bytes)
-	})
-}
-
 // Remove removes the group with matching properties from the store.
 // Returns an error if no such group exists.
-func (s *storeImpl) Remove(id string) error {
+func (s *storeImpl) Remove(props *storage.GroupProperties) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		return removeInTransaction(tx, id)
+		return removeInTransaction(tx, props)
 	})
 }
 
@@ -128,7 +141,7 @@ func (s *storeImpl) Remove(id string) error {
 func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		for _, group := range toRemove {
-			if err := removeInTransaction(tx, group.GetProps().GetId()); err != nil {
+			if err := removeInTransaction(tx, group.GetProps()); err != nil {
 				return errors.Wrap(err, "error removing during mutation")
 			}
 		}
@@ -167,10 +180,40 @@ func addInTransaction(tx *bolt.Tx, group *storage.Group) error {
 
 func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
 	id := group.GetProps().GetId()
-
 	buc := tx.Bucket(groupsBucket)
-	if buc.Get([]byte(id)) == nil {
-		return errox.NotFound.Newf("group config for %q does not exist", id)
+
+	// TODO: Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
+	// can be removed and groups shall only be retrievable via their id.
+	if id != "" {
+		if buc.Get([]byte(id)) == nil {
+			return errox.NotFound.Newf("group config for %q does not exist", id)
+		}
+	} else {
+		grps, err := filterInTransaction(tx, func(props *storage.GroupProperties) bool {
+			if group.GetProps().GetAuthProviderId() != props.GetAuthProviderId() {
+				return false
+			}
+			if group.GetProps().GetKey() != props.GetKey() {
+				return false
+			}
+			if group.GetProps().GetValue() != props.GetValue() {
+				return false
+			}
+			return true
+		})
+		if err != nil {
+			return err
+		}
+		if len(grps) > 1 {
+			return errox.InvalidArgs.Newf("multiple groups found for properties (auth provider id=%s, key=%s, "+
+				"value=%s), provide an ID to retrieve a group unambiguously",
+				group.GetProps().GetAuthProviderId(), group.GetProps().GetKey(), group.GetProps().GetValue())
+		}
+		if len(grps) == 0 {
+			return errox.NotFound.Newf("group config for (auth provider id=%s, key=%s, value=%s) does not exist",
+				group.GetProps().GetAuthProviderId(), group.GetProps().GetKey(), group.GetProps().GetValue())
+		}
+		id = grps[0].GetProps().GetId()
 	}
 
 	bytes, err := proto.Marshal(group)
@@ -181,12 +224,62 @@ func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
 	return buc.Put([]byte(id), bytes)
 }
 
-func removeInTransaction(tx *bolt.Tx, id string) error {
+func removeInTransaction(tx *bolt.Tx, props *storage.GroupProperties) error {
 	buc := tx.Bucket(groupsBucket)
-	if buc.Get([]byte(id)) == nil {
-		return errox.NotFound.Newf("group config for %q does not exist", id)
+	id := props.GetId()
+
+	// TODO: Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
+	// can be removed and groups shall only be retrievable via their id.
+	if id != "" {
+		if buc.Get([]byte(id)) == nil {
+			return errox.NotFound.Newf("group config for %q does not exist", id)
+		}
+	} else {
+		grps, err := filterInTransaction(tx, func(p *storage.GroupProperties) bool {
+			if props.GetAuthProviderId() != p.GetAuthProviderId() {
+				return false
+			}
+			if props.GetKey() != p.GetKey() {
+				return false
+			}
+			if props.GetValue() != p.GetValue() {
+				return false
+			}
+			return true
+		})
+		if err != nil {
+			return err
+		}
+		if len(grps) > 1 {
+			return errox.InvalidArgs.Newf("multiple groups found for properties (auth provider id=%s, key=%s, "+
+				"value=%s), provide an ID to retrieve a group unambiguously",
+				props.GetAuthProviderId(), props.GetKey(), props.GetValue())
+		}
+		if len(grps) == 0 {
+			return errox.NotFound.Newf("group config for (auth provider id=%s, key=%s, value=%s) does not exist",
+				props.GetAuthProviderId(), props.GetKey(), props.GetValue())
+		}
+		id = grps[0].GetProps().GetId()
 	}
+
 	return buc.Delete([]byte(id))
+}
+
+func filterInTransaction(tx *bolt.Tx, filter func(*storage.GroupProperties) bool) (grps []*storage.Group, err error) {
+	buc := tx.Bucket(groupsBucket)
+
+	err = buc.ForEach(func(k, v []byte) error {
+		var grp storage.Group
+		err := proto.Unmarshal(v, &grp)
+		if err != nil {
+			return err
+		}
+		if filter == nil || filter(grp.GetProps()) {
+			grps = append(grps, &grp)
+		}
+		return nil
+	})
+	return grps, err
 }
 
 // When given an auth provider and attributes, we will look for all keys and

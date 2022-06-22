@@ -32,13 +32,10 @@ func ValidateGroup(group *storage.Group) error {
 
 // ValidateProps validates the given properties for conformity.
 // A property must fulfill the following:
-// 	- have an ID.
 //	- have an auth provider ID.
 // 	- if no key is given, no value shall be given.
 func ValidateProps(props *storage.GroupProperties) error {
-	if props.GetId() == "" {
-		return errox.InvalidArgs.Newf("ID must be set in {%s}", proto.MarshalTextString(props))
-	}
+	// TODO: Once retrieving properties by their ID is fully deprecated, require IDs and validate this here.
 	if props.GetAuthProviderId() == "" {
 		return errox.InvalidArgs.Newf("authprovider ID must be set in {%s}", proto.MarshalTextString(props))
 	}

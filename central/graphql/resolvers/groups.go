@@ -50,6 +50,6 @@ func (resolver *Resolver) Group(ctx context.Context, args struct{ AuthProviderID
 	if args.ID != nil {
 		props.Id = *args.ID
 	}
-	grp, err := resolver.GroupDataStore.Get(ctx, props.GetId())
+	grp, err := resolver.GroupDataStore.Get(ctx, props)
 	return resolver.wrapGroup(grp, grp != nil, err)
 }

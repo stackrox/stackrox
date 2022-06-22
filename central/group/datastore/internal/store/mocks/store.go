@@ -49,18 +49,18 @@ func (mr *MockStoreMockRecorder) Add(arg0 interface{}) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(id string) (*storage.Group, error) {
+func (m *MockStore) Get(props *storage.GroupProperties) (*storage.Group, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
+	ret := m.ctrl.Call(m, "Get", props)
 	ret0, _ := ret[0].(*storage.Group)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Get(props interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), props)
 }
 
 // GetAll mocks base method.
@@ -108,17 +108,17 @@ func (mr *MockStoreMockRecorder) Mutate(remove, update, add interface{}) *gomock
 }
 
 // Remove mocks base method.
-func (m *MockStore) Remove(id string) error {
+func (m *MockStore) Remove(props *storage.GroupProperties) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Remove", id)
+	ret := m.ctrl.Call(m, "Remove", props)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Remove indicates an expected call of Remove.
-func (mr *MockStoreMockRecorder) Remove(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Remove(props interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockStore)(nil).Remove), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockStore)(nil).Remove), props)
 }
 
 // Update mocks base method.
@@ -133,20 +133,6 @@ func (m *MockStore) Update(arg0 *storage.Group) error {
 func (mr *MockStoreMockRecorder) Update(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockStore)(nil).Update), arg0)
-}
-
-// Upsert mocks base method.
-func (m *MockStore) Upsert(arg0 *storage.Group) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Upsert indicates an expected call of Upsert.
-func (mr *MockStoreMockRecorder) Upsert(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), arg0)
 }
 
 // Walk mocks base method.

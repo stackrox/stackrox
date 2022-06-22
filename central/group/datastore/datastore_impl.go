@@ -19,18 +19,14 @@ type dataStoreImpl struct {
 	storage store.Store
 }
 
-func (ds *dataStoreImpl) Get(ctx context.Context, id string) (*storage.Group, error) {
+func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
 	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
 	}
 
-	if id == "" {
-		return nil, errox.InvalidArgs.New("id must be set when retrieving group")
-	}
-
-	return ds.storage.Get(id)
+	return ds.storage.Get(props)
 }
 
 func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
@@ -97,24 +93,6 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error
 	return ds.storage.Update(group)
 }
 
-func (ds *dataStoreImpl) Upsert(ctx context.Context, group *storage.Group) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	if group.GetProps().GetId() == "" {
-		group.GetProps().Id = GenerateGroupID()
-	}
-
-	if err := ValidateGroup(group); err != nil {
-		return err
-	}
-
-	return ds.storage.Upsert(group)
-}
-
 func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group) error {
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -141,14 +119,14 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 	return ds.storage.Mutate(remove, update, add)
 }
 
-func (ds *dataStoreImpl) Remove(ctx context.Context, id string) error {
+func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupProperties) error {
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Remove(id)
+	return ds.storage.Remove(props)
 }
 
 func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string) error {
