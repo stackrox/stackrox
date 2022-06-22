@@ -4118,21 +4118,6 @@ jobs:
   # Post-build jobs to handle built artifacts (like tag, scan and publish images)
   ###
 
-  mark-collector-release:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "7f:08:58:1e:80:80:6e:66:99:9a:37:cb:e9:96:0b:40"
-
-      - run:
-          name: Open a collector PR to add this release to RELEASED_VERSIONS
-          command: |
-            source scripts/ci/lib.sh
-            mark_collector_release "${CIRCLE_TAG}" "${CIRCLE_USERNAME}"
-
   push-release:
     executor: custom
     resource_class: small
@@ -4801,14 +4786,6 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - pre-build-cli
-      - mark-collector-release:
-          <<: *runOnlyOnReleaseBuilds
-          context:
-            - custom-executor-pull
-          requires:
-            - build-stackrox
-            - build-rhacs
-            - push-release
 
       - provision-openshift-rosa-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
