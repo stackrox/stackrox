@@ -6,6 +6,12 @@ import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
+import {
+    VULN_CVE_DETAIL_FRAGMENT,
+    IMAGE_CVE_DETAIL_FRAGMENT,
+    NODE_CVE_DETAIL_FRAGMENT,
+    CLUSTER_CVE_DETAIL_FRAGMENT,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import VulnMgmtCveOverview from './VulnMgmtCveOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
@@ -15,50 +21,38 @@ import {
     getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
 
+const vulnQueryMap = {
+    CVE: 'vulnerability',
+    IMAGE_CVE: 'imageVulnerability',
+    NODE_CVE: 'nodeVulnerability',
+    CLUSTER_CVE: 'clusterVulnerability',
+};
+const vulnFieldMap = {
+    CVE: VULN_CVE_DETAIL_FRAGMENT,
+    IMAGE_CVE: IMAGE_CVE_DETAIL_FRAGMENT,
+    NODE_CVE: NODE_CVE_DETAIL_FRAGMENT,
+    CLUSTER_CVE: CLUSTER_CVE_DETAIL_FRAGMENT,
+};
+
 const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const workflowState = useContext(workflowStateContext);
+    const cveType = workflowState.getBaseEntityType() || entityTypes.IMAGE_CVE;
+    const vulnQuery = vulnQueryMap[cveType];
+    const vulnFields = vulnFieldMap[cveType];
 
     const overviewQuery = gql`
         query getCve($id: ID!, $query: String, $scopeQuery: String) {
-            result: vulnerability(id: $id) {
-                id: cve
-                cve
-                vulnerabilityTypes
-                envImpact
-                cvss
-                scoreVersion
-                link # for View on NVD website
-                vectors {
-                    __typename
-                    ... on CVSSV2 {
-                        impactScore
-                        exploitabilityScore
-                        vector
-                    }
-                    ... on CVSSV3 {
-                        impactScore
-                        exploitabilityScore
-                        vector
-                    }
-                }
-                publishedOn
-                lastModified
-                summary
-                fixedByVersion
-                isFixable(query: $scopeQuery)
-                createdAt
-                componentCount(query: $query)
-                imageCount(query: $query)
-                deploymentCount(query: $query)
-                nodeCount(query: $query)
+            result: ${vulnQuery}(id: $id) {
+                ...cveFields
             }
         }
+        ${vulnFields}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
         query getCve${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
-            result: vulnerability(id: $id) {
+            result: ${vulnQuery}(id: $id) {
                 id
                 ${defaultCountKeyMap[entityListType]}(query: $query)
                 ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }

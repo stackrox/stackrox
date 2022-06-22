@@ -50,6 +50,8 @@ function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
             cy.get(colSelector).eq(0).click({ force: true });
             let entitySelector;
             const col1 = col.toLowerCase();
+            cy.log(`col1: ${col1}`);
+            cy.log(`col1.includes('node'): ${col1.includes('node')}`);
             if (col1.includes('image')) {
                 entitySelector = vulnManagementSelectors.imageTileLink;
             } else if (col1.includes('deployment')) {
@@ -60,9 +62,12 @@ function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
                 entitySelector = vulnManagementSelectors.componentTileLink;
             } else if (col1.includes('cve')) {
                 entitySelector = vulnManagementSelectors.cveTileLink;
+            } else if (col1.includes('node')) {
+                entitySelector = vulnManagementSelectors.nodeTileLink;
             } else {
                 entitySelector = vulnManagementSelectors.getTileLink(col.toUpperCase());
             }
+            cy.log(`entitySelector: ${entitySelector}`);
             cy.get(entitySelector)
                 .find(vulnManagementSelectors.tileLinkText)
                 .contains(parseInt(value, 10));
