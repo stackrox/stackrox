@@ -36,6 +36,8 @@ import (
 	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/sorted"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 //go:generate mockgen-wrapper
