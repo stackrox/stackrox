@@ -202,7 +202,7 @@ push_docs_image() {
 
     for registry in "${registries[@]}"; do
         registry_rw_login "$registry"
-        oc image mirror "$DOCS_IMAGE" "$registry:$docs_tag"
+        oc image mirror "$PIPELINE_DOCS_IMAGE" "$registry:$docs_tag"
     done
 }
 
