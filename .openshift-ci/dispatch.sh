@@ -42,15 +42,13 @@ case "$ci_job" in
         ;;
     style-checks)
         make style
-        ;&  # fallthrough for testing from PR
-    grouped-static-checks)
-        ;&  # fallthrough
+        ;;
     generated-checks)
         "$ROOT/scripts/ci/jobs/check-generated.sh"
-        ;&  # fallthrough
+        ;;
     todo-checks)
         "$ROOT/scripts/ci/jobs/check-todos.sh"
-        ;&  # fallthrough
+        ;;
     pr-fixes-checks)
         "$ROOT/scripts/ci/jobs/check-pr-fixes.sh"
         ;;
