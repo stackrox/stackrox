@@ -37,6 +37,8 @@ import (
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 //go:generate mockgen-wrapper
