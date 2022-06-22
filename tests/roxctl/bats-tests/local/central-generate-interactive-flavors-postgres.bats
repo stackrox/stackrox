@@ -67,9 +67,9 @@ assert_prompts_stackrox() {
 }
 
 assert_prompts_rhacs() {
-  assert_line --regexp 'Enter main .* "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:'
-  assert_line --regexp 'Enter scanner-db .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8:'
-  assert_line --regexp 'Enter scanner .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:'
+  assert_line --regexp 'Enter main .* "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel9:'
+  assert_line --regexp 'Enter scanner-db .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9:'
+  assert_line --regexp 'Enter scanner .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel9:'
 }
 
 @test "roxctl-development central generate interactive flavor=development_build" {

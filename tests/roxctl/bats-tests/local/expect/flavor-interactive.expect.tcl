@@ -46,7 +46,7 @@ expect "Enter default container images settings*" { send "$flavor\n" }
 if {[info exists ::env(ROX_POSTGRES_DATASTORE)] && [string equal "$env(ROX_POSTGRES_DATASTORE)" true]} {
   # Enter central-db image to use (default: "docker.io/stackrox/central-db:2.21.0-15-g448f2dc8fa"):
   # Enter central-db image to use (default: "stackrox.io/central-db:3.67.x-296-g56df6a892d"):
-  # Enter central-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
+  # Enter central-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel9:3.68.x-30-g516b4e7a6c-dirty"):
   expect {
     default {
       send_user "\nFATAL: No question about Central-DB image\n"
@@ -62,7 +62,7 @@ if {[info exists ::env(ROX_POSTGRES_DATASTORE)] && [string equal "$env(ROX_POSTG
       send "\n"
     }
     # Special case for RHACS to avoid writing a regexp in TCL
-    "Enter central-db * (default: \"$registry/rhacs-central-db-rhel8:*\"):" {
+    "Enter central-db * (default: \"$registry/rhacs-central-db-rhel9:*\"):" {
       send_user "roxctl suggests correct registry for central-db"
       send "\n"
     }
@@ -72,7 +72,7 @@ expect "Enter the method of exposing Central*" { send "none\n" }
 
 # Enter main image to use (default: "docker.io/stackrox/main:3.67.x-296-g56df6a892d"):
 # Enter main image to use (default: "stackrox.io/main:3.67.x-296-g56df6a892d")
-# Enter main image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
+# Enter main image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel9:3.68.x-30-g516b4e7a6c-dirty"):
 expect {
   default {
     send_user "\nFATAL: No question about main image\n"
@@ -88,7 +88,7 @@ expect {
     send "\n"
   }
   # Special case for RHACS to avoid writing a regexp in TCL
-  "Enter main * (default: \"$registry/rhacs-main-rhel8:*\"):" {
+  "Enter main * (default: \"$registry/rhacs-main-rhel9:*\"):" {
     send_user "roxctl suggests correct registry for main"
     send "\n"
   }
@@ -100,7 +100,7 @@ expect "Enter Istio version when deploying into an Istio-enabled cluster*:" { se
 
 # Enter scanner-db image to use (default: "docker.io/stackrox/scanner-db:2.21.0-15-g448f2dc8fa"):
 # Enter scanner-db image to use (default: "stackrox.io/scanner-db:3.67.x-296-g56df6a892d"):
-# Enter scanner-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
+# Enter scanner-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9:3.68.x-30-g516b4e7a6c-dirty"):
 expect {
   default {
     send_user "\nFATAL: No question about Scanner-DB image\n"
@@ -116,7 +116,7 @@ expect {
     send "\n"
   }
   # Special case for RHACS to avoid writing a regexp in TCL
-  "Enter scanner-db * (default: \"$registry/rhacs-scanner-db-rhel8:*\"):" {
+  "Enter scanner-db * (default: \"$registry/rhacs-scanner-db-rhel9:*\"):" {
     send_user "roxctl suggests correct registry for scanner-db"
     send "\n"
   }
@@ -140,7 +140,7 @@ expect {
     send "\n"
   }
   # Special case for RHACS to avoid writing a regexp in TCL
-  "Enter scanner * (default: \"$registry/rhacs-scanner-rhel8:*\"):" {
+  "Enter scanner * (default: \"$registry/rhacs-scanner-rhel9:*\"):" {
     send_user "roxctl suggests correct registry for scanner"
     send "\n"
   }

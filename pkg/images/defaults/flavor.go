@@ -167,23 +167,23 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
 		MainRegistry:  "registry.redhat.io/advanced-cluster-security",
-		MainImageName: "rhacs-main-rhel8",
+		MainImageName: "rhacs-main-rhel9",
 		MainImageTag:  v.MainVersion,
-		/* TODO(ROX-9858): Create repo rhacs-central-db-rhel8 when starting building rhacs */
+		/* TODO(ROX-9858): Create repo rhacs-central-db-rhel9 when starting building rhacs */
 		CentralDBImageTag:  v.MainVersion,
-		CentralDBImageName: "rhacs-central-db-rhel8",
+		CentralDBImageName: "rhacs-central-db-rhel9",
 
 		CollectorRegistry:      "registry.redhat.io/advanced-cluster-security",
-		CollectorImageName:     "rhacs-collector-rhel8",
+		CollectorImageName:     "rhacs-collector-rhel9",
 		CollectorImageTag:      v.CollectorVersion,
-		CollectorSlimImageName: "rhacs-collector-slim-rhel8",
+		CollectorSlimImageName: "rhacs-collector-slim-rhel9",
 		CollectorSlimImageTag:  v.CollectorVersion,
 
-		ScannerImageName:       "rhacs-scanner-rhel8",
-		ScannerSlimImageName:   "rhacs-scanner-slim-rhel8",
+		ScannerImageName:       "rhacs-scanner-rhel9",
+		ScannerSlimImageName:   "rhacs-scanner-slim-rhel9",
 		ScannerImageTag:        v.ScannerVersion,
-		ScannerDBImageName:     "rhacs-scanner-db-rhel8",
-		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel8",
+		ScannerDBImageName:     "rhacs-scanner-db-rhel9",
+		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel9",
 
 		ChartRepo: ChartRepo{
 			URL: "https://mirror.openshift.com/pub/rhacs/charts",

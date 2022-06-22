@@ -119,7 +119,7 @@ curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-8.${rpm_
 postgres_major="14"
 pg_rhel_version="9"
 postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-x86_64"
-postgres_minor="14.2-1PGDG.rhel9.x86_64"
+postgres_minor="14.4-1PGDG.rhel9.x86_64"
 
 curl -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"

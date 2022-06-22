@@ -238,7 +238,7 @@ image_reference_regex() {
       fi
       ;;
     registry.redhat.io)
-      echo "registry\.redhat\.io/advanced-cluster-security/rhacs-$component-rhel8:$version"
+      echo "registry\.redhat\.io/advanced-cluster-security/rhacs-$component-rhel9:$version"
       ;;
     example.com)
       echo "example\.com/$component:$version"
