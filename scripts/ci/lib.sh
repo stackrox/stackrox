@@ -158,13 +158,8 @@ push_main_image_set() {
     }
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        registry_rw_login "quay.io/stackrox-io"
-
         local destination_registries=("quay.io/stackrox-io")
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        registry_rw_login "docker.io/stackrox"
-        registry_rw_login "quay.io/rhacs-eng"
-
         local destination_registries=("docker.io/stackrox" "quay.io/rhacs-eng")
     else
         die "$brand is not a supported brand"
@@ -173,6 +168,8 @@ push_main_image_set() {
     local tag
     tag="$(make --quiet tag)"
     for registry in "${destination_registries[@]}"; do
+        registry_rw_login "$registry"
+
         if is_OPENSHIFT_CI; then
             _mirror_main_image_set "$registry" "$tag"
         else
@@ -261,16 +258,11 @@ push_matching_collector_scanner_images() {
     local brand="$1"
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        registry_rw_login "quay.io/stackrox-io"
-
         local source_registry="quay.io/stackrox-io"
         local target_registries=( "quay.io/stackrox-io" )
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        registry_rw_login "docker.io/stackrox"
-        registry_rw_login "quay.io/rhacs-eng"
-
         local source_registry="quay.io/rhacs-eng"
-        local target_registries=( "docker.io/stackrox" "quay.io/rhacs-eng" )
+        local target_registries=( "quay.io/rhacs-eng" "docker.io/stackrox" )
     else
         die "$brand is not a supported brand"
     fi
@@ -291,6 +283,8 @@ push_matching_collector_scanner_images() {
     collector_version="$(make --quiet collector-tag)"
 
     for target_registry in "${target_registries[@]}"; do
+        registry_rw_login "${target_registry}"
+
         _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
         _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
         _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}"
