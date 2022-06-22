@@ -1,6 +1,8 @@
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceControl
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandard
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
+import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_WRITE_ACCESS
+import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuilder
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -12,7 +14,6 @@ import com.google.protobuf.util.Timestamps
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
-import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
@@ -27,6 +28,8 @@ import io.stackrox.proto.storage.NodeOuterClass.Node
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
+import io.stackrox.proto.storage.RoleOuterClass
+
 import common.Constants
 import groups.BAT
 import groups.SensorBounceNext
@@ -38,6 +41,7 @@ import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
 import objects.SlackNotifier
+import services.ApiTokenService
 import services.BaseService
 import services.ClusterService
 import services.ComplianceManagementService
@@ -48,6 +52,7 @@ import services.NetworkPolicyService
 import services.NodeService
 import services.PolicyService
 import services.ProcessService
+import services.RoleService
 import util.Env
 import util.Timer
 
@@ -76,7 +81,6 @@ class ComplianceTest extends BaseSpecification {
     private gcrId = ""
     @Shared
     private Map<String, String> standardsByName = [:]
-    static final private String TESTROLE = "Continuous Integration"
     static final private String COMPLIANCETOKEN = "stackrox-compliance"
 
     def setupSpec() {
@@ -1374,9 +1378,47 @@ class ComplianceTest extends BaseSpecification {
         def otherClusterName = "disallowedCluster"
 
         given:
+        "Create access scope and test role"
+        def remoteStackroxAccessScope = RoleService.createAccessScope(newBuilder()
+                .setName(UUID.randomUUID().toString())
+                .setRules(RoleOuterClass.SimpleAccessScope.Rules.newBuilder()
+                        .addIncludedNamespaces(RoleOuterClass.SimpleAccessScope.Rules.Namespace.newBuilder()
+                                .setClusterName(DEFAULT_CLUSTER_NAME)
+                                .setNamespaceName("stackrox")))
+                .build())
+        String testRole = RoleService.createRoleWithScopeAndPermissionSet(
+                "Compliance Test Automation Role " + UUID.randomUUID(),
+                remoteStackroxAccessScope.id, [
+                "APIToken"             : READ_WRITE_ACCESS,
+                "AllComments"          : READ_WRITE_ACCESS,
+                "AuthPlugin"           : READ_WRITE_ACCESS,
+                "AuthProvider"         : READ_WRITE_ACCESS,
+                "BackupPlugins"        : READ_WRITE_ACCESS,
+                "ComplianceRunSchedule": READ_WRITE_ACCESS,
+                "Config"               : READ_WRITE_ACCESS,
+                "DebugLogs"            : READ_WRITE_ACCESS,
+                "Detection"            : READ_WRITE_ACCESS,
+                "Group"                : READ_WRITE_ACCESS,
+                "ImageIntegration"     : READ_WRITE_ACCESS,
+                "Licenses"             : READ_WRITE_ACCESS,
+                "Notifier"             : READ_WRITE_ACCESS,
+                "Policy"               : READ_WRITE_ACCESS,
+                "ProbeUpload"          : READ_WRITE_ACCESS,
+                "Role"                 : READ_WRITE_ACCESS,
+                "ScannerBundle"        : READ_WRITE_ACCESS,
+                "ScannerDefinitions"   : READ_WRITE_ACCESS,
+                "SensorUpgradeConfig"  : READ_WRITE_ACCESS,
+                "ServiceIdentity"      : READ_WRITE_ACCESS,
+                "User"                 : READ_WRITE_ACCESS,
+                "Cluster"              : READ_WRITE_ACCESS,
+                "Compliance"           : READ_WRITE_ACCESS,
+                "ComplianceRuns"       : READ_WRITE_ACCESS,
+                "Node"                 : READ_WRITE_ACCESS,
+        ]).name
+
         "Enable SAC token and add other cluster"
         ClusterService.createCluster(otherClusterName, "stackrox/main:latest", "central.stackrox:443")
-        ApiTokenService.GenerateTokenResponse token = services.ApiTokenService.generateToken(COMPLIANCETOKEN, TESTROLE)
+        def token = ApiTokenService.generateToken(COMPLIANCETOKEN, testRole, "None")
         BaseService.useApiToken(token.token)
 
         when:
@@ -1395,5 +1437,6 @@ class ComplianceTest extends BaseSpecification {
         "revert to basic auth and delete extra cluster"
         BaseService.useBasicAuth()
         ClusterService.deleteCluster(ClusterService.getClusterId(otherClusterName))
+        RoleService.deleteRole(testRole)
     }
 }
