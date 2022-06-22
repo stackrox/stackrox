@@ -14,4 +14,7 @@ import (
 {{ template "copyObject" .Schema }}
 
 {{ template "copyFrom" . }}
-{{- end }}
+    {{- if $singlePK}}
+    {{- else}}
+    {{- end }}
+{{- end}}

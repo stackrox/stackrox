@@ -325,7 +325,7 @@ func main() {
 		if err := t.Execute(buf, templateMap); err != nil {
 			return err
 		}
-		if err := os.WriteFile(filepath.Join(root, "rocksdb_plugin.go"), buf.Bytes(), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(root, "legacy/rocksdb_plugin.go"), buf.Bytes(), 0644); err != nil {
 			return err
 		}
 

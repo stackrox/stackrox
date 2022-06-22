@@ -10,4 +10,5 @@ type MigrationOptions struct {
 	MigrateFromDB     string
 	MigrateFromBucket string
 	MigrateSequence   int
+	Dir               string
 }

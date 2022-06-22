@@ -6,6 +6,7 @@ package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/search"
@@ -98,6 +100,7 @@ func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
 	var {{$name}}s []*{{.Type}}
 	{{- if $rocksDB}}
+	legacyStore := rocks.New(s.legacyDB)
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
@@ -107,29 +110,20 @@ func (s *postgresMigrationSuite) TestMigration() {
 	for i := 0; i < 200; i++ {
 		{{$name}} := &{{.Type}}{}
 		s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		{{- if $rocksDB}}
-		bytes, err := proto.Marshal({{$name}})
-		s.NoError(err, "failed to marshal data")
-		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey({{$name}}Bucket, keyFunc({{$name}})), bytes)
-		{{- else}}
-        s.NoError(store.Upsert(s.ctx, {{$name}}))
-		{{- end}}
 		{{$name}}s = append({{$name}}s, {{$name}})
 	}
 
     {{- if $rocksDB}}
-	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
+    s.NoError(legacyStore.UpsertMany(s.ctx, alerts))
 	{{- end}}
-	s.NoError(move{{.Table|upperCamelCase}}(s.legacyDB, s.gormDB, s.pool))
+	s.NoError(move{{.Table|upperCamelCase}}(s.legacyDB, s.gormDB, s.pool, legacyStore))
 	var count int64
 	s.gormDB.Model({{template  "createTableStmtVar" .Schema}}.GormModel).Count(&count)
 	s.Equal(int64(len({{$name}}s)), count)
-
-    {{- if $rocksDB}}
 	for _, {{$name}} := range {{$name}}s {
 		s.Equal({{$name}}, s.get({{ template "getterParamList" $ }}))
 	}
-	{{- else}}
+	{{- /*
 		sort.Slice({{$name}}s, func(i, j int) bool {
             return {{$name}}s[i].Id < {{$name}}s[j].Id
     })
@@ -139,8 +133,7 @@ func (s *postgresMigrationSuite) TestMigration() {
         return all[i].Id < all[j].Id
     })
 
-    s.Equal({{$name}}s, all)
-	{{- end}}
+    s.Equal({{$name}}s, all) */}}
 }
 
 func (s *postgresMigrationSuite) get({{template "paramList" $pks}}) *{{.Type}} {

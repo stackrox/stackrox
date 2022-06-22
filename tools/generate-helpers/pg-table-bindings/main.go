@@ -276,35 +276,39 @@ func main() {
 			if err := renderFile(templateMap, singletonTemplate, "store.go"); err != nil {
 				return err
 			}
-			return renderFile(templateMap, singletonTestTemplate, "store_test.go")
-		}
-		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
-			return err
-		}
-		if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
-			return err
-		}
-
-		if props.SearchCategory != "" {
-			if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
+			if err := renderFile(templateMap, singletonTestTemplate, "store_test.go"); err != nil {
 				return err
 			}
-		}
-		if permissionCheckerEnabled {
-			if err := renderFile(templateMap, permissionCheckerTemplate, "permission_checker.go"); err != nil {
+		} else {
+			if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
 				return err
+			}
+			if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
+				return err
+			}
+
+			if props.SearchCategory != "" {
+				if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
+					return err
+				}
+			}
+			if permissionCheckerEnabled {
+				if err := renderFile(templateMap, permissionCheckerTemplate, "permission_checker.go"); err != nil {
+					return err
+				}
 			}
 		}
 
 		if props.MigrateSeq != 0 {
 			froms := strings.SplitN(props.MigrateFrom, ":", 2)
+			migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.MigrateSeq, props.MigrateSeq+1, props.Table)
+			root := filepath.Join(props.MigrateRoot, migrationDir)
 			templateMap["Migration"] = MigrationOptions{
 				MigrateFromDB:     froms[0],
 				MigrateFromBucket: froms[1],
 				MigrateSequence:   props.MigrateSeq,
+				Dir:               migrationDir,
 			}
-			migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.MigrateSeq, props.MigrateSeq+1, props.Table)
-			root := filepath.Join(props.MigrateRoot, migrationDir)
 
 			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {
 				return err

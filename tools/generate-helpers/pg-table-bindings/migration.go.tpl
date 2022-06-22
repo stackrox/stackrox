@@ -22,11 +22,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
+	"github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/legacy"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/db"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	bolt "go.etcd.io/bbolt"
@@ -38,7 +37,8 @@ var (
 		StartingSeqNum: 100,
 		VersionAfter:   storage.Version{SeqNum: 101},
 		Run: func(databases *types.Databases) error {
-			if err := move{{.Table|upperCamelCase}}({{if $rocksDB}}databases.PkgRocksDB{{else}}databases.BoltDB{{- end}}, databases.GormDB, databases.PostgresDB); err != nil {
+		    legacyStore    := rocks.New(databases.PkgRocksDB)
+			if err := move{{.Table|upperCamelCase}}({{if $rocksDB}}databases.PkgRocksDB{{else}}databases.BoltDB{{- end}}, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving {{.Table|lowerCase}} from rocksdb to postgres")
 			}
@@ -52,15 +52,15 @@ var (
 )
 
 {{$rocksDB :=  eq .Migration.MigrateFromDB "rocksdb" }}
-func move{{.Table|upperCamelCase}}(legacyDB {{if $rocksDB}}*rocksdb.RocksDB{{else}}*bolt.DB{{end}}, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
+func move{{.Table|upperCamelCase}}(legacyDB {{if $rocksDB}}*rocksdb.RocksDB{{else}}*bolt.DB{{end}}, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore rocks.Store) error {
 	ctx := context.Background()
-	store := newStore(postgresDB, {{if $rocksDB}}generic.NewCRUD(legacyDB, {{$name}}Bucket, keyFunc, alloc, false){{else}}legacyDB{{end}})
+	store := newStore(postgresDB{{if not $rocksDB}}, legacyDB{{end}})
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 
 	var {{.Table|lowerCamelCase}} []*{{.Type}}
 	var err error
 	{{- if $rocksDB}}
-	store.Walk(ctx, func(obj *{{.Type}}) error {
+	legacyStore.Walk(ctx, func(obj *{{.Type}}) error {
 		{{.Table|lowerCamelCase}} = append({{.Table|lowerCamelCase}}, obj)
 		if len({{.Table|lowerCamelCase}}) == 10*batchSize {
 			if err := store.copyFrom(ctx, {{.Table|lowerCamelCase}}...); err != nil {
@@ -89,18 +89,12 @@ func move{{.Table|upperCamelCase}}(legacyDB {{if $rocksDB}}*rocksdb.RocksDB{{els
 
 type storeImpl struct {
 	db   *pgxpool.Pool // Postgres DB
-	{{- if $rocksDB}}
-	crud db.Crud // Rocksdb DB crud
-	{{- else}}
-	legacyDB *bolt.DB
-	{{- end}}
 }
 
 // newStore returns a new Store instance using the provided sql instance.
-func newStore(db *pgxpool.Pool, {{if $rocksDB}}crud db.Crud{{else}}legacyDB *bolt.DB{{end}}) *storeImpl {
+func newStore(db *pgxpool.Pool) *storeImpl {
 	return &storeImpl{
 		db:   db,
-		{{- if $rocksDB}}crud: crud{{else}}legacyDB: legacyDB{{end}},
 	}
 }
 
@@ -112,7 +106,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*pgxpo
 	return conn, conn.Release, nil
 }
 
-{{- if not .JoinTable }}
+{{- if and $singlePK (not .JoinTable) }}
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error {
 	q := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
 	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
