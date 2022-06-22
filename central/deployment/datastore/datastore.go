@@ -109,13 +109,13 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Po
 	} else {
 		storage = dackBoxStore.New(dacky, keyFence)
 	}
-	return newDataStore(storage, dacky, processTagsStore, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+	return newDataStore(storage, dacky, pool, processTagsStore, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) DataStore {
 	postgres.Destroy(ctx, pool)
-	dbstore := postgres.CreateTableAndNewStore(ctx, pool, gormDB)
+	dbstore := postgres.FullStoreWrap(postgres.CreateTableAndNewStore(ctx, pool, gormDB))
 	indexer := postgres.NewIndexer(pool)
 	searcher := search.NewV2(dbstore, indexer)
 	imageStore := imageDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
@@ -135,7 +135,7 @@ func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.P
 func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) DataStore {
 	imageStore := imageDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
 	processBaselineStore := pbDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
-	networkFlowClusterStore := nfDS.GetTestRocksBleveClusterDataStore(t, rocksengine, bleveIndex)
+	networkFlowClusterStore := nfDS.GetTestRocksBleveClusterDataStore(t, rocksengine)
 	riskStore := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
 	processFilter := processIndicatorFilter.Singleton()
 	clusterRanker := ranking.ClusterRanker()
