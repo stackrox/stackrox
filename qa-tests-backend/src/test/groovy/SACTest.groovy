@@ -113,8 +113,6 @@ class SACTest extends BaseSpecification {
             }
         }
 
-        disableAuthzPlugin()
-
         allResourcesAccess = RoleService.resources.resourcesList.collectEntries { [it, READ_WRITE_ACCESS] }
 
         // TODO: Replace with the defaultAccessScope id: "denyall"
