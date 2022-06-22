@@ -37,11 +37,11 @@ case "$ci_job" in
 esac
 
 case "$ci_job" in
-    policy-checks)
-        "$ROOT/scripts/ci/jobs/check-policy-files.sh"
-        ;;
     style-checks)
         make style
+        ;;
+    policy-checks)
+        "$ROOT/scripts/ci/jobs/check-policy-files.sh"
         ;;
     generated-checks)
         "$ROOT/scripts/ci/jobs/check-generated.sh"
