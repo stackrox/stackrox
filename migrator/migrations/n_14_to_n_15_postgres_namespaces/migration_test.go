@@ -9,7 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
+	legacy "github.com/stackrox/rox/migrator/migrations/n_14_to_n_15_postgres_namespaces/legacy"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -33,9 +33,8 @@ type postgresMigrationSuite struct {
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
 
-	// RocksDB
-	rocksDB *rocksdb.RocksDB
-	db      *gorocksdb.DB
+	// LegacyDB to migrate from
+	legacyDB *rocksdb.RocksDB
 
 	// PostgresDB
 	pool   *pgxpool.Pool
@@ -53,10 +52,8 @@ func (s *postgresMigrationSuite) SetupTest() {
 	}
 
 	var err error
-	s.rocksDB, err = rocksdb.NewTemp(s.T().Name())
+	s.legacyDB, err = rocksdb.NewTemp(s.T().Name())
 	s.NoError(err)
-
-	s.db = s.rocksDB.DB
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -70,7 +67,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(s.rocksDB)
+	rocksdbtest.TearDownRocksDB(s.legacyDB)
 	_ = s.gormDB.Migrator().DropTable(pkgSchema.CreateTableNamespacesStmt.GormModel)
 	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
 	pgtest.CloseGormDB(s.T(), s.gormDB)
@@ -79,21 +76,19 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
+	var namespaceMetadatas []*storage.NamespaceMetadata
+	legacyStore, err := legacy.New(s.legacyDB)
+	s.NoError(err)
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
-	var namespaceMetadatas []*storage.NamespaceMetadata
 	for i := 0; i < 200; i++ {
 		namespaceMetadata := &storage.NamespaceMetadata{}
 		s.NoError(testutils.FullInit(namespaceMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		bytes, err := proto.Marshal(namespaceMetadata)
-		s.NoError(err, "failed to marshal data")
-		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, keyFunc(namespaceMetadata)), bytes)
 		namespaceMetadatas = append(namespaceMetadatas, namespaceMetadata)
 	}
-
-	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
-	s.NoError(moveNamespaces(s.rocksDB, s.gormDB, s.pool))
+	s.NoError(legacyStore.UpsertMany(s.ctx, namespaceMetadatas))
+	s.NoError(moveNamespaces(s.legacyDB, s.gormDB, s.pool, legacyStore))
 	var count int64
 	s.gormDB.Model(pkgSchema.CreateTableNamespacesStmt.GormModel).Count(&count)
 	s.Equal(int64(len(namespaceMetadatas)), count)

@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
-	"github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/legacy"
+	legacy "github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/legacy"
 	"github.com/stackrox/rox/migrator/types"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -37,7 +37,14 @@ var (
 		StartingSeqNum: 100,
 		VersionAfter:   storage.Version{SeqNum: 101},
 		Run: func(databases *types.Databases) error {
-		    legacyStore    := rocks.New(databases.PkgRocksDB)
+		    {{- if $rocksDB}}
+		    legacyStore, err := legacy.New(databases.{{if $rocksDB}}PkgRocksDB{{else}}BoltDB{{end}})
+		    if err != nil {
+		        return err
+		    }
+		    {{- else}}
+		    legacyStore := legacy.New(databases.{{if $rocksDB}}PkgRocksDB{{else}}BoltDB{{end}})
+		    {{- end}}
 			if err := move{{.Table|upperCamelCase}}({{if $rocksDB}}databases.PkgRocksDB{{else}}databases.BoltDB{{- end}}, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving {{.Table|lowerCase}} from rocksdb to postgres")
@@ -51,9 +58,9 @@ var (
 )
 
 {{$rocksDB :=  eq .Migration.MigrateFromDB "rocksdb" }}
-func move{{.Table|upperCamelCase}}(legacyDB {{if $rocksDB}}*rocksdb.RocksDB{{else}}*bolt.DB{{end}}, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore rocks.Store) error {
+func move{{.Table|upperCamelCase}}(legacyDB {{if $rocksDB}}*rocksdb.RocksDB{{else}}*bolt.DB{{end}}, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := context.Background()
-	store := newStore(postgresDB{{if not $rocksDB}}, legacyDB{{end}})
+	store := newStore(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 
 	var {{.Table|lowerCamelCase}} []*{{.Type}}
@@ -71,7 +78,7 @@ func move{{.Table|upperCamelCase}}(legacyDB {{if $rocksDB}}*rocksdb.RocksDB{{els
 		return nil
 	})
 	{{- else}}
-	{{.Table|lowerCamelCase}}, err = store.GetAll(ctx)
+	{{.Table|lowerCamelCase}}, err = legacyStore.GetAll(ctx)
     if err != nil {
         log.WriteToStderr("failed to fetch all {{.Table|lowerCamelCase}}")
         return err

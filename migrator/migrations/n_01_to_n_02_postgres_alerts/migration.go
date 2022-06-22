@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
-	rocks "github.com/stackrox/rox/migrator/migrations/n_01_to_n_02_postgres_alerts/legacy"
+	legacy "github.com/stackrox/rox/migrator/migrations/n_01_to_n_02_postgres_alerts/legacy"
 	"github.com/stackrox/rox/migrator/types"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -24,7 +24,10 @@ var (
 		StartingSeqNum: 100,
 		VersionAfter:   storage.Version{SeqNum: 101},
 		Run: func(databases *types.Databases) error {
-			legacyStore := rocks.New(databases.PkgRocksDB)
+			legacyStore, err := legacy.New(databases.PkgRocksDB)
+			if err != nil {
+				return err
+			}
 			if err := moveAlerts(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving alerts from rocksdb to postgres")
@@ -37,7 +40,7 @@ var (
 	log       = loghelper.LogWrapper{}
 )
 
-func moveAlerts(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore rocks.Store) error {
+func moveAlerts(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := context.Background()
 	store := newStore(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)

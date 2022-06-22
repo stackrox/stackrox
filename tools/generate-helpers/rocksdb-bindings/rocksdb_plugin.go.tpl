@@ -1,5 +1,5 @@
 
-package rocks
+package legacy
 import (
 	"context"
 
@@ -7,6 +7,9 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
+	{{- if .Cache}}
+	"github.com/stackrox/rox/pkg/db/mapcache"
+	{{- end}}
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 )
@@ -36,13 +39,19 @@ type storeImpl struct {
 func alloc() proto.Message {
 	return &storage.{{.Type}}{}
 }
-
+{{ if not .NoKeyField}}
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.{{.Type}}).{{.KeyFunc}})
 }
+{{- end}}
+
+{{- if .UniqKeyFunc}}
+func uniqKeyFunc(msg proto.Message) []byte {
+	return []byte(msg.(*storage.{{.Type}}).{{.UniqKeyFunc}})
+}
+{{- end}}
 
 // New returns a new Store instance using the provided rocksdb instance.
-{{- if .Cache}}
 func New(db *rocksdb.RocksDB) (Store, error) {
 	globaldb.RegisterBucket(bucket, "{{.Type}}")
 	{{- if .UniqKeyFunc}}
@@ -50,6 +59,9 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 	{{- else}}
 	baseCRUD := generic.NewCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, {{.TrackIndex}})
 	{{- end}}
+    {{- if not .Cache}}
+    return  &storeImpl{crud: baseCRUD}, nil
+    {{- else}}
 	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, {{if .NoKeyField}}nil{{else}}keyFunc{{end}})
 	if err != nil {
 		return nil, err
@@ -57,21 +69,8 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 	return &storeImpl{
 		crud: cacheCRUD,
 	}, nil
+    {{- end}}
 }
-{{- else}}
-func New(db *rocksdb.RocksDB) Store {
-	globaldb.RegisterBucket(bucket, "{{.Type}}")
-	{{- if .UniqKeyFunc}}
-	return &storeImpl{
-		crud: generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, uniqKeyFunc, {{.TrackIndex}}),
-	}
-	{{- else}}
-	return &storeImpl{
-		crud: generic.NewCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, {{.TrackIndex}}),
-	}
-	{{- end}}
-}
-{{- end}}
 /*
 // Get returns the object, if it exists from the store
 func (b *storeImpl) Get(_ context.Context, id string) (*storage.{{.Type}}, bool, error) {

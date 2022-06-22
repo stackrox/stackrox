@@ -9,7 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
+	legacy "github.com/stackrox/rox/migrator/migrations/n_07_to_n_08_postgres_cluster_init_bundles/legacy"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -33,9 +33,8 @@ type postgresMigrationSuite struct {
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
 
-	// RocksDB
-	rocksDB *rocksdb.RocksDB
-	db      *gorocksdb.DB
+	// LegacyDB to migrate from
+	legacyDB *rocksdb.RocksDB
 
 	// PostgresDB
 	pool   *pgxpool.Pool
@@ -53,10 +52,8 @@ func (s *postgresMigrationSuite) SetupTest() {
 	}
 
 	var err error
-	s.rocksDB, err = rocksdb.NewTemp(s.T().Name())
+	s.legacyDB, err = rocksdb.NewTemp(s.T().Name())
 	s.NoError(err)
-
-	s.db = s.rocksDB.DB
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -70,7 +67,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(s.rocksDB)
+	rocksdbtest.TearDownRocksDB(s.legacyDB)
 	_ = s.gormDB.Migrator().DropTable(pkgSchema.CreateTableClusterInitBundlesStmt.GormModel)
 	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
 	pgtest.CloseGormDB(s.T(), s.gormDB)
@@ -79,21 +76,19 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
+	var initBundleMetas []*storage.InitBundleMeta
+	legacyStore, err := legacy.New(s.legacyDB)
+	s.NoError(err)
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
-	var initBundleMetas []*storage.InitBundleMeta
 	for i := 0; i < 200; i++ {
 		initBundleMeta := &storage.InitBundleMeta{}
 		s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		bytes, err := proto.Marshal(initBundleMeta)
-		s.NoError(err, "failed to marshal data")
-		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, keyFunc(initBundleMeta)), bytes)
 		initBundleMetas = append(initBundleMetas, initBundleMeta)
 	}
-
-	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
-	s.NoError(moveClusterInitBundles(s.rocksDB, s.gormDB, s.pool))
+	s.NoError(legacyStore.UpsertMany(s.ctx, initBundleMetas))
+	s.NoError(moveClusterInitBundles(s.legacyDB, s.gormDB, s.pool, legacyStore))
 	var count int64
 	s.gormDB.Model(pkgSchema.CreateTableClusterInitBundlesStmt.GormModel).Count(&count)
 	s.Equal(int64(len(initBundleMetas)), count)

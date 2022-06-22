@@ -12,6 +12,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
+	legacy "github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/legacy"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/pkg/features"
@@ -39,13 +40,9 @@ type postgresMigrationSuite struct {
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
 
-    {{- if $rocksDB}}
-	// RocksDB
-	legacyDB *rocksdb.RocksDB
-	{{- else}}
-	// Bolt DB
-    legacyDB *bolt.DB
-    {{- end}}
+	// LegacyDB to migrate from
+	legacyDB {{if $rocksDB}}*rocksdb.RocksDB{{else}}*bolt.DB{{end}}
+
 	// PostgresDB
 	pool   *pgxpool.Pool
 	gormDB *gorm.DB
@@ -68,7 +65,6 @@ func (s *postgresMigrationSuite) SetupTest() {
 	{{- else}}
     s.legacyDB, err = bolthelper.NewTemp(s.T().Name() + ".db")
     s.NoError(err)
-    bolthelper.RegisterBucketOrPanic(s.legacyDB, {{$name}}Bucket)
 	{{- end}}
 
 	source := pgtest.GetConnectionString(s.T())
@@ -98,21 +94,27 @@ func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
 	var {{$name}}s []*{{.Type}}
 	{{- if $rocksDB}}
-	legacyStore := rocks.New(s.legacyDB)
+	legacyStore, err := legacy.New(s.legacyDB)
+	s.NoError(err)
+	{{- else}}
+	legacyStore := legacy.New(s.legacyDB)
+	{{- end}}
+	{{- if $rocksDB}}
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
-	{{- else}}
-    store := newStore(s.pool, s.legacyDB)
 	{{- end}}
 	for i := 0; i < 200; i++ {
 		{{$name}} := &{{.Type}}{}
 		s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		{{$name}}s = append({{$name}}s, {{$name}})
+		{{- if not $rocksDB}}
+		s.NoError(legacyStore.Upsert(s.ctx, {{$name}}))
+		{{- end}}
 	}
 
     {{- if $rocksDB}}
-    s.NoError(legacyStore.UpsertMany(s.ctx, alerts))
+    s.NoError(legacyStore.UpsertMany(s.ctx, {{$name}}s))
 	{{- end}}
 	s.NoError(move{{.Table|upperCamelCase}}(s.legacyDB, s.gormDB, s.pool, legacyStore))
 	var count int64

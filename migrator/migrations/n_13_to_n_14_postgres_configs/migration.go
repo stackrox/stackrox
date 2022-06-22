@@ -9,11 +9,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
+	legacy "github.com/stackrox/rox/migrator/migrations/n_13_to_n_14_postgres_configs/legacy"
 	"github.com/stackrox/rox/migrator/types"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	bolt "go.etcd.io/bbolt"
-	boltStore "github.com/stackrox/rox/migrator/migrations/n_13_to_n_14_postgres_configs/bolt"
 	"gorm.io/gorm"
 )
 
@@ -22,48 +22,48 @@ var (
 		StartingSeqNum: 100,
 		VersionAfter:   storage.Version{SeqNum: 101},
 		Run: func(databases *types.Databases) error {
-			if err := moveConfigs(databases.BoltDB, databases.GormDB, databases.PostgresDB); err != nil {
+			legacyStore := legacy.New(databases.BoltDB)
+			if err := moveConfigs(databases.BoltDB, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving configs from rocksdb to postgres")
 			}
 			return nil
 		},
 	}
-	configBucket = []byte("config")
-	batchSize    = 10000
-	schema       = pkgSchema.ConfigsSchema
-	log          = loghelper.LogWrapper{}
+	batchSize = 10000
+	schema    = pkgSchema.ConfigsSchema
+	log       = loghelper.LogWrapper{}
 )
 
-func moveConfigs(legacyDB *bolt.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
+func moveConfigs(legacyDB *bolt.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := context.Background()
-	store := newStore(postgresDB, legacyDB)
+	store := newStore(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 
-	config, found, err := store.legacyStore.Get(ctx)
+	var configs []*storage.Config
+	var err error
+	configs, err = legacyStore.GetAll(ctx)
 	if err != nil {
-		log.WriteToStderr("failed to fetch config")
+		log.WriteToStderr("failed to fetch all configs")
 		return err
 	}
-	if !found {
-		return nil
+	if len(configs) > 0 {
+		if err = store.copyFrom(ctx, configs...); err != nil {
+			log.WriteToStderrf("failed to persist configs to store %v", err)
+			return err
+		}
 	}
-	store.Upsert(ctx, config)
 	return nil
 }
 
 type storeImpl struct {
-	db       *pgxpool.Pool // Postgres DB
-	legacyDB *bolt.DB
-	legacyStore *boltStore.Store
+	db *pgxpool.Pool // Postgres DB
 }
 
 // newStore returns a new Store instance using the provided sql instance.
-func newStore(db *pgxpool.Pool, legacyDB *bolt.DB) *storeImpl {
+func newStore(db *pgxpool.Pool) *storeImpl {
 	return &storeImpl{
-		db:          db,
-		legacyDB:    legacyDB,
-		legacyStore: boltStore.New(legacyDB),
+		db: db,
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
-	rocks "github.com/stackrox/rox/migrator/migrations/n_01_to_n_02_postgres_alerts/legacy"
+	legacy "github.com/stackrox/rox/migrator/migrations/n_01_to_n_02_postgres_alerts/legacy"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -32,8 +32,10 @@ type postgresMigrationSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
-	// RocksDB
+
+	// LegacyDB to migrate from
 	legacyDB *rocksdb.RocksDB
+
 	// PostgresDB
 	pool   *pgxpool.Pool
 	gormDB *gorm.DB
@@ -75,7 +77,8 @@ func (s *postgresMigrationSuite) TearDownTest() {
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
 	var alerts []*storage.Alert
-	legacyStore := rocks.New(s.legacyDB)
+	legacyStore, err := legacy.New(s.legacyDB)
+	s.NoError(err)
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()

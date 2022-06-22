@@ -4,12 +4,12 @@ package n3ton4
 
 import (
 	"context"
-	"sort"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
+	legacy "github.com/stackrox/rox/migrator/migrations/n_03_to_n_04_postgres_auth_providers/legacy"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -31,8 +31,10 @@ type postgresMigrationSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
-	// Bolt DB
+
+	// LegacyDB to migrate from
 	legacyDB *bolt.DB
+
 	// PostgresDB
 	pool   *pgxpool.Pool
 	gormDB *gorm.DB
@@ -51,7 +53,6 @@ func (s *postgresMigrationSuite) SetupTest() {
 	var err error
 	s.legacyDB, err = bolthelper.NewTemp(s.T().Name() + ".db")
 	s.NoError(err)
-	bolthelper.RegisterBucketOrPanic(s.legacyDB, authProviderBucket)
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -75,27 +76,20 @@ func (s *postgresMigrationSuite) TearDownTest() {
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
 	var authProviders []*storage.AuthProvider
-	store := newStore(s.pool, s.legacyDB)
+	legacyStore := legacy.New(s.legacyDB)
 	for i := 0; i < 200; i++ {
 		authProvider := &storage.AuthProvider{}
 		s.NoError(testutils.FullInit(authProvider, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		s.NoError(store.Upsert(s.ctx, authProvider))
 		authProviders = append(authProviders, authProvider)
+		s.NoError(legacyStore.Upsert(s.ctx, authProvider))
 	}
-	s.NoError(moveAuthProviders(s.legacyDB, s.gormDB, s.pool))
+	s.NoError(moveAuthProviders(s.legacyDB, s.gormDB, s.pool, legacyStore))
 	var count int64
 	s.gormDB.Model(pkgSchema.CreateTableAuthProvidersStmt.GormModel).Count(&count)
 	s.Equal(int64(len(authProviders)), count)
-	sort.Slice(authProviders, func(i, j int) bool {
-		return authProviders[i].Id < authProviders[j].Id
-	})
-	all, err := store.GetAll(s.ctx)
-	s.Require().NoError(err)
-	sort.Slice(all, func(i, j int) bool {
-		return all[i].Id < all[j].Id
-	})
-
-	s.Equal(authProviders, all)
+	for _, authProvider := range authProviders {
+		s.Equal(authProvider, s.get(authProvider.GetId()))
+	}
 }
 
 func (s *postgresMigrationSuite) get(id string) *storage.AuthProvider {

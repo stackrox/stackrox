@@ -7,18 +7,19 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
+	"github.com/stackrox/rox/pkg/db/mapcache"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 )
 
 var (
-	bucket = []byte("alerts")
+	bucket = []byte("clusters")
 )
 
 type Store interface {
-	// Get(ctx context.Context, id string) (*storage.Alert, bool, error)
-    UpsertMany(ctx context.Context, objs []*storage.Alert) error
-	Walk(ctx context.Context, fn func(obj *storage.Alert) error) error
+	// Get(ctx context.Context, id string) (*storage.Cluster, bool, error)
+    UpsertMany(ctx context.Context, objs []*storage.Cluster) error
+	Walk(ctx context.Context, fn func(obj *storage.Cluster) error) error
 }
 
 type storeImpl struct {
@@ -26,31 +27,39 @@ type storeImpl struct {
 }
 
 func alloc() proto.Message {
-	return &storage.Alert{}
+	return &storage.Cluster{}
 }
-
 func keyFunc(msg proto.Message) []byte {
-	return []byte(msg.(*storage.Alert).GetId())
+	return []byte(msg.(*storage.Cluster).GetId())
+}
+func uniqKeyFunc(msg proto.Message) []byte {
+	return []byte(msg.(*storage.Cluster).GetName())
 }
 
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
-	globaldb.RegisterBucket(bucket, "Alert")
-	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, true)
-    return  &storeImpl{crud: baseCRUD}, nil
+	globaldb.RegisterBucket(bucket, "Cluster")
+	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, false)
+	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
+	if err != nil {
+		return nil, err
+	}
+	return &storeImpl{
+		crud: cacheCRUD,
+	}, nil
 }
 /*
 // Get returns the object, if it exists from the store
-func (b *storeImpl) Get(_ context.Context, id string) (*storage.Alert, bool, error) {
+func (b *storeImpl) Get(_ context.Context, id string) (*storage.Cluster, bool, error) {
 	msg, exists, err := b.crud.Get(id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
-	return msg.(*storage.Alert), true, nil
+	return msg.(*storage.Cluster), true, nil
 }
 */
 // UpsertMany batches objects into the DB
-func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.Alert) error {
+func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.Cluster) error {
 	msgs := make([]proto.Message, 0, len(objs))
 	for _, o := range objs {
 		msgs = append(msgs, o)
@@ -59,8 +68,8 @@ func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.Alert) error {
 	return b.crud.UpsertMany(msgs)
 }
 // Walk iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) Walk(_ context.Context, fn func(obj *storage.Alert) error) error {
+func (b *storeImpl) Walk(_ context.Context, fn func(obj *storage.Cluster) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {
-		return fn(msg.(*storage.Alert))
+		return fn(msg.(*storage.Cluster))
 	})
 }

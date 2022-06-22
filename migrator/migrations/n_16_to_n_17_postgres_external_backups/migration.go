@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
-	boltStore "github.com/stackrox/rox/migrator/migrations/n_16_to_n_17_postgres_external_backups/bolt"
+	legacy "github.com/stackrox/rox/migrator/migrations/n_16_to_n_17_postgres_external_backups/legacy"
 	"github.com/stackrox/rox/migrator/types"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -24,25 +24,27 @@ var (
 		StartingSeqNum: 100,
 		VersionAfter:   storage.Version{SeqNum: 101},
 		Run: func(databases *types.Databases) error {
-			if err := moveExternalBackups(databases.BoltDB, databases.GormDB, databases.PostgresDB); err != nil {
+			legacyStore := legacy.New(databases.BoltDB)
+			if err := moveExternalBackups(databases.BoltDB, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving external_backups from rocksdb to postgres")
 			}
 			return nil
 		},
 	}
-	externalBackupBucket = []byte("externalBackups")
-	batchSize            = 10000
-	schema               = pkgSchema.ExternalBackupsSchema
-	log                  = loghelper.LogWrapper{}
+	batchSize = 10000
+	schema    = pkgSchema.ExternalBackupsSchema
+	log       = loghelper.LogWrapper{}
 )
 
-func moveExternalBackups(legacyDB *bolt.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
+func moveExternalBackups(legacyDB *bolt.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := context.Background()
+	store := newStore(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
-	store := newStore(postgresDB, legacyDB)
-	externalBackups, err := store.LegacyStore.GetAll(ctx)
 
+	var externalBackups []*storage.ExternalBackup
+	var err error
+	externalBackups, err = legacyStore.GetAll(ctx)
 	if err != nil {
 		log.WriteToStderr("failed to fetch all externalBackups")
 		return err
@@ -57,15 +59,13 @@ func moveExternalBackups(legacyDB *bolt.DB, gormDB *gorm.DB, postgresDB *pgxpool
 }
 
 type storeImpl struct {
-	db       *pgxpool.Pool // Postgres DB
-	legacyDB    *bolt.DB
-	LegacyStore boltStore.Store
+	db *pgxpool.Pool // Postgres DB
 }
 
 // newStore returns a new Store instance using the provided sql instance.
-func newStore(db *pgxpool.Pool, legacyDB *bolt.DB) *storeImpl {
+func newStore(db *pgxpool.Pool) *storeImpl {
 	return &storeImpl{
-		db: db, legacyDB: legacyDB, LegacyStore: boltStore.New(legacyDB),
+		db: db,
 	}
 }
 

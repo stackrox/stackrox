@@ -5,60 +5,60 @@ package n13ton14
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
-const (
-	getStmt    = "SELECT serialized FROM configs LIMIT 1"
-	deleteStmt = "DELETE FROM configs"
-)
+func (s *storeImpl) copyFromConfigs(ctx context.Context, tx pgx.Tx, objs ...*storage.Config) error {
 
+	inputRows := [][]interface{}{}
 
-// Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context) (*storage.Config, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Config")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	var err error
 
-	row := conn.QueryRow(ctx, getStmt)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
+	copyCols := []string{
+
+		"serialized",
 	}
 
-	var msg storage.Config
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			serialized,
+		})
+
+		if err := s.Delete(ctx); err != nil {
+			return err
+		}
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"configs"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
 	}
-	return &msg, true, nil
+
+	return err
 }
 
-func insertIntoConfigs(ctx context.Context, tx pgx.Tx, obj *storage.Config) error {
-	serialized, marshalErr := obj.Marshal()
-	if marshalErr != nil {
-		return marshalErr
-	}
-
-	values := []interface{}{
-		// parent primary keys start
-		serialized,
-	}
-
-	finalStr := "INSERT INTO configs (serialized) VALUES($1)"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Config) error {
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Config) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Config")
 	if err != nil {
 		return err
@@ -70,11 +70,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Config) error {
 		return err
 	}
 
-	if _, err := tx.Exec(ctx, deleteStmt); err != nil {
-		return err
-	}
-
-	if err := insertIntoConfigs(ctx, tx, obj); err != nil {
+	if err := s.copyFromConfigs(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}

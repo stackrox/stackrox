@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
+	legacy "github.com/stackrox/rox/migrator/migrations/n_16_to_n_17_postgres_external_backups/legacy"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -30,8 +31,10 @@ type postgresMigrationSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
-	// Bolt DB
+
+	// LegacyDB to migrate from
 	legacyDB *bolt.DB
+
 	// PostgresDB
 	pool   *pgxpool.Pool
 	gormDB *gorm.DB
@@ -50,7 +53,6 @@ func (s *postgresMigrationSuite) SetupTest() {
 	var err error
 	s.legacyDB, err = bolthelper.NewTemp(s.T().Name() + ".db")
 	s.NoError(err)
-	bolthelper.RegisterBucketOrPanic(s.legacyDB, externalBackupBucket)
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -74,18 +76,17 @@ func (s *postgresMigrationSuite) TearDownTest() {
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
 	var externalBackups []*storage.ExternalBackup
-	store := newStore(s.pool, s.legacyDB)
+	legacyStore := legacy.New(s.legacyDB)
 	for i := 0; i < 200; i++ {
 		externalBackup := &storage.ExternalBackup{}
 		s.NoError(testutils.FullInit(externalBackup, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		s.NoError(store.LegacyStore.Upsert(s.ctx, externalBackup))
 		externalBackups = append(externalBackups, externalBackup)
+		s.NoError(legacyStore.Upsert(s.ctx, externalBackup))
 	}
-	s.NoError(moveExternalBackups(s.legacyDB, s.gormDB, s.pool))
+	s.NoError(moveExternalBackups(s.legacyDB, s.gormDB, s.pool, legacyStore))
 	var count int64
 	s.gormDB.Model(pkgSchema.CreateTableExternalBackupsStmt.GormModel).Count(&count)
 	s.Equal(int64(len(externalBackups)), count)
-
 	for _, externalBackup := range externalBackups {
 		s.Equal(externalBackup, s.get(externalBackup.GetId()))
 	}

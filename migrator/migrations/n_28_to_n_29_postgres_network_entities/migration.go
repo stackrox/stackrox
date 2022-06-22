@@ -9,12 +9,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
+	legacy "github.com/stackrox/rox/migrator/migrations/n_28_to_n_29_postgres_network_entities/legacy"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/db"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"gorm.io/gorm"
@@ -25,26 +24,30 @@ var (
 		StartingSeqNum: 100,
 		VersionAfter:   storage.Version{SeqNum: 101},
 		Run: func(databases *types.Databases) error {
-			if err := moveNetworkEntities(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB); err != nil {
+			legacyStore, err := legacy.New(databases.PkgRocksDB)
+			if err != nil {
+				return err
+			}
+			if err := moveNetworkEntities(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving network_entities from rocksdb to postgres")
 			}
 			return nil
 		},
 	}
-	rocksdbBucket = []byte("networkentity")
-	batchSize     = 10000
-	schema        = pkgSchema.NetworkEntitiesSchema
-	log           = loghelper.LogWrapper{}
+	batchSize = 10000
+	schema    = pkgSchema.NetworkEntitiesSchema
+	log       = loghelper.LogWrapper{}
 )
 
-func moveNetworkEntities(rocksDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
+func moveNetworkEntities(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := context.Background()
-	store := newStore(postgresDB, generic.NewCRUD(rocksDB, rocksdbBucket, keyFunc, alloc, false))
+	store := newStore(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 
 	var networkEntities []*storage.NetworkEntity
-	store.Walk(ctx, func(obj *storage.NetworkEntity) error {
+	var err error
+	legacyStore.Walk(ctx, func(obj *storage.NetworkEntity) error {
 		networkEntities = append(networkEntities, obj)
 		if len(networkEntities) == 10*batchSize {
 			if err := store.copyFrom(ctx, networkEntities...); err != nil {
@@ -56,7 +59,7 @@ func moveNetworkEntities(rocksDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *
 		return nil
 	})
 	if len(networkEntities) > 0 {
-		if err := store.copyFrom(ctx, networkEntities...); err != nil {
+		if err = store.copyFrom(ctx, networkEntities...); err != nil {
 			log.WriteToStderrf("failed to persist network_entities to store %v", err)
 			return err
 		}
@@ -65,15 +68,13 @@ func moveNetworkEntities(rocksDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *
 }
 
 type storeImpl struct {
-	db   *pgxpool.Pool // Postgres DB
-	crud db.Crud       // Rocksdb DB crud
+	db *pgxpool.Pool // Postgres DB
 }
 
 // newStore returns a new Store instance using the provided sql instance.
-func newStore(db *pgxpool.Pool, crud db.Crud) *storeImpl {
+func newStore(db *pgxpool.Pool) *storeImpl {
 	return &storeImpl{
-		db:   db,
-		crud: crud,
+		db: db,
 	}
 }
 
