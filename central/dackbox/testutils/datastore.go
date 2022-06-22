@@ -68,6 +68,7 @@ type DackboxTestDataStore interface {
 }
 
 type dackboxTestDataStoreImpl struct {
+	t *testing.T
 	// Pool for postgres mode
 	pgtestbase *pgtest.TestPostgres
 	// Elements for rocksdb+bleve mode
@@ -273,7 +274,9 @@ func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 // dackbox datastores, as well as a set of functions to inject and cleanup data.
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	var err error
-	s := &dackboxTestDataStoreImpl{}
+	s := &dackboxTestDataStoreImpl{
+		t: t,
+	}
 	if features.PostgresDatastore.Enabled() {
 		s.pgtestbase = pgtest.ForT(t)
 		s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
