@@ -39,7 +39,7 @@ setup_deployment_env() {
     local use_websocket="$2"
 
     if [[ "$docker_login" == "true" ]]; then
-        registry_login "quay.io/rhacs-eng"
+        registry_ro_login "quay.io/rhacs-eng"
     fi
 
     if [[ "$use_websocket" == "true" ]]; then
@@ -158,12 +158,12 @@ push_main_image_set() {
     }
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        registry_login "quay.io/stackrox-io"
+        registry_rw_login "quay.io/stackrox-io"
 
         local destination_registries=("quay.io/stackrox-io")
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        registry_login "docker.io/stackrox"
-        registry_login "quay.io/rhacs-eng"
+        registry_rw_login "docker.io/stackrox"
+        registry_rw_login "quay.io/rhacs-eng"
 
         local destination_registries=("docker.io/stackrox" "quay.io/rhacs-eng")
     else
@@ -204,14 +204,14 @@ push_docs_image() {
     local registries=("docker.io/stackrox" "quay.io/rhacs-eng" "quay.io/stackrox-io")
 
     for registry in "${registries[@]}"; do
-        registry_login "$registry"
+        registry_rw_login "$registry"
         oc image mirror "$DOCS_IMAGE" "$registry:$docs_tag"
     done
 }
 
-registry_login() {
+registry_rw_login() {
     if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: registry_login <registry>"
+        die "missing arg. usage: registry_rw_login <registry>"
     fi
 
     local registry="$1"
@@ -227,7 +227,23 @@ registry_login() {
             docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
             ;;
         *)
-            die "Unsupported registry: $registry" 
+            die "Unsupported registry login: $registry" 
+    esac
+}
+
+registry_ro_login() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: registry_ro_login <registry>"
+    fi
+
+    local registry="$1"
+
+    case "$registry" in
+        quay.io/rhacs-eng)
+            docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
+            ;;
+        *)
+            die "Unsupported registry login: $registry" 
     esac
 }
 
@@ -245,13 +261,13 @@ push_matching_collector_scanner_images() {
     local brand="$1"
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        registry_login "quay.io/stackrox-io"
+        registry_rw_login "quay.io/stackrox-io"
 
         local source_registry="quay.io/stackrox-io"
         local target_registries=( "quay.io/stackrox-io" )
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        registry_login "docker.io/stackrox"
-        registry_login "quay.io/rhacs-eng"
+        registry_rw_login "docker.io/stackrox"
+        registry_rw_login "quay.io/rhacs-eng"
 
         local source_registry="quay.io/rhacs-eng"
         local target_registries=( "docker.io/stackrox" "quay.io/rhacs-eng" )
