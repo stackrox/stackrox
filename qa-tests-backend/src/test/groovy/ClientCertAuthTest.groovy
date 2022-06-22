@@ -24,7 +24,6 @@ class ClientCertAuthTest extends BaseSpecification {
 
     def setupSpec() {
         BaseService.useBasicAuth()
-        disableAuthzPlugin()
 
         String caPath = Env.mustGetClientCAPath()
         byte[] encoded = Files.readAllBytes(Paths.get(caPath))

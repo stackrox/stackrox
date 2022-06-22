@@ -1,14 +1,20 @@
 import static Services.waitForViolation
+import static io.stackrox.proto.storage.RoleOuterClass.Access.NO_ACCESS
+import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_ACCESS
+import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_WRITE_ACCESS
+import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuilder
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
-import groups.BAT
+
+import orchestratormanager.OrchestratorTypes
+
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
 import io.stackrox.proto.storage.DeploymentOuterClass
+import io.stackrox.proto.storage.RoleOuterClass
+
+import groups.BAT
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
-import org.junit.AssumptionViolatedException
-import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ApiTokenService
 import services.BaseService
@@ -16,13 +22,18 @@ import services.DeploymentService
 import services.ImageService
 import services.NamespaceService
 import services.NetworkGraphService
+import services.RoleService
 import services.SearchService
 import services.SecretService
 import services.SummaryService
-import spock.lang.IgnoreIf
-import spock.lang.Unroll
 import util.Env
 import util.NetworkGraphUtil
+
+import org.junit.AssumptionViolatedException
+import org.junit.experimental.categories.Category
+import spock.lang.IgnoreIf
+import spock.lang.Shared
+import spock.lang.Unroll
 
 @Category(BAT)
 @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
@@ -31,7 +42,6 @@ class SACTest extends BaseSpecification {
     static final private String NAMESPACE_QA1 = "qa-test1"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA2 = "sac-deploymentnginx-qa2"
     static final private String NAMESPACE_QA2 = "qa-test2"
-    static final private String TESTROLE = "Continuous Integration"
     static final private String SECRETNAME = "sac-secret"
     static final protected String ALLACCESSTOKEN = "allAccessToken"
     static final protected String NOACCESSTOKEN = "noAccess"
@@ -67,6 +77,16 @@ class SACTest extends BaseSpecification {
     static final private Integer WAIT_FOR_RISK_RETRIES =
             isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 80 : 50)
 
+    @Shared
+    private Map<String, RoleOuterClass.Access> allResourcesAccess
+
+    @Shared
+    private Map<String, List<String>> tokenToRoles
+
+    def setup() {
+        BaseService.useBasicAuth()
+    }
+
     def setupSpec() {
         // Make sure we scan the image initially to make reprocessing faster.
         def img = Services.scanImage(TEST_IMAGE)
@@ -92,6 +112,43 @@ class SACTest extends BaseSpecification {
                 throw new AssumptionViolatedException("Failed to retrieve risk from deployment ${dep.name}", e)
             }
         }
+
+        allResourcesAccess = RoleService.resources.resourcesList.collectEntries { [it, READ_WRITE_ACCESS] }
+
+        // TODO: Replace with the defaultAccessScope id: "denyall"
+        def noaccessScope = RoleService.createAccessScope(newBuilder()
+                .setName("no-access-scope").build())
+        def remoteQaTest1 = createAccessScope(DEFAULT_CLUSTER_NAME, "qa-test1")
+        def remoteQaTest2 = createAccessScope(DEFAULT_CLUSTER_NAME, "qa-test2")
+
+        def noaccess = createRole(noaccessScope.id, allResourcesAccess)
+
+        tokenToRoles = [
+                (NOACCESSTOKEN)                   : [noaccess],
+                (ALLACCESSTOKEN)                  : [createRole(UNRESTRICTED_SCOPE_ID, allResourcesAccess)],
+                "deployments-access-token"        : [createRole(remoteQaTest2.id,
+                        ["Deployment": READ_ACCESS, "Risk": READ_ACCESS])],
+                "getSummaryCountsToken"           : [createRole(remoteQaTest1.id, allResourcesAccess)],
+                "listSecretsToken"                : [createRole(UNRESTRICTED_SCOPE_ID, ["Secret": READ_ACCESS])],
+                "searchAlertsToken"               : [createRole(remoteQaTest1.id, ["Alert": READ_ACCESS]), noaccess],
+                "searchDeploymentsToken"          : [createRole(remoteQaTest1.id,
+                        ["Deployment": READ_ACCESS]), noaccess],
+                "searchImagesToken"               : [createRole(remoteQaTest1.id, ["Image": READ_ACCESS]), noaccess],
+                "searchNamespacesToken"           : [createRole(remoteQaTest1.id,
+                        ["Namespace": READ_ACCESS]), noaccess],
+                "searchDeploymentsImagesToken"    : [createRole(remoteQaTest1.id,
+                        ["Deployment": READ_ACCESS, "Image": READ_ACCESS]), noaccess],
+                "stackroxNetFlowsToken"           : [createRole(createAccessScope(DEFAULT_CLUSTER_NAME, "stackrox").id,
+                        ["Deployment": READ_ACCESS, "NetworkGraph": READ_ACCESS]),
+                                                     createRole(UNRESTRICTED_SCOPE_ID, ["Cluster": READ_ACCESS]),
+                                                     noaccess],
+                "kubeSystemDeploymentsImagesToken": [createRole(createAccessScope(
+                        DEFAULT_CLUSTER_NAME, "kube-system").id, ["Deployment": READ_ACCESS, "Image": READ_ACCESS]),
+                                                     noaccess],
+                "aggregatedToken"                 : [createRole(remoteQaTest2.id, ["Deployment": READ_ACCESS]),
+                                                     createRole(remoteQaTest1.id, ["Deployment": NO_ACCESS]),
+                                                     noaccess],
+        ]
     }
 
     def cleanupSpec() {
@@ -104,6 +161,7 @@ class SACTest extends BaseSpecification {
                 orchestrator.deleteNamespace(ns)
                 orchestrator.waitForNamespaceDeletion(ns)
         }
+        cleanupRole(*(tokenToRoles.values().flatten().unique()))
     }
 
     static getAlertCount() {
@@ -123,7 +181,7 @@ class SACTest extends BaseSpecification {
     }
 
     GenerateTokenResponse useToken(String tokenName) {
-        GenerateTokenResponse token = ApiTokenService.generateToken(tokenName, TESTROLE)
+        GenerateTokenResponse token = ApiTokenService.generateToken(tokenName, *(tokenToRoles.get(tokenName)))
         BaseService.useApiToken(token.token)
         token
     }
@@ -145,7 +203,33 @@ class SACTest extends BaseSpecification {
         orchestrator.deleteSecret(SECRETNAME, namespace)
     }
 
-    Boolean summaryTestShouldSeeNoClustersAndNodes() { true }
+    def cleanupRole(String... roleName) {
+        roleName.each {
+            try {
+                def role = RoleService.getRole(it)
+                RoleService.deleteRole(role.name)
+                RoleService.deleteAccessScope(role.accessScopeId)
+            } catch (Exception e) {
+                log.error("Error deleting role ${name}", e)
+            }
+        }
+    }
+
+    String createRole(String sacId, Map<String, RoleOuterClass.Access> resources) {
+        RoleService.createRoleWithScopeAndPermissionSet("SACv2 Test Automation Role " + UUID.randomUUID(),
+                sacId, resources
+        ).name
+    }
+
+    def createAccessScope(String clusterName, String namespaceName) {
+        RoleService.createAccessScope(newBuilder()
+                .setName(UUID.randomUUID().toString())
+                .setRules(RoleOuterClass.SimpleAccessScope.Rules.newBuilder()
+                        .addIncludedNamespaces(RoleOuterClass.SimpleAccessScope.Rules.Namespace.newBuilder()
+                                .setClusterName(clusterName)
+                                .setNamespaceName(namespaceName)))
+                .build())
+    }
 
     @Unroll
     @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
@@ -161,11 +245,10 @@ class SACTest extends BaseSpecification {
         assert DeploymentService.getDeploymentWithRisk(result.first().id).hasRisk()
         def resourceNotAllowed = result.find { it.namespace != sacResource }
         assert resourceNotAllowed == null
-        cleanup:
-        BaseService.useBasicAuth()
+
         where:
         "Data inputs are: "
-        sacResource | _
+        sacResource   | _
         NAMESPACE_QA2 | _
     }
 
@@ -201,10 +284,6 @@ class SACTest extends BaseSpecification {
         "Verify correct counts are returned by GetSummaryCounts"
         assert result.getNumDeployments() == 1
         assert result.getNumSecrets() == orchestrator.getSecretCount(DEPLOYMENT_QA1.namespace)
-        if (summaryTestShouldSeeNoClustersAndNodes()) {
-            assert result.getNumNodes() == 0
-            assert result.getNumClusters() == 0
-        }
         assert result.getNumImages() == 1
         cleanup:
         "Cleanup"
@@ -257,16 +336,12 @@ class SACTest extends BaseSpecification {
         // ALLACCESSTOKEN has access to QA1 and QA2. Since deployments are identical
         // number of alerts for ALLACCESSTOKEN should be twice of getSummaryCountsToken.
         assert 2 * alertsCount("getSummaryCountsToken") == alertsCount(ALLACCESSTOKEN)
-
-        cleanup:
-        BaseService.useBasicAuth()
     }
 
     @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify ListSecrets using a token without access receives no results"() {
         when:
         "ListSecrets is called using a token without view access to Secrets"
-        BaseService.useBasicAuth()
         createSecret(DEPLOYMENT_QA1.namespace)
         useToken(NOACCESSTOKEN)
         def result = SecretService.listSecrets()
@@ -283,7 +358,6 @@ class SACTest extends BaseSpecification {
     def "Verify ListSecrets using a token with access receives some results"() {
         when:
         "ListSecrets is called using a token with view access to Secrets"
-        BaseService.useBasicAuth()
         createSecret(DEPLOYMENT_QA1.namespace)
         createSecret(DEPLOYMENT_QA2.namespace)
         useToken("listSecretsToken")
@@ -313,10 +387,6 @@ class SACTest extends BaseSpecification {
         "Verify the specified number of results are returned"
         assert result.resultsCount == numResults
 
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
-
         where:
         "Data inputs are: "
         tokenName                | category     | numResults
@@ -338,9 +408,6 @@ class SACTest extends BaseSpecification {
         "Verify >= the specified number of results are returned"
         assert result.resultsCount >= minReturned
 
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
         where:
         "Data inputs are: "
         tokenName           | category     | minReturned
@@ -381,9 +448,7 @@ class SACTest extends BaseSpecification {
         then:
         "Verify no results are returned by Search"
         assert result.getValuesCount() == numResults
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
+
         where:
         "Data inputs are: "
         tokenName                | category     | numResults
@@ -405,9 +470,7 @@ class SACTest extends BaseSpecification {
         then:
         "Verify exactly the expected number of results are returned"
         assert result.getValuesCount() >= minReturned
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
+
         where:
         "Data inputs are: "
         tokenName      | category     | minReturned
@@ -425,9 +488,7 @@ class SACTest extends BaseSpecification {
         then:
         "Verify exactly the expected number of results are returned"
         assert result == numReturned
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
+
         where:
         "Data inputs are: "
         tokenName                | numReturned | resultCountFunc          | service
@@ -450,9 +511,7 @@ class SACTest extends BaseSpecification {
         then:
         "Verify greater than or equal to the expected number of results are returned"
         assert result >= minNumReturned
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
+
         where:
         "Data inputs are: "
         tokenName           | minNumReturned | resultCountFunc          | service
@@ -488,9 +547,7 @@ class SACTest extends BaseSpecification {
         // Either the value should be null and it is, else the value is not null
         assert qa1Null && qa1 == null || qa1 != null
         assert qa2Null && qa2 == null || qa2 != null
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
+
         where:
         "Data inputs are: "
         tokenName               | qa1Null | qa2Null
@@ -508,7 +565,6 @@ class SACTest extends BaseSpecification {
                 .addAllCategories(categories)
                 .setQuery("Cluster:${DEFAULT_CLUSTER_NAME}+Namespace:${namespace}")
                 .build()
-        BaseService.useBasicAuth()
         def restrictedWithBasicAuthCount = SearchService.search(restrictedQuery).resultsCount
 
         and:
@@ -535,10 +591,6 @@ class SACTest extends BaseSpecification {
         assert restrictedWithBasicAuthCount == restrictedWithAllAccessCount
         assert restrictedWithAllAccessCount == unrestrictedWithSACCount
 
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
-
         where:
         "Data inputs are: "
         tokenName                          | namespace      | categories
@@ -555,7 +607,6 @@ class SACTest extends BaseSpecification {
     def "Verify that SAC has the same effect as query restriction for network flows"() {
         when:
         "Obtaining the network graph for the StackRox namespace with all access"
-        BaseService.useBasicAuth()
         def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
         def allAccessFlows = NetworkGraphUtil.flowStrings(networkGraphWithAllAccess)
         allAccessFlows.removeAll(UNSTABLE_FLOWS)
@@ -607,17 +658,24 @@ class SACTest extends BaseSpecification {
                 allAccessFlows.size() - allAccessFlowsWithoutNeighbors.size()
         assert sacFlowsNoQuery.size() - sacFlowsNoQueryFiltered.size() ==
                 allAccessFlows.size() - allAccessFlowsWithoutNeighbors.size()
+    }
 
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+    def "test role aggregation should not combine permissions sets"() {
+        when:
+        useToken("aggregatedToken")
+
+        then:
+        def result = DeploymentService.listDeployments()
+        assert result.find { it.name == DEPLOYMENT_QA2.name }
+        assert !result.find { it.name == DEPLOYMENT_QA1.name }
     }
 
     private static List<DeploymentOuterClass.ListDeployment> listDeployments() {
         return Services.getDeployments(
-                SSOC.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA1).build()
+                SSOC.RawQuery.newBuilder().setQuery("Namespace:" + NAMESPACE_QA1).build()
         ) + Services.getDeployments(
-                SSOC.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA2).build()
+                SSOC.RawQuery.newBuilder().setQuery("Namespace:" + NAMESPACE_QA2).build()
         )
     }
 }

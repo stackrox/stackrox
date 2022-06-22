@@ -18,6 +18,7 @@ type validateConfiguration struct {
 	// See ROX-5208 for details.
 	validateEnvVarSourceRestrictions bool
 	sourceIsAuditLogEvents           bool
+	disallowFromInDockerfileLine     bool
 }
 
 // ValidateOption models an option for validation.
@@ -28,6 +29,13 @@ type ValidateOption func(*validateConfiguration)
 func ValidateEnvVarSourceRestrictions() ValidateOption {
 	return func(c *validateConfiguration) {
 		c.validateEnvVarSourceRestrictions = true
+	}
+}
+
+// ValidateNoFromInDockerfileLine disallows FROM in the Dockerfile line.
+func ValidateNoFromInDockerfileLine() ValidateOption {
+	return func(c *validateConfiguration) {
+		c.disallowFromInDockerfileLine = true
 	}
 }
 

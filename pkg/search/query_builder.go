@@ -109,7 +109,7 @@ func (p *Pagination) AddSortOption(option FieldLabel, reversed bool) *Pagination
 // QueryBuilder builds a search query
 type QueryBuilder struct {
 	fieldsToValues map[FieldLabel][]string
-	ids            []string
+	ids            *[]string
 	linkedFields   [][]fieldValue
 
 	highlightedFields map[FieldLabel]struct{}
@@ -143,14 +143,22 @@ func (qb *QueryBuilder) AddLinkedFields(fields []FieldLabel, values []string) *Q
 
 // AddDocIDs adds the list of ids to the DocID query of the QueryBuilder.
 func (qb *QueryBuilder) AddDocIDs(ids ...string) *QueryBuilder {
-	qb.ids = append(qb.ids, ids...)
+	if qb.ids == nil {
+		slice := make([]string, 0, len(ids))
+		qb.ids = &slice
+	}
+	*qb.ids = append(*qb.ids, ids...)
 	return qb
 }
 
 // AddDocIDSet adds the set of ids to the DocID query of the QueryBuilder.
 func (qb *QueryBuilder) AddDocIDSet(idSet set.StringSet) *QueryBuilder {
+	if qb.ids == nil {
+		slice := make([]string, 0, len(idSet))
+		qb.ids = &slice
+	}
 	for id := range idSet {
-		qb.ids = append(qb.ids, id)
+		*qb.ids = append(*qb.ids, id)
 	}
 	return qb
 }
@@ -297,8 +305,8 @@ func (qb *QueryBuilder) Query() string {
 func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	queries := make([]*v1.Query, 0, len(qb.fieldsToValues)+len(qb.linkedFields))
 
-	if len(qb.ids) > 0 {
-		queries = append(queries, docIDQuery(qb.ids))
+	if qb.ids != nil {
+		queries = append(queries, docIDQuery(*qb.ids))
 	}
 
 	// Sort the queries by field value, to ensure consistency of output.

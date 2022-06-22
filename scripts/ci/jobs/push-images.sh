@@ -17,6 +17,15 @@ push_images() {
 
     [[ "${OPENSHIFT_CI:-false}" == "true" ]] || { die "Only supported in OpenShift CI"; }
 
+    local tag
+    tag="$(make --quiet tag)"
+    if is_release_version "$tag"; then
+        check_docs "${tag}"
+        check_scanner_and_collector_versions
+    else
+        info "Not checking docs/ & version files for non releases"
+    fi
+
     local brand="$1"
     local push_context=""
     local base_ref
@@ -30,6 +39,7 @@ push_images() {
     fi
 
     push_main_image_set "$push_context" "$brand"
+    push_matching_collector_scanner_images "$brand"
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]]; then
         comment_on_pr

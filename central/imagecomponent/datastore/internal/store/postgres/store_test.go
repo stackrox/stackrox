@@ -81,6 +81,8 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundImageComponent)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, imageComponent))
 	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	imageComponentCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, imageComponentCount)
+	imageComponentCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(imageComponentCount)
 
 	imageComponentExists, err := store.Exists(ctx, imageComponent.GetId())
 	s.NoError(err)
 	s.True(imageComponentExists)
 	s.NoError(store.Upsert(ctx, imageComponent))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, imageComponent), sac.ErrResourceAccessDenied)
 
 	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImageComponent)
+	s.NoError(store.Delete(withNoAccessCtx, imageComponent.GetId()))
 
 	var imageComponents []*storage.ImageComponent
 	for i := 0; i < 200; i++ {

@@ -12,7 +12,7 @@ import {
     fetchSummaryAlertCountsLegacy as fetchSummaryAlertCounts,
 } from 'services/AlertsService';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { fetchDeployments } from 'services/DeploymentsService';
+import { fetchDeploymentsLegacy as fetchDeployments } from 'services/DeploymentsService';
 import AlertsByTimeseriesChart from './AlertsByTimeseriesChart';
 import SummaryCounts from './SummaryCounts';
 import ViolationsByClusterChart from './ViolationsByClusterChart';

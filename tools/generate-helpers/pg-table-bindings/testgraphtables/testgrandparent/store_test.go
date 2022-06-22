@@ -81,6 +81,8 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundTestGrandparent)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, testGrandparent))
 	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	testGrandparentCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, testGrandparentCount)
+	testGrandparentCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(testGrandparentCount)
 
 	testGrandparentExists, err := store.Exists(ctx, testGrandparent.GetId())
 	s.NoError(err)
 	s.True(testGrandparentExists)
 	s.NoError(store.Upsert(ctx, testGrandparent))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, testGrandparent), sac.ErrResourceAccessDenied)
 
 	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestGrandparent)
+	s.NoError(store.Delete(withNoAccessCtx, testGrandparent.GetId()))
 
 	var testGrandparents []*storage.TestGrandparent
 	for i := 0; i < 200; i++ {

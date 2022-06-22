@@ -22,6 +22,40 @@ die() {
     exit 1
 }
 
+# Caution when editing: make sure groups would correspond to BASH_REMATCH use.
+RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
+
+is_release_version() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: is_release_version <version>"
+    fi
+    [[ "$1" =~ $RELEASE_RC_TAG_BASH_REGEX && -z "${BASH_REMATCH[3]}" ]]
+}
+
+is_RC_version() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: is_RC_version <version>"
+    fi
+    [[ "$1" =~ $RELEASE_RC_TAG_BASH_REGEX && -n "${BASH_REMATCH[3]}" ]]
+}
+
+# get_release_stream() - Gets the release major.minor from the output of `make tag`.
+get_release_stream() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: get_release_stream <tag>"
+    fi
+    [[ "$1" =~ ^([[:digit:]]+\.[[:digit:]]+) ]]
+    echo "${BASH_REMATCH[1]}"
+}
+
+# is_release_test_stream() - A major number of 0 is used to test release handling.
+is_release_test_stream() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: is_release_test_stream <tag>"
+    fi
+    [[ "$1" =~ ^0\. ]]
+}
+
 is_CI() {
     [[ "${CI:-}" == "true" ]]
 }

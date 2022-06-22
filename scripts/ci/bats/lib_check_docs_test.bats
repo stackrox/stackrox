@@ -20,38 +20,11 @@ function setup() {
     assert_output --partial 'not a release or RC'
 }
 
-@test "exits early when only interested in releases and this is an RC" {
-    run check_docs "3.69.0-rc.10" "true"
-    assert_success
-    assert_output --partial 'Skipping'
-    assert_output --partial 'this is an RC'
-}
-
 function git_matches() {
     if [[ "$1" == "config" ]]; then
         echo "rhacs-docs-3.69.0"
     fi
     return 0
-}
-
-@test "does not exit early when only interested in releases and this is a release" {
-    function git() {
-        git_matches "$@"
-    }
-    run check_docs "3.69.0" "true"
-    assert_success
-    refute_output --partial 'Skipping'
-    refute_output --partial 'this is an RC'
-}
-
-@test "does not exit early when explicitly not only interested in releases and this is an RC" {
-    function git() {
-        git_matches "$@"
-    }
-    run check_docs "3.69.0-rc.10" "false"
-    assert_success
-    refute_output --partial 'Skipping'
-    refute_output --partial 'this is an RC'
 }
 
 @test "succeeds when versions match (RC)" {
@@ -85,7 +58,7 @@ function git_matches() {
     function git() {
         git_matches "$@"
     }
-    run check_docs "4.69.0" "true"
+    run check_docs "4.69.0"
     assert_failure
     assert_output --partial 'Expected docs/content'
 }

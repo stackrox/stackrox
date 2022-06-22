@@ -12,9 +12,6 @@ values:
 tests:
 - name: "scanner with default settings"
   expect: |
-    .podsecuritypolicys["stackrox-scanner"] | assertThat(. != null)
-    .rolebindings["stackrox-scanner-psp"] | assertThat(. != null)
-    .clusterroles["stackrox-scanner-psp"] | assertThat(. != null)
     .serviceaccounts["scanner"] | assertThat(. != null)
     .secrets["scanner-db-password"].stringData.password | assertThat(length != 0)
     .configmaps["scanner-config"].data.["config.yaml"] | assertThat(length != 0)
@@ -42,11 +39,11 @@ tests:
 - name: "scanner with deprecated PodSecurityPolicies disabled"
   values:
     system:
-      enablePodSecurityPolicies: false
+      enablePodSecurityPolicies: true
   expect: |
-    .podsecuritypolicys["stackrox-scanner"] | assertThat(. == null)
-    .rolebindings["stackrox-scanner-psp"] | assertThat(. == null)
-    .clusterroles["stackrox-scanner-psp"] | assertThat(. == null)
+    .podsecuritypolicys["stackrox-scanner"] | assertThat(. != null)
+    .rolebindings["stackrox-scanner-psp"] | assertThat(. != null)
+    .clusterroles["stackrox-scanner-psp"] | assertThat(. != null)
 
 #TODO: Add istio tests
 - name: "configured scanner"

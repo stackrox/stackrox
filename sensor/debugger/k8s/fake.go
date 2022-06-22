@@ -73,16 +73,22 @@ type FakeEventsManager struct {
 	resourceMap map[string]interface{}
 }
 
+const (
+	createAction string = "CREATE_RESOURCE"
+	updateAction string = "UPDATE_RESOURCE"
+	removeAction string = "REMOVE_RESOURCE"
+)
+
 var actionToMethod = map[string]string{
-	"CREATE_RESOURCE": "Create",
-	"UPDATE_RESOURCE": "Update",
-	"DELETE_RESOURCE": "Delete",
+	createAction: "Create",
+	updateAction: "Update",
+	removeAction: "Delete",
 }
 
 var actionToOptions = map[string]interface{}{
-	"CREATE_RESOURCE": metav1.CreateOptions{},
-	"UPDATE_RESOURCE": metav1.UpdateOptions{},
-	"DELETE_RESOURCE": metav1.DeleteOptions{},
+	createAction: metav1.CreateOptions{},
+	updateAction: metav1.UpdateOptions{},
+	removeAction: metav1.DeleteOptions{},
 }
 
 // Init initializes the FakeEventsManager
@@ -248,6 +254,15 @@ func getNamespace(resource reflect.Value) string {
 	return values[0].String()
 }
 
+// getName returns the name from a resource
+func getName(resource reflect.Value) string {
+	values := resource.MethodByName("GetName").Call([]reflect.Value{})
+	if len(values) != 1 {
+		return ""
+	}
+	return values[0].String()
+}
+
 // handleRunOp handles the execution of runOp
 func (f *FakeEventsManager) handleRunOp(action, kind string, ch chan<- string, client, object reflect.Value) error {
 	returnVals := runOp(action, client, object)
@@ -256,7 +271,7 @@ func (f *FakeEventsManager) handleRunOp(action, kind string, ch chan<- string, c
 	}
 	errInt := returnVals[len(returnVals)-1].Interface()
 	if errInt == nil {
-		if action == "CREATE_RESOURCE" {
+		if action == createAction {
 			ch <- kind
 		}
 		return nil
@@ -289,12 +304,15 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan<- 
 	}
 	cl := clFunc(getNamespace(reflect.ValueOf(r)))
 
-	err = f.handleRunOp(msg.Action, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
-	if k8sErrors.IsNotFound(err) && msg.Action == "UPDATE_RESOURCE" {
-		return f.handleRunOp("CREATE_RESOURCE", kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
+	if msg.Action == removeAction {
+		return f.handleRunOp(msg.Action, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(getName(reflect.ValueOf(r))))
 	}
-	if k8sErrors.IsAlreadyExists(err) && msg.Action == "CREATE_RESOURCE" {
-		return f.handleRunOp("UPDATE_RESOURCE", kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
+	err = f.handleRunOp(msg.Action, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
+	if k8sErrors.IsNotFound(err) && msg.Action == updateAction {
+		return f.handleRunOp(createAction, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
+	}
+	if k8sErrors.IsAlreadyExists(err) && msg.Action == createAction {
+		return f.handleRunOp(updateAction, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
 	}
 	return err
 }

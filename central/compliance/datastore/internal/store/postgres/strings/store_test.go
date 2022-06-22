@@ -81,6 +81,8 @@ func (s *ComplianceStringsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundComplianceStrings)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, complianceStrings))
 	foundComplianceStrings, exists, err = store.Get(ctx, complianceStrings.GetId())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *ComplianceStringsStoreSuite) TestStore() {
 	complianceStringsCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, complianceStringsCount)
+	complianceStringsCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(complianceStringsCount)
 
 	complianceStringsExists, err := store.Exists(ctx, complianceStrings.GetId())
 	s.NoError(err)
 	s.True(complianceStringsExists)
 	s.NoError(store.Upsert(ctx, complianceStrings))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceStrings), sac.ErrResourceAccessDenied)
 
 	foundComplianceStrings, exists, err = store.Get(ctx, complianceStrings.GetId())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *ComplianceStringsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceStrings)
+	s.NoError(store.Delete(withNoAccessCtx, complianceStrings.GetId()))
 
 	var complianceStringss []*storage.ComplianceStrings
 	for i := 0; i < 200; i++ {

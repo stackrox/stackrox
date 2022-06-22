@@ -385,9 +385,10 @@ restoreDB: &restoreDB
   run:
     name: Restore DB
     command: |
-      # TODO ROX-10087 figure out how to make it work for rocks and postgres
       if [ -z "${ROX_POSTGRES_DATASTORE}" ] || [ "${ROX_POSTGRES_DATASTORE}" == "false" ]; then
         roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore `ls -t central-backup/stackrox_db_* |head -n1`
+      else
+        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore `ls -t central-backup/postgres_db_* |head -n1`
       fi
 
 getPrometheusMetricParser: &getPrometheusMetricParser
@@ -815,28 +816,6 @@ commands:
         command: |
           git submodule update --init
 
-  check-docs-step:
-    parameters:
-      only-on-release:
-        type: boolean
-    steps:
-    - run:
-        name: Verify that docs are up to date
-        command: |
-          source scripts/ci/lib.sh
-          check_docs "${CIRCLE_TAG:-}" "<< parameters.only-on-release >>"
-
-  check-scanner-and-collector-release-step:
-    parameters:
-      fail-on-rc:
-        type: boolean
-    steps:
-    - run:
-        name: Check on release builds that COLLECTOR_VERSION and SCANNER_VERSION are release
-        command: |
-          source scripts/ci/lib.sh
-          check_scanner_and_collector "<< parameters.fail-on-rc >>"
-
   setup-go-build-env:
     steps:
       - run:
@@ -886,6 +865,39 @@ commands:
 
           when: always
 
+  continue-when-in-a-pr-or-nightly-context:
+    steps:
+      - run:
+          name: Continue when in a PR or nightly build context
+          command: |
+            if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
+              echo "This is a PR, will continue with the remaining steps in this job"
+              exit 0
+            fi
+            if .circleci/is-nightly-tag.sh; then
+              echo "This is a nightly build, will continue with the remaining steps in this job"
+              exit 0
+            fi
+            echo "This is not a PR, will skip the remaining steps in this job"
+            circleci step halt
+
+  poll-for-builds-when-not-in-a-pr-or-nightly-context:
+    steps:
+      - run:
+          name: Poll for builds from OpenShift CI when not in a PR or nightly context
+          command: |
+            if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
+              echo "This is a PR, will continue with the remaining steps in this job"
+              exit 0
+            fi
+            if .circleci/is-nightly-tag.sh; then
+              echo "This is a nightly build, will continue with the remaining steps in this job"
+              exit 0
+            fi
+            source scripts/ci/lib.sh
+            poll_for_system_test_images 3600
+            echo "The required images were built"
+
   pre-build-ui:
     parameters:
       branding:
@@ -893,6 +905,7 @@ commands:
         default: stackrox
     steps:
       - checkout
+      - continue-when-in-a-pr-or-nightly-context
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-npm-deps-cache
@@ -945,10 +958,8 @@ commands:
   build:
     steps:
       - checkout-with-submodules
-      - check-docs-step:
-          only-on-release: true
-      - check-scanner-and-collector-release-step:
-          fail-on-rc: false
+      - poll-for-builds-when-not-in-a-pr-or-nightly-context
+      - continue-when-in-a-pr-or-nightly-context
 
       - setup_remote_docker:
           version: << pipeline.parameters.docker_version >>
@@ -1521,6 +1532,7 @@ commands:
       - *restoreGradle
       - run:
           name: QA Automation Platform Part 1
+          no_output_timeout: 15m
           command: |
             if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
               export CLUSTER=OPENSHIFT
@@ -1553,6 +1565,7 @@ commands:
 
       - run:
           name: QA Automation Platform Part 2
+          no_output_timeout: 15m
           command: |
             if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
               export CLUSTER=OPENSHIFT
@@ -2266,8 +2279,6 @@ jobs:
             # Cannot use .circleci/is-nightly-tag.sh because this job doesn't have access to git
             if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
               webhook_url="$NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK"
-            elif [[ "$CIRCLE_TAG" =~ << pipeline.parameters.release_rc_tag_bash_regex >> ]]; then
-              webhook_url="$RELEASE_WORKFLOW_NOTIFY_WEBHOOK"
             else
               exit 0
             fi
@@ -2298,26 +2309,6 @@ jobs:
           make go-postgres-unit-tests
     - post-go-unit-tests:
         path: go-unit-release-junit-reports
-
-  # This job checks that the docs/content submodule is pointing to the correct branch in the openshift-docs repo,
-  # and that it is up-to-date. It only runs on RC builds, and is primarily intended as a reminder for the release
-  # manager to inquire about docs and, if available, update the submodule pointer.
-  check-docs-job:
-    executor: custom
-    resource_class: small
-    steps:
-    - checkout-with-submodules
-    - check-docs-step:
-        only-on-release: false
-
-  # This serves as a reminder for the release manager to make sure Scanner and Collector versions are set to release.
-  check-scanner-and-collector-release-job:
-    executor: custom
-    resource_class: small
-    steps:
-    - checkout
-    - check-scanner-and-collector-release-step:
-        fail-on-rc: true
 
   check-generated-files-up-to-date:
     executor: custom
@@ -2464,14 +2455,14 @@ jobs:
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: ebpf
       - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
+      - POD_SECURITY_POLICIES: "false"
       - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - LOAD_BALANCER: none
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - AUTH0_SUPPORT: false
+      - ROX_DEV_AUTH0_CLIENT_SECRET: ""
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
 
     steps:
@@ -2881,7 +2872,7 @@ jobs:
     resource_class: small
     environment:
       - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
+      - POD_SECURITY_POLICIES: "false"
     steps:
       - checkout
       - check-backend-changes
@@ -3250,7 +3241,7 @@ jobs:
     resource_class: small
     environment:
       GCP_IMAGE_TYPE: "COS"
-      POD_SECURITY_POLICIES: "true"
+      POD_SECURITY_POLICIES: "false"
     steps:
       - checkout
       - check-backend-changes
@@ -3298,6 +3289,7 @@ jobs:
       - SENSOR_HELM_DEPLOY: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
+      - ROX_DECOMMISSIONED_CLUSTER_RETENTION: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
       - ROX_NETPOL_FIELDS: true
       - ROX_NEW_POLICY_CATEGORIES: true
@@ -3452,6 +3444,7 @@ jobs:
       - SCANNER_SUPPORT: true
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
+      - ROX_DECOMMISSIONED_CLUSTER_RETENTION: true
       - ROX_SYSTEM_HEALTH_PF: true
       - ROX_POLICIES_PATTERNFLY: true
       - ROX_NEW_POLICY_CATEGORIES: true
@@ -4125,21 +4118,6 @@ jobs:
   # Post-build jobs to handle built artifacts (like tag, scan and publish images)
   ###
 
-  mark-collector-release:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "7f:08:58:1e:80:80:6e:66:99:9a:37:cb:e9:96:0b:40"
-
-      - run:
-          name: Open a collector PR to add this release to RELEASED_VERSIONS
-          command: |
-            source scripts/ci/lib.sh
-            mark_collector_release "${CIRCLE_TAG}" "${CIRCLE_USERNAME}"
-
   push-release:
     executor: custom
     resource_class: small
@@ -4808,14 +4786,6 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - pre-build-cli
-      - mark-collector-release:
-          <<: *runOnlyOnReleaseBuilds
-          context:
-            - custom-executor-pull
-          requires:
-            - build-stackrox
-            - build-rhacs
-            - push-release
 
       - provision-openshift-rosa-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -4833,15 +4803,6 @@ workflows:
           context:
             - osd-cluster-manager
             - quay-rhacs-eng-readonly
-
-      - check-docs-job:
-          <<: *runOnlyOnReleaseCandidateBuilds
-          context:
-          - custom-executor-pull
-      - check-scanner-and-collector-release-job:
-          <<: *runOnlyOnReleaseCandidateBuilds
-          context:
-          - custom-executor-pull
 
       - provision-openshift-aro-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx

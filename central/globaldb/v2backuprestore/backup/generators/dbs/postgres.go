@@ -2,20 +2,13 @@ package dbs
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"io"
 	"os/exec"
-	"strconv"
-	"strings"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/logging"
-)
-
-const (
-	dumpTmpPath    = "pg_backup"
-	dbPasswordFile = "/run/secrets/stackrox.io/db-password/password"
+	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 )
 
 var (
@@ -30,102 +23,36 @@ func NewPostgresBackup(db *pgxpool.Pool) *PostgresBackup {
 	}
 }
 
-// PostgresBackup is an implementation of a postgres connection pool
+// PostgresBackup is an implementation of a StreamGenerator which writes a backup of PostgresDB to the input io.Writer.
 type PostgresBackup struct {
 	db *pgxpool.Pool
 }
 
-// getPostgresSize Method to calculate size
-func (bu *PostgresBackup) getPostgresSize(ctx context.Context) (int64, error) {
-	row := bu.db.QueryRow(ctx, "SELECT pg_database_size('postgres')")
-	var count int64
-	if err := row.Scan(&count); err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-// WriteDirectory writes a backup of RocksDB to the input path.
-func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
-	centralConfig := config.GetConfig()
-	password, err := os.ReadFile(dbPasswordFile)
-	if err != nil {
-		log.Fatalf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
-		return "", err
-	}
-	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
-	sourceMap := bu.parseSource(source)
-
-	config, err := pgxpool.ParseConfig(source)
+// WriteTo writes a backup of Postgres to the writer
+func (bu *PostgresBackup) WriteTo(ctx context.Context, out io.Writer) error {
+	sourceMap, config, err := globaldb.GetPostgresConfig()
 	if err != nil {
 		log.Fatalf("Could not parse postgres config: %v", err)
-		return "", err
-	}
-
-	backupPath, err := bu.findScratchPath(ctx)
-	if err != nil {
-		return "", err
+		return err
 	}
 
 	// Set the options for pg_dump from the connection config
 	options := []string{
-		"-U",
-		config.ConnConfig.User,
-		"-h",
-		config.ConnConfig.Host,
-		"-p",
-		strconv.FormatUint(uint64(config.ConnConfig.Port), 10),
 		"-d",
 		config.ConnConfig.Database,
-		"-Fd",
-		"-f",
-		backupPath,
-		"-j",
-		"5",
+		"-Fc", // Custom format, compressed hopefully supports stdin to restore
+		"-v",
 	}
+
+	// Get the common DB connection info
+	options = append(options, pgadmin.GetConnectionOptions(config)...)
 
 	cmd := exec.Command("pg_dump", options...)
-	cmd.Env = os.Environ()
 
-	if _, found := sourceMap["sslmode"]; found {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("PGSSLMODE=%s", sourceMap["sslmode"]))
-	}
-	if _, found := sourceMap["sslrootcert"]; found {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("PGSSLROOTCERT=%s", sourceMap["sslrootcert"]))
-	}
-	cmd.Env = append(cmd.Env, fmt.Sprintf("PGPASSWORD=%s", config.ConnConfig.Password))
+	// Set the stdout of the command to be the output writer.
+	cmd.Stdout = out
 
-	// Run the command
-	err = cmd.Start()
-	if err != nil {
-		return "", err
-	}
-	err = cmd.Wait()
+	pgadmin.SetPostgresCmdEnv(cmd, sourceMap, config)
 
-	if exitError, ok := err.(*exec.ExitError); ok {
-		log.Error(exitError)
-		return "", err
-	}
-
-	return backupPath, nil
-}
-
-func (bu *PostgresBackup) findScratchPath(ctx context.Context) (string, error) {
-	dbSize, err := bu.getPostgresSize(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return findTmpPath(dbSize, dumpTmpPath)
-}
-
-func (bu *PostgresBackup) parseSource(source string) map[string]string {
-	sourceSlice := strings.Split(source, " ")
-	sourceMap := make(map[string]string)
-	for _, pair := range sourceSlice {
-		configSetting := strings.Split(pair, "=")
-		sourceMap[configSetting[0]] = configSetting[1]
-	}
-
-	return sourceMap
+	return pgadmin.ExecutePostgresCmd(cmd)
 }

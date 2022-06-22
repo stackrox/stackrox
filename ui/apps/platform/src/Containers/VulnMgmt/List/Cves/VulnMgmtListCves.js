@@ -31,7 +31,11 @@ import removeEntityContextColumns from 'utils/tableUtils';
 import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
 import { snoozeDurations, durations } from 'constants/timeWindows';
-import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import {
+    VULN_CVE_LIST_FRAGMENT,
+    NODE_CVE_LIST_FRAGMENT,
+    CLUSTER_CVE_LIST_FRAGMENT,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 import CVSSSeverityLabel from 'Components/CVSSSeverityLabel';
 import CveBulkActionDialogue from './CveBulkActionDialogue';
@@ -273,15 +277,49 @@ const VulnMgmtCves = ({
 
     const workflowState = useContext(workflowStateContext);
 
-    const CVES_QUERY = gql`
-        query getCves($query: String, $scopeQuery: String, $pagination: Pagination) {
-            results: vulnerabilities(query: $query, pagination: $pagination) {
-                ...cveFields
-            }
-            count: vulnerabilityCount(query: $query)
+    const cveType = workflowState.getCurrentEntityType();
+
+    let cveQuery = '';
+
+    switch (cveType) {
+        case 'NODE_CVE': {
+            cveQuery = gql`
+                query getNodeCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                    results: nodeVulnerabilities(query: $query, pagination: $pagination) {
+                        ...cveFields
+                    }
+                    count: nodeVulnerabilityCount(query: $query)
+                }
+                ${NODE_CVE_LIST_FRAGMENT}
+            `;
+            break;
         }
-        ${VULN_CVE_LIST_FRAGMENT}
-    `;
+        case 'CLUSTER_CVE': {
+            cveQuery = gql`
+                query getClusterCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                    results: clusterVulnerabilities(query: $query, pagination: $pagination) {
+                        ...cveFields
+                    }
+                    count: clusterVulnerabilityCount(query: $query)
+                }
+                ${CLUSTER_CVE_LIST_FRAGMENT}
+            `;
+            break;
+        }
+        case 'CVE':
+        default: {
+            cveQuery = gql`
+                query getCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                    results: vulnerabilities(query: $query, pagination: $pagination) {
+                        ...cveFields
+                    }
+                    count: vulnerabilityCount(query: $query)
+                }
+                ${VULN_CVE_LIST_FRAGMENT}
+            `;
+            break;
+        }
+    }
 
     const viewingSuppressed = getViewStateFromSearch(search, cveSortFields.SUPPRESSED);
 
@@ -481,7 +519,7 @@ const VulnMgmtCves = ({
             <WorkflowListPage
                 data={data}
                 totalResults={totalResults}
-                query={CVES_QUERY}
+                query={cveQuery}
                 queryOptions={queryOptions}
                 idAttribute="cve"
                 entityListType={entityTypes.CVE}

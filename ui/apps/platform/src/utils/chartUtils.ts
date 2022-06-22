@@ -24,6 +24,14 @@ export const patternflySeverityTheme = {
         ...defaultTheme.legend,
         colorScale: severityColorScale,
     },
+    tooltip: {
+        style: {
+            ...(defaultTheme.tooltip?.style ?? {}),
+            fontWeight: '600',
+            textAnchor: 'start',
+        },
+        flyoutPadding: { top: 8, bottom: 8, left: 12, right: 12 },
+    },
 };
 
 /**

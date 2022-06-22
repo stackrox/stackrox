@@ -13,8 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
 	"github.com/stackrox/rox/roxctl/scanner/clustertype"
 )
@@ -59,7 +61,9 @@ func (cmd *scannerGenerateCommand) validate() error {
 	return nil
 }
 
-func (cmd *scannerGenerateCommand) generate() error {
+func (cmd *scannerGenerateCommand) generate(logger logger.Logger) error {
+	common.LogInfoPsp(logger, cmd.enablePodSecurityPolicies)
+
 	cmd.apiParams.ClusterType = clustertype.Get().String()
 	cmd.apiParams.DisablePodSecurityPolicies = !cmd.enablePodSecurityPolicies
 
@@ -95,7 +99,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 				return err
 			}
 
-			return scannerGenerateCmd.generate()
+			return scannerGenerateCmd.generate(cliEnvironment.Logger())
 		},
 	}
 

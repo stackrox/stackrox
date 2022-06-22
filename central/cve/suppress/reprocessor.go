@@ -6,8 +6,11 @@ import (
 	"time"
 
 	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
-	cveDataStore "github.com/stackrox/rox/central/cve/image/datastore"
+	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
+	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -31,34 +34,37 @@ type CVEUnsuppressLoop interface {
 	Stop()
 }
 
+type vulnsStore interface {
+	Unsuppress(ctx context.Context, ids ...string) error
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+}
+
 // Singleton returns the singleton reprocessor loop
 func Singleton() CVEUnsuppressLoop {
-	var imageCVEDataStore cveDataStore.DataStore
-	if features.PostgresDatastore.Enabled() {
-		imageCVEDataStore = cveDataStore.Singleton()
-	} else {
-		imageCVEDataStore = legacyImageCVEDataStore.Singleton()
-	}
 
 	once.Do(func() {
-		// TODO: Attach other CVE stores.
-		loop = NewLoop(imageCVEDataStore)
+		if features.PostgresDatastore.Enabled() {
+			// TODO: Attach cluster CVE store.
+			loop = NewLoop(imageCVEDataStore.Singleton(), nodeCVEDataStore.Singleton())
+		} else {
+			loop = NewLoop(legacyImageCVEDataStore.Singleton())
+		}
 	})
 	return loop
 }
 
 // NewLoop returns a new instance of a Loop.
-func NewLoop(cves cveDataStore.DataStore) CVEUnsuppressLoop {
+func NewLoop(cveStores ...vulnsStore) CVEUnsuppressLoop {
 	// ticker duration is set to 1 hour since the smallest time unit for suppress expiry is 1 day.
-	return newLoopWithDuration(cves, time.Hour)
+	return newLoopWithDuration(time.Hour, cveStores...)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
 // It is NOT exported, since we don't want clients to control the duration; it only exists as a separate function
 // to enable testing.
-func newLoopWithDuration(cves cveDataStore.DataStore, tickerDuration time.Duration) CVEUnsuppressLoop {
+func newLoopWithDuration(tickerDuration time.Duration, cveStores ...vulnsStore) CVEUnsuppressLoop {
 	return &cveUnsuppressLoopImpl{
-		cves:                      cves,
+		cveStores:                 cveStores,
 		cveSuppressTickerDuration: tickerDuration,
 
 		stopChan: concurrency.NewSignal(),
@@ -70,7 +76,7 @@ type cveUnsuppressLoopImpl struct {
 	cveSuppressTickerDuration time.Duration
 	cveSuppressTicker         *time.Ticker
 
-	cves cveDataStore.DataStore
+	cveStores []vulnsStore
 
 	stopChan concurrency.Signal
 	stopped  concurrency.Signal
@@ -93,31 +99,43 @@ func (l *cveUnsuppressLoopImpl) unsuppressCVEsWithExpiredSuppressState() {
 		return
 	}
 
-	cves, err := l.getCVEsWithExpiredSuppressState()
-	if err != nil {
-		log.Errorf("error retrieving CVEs for reprocessing: %v", err)
-		return
-	}
-	if len(cves) == 0 {
-		return
-	}
+	totalUnsuppressedCVEs := 0
+	for _, cveStore := range l.cveStores {
+		cves, err := getCVEsWithExpiredSuppressState(cveStore)
+		if err != nil {
+			log.Errorf("error retrieving CVEs for reprocessing: %v", err)
+			continue
+		}
+		if len(cves) == 0 {
+			continue
+		}
 
-	if err := l.cves.Unsuppress(reprocessorCtx, cves...); err != nil {
-		log.Errorf("error unsuppressing CVEs %+s: %v", cves, err)
-		return
+		if err := cveStore.Unsuppress(reprocessorCtx, cves...); err != nil {
+			log.Errorf("error unsuppressing CVEs %+s: %v", cves, err)
+			continue
+		}
+		totalUnsuppressedCVEs += len(cves)
 	}
-	log.Infof("Successfully unsuppressed %d CVEs", len(cves))
+	log.Infof("Successfully unsuppressed %d CVEs", totalUnsuppressedCVEs)
 }
 
-func (l *cveUnsuppressLoopImpl) getCVEsWithExpiredSuppressState() ([]string, error) {
+func getCVEsWithExpiredSuppressState(cveStore vulnsStore) ([]string, error) {
 	// TODO: ROX-4072: change the format to 01/02/2006 15:04:05 MST once timestamp query is supported
 	now := fmt.Sprintf("<%s", time.Now().Format("01/02/2006 MST"))
 	q := search.NewQueryBuilder().AddGenericTypeLinkedFields(
 		[]search.FieldLabel{search.CVESuppressed, search.CVESuppressExpiry}, []interface{}{true, now}).ProtoQuery()
-	results, err := l.cves.Search(reprocessorCtx, q)
-
+	results, err := cveStore.Search(reprocessorCtx, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
+	}
+
+	if features.PostgresDatastore.Enabled() {
+		cves := make([]string, 0, len(results))
+		for _, res := range results {
+			cve, _ := cve.IDToParts(res.ID)
+			cves = append(cves, cve)
+		}
+		return cves, nil
 	}
 	return search.ResultsToIDs(results), nil
 }

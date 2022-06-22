@@ -94,6 +94,9 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 	k8SRoleBindingCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, k8SRoleBindingCount)
+	k8SRoleBindingCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(k8SRoleBindingCount)
 
 	k8SRoleBindingExists, err := store.Exists(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundK8SRoleBinding)
+	s.NoError(store.Delete(withNoAccessCtx, k8SRoleBinding.GetId()))
 
 	var k8SRoleBindings []*storage.K8SRoleBinding
 	for i := 0; i < 200; i++ {

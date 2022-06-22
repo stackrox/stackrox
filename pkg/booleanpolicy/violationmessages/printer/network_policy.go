@@ -19,10 +19,6 @@ const (
 	PolicyName = "Policy name"
 )
 
-// TODO(ROX-9760): Implement these functions according to UX decision on how to display violations for missing network policies.
-// This is implemented with place-holder messages for now just to unblock further developments on the evaluation of
-// this policy.
-
 func hasIngressNetworkPolicyPrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		HasIngress bool

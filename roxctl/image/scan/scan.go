@@ -77,7 +77,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "the --force flag ignores Central's cache for the scan and forces a fresh re-pull from Scanner")
-	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", true, "the --include-snoozed flag returns both snoozed and unsnoozed CVEs if set to false")
+	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "the --include-snoozed flag returns both snoozed and unsnoozed CVEs if set")
 	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
 
