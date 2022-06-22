@@ -16,7 +16,7 @@ var (
 )
 
 type Store interface {
-	Get(ctx context.Context, id string) (*storage.Alert, bool, error)
+	// Get(ctx context.Context, id string) (*storage.Alert, bool, error)
     UpsertMany(ctx context.Context, objs []*storage.Alert) error
 	Walk(ctx context.Context, fn func(obj *storage.Alert) error) error
 }
@@ -40,7 +40,7 @@ func New(db *rocksdb.RocksDB) Store {
 		crud: generic.NewCRUD(db, bucket, keyFunc, alloc, true),
 	}
 }
-
+/*
 // Get returns the object, if it exists from the store
 func (b *storeImpl) Get(_ context.Context, id string) (*storage.Alert, bool, error) {
 	msg, exists, err := b.crud.Get(id)
@@ -49,6 +49,7 @@ func (b *storeImpl) Get(_ context.Context, id string) (*storage.Alert, bool, err
 	}
 	return msg.(*storage.Alert), true, nil
 }
+*/
 // UpsertMany batches objects into the DB
 func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.Alert) error {
 	msgs := make([]proto.Message, 0, len(objs))

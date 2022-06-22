@@ -32,10 +32,9 @@ var (
 			return nil
 		},
 	}
-	alertBucket = []byte("alerts")
-	batchSize   = 10000
-	schema      = pkgSchema.AlertsSchema
-	log         = loghelper.LogWrapper{}
+	batchSize = 10000
+	schema    = pkgSchema.AlertsSchema
+	log       = loghelper.LogWrapper{}
 )
 
 func moveAlerts(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore rocks.Store) error {

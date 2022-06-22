@@ -42,7 +42,6 @@ type postgresMigrationSuite struct {
     {{- if $rocksDB}}
 	// RocksDB
 	legacyDB *rocksdb.RocksDB
-	db      *gorocksdb.DB
 	{{- else}}
 	// Bolt DB
     legacyDB *bolt.DB
@@ -66,7 +65,6 @@ func (s *postgresMigrationSuite) SetupTest() {
     {{- if $rocksDB}}
 	s.legacyDB, err = rocksdb.NewTemp(s.T().Name())
 	s.NoError(err)
-	s.db = s.legacyDB.DB
 	{{- else}}
     s.legacyDB, err = bolthelper.NewTemp(s.T().Name() + ".db")
     s.NoError(err)

@@ -34,7 +34,6 @@ type postgresMigrationSuite struct {
 	ctx         context.Context
 	// RocksDB
 	legacyDB *rocksdb.RocksDB
-	db       *gorocksdb.DB
 	// PostgresDB
 	pool   *pgxpool.Pool
 	gormDB *gorm.DB
@@ -53,7 +52,6 @@ func (s *postgresMigrationSuite) SetupTest() {
 	var err error
 	s.legacyDB, err = rocksdb.NewTemp(s.T().Name())
 	s.NoError(err)
-	s.db = s.legacyDB.DB
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)

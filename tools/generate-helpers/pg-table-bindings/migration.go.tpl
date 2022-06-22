@@ -45,7 +45,6 @@ var (
 			return nil
 		},
 	}
-	{{$name}}Bucket = []byte("{{.Migration.MigrateFromBucket}}")
 	batchSize     = 10000
 	schema        = {{template "schemaVar" .Schema}}
 	log           = loghelper.LogWrapper{}
