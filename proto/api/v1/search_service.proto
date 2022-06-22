@@ -24,6 +24,7 @@ enum SearchCategory {
     PROCESS_INDICATORS        = 6;
     COMPLIANCE                = 7;
     CLUSTERS                  = 8;
+    CLUSTER_HEALTH            = 45;
     NAMESPACES                = 9;
     NODES                     = 10;
     NODE_COMPONENTS           = 38;
