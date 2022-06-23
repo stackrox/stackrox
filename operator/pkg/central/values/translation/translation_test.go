@@ -31,6 +31,8 @@ func TestTranslate(t *testing.T) {
 	claimName := "central-claim-name"
 	scannerComponentPolicy := platform.ScannerComponentEnabled
 	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
+	centralMonitoringExposeEndpointEnabled := platform.ExposeEndpointEnabled
+	centralMonitoringExposeEndpointDisabled := platform.ExposeEndpointDisabled
 
 	truth := true
 	lbPort := int32(12345)
@@ -52,6 +54,7 @@ func TestTranslate(t *testing.T) {
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
+					"exposeMonitoring": false,
 					"persistence": map[string]interface{}{
 						"persistentVolumeClaim": map[string]interface{}{
 							"createClaim": false,
@@ -102,6 +105,9 @@ func TestTranslate(t *testing.T) {
 							},
 							DefaultTLSSecret: &platform.LocalSecretReference{
 								Name: "my-default-tls-secret",
+							},
+							Monitoring: &platform.Monitoring{
+								ExposeEndpoint: &centralMonitoringExposeEndpointEnabled,
 							},
 							Persistence: &platform.Persistence{
 								HostPath: &platform.HostPathSpec{
@@ -257,6 +263,7 @@ func TestTranslate(t *testing.T) {
 							"operator": "Exists",
 						},
 					},
+					"exposeMonitoring": true,
 					"persistence": map[string]interface{}{
 						"hostPath": "/central/host/path",
 					},
@@ -379,9 +386,34 @@ func TestTranslate(t *testing.T) {
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
+					"exposeMonitoring": false,
 					"persistence": map[string]interface{}{
 						"persistentVolumeClaim": map[string]interface{}{
 							"claimName":   "stackrox-db-test",
+							"createClaim": false,
+						},
+					},
+				},
+			},
+		},
+
+		"disabled monitoring endpoint": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Monitoring: &platform.Monitoring{
+								ExposeEndpoint: &centralMonitoringExposeEndpointDisabled,
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"persistentVolumeClaim": map[string]interface{}{
 							"createClaim": false,
 						},
 					},
