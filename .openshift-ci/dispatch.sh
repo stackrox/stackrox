@@ -65,7 +65,7 @@ case "$ci_job" in
         "$ROOT/scripts/ci/jobs/ui-unit-tests.sh"
         ;;
     test-binary-build-commands)
-        make cli upgrader
+        "$ROOT/scripts/ci/jobs/test-binary-build-commands.sh"
         ;;
     push-images)
         "$ROOT/scripts/ci/jobs/push-images.sh" "$@"
