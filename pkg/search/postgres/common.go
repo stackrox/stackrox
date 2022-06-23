@@ -39,11 +39,14 @@ const (
 )
 
 func replaceVars(s string) string {
+	if len(s) == 0 {
+		return ""
+	}
 	varNum := 1
 	var newString strings.Builder
 	newString.Grow(len(s))
-	for i := 0; i < len(s)-1; i++ {
-		if s[i] == '$' && s[i+1] == '$' {
+	for i := 0; i < len(s); i++ {
+		if i < len(s)-1 && s[i] == '$' && s[i+1] == '$' {
 			newString.WriteRune('$')
 			newString.WriteString(strconv.Itoa(varNum))
 			varNum++
@@ -52,7 +55,6 @@ func replaceVars(s string) string {
 			newString.WriteByte(s[i])
 		}
 	}
-	newString.WriteByte(s[len(s)-1])
 	return newString.String()
 }
 

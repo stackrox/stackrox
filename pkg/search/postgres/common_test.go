@@ -34,6 +34,10 @@ func TestReplaceVars(t *testing.T) {
 			"$1",
 		},
 		{
+			query:  "select * from table where column > $$ and true",
+			result: "select * from table where column > $1 and true",
+		},
+		{
 			"$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$",
 			"$1 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11",
 		},
