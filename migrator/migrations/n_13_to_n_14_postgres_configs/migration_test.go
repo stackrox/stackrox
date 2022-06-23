@@ -6,15 +6,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_13_to_n_14_postgres_configs/legacy"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/features"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -75,34 +72,18 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
-	var configs []*storage.Config
 	legacyStore := legacy.New(s.legacyDB)
-	for i := 0; i < 200; i++ {
-		config := &storage.Config{}
-		s.NoError(testutils.FullInit(config, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		configs = append(configs, config)
-		s.NoError(legacyStore.Upsert(s.ctx, config))
-	}
+	config := &storage.Config{}
+	s.NoError(testutils.FullInit(config, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(legacyStore.Upsert(s.ctx, config))
 	s.NoError(moveConfigs(s.legacyDB, s.gormDB, s.pool, legacyStore))
-	var count int64
-	s.gormDB.Model(pkgSchema.CreateTableConfigsStmt.GormModel).Count(&count)
-	s.Equal(int64(len(configs)), count)
-	for _, config := range configs {
-		s.Equal(config, s.get())
-	}
+	s.Equal(config, s.get())
 }
 
 func (s *postgresMigrationSuite) get() *storage.Config {
-
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Config")
+	store := newStore(s.pool)
+	config, found, err := store.Get(s.ctx)
 	s.NoError(err)
-	defer release()
-
-	row := conn.QueryRow(ctx, getStmt)
-	var data []byte
-	err = row.Scan(&data)
-	s.NoError(pgutils.ErrNilIfNoRows(err))
-	var msg storage.Config
-	s.NoError(proto.Unmarshal(data, &msg))
-	return &msg
+	s.True(found)
+	return config
 }

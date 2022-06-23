@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_13_to_n_14_postgres_configs/legacy"
 	"github.com/stackrox/rox/migrator/types"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"
@@ -40,18 +39,17 @@ func moveConfigs(legacyDB *bolt.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, l
 	store := newStore(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 
-	var configs []*storage.Config
-	var err error
-	configs, err = legacyStore.GetAll(ctx)
+	config, found, err := legacyStore.Get(ctx)
 	if err != nil {
 		log.WriteToStderr("failed to fetch all configs")
 		return err
 	}
-	if len(configs) > 0 {
-		if err = store.copyFrom(ctx, configs...); err != nil {
-			log.WriteToStderrf("failed to persist configs to store %v", err)
-			return err
-		}
+	if !found {
+		return nil
+	}
+	if err = store.Upsert(ctx, config); err != nil {
+		log.WriteToStderrf("failed to persist configs to store %v", err)
+		return err
 	}
 	return nil
 }
@@ -65,14 +63,6 @@ func newStore(db *pgxpool.Pool) *storeImpl {
 	return &storeImpl{
 		db: db,
 	}
-}
-
-func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*pgxpool.Conn, func(), error) {
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
 }
 
 func init() {

@@ -64,7 +64,7 @@ var postgresPluginFile string
 
 var (
 	schemaTemplate            = newTemplate(schemaFile)
-	singletonTemplate         = newTemplate(singletonFile)
+	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage store", singletonFile}, "\n"))
 	singletonTestTemplate     = newTemplate(singletonTestFile)
 	storeTemplate             = newTemplate(strings.Join([]string{storeCommonFile, storeFile}, "\n"))
 	storeTestTemplate         = newTemplate(storeTestFile)
@@ -72,7 +72,6 @@ var (
 	permissionCheckerTemplate = newTemplate(permissionCheckerFile)
 	migrationTemplate         = newTemplate(migrationFile)
 	migrationTestTemplate     = newTemplate(strings.Join([]string{storeCommonFile, migrationTestFile}, "\n"))
-	postgresPluginTemplate    = newTemplate(strings.Join([]string{storeCommonFile, postgresPluginFile}, "\n"))
 )
 
 type properties struct {
@@ -300,6 +299,10 @@ func main() {
 		}
 
 		if props.MigrateSeq != 0 {
+			postgresPluginTemplate := newTemplate(strings.Join([]string{fmt.Sprintf("\npackage n%2dton%2d", props.MigrateSeq, props.MigrateSeq+1), singletonFile}, "\n"))
+			if !props.SingletonStore {
+				postgresPluginTemplate = newTemplate(strings.Join([]string{storeCommonFile, postgresPluginFile}, "\n"))
+			}
 			froms := strings.SplitN(props.MigrateFrom, ":", 2)
 			migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.MigrateSeq, props.MigrateSeq+1, props.Table)
 			root := filepath.Join(props.MigrateRoot, migrationDir)
@@ -308,6 +311,7 @@ func main() {
 				MigrateFromBucket: froms[1],
 				MigrateSequence:   props.MigrateSeq,
 				Dir:               migrationDir,
+				SingletonStore:    props.SingletonStore,
 			}
 
 			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {

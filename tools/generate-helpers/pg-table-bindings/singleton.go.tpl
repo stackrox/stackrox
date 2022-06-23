@@ -8,8 +8,6 @@
 
 {{- $ := . }}
 
-package postgres
-
 import (
     "context"
     "strings"

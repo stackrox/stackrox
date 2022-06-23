@@ -11,4 +11,5 @@ type MigrationOptions struct {
 	MigrateFromBucket string
 	MigrateSequence   int
 	Dir               string
+	SingletonStore    bool
 }
