@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Full RC number (A.B.C-rc.D)
+        description: Full RC version (A.B.C[-N]-rc.D)
         required: true
-        default: 0.0.0-rc.1
+        default: 0.0.0-test-rc.1
         type: string
       dry-run:
         description: Dry-run
@@ -41,7 +41,8 @@ jobs:
         env:
           JQL: >-
             project IN (${{env.jira_projects}})
-            AND fixVersion = \"${{needs.variables.outputs.release-patch}}\"
+            AND fixVersion IN (\"${{needs.variables.outputs.release-patch}}\",
+            \"${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}\")
             AND status != CLOSED
             AND Component != Documentation AND type != Epic
             order by assignee
