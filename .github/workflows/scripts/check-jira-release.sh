@@ -2,7 +2,7 @@
 #
 # Queries Jira for the release date.
 #
-set -euo pipeline
+set -euo pipefail
 
 VERSION="$1"
 
