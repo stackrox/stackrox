@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import Raven from 'raven-js';
 import pluralize from 'pluralize';
-import { format } from 'date-fns';
 import {
     Alert,
     Button,
@@ -54,6 +53,9 @@ const tileLinks: Record<TileEntity, string> = {
     Image: vulnManagementImagesPath,
     Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
 };
+
+const dateFormatter = new Intl.DateTimeFormat('en-US');
+const timeFormatter = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric' });
 
 function SummaryCounts() {
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -118,7 +120,9 @@ function SummaryCounts() {
                 style={{ fontStyle: 'italic' }}
                 className="pf-u-color-200 pf-u-font-size-sm pf-u-mr-md pf-u-mr-lg-on-lg"
             >
-                Last updated {format(lastUpdate, 'DD/MM/YYYY')} at {format(lastUpdate, 'hh:mm A')}
+                {`Last updated ${dateFormatter.format(lastUpdate)} at ${timeFormatter.format(
+                    lastUpdate
+                )}`}
             </div>
         </Split>
     );
