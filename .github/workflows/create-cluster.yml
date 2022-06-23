@@ -1,0 +1,71 @@
+name: Create Test Cluster
+on:
+  workflow_call:
+    inputs:
+      flavor:
+        description: Flavor
+        type: string
+        required: true
+      name:
+        description: Cluster name
+        type: string
+        required: true
+      lifespan:
+        description: Cluster lifespan
+        type: string
+        default: 48h
+        required: false
+      args:
+        description: Comma separated flavor arguments. Ex. nodes=5,main-image=main:tag
+        type: string
+        required: false
+        default: ""
+      wait:
+        description: Whether to wait for the cluster readiness
+        type: boolean
+        required: false
+        default: false
+jobs:
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download infractl
+        run: |
+          curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
+          | jq -r ".result.fileChunk" \
+          | base64 -d \
+          > infractl
+          chmod +x infractl
+      - name: Create Cluster
+        env:
+          INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
+        run: |
+          set -u
+          NAME="${{inputs.name}}"
+
+          if STATUS=$(./infractl get "${NAME//./-}"); then
+            echo "$STATUS" >> $GITHUB_STEP_SUMMARY
+            if ! grep "Status:[ \t]*FAILED" <<< "$STATUS"; then
+              echo "::notice::Cluster \`${NAME//./-}\` already exists."
+              // TODO: wait for the cluster being created to finish.
+              exit 0;
+            fi
+          fi
+
+          OPTIONS=()
+          if [ "${{inputs.wait}}" = "true" ]; then
+            OPTIONS+=("--wait")
+            echo "::warning::The job will wait for the cluster creation to finish."
+          fi
+
+          IFS=',' read -ra args <<< "${{inputs.args}}"
+          for arg in "${args[@]}"; do
+            OPTIONS+=("--arg")
+            OPTIONS+=("$arg")
+          done
+
+          ./infractl create "${{inputs.flavor}}" "${NAME//./-}" \
+            --lifespan "${{inputs.lifespan}}" \
+            "${OPTIONS[@]}"
+
+          ./infractl get "${NAME//./-}" >> $GITHUB_STEP_SUMMARY

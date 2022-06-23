@@ -3,7 +3,7 @@ package datastore
 import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
-	dackbox "github.com/stackrox/rox/central/globaldb/dackbox"
+	globalDackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/idmap"
 	"github.com/stackrox/rox/central/namespace/index"
@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/namespace/store/postgres"
 	"github.com/stackrox/rox/central/namespace/store/rocksdb"
 	"github.com/stackrox/rox/central/ranking"
+	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -25,16 +26,18 @@ var (
 func initialize() {
 	var storage store.Store
 	var indexer index.Indexer
+	var dackBox *dackbox.DackBox
 	if features.PostgresDatastore.Enabled() {
 		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {
+		dackBox = globalDackbox.GetGlobalDackBox()
 		storage = rocksdb.New(globaldb.GetRocksDB())
 		indexer = index.New(globalindex.GetGlobalTmpIndex())
 	}
 
 	var err error
-	as, err = New(storage, dackbox.GetGlobalDackBox(), indexer, deploymentDataStore.Singleton(), ranking.NamespaceRanker(), idmap.StorageSingleton())
+	as, err = New(storage, dackBox, indexer, deploymentDataStore.Singleton(), ranking.NamespaceRanker(), idmap.StorageSingleton())
 	utils.CrashOnError(err)
 }
 

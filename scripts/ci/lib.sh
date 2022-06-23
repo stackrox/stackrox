@@ -38,11 +38,8 @@ setup_deployment_env() {
     local docker_login="$1"
     local use_websocket="$2"
 
-    require_environment QUAY_RHACS_ENG_RO_USERNAME
-    require_environment QUAY_RHACS_ENG_RO_PASSWORD
-
     if [[ "$docker_login" == "true" ]]; then
-        docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
+        registry_ro_login "quay.io/rhacs-eng"
     fi
 
     if [[ "$use_websocket" == "true" ]]; then
@@ -115,7 +112,7 @@ get_central_diagnostics() {
 }
 
 push_main_image_set() {
-    info "Pushing main and roxctl images"
+    info "Pushing main, roxctl and central-db images"
 
     if [[ "$#" -ne 2 ]]; then
         die "missing arg. usage: push_main_image_set <push_context> <brand>"
@@ -161,21 +158,8 @@ push_main_image_set() {
     }
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        require_environment "QUAY_STACKROX_IO_RW_USERNAME"
-        require_environment "QUAY_STACKROX_IO_RW_PASSWORD"
-
-        docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
-
         local destination_registries=("quay.io/stackrox-io")
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        require_environment "DOCKER_IO_PUSH_USERNAME"
-        require_environment "DOCKER_IO_PUSH_PASSWORD"
-        require_environment "QUAY_RHACS_ENG_RW_USERNAME"
-        require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
-
-        docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-        docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-
         local destination_registries=("docker.io/stackrox" "quay.io/rhacs-eng")
     else
         die "$brand is not a supported brand"
@@ -184,6 +168,8 @@ push_main_image_set() {
     local tag
     tag="$(make --quiet tag)"
     for registry in "${destination_registries[@]}"; do
+        registry_rw_login "$registry"
+
         if is_OPENSHIFT_CI; then
             _mirror_main_image_set "$registry" "$tag"
         else
@@ -201,6 +187,63 @@ push_main_image_set() {
     done
 }
 
+push_docs_image() {
+    info "Pushing the docs image"
+
+    if ! is_OPENSHIFT_CI; then
+        die "Only supported in OpenShift CI"
+    fi
+
+    oc registry login
+    local docs_tag
+    docs_tag="$(make --quiet docs-tag)"
+
+    local registries=("docker.io/stackrox" "quay.io/rhacs-eng" "quay.io/stackrox-io")
+
+    for registry in "${registries[@]}"; do
+        registry_rw_login "$registry"
+        oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
+    done
+}
+
+registry_rw_login() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: registry_rw_login <registry>"
+    fi
+
+    local registry="$1"
+
+    case "$registry" in
+        docker.io/stackrox)        
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+            ;;
+        quay.io/rhacs-eng)
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            ;;
+        quay.io/stackrox-io)
+            docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+            ;;
+        *)
+            die "Unsupported registry login: $registry" 
+    esac
+}
+
+registry_ro_login() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: registry_ro_login <registry>"
+    fi
+
+    local registry="$1"
+
+    case "$registry" in
+        quay.io/rhacs-eng)
+            docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
+            ;;
+        *)
+            die "Unsupported registry login: $registry" 
+    esac
+}
+
 push_matching_collector_scanner_images() {
     info "Pushing collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng"
 
@@ -215,24 +258,11 @@ push_matching_collector_scanner_images() {
     local brand="$1"
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        require_environment "QUAY_STACKROX_IO_RW_USERNAME"
-        require_environment "QUAY_STACKROX_IO_RW_PASSWORD"
-
-        docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
-
         local source_registry="quay.io/stackrox-io"
         local target_registries=( "quay.io/stackrox-io" )
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        require_environment "DOCKER_IO_PUSH_USERNAME"
-        require_environment "DOCKER_IO_PUSH_PASSWORD"
-        require_environment "QUAY_RHACS_ENG_RW_USERNAME"
-        require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
-
-        docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-        docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-
         local source_registry="quay.io/rhacs-eng"
-        local target_registries=( "docker.io/stackrox" "quay.io/rhacs-eng" )
+        local target_registries=( "quay.io/rhacs-eng" "docker.io/stackrox" )
     else
         die "$brand is not a supported brand"
     fi
@@ -253,6 +283,8 @@ push_matching_collector_scanner_images() {
     collector_version="$(make --quiet collector-tag)"
 
     for target_registry in "${target_registries[@]}"; do
+        registry_rw_login "${target_registry}"
+
         _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
         _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
         _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}"
