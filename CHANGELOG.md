@@ -6,6 +6,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+- ROX-11349: Updated rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
 - ROX-11443: The default value for `--include-snoozed` option of `roxctl image scan` command is set to `false`. The result of `roxctl image scan` execution without `--include-snoozed` flag will not include deferred CVEs anymore.
 - ROX-9760: The deployment tab on violation detail now contains a list of network policies in the deployment's namespace.
 - ROX-9358: The diagnostic bundle includes notifiers, auth providers and auth provider groups, access control roles with attached permission set and access scope, and system configuration. Users with `DebugLogs` permission will be able to read listed entities from a generated diagnostic bundle regardless of their respective permissions.

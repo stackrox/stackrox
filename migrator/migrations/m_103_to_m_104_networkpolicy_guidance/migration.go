@@ -1,4 +1,4 @@
-package m_103_to_m_104_networkpolicy_guidance
+package m103tom104
 
 import (
 	"embed"
