@@ -165,7 +165,7 @@ jobs:
           SCRIPT="patch-changelog.sh"
           gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
             "${{inputs.version}}" "${{inputs.ref}}" "${{needs.variables.outputs.branch}}" "${{inputs.dry-run}}"
-          
+
   milestone:
     name: Create milestone
     needs: [variables]
