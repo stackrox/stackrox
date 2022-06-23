@@ -49,7 +49,7 @@ func (s *signalServer) PushSignals(stream sensorAPI.SignalService_PushSignalsSer
 			processSignal = signal.GetSignal().GetProcessSignal()
 		}
 
-		processInfo := fmt.Sprintf("%s:%s:%d:%d", processSignal.GetName(), processSignal.GetExecFilePath(), processSignal.GetUid(), processSignal.GetGid())
+		processInfo := fmt.Sprintf("%s:%s:%d:%d:%d:%s", processSignal.GetName(), processSignal.GetExecFilePath(), processSignal.GetUid(), processSignal.GetGid(), processSignal.GetPid(), processSignal.GetArgs())
 		fmt.Printf("ProcessInfo: %s %s\n", processSignal.GetContainerId(), processInfo)
 		if err := s.UpdateProcessSignals(processSignal.GetName(), processInfo); err != nil {
 			return err
