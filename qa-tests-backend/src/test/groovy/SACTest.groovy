@@ -76,6 +76,7 @@ class SACTest extends BaseSpecification {
 
     static final private Integer WAIT_FOR_RISK_RETRIES =
             isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 80 : 50)
+    static final private String DENY_ALL = 'io.stackrox.authz.accessscope.denyall'
 
     @Shared
     private Map<String, RoleOuterClass.Access> allResourcesAccess
@@ -115,13 +116,10 @@ class SACTest extends BaseSpecification {
 
         allResourcesAccess = RoleService.resources.resourcesList.collectEntries { [it, READ_WRITE_ACCESS] }
 
-        // TODO: Replace with the defaultAccessScope id: "denyall"
-        def noaccessScope = RoleService.createAccessScope(newBuilder()
-                .setName("no-access-scope").build())
         def remoteQaTest1 = createAccessScope(DEFAULT_CLUSTER_NAME, "qa-test1")
         def remoteQaTest2 = createAccessScope(DEFAULT_CLUSTER_NAME, "qa-test2")
 
-        def noaccess = createRole(noaccessScope.id, allResourcesAccess)
+        def noaccess = createRole(DENY_ALL, allResourcesAccess)
 
         tokenToRoles = [
                 (NOACCESSTOKEN)                   : [noaccess],
