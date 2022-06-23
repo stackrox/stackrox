@@ -73,57 +73,57 @@ func (s *ImageCvesStoreSuite) TestStore() {
 
 	store := s.store
 
-	cVE := &storage.CVE{}
-	s.NoError(testutils.FullInit(cVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	imageCVE := &storage.ImageCVE{}
+	s.NoError(testutils.FullInit(imageCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundCVE, exists, err := store.Get(ctx, cVE.GetId())
+	foundImageCVE, exists, err := store.Get(ctx, imageCVE.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundCVE)
+	s.Nil(foundImageCVE)
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 
-	s.NoError(store.Upsert(ctx, cVE))
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId())
+	s.NoError(store.Upsert(ctx, imageCVE))
+	foundImageCVE, exists, err = store.Get(ctx, imageCVE.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(cVE, foundCVE)
+	s.Equal(imageCVE, foundImageCVE)
 
-	cVECount, err := store.Count(ctx)
+	imageCVECount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(1, cVECount)
-	cVECount, err = store.Count(withNoAccessCtx)
+	s.Equal(1, imageCVECount)
+	imageCVECount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
-	s.Zero(cVECount)
+	s.Zero(imageCVECount)
 
-	cVEExists, err := store.Exists(ctx, cVE.GetId())
+	imageCVEExists, err := store.Exists(ctx, imageCVE.GetId())
 	s.NoError(err)
-	s.True(cVEExists)
-	s.NoError(store.Upsert(ctx, cVE))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, cVE), sac.ErrResourceAccessDenied)
+	s.True(imageCVEExists)
+	s.NoError(store.Upsert(ctx, imageCVE))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, imageCVE), sac.ErrResourceAccessDenied)
 
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId())
+	foundImageCVE, exists, err = store.Get(ctx, imageCVE.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(cVE, foundCVE)
+	s.Equal(imageCVE, foundImageCVE)
 
-	s.NoError(store.Delete(ctx, cVE.GetId()))
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId())
+	s.NoError(store.Delete(ctx, imageCVE.GetId()))
+	foundImageCVE, exists, err = store.Get(ctx, imageCVE.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundCVE)
-	s.NoError(store.Delete(withNoAccessCtx, cVE.GetId()))
+	s.Nil(foundImageCVE)
+	s.NoError(store.Delete(withNoAccessCtx, imageCVE.GetId()))
 
-	var cVEs []*storage.CVE
+	var imageCVEs []*storage.ImageCVE
 	for i := 0; i < 200; i++ {
-		cVE := &storage.CVE{}
-		s.NoError(testutils.FullInit(cVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		cVEs = append(cVEs, cVE)
+		imageCVE := &storage.ImageCVE{}
+		s.NoError(testutils.FullInit(imageCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		imageCVEs = append(imageCVEs, imageCVE)
 	}
 
-	s.NoError(store.UpsertMany(ctx, cVEs))
+	s.NoError(store.UpsertMany(ctx, imageCVEs))
 
-	cVECount, err = store.Count(ctx)
+	imageCVECount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, cVECount)
+	s.Equal(200, imageCVECount)
 }
