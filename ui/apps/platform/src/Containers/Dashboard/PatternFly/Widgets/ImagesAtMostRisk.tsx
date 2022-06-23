@@ -22,11 +22,12 @@ import { gql, useQuery } from '@apollo/client';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import WidgetCard from './WidgetCard';
 import ImagesAtMostRiskTable, { CveStatusOption, ImageData } from './ImagesAtMostRiskTable';
+import isResourceScoped from '../utils';
 
 function getTitle(searchFilter: SearchFilter, imageStatusOption: ImageStatusOption) {
-    return imageStatusOption === 'Active' || searchFilter.Cluster || searchFilter['Namespace ID']
-        ? 'Active images with most severe CVEs'
-        : 'Images with most severe CVEs';
+    return imageStatusOption === 'Active' || isResourceScoped(searchFilter)
+        ? 'Active images at most risk'
+        : 'All images at most risk';
 }
 
 function getViewAllLink(searchFilter: SearchFilter) {
@@ -64,9 +65,8 @@ export const imagesQuery = gql`
 `;
 
 function getQueryVariables(searchFilter: SearchFilter, statusOption: ImageStatusOption) {
-    const hasUserAppliedFilter = searchFilter.Cluster || searchFilter['Namespace ID'];
     const query =
-        statusOption === 'Active' && !hasUserAppliedFilter
+        statusOption === 'Active' && !isResourceScoped(searchFilter)
             ? 'Namespace:*'
             : getRequestQueryStringForSearchFilter(searchFilter);
     return { query };
@@ -81,7 +81,7 @@ function ImagesAtMostRisk() {
     const { searchFilter } = useURLSearch();
 
     const [cveStatusOption, setCveStatusOption] = useState<CveStatusOption>('Fixable');
-    const [imageStatusOption, setImageStatusOption] = useState<ImageStatusOption>('Active');
+    const [imageStatusOption, setImageStatusOption] = useState<ImageStatusOption>('All');
 
     const variables = getQueryVariables(searchFilter, imageStatusOption);
     const { data, previousData, loading, error } = useQuery<ImageData>(imagesQuery, {
@@ -89,6 +89,7 @@ function ImagesAtMostRisk() {
     });
 
     const imageData = data || previousData;
+    const isScopeApplied = isResourceScoped(searchFilter);
 
     return (
         <WidgetCard
@@ -141,15 +142,20 @@ function ImagesAtMostRisk() {
                                 >
                                     <ToggleGroup aria-label="Show all images or active images only">
                                         <ToggleGroupItem
-                                            text="Active Images"
+                                            text="Active images"
                                             buttonId={`${fieldIdPrefix}-status-active`}
-                                            isSelected={imageStatusOption === 'Active'}
+                                            isSelected={
+                                                imageStatusOption === 'Active' || isScopeApplied
+                                            }
                                             onChange={() => setImageStatusOption('Active')}
                                         />
                                         <ToggleGroupItem
                                             text="All images"
                                             buttonId={`${fieldIdPrefix}-status-all`}
-                                            isSelected={imageStatusOption === 'All'}
+                                            isSelected={
+                                                imageStatusOption === 'All' && !isScopeApplied
+                                            }
+                                            isDisabled={isScopeApplied}
                                             onChange={() => setImageStatusOption('All')}
                                         />
                                     </ToggleGroup>

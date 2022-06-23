@@ -49,7 +49,7 @@ const mocks = [
         request: {
             query: imagesQuery,
             variables: {
-                query: 'Namespace:*',
+                query: '',
             },
         },
         result: {
@@ -86,16 +86,16 @@ describe('Images at most risk dashboard widget', () => {
 
         expect(
             await screen.findByRole('heading', {
-                name: 'Active images with most severe CVEs',
+                name: 'All images at most risk',
             })
         ).toBeInTheDocument();
 
         await user.click(await screen.findByRole('button', { name: `Options` }));
-        await user.click(await screen.findByRole('button', { name: `All images` }));
+        await user.click(await screen.findByRole('button', { name: `Active images` }));
 
         expect(
             await screen.findByRole('heading', {
-                name: 'Images with most severe CVEs',
+                name: 'Active images at most risk',
             })
         ).toBeInTheDocument();
     });
@@ -121,7 +121,7 @@ describe('Images at most risk dashboard widget', () => {
             utils: { history },
         } = setup();
 
-        await screen.findByRole('heading', { name: 'Active images with most severe CVEs' });
+        await screen.findByRole('heading', { name: 'All images at most risk' });
         await user.click(screen.getByRole('link', { name: 'reg/name-2:tag' }));
         expect(history.location.pathname).toBe('/main/vulnerability-management/image/2');
         expect(history.location.hash).toBe('#image-findings');
