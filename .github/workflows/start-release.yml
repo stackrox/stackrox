@@ -177,13 +177,13 @@ jobs:
           if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"; then
             echo "Branch \`$CHANGELOG_BRANCH\` already exists." >> $GITHUB_STEP_SUMMARY
 
-            EXISTING_PR=($(gh pr list --head "$CHANGELOG_BRANCH" --search "$TITLE in:title" --state open --json number,url --jq ".[]|.number,.url"))
+            EXISTING_PR=($(gh pr list --head "$CHANGELOG_BRANCH" --state open --json number,url --jq ".[]|.number,.url"))
             if [ "${#EXISTING_PR[@]}" -eq 2 ]; then
               echo ":arrow_right: There is already an open [PR ${EXISTING_PR[0]}](${EXISTING_PR[1]})," \
                 "which needs to be merged, ensuring all lines added to \`CHANGELOG.md\` after the release branch are listed" \
                 "above the \`[${{inputs.version}}]\` section." >> $GITHUB_STEP_SUMMARY
             else
-              echo ":arrow_right: There is no open PR from this branch. Please open a PR to the ${{env.main_branch}} if" \
+              echo ":arrow_right: There is no open PR from this branch. Please open a PR to the ${{env.main_branch}} branch if" \
                 "\`[CHANGELOG.md](${{github.server_url}}/${{github.repository}}/blob/${{env.main_branch}}/CHANGELOG.md)\`" \
                 "still needs to be updated." >> $GITHUB_STEP_SUMMARY
             fi
