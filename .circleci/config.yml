@@ -1412,13 +1412,6 @@ commands:
           command: |
             ./scripts/ci/create-default-psp.sh
 
-  deploy-authz-plugin:
-    steps:
-      - run:
-          name: Deploy Default Authorization Plugin
-          command: |
-            ./scripts/ci/create-scopedaccessserver.sh
-
   deploy-clair:
     parameters:
       cluster-id:
@@ -1526,7 +1519,6 @@ commands:
 
       - deploy-default-psp
       - deploy-webhook-server
-      - deploy-authz-plugin
 
       - *getECRDockerPullPassword
       - *restoreGradle
@@ -1872,7 +1864,6 @@ commands:
             oc -n stackrox label --overwrite svc sensor kicked="$(date +'%s')"
 
       - deploy-webhook-server
-      - deploy-authz-plugin
 
       - *getECRDockerPullPassword
       - *restoreGradle
@@ -2458,7 +2449,6 @@ jobs:
 
       - deploy-default-psp
       - deploy-webhook-server
-      - deploy-authz-plugin
 
       - *getECRDockerPullPassword
       - *restoreGradle
@@ -3731,7 +3721,6 @@ jobs:
             - *setupClientTLSCerts
 
       - deploy-webhook-server
-      - deploy-authz-plugin
 
       - *getECRDockerPullPassword
       - *restoreGradle
