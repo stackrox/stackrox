@@ -1,16 +1,21 @@
 import static com.jayway.restassured.RestAssured.given
+
 import com.jayway.restassured.response.Response
-import common.Constants
-import groups.BAT
-import groups.NetworkFlowVisualization
-import groups.RUNTIME
 import io.grpc.StatusRuntimeException
+import orchestratormanager.OrchestratorTypes
+import org.yaml.snakeyaml.Yaml
+
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraph
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkNode
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
 import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
+
+import common.Constants
+import groups.BAT
+import groups.NetworkFlowVisualization
+import groups.RUNTIME
 import objects.DaemonSet
 import objects.Deployment
 import objects.Edge
@@ -18,22 +23,20 @@ import objects.K8sServiceAccount
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
-import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
-import org.junit.experimental.categories.Category
-import org.yaml.snakeyaml.Yaml
 import services.ClusterService
 import services.NetworkGraphService
 import services.NetworkPolicyService
-import spock.lang.Ignore
-import spock.lang.IgnoreIf
-import spock.lang.Shared
-import spock.lang.Stepwise
-import spock.lang.Unroll
 import util.Env
 import util.Helpers
 import util.NetworkGraphUtil
 import util.Timer
+
+import org.junit.Assume
+import org.junit.experimental.categories.Category
+import spock.lang.Ignore
+import spock.lang.Shared
+import spock.lang.Stepwise
+import spock.lang.Unroll
 
 @Stepwise
 class NetworkFlowTest extends BaseSpecification {
@@ -633,7 +636,6 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Category([BAT])
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify generated network policies"() {
         // ROX-8785 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
