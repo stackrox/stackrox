@@ -1273,47 +1273,47 @@ func (s *IndexSuite) TestPagination() {
 	}{
 		{
 			"sort ascending",
-			search.NewPagination().AddSortOption(search.TestString, false),
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString)),
 			[]int{1, 2, 4, 5, 7},
 		},
 		{
 			"sort descending",
-			search.NewPagination().AddSortOption(search.TestString, true),
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString).Reversed(true)),
 			[]int{7, 5, 4, 2, 1},
 		},
 		{
 			"limit",
-			search.NewPagination().AddSortOption(search.TestString, false).Limit(3),
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString)).Limit(3),
 			[]int{1, 2, 4},
 		},
 		{
 			"limit descending",
-			search.NewPagination().AddSortOption(search.TestString, true).Limit(3),
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString).Reversed(true)).Limit(3),
 			[]int{7, 5, 4},
 		},
 		{
 			"offset",
-			search.NewPagination().AddSortOption(search.TestString, false).Offset(2),
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString)).Offset(2),
 			[]int{4, 5, 7},
 		},
 		{
 			"offset descending",
-			search.NewPagination().AddSortOption(search.TestString, true).Offset(2),
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString).Reversed(true)).Offset(2),
 			[]int{4, 2, 1},
 		},
 		{
 			"limit + offset",
-			search.NewPagination().AddSortOption(search.TestString, false).Offset(2).Limit(2),
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString)).Offset(2).Limit(2),
 			[]int{4, 5},
 		},
 		{
 			"limit + offset descending",
-			search.NewPagination().AddSortOption(search.TestString, true).Offset(2).Limit(2),
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString).Reversed(true)).Offset(2).Limit(2),
 			[]int{4, 2},
 		},
 		{
 			"invalid",
-			search.NewPagination().AddSortOption(search.TestString, true).Offset(10).Limit(2),
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString).Reversed(true)).Offset(10).Limit(2),
 			[]int{},
 		},
 	} {
@@ -1325,7 +1325,7 @@ func (s *IndexSuite) TestPagination() {
 			actualMatches := make([]int, 0, len(results))
 			for resultIdx, r := range results {
 				for i, s := range testStructs {
-					if r.ID == s.Key1+pkgPostgres.IDSeparator+s.Key2 {
+					if r.ID == getID(s) {
 						actualMatches = append(actualMatches, i)
 						break
 					}
