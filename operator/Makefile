@@ -9,6 +9,7 @@ VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(
 
 GO_VERSION ?= $(shell cat ../EXPECTED_GO_VERSION | sed 's/go//')
 
+# Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
 # CHANNELS define the bundle channels used in the bundle.

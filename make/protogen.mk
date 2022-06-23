@@ -1,4 +1,5 @@
 BASE_PATH ?= $(CURDIR)
+# Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to

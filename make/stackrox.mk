@@ -2,6 +2,7 @@
 IMAGE ?= $(ROX_PROJECT)
 PROJECT_SUBDIR ?= $(ROX_PROJECT)
 BINARY ?= $(ROX_PROJECT)
+# Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
 GO111MODULE := on

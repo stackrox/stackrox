@@ -4,6 +4,7 @@ ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 
+# Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
 # UNIT_TEST_IGNORE ignores a set of file patterns from the unit test make command.
