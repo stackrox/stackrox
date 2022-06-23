@@ -19,12 +19,6 @@ test_part_1() {
 
     export_test_environment
 
-    if is_OPENSHIFT_CI; then
-        # TODO(RS-494) may provide roxctl
-        make cli-linux
-        install_built_roxctl_in_gopath
-    fi
-
     setup_gcp
     setup_deployment_env false false
     remove_existing_stackrox_resources
