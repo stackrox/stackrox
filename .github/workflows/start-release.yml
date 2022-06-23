@@ -33,17 +33,17 @@ jobs:
     outputs:
       release-date: ${{steps.check-jira-release.outputs.date}}
     steps:
-      - name: Check that Jira release ${{github.event.inputs.version}} is not released
+      - name: Check that Jira release ${{inputs.version}} is not released
         id: check-jira-release
         run: |
           set -u
           JIRA_RELEASE_DATE="$(curl --fail -sSL \
             -H "Authorization: Bearer $JIRA_TOKEN" \
             "https://issues.redhat.com/rest/api/2/project/${{env.jira_project}}/versions" \
-          | jq -r '.[] | select(.name == "${{github.event.inputs.version}}" and .released == false) | .releaseDate')"
+          | jq -r '.[] | select(.name == "${{inputs.version}}" and .released == false) | .releaseDate')"
 
           if [ -z "$JIRA_RELEASE_DATE" ]; then
-            echo "::error::Couldn't find unreleased JIRA release \`${{github.event.inputs.version}}\`."
+            echo "::error::Couldn't find unreleased JIRA release \`${{inputs.version}}\`."
           else
             echo "Release date: $JIRA_RELEASE_DATE" >> $GITHUB_STEP_SUMMARY
             echo "::set-output name=date::$JIRA_RELEASE_DATE"
@@ -53,7 +53,7 @@ jobs:
     name: Setup variables
     uses: ./.github/workflows/variables.yml
     with:
-      version: ${{github.event.inputs.version}}
+      version: ${{inputs.version}}
 
   check-docs-branch:
     name: Check documentation branch
@@ -106,7 +106,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
         with:
-          ref: ${{github.event.inputs.ref}}
+          ref: ${{inputs.ref}}
       - name: Check remote branch exists
         id: check-existing
         run: |
@@ -137,14 +137,14 @@ jobs:
       - name: Update the changelog
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
-          sed -i "s/## \[NEXT RELEASE\]/## [${{github.event.inputs.version}}]/" CHANGELOG.md
+          sed -i "s/## \[NEXT RELEASE\]/## [${{inputs.version}}]/" CHANGELOG.md
           git add CHANGELOG.md
           if ! git diff-index --quiet HEAD; then
-            git commit --message "Changelog for ${{github.event.inputs.version}}"
+            git commit --message "Changelog for ${{inputs.version}}"
             echo "\`CHANGELOG.md\` updated on release branch." >> $GITHUB_STEP_SUMMARY
           fi
       - name: Push changes
-        if: github.event.inputs.dry-run != 'true' && steps.check-existing.outputs.branch-exists == 'false'
+        if: inputs.dry-run != 'true' && steps.check-existing.outputs.branch-exists == 'false'
         run: |
           git push --set-upstream origin ${{needs.variables.outputs.branch}}
 
@@ -156,7 +156,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
         with:
-          ref: ${{github.event.inputs.ref}}
+          ref: ${{inputs.ref}}
       - name: Initialize mandatory git config
         run: |
           git config user.name "${{github.event.sender.login}}"
@@ -166,18 +166,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -u
-          CHANGELOG_BRANCH="automation/changelog-${{github.event.inputs.version}}"
+          CHANGELOG_BRANCH="automation/changelog-${{inputs.version}}"
           if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"; then
             echo "Branch \`$CHANGELOG_BRANCH\` already exists."
             exit 0
           fi
           git switch --create "$CHANGELOG_BRANCH"
-          sed -i "s/## \[NEXT RELEASE\]/\\0\n\n## [${{github.event.inputs.version}}]/" CHANGELOG.md
+          sed -i "s/## \[NEXT RELEASE\]/\\0\n\n## [${{inputs.version}}]/" CHANGELOG.md
           git add CHANGELOG.md
           if ! git diff-index --quiet HEAD; then
-            git commit --message "Next version in changelog after ${{github.event.inputs.version}}"
+            git commit --message "Next version in changelog after ${{inputs.version}}"
 
-            if [ "${{github.event.inputs.dry-run}}" != "true" ]; then
+            if [ "${{inputs.dry-run}}" != "true" ]; then
               git push --set-upstream origin "$CHANGELOG_BRANCH"
               gh pr create \
                 --title "Advance \`CHANGELOG.md\` to the next release" \
@@ -198,7 +198,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Create ${{needs.variables.outputs.milestone}} milestone
-        if: github.event.inputs.dry-run != 'true'
+        if: inputs.dry-run != 'true'
         run: |
           set -u
           if ! http_code=$(gh api --silent -X POST \
