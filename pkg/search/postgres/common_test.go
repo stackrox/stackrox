@@ -5,6 +5,7 @@ package postgres
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -44,10 +45,18 @@ func TestReplaceVars(t *testing.T) {
 	}
 }
 
-func BenchmarkVarsBench(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		replaceVars("$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$")
-	}
+func BenchmarkReplaceVars(b *testing.B) {
+	veryLongString := strings.Repeat("$$ ", 1000)
+	b.Run("short", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			replaceVars("$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$")
+		}
+	})
+	b.Run("long", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			replaceVars(veryLongString)
+		}
+	})
 }
 
 func TestMultiTableQueries(t *testing.T) {

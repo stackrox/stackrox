@@ -40,15 +40,19 @@ const (
 
 func replaceVars(s string) string {
 	varNum := 1
+	var newString strings.Builder
+	newString.Grow(len(s))
 	for i := 0; i < len(s)-1; i++ {
 		if s[i] == '$' && s[i+1] == '$' {
-			varStr := strconv.Itoa(varNum)
-			s = s[:i+1] + varStr + s[i+2:]
-			i += len(varStr)
+			newString.WriteRune('$')
+			newString.WriteString(strconv.Itoa(varNum))
 			varNum++
+			i++
+		} else {
+			newString.WriteByte(s[i])
 		}
 	}
-	return s
+	return newString.String()
 }
 
 type innerJoin struct {
