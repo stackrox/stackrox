@@ -299,9 +299,9 @@ func main() {
 		}
 
 		if props.MigrateSeq != 0 {
-			postgresPluginTemplate := newTemplate(strings.Join([]string{fmt.Sprintf("\npackage n%2dton%2d", props.MigrateSeq, props.MigrateSeq+1), singletonFile}, "\n"))
-			if !props.SingletonStore {
-				postgresPluginTemplate = newTemplate(strings.Join([]string{storeCommonFile, postgresPluginFile}, "\n"))
+			postgresPluginTemplate := storeTemplate
+			if props.SingletonStore {
+				postgresPluginTemplate = singletonTemplate
 			}
 			froms := strings.SplitN(props.MigrateFrom, ":", 2)
 			migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.MigrateSeq, props.MigrateSeq+1, props.Table)
@@ -320,8 +320,13 @@ func main() {
 			if err := renderFile(templateMap, migrationTestTemplate, filepath.Join(root, "migration_test.go")); err != nil {
 				return err
 			}
-			if err := renderFile(templateMap, postgresPluginTemplate, filepath.Join(root, "postgres_plugin.go")); err != nil {
+			if err := renderFile(templateMap, postgresPluginTemplate, filepath.Join(root, "postgres/postgres_plugin.go")); err != nil {
 				return err
+			}
+			if permissionCheckerEnabled {
+				if err := renderFile(templateMap, permissionCheckerTemplate, filepath.Join(root, "postgres/permission_checker.go")); err != nil {
+					return err
+				}
 			}
 		}
 

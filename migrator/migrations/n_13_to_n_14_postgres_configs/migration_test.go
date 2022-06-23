@@ -9,10 +9,12 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_13_to_n_14_postgres_configs/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/n_13_to_n_14_postgres_configs/postgres"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -55,7 +57,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	s.ctx = context.Background()
+	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
 	s.Require().NoError(err)
 	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
@@ -69,21 +71,16 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
-
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
 	legacyStore := legacy.New(s.legacyDB)
+	store := pgStore.New(s.ctx, s.pool)
 	config := &storage.Config{}
 	s.NoError(testutils.FullInit(config, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	s.NoError(legacyStore.Upsert(s.ctx, config))
-	s.NoError(moveConfigs(s.legacyDB, s.gormDB, s.pool, legacyStore))
-	s.Equal(config, s.get())
-}
-
-func (s *postgresMigrationSuite) get() *storage.Config {
-	store := newStore(s.pool)
-	config, found, err := store.Get(s.ctx)
+	s.NoError(move(s.legacyDB, s.gormDB, s.pool, legacyStore))
+	fetched, found, err := store.Get(s.ctx)
 	s.NoError(err)
 	s.True(found)
-	return config
+	s.Equal(config, fetched)
 }

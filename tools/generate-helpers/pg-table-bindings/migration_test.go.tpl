@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/postgres"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/pkg/features"
@@ -71,7 +72,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	s.ctx = context.Background()
+	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
 	s.Require().NoError(err)
 	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
@@ -90,6 +91,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
     s.pool.Close()
 }
 
+{{- if not .Migration.SingletonStore}}
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
 	var {{$name}}s []*{{.Type}}
@@ -116,7 +118,7 @@ func (s *postgresMigrationSuite) TestMigration() {
     {{- if $rocksDB}}
     s.NoError(legacyStore.UpsertMany(s.ctx, {{$name}}s))
 	{{- end}}
-	s.NoError(move{{.Table|upperCamelCase}}(s.legacyDB, s.gormDB, s.pool, legacyStore))
+	s.NoError(move(s.legacyDB, s.gormDB, s.pool, legacyStore))
 	var count int64
 	s.gormDB.Model({{template  "createTableStmtVar" .Schema}}.GormModel).Count(&count)
 	s.Equal(int64(len({{$name}}s)), count)
@@ -165,3 +167,18 @@ func (s *postgresMigrationSuite) get({{template "paramList" $pks}}) *{{.Type}} {
 	s.NoError(proto.Unmarshal(data, &msg))
 	return &msg
 }
+{{- else}}
+func (s *postgresMigrationSuite) TestMigration() {
+	// Prepare data and write to legacy DB
+	legacyStore := legacy.New(s.legacyDB)
+	store := pgStore.New(s.ctx, s.pool)
+	{{$name}} := &{{.Type}}{}
+	s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(legacyStore.Upsert(s.ctx, {{$name}}))
+	s.NoError(move(s.legacyDB, s.gormDB, s.pool, legacyStore))
+	fetched, found, err := store.Get(s.ctx)
+	s.NoError(err)
+	s.True(found)
+	s.Equal({{$name}}, fetched)
+}
+{{- end}}

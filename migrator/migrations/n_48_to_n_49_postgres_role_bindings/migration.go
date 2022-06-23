@@ -10,12 +10,11 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_48_to_n_49_postgres_role_bindings/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/n_48_to_n_49_postgres_role_bindings/postgres"
 	"github.com/stackrox/rox/migrator/types"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +27,7 @@ var (
 			if err != nil {
 				return err
 			}
-			if err := moveRoleBindings(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
+			if err := move(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving role_bindings from rocksdb to postgres")
 			}
@@ -40,17 +39,16 @@ var (
 	log       = loghelper.LogWrapper{}
 )
 
-func moveRoleBindings(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
-	ctx := context.Background()
-	store := newStore(postgresDB)
+func move(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
-
 	var roleBindings []*storage.K8SRoleBinding
 	var err error
 	legacyStore.Walk(ctx, func(obj *storage.K8SRoleBinding) error {
 		roleBindings = append(roleBindings, obj)
 		if len(roleBindings) == 10*batchSize {
-			if err := store.copyFrom(ctx, roleBindings...); err != nil {
+			if err := store.UpsertMany(ctx, roleBindings); err != nil {
 				log.WriteToStderrf("failed to persist role_bindings to store %v", err)
 				return err
 			}
@@ -59,35 +57,12 @@ func moveRoleBindings(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pg
 		return nil
 	})
 	if len(roleBindings) > 0 {
-		if err = store.copyFrom(ctx, roleBindings...); err != nil {
+		if err = store.UpsertMany(ctx, roleBindings); err != nil {
 			log.WriteToStderrf("failed to persist role_bindings to store %v", err)
 			return err
 		}
 	}
 	return nil
-}
-
-type storeImpl struct {
-	db *pgxpool.Pool // Postgres DB
-}
-
-// newStore returns a new Store instance using the provided sql instance.
-func newStore(db *pgxpool.Pool) *storeImpl {
-	return &storeImpl{
-		db: db,
-	}
-}
-
-func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*pgxpool.Conn, func(), error) {
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	q := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 func init() {

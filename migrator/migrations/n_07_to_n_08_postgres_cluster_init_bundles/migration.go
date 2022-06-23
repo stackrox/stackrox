@@ -10,12 +10,11 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_07_to_n_08_postgres_cluster_init_bundles/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/n_07_to_n_08_postgres_cluster_init_bundles/postgres"
 	"github.com/stackrox/rox/migrator/types"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +27,7 @@ var (
 			if err != nil {
 				return err
 			}
-			if err := moveClusterInitBundles(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
+			if err := move(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving cluster_init_bundles from rocksdb to postgres")
 			}
@@ -40,17 +39,16 @@ var (
 	log       = loghelper.LogWrapper{}
 )
 
-func moveClusterInitBundles(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
-	ctx := context.Background()
-	store := newStore(postgresDB)
+func move(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
-
 	var clusterInitBundles []*storage.InitBundleMeta
 	var err error
 	legacyStore.Walk(ctx, func(obj *storage.InitBundleMeta) error {
 		clusterInitBundles = append(clusterInitBundles, obj)
 		if len(clusterInitBundles) == 10*batchSize {
-			if err := store.copyFrom(ctx, clusterInitBundles...); err != nil {
+			if err := store.UpsertMany(ctx, clusterInitBundles); err != nil {
 				log.WriteToStderrf("failed to persist cluster_init_bundles to store %v", err)
 				return err
 			}
@@ -59,35 +57,12 @@ func moveClusterInitBundles(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgres
 		return nil
 	})
 	if len(clusterInitBundles) > 0 {
-		if err = store.copyFrom(ctx, clusterInitBundles...); err != nil {
+		if err = store.UpsertMany(ctx, clusterInitBundles); err != nil {
 			log.WriteToStderrf("failed to persist cluster_init_bundles to store %v", err)
 			return err
 		}
 	}
 	return nil
-}
-
-type storeImpl struct {
-	db *pgxpool.Pool // Postgres DB
-}
-
-// newStore returns a new Store instance using the provided sql instance.
-func newStore(db *pgxpool.Pool) *storeImpl {
-	return &storeImpl{
-		db: db,
-	}
-}
-
-func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*pgxpool.Conn, func(), error) {
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	q := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 func init() {

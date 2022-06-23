@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -59,7 +60,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	s.ctx = context.Background()
+	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
 	s.Require().NoError(err)
 	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
@@ -73,7 +74,6 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
-
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
 	var alerts []*storage.Alert
@@ -88,7 +88,7 @@ func (s *postgresMigrationSuite) TestMigration() {
 		alerts = append(alerts, alert)
 	}
 	s.NoError(legacyStore.UpsertMany(s.ctx, alerts))
-	s.NoError(moveAlerts(s.legacyDB, s.gormDB, s.pool, legacyStore))
+	s.NoError(move(s.legacyDB, s.gormDB, s.pool, legacyStore))
 	var count int64
 	s.gormDB.Model(pkgSchema.CreateTableAlertsStmt.GormModel).Count(&count)
 	s.Equal(int64(len(alerts)), count)

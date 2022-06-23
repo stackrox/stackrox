@@ -10,8 +10,10 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_13_to_n_14_postgres_configs/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/n_13_to_n_14_postgres_configs/postgres"
 	"github.com/stackrox/rox/migrator/types"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"
 )
@@ -22,7 +24,7 @@ var (
 		VersionAfter:   storage.Version{SeqNum: 101},
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.New(databases.BoltDB)
-			if err := moveConfigs(databases.BoltDB, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
+			if err := move(databases.BoltDB, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving configs from rocksdb to postgres")
 			}
@@ -34,14 +36,13 @@ var (
 	log       = loghelper.LogWrapper{}
 )
 
-func moveConfigs(legacyDB *bolt.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
-	ctx := context.Background()
-	store := newStore(postgresDB)
+func move(legacyDB *bolt.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	store := pgStore.New(ctx, postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
-
 	config, found, err := legacyStore.Get(ctx)
 	if err != nil {
-		log.WriteToStderr("failed to fetch all configs")
+		log.WriteToStderr("failed to fetch config")
 		return err
 	}
 	if !found {
@@ -52,17 +53,6 @@ func moveConfigs(legacyDB *bolt.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, l
 		return err
 	}
 	return nil
-}
-
-type storeImpl struct {
-	db *pgxpool.Pool // Postgres DB
-}
-
-// newStore returns a new Store instance using the provided sql instance.
-func newStore(db *pgxpool.Pool) *storeImpl {
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func init() {
