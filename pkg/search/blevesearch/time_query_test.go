@@ -8,6 +8,7 @@ import (
 
 	"github.com/blevesearch/bleve/search/query"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -144,4 +145,81 @@ func TestParseDuration(t *testing.T) {
 			assert.Equal(t, c.duration, duration)
 		})
 	}
+}
+
+func TestTimeQuery(t *testing.T) {
+	fakeNow := timeutil.MustParse(time.RFC3339, "2022-06-24T12:00:00Z")
+	float1dayLater := float64(fakeNow.Add(24 * time.Hour).Unix())
+	float1dayAgo := float64(fakeNow.Add(-24 * time.Hour).Unix())
+	float10daysAgo := float64(fakeNow.Add(-10 * 24 * time.Hour).Unix())
+	cases := []struct {
+		value                string
+		expectErr            bool
+		expectedMin          *float64
+		expectedMax          *float64
+		expectedInclusiveMin *bool
+		expectedInclusiveMax *bool
+	}{
+		{
+			value:                "1",
+			expectedMin:          &float1dayAgo,
+			expectedMax:          &float1dayAgo,
+			expectedInclusiveMin: boolPtr(true),
+			expectedInclusiveMax: boolPtr(true),
+		},
+		{
+			value:                "1d",
+			expectedMin:          &float1dayAgo,
+			expectedMax:          &float1dayAgo,
+			expectedInclusiveMin: boolPtr(true),
+			expectedInclusiveMax: boolPtr(true),
+		},
+		{
+			value:     ">lol",
+			expectErr: true,
+		},
+		{
+			value:                ">1",
+			expectedMax:          &float1dayAgo,
+			expectedInclusiveMax: boolPtr(true),
+		},
+		{
+			value:                "1-10",
+			expectedMax:          &float1dayAgo,
+			expectedInclusiveMax: boolPtr(false),
+			expectedMin:          &float10daysAgo,
+			expectedInclusiveMin: boolPtr(false),
+		},
+		{
+			value:                "1d-10d",
+			expectedMax:          &float1dayAgo,
+			expectedInclusiveMax: boolPtr(false),
+			expectedMin:          &float10daysAgo,
+			expectedInclusiveMin: boolPtr(false),
+		},
+		{
+			value:                "-1d-10d",
+			expectedMax:          &float1dayLater,
+			expectedInclusiveMax: boolPtr(false),
+			expectedMin:          &float10daysAgo,
+			expectedInclusiveMin: boolPtr(false),
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.value, func(t *testing.T) {
+			actual, err := newTimeQueryHelper(fakeNow, fakeFieldName, c.value)
+			if c.expectErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			actualTyped := actual.(*query.NumericRangeQuery)
+			assert.Equal(t, fakeFieldName, actualTyped.FieldVal)
+			assert.Equal(t, c.expectedMax, actualTyped.Max)
+			assert.Equal(t, c.expectedMin, actualTyped.Min)
+			assert.Equal(t, c.expectedInclusiveMax, actualTyped.InclusiveMax)
+			assert.Equal(t, c.expectedInclusiveMin, actualTyped.InclusiveMin)
+		})
+	}
+
 }

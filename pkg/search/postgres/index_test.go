@@ -558,7 +558,6 @@ func (s *IndexSuite) TestTime() {
 	testStruct2020Mar09Noon := s.getStruct(4, func(s *storage.TestMultiKeyStruct) {
 		s.Timestamp = ts2020Mar09Noon
 	})
-	_ = testStruct2029Mar09Noon
 
 	s.runTestCases([]testCase{
 		{
@@ -585,6 +584,16 @@ func (s *IndexSuite) TestTime() {
 			desc:            "> duration (this test will fail in 2029, but hopefully it's not still being run then)",
 			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "> 1d").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct2021Mar09Noon, testStruct2020Mar09Noon, testStruct2022Feb09Noon, testStruct2022Mar09Noon},
+		},
+		{
+			desc:            "range duration (this test will fail in 2027, but hopefully it's not still being run then)",
+			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "1d-2500d").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct2021Mar09Noon, testStruct2020Mar09Noon, testStruct2022Feb09Noon, testStruct2022Mar09Noon},
+		},
+		{
+			desc:            "range duration with negative (this test will fail in 2029, but hopefully it's not still being run then)",
+			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "-3000d-1d").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct2029Mar09Noon},
 		},
 	})
 }
