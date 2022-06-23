@@ -41,7 +41,7 @@ function* saveRuleGroup(action) {
             roleName: defaultRole,
         });
         yield call(service.updateOrAddGroup, {
-            newGroups: getGroupsWithDefault(group, id, defaultGroup?.response),
+            newGroups: getGroupsWithDefault(group, id, defaultRole, defaultGroup?.response),
             oldGroups: getExistingGroupsWithDefault(existingGroups, id),
         });
         yield call(getRuleGroups);
