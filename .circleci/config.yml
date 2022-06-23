@@ -4202,7 +4202,7 @@ jobs:
             git commit --allow-empty -m "Nightly build $(date)"
             NIGHTLY_TAG="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-$(date '+%Y%m%d')"
             git tag "$NIGHTLY_TAG"
-            git push origin "$NIGHTLY_TAG"
+            git push origin --follow-tags
 
       - run:
           name: Remove tags more than 3 days old
