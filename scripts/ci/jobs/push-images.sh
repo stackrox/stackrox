@@ -19,6 +19,9 @@ push_images() {
 
     local tag
     tag="$(make --quiet tag)"
+
+    slack_build_notice "$tag"
+
     if is_release_version "$tag"; then
         check_docs "${tag}"
         check_scanner_and_collector_versions
@@ -40,7 +43,6 @@ push_images() {
 
     push_main_image_set "$push_context" "$brand"
     push_matching_collector_scanner_images "$brand"
-    # TODO(RS-509) - remove this check after the openshift/release master CI PR merges
     if [[ -n "${PIPELINE_DOCS_IMAGE:-}" ]]; then
         push_docs_image
     fi
@@ -89,6 +91,39 @@ To use with deploy scripts, first \`export MAIN_IMAGE_TAG={{.Env._TAG}}\`.
 EOT
 
     hub_comment -type build -template-file "$tmpfile"
+}
+
+slack_build_notice() {
+    info "Slack a build notice"
+
+    if [[ "$#" -lt 1 ]]; then
+        die "missing arg. usage: slack_build_notice <tag>"
+    fi
+
+    local tag="$1"
+
+    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
+        info "Skipping step as this is not a release or RC build"
+        return 0
+    }
+
+    local release
+    release="$(get_release_stream "$tag")"
+
+    local webhook_url
+    if is_release_test_stream "$tag"; then
+        # send to #slack-test when testing the release process
+        webhook_url="${SLACK_MAIN_WEBHOOK}"
+    else
+        # send to #eng-release
+        webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
+    fi
+
+    jq -n \
+    --arg release "$release" \
+    --arg tag "$tag" \
+    '{"text": "Prow build for tag `\($tag)` started! Check the status of the build under the following URL: https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*release-\($release).x*"}' \
+| curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
 push_images "$@"
