@@ -195,6 +195,11 @@ func (ds *datastoreImpl) UpsertNode(ctx context.Context, node *storage.Node) err
 	ds.updateComponentRisk(node)
 	enricher.FillScanStats(node)
 
+	log.Infof("Upserting node:: %s", node.GetName())
+	for _, c := range node.GetScan().GetComponents() {
+		log.Infof("#components (%s %s) #new vulns %d", c.GetName(), c.GetVersion(), len(c.GetVulnerabilities()))
+	}
+
 	if err := ds.storage.Upsert(ctx, node); err != nil {
 		return err
 	}

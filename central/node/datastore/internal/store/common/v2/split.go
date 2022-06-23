@@ -47,6 +47,8 @@ func splitComponents(parts *NodeParts) []*ComponentParts {
 }
 
 func splitCVEs(os string, component *ComponentParts, embedded *storage.EmbeddedNodeScanComponent) []*CVEParts {
+	log.Infof("During Split:: component %s #new vulns %d", component.Component.GetId(), len(embedded.GetVulnerabilities()))
+
 	cves := embedded.GetVulnerabilities()
 	addedCVEs := set.NewStringSet()
 	ret := make([]*CVEParts, 0, len(cves))

@@ -452,10 +452,20 @@ func (l *loopImpl) reprocessNode(id string) bool {
 		return false
 	}
 
+	log.Infof("Before enrichment:: node %s", node.GetName())
+	for _, c := range node.GetScan().GetComponents() {
+		log.Infof("#components (%s %s) #old vulns %d", c.GetName(), c.GetVersion(), len(c.GetVulns()))
+	}
+
 	err = l.nodeEnricher.EnrichNode(node)
 	if err != nil {
 		log.Errorf("error enriching node %s: %v", node.GetName(), err)
 		return false
+	}
+
+	log.Infof("After enrichment:: node %s", node.GetName())
+	for _, c := range node.GetScan().GetComponents() {
+		log.Infof("#components (%s %s) #new vulns %d", c.GetName(), c.GetVersion(), len(c.GetVulnerabilities()))
 	}
 
 	if err := l.risk.CalculateRiskAndUpsertNode(node); err != nil {
