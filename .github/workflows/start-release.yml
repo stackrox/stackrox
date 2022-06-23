@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Release number (A.B.C)
+        description: Release version (A.B.C[-N])
         required: true
         default: 0.0.0
         type: string
