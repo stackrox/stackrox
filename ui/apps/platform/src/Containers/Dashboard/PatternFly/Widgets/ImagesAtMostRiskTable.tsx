@@ -7,6 +7,7 @@ import { ImageName } from 'types/image.proto';
 import { severityColors } from 'constants/visuals/colors';
 import { middleTruncate } from 'utils/textUtils';
 import { vulnManagementPath } from 'routePaths';
+import { Tooltip } from '@patternfly/react-core';
 
 type VulnCounts = {
     total: number;
@@ -64,11 +65,14 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                                 to={linkToImage(id)}
                                 scroll={(el: HTMLElement) =>
                                     // TODO This is a heavy handed way to scroll to the CVE section which is loaded on
-                                    // the target image page asynchronously
+                                    // the target image page asynchronously. Without a delay, following data loads
+                                    // scroll the target element back off the screen.
                                     setTimeout(() => el.scrollIntoView(), 500)
                                 }
                             >
-                                <span title={name.fullName}>{middleTruncate(name.remote)}</span>
+                                <Tooltip content={<div>{name.fullName}</div>}>
+                                    <span>{middleTruncate(name.remote)}</span>
+                                </Tooltip>
                             </Link>
                         </Td>
                         <Td
