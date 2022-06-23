@@ -15,8 +15,6 @@ import groups.BAT
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
-import spock.lang.IgnoreIf
-import util.Env
 import util.SplunkUtil
 import util.SplunkUtil.SplunkDeployment
 import util.Timer
@@ -318,7 +316,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     private boolean waitForAlertWithPolicyId(String policyId) {
-        println "Waiting for alert with policy id ${policyId} and ${TEST_NAMESPACE}"
         retryUntilTrue({
             AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest.newBuilder()
                     .setQuery("Namespace:${TEST_NAMESPACE}+Violation State:*")
