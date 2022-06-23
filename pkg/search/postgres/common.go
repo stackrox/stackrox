@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -41,7 +42,9 @@ func replaceVars(s string) string {
 	varNum := 1
 	for i := 0; i < len(s)-1; i++ {
 		if s[i] == '$' && s[i+1] == '$' {
-			s = s[:i+1] + fmt.Sprintf("%d", varNum) + s[i+2:]
+			varStr := strconv.Itoa(varNum)
+			s = s[:i+1] + varStr + s[i+2:]
+			i += len(varStr)
 			varNum++
 		}
 	}

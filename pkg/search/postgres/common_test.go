@@ -19,6 +19,37 @@ var (
 	deploymentBaseSchema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 )
 
+func TestReplaceVars(t *testing.T) {
+	cases := []struct {
+		query  string
+		result string
+	}{
+		{
+			query:  "",
+			result: "",
+		},
+		{
+			"$$",
+			"$1",
+		},
+		{
+			"$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$",
+			"$1 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.query, func(t *testing.T) {
+			assert.Equal(t, c.result, replaceVars(c.query))
+		})
+	}
+}
+
+func BenchmarkVarsBench(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		replaceVars("$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$")
+	}
+}
+
 func TestMultiTableQueries(t *testing.T) {
 	t.Parallel()
 
