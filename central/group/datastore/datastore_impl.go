@@ -66,14 +66,19 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 		return sac.ErrResourceAccessDenied
 	}
 
+	if err := ValidateGroup(group); err != nil {
+		return err
+	}
+
 	if group.GetProps().GetId() != "" {
 		return errox.InvalidArgs.Newf("id should be empty but %q was provided", group.GetProps().GetId())
 	}
 
-	group.GetProps().Id = GenerateGroupID()
-
-	if err := ValidateGroup(group); err != nil {
-		return err
+	if group.GetProps() != nil {
+		group.GetProps().Id = GenerateGroupID()
+	} else {
+		// Theoretically should never happen, as the auth provider ID is required to be set.
+		group.Props = &storage.GroupProperties{Id: GenerateGroupID()}
 	}
 
 	return ds.storage.Add(group)
@@ -107,12 +112,18 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 	}
 
 	for _, grp := range add {
+		if err := ValidateGroup(grp); err != nil {
+			return err
+		}
+
 		if grp.GetProps().GetId() != "" {
 			return errox.InvalidArgs.Newf("id should be empty but %q was provided", grp.GetProps().GetId())
 		}
-		grp.GetProps().Id = GenerateGroupID()
-		if err := ValidateGroup(grp); err != nil {
-			return err
+		if grp.GetProps() != nil {
+			grp.GetProps().Id = GenerateGroupID()
+		} else {
+			// Theoretically should never happen, as the auth provider ID is required to be set.
+			grp.Props = &storage.GroupProperties{Id: GenerateGroupID()}
 		}
 	}
 
