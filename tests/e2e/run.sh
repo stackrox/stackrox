@@ -65,12 +65,6 @@ test_e2e() {
 }
 
 test_preamble() {
-    if is_OPENSHIFT_CI; then
-        # TODO(RS-494) may provide roxctl
-        make cli-linux
-        install_built_roxctl_in_gopath
-    fi
-
     require_executable "roxctl"
 
     if ! is_CI; then
