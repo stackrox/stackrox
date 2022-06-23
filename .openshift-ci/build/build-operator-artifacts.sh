@@ -19,7 +19,7 @@ build_operator_bundle_and_binary() {
 
     openshift_ci_mods
 
-    make -C operator bundle bundle-post-process build
+    make -C operator bundle bundle-post-process build SILENT=
 }
 
 build_operator_bundle_and_binary
