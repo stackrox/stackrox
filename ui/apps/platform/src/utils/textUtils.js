@@ -12,17 +12,6 @@ export function truncate(str, maxLength = 200) {
     return `${truncatedStr}…`;
 }
 
-export function middleTruncate(str, maxLength = 22) {
-    if (str.length <= maxLength) {
-        return str;
-    }
-    const sideLength = maxLength / 2;
-    const left = str.substr(0, sideLength);
-    const right = str.substr(str.length - sideLength, str.length);
-    const ellipsis = '\u2026';
-    return `${left}${ellipsis}${right}`;
-}
-
 export function pluralizeHas(len) {
     return len === 1 ? 'has' : 'have';
 }

@@ -1,12 +1,11 @@
 import React from 'react';
 import { HashLink as Link } from 'react-router-hash-link';
-import { Tooltip } from '@patternfly/react-core';
+import { Tooltip, Truncate } from '@patternfly/react-core';
 import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { SecurityIcon } from '@patternfly/react-icons';
 
 import { ImageName } from 'types/image.proto';
 import { severityColors } from 'constants/visuals/colors';
-import { middleTruncate } from 'utils/textUtils';
 import { vulnManagementPath } from 'routePaths';
 
 type VulnCounts = {
@@ -71,7 +70,11 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                                 }
                             >
                                 <Tooltip content={<div>{name.fullName}</div>}>
-                                    <span title={name.fullName}>{middleTruncate(name.remote)}</span>
+                                    <Truncate
+                                        content={name.remote ?? ''}
+                                        position="middle"
+                                        trailingNumChars={13}
+                                    />
                                 </Tooltip>
                             </Link>
                         </Td>

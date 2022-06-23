@@ -136,7 +136,7 @@ describe('Images at most risk dashboard widget', () => {
         await screen.findByRole('heading', { name: 'All images at most risk' });
         // Click on the link matching the second image
         const secondImageInList = mockImages[1];
-        await user.click(screen.getByRole('link', { name: secondImageInList.name?.fullName }));
+        await user.click(screen.getByRole('link', { name: secondImageInList.name?.remote }));
         expect(history.location.pathname).toBe(
             `${vulnManagementPath}/image/${secondImageInList.id}`
         );
