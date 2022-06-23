@@ -23,6 +23,7 @@ env:
   slack_channel: C03KSV3N6N8 #test-release-automation
   main_branch: master
   jira_project: ROX
+  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/${SCRIPT}?ref=${main_branch}
 
 jobs:
   check-jira:
@@ -30,24 +31,17 @@ jobs:
     runs-on: ubuntu-latest
     env:
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       release-date: ${{steps.check-jira-release.outputs.date}}
     steps:
       - name: Check that Jira release ${{inputs.version}} is not released
         id: check-jira-release
         run: |
-          set -u
-          JIRA_RELEASE_DATE="$(curl --fail -sSL \
-            -H "Authorization: Bearer $JIRA_TOKEN" \
-            "https://issues.redhat.com/rest/api/2/project/${{env.jira_project}}/versions" \
-          | jq -r '.[] | select(.name == "${{inputs.version}}" and .released == false) | .releaseDate')"
-
-          if [ -z "$JIRA_RELEASE_DATE" ]; then
-            echo "::error::Couldn't find unreleased JIRA release \`${{inputs.version}}\`."
-          else
-            echo "Release date: $JIRA_RELEASE_DATE" >> $GITHUB_STEP_SUMMARY
-            echo "::set-output name=date::$JIRA_RELEASE_DATE"
-          fi
+          set -uo pipefail
+          SCRIPT="check-jira-release.sh"
+          gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
+            "${{inputs.version}}"
 
   variables:
     name: Setup variables
@@ -156,6 +150,8 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
         with:
+          # Working on `inputs.ref` instead of `env.main_branch` may help
+          # to spot changes happened to CHANGELOG.md after `inputs.ref`.
           ref: ${{inputs.ref}}
       - name: Initialize mandatory git config
         run: |
@@ -165,49 +161,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -u
-          if grep "^## \[${{inputs.version}}\]$" CHANGELOG.md; then
-            echo "\`CHANGELOG.md@${{inputs.ref}}\` has got already the \`[${{inputs.version}}]\` section." >> $GITHUB_STEP_SUMMARY
-            exit 0
-          fi
-
-          CHANGELOG_BRANCH="automation/changelog-${{inputs.version}}"
-          TITLE="Advance \`CHANGELOG.md\` to the next release"
-
-          if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"; then
-            echo "Branch \`$CHANGELOG_BRANCH\` already exists." >> $GITHUB_STEP_SUMMARY
-
-            EXISTING_PR=($(gh pr list --head "$CHANGELOG_BRANCH" --search "$TITLE in:title" --state open --json number,url --jq ".[]|.number,.url"))
-            if [ "${#EXISTING_PR[@]}" -eq 2 ]; then
-              echo ":arrow_right: There is already an open [PR ${EXISTING_PR[0]}](${EXISTING_PR[1]})," \
-                "which needs to be merged, ensuring all lines added to \`CHANGELOG.md\` after the release branch are listed" \
-                "above the \`[${{inputs.version}}]\` section." >> $GITHUB_STEP_SUMMARY
-            else
-              echo ":arrow_right: There is no open PR from this branch. Please open a PR to the ${{env.main_branch}} if" \
-                "\`[CHANGELOG.md](${{github.server_url}}/${{github.repository}}/blob/${{env.main_branch}}/CHANGELOG.md)\`" \
-                "still needs to be updated." >> $GITHUB_STEP_SUMMARY
-            fi
-            exit 0
-          fi
-          git switch --create "$CHANGELOG_BRANCH"
-          sed -i "s/## \[NEXT RELEASE\]/\\0\n\n## [${{inputs.version}}]/" CHANGELOG.md
-          git add CHANGELOG.md
-          if ! git diff-index --quiet HEAD; then
-            git commit --message "Next version in changelog after ${{inputs.version}}"
-
-            if [ "${{inputs.dry-run}}" != "true" ]; then
-              git push --set-upstream origin "$CHANGELOG_BRANCH"
-              PR_URL=$(gh pr create \
-                --title "$TITLE" \
-                --base "${{env.main_branch}}" \
-                --body "Cutting \`CHANGELOG.md\` after the ${{needs.variables.outputs.branch}} branch." \
-                --assignee "${{github.event.sender.login}}")
-            fi
-            # TODO: Add labels to skip CI runs
-
-            echo "::notice::Review and merge the [PR]($PR_URL) that has been created for the \`${{env.main_branch}}\` branch with advanced \`CHANGELOG.md\`."
-          fi
-
+          set -uo pipefail
+          SCRIPT="patch-changelog.sh"
+          gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
+            "${{inputs.version}}" "${{inputs.ref}}" "${{needs.variables.outputs.branch}}" "${{inputs.dry-run}}"
+          
   milestone:
     name: Create milestone
     needs: [variables]
