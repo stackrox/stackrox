@@ -1,4 +1,5 @@
 import React from 'react';
+import { gql, useQuery } from '@apollo/client';
 import { Flex, FlexItem, Title, Button } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -7,9 +8,11 @@ import { violationsBasePath } from 'routePaths';
 
 import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import WidgetCard from './WidgetCard';
 import MostRecentViolations from './MostRecentViolations';
 import PolicyViolationTiles from './PolicyViolationTiles';
+import useAlertGroups from '../hooks/useAlertGroups';
 
 function getViewAllLink(searchFilter: SearchFilter) {
     const queryString = getQueryString({
@@ -21,12 +24,50 @@ function getViewAllLink(searchFilter: SearchFilter) {
     return `${violationsBasePath}${queryString}`;
 }
 
+const mostRecentAlertsQuery = gql`
+    query mostRecentAlerts($query: String) {
+        violations(
+            query: $query
+            pagination: { limit: 3, sortOption: { field: "Violation Time", reversed: true } }
+        ) {
+            id
+            time
+            deployment {
+                clusterName
+                namespace
+                name
+            }
+            policy {
+                name
+                severity
+            }
+        }
+    }
+`;
+
 function ViolationsByPolicySeverity() {
     const { searchFilter } = useURLSearch();
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const {
+        data: alertCountData,
+        loading: alertCountLoading,
+        error: alertCountError,
+    } = useAlertGroups(query);
+    const {
+        data: currentRecentAlertsData,
+        previousData: previousRecentAlertsData,
+        loading: recentAlertsLoading,
+        error: recentAlertsError,
+    } = useQuery(mostRecentAlertsQuery);
+
+    const recentAlertsData = currentRecentAlertsData || previousRecentAlertsData;
 
     return (
         <WidgetCard
-            isLoading
+            isLoading={
+                alertCountLoading || recentAlertsLoading || !alertCountData || !recentAlertsData
+            }
+            error={alertCountError || recentAlertsError}
             header={
                 <Flex direction={{ default: 'row' }}>
                     <FlexItem grow={{ default: 'grow' }}>
@@ -44,8 +85,15 @@ function ViolationsByPolicySeverity() {
                 </Flex>
             }
         >
-            <PolicyViolationTiles />
-            <MostRecentViolations />
+            {alertCountData && recentAlertsData && (
+                <>
+                    <PolicyViolationTiles
+                        searchFilter={searchFilter}
+                        counts={alertCountData[0]?.counts}
+                    />
+                    <MostRecentViolations alerts={recentAlertsData} />
+                </>
+            )}
         </WidgetCard>
     );
 }
