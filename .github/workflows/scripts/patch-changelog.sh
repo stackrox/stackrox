@@ -2,7 +2,7 @@
 #
 # Patch CHANGELOG.md on the main branch and create a PR.
 #
-set -euo pipefile
+set -euo pipefail
 
 VERSION="$1"
 REF="$2"
