@@ -56,6 +56,11 @@ spec:
         path: central.exposure.route
       - displayName: Enabled
         path: central.exposure.route.enabled
+      - description: Expose Central's monitoring endpoint. A new service, "monitoring",
+          with port 9090, will be created as well as a network policy allowing inbound
+          connections to the port.
+        displayName: Expose Endpoint
+        path: central.monitoring.exposeEndpoint
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
           storage location of persistent data. Recommended for most users.
         displayName: Persistent volume claim
@@ -171,11 +176,11 @@ spec:
         path: scanner.db
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - description: Configures how Central should store its persistent data. You
-          can choose between using a persistent volume claim (recommended default),
-          and a host path.
-        displayName: Persistence
-        path: central.persistence
+      - description: Configures monitoring endpoint for Central. The monitoring endpoint
+          allows other services to collect metrics from Central, provided in Prometheus
+          compatible format.
+        displayName: Monitoring
+        path: central.monitoring
       - displayName: Autoscaling Maximum Replicas
         path: scanner.analyzer.scaling.maxReplicas
         x-descriptors:
@@ -183,6 +188,11 @@ spec:
       - description: Allows you to specify additional trusted Root CAs.
         displayName: TLS
         path: tls
+      - description: Configures how Central should store its persistent data. You
+          can choose between using a persistent volume claim (recommended default),
+          and a host path.
+        displayName: Persistence
+        path: central.persistence
       - description: Additional image pull secrets to be taken into account for pulling
           images.
         displayName: Image Pull Secrets
