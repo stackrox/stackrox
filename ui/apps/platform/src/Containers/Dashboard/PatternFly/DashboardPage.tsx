@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Divider,
     Flex,
@@ -6,9 +6,12 @@ import {
     Grid,
     GridItem,
     PageSection,
+    Split,
+    SplitItem,
     Text,
     Title,
 } from '@patternfly/react-core';
+import { format } from 'date-fns';
 import SummaryCounts from './SummaryCounts';
 import ScopeBar from './ScopeBar';
 
@@ -16,10 +19,22 @@ import ViolationsByPolicyCategory from './Widgets/ViolationsByPolicyCategory';
 import DeploymentsAtMostRisk from './Widgets/DeploymentsAtMostRisk';
 
 function DashboardPage() {
+    const [lastUpdate] = useState<Date>(new Date());
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <SummaryCounts />
+                <Split className="pf-u-align-items-center">
+                    <SplitItem isFilled>
+                        <SummaryCounts />
+                    </SplitItem>
+                    <div
+                        style={{ fontStyle: 'italic' }}
+                        className="pf-u-color-200 pf-u-font-size-sm pf-u-mr-md pf-u-mr-lg-on-lg"
+                    >
+                        Last updated {format(lastUpdate, 'DD/MM/YYYY')} at{' '}
+                        {format(lastUpdate, 'hh:mm A')}
+                    </div>
+                </Split>
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
