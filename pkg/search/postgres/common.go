@@ -52,6 +52,7 @@ func replaceVars(s string) string {
 			newString.WriteByte(s[i])
 		}
 	}
+	newString.WriteByte(s[len(s)-1])
 	return newString.String()
 }
 
