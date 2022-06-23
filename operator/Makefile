@@ -9,6 +9,8 @@ VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(
 
 GO_VERSION ?= $(shell cat ../EXPECTED_GO_VERSION | sed 's/go//')
 
+# Set to empty string to echo some command lines which are hidden by default.
+SILENT ?= @
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "preview,fast,stable")
@@ -184,7 +186,7 @@ GET_GITHUB_RELEASE_FN = get_github_release() { \
 
 # go-get-tool will 'go get -d' any package $2 and install it to $(PROJECT_DIR)/bin unless $1 already exists.
 define go-get-tool
-@[ -f $(1) ] || { \
+$(SILENT)[ -f $(1) ] || { \
 set -e ;\
 TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
@@ -248,7 +250,7 @@ stackrox-image-pull-secret: ## Create default image pull secret for StackRox ima
 
 .PHONY: check-ci-setup
 check-ci-setup: ## Make sure this target is not started in CI environment.
-	@if [ -n "$$CI" ]; then echo "Setup error: operator should be installed and started by OLM." >&2; exit 1; fi
+	$(SILENT)if [ -n "$$CI" ]; then echo "Setup error: operator should be installed and started by OLM." >&2; exit 1; fi
 
 .PHONY: run
 run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
@@ -264,7 +266,7 @@ build: generate fmt vet ## Build operator local binary.
 	../scripts/go-build-file.sh ./main.go bin/manager
 
 docker-build: test ## Build docker image with the operator.
-	@( \
+	$(SILENT)( \
 		`# status.sh file is used by scripts/go-build.sh which we try to run in the docker container.` \
 		`# status.sh needs git repo, make and Makefile and who knows what else but its actual output is simple.` \
 		`# Here we grab the output and create a new build/status.sh from it. That file will be copied into the` \
@@ -325,7 +327,7 @@ deploy-dirty-tag-via-olm: ## Deploy operator dirty tagged image to the cluster u
 deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLM.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	@replaced_version_no_v=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.v(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
+	$(SILENT)replaced_version_no_v=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.v(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
 	set -x ;\
 	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION) $${replaced_version_no_v}
 
@@ -414,7 +416,7 @@ index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the 
 # We assume that the index for the replaced bundle is already in the registry with the same tag and so we use previous
 # index image as a base when building the current index image. The sed expression below should extract everything after
 # the first dot in `replaces:` value. E.g. `  replaces: rhacs-operator.v3.62.0` -> `v3.62.0`
-	@set -euo pipefail ;\
+	$(SILENT)set -euo pipefail ;\
 	replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
 	./hack/build-index-image.sh \
 		--base-index-tag "$(INDEX_IMG_BASE):$${replaced_version}" \
