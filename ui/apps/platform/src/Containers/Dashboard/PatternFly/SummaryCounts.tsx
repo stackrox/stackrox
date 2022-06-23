@@ -54,8 +54,9 @@ const tileLinks: Record<TileEntity, string> = {
     Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
 };
 
-const dateFormatter = new Intl.DateTimeFormat('en-US');
-const timeFormatter = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric' });
+const locale = window.navigator.language ?? 'en-US';
+const dateFormatter = new Intl.DateTimeFormat(locale);
+const timeFormatter = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: 'numeric' });
 
 function SummaryCounts() {
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
