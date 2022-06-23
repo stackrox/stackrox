@@ -1,6 +1,6 @@
 import React from 'react';
 import { gql, useQuery } from '@apollo/client';
-import { Flex, FlexItem, Title, Button } from '@patternfly/react-core';
+import { Flex, FlexItem, Title, Button, Divider } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useURLSearch from 'hooks/useURLSearch';
@@ -60,7 +60,18 @@ function ViolationsByPolicySeverity() {
         error: recentAlertsError,
     } = useQuery(mostRecentAlertsQuery);
 
+    const severityCounts = (alertCountData && alertCountData[0]?.counts) ?? [];
     const recentAlertsData = currentRecentAlertsData || previousRecentAlertsData;
+
+    const counts = {
+        LOW_SEVERITY: 0,
+        MEDIUM_SEVERITY: 0,
+        HIGH_SEVERITY: 0,
+        CRITICAL_SEVERITY: 0,
+    };
+    severityCounts.forEach(({ severity, count }) => {
+        counts[severity] = parseInt(count, 10);
+    });
 
     return (
         <WidgetCard
@@ -85,12 +96,10 @@ function ViolationsByPolicySeverity() {
                 </Flex>
             }
         >
-            {alertCountData && recentAlertsData && (
+            {severityCounts && recentAlertsData && (
                 <>
-                    <PolicyViolationTiles
-                        searchFilter={searchFilter}
-                        counts={alertCountData[0]?.counts}
-                    />
+                    <PolicyViolationTiles searchFilter={searchFilter} counts={counts} />
+                    <Divider component='div' className="pf-u-my-lg"/>
                     <MostRecentViolations alerts={recentAlertsData} />
                 </>
             )}

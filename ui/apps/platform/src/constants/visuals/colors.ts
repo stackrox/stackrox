@@ -1,3 +1,5 @@
+import { Severity } from 'services/AlertsService';
+
 const colors = [
     'var(--primary-400)',
     'var(--secondary-400)',
@@ -25,11 +27,11 @@ export const fileUploadColors = {
 
 export const defaultColorType = 'base';
 
-export const severityColors = {
-    low: 'var(--pf-global--palette--black-500)',
-    medium: 'var(--pf-global--palette--gold-300)',
-    important: 'var(--pf-global--palette--orange-300)',
-    critical: 'var(--pf-global--palette--red-100)',
+export const severityColors: Record<Severity, string> = {
+    LOW_SEVERITY: 'var(--color-severity-low)',
+    MEDIUM_SEVERITY: 'var(--color-severity-medium)',
+    HIGH_SEVERITY: 'var(--color-severity-important)',
+    CRITICAL_SEVERITY: 'var(--color-severity-critical)',
 };
 
 export default colors;
