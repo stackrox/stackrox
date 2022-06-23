@@ -45,7 +45,7 @@ function linkToImage(id: string) {
 
 function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: ImagesAtMostRiskProps) {
     return (
-        <TableComposable aria-label="Images at most risk" variant="compact" borders={false}>
+        <TableComposable variant="compact" borders={false}>
             <Thead>
                 <Tr>
                     <Th width={35} className="pf-u-pl-0">
