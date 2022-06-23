@@ -38,7 +38,7 @@ export function visitClusterById(clusterId, staticResponseMap) {
         ...routeMatcherMap,
         cluster: {
             method: 'GET',
-            url: api.clusters.single,
+            url: `${api.clusters.list}/${clusterId}`,
         },
     };
     visit(
