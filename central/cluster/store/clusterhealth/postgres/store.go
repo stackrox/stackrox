@@ -87,10 +87,11 @@ func insertIntoClusterHealthStatuses(ctx context.Context, tx pgx.Tx, obj *storag
 		obj.GetOverallHealthStatus(),
 		obj.GetAdmissionControlHealthStatus(),
 		obj.GetScannerHealthStatus(),
+		pgutils.NilOrTime(obj.GetLastContact()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO cluster_health_statuses (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, ScannerHealthStatus, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, ScannerHealthStatus = EXCLUDED.ScannerHealthStatus, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cluster_health_statuses (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, ScannerHealthStatus, LastContact, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, ScannerHealthStatus = EXCLUDED.ScannerHealthStatus, LastContact = EXCLUDED.LastContact, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -123,6 +124,8 @@ func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx pgx.Tx
 
 		"scannerhealthstatus",
 
+		"lastcontact",
+
 		"serialized",
 	}
 
@@ -148,6 +151,8 @@ func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx pgx.Tx
 			obj.GetAdmissionControlHealthStatus(),
 
 			obj.GetScannerHealthStatus(),
+
+			pgutils.NilOrTime(obj.GetLastContact()),
 
 			serialized,
 		})

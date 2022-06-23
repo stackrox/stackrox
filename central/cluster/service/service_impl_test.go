@@ -141,10 +141,10 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 			suite.sysConfigDatastore.EXPECT().GetConfig(gomock.Any()).AnyTimes().Return(config, nil)
 			clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
 
-			clusterId := &v1.ResourceByID{
+			clusterID := &v1.ResourceByID{
 				Id: testCase.cluster.GetId(),
 			}
-			result, err := clusterService.GetCluster(context.Background(), clusterId)
+			result, err := clusterService.GetCluster(context.Background(), clusterID)
 			suite.NoError(err)
 			suite.Equal(strings.TrimSpace(result.GetClusterRetentionInfo().String()), testCase.expected)
 		})

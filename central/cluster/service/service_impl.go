@@ -193,18 +193,18 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 		}, nil
 	}
 
-	clusterIdToRetentionInfoMap, err := s.getClusterIdToRetentionInfoMap(ctx, clusters)
+	clusterIDToRetentionInfoMap, err := s.getClusterIDToRetentionInfoMap(ctx, clusters)
 	if err != nil {
 		return nil, err
 	}
 
 	return &v1.ClustersList{
 		Clusters:                 clusters,
-		ClusterIdToRetentionInfo: clusterIdToRetentionInfoMap,
+		ClusterIdToRetentionInfo: clusterIDToRetentionInfoMap,
 	}, nil
 }
 
-func (s *serviceImpl) getClusterIdToRetentionInfoMap(
+func (s *serviceImpl) getClusterIDToRetentionInfoMap(
 	ctx context.Context,
 	clusters []*storage.Cluster,
 ) (map[string]*v1.DecommissionedClusterRetentionInfo, error) {
