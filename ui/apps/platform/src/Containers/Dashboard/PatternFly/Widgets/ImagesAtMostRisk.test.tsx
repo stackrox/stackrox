@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
+import { vulnManagementImagesPath, vulnManagementPath } from 'routePaths';
 import ImagesAtMostRisk, { imagesQuery } from './ImagesAtMostRisk';
 
 function makeMockImage(
@@ -84,12 +85,14 @@ describe('Images at most risk dashboard widget', () => {
     it('should render the correct title based on selected options', async () => {
         const { user } = setup();
 
+        // Default is display all images
         expect(
             await screen.findByRole('heading', {
                 name: 'All images at most risk',
             })
         ).toBeInTheDocument();
 
+        // Change to display only active images
         await user.click(await screen.findByRole('button', { name: `Options` }));
         await user.click(await screen.findByRole('button', { name: `Active images` }));
 
@@ -103,16 +106,25 @@ describe('Images at most risk dashboard widget', () => {
     it('should render the correct text and number of CVEs under each column', async () => {
         const { user } = setup();
 
-        // Default should show fixable CVEs
-        expect(await screen.findAllByText(`${fixableCritical} fixable`)).toHaveLength(6);
-        expect(await screen.findAllByText(`${fixableImportant} fixable`)).toHaveLength(6);
+        // Note that in this case the mock data uses the same number of CVEs for every image
+        // so we will expect multiple elements matching the below text queries
 
-        // Switch to display all CVEs
+        // Default should show fixable CVEs
+        expect(await screen.findAllByText(`${fixableCritical} fixable`)).toHaveLength(
+            mockImages.length
+        );
+        expect(await screen.findAllByText(`${fixableImportant} fixable`)).toHaveLength(
+            mockImages.length
+        );
+
+        // Switch to show total CVEs
         await user.click(await screen.findByRole('button', { name: `Options` }));
         await user.click(await screen.findByRole('button', { name: `All CVEs` }));
 
-        expect(await screen.findAllByText(`${totalCritical} CVEs`)).toHaveLength(6);
-        expect(await screen.findAllByText(`${totalImportant} CVEs`)).toHaveLength(6);
+        expect(await screen.findAllByText(`${totalCritical} CVEs`)).toHaveLength(mockImages.length);
+        expect(await screen.findAllByText(`${totalImportant} CVEs`)).toHaveLength(
+            mockImages.length
+        );
     });
 
     it('should link to the appropriate pages in VulnMgmt', async () => {
@@ -122,13 +134,17 @@ describe('Images at most risk dashboard widget', () => {
         } = setup();
 
         await screen.findByRole('heading', { name: 'All images at most risk' });
-        await user.click(screen.getByRole('link', { name: 'reg/name-2:tag' }));
-        expect(history.location.pathname).toBe('/main/vulnerability-management/image/2');
+        // Click on the link matching the second image
+        const secondImageInList = mockImages[1];
+        await user.click(screen.getByRole('link', { name: secondImageInList.name?.fullName }));
+        expect(history.location.pathname).toBe(
+            `${vulnManagementPath}/image/${secondImageInList.id}`
+        );
         expect(history.location.hash).toBe('#image-findings');
 
         await history.goBack();
 
         await user.click(screen.getByRole('link', { name: 'View All' }));
-        expect(history.location.pathname).toBe('/main/vulnerability-management/images');
+        expect(history.location.pathname).toBe(`${vulnManagementImagesPath}`);
     });
 });

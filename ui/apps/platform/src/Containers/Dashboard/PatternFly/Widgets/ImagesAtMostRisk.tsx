@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { gql, useQuery } from '@apollo/client';
 import {
     Button,
     Dropdown,
@@ -12,14 +13,14 @@ import {
     ToggleGroupItem,
 } from '@patternfly/react-core';
 
-import useURLSearch from 'hooks/useURLSearch';
-import { SearchFilter } from 'types/search';
-import LinkShim from 'Components/PatternFly/LinkShim';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { vulnManagementImagesPath } from 'routePaths';
+import useURLSearch from 'hooks/useURLSearch';
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
-import { gql, useQuery } from '@apollo/client';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import LinkShim from 'Components/PatternFly/LinkShim';
+
 import WidgetCard from './WidgetCard';
 import ImagesAtMostRiskTable, { CveStatusOption, ImageData } from './ImagesAtMostRiskTable';
 import isResourceScoped from '../utils';
@@ -64,6 +65,8 @@ export const imagesQuery = gql`
     }
 `;
 
+// If no resource scope is applied and the user selects "Active images" only, we
+// can use the wildcard query `Namespace:*` to return images part of any namespace i.e. active
 function getQueryVariables(searchFilter: SearchFilter, statusOption: ImageStatusOption) {
     const query =
         statusOption === 'Active' && !isResourceScoped(searchFilter)
@@ -72,7 +75,7 @@ function getQueryVariables(searchFilter: SearchFilter, statusOption: ImageStatus
     return { query };
 }
 
-const fieldIdPrefix = 'severe-cve-images';
+const fieldIdPrefix = 'images-at-most-risk';
 
 type ImageStatusOption = 'Active' | 'All';
 
