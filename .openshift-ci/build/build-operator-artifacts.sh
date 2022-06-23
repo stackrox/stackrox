@@ -19,6 +19,7 @@ build_operator_bundle_and_binary() {
 
     openshift_ci_mods
 
+    go mod download
     make -C operator bundle bundle-post-process build SILENT=
 }
 
