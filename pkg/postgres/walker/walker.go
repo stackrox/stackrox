@@ -278,9 +278,11 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			continue
 		}
 		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.Parent == nil, ctx.ignorePK, ctx.ignoreUnique, ctx.ignoreFKs)
-
 		if opts.Ignored {
 			continue
+		}
+		if opts.PrimaryKey && structField.Type.Kind() != reflect.String {
+			panic("only string primary keys are supported due to DocID queries")
 		}
 
 		searchOpts, derivedFields := getSearchOptions(ctx, structField.Tag.Get("search"))
