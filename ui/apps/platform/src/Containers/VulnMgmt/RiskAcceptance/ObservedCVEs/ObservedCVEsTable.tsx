@@ -41,7 +41,7 @@ import SearchFilterResults from '../SearchFilterResults';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
-    ids: string[];
+    cves: string[];
 } | null;
 
 export type ObservedCVEsTableProps = {
@@ -84,13 +84,13 @@ function ObservedCVEsTable({
     } = useTableSelection<Vulnerability>(rows);
     const [cvesToBeAssessed, setCVEsToBeAssessed] = useState<CVEsToBeAssessed>(null);
     const requestDeferral = useDeferVulnerability({
-        cveIDs: cvesToBeAssessed?.ids || [],
+        cveIDs: cvesToBeAssessed?.cves || [],
         registry,
         remote,
         tag,
     });
     const requestFalsePositive = useMarkFalsePositive({
-        cveIDs: cvesToBeAssessed?.ids || [],
+        cveIDs: cvesToBeAssessed?.cves || [],
         registry,
         remote,
         tag,
@@ -115,7 +115,7 @@ function ObservedCVEsTable({
               .filter((row) => {
                   return selectedIds.includes(row.id);
               })
-              .map((row) => row.id)
+              .map((row) => row.cve)
         : [];
 
     return (
@@ -137,7 +137,7 @@ function ObservedCVEsTable({
                                 onClick={() =>
                                     setCVEsToBeAssessed({
                                         type: 'DEFERRAL',
-                                        ids: selectedVulnsToDeferOrMarkFalsePositive,
+                                        cves: selectedVulnsToDeferOrMarkFalsePositive,
                                     })
                                 }
                                 isDisabled={selectedVulnsToDeferOrMarkFalsePositive.length === 0}
@@ -150,7 +150,7 @@ function ObservedCVEsTable({
                                 onClick={() =>
                                     setCVEsToBeAssessed({
                                         type: 'FALSE_POSITIVE',
-                                        ids: selectedVulnsToDeferOrMarkFalsePositive,
+                                        cves: selectedVulnsToDeferOrMarkFalsePositive,
                                     })
                                 }
                                 isDisabled={selectedVulnsToDeferOrMarkFalsePositive.length === 0}
@@ -229,7 +229,7 @@ function ObservedCVEsTable({
                                     title: 'Defer CVE',
                                     onClick: (event) => {
                                         event.preventDefault();
-                                        setCVEsToBeAssessed({ type: 'DEFERRAL', ids: [row.cve] });
+                                        setCVEsToBeAssessed({ type: 'DEFERRAL', cves: [row.cve] });
                                     },
                                     isDisabled: !canCreateRequests,
                                 },
@@ -239,7 +239,7 @@ function ObservedCVEsTable({
                                         event.preventDefault();
                                         setCVEsToBeAssessed({
                                             type: 'FALSE_POSITIVE',
-                                            ids: [row.cve],
+                                            cves: [row.cve],
                                         });
                                     },
                                     isDisabled: !canCreateRequests,
@@ -279,7 +279,9 @@ function ObservedCVEsTable({
                                         <CVSSScoreLabel cvss={row.cvss} />
                                     </Td>
                                     <Td dataLabel="Affected components">
-                                        <AffectedComponentsButton components={row.components} />
+                                        <AffectedComponentsButton
+                                            components={row.imageComponents}
+                                        />
                                     </Td>
                                     <Td dataLabel="Discovered">
                                         <DateTimeFormat time={row.discoveredAtImage} />
@@ -298,14 +300,14 @@ function ObservedCVEsTable({
             </TableComposable>
             <DeferralFormModal
                 isOpen={cvesToBeAssessed?.type === 'DEFERRAL'}
-                numCVEsToBeAssessed={cvesToBeAssessed?.ids.length || 0}
+                numCVEsToBeAssessed={cvesToBeAssessed?.cves.length || 0}
                 onSendRequest={requestDeferral}
                 onCompleteRequest={completeAssessment}
                 onCancelDeferral={cancelAssessment}
             />
             <FalsePositiveRequestModal
                 isOpen={cvesToBeAssessed?.type === 'FALSE_POSITIVE'}
-                numCVEsToBeAssessed={cvesToBeAssessed?.ids.length || 0}
+                numCVEsToBeAssessed={cvesToBeAssessed?.cves.length || 0}
                 onSendRequest={requestFalsePositive}
                 onCompleteRequest={completeAssessment}
                 onCancelFalsePositive={cancelAssessment}
