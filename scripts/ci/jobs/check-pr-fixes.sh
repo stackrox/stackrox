@@ -18,7 +18,7 @@ check-pr-fixes() {
 
     if [[ "${#tickets[@]}" == 0 ]]; then
         echo "This PR does not claim to fix any tickets!"
-        exit 0
+        return 0
     fi
 
     echo "Tickets this PR claims to fix:"
