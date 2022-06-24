@@ -40,7 +40,7 @@ gitbot(){
 		"${@}"
 }
 
-git clone "$remote_repository" "$tmp_remote_repository"
+gitbot clone "$remote_repository" "$tmp_remote_repository"
 
 branch_name="release/${version}"
 
