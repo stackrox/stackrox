@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -52,15 +53,17 @@ func New(db *pgxpool.Pool, noUpdateTimestamps bool) store.Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
+		keyFence:           concurrency.NewKeyFence(),
 	}
 }
 
 type storeImpl struct {
 	db                 *pgxpool.Pool
 	noUpdateTimestamps bool
+	keyFence           concurrency.KeyFence
 }
 
-func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUpdated bool, iTime *protoTypes.Timestamp) error {
+func (s *storeImpl) insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUpdated bool, iTime *protoTypes.Timestamp) error {
 	cloned := obj
 	if cloned.GetScan().GetComponents() != nil {
 		cloned = obj.Clone()
@@ -121,19 +124,23 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUp
 	}
 
 	components, vulns, imageComponentRelations, componentCVERelations, imageCVERelations := getPartsAsSlice(common.Split(obj, scanUpdated))
-	if err := copyFromImageComponents(ctx, tx, components...); err != nil {
-		return err
-	}
-	if err := copyFromImageComponentRelations(ctx, tx, imageComponentRelations...); err != nil {
-		return err
-	}
-	if err := copyFromImageCves(ctx, tx, iTime, vulns...); err != nil {
-		return err
-	}
-	if err := copyFromImageComponentCVERelations(ctx, tx, obj.GetScan().GetOperatingSystem(), componentCVERelations...); err != nil {
-		return err
-	}
-	return copyFromImageCVERelations(ctx, tx, iTime, imageCVERelations...)
+	keys := gatherKeysFromParts(components, vulns)
+
+	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+		if err := copyFromImageComponents(ctx, tx, components...); err != nil {
+			return err
+		}
+		if err := copyFromImageComponentRelations(ctx, tx, imageComponentRelations...); err != nil {
+			return err
+		}
+		if err := copyFromImageCves(ctx, tx, iTime, vulns...); err != nil {
+			return err
+		}
+		if err := copyFromImageComponentCVERelations(ctx, tx, obj.GetScan().GetOperatingSystem(), componentCVERelations...); err != nil {
+			return err
+		}
+		return copyFromImageCVERelations(ctx, tx, iTime, imageCVERelations...)
+	})
 }
 
 func getPartsAsSlice(parts common.ImageParts) ([]*storage.ImageComponent, []*storage.ImageCVE, []*storage.ImageComponentEdge, []*storage.ComponentCVEEdge, []*storage.ImageCVEEdge) {
@@ -568,13 +575,16 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Image) error {
 			return nil
 		}
 
-		if err := insertIntoImages(ctx, tx, obj, scanUpdated, iTime); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
+		err = s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(obj.GetId())), func() error {
+			if err := s.insertIntoImages(ctx, tx, obj, scanUpdated, iTime); err != nil {
+				if err := tx.Rollback(ctx); err != nil {
+					return err
+				}
 				return err
 			}
-			return err
-		}
-		if err := tx.Commit(ctx); err != nil {
+			return tx.Commit(ctx)
+		})
+		if err != nil {
 			return err
 		}
 	}
@@ -743,16 +753,11 @@ func getImageCVEEdgeIDs(ctx context.Context, tx pgx.Tx, imageID string) (set.Str
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	ids := set.NewStringSet()
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids.Add(id)
+	ids, err := scanIDs(rows)
+	if err != nil {
+		return nil, err
 	}
-	return ids, nil
+	return set.NewStringSet(ids...), nil
 }
 
 func getImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string) (map[string]*storage.ImageCVEEdge, error) {
@@ -857,7 +862,9 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	return s.deleteImageTree(ctx, conn, id)
+	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(id)), func() error {
+		return s.deleteImageTree(ctx, conn, id)
+	})
 }
 
 func (s *storeImpl) deleteImageTree(ctx context.Context, conn *pgxpool.Conn, imageIDs ...string) error {
@@ -865,30 +872,45 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, conn *pgxpool.Conn, ima
 	if _, err := conn.Exec(ctx, "delete from "+imagesTable+" where Id = ANY($1::text[])", imageIDs); err != nil {
 		return err
 	}
+
 	// Get orphaned image components.
 	rows, err := s.db.Query(ctx, "select id from "+imageComponentsTable+" where not exists (select "+imageComponentsTable+".id FROM "+imageComponentsTable+", "+imageComponentEdgesTable+" WHERE "+imageComponentsTable+".id = "+imageComponentEdgesTable+".imagecomponentid)")
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
-	defer rows.Close()
-	var componentIDs []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return err
-		}
-		componentIDs = append(componentIDs, id)
+	ids, err := scanIDs(rows)
+	if err != nil {
+		return err
 	}
 
-	// Delete orphaned image components.
-	if _, err := conn.Exec(ctx, "delete from "+imageComponentsTable+" where id = ANY($1::text[])", componentIDs); err != nil {
+	err = s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(bytes(ids)...), func() error {
+		// Delete orphaned image components.
+		if _, err := conn.Exec(ctx, "delete from "+imageComponentsTable+" where id = ANY($1::text[])", ids); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		return err
 	}
-	// Delete orphaned cves.
-	if _, err := conn.Exec(ctx, "delete from "+imageCVEsTable+" where not exists (select "+imageCVEsTable+".id FROM "+imageCVEsTable+", "+componentCVEEdgesTable+" WHERE "+imageCVEsTable+".id = "+componentCVEEdgesTable+".imagecveid)"); err != nil {
+
+	// Get orphaned image vulns.
+	rows, err = s.db.Query(ctx, "select id from "+imageCVEsTable+" where not exists (select "+imageCVEsTable+".id FROM "+imageCVEsTable+", "+componentCVEEdgesTable+" WHERE "+imageCVEsTable+".id = "+componentCVEEdgesTable+".imagecveid)")
+	if err != nil {
+		return pgutils.ErrNilIfNoRows(err)
+	}
+	ids, err = scanIDs(rows)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(bytes(ids)...), func() error {
+		// Delete orphaned image components.
+		if _, err := conn.Exec(ctx, "delete from "+imageCVEsTable+" where id = ANY($1::text[])", ids); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 // GetIDs returns all the IDs for the store
@@ -899,15 +921,11 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+	ids, err := scanIDs(rows)
+	if err != nil {
+		return nil, err
 	}
+
 	return ids, nil
 }
 
@@ -950,19 +968,6 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 		}
 	}
 	return elems, missingIndices, nil
-}
-
-// DeleteMany removes the specified IDs from the store.
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Image")
-
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "Image")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	return s.deleteImageTree(ctx, conn, ids...)
 }
 
 //// Used for testing
@@ -1052,7 +1057,7 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 	return &msg, true, nil
 }
 
-func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
+func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "UpdateVulnState")
 	if err != nil {
 		return err
@@ -1064,13 +1069,71 @@ func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, images []st
 		return err
 	}
 
-	query := "update " + imageCVEEdgesTable + " set state = $1 where imagecveid = $2 AND imageid = ANY($3::text[])"
-	_, err = tx.Exec(ctx, query, state, cve, images)
-	if err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
+	cveIDs, err := func() ([]string, error) {
+		rows, err := s.db.Query(ctx, "select id from "+imageCVEsTable+" where cvebaseinfo_cve = $1")
+		if err != nil {
+			return nil, pgutils.ErrNilIfNoRows(err)
 		}
+		return scanIDs(rows)
+	}()
+	if err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+
+	if len(imageIDs) == 0 || len(cveIDs) == 0 {
+		return nil
+	}
+
+	keys := make([][]byte, 0, len(cveIDs)+len(imageIDs))
+	for _, id := range imageIDs {
+		keys = append(keys, []byte(id))
+	}
+	for _, id := range cveIDs {
+		keys = append(keys, []byte(id))
+	}
+
+	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+		query := "update " + imageCVEEdgesTable + " set state = $1 where imagecveid = ANY($2::text[]) AND imageid = ANY($3::text[])"
+		_, err = tx.Exec(ctx, query, state, cveIDs, imageIDs)
+		if err != nil {
+			if err := tx.Rollback(ctx); err != nil {
+				return err
+			}
+			return err
+		}
+		return tx.Commit(ctx)
+	})
+}
+
+func gatherKeysFromParts(components []*storage.ImageComponent, vulns []*storage.ImageCVE) [][]byte {
+	keys := make([][]byte, 0, len(components)+len(vulns))
+	for _, component := range components {
+		keys = append(keys, []byte(component.GetId()))
+	}
+	for _, vuln := range vulns {
+		keys = append(keys, []byte(vuln.GetId()))
+	}
+	return keys
+}
+
+func scanIDs(rows pgx.Rows) ([]string, error) {
+	defer rows.Close()
+	var ids []string
+
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+func bytes(ids []string) [][]byte {
+	ret := make([][]byte, 0, len(ids))
+	for _, id := range ids {
+		ret = append(ret, []byte(id))
+	}
+	return ret
 }

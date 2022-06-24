@@ -20,7 +20,7 @@ type Store interface {
 	Upsert(ctx context.Context, image *storage.Image) error
 	Delete(ctx context.Context, id string) error
 
-	UpdateVulnState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error
+	UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)

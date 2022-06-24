@@ -16,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -60,7 +61,6 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
 	// GetNodeMetadata gets the node without scan/component data.
 	GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error)
-	DeleteMany(ctx context.Context, ids []string) error
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
@@ -69,6 +69,7 @@ type Store interface {
 type storeImpl struct {
 	db                 *pgxpool.Pool
 	noUpdateTimestamps bool
+	keyFence           concurrency.KeyFence
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -76,10 +77,11 @@ func New(db *pgxpool.Pool, noUpdateTimestamps bool) Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
+		keyFence:           concurrency.NewKeyFence(),
 	}
 }
 
-func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpdated bool, iTime *protoTypes.Timestamp) error {
+func (s *storeImpl) insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpdated bool, iTime *protoTypes.Timestamp) error {
 	cloned := obj
 	if cloned.GetScan().GetComponents() != nil {
 		cloned = obj.Clone()
@@ -135,16 +137,20 @@ func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpda
 	}
 
 	components, vulns, nodeComponentEdges, componentCVEEdges := getPartsAsSlice(common.Split(obj, scanUpdated))
-	if err := copyFromNodeComponents(ctx, tx, components...); err != nil {
-		return err
-	}
-	if err := copyFromNodeComponentEdges(ctx, tx, nodeComponentEdges...); err != nil {
-		return err
-	}
-	if err := copyFromNodeCves(ctx, tx, iTime, vulns...); err != nil {
-		return err
-	}
-	return copyFromNodeComponentCVEEdges(ctx, tx, componentCVEEdges...)
+	keys := gatherKeysFromParts(components, vulns)
+
+	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+		if err := copyFromNodeComponents(ctx, tx, components...); err != nil {
+			return err
+		}
+		if err := copyFromNodeComponentEdges(ctx, tx, nodeComponentEdges...); err != nil {
+			return err
+		}
+		if err := copyFromNodeCves(ctx, tx, iTime, vulns...); err != nil {
+			return err
+		}
+		return copyFromNodeComponentCVEEdges(ctx, tx, componentCVEEdges...)
+	})
 }
 
 func getPartsAsSlice(parts *common.NodeParts) ([]*storage.NodeComponent, []*storage.NodeCVE, []*storage.NodeComponentEdge, []*storage.NodeComponentCVEEdge) {
@@ -475,13 +481,16 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 			return nil
 		}
 
-		if err := insertIntoNodes(ctx, tx, obj, scanUpdated, iTime); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
+		err = s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(obj.GetId())), func() error {
+			if err := s.insertIntoNodes(ctx, tx, obj, scanUpdated, iTime); err != nil {
+				if err := tx.Rollback(ctx); err != nil {
+					return err
+				}
 				return err
 			}
-			return err
-		}
-		if err := tx.Commit(ctx); err != nil {
+			return tx.Commit(ctx)
+		})
+		if err != nil {
 			return err
 		}
 	}
@@ -755,7 +764,9 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	return s.deleteNodeTree(ctx, conn, id)
+	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(id)), func() error {
+		return s.deleteNodeTree(ctx, conn, id)
+	})
 }
 
 func (s *storeImpl) deleteNodeTree(ctx context.Context, conn *pgxpool.Conn, nodeIDs ...string) error {
@@ -770,28 +781,41 @@ func (s *storeImpl) deleteNodeTree(ctx context.Context, conn *pgxpool.Conn, node
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
-	defer rows.Close()
-	var componentIDs []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
+	ids, err := scanIDs(rows)
+	if err != nil {
+		return err
+	}
+
+	err = s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(bytes(ids)...), func() error {
+		// Delete orphaned node components.
+		if _, err := conn.Exec(ctx, "delete from "+nodeComponentsTable+" where id = ANY($1::text[])", ids); err != nil {
 			return err
 		}
-		componentIDs = append(componentIDs, id)
-	}
-
-	// Delete orphaned node components.
-	if _, err := conn.Exec(ctx, "delete from "+nodeComponentsTable+" where id = ANY($1::text[])", componentIDs); err != nil {
+		return nil
+	})
+	if err != nil {
 		return err
 	}
+
+	// Get orphaned node vulns.
+	rows, err = s.db.Query(ctx, "select id from "+nodeCVEsTable+" where not exists (select "+nodeCVEsTable+".id FROM "+nodeCVEsTable+", "+componentCVEEdgesTable+" WHERE "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)")
+	if err != nil {
+		return pgutils.ErrNilIfNoRows(err)
+	}
+	ids, err = scanIDs(rows)
+	if err != nil {
+		return err
+	}
+
+	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(bytes(ids)...), func() error {
+		// Delete orphaned node components.
+		if _, err := conn.Exec(ctx, "delete from "+nodeCVEsTable+" where id = ANY($1::text[])", ids); err != nil {
+			return err
+		}
+		return nil
+	})
 
 	// Component-CVE edges have ON DELETE CASCADE referential constraint on component id, therefore, no need to explicitly trigger deletion.
-
-	// Delete orphaned cves.
-	if _, err := conn.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+nodeCVEsTable+".id FROM "+nodeCVEsTable+", "+componentCVEEdgesTable+" WHERE "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)"); err != nil {
-		return err
-	}
-	return nil
 }
 
 // GetIDs returns all the IDs for the store
@@ -885,19 +909,6 @@ func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.No
 	return &msg, true, nil
 }
 
-// Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Node")
-
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "Node")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	return s.deleteNodeTree(ctx, conn, ids...)
-}
-
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing
@@ -978,4 +989,37 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 		idToCVEMap[msg.GetId()] = msg
 	}
 	return idToCVEMap, nil
+}
+
+func gatherKeysFromParts(components []*storage.NodeComponent, vulns []*storage.NodeCVE) [][]byte {
+	keys := make([][]byte, 0, len(components)+len(vulns))
+	for _, component := range components {
+		keys = append(keys, []byte(component.GetId()))
+	}
+	for _, vuln := range vulns {
+		keys = append(keys, []byte(vuln.GetId()))
+	}
+	return keys
+}
+
+func scanIDs(rows pgx.Rows) ([]string, error) {
+	defer rows.Close()
+	var ids []string
+
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+func bytes(ids []string) [][]byte {
+	ret := make([][]byte, 0, len(ids))
+	for _, id := range ids {
+		ret = append(ret, []byte(id))
+	}
+	return ret
 }

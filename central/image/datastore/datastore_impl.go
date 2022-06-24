@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -125,16 +126,22 @@ func (ds *datastoreImpl) ListImage(ctx context.Context, sha string) (*storage.Li
 
 // CountImages delegates to the underlying store.
 func (ds *datastoreImpl) CountImages(ctx context.Context) (int, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	} else if ok {
-		return ds.storage.Count(ctx)
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {
+			return 0, err
+		} else if ok {
+			return ds.storage.Count(ctx)
+		}
 	}
 
 	return ds.Count(ctx, pkgSearch.EmptyQuery())
 }
 
 func (ds *datastoreImpl) canReadImage(ctx context.Context, sha string) (bool, error) {
+	if features.PostgresDatastore.Enabled() {
+		return true, nil
+	}
+
 	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {
 		return false, err
 	} else if ok {
@@ -183,9 +190,15 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Ima
 // GetImagesBatch delegates to the underlying store.
 func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*storage.Image, error) {
 	var imgs []*storage.Image
-	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if ok {
+	var err error
+	ok := true
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err = imagesSAC.ReadAllowed(ctx); err != nil {
+			return nil, err
+		}
+	}
+
+	if ok {
 		imgs, _, err = ds.storage.GetMany(ctx, shas)
 		if err != nil {
 			return nil, err
@@ -211,10 +224,12 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 		return errors.New("cannot upsert an image without an id")
 	}
 
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
 	}
 
 	ds.keyedMutex.Lock(image.GetId())
@@ -234,10 +249,12 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "DeleteImages")
 
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
 	}
 
 	errorList := errorhelpers.NewErrorList("deleting images")
@@ -267,10 +284,12 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
 	}
 
 	if err := ds.storage.UpdateVulnState(ctx, cve, images, state); err != nil {
