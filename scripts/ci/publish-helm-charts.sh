@@ -7,9 +7,6 @@ set -euo pipefail
 
 [[ -n "${GITHUB_TOKEN}" ]] || die "No GitHub token found"
 
-user_name='roxbot'
-user_email='roxbot@stackrox.com'
-
 remote_repository="https://github.com/stackrox/release-artifacts.git"
 remote_subdirectory="helm-charts"
 
@@ -37,11 +34,17 @@ fi
 
 tmp_remote_repository="$(mktemp -d)"
 
+gitbot(){
+	git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" \
+		-c "url.https://${GITHUB_TOKEN}:x-oauth-basic@github.com/.insteadOf=https://github.com/" \
+		"${@}"
+}
+
 git clone "$remote_repository" "$tmp_remote_repository"
 
 branch_name="release/${version}"
 
-git -C "$tmp_remote_repository" checkout -b "$branch_name"
+gitbot -C "$tmp_remote_repository" checkout -b "$branch_name"
 
 mkdir "${tmp_remote_repository}/${remote_subdirectory}/${version}"
 
@@ -63,9 +66,9 @@ helm package -d "${tmp_remote_repository}/${remote_subdirectory}/opensource" "${
 echo "Building OSS helm repo index"
 helm repo index "${tmp_remote_repository}/${remote_subdirectory}/opensource"
 
-git -C "$tmp_remote_repository" add -A
-git -C "$tmp_remote_repository" -c "user.name=${user_name}" -c "user.email=${user_email}" commit -m "Publish Helm Charts for version ${version}"
-git -C "$tmp_remote_repository" push origin "$branch_name"
+gitbot -C "$tmp_remote_repository" add -A
+gitbot -C "$tmp_remote_repository" commit -m "Publish Helm Charts for version ${version}"
+gitbot -C "$tmp_remote_repository" push origin "$branch_name"
 
 pr_response_file="$(mktemp)"
 
