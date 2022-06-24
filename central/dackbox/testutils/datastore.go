@@ -317,5 +317,6 @@ func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	s.storedNamespaces = make([]string, 0)
 	s.storedImages = make([]string, 0)
 	s.storedNodes = make([]string, 0)
+
 	return s, nil
 }
