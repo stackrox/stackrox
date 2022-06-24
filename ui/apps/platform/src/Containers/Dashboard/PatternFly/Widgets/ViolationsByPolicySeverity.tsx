@@ -11,6 +11,7 @@ import { getQueryString } from 'utils/queryStringUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import { severities } from 'constants/severities';
+import pluralize from 'pluralize';
 import WidgetCard from './WidgetCard';
 import MostRecentViolations from './MostRecentViolations';
 import PolicyViolationTiles from './PolicyViolationTiles';
@@ -93,9 +94,10 @@ function ViolationsByPolicySeverity() {
                 <Flex direction={{ default: 'row' }}>
                     <FlexItem grow={{ default: 'grow' }}>
                         <Title headingLevel="h2">
-                            {totalCount === 1
-                                ? `1 policy violation by severity`
-                                : `${totalCount} policy violations by severity`}
+                            {`${totalCount} policy ${pluralize(
+                                'violation',
+                                totalCount
+                            )} by severity`}
                         </Title>
                     </FlexItem>
                     <FlexItem>

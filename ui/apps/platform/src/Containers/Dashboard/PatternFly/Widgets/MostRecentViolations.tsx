@@ -9,10 +9,10 @@ import {
     Truncate,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Tr, Td } from '@patternfly/react-table';
+import { SearchIcon, SecurityIcon } from '@patternfly/react-icons';
 
 import { DeploymentAlert } from 'types/alert.proto';
 import { violationsBasePath } from 'routePaths';
-import { SearchIcon, SecurityIcon } from '@patternfly/react-icons';
 import { severityColors } from 'constants/visuals/colors';
 import { getDateTime } from 'utils/dateUtils';
 
@@ -55,7 +55,7 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                 </Flex>
                             </Td>
                             <Td dataLabel="Deployment in violation">
-                                <Truncate content={deployment?.name ?? ''} />
+                                <Truncate content={deployment.name} />
                             </Td>
                             <Td
                                 width={35}
