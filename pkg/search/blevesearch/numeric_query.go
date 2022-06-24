@@ -132,11 +132,52 @@ func createNumericQuery(field string, prefix string, value *float64) query.Query
 	return q
 }
 
+var (
+	errNotARange = errors.New("not a range")
+)
+
+func maybeParseNumericRange(value string) (*float64, *float64, error) {
+	// Split the value into two parts, separated by a hyphen.
+	// We need to be careful to ensure that we don't mistake
+	// hyphens for minus signs.
+	for i, char := range value {
+		if i == 0 {
+			continue
+		}
+		if char == '-' {
+			lower, err := parseNumericStringToPtr(value[:i])
+			if err != nil {
+				return nil, nil, errors.Errorf("invalid range %s (%v)", value, err)
+			}
+			upper, err := parseNumericStringToPtr(value[i+1:])
+			if err != nil {
+				return nil, nil, errors.Errorf("invalid range %s (%v)", value, err)
+			}
+			if *lower >= *upper {
+				return nil, nil, errors.Errorf("invalid range %s (first value must be strictly less than the second)", value)
+			}
+			return lower, upper, nil
+		}
+	}
+	return nil, nil, errNotARange
+}
+
 func newNumericQuery(_ v1.SearchCategory, field string, value string, modifiers ...queryModifier) (query.Query, error) {
 	if len(modifiers) > 0 {
 		return nil, errors.Errorf("modifiers not supported for numeric query: %+v", modifiers)
 	}
 	prefix, trimmedValue := parseNumericPrefix(value)
+	if prefix == "" {
+		lower, upper, err := maybeParseNumericRange(trimmedValue)
+		if err == nil {
+			q := bleve.NewNumericRangeInclusiveQuery(lower, upper, boolPtr(false), boolPtr(false))
+			q.SetField(field)
+			return q, nil
+		}
+		if err != errNotARange {
+			return nil, err
+		}
+	}
 	valuePtr, err := parseNumericStringToPtr(trimmedValue)
 	if err != nil {
 		return nil, err
