@@ -832,4 +832,5 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEUnsuppress() {
 
 func (s *cveDataStoreSACTestSuite) TestSACEnrichNodeWithSuppressedCVEs() {
 	s.T().Skip("Not implemented yet.")
+
 }
