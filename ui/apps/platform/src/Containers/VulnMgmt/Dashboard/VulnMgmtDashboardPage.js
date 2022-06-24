@@ -11,6 +11,7 @@ import RadioButtonGroup from 'Components/RadioButtonGroup';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { DASHBOARD_LIMIT } from 'constants/workflowPages.constants';
 import DashboardMenu from 'Components/DashboardMenu';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import PoliciesCountTile from '../Components/PoliciesCountTile';
 import CvesCountTile from '../Components/CvesCountTile';
 import ImagesCountTile from '../Components/ImagesCountTile';
@@ -34,6 +35,7 @@ const entityMenuTypes = [
 const VulnDashboardPage = ({ history }) => {
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const cveFilterButtons = [
         {
