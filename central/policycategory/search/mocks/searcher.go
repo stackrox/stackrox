@@ -67,6 +67,21 @@ func (mr *MockSearcherMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), ctx, q)
 }
 
+// SearchCategories mocks base method.
+func (m *MockSearcher) SearchCategories(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchCategories", ctx, q)
+	ret0, _ := ret[0].([]*v1.SearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchCategories indicates an expected call of SearchCategories.
+func (mr *MockSearcherMockRecorder) SearchCategories(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCategories", reflect.TypeOf((*MockSearcher)(nil).SearchCategories), ctx, q)
+}
+
 // SearchRawCategories mocks base method.
 func (m *MockSearcher) SearchRawCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error) {
 	m.ctrl.T.Helper()
