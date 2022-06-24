@@ -1871,8 +1871,10 @@ class Kubernetes implements OrchestratorMain {
       } catch (io.fabric8.kubernetes.client.KubernetesClientException e) {
         log.warn("Client returned exception when creating k8s deployment: ",  e)
         if (retry >= maxRetries) {
+          log.debug "No more retries. Retried " + maxRetries + " times already"
           return false
         }
+        log.debug "Retrying. Retry " + retry+1 + " out of " + maxRetries
         return  createDeploymentNoWaitRetry(deployment, retry+1, maxRetries)
       } catch (Exception e) {
         log.warn("Error creating k8s deployment: ",  e)
