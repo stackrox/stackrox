@@ -1,15 +1,15 @@
 import React, { CSSProperties } from 'react';
-import { Link } from 'react-router-dom';
-import { Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
+import { Button, ButtonVariant, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
 
 import { violationsBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { severityLabels } from 'messages/common';
-
-import './SeverityTile.css';
 import { severityColors } from 'constants/visuals/colors';
 import { policySeverities, PolicySeverity } from 'types/policy.proto';
+import LinkShim from 'Components/PatternFly/LinkShim';
+
+import './SeverityTile.css';
 
 type SeverityTileProps = {
     severity: PolicySeverity;
@@ -19,17 +19,21 @@ type SeverityTileProps = {
 
 function SeverityTile({ severity, violationCount, link }: SeverityTileProps) {
     return (
-        <Stack
+        <Button
             style={{ '--pf-severity-tile-color': severityColors[severity] } as CSSProperties}
-            className="pf-severity-tile pf-u-px-md pf-u-py-sm pf-u-align-items-center"
+            className="pf-severity-tile pf-u-w-100 pf-u-px-md pf-u-py-sm pf-u-align-items-center"
+            key={severity}
+            variant={ButtonVariant.link}
+            component={LinkShim}
+            href={link}
         >
-            <StackItem className="pf-u-font-weight-bold pf-u-font-size-xl">
-                {violationCount}
-            </StackItem>
-            <StackItem>
-                <Link to={link}>{severityLabels[severity]}</Link>
-            </StackItem>
-        </Stack>
+            <Stack>
+                <StackItem className="pf-u-color-100 pf-u-font-weight-bold pf-u-font-size-xl">
+                    {violationCount}
+                </StackItem>
+                <StackItem>{severityLabels[severity]}</StackItem>
+            </Stack>
+        </Button>
     );
 }
 
