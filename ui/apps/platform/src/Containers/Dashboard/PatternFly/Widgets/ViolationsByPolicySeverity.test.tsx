@@ -5,24 +5,12 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
-import ViolationsByPolicyCategory from 'Containers/Dashboard/ViolationsByPolicyCategory';
-import { mostRecentAlertsQuery } from './ViolationsByPolicySeverity';
+import { violationsBasePath } from 'routePaths';
+import ViolationsByPolicySeverity, { mostRecentAlertsQuery } from './ViolationsByPolicySeverity';
 
 const mockAlerts = [
     {
         id: '1',
-        time: '2022-06-24T02:20:00.703746138Z',
-        deployment: { clusterName: 'security', namespace: 'stackrox', name: 'central' },
-        policy: { name: 'Unauthorized Network Flow', severity: 'CRITICAL_SEVERITY' },
-    },
-    {
-        id: '2',
-        time: '2022-06-24T02:20:00.704383154Z',
-        deployment: { clusterName: 'security', namespace: 'stackrox', name: 'scanner' },
-        policy: { name: 'Unauthorized Network Flow', severity: 'CRITICAL_SEVERITY' },
-    },
-    {
-        id: '3',
         time: '2022-06-24T00:35:42.299667447Z',
         deployment: { clusterName: 'production', namespace: 'kube-system', name: 'kube-proxy' },
         policy: { name: 'Ubuntu Package Manager in Image', severity: 'CRITICAL_SEVERITY' },
@@ -50,6 +38,30 @@ jest.mock('hooks/useResizeObserver', () => ({
     default: jest.fn().mockImplementation(jest.fn),
 }));
 
+// Mock the hook that handles the data fetching of alert counts
+jest.mock('Containers/Dashboard/PatternFly/hooks/useAlertGroups', () => ({
+    __esModule: true,
+    default: () => ({
+        data: {
+            data: {
+                groups: [
+                    {
+                        group: '',
+                        counts: [
+                            { severity: 'LOW_SEVERITY', count: '220' },
+                            { severity: 'MEDIUM_SEVERITY', count: '70' },
+                            { severity: 'HIGH_SEVERITY', count: '140' },
+                            { severity: 'CRITICAL_SEVERITY', count: '3' },
+                        ],
+                    },
+                ],
+            },
+        },
+        loading: false,
+        error: undefined,
+    }),
+}));
+
 beforeEach(() => {
     jest.resetModules();
 });
@@ -58,32 +70,58 @@ function setup() {
     const user = userEvent.setup();
     const utils = renderWithRouter(
         <MockedProvider mocks={mocks} addTypename={false}>
-            <ViolationsByPolicyCategory />
+            <ViolationsByPolicySeverity />
         </MockedProvider>
     );
 
     return { user, utils };
 }
 
-describe('Images at most risk dashboard widget', () => {
-    it('should render the correct title based on selected options', async () => {
-        const { user } = setup();
+describe('Violations by policy severity widget', () => {
+    it('should display total violations in the title that match the sum of the individual tiles', async () => {
+        setup();
 
-        // Default is display all images
-        expect(
-            await screen.findByRole('heading', {
-                name: 'All images at most risk',
-            })
-        ).toBeInTheDocument();
+        // Find items on the screen that with text that contains -only- an integer
+        const tiles = await screen.findAllByText(/^\d+$/);
+        expect(tiles).toHaveLength(4);
 
-        // Change to display only active images
-        await user.click(await screen.findByRole('button', { name: `Options` }));
-        await user.click(await screen.findByRole('button', { name: `Active images` }));
+        let alertCount = 0;
+        tiles.forEach((tile) => {
+            alertCount += parseInt(tile.textContent ?? '0', 10);
+        });
 
         expect(
             await screen.findByRole('heading', {
-                name: 'Active images at most risk',
+                name: `${alertCount} policy violations by severity`,
             })
         ).toBeInTheDocument();
+    });
+
+    it('should link to the correct violations pages when clicking links in the widget', async () => {
+        const {
+            user,
+            utils: { history },
+        } = setup();
+
+        expect(
+            await screen.findByRole('heading', { name: /policy violations by severity/g })
+        ).toBeInTheDocument();
+
+        // Test the 'View All' violations link button
+        await user.click(await screen.findByRole('link', { name: 'View all' }));
+        expect(history.location.pathname).toBe(`${violationsBasePath}`);
+        expect(history.location.search).toContain('sortOption[field]=Severity');
+
+        // Test links from the violation count tiles
+        await user.click(await screen.findByRole('link', { name: 'Low' }));
+        expect(history.location.pathname).toBe(`${violationsBasePath}`);
+        expect(history.location.search).toContain('[Severity]=LOW_SEVERITY');
+        await user.click(await screen.findByRole('link', { name: 'Critical' }));
+        expect(history.location.pathname).toBe(`${violationsBasePath}`);
+        expect(history.location.search).toContain('[Severity]=CRITICAL_SEVERITY');
+
+        // Test links from the 'most recent violations' section
+        await user.click(await screen.findByRole('link', { name: /ubuntu package manager/gi }));
+        expect(history.location.pathname).toBe(`${violationsBasePath}/${mockAlerts[0].id}`);
     });
 });

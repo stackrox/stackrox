@@ -17,7 +17,7 @@ import { severityColors } from 'constants/visuals/colors';
 import { getDateTime } from 'utils/dateUtils';
 
 export type MostRecentViolationsProps = {
-    alerts: Partial<DeploymentAlert>[];
+    alerts: DeploymentAlert[];
 };
 
 function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
@@ -42,21 +42,17 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                     {alerts.map(({ id, time, deployment, policy }) => (
                         <Tr key={id}>
                             <Td className="pf-u-p-0" dataLabel="Severity icon">
-                                {policy && (
-                                    <SecurityIcon
-                                        className="pf-u-display-inline"
-                                        color={severityColors[policy.severity]}
-                                    />
-                                )}
+                                <SecurityIcon
+                                    className="pf-u-display-inline"
+                                    color={severityColors[policy.severity]}
+                                />
                             </Td>
                             <Td dataLabel="Violation name">
-                                {policy && (
-                                    <Flex direction={{ default: 'row' }}>
-                                        <Link to={`${violationsBasePath}`}>
-                                            <Truncate content={policy.name} />
-                                        </Link>
-                                    </Flex>
-                                )}
+                                <Flex direction={{ default: 'row' }}>
+                                    <Link to={`${violationsBasePath}/${id}`}>
+                                        <Truncate content={policy.name} />
+                                    </Link>
+                                </Flex>
                             </Td>
                             <Td dataLabel="Deployment in violation">
                                 <Truncate content={deployment?.name ?? ''} />

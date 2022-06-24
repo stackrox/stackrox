@@ -64,7 +64,7 @@ function ViolationsByPolicySeverity() {
         previousData: previousRecentAlertsData,
         loading: recentAlertsLoading,
         error: recentAlertsError,
-    } = useQuery<{ alerts: Partial<DeploymentAlert>[] }>(mostRecentAlertsQuery, {
+    } = useQuery<{ alerts: DeploymentAlert[] }>(mostRecentAlertsQuery, {
         variables: { query: mostRecentFilterQuery },
     });
 
@@ -104,7 +104,7 @@ function ViolationsByPolicySeverity() {
                             component={LinkShim}
                             href={getViewAllLink(searchFilter)}
                         >
-                            View All
+                            View all
                         </Button>
                     </FlexItem>
                 </Flex>
