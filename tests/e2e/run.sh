@@ -43,6 +43,11 @@ test_e2e() {
     store_test_results "tests/all-tests-results" "all-tests-results"
     [[ ! -f FAIL ]] || die "e2e tests failed"
 
+    info "Sensor k8s integration tests"
+    make test-integration-test || touch FAIL
+    store_test_results "test-output/sensor-integration.log" "sensor-integration"
+    [[ ! -f FAIL ]] || die "e2e tests failed"
+
     setup_proxy_tests "localhost"
     run_proxy_tests "localhost"
     cd "$ROOT"
