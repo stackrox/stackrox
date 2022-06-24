@@ -45,7 +45,6 @@ const (
 	SearchCategory_PROCESS_INDICATORS       SearchCategory = 6
 	SearchCategory_COMPLIANCE               SearchCategory = 7
 	SearchCategory_CLUSTERS                 SearchCategory = 8
-	SearchCategory_CLUSTER_HEALTH           SearchCategory = 45
 	SearchCategory_NAMESPACES               SearchCategory = 9
 	SearchCategory_NODES                    SearchCategory = 10
 	SearchCategory_NODE_COMPONENTS          SearchCategory = 38
