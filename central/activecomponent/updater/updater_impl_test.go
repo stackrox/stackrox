@@ -18,7 +18,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
@@ -171,13 +170,7 @@ func (s *acUpdaterTestSuite) SetupTest() {
 	s.mockImageDataStore = imageMocks.NewMockDataStore(s.mockCtrl)
 	s.executableCache = simplecache.New()
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.ActiveVulnManagement.EnvVar(), "true")
 	s.mockAggregator = mocks.NewMockProcessAggregator(s.mockCtrl)
-
-	if !features.ActiveVulnManagement.Enabled() {
-		s.T().Skip("Skip active component updater test")
-		s.T().SkipNow()
-	}
 }
 
 func (s *acUpdaterTestSuite) TearDownTest() {
