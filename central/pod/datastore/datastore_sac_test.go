@@ -8,7 +8,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/pod/datastore/internal/search"
 	"github.com/stackrox/rox/central/pod/index"
 	"github.com/stackrox/rox/central/pod/mappings"
 	"github.com/stackrox/rox/central/pod/store"
@@ -44,7 +43,6 @@ type podDatastoreSACSuite struct {
 
 	storage store.Store
 	indexer index.Indexer
-	search  search.Searcher
 	filter  filter.Filter
 
 	processStore *mockProcessStore.MockDataStore

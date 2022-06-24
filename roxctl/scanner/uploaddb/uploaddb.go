@@ -38,7 +38,7 @@ func (cmd *scannerUploadDbCommand) uploadDd() error {
 	}
 	defer utils.IgnoreError(file.Close)
 
-	resp, err := common.DoHTTPRequestAndCheck200(scannerUploadDbAPIPath, cmd.timeout, http.MethodPost, file)
+	resp, err := common.DoHTTPRequestAndCheck200(scannerUploadDbAPIPath, cmd.timeout, http.MethodPost, file, cmd.env.Logger())
 	if err != nil {
 		return errors.Wrap(err, "could not connect with scanner definitions API")
 	}

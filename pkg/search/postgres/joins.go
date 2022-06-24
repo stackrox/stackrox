@@ -113,12 +113,17 @@ func collectFields(q *v1.Query) set.StringSet {
 	return collectedFields
 }
 
-func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string]*walker.Field) {
+type searchFieldMetadata struct {
+	baseField       *walker.Field
+	derivedMetadata *walker.DerivedSearchField
+}
+
+func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string]searchFieldMetadata) {
 	unreachedFields := collectFields(q)
 	joinTreeRoot := &joinTreeNode{
 		currNode: src,
 	}
-	reachableFields := make(map[string]*walker.Field)
+	reachableFields := make(map[string]searchFieldMetadata)
 	queue := []bfsQueueElem{{schema: src}}
 	visited := set.NewStringSet()
 	for len(queue) > 0 && len(unreachedFields) > 0 {
@@ -132,7 +137,17 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 			field := f
 			lowerCaseName := strings.ToLower(f.Search.FieldName)
 			if unreachedFields.Remove(lowerCaseName) {
-				reachableFields[lowerCaseName] = &field
+				reachableFields[lowerCaseName] = searchFieldMetadata{baseField: &field}
+			}
+			for _, derivedF := range field.DerivedSearchFields {
+				derivedField := derivedF
+				lowerCaseDerivedName := strings.ToLower(derivedField.FieldName)
+				if unreachedFields.Remove(lowerCaseDerivedName) {
+					reachableFields[lowerCaseDerivedName] = searchFieldMetadata{
+						baseField:       &field,
+						derivedMetadata: &derivedField,
+					}
+				}
 			}
 		}
 		// We found a field in this schema; if this is not the root schema itself, we'll need to add it to the join tree.

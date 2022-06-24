@@ -49,16 +49,16 @@ const (
 									name {
 										full_name:fullName
 									}
-									components {
+									imageComponents {
 										name
-										vulns(query: $cvequery) {
+										imageVulnerabilities(query: $cvequery) {
 											...cveFields
 										}
 									}
 								}
 							}
 						}
-	fragment cveFields on EmbeddedVulnerability {
+	fragment cveFields on ImageVulnerability {
         cve
 	    severity
         fixedByVersion

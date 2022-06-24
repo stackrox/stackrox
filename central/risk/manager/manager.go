@@ -9,7 +9,6 @@ import (
 	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
-	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	nodeDS "github.com/stackrox/rox/central/node/globaldatastore"
 	"github.com/stackrox/rox/central/ranking"
@@ -45,11 +44,10 @@ type Manager interface {
 }
 
 type managerImpl struct {
-	deploymentStorage     deploymentDS.DataStore
-	nodeStorage           nodeDS.GlobalDataStore
-	imageStorage          imageDS.DataStore
-	imageComponentStorage imageComponentDS.DataStore
-	riskStorage           riskDS.DataStore
+	deploymentStorage deploymentDS.DataStore
+	nodeStorage       nodeDS.GlobalDataStore
+	imageStorage      imageDS.DataStore
+	riskStorage       riskDS.DataStore
 
 	deploymentScorer     deploymentScorer.Scorer
 	nodeScorer           nodeScorer.Scorer
@@ -57,9 +55,10 @@ type managerImpl struct {
 	imageComponentScorer componentScorer.Scorer
 	nodeComponentScorer  componentScorer.Scorer
 
-	clusterRanker   *ranking.Ranker
-	nsRanker        *ranking.Ranker
-	componentRanker *ranking.Ranker
+	clusterRanker        *ranking.Ranker
+	nsRanker             *ranking.Ranker
+	imageComponentRanker *ranking.Ranker
+	nodeComponentRanker  *ranking.Ranker
 
 	acUpdater acUpdater.Updater
 }
@@ -68,7 +67,6 @@ type managerImpl struct {
 func New(nodeStorage nodeDS.GlobalDataStore,
 	deploymentStorage deploymentDS.DataStore,
 	imageStorage imageDS.DataStore,
-	imageComponentStorage imageComponentDS.DataStore,
 	riskStorage riskDS.DataStore,
 	nodeScorer nodeScorer.Scorer,
 	nodeComponentScorer componentScorer.Scorer,
@@ -78,14 +76,14 @@ func New(nodeStorage nodeDS.GlobalDataStore,
 	clusterRanker *ranking.Ranker,
 	nsRanker *ranking.Ranker,
 	componentRanker *ranking.Ranker,
+	nodeComponentRanker *ranking.Ranker,
 	acUpdater acUpdater.Updater,
 ) Manager {
 	m := &managerImpl{
-		nodeStorage:           nodeStorage,
-		deploymentStorage:     deploymentStorage,
-		imageStorage:          imageStorage,
-		imageComponentStorage: imageComponentStorage,
-		riskStorage:           riskStorage,
+		nodeStorage:       nodeStorage,
+		deploymentStorage: deploymentStorage,
+		imageStorage:      imageStorage,
+		riskStorage:       riskStorage,
 
 		nodeScorer:           nodeScorer,
 		nodeComponentScorer:  nodeComponentScorer,
@@ -93,10 +91,11 @@ func New(nodeStorage nodeDS.GlobalDataStore,
 		imageScorer:          imageScorer,
 		imageComponentScorer: imageComponentScorer,
 
-		clusterRanker:   clusterRanker,
-		nsRanker:        nsRanker,
-		componentRanker: componentRanker,
-		acUpdater:       acUpdater,
+		clusterRanker:        clusterRanker,
+		nsRanker:             nsRanker,
+		imageComponentRanker: componentRanker,
+		nodeComponentRanker:  nodeComponentRanker,
+		acUpdater:            acUpdater,
 	}
 	return m
 }
@@ -238,12 +237,12 @@ func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "ImageComponent")
 
-	risk := e.imageComponentScorer.Score(allAccessCtx, imageComponent)
+	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent))
 	if risk == nil {
 		return
 	}
 
-	oldScore := e.componentRanker.GetScoreForID(
+	oldScore := e.imageComponentRanker.GetScoreForID(
 		scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), ""))
 	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
 		log.Errorf("Error reprocessing risk for image component %s v%s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
@@ -262,7 +261,7 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 func (e *managerImpl) reprocessNodeComponentRisk(nodeComponent *storage.EmbeddedNodeScanComponent) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "NodeComponent")
 
-	risk := e.nodeComponentScorer.Score(allAccessCtx, nodeComponent)
+	risk := e.nodeComponentScorer.Score(allAccessCtx, scancomponent.NewFromNodeComponent(nodeComponent))
 	if risk == nil {
 		return
 	}

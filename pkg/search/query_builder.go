@@ -73,13 +73,80 @@ type fieldValue struct {
 	highlighted bool
 }
 
+// NewPagination create a new pagination object
+func NewPagination() *Pagination {
+	return &Pagination{
+		qp: &v1.QueryPagination{},
+	}
+}
+
+// Pagination defines the pagination to be used with the query
+type Pagination struct {
+	qp *v1.QueryPagination
+}
+
+// Limit sets the limit
+func (p *Pagination) Limit(limit int32) *Pagination {
+	p.qp.Limit = limit
+	return p
+}
+
+// Offset sets the offset
+func (p *Pagination) Offset(offset int32) *Pagination {
+	p.qp.Offset = offset
+	return p
+}
+
+// SortOption describes the way to sort the query
+type SortOption struct {
+	field       FieldLabel
+	reversed    bool
+	searchAfter string
+}
+
+// NewSortOption creates a new sort option
+func NewSortOption(field FieldLabel) *SortOption {
+	return &SortOption{
+		field: field,
+	}
+}
+
+// Reversed describes if the sort should be reversed
+func (s *SortOption) Reversed(reversed bool) *SortOption {
+	s.reversed = reversed
+	return s
+}
+
+// SearchAfter starts from the passed value instead of using limit/offset pagination
+func (s *SortOption) SearchAfter(searchAfter string) *SortOption {
+	s.searchAfter = searchAfter
+	return s
+}
+
+// AddSortOption adds the sort option to the pagination object
+func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
+	opt := &v1.QuerySortOption{
+		Field:    string(so.field),
+		Reversed: so.reversed,
+	}
+	if so.searchAfter != "" {
+		opt.SearchAfterOpt = &v1.QuerySortOption_SearchAfter{
+			SearchAfter: so.searchAfter,
+		}
+	}
+	p.qp.SortOptions = append(p.qp.SortOptions, opt)
+	return p
+}
+
 // QueryBuilder builds a search query
 type QueryBuilder struct {
 	fieldsToValues map[FieldLabel][]string
-	ids            []string
+	ids            *[]string
 	linkedFields   [][]fieldValue
 
 	highlightedFields map[FieldLabel]struct{}
+
+	pagination *Pagination
 }
 
 // NewQueryBuilder instantiates a query builder with no values
@@ -88,6 +155,12 @@ func NewQueryBuilder() *QueryBuilder {
 		fieldsToValues:    make(map[FieldLabel][]string),
 		highlightedFields: make(map[FieldLabel]struct{}),
 	}
+}
+
+// WithPagination applies pagination to the query
+func (qb *QueryBuilder) WithPagination(p *Pagination) *QueryBuilder {
+	qb.pagination = p
+	return qb
 }
 
 // AddLinkedFields adds a bunch of fields and values where the matches must be in corresponding places in both fields.
@@ -102,14 +175,22 @@ func (qb *QueryBuilder) AddLinkedFields(fields []FieldLabel, values []string) *Q
 
 // AddDocIDs adds the list of ids to the DocID query of the QueryBuilder.
 func (qb *QueryBuilder) AddDocIDs(ids ...string) *QueryBuilder {
-	qb.ids = append(qb.ids, ids...)
+	if qb.ids == nil {
+		slice := make([]string, 0, len(ids))
+		qb.ids = &slice
+	}
+	*qb.ids = append(*qb.ids, ids...)
 	return qb
 }
 
 // AddDocIDSet adds the set of ids to the DocID query of the QueryBuilder.
 func (qb *QueryBuilder) AddDocIDSet(idSet set.StringSet) *QueryBuilder {
+	if qb.ids == nil {
+		slice := make([]string, 0, len(idSet))
+		qb.ids = &slice
+	}
 	for id := range idSet {
-		qb.ids = append(qb.ids, id)
+		*qb.ids = append(*qb.ids, id)
 	}
 	return qb
 }
@@ -256,8 +337,8 @@ func (qb *QueryBuilder) Query() string {
 func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	queries := make([]*v1.Query, 0, len(qb.fieldsToValues)+len(qb.linkedFields))
 
-	if len(qb.ids) > 0 {
-		queries = append(queries, docIDQuery(qb.ids))
+	if qb.ids != nil {
+		queries = append(queries, docIDQuery(*qb.ids))
 	}
 
 	// Sort the queries by field value, to ensure consistency of output.
@@ -272,7 +353,11 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 		queries = append(queries, matchLinkedFieldsQuery(linkedFieldsGroup))
 	}
 
-	return ConjunctionQuery(queries...)
+	cq := ConjunctionQuery(queries...)
+	if qb.pagination != nil {
+		cq.Pagination = qb.pagination.qp
+	}
+	return cq
 }
 
 func (qb *QueryBuilder) getSortedFields() []FieldLabel {

@@ -94,6 +94,9 @@ func (s *K8sRolesStoreSuite) TestStore() {
 	k8SRoleCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, k8SRoleCount)
+	k8SRoleCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(k8SRoleCount)
 
 	k8SRoleExists, err := store.Exists(ctx, k8SRole.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *K8sRolesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundK8SRole)
+	s.NoError(store.Delete(withNoAccessCtx, k8SRole.GetId()))
 
 	var k8SRoles []*storage.K8SRole
 	for i := 0; i < 200; i++ {

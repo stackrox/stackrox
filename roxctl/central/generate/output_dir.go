@@ -1,8 +1,9 @@
 package generate
 
 import (
-	"fmt"
 	"os"
+
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 const defaultPath = "central-bundle"
@@ -29,7 +30,7 @@ func (o *outputDirWrapper) Set(input string) error {
 	if _, err := os.Stat(input); err != nil && !os.IsNotExist(err) {
 		return err
 	} else if err == nil {
-		return fmt.Errorf("directory %q already exists. Please specify and new path to ensure expected results", input)
+		return errox.InvalidArgs.Newf("directory %q already exists. Please specify and new path to ensure expected results", input)
 	}
 	*o.OutputDir = input
 	return nil

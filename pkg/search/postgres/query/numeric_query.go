@@ -2,12 +2,12 @@ package pgsearch
 
 import (
 	"fmt"
-	"math"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/readable"
 )
 
 type prefixAndInversion struct {
@@ -27,7 +27,7 @@ var (
 			validPrefixes = append(validPrefixes, pAndI.prefix)
 			validPrefixes = append(validPrefixes, pAndI.inversion)
 		}
-		validPrefixes = append(validPrefixes, "==")
+		validPrefixes = append(validPrefixes, "=", "==")
 		sort.Slice(validPrefixes, func(i, j int) bool {
 			return len(validPrefixes[i]) > len(validPrefixes[j])
 		})
@@ -110,13 +110,24 @@ func getEquivalentGoFuncForNumericQuery(prefix string, value float64) func(found
 	}
 }
 
-func createNumericQuery(root string, prefix string, value float64) WhereClause {
-	var valueStr string
-	if _, fraction := math.Modf(value); fraction > 0 {
-		valueStr = fmt.Sprintf("%0.2f", value)
-	} else {
-		valueStr = fmt.Sprintf("%0.0f", value)
+func createNumericRangeQuery(root string, lower float64, upper float64) WhereClause {
+	lowerStr := readable.Float(lower, 2)
+	upperStr := readable.Float(upper, 2)
+	return WhereClause{
+		Query:  fmt.Sprintf("(%s > $$) AND (%s < $$)", root, root),
+		Values: []interface{}{lowerStr, upperStr},
+		equivalentGoFunc: func(foundValue interface{}) bool {
+			asFloat, ok := getValueAsFloat64(foundValue)
+			if !ok {
+				return false
+			}
+			return asFloat > lower && asFloat < upper
+		},
 	}
+}
+
+func createNumericPrefixQuery(root string, prefix string, value float64) WhereClause {
+	valueStr := readable.Float(value, 2)
 
 	if prefix == "" || prefix == "==" {
 		prefix = "="
@@ -128,15 +139,59 @@ func createNumericQuery(root string, prefix string, value float64) WhereClause {
 	}
 }
 
+var (
+	errNotARange = errors.New("not a range")
+)
+
+func maybeParseNumericRange(value string) (float64, float64, error) {
+	// Split the value into two parts, separated by a hyphen.
+	// We need to be careful to ensure that we don't mistake
+	// hyphens for minus signs.
+	for i, char := range value {
+		if i == 0 {
+			continue
+		}
+		if char == '-' {
+			lower, err := parseNumericStringToFloat(value[:i])
+			if err != nil {
+				return 0, 0, errors.Errorf("invalid range %s (%v)", value, err)
+			}
+			upper, err := parseNumericStringToFloat(value[i+1:])
+			if err != nil {
+				return 0, 0, errors.Errorf("invalid range %s (%v)", value, err)
+			}
+			if lower >= upper {
+				return 0, 0, errors.Errorf("invalid range %s (first value must be strictly less than the second)", value)
+			}
+			return lower, upper, nil
+		}
+	}
+	return 0, 0, errNotARange
+}
+
 func newNumericQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	if len(ctx.queryModifiers) > 0 {
 		return nil, errors.Errorf("modifiers not supported for numeric query: %+v", ctx.queryModifiers)
 	}
 	prefix, trimmedValue := parseNumericPrefix(ctx.value)
-	valuePtr, err := parseNumericStringToFloat(trimmedValue)
-	if err != nil {
-		return nil, err
+
+	var whereClause WhereClause
+	var isRange bool
+	if prefix == "" {
+		lower, upper, err := maybeParseNumericRange(trimmedValue)
+		if err == nil {
+			whereClause = createNumericRangeQuery(ctx.qualifiedColumnName, lower, upper)
+			isRange = true
+		} else if err != errNotARange {
+			return nil, errors.Wrap(err, "range query was attempted, but it was invalid")
+		}
 	}
-	whereClause := createNumericQuery(ctx.qualifiedColumnName, prefix, valuePtr)
+	if !isRange {
+		floatValue, err := parseNumericStringToFloat(trimmedValue)
+		if err != nil {
+			return nil, err
+		}
+		whereClause = createNumericPrefixQuery(ctx.qualifiedColumnName, prefix, floatValue)
+	}
 	return qeWithSelectFieldIfNeeded(ctx, &whereClause, nil), nil
 }

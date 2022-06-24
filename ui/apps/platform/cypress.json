@@ -6,6 +6,7 @@
     "viewportWidth": 1440,
     "viewportHeight": 850,
     "numTestsKeptInMemory": 0,
+    "pluginsFile": false,
     "retries": {
         "runMode": 0,
         "openMode": 0

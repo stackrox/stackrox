@@ -638,9 +638,6 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 }
 
 func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
-	}
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.Search(ctx, nil)
 	s.NoError(err)
@@ -665,9 +662,6 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearch() {
 }
 
 func (s *alertDatastoreSACTestSuite) runCountTest(testparams alertSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
-	}
 	ctx := s.testContexts[testparams.scopeKey]
 	resultCount, err := s.datastore.Count(ctx, nil)
 	s.NoError(err)
@@ -692,9 +686,6 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCount() {
 }
 
 func (s *alertDatastoreSACTestSuite) runCountAlertsTest(testparams alertSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
-	}
 	ctx := s.testContexts[testparams.scopeKey]
 	resultCount, err := s.datastore.CountAlerts(ctx)
 	s.NoError(err)
@@ -719,9 +710,6 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCountAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) runSearchAlertsTest(testparams alertSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
-	}
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchAlerts(ctx, nil)
 	s.NoError(err)
@@ -765,9 +753,6 @@ func countListAlertsResultsPerClusterAndNamespace(results []*storage.ListAlert) 
 }
 
 func (s *alertDatastoreSACTestSuite) runSearchListAlertsTest(testparams alertSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
-	}
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchListAlerts(ctx, nil)
 	s.NoError(err)
@@ -792,9 +777,6 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchListAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) runListAlertsTest(testparams alertSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
-	}
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.ListAlerts(ctx, nil)
 	s.NoError(err)
@@ -847,9 +829,6 @@ func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert)
 }
 
 func (s *alertDatastoreSACTestSuite) runSearchRawAlertsTest(testparams alertSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
-	}
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchRawAlerts(ctx, nil)
 	s.NoError(err)

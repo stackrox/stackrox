@@ -26,16 +26,14 @@ import (
 const (
 	baseTable = "image_component_edges"
 
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_edges WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3)"
-	getStmt    = "SELECT serialized FROM image_component_edges WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
-	deleteStmt = "DELETE FROM image_component_edges WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
 )
 
 var (
@@ -45,8 +43,8 @@ var (
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, imageId string, imageComponentId string) (bool, error)
-	Get(ctx context.Context, id string, imageId string, imageComponentId string) (*storage.ImageComponentEdge, bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*storage.ImageComponentEdge, bool, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponentEdge, []int, error)
 
@@ -78,30 +76,33 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string, imageId string, imageComponentId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ImageComponentEdge")
 
-	row := s.db.QueryRow(ctx, existsStmt, id, imageId, imageComponentId)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
-	}
-	return exists, nil
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	return count == 1, err
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string, imageId string, imageComponentId string) (*storage.ImageComponentEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageComponentEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponentEdge")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageComponentEdge")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, id, imageId, imageComponentId)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -190,17 +191,27 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ImageComponentEdge) error) error {
 	var sacQueryFilter *v1.Query
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+		return err
 	}
-	for _, data := range rows {
-		var msg storage.ImageComponentEdge
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		if err := fn(&msg); err != nil {
-			return err
+		for _, data := range rows {
+			var msg storage.ImageComponentEdge
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil

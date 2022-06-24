@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
@@ -65,7 +66,7 @@ func fetchCACommand(cliEnvironment environment.Environment) *cobra.Command {
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if outputFile == "" {
-				return errors.New("No output file specified with --output (for stdout, specify '-')")
+				return common.ErrInvalidCommandOption.New("no output file specified with --output (for stdout, specify '-')")
 			} else if outputFile == "-" {
 				outputFile = ""
 			}

@@ -206,6 +206,19 @@ func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
 	assert.Nil(t, result)
 }
 
+func TestSomething(t *testing.T) {
+	cimg, err := imgUtils.GenerateImageFromString("docker.io/danielrox/testingprivate:1.0.0")
+	require.NoError(t, err, "creating test image")
+	img := types.ToImage(cimg)
+
+	f := newCosignPublicKeySignatureFetcher()
+	reg := &mockRegistry{cfg: &registryTypes.Config{RegistryHostname: "docker.io", Username: "danielrox", Password: "v4LeM8WmUHyT$"}}
+
+	result, err := f.FetchSignatures(context.Background(), img, reg)
+	assert.NoError(t, err)
+	assert.Nil(t, result)
+}
+
 func TestIsMissingSignatureError(t *testing.T) {
 	notFoundErr := dockerRegistry.HttpStatusError{
 		Response: &http.Response{
@@ -243,6 +256,24 @@ func TestIsMissingSignatureError(t *testing.T) {
 			err: errors.Wrap(&url.Error{
 				Err: &unauthorizedErr,
 			}, "something went wrong"),
+		},
+		"wrapped registry error with status code not found should indicate missing signature": {
+			err:              fmt.Errorf("something went wrong %w", &url.Error{Err: &notFoundErr}),
+			missingSignature: true,
+		},
+		"wraooed registry error with status code unauthorized should not indicate missing signature": {
+			err: fmt.Errorf("something went wrong %w", &url.Error{Err: &unauthorizedErr}),
+		},
+		"transport error with status code unauthorized should not indicate missing signature": {
+			err: &transport.Error{
+				StatusCode: http.StatusUnauthorized,
+			},
+		},
+		"transport error with status code not found should indicate missing signature": {
+			err: &transport.Error{
+				StatusCode: http.StatusNotFound,
+			},
+			missingSignature: true,
 		},
 		"neither registry nor cosign error": {
 			err: errors.New("something error"),

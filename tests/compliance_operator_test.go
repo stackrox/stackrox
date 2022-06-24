@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,7 +44,7 @@ var (
 )
 
 func getCurrentComplianceResults(t *testing.T) (rhcos, ocp *storage.ComplianceRunResults) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	managementService := v1.NewComplianceManagementServiceClient(conn)
 
 	resp, err := managementService.TriggerRuns(context.Background(), &v1.TriggerComplianceRunsRequest{
@@ -143,7 +143,11 @@ func TestComplianceOperatorResults(t *testing.T) {
 }
 
 func getDynamicClientGenerator(t *testing.T) dynamic.Interface {
-	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube/config"))
+	kubeconfig := os.Getenv("KUBECONFIG")
+	if len(kubeconfig) == 0 {
+		kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube/config")
+	}
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	require.NoError(t, err)
 
 	dynamicClientGenerator, err := dynamic.NewForConfig(config)

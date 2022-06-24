@@ -2,7 +2,6 @@ package maincommand
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -14,7 +13,6 @@ import (
 	"github.com/stackrox/rox/roxctl/collector"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/completion"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/helm"
@@ -24,13 +22,13 @@ import (
 	"github.com/stackrox/rox/roxctl/sensor"
 )
 
-func versionCommand() *cobra.Command {
+func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:  "version",
 		Args: cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
-				enc := json.NewEncoder(os.Stdout)
+				enc := json.NewEncoder(cliEnvironment.InputOutput().Out())
 				enc.SetIndent("", "  ")
 				versions := version.GetAllVersionsDevelopment()
 				if buildinfo.ReleaseBuild {
@@ -38,7 +36,7 @@ func versionCommand() *cobra.Command {
 				}
 				return errors.Wrap(enc.Encode(versions), "could not encode version")
 			}
-			fmt.Println(version.GetMainVersion())
+			cliEnvironment.Logger().PrintfLn(version.GetMainVersion())
 			return nil
 		},
 	}
@@ -58,16 +56,7 @@ func Command() *cobra.Command {
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
 
-	// We have chicken and egg problem here. We need to parse flags to know if --no-color was set
-	// but at the same time we need to set printer to handle possible flags parsing errors.
-	// Instead of using native cobra flags mechanism we can just check if os.Args contains --no-color.
-	var colorPrinter printer.ColorfulPrinter
-	if flags.HasNoColor(os.Args) {
-		colorPrinter = printer.NoColorPrinter()
-	} else {
-		colorPrinter = printer.DefaultColorPrinter()
-	}
-	cliEnvironment := environment.NewCLIEnvironment(environment.DefaultIO(), colorPrinter)
+	cliEnvironment := environment.CLIEnvironment()
 	c.SetErr(errorWriter{
 		logger: cliEnvironment.Logger(),
 	})
@@ -77,13 +66,13 @@ func Command() *cobra.Command {
 		cluster.Command(cliEnvironment),
 		collector.Command(cliEnvironment),
 		deployment.Command(cliEnvironment),
-		logconvert.Command(),
+		logconvert.Command(cliEnvironment),
 		image.Command(cliEnvironment),
 		scanner.Command(cliEnvironment),
 		sensor.Command(cliEnvironment),
 		helm.Command(cliEnvironment),
-		versionCommand(),
-		completion.Command(),
+		versionCommand(cliEnvironment),
+		completion.Command(cliEnvironment),
 	)
 
 	return c

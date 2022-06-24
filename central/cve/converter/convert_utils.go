@@ -262,6 +262,9 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 		Suppressed:            protoCVE.GetSuppressed(),
 		SuppressActivation:    protoCVE.GetSuppressActivation(),
 		SuppressExpiry:        protoCVE.GetSuppressExpiry(),
+
+		// In dackbox, when reading out the image vulnerabilities, severity is overwritten during merge.
+		Severity: protoCVE.GetSeverity(),
 	}
 	if features.PostgresDatastore.Enabled() {
 		embeddedCVE.Cve = protoCVE.GetCve()
@@ -276,6 +279,48 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 	embeddedCVE.VulnerabilityType = protoToEmbeddedVulnType(protoCVE.GetType())
 	for _, vulnType := range protoCVE.GetTypes() {
 		embeddedCVE.VulnerabilityTypes = append(embeddedCVE.VulnerabilityTypes, protoToEmbeddedVulnType(vulnType))
+	}
+	return embeddedCVE
+}
+
+// ImageCVEToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
+// It converts all the fields except except Fixed By which gets set depending on the CVE
+func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVulnerability {
+	embeddedCVE := &storage.EmbeddedVulnerability{
+		Cve:                   vuln.GetCveBaseInfo().GetCve(),
+		Cvss:                  vuln.GetCvss(),
+		Summary:               vuln.GetCveBaseInfo().GetSummary(),
+		Link:                  vuln.GetCveBaseInfo().GetLink(),
+		CvssV2:                vuln.GetCveBaseInfo().GetCvssV2(),
+		CvssV3:                vuln.GetCveBaseInfo().GetCvssV3(),
+		PublishedOn:           vuln.GetCveBaseInfo().GetPublishedOn(),
+		LastModified:          vuln.GetCveBaseInfo().GetLastModified(),
+		FirstSystemOccurrence: vuln.GetCveBaseInfo().GetCreatedAt(),
+		Suppressed:            vuln.GetSnoozed(),
+		SuppressActivation:    vuln.GetSnoozeStart(),
+		SuppressExpiry:        vuln.GetSnoozeExpiry(),
+		Severity:              vuln.GetSeverity(),
+	}
+	if vuln.GetCveBaseInfo().GetCvssV3() != nil {
+		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
+	} else {
+		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V2
+	}
+	embeddedCVE.VulnerabilityType = storage.EmbeddedVulnerability_IMAGE_VULNERABILITY
+	embeddedCVE.VulnerabilityTypes = append(embeddedCVE.VulnerabilityTypes, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	return embeddedCVE
+}
+
+// NodeCVEToNodeVulnerability coverts a Proto CVEs to Embedded node vulnerability.
+// It converts all the fields except fields that depend on the node context.
+func NodeCVEToNodeVulnerability(protoCVE *storage.NodeCVE) *storage.NodeVulnerability {
+	embeddedCVE := &storage.NodeVulnerability{
+		CveBaseInfo:  protoCVE.GetCveBaseInfo(),
+		Severity:     protoCVE.GetSeverity(),
+		Cvss:         protoCVE.GetCvss(),
+		Snoozed:      protoCVE.GetSnoozed(),
+		SnoozeStart:  protoCVE.GetSnoozeStart(),
+		SnoozeExpiry: protoCVE.GetSnoozeExpiry(),
 	}
 	return embeddedCVE
 }
@@ -322,6 +367,12 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 		ret.ScoreVersion = storage.CVE_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
+
+	if features.PostgresDatastore.Enabled() {
+		ret.Severity = from.GetSeverity()
+		return ret
+	}
+
 	// If the OS is empty, then the OS is unknown and we don't need to save
 	// any distro specific settings
 	if os == "" {
@@ -335,6 +386,57 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 			CvssV3:       ret.CvssV3,
 			ScoreVersion: ret.ScoreVersion,
 		},
+	}
+	return ret
+}
+
+// EmbeddedVulnerabilityToImageCVE converts *storage.EmbeddedVulnerability object to *storage.ImageCVE object
+func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerability) *storage.ImageCVE {
+	ret := &storage.ImageCVE{
+		Id:              cve.ID(from.GetCve(), os),
+		OperatingSystem: os,
+		CveBaseInfo: &storage.CVEInfo{
+			Cve:          from.GetCve(),
+			Summary:      from.GetSummary(),
+			Link:         from.GetLink(),
+			PublishedOn:  from.GetPublishedOn(),
+			CreatedAt:    from.GetFirstSystemOccurrence(),
+			LastModified: from.GetLastModified(),
+			CvssV2:       from.GetCvssV2(),
+			CvssV3:       from.GetCvssV3(),
+		},
+		Cvss:         from.GetCvss(),
+		Severity:     from.GetSeverity(),
+		Snoozed:      from.GetSuppressed(),
+		SnoozeStart:  from.GetSuppressActivation(),
+		SnoozeExpiry: from.GetSuppressExpiry(),
+	}
+	if ret.GetCveBaseInfo().GetCvssV3() != nil {
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
+		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
+	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
+		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
+	}
+	return ret
+}
+
+// NodeVulnerabilityToNodeCVE converts *storage.NodeVulnerability object to *storage.NodeCVE object
+func NodeVulnerabilityToNodeCVE(os string, from *storage.NodeVulnerability) *storage.NodeCVE {
+	ret := &storage.NodeCVE{
+		Id:              cve.ID(from.GetCveBaseInfo().GetCve(), os),
+		CveBaseInfo:     from.GetCveBaseInfo(),
+		Cvss:            from.GetCvss(),
+		OperatingSystem: os,
+		Severity:        from.GetSeverity(),
+		Snoozed:         from.GetSnoozed(),
+		SnoozeStart:     from.GetSnoozeStart(),
+		SnoozeExpiry:    from.GetSnoozeExpiry(),
+	}
+	if from.GetCveBaseInfo().GetCvssV3() != nil {
+		ret.ImpactScore = from.GetCveBaseInfo().GetCvssV3().GetImpactScore()
+	} else if from.GetCveBaseInfo().GetCvssV2() != nil {
+		ret.ImpactScore = from.GetCveBaseInfo().GetCvssV2().GetImpactScore()
 	}
 	return ret
 }

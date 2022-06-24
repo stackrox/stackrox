@@ -1,0 +1,25 @@
+tests:
+- name: non slim mode
+  set:
+    collector.slimMode: false
+  expect: |
+    assertMainIs("quay.io/stackrox-io/main:3.0.99.0")
+    assertCollectorIs("quay.io/stackrox-io/collector:99.9.9-latest")
+- name: slim mode
+  set:
+    collector.slimMode: true
+  expect: |
+    assertMainIs("quay.io/stackrox-io/main:3.0.99.0")
+    assertCollectorIs("quay.io/stackrox-io/collector:99.9.9-slim")
+
+- name: scanner image
+  server:
+    visibleSchemas:
+    - openshift-4.1.0
+    availableSchemas:
+    - openshift-4.1.0
+  set:
+    scanner.disable: false
+  expect: |
+    assertScannerIs("quay.io/stackrox-io/scanner-slim:99.9.9")
+    assertScannerDBIs("quay.io/stackrox-io/scanner-db-slim:99.9.9")

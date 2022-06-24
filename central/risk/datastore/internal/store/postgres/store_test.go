@@ -94,6 +94,9 @@ func (s *RisksStoreSuite) TestStore() {
 	riskCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, riskCount)
+	riskCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(riskCount)
 
 	riskExists, err := store.Exists(ctx, risk.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *RisksStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundRisk)
+	s.NoError(store.Delete(withNoAccessCtx, risk.GetId()))
 
 	var risks []*storage.Risk
 	for i := 0; i < 200; i++ {

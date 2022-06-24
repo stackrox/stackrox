@@ -110,11 +110,11 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 
 	// Test Add
 	for _, d := range nodes {
-		suite.NoError(suite.store.Upsert(d))
+		suite.NoError(suite.store.Upsert(ctx, d))
 	}
 
 	for _, d := range nodes {
-		got, exists, err := suite.store.GetNode(d.GetId())
+		got, exists, err := suite.store.Get(ctx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		// Upsert sets `createdAt` for every CVE that doesn't already exist in the store, which should be same as (*storage.Node).LastUpdated.
@@ -142,18 +142,18 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	}
 
 	for _, d := range nodes {
-		suite.NoError(suite.store.Upsert(d))
+		suite.NoError(suite.store.Upsert(ctx, d))
 	}
 
 	for _, d := range nodes {
-		got, exists, err := suite.store.GetNode(d.GetId())
+		got, exists, err := suite.store.Get(ctx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(d, got)
 	}
 
 	// Test Count
-	count, err := suite.store.CountNodes()
+	count, err := suite.store.Count(ctx)
 	suite.NoError(err)
 	suite.Equal(len(nodes), count)
 
@@ -163,8 +163,8 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	cloned.Name = "newname"
 	cloned.Scan.Components = nil
 	cloned.RiskScore = 100
-	suite.NoError(suite.store.Upsert(cloned))
-	got, exists, err := suite.store.GetNode(cloned.GetId())
+	suite.NoError(suite.store.Upsert(ctx, cloned))
+	got, exists, err := suite.store.Get(ctx, cloned.GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	// Since the scan is not outdated, node update does not go through.
@@ -194,9 +194,9 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 		},
 	}
 
-	suite.NoError(suite.store.Upsert(nodes[1]))
+	suite.NoError(suite.store.Upsert(ctx, nodes[1]))
 
-	got, exists, err = suite.store.GetNode(nodes[1].GetId())
+	got, exists, err = suite.store.Get(ctx, nodes[1].GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = nodes[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
@@ -211,9 +211,9 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 			VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 		})
 
-	suite.NoError(suite.store.Upsert(nodes[0]))
+	suite.NoError(suite.store.Upsert(ctx, nodes[0]))
 
-	got, exists, err = suite.store.GetNode(nodes[0].GetId())
+	got, exists, err = suite.store.Get(ctx, nodes[0].GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = nodes[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
@@ -223,12 +223,12 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 
 	// Test Delete
 	for _, d := range nodes {
-		err := suite.store.Delete(d.GetId())
+		err := suite.store.Delete(ctx, d.GetId())
 		suite.NoError(err)
 	}
 
 	// Test Count
-	count, err = suite.store.CountNodes()
+	count, err = suite.store.Count(ctx)
 	suite.NoError(err)
 	suite.Equal(0, count)
 
@@ -239,6 +239,7 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 }
 
 func (suite *NodeStoreTestSuite) TestNodeUpsert() {
+	ctx := sac.WithAllAccess(context.Background())
 	node := &storage.Node{
 		Id:         "id1",
 		Name:       "name1",
@@ -290,8 +291,8 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 		RiskScore: 30,
 	}
 
-	suite.NoError(suite.store.Upsert(node))
-	storedNode, exists, err := suite.store.GetNode(node.GetId())
+	suite.NoError(suite.store.Upsert(ctx, node))
+	storedNode, exists, err := suite.store.Get(ctx, node.GetId())
 	suite.NoError(err)
 	suite.True(exists)
 
@@ -305,8 +306,8 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 
 	expectedNode := newNode.Clone()
 
-	suite.NoError(suite.store.Upsert(newNode))
-	storedNode, exists, err = suite.store.GetNode(newNode.GetId())
+	suite.NoError(suite.store.Upsert(ctx, newNode))
+	storedNode, exists, err = suite.store.Get(ctx, newNode.GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	suite.True(expectedNode.GetLastUpdated().Compare(storedNode.GetLastUpdated()) < 0)
@@ -317,13 +318,13 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 	node.Scan.ScanTime = types.TimestampNow()
 	expectedNode.Scan.ScanTime = node.GetScan().GetScanTime()
 
-	suite.NoError(suite.store.Upsert(node))
-	storedNode, exists, err = suite.store.GetNode(node.GetId())
+	suite.NoError(suite.store.Upsert(ctx, node))
+	storedNode, exists, err = suite.store.Get(ctx, node.GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	suite.True(expectedNode.GetLastUpdated().Compare(storedNode.GetLastUpdated()) < 0)
 	expectedNode.LastUpdated = storedNode.GetLastUpdated()
 	suite.Equal(expectedNode, storedNode)
 
-	suite.NoError(suite.store.Delete(node.GetId()))
+	suite.NoError(suite.store.Delete(ctx, node.GetId()))
 }

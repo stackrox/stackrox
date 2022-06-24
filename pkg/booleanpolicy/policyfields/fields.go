@@ -106,7 +106,10 @@ func ContainsMemResourceLimit(p *storage.Policy) bool {
 	return booleanpolicy.ContainsValueWithFieldName(p, fieldnames.ContainerMemLimit)
 }
 
-// ContainsUnscannedImageField returns whether the policy contains the unscanned image field.
-func ContainsUnscannedImageField(p *storage.Policy) bool {
-	return booleanpolicy.ContainsValueWithFieldName(p, fieldnames.UnscannedImage)
+// ContainsScanRequiredFields returns whether the policy contains fields related to image scanning,
+// which require a scan result and may otherwise fail, i.e. fieldnames.UnscannedImage or
+// fieldnames.ImageSignatureVerifiedBy.
+func ContainsScanRequiredFields(p *storage.Policy) bool {
+	return booleanpolicy.ContainsValueWithFieldName(p, fieldnames.UnscannedImage) ||
+		booleanpolicy.ContainsValueWithFieldName(p, fieldnames.ImageSignatureVerifiedBy)
 }

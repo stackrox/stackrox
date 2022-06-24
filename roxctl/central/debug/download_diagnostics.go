@@ -27,8 +27,28 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 		Use: "download-diagnostics",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cliEnvironment.Logger().InfofLn("Downloading diagnostic bundle...")
-			return retrieveDiagnosticBundle(flags.Timeout(c), outputDir,
-				clusters, since)
+			path := "/api/extensions/diagnostics"
+
+			values := url.Values{}
+			for _, cluster := range clusters {
+				values.Add("cluster", cluster)
+			}
+			if since != "" {
+				values.Add("since", since)
+			}
+
+			urlParams := values.Encode()
+			if urlParams != "" {
+				path = fmt.Sprintf("%s?%s", path, urlParams)
+			}
+			return zipdownload.GetZip(zipdownload.GetZipOptions{
+				Path:       path,
+				Method:     http.MethodGet,
+				Timeout:    flags.Timeout(c),
+				BundleType: "diagnostic",
+				ExpandZip:  false,
+				OutputDir:  outputDir,
+			}, cliEnvironment.Logger())
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, diagnosticBundleDownloadTimeout)
@@ -37,30 +57,4 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 	c.PersistentFlags().StringVar(&since, "since", "", "timestamp starting when logs should be collected from sensor clusters")
 
 	return c
-}
-
-func retrieveDiagnosticBundle(timeout time.Duration, outputDir string, clusters []string, since string) error {
-	path := "/api/extensions/diagnostics"
-
-	values := url.Values{}
-	for _, cluster := range clusters {
-		values.Add("cluster", cluster)
-	}
-	if since != "" {
-		values.Add("since", since)
-	}
-
-	urlParams := values.Encode()
-	if urlParams != "" {
-		path = fmt.Sprintf("%s?%s", path, urlParams)
-	}
-
-	return zipdownload.GetZip(zipdownload.GetZipOptions{
-		Path:       path,
-		Method:     http.MethodGet,
-		Timeout:    timeout,
-		BundleType: "diagnostic",
-		ExpandZip:  false,
-		OutputDir:  outputDir,
-	})
 }

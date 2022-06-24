@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -22,6 +23,12 @@ const (
 const (
 	postgresConnectionRetries    = 18
 	postgresConnectRetryInterval = 10 * time.Second
+)
+
+var (
+	gormDB *gorm.DB
+	once   sync.Once
+	err    error
 )
 
 // Load loads a Postgres instance and returns a GormDB.

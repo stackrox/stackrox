@@ -94,6 +94,9 @@ func (s *SecretsStoreSuite) TestStore() {
 	secretCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, secretCount)
+	secretCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(secretCount)
 
 	secretExists, err := store.Exists(ctx, secret.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundSecret)
+	s.NoError(store.Delete(withNoAccessCtx, secret.GetId()))
 
 	var secrets []*storage.Secret
 	for i := 0; i < 200; i++ {

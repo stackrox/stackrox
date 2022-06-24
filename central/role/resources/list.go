@@ -40,18 +40,24 @@ var (
 	Image               = newResourceMetadata("Image", permissions.NamespaceScope)
 	// SAC check is not performed directly on ImageComponent resource. It exists here for postgres sac generation to pass.
 	ImageComponent = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
+	// SAC check is not performed directly on ImageCVE resource. It exists here for postgres sac generation to pass.
+	ImageCVE = newResourceMetadata("ImageCVE", permissions.NamespaceScope)
 
 	InstallationInfo = newResourceMetadata("InstallationInfo", permissions.GlobalScope)
 
 	// Integration is the new  resource grouping all integration resources.
-	Integration                      = newResourceMetadata("Integration", permissions.GlobalScope)
-	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
-	K8sRoleBinding                   = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
-	K8sSubject                       = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
-	Namespace                        = newResourceMetadata("Namespace", permissions.NamespaceScope)
-	NetworkGraph                     = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
-	NetworkPolicy                    = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
-	Node                             = newResourceMetadata("Node", permissions.ClusterScope)
+	Integration    = newResourceMetadata("Integration", permissions.GlobalScope)
+	K8sRole        = newResourceMetadata("K8sRole", permissions.NamespaceScope)
+	K8sRoleBinding = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
+	K8sSubject     = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
+	Namespace      = newResourceMetadata("Namespace", permissions.NamespaceScope)
+	NetworkGraph   = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
+	NetworkPolicy  = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
+	Node           = newResourceMetadata("Node", permissions.ClusterScope)
+	// SAC check is not performed directly on NodeComponent resource. It exists here for postgres sac generation to pass.
+	NodeComponent = newResourceMetadata("NodeComponent", permissions.ClusterScope)
+	// SAC check is not performed directly on NodeCVE resource. It exists here for postgres sac generation to pass.
+	NodeCVE                          = newResourceMetadata("NodeCVE", permissions.ClusterScope)
 	Policy                           = newResourceMetadata("Policy", permissions.GlobalScope)
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
@@ -169,14 +175,6 @@ func newDeprecatedResourceMetadataWithFeatureFlag(name permissions.Resource, sco
 		disabledResourceToMetadata[name] = md
 	}
 	return md
-}
-
-func newInternalResourceMetadata(name permissions.Resource,
-	scope permissions.ResourceScope) permissions.ResourceMetadata {
-	return permissions.ResourceMetadata{
-		Resource: name,
-		Scope:    scope,
-	}
 }
 
 // ListAll returns a list of all resources.

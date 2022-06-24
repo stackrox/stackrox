@@ -94,6 +94,9 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	deploymentCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, deploymentCount)
+	deploymentCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(deploymentCount)
 
 	deploymentExists, err := store.Exists(ctx, deployment.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundDeployment)
+	s.NoError(store.Delete(withNoAccessCtx, deployment.GetId()))
 
 	var deployments []*storage.Deployment
 	for i := 0; i < 200; i++ {

@@ -1,5 +1,6 @@
 import static Services.getViolationsWithTimeout
 
+import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.apps.Deployment as OrchestratorDeployment
 
 import io.stackrox.proto.storage.AlertOuterClass
@@ -52,7 +53,24 @@ class ReconciliationTest extends BaseSpecification {
         "*central.SensorEvent_Secret": 5,
     ]
 
-    private void verifyReconciliationStats(boolean verifyMin) {
+    private Set<String> getPodsInCluster() {
+        Set<String> result = [] as Set
+        for (namespace in orchestrator.getNamespaces()) {
+            List<Pod> allPods = orchestrator.getPodsByLabel(namespace, new HashMap<String, String>())
+            for (pod in allPods) {
+                result.add(namespace + ":" + pod.metadata.getName())
+            }
+        }
+        return result
+    }
+
+    private Set<String> getDifference(Set<String> list1, Set<String> list2) {
+        Set<String> result = list1.clone() as Set<String>
+        result.removeAll(list2)
+        return result
+    }
+
+    private void verifyReconciliationStats() {
         // Cannot verify this on a release build, since the API is not exposed.
         if (MetadataService.isReleaseBuild()) {
             return
@@ -70,10 +88,8 @@ class ReconciliationTest extends BaseSpecification {
             def expectedMinDeletions = EXPECTED_MIN_DELETIONS_BY_KEY.get(entry.getKey())
             assert expectedMinDeletions != null : "Please add object type " +
                 "${entry.getKey()} to the map of known reconciled resources in ReconciliationTest.groovy"
-            if (verifyMin) {
-                assert entry.getValue() >= expectedMinDeletions: "Number of deletions too low for " +
+            assert entry.getValue() >= expectedMinDeletions: "Number of deletions too low for " +
                     "object type ${entry.getKey()} (got ${entry.getValue()})"
-            }
             def maxAllowedDeletions = MAX_ALLOWED_DELETIONS_BY_KEY.getOrDefault(
                 entry.getKey(), DEFAULT_MAX_ALLOWED_DELETIONS)
             assert entry.getValue() <= maxAllowedDeletions: "Overly aggressive reconciliation for " +
@@ -89,10 +105,6 @@ class ReconciliationTest extends BaseSpecification {
 
         when:
         "Get Sensor and counts"
-
-        // Verify initial reconciliation stats (from the reconciliation that must have happened
-        // whenever the sensor first connected).
-        verifyReconciliationStats(false)
 
         OrchestratorDeployment sensorOrchestratorDeployment =
                 orchestrator.getOrchestratorDeployment("stackrox", "sensor")
@@ -111,6 +123,8 @@ class ReconciliationTest extends BaseSpecification {
         // Wait is pretty much instantaneous
         def namespaceID = orchestrator.createNamespace(ns)
         NamespaceService.waitForNamespace(namespaceID, 10)
+
+        Set<String> podsBeforeDeleting
 
         try {
             addStackroxImagePullSecret(ns)
@@ -143,6 +157,12 @@ class ReconciliationTest extends BaseSpecification {
             networkPolicyID = orchestrator.applyNetworkPolicy(policy)
             assert NetworkPolicyService.waitForNetworkPolicy(networkPolicyID)
 
+            podsBeforeDeleting = podsInCluster
+            log.info "Pods in cluster before deleting:"
+            for (pod in podsBeforeDeleting) {
+                log.info pod
+            }
+
             orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
 
             orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"])
@@ -157,6 +177,16 @@ class ReconciliationTest extends BaseSpecification {
             orchestrator.deleteNamespace(ns)
             // Just wait for the namespace to be deleted which is indicative that all of them have been deleted
             orchestrator.waitForNamespaceDeletion(ns)
+        }
+
+        Set<String> podsBeforeRestarting = podsInCluster
+        log.info "Pods in cluster before restarting:"
+        for (pod in podsBeforeRestarting) {
+            log.info pod
+        }
+        log.info "Pods that were likely deleted while sensor was down:"
+        for (pod in getDifference(podsBeforeDeleting, podsBeforeRestarting)) {
+            log.info pod
         }
 
         // Recreate sensor
@@ -195,7 +225,7 @@ class ReconciliationTest extends BaseSpecification {
         assert numNetworkPolicies == 0
         assert numSecrets == 0
 
-        verifyReconciliationStats(true)
+        verifyReconciliationStats()
 
         // Verify Latest Tag alert is marked as stale
         def violation = AlertService.getViolation(violations[0].getId())

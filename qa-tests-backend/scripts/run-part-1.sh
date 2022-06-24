@@ -3,6 +3,7 @@
 # Tests part I of qa-tests-backend. Formerly CircleCI gke-api-e2e-tests.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$ROOT/scripts/ci/gcp.sh"
 source "$ROOT/scripts/ci/lib.sh"
 source "$ROOT/scripts/ci/sensor-wait.sh"
 source "$ROOT/tests/e2e/lib.sh"
@@ -18,12 +19,7 @@ test_part_1() {
 
     export_test_environment
 
-    if is_OPENSHIFT_CI; then
-        # TODO(RS-494) may provide roxctl
-        make cli-linux
-        install_built_roxctl_in_gopath
-    fi
-
+    setup_gcp
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
@@ -32,7 +28,6 @@ test_part_1() {
 
     deploy_default_psp
     deploy_webhook_server
-    deploy_authz_plugin
     get_ECR_docker_pull_password
 
     run_tests_part_1
@@ -50,12 +45,6 @@ deploy_webhook_server() {
     certs_dir="$(mktemp -d)"
     "${ROOT}/scripts/ci/create-webhookserver.sh" "${certs_dir}"
     ci_export GENERIC_WEBHOOK_SERVER_CA_CONTENTS "$(cat "${certs_dir}/ca.crt")"
-}
-
-deploy_authz_plugin() {
-    info "Deploy Default Authorization Plugin"
-
-    "${ROOT}/scripts/ci/create-scopedaccessserver.sh"
 }
 
 get_ECR_docker_pull_password() {
@@ -79,7 +68,7 @@ run_tests_part_1() {
     if is_openshift_CI_rehearse_PR; then
         info "On an openshift rehearse PR, running BAT tests only..."
         make -C qa-tests-backend bat-test || touch FAIL
-    elif pr_has_label ci-all-qa-tests; then
+    elif is_in_PR_context && pr_has_label ci-all-qa-tests; then
         info "ci-all-qa-tests label was specified, so running all QA tests..."
         make -C qa-tests-backend test || touch FAIL
     elif is_in_PR_context; then
@@ -88,6 +77,9 @@ run_tests_part_1() {
     elif is_tagged; then
         info "Tagged, running all QA tests..."
         make -C qa-tests-backend test || touch FAIL
+    elif [[ -n "${QA_TEST_TARGET:-}" ]]; then
+        info "Directed to run the '""${QA_TEST_TARGET:-}""' target..."
+        make -C qa-tests-backend "${QA_TEST_TARGET:-}" || touch FAIL
     else
         info "An unexpected context. Defaulting to BAT tests only..."
         make -C qa-tests-backend bat-test || touch FAIL

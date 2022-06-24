@@ -7,23 +7,6 @@ source "$SCRIPTS_ROOT/scripts/lib.sh"
 
 set -euo pipefail
 
-# Caution when editing: make sure groups would correspond to BASH_REMATCH use.
-RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
-
-is_release_version() {
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: is_release_version <version>"
-    fi
-    [[ "$1" =~ $RELEASE_RC_TAG_BASH_REGEX && -z "${BASH_REMATCH[3]}" ]]
-}
-
-is_RC_version() {
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: is_RC_version <version>"
-    fi
-    [[ "$1" =~ $RELEASE_RC_TAG_BASH_REGEX && -n "${BASH_REMATCH[3]}" ]]
-}
-
 ensure_CI() {
     if ! is_CI; then
         die "A CI environment is required."
@@ -55,11 +38,8 @@ setup_deployment_env() {
     local docker_login="$1"
     local use_websocket="$2"
 
-    require_environment QUAY_RHACS_ENG_RO_USERNAME
-    require_environment QUAY_RHACS_ENG_RO_PASSWORD
-
     if [[ "$docker_login" == "true" ]]; then
-        docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
+        registry_ro_login "quay.io/rhacs-eng"
     fi
 
     if [[ "$use_websocket" == "true" ]]; then
@@ -132,13 +112,13 @@ get_central_diagnostics() {
 }
 
 push_main_image_set() {
-    info "Pushing main and roxctl images"
+    info "Pushing main, roxctl and central-db images"
 
     if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: push_main_image_set <branch> <brand>"
+        die "missing arg. usage: push_main_image_set <push_context> <brand>"
     fi
 
-    local branch="$1"
+    local push_context="$1"
     local brand="$2"
 
     local main_image_set=("main" "roxctl" "central-db")
@@ -178,21 +158,8 @@ push_main_image_set() {
     }
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        require_environment "QUAY_STACKROX_IO_RW_USERNAME"
-        require_environment "QUAY_STACKROX_IO_RW_PASSWORD"
-
-        docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
-
         local destination_registries=("quay.io/stackrox-io")
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        require_environment "DOCKER_IO_PUSH_USERNAME"
-        require_environment "DOCKER_IO_PUSH_PASSWORD"
-        require_environment "QUAY_RHACS_ENG_RW_USERNAME"
-        require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
-
-        docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-        docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-
         local destination_registries=("docker.io/stackrox" "quay.io/rhacs-eng")
     else
         die "$brand is not a supported brand"
@@ -201,13 +168,15 @@ push_main_image_set() {
     local tag
     tag="$(make --quiet tag)"
     for registry in "${destination_registries[@]}"; do
+        registry_rw_login "$registry"
+
         if is_OPENSHIFT_CI; then
             _mirror_main_image_set "$registry" "$tag"
         else
             _tag_main_image_set "$tag" "$registry" "$tag"
             _push_main_image_set "$registry" "$tag"
         fi
-        if [[ "$branch" == "master" ]]; then
+        if [[ "$push_context" == "merge-to-master" ]]; then
             if is_OPENSHIFT_CI; then
                 _mirror_main_image_set "$registry" "latest"
             else
@@ -218,6 +187,63 @@ push_main_image_set() {
     done
 }
 
+push_docs_image() {
+    info "Pushing the docs image"
+
+    if ! is_OPENSHIFT_CI; then
+        die "Only supported in OpenShift CI"
+    fi
+
+    oc registry login
+    local docs_tag
+    docs_tag="$(make --quiet docs-tag)"
+
+    local registries=("docker.io/stackrox" "quay.io/rhacs-eng" "quay.io/stackrox-io")
+
+    for registry in "${registries[@]}"; do
+        registry_rw_login "$registry"
+        oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
+    done
+}
+
+registry_rw_login() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: registry_rw_login <registry>"
+    fi
+
+    local registry="$1"
+
+    case "$registry" in
+        docker.io/stackrox)        
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+            ;;
+        quay.io/rhacs-eng)
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            ;;
+        quay.io/stackrox-io)
+            docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+            ;;
+        *)
+            die "Unsupported registry login: $registry" 
+    esac
+}
+
+registry_ro_login() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: registry_ro_login <registry>"
+    fi
+
+    local registry="$1"
+
+    case "$registry" in
+        quay.io/rhacs-eng)
+            docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
+            ;;
+        *)
+            die "Unsupported registry login: $registry" 
+    esac
+}
+
 push_matching_collector_scanner_images() {
     info "Pushing collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng"
 
@@ -225,30 +251,29 @@ push_matching_collector_scanner_images() {
         die "missing arg. usage: push_matching_collector_scanner_images <brand>"
     fi
 
+    if is_OPENSHIFT_CI; then
+        oc registry login
+    fi
+
     local brand="$1"
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        require_environment "QUAY_STACKROX_IO_RW_USERNAME"
-        require_environment "QUAY_STACKROX_IO_RW_PASSWORD"
-
-        docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
-
         local source_registry="quay.io/stackrox-io"
         local target_registries=( "quay.io/stackrox-io" )
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        require_environment "DOCKER_IO_PUSH_USERNAME"
-        require_environment "DOCKER_IO_PUSH_PASSWORD"
-        require_environment "QUAY_RHACS_ENG_RW_USERNAME"
-        require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
-
-        docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-        docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-
         local source_registry="quay.io/rhacs-eng"
-        local target_registries=( "docker.io/stackrox" "quay.io/rhacs-eng" )
+        local target_registries=( "quay.io/rhacs-eng" "docker.io/stackrox" )
     else
         die "$brand is not a supported brand"
     fi
+
+    _retag_or_mirror() {
+        if is_OPENSHIFT_CI; then
+            oc image mirror "$1" "$2"
+        else
+            "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
+        fi
+    }
 
     local main_tag
     main_tag="$(make --quiet tag)"
@@ -258,13 +283,15 @@ push_matching_collector_scanner_images() {
     collector_version="$(make --quiet collector-tag)"
 
     for target_registry in "${target_registries[@]}"; do
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}"
+        registry_rw_login "${target_registry}"
 
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}"
+
+        _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
+        _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
     done
 }
 
@@ -314,107 +341,79 @@ check_docs() {
     fi
 
     local tag="$1"
-    local only_run_on_releases="${2:-false}"
 
     [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
         info "Skipping step as this is not a release or RC build"
-        exit 0
+        return 0
     }
 
-    if [[ "$only_run_on_releases" == "true" ]]; then
-        [[ -z "${BASH_REMATCH[3]}" ]] || {
-            info "Skipping as this is an RC build"
-            exit 0
-        }
-    fi
-
-    local version="${BASH_REMATCH[1]}"
-    local expected_content_branch="rhacs-docs-${version}"
+    local release_version="${BASH_REMATCH[1]}"
+    local expected_content_branch="rhacs-docs-${release_version}"
     local actual_content_branch
     actual_content_branch="$(git config -f .gitmodules submodule.docs/content.branch)"
     [[ "$actual_content_branch" == "$expected_content_branch" ]] || {
-        echo >&2 "Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
-        exit 1
+        echo >&2 "ERROR: Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
+        return 1
     }
 
     git submodule update --remote docs/content
     git diff --exit-code HEAD || {
-        echo >&2 "The docs/content submodule is out of date for the ${expected_content_branch} branch; please run"
+        echo >&2 "ERROR: The docs/content submodule is out of date for the ${expected_content_branch} branch; please run"
         echo >&2 "  git submodule update --remote docs/content"
         echo >&2 "and commit the result."
-        exit 1
+        return 1
     }
 
     info "The docs version is as expected"
-    exit 0
 }
 
-check_scanner_and_collector() {
-    info "Check on release builds that COLLECTOR_VERSION and SCANNER_VERSION are release"
-
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: check_scanner_and_collector <fail-on-rc>"
-    fi
-
-    local fail_on_rc="$1"
-    local main_release_like=0
-    local main_rc=0
-    local main_tag
-    main_tag="$(make --quiet tag)"
-    if is_release_version "$main_tag"; then
-        main_release_like=1
-    fi
-    if is_RC_version "$main_tag"; then
-        main_release_like=1
-        main_rc=1
-    fi
+check_scanner_and_collector_versions() {
+    info "Check on builds that COLLECTOR_VERSION and SCANNER_VERSION are release versions"
 
     local release_mismatch=0
-    if ! is_release_version "$(make --quiet collector-tag)" && [[ "$main_release_like" == "1" ]]; then
-        echo >&2 "Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
+    if ! is_release_version "$(make --quiet collector-tag)"; then
+        echo >&2 "ERROR: Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
         release_mismatch=1
     fi
-    if ! is_release_version "$(make --quiet scanner-tag)" && [[ "$main_release_like" == "1" ]]; then
-        echo >&2 "Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
+    if ! is_release_version "$(make --quiet scanner-tag)"; then
+        echo >&2 "ERROR: Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
         release_mismatch=1
     fi
 
-    if [[ "$release_mismatch" == "1" && ( "$main_rc" == "0" || "$fail_on_rc" == "true" ) ]]; then
-        # Note that the script avoids doing early exits in order for the most of its logic to be executed drung
-        # regular pipeline runs so that it does not get rusty by the time of the release.
-        exit 1
+    if [[ "$release_mismatch" == "1" ]]; then
+        return 1
     fi
+
+    info "The scanner and collector versions are release versions"
 }
 
 mark_collector_release() {
     info "Create a PR for collector to add this release to its RELEASED_VERSIONS file"
 
-    if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: mark_collector_release <tag> <username>"
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: mark_collector_release <tag>"
     fi
 
-    ensure_CI
-
     local tag="$1"
-    local username="$2"
+    local username="roxbot"
 
     if ! is_release_version "$tag"; then
         die "A release version is required. Got $tag"
     fi
 
-    ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-
     info "Check out collector source code"
 
     mkdir -p /tmp/collector
-    git -C /tmp clone --depth=2 --no-single-branch git@github.com:stackrox/collector.git
+    git -C /tmp clone --depth=2 --no-single-branch https://github.com/stackrox/collector.git
 
     info "Create a branch for the PR"
 
     collector_version="$(cat COLLECTOR_VERSION)"
     cd /tmp/collector || exit
     gitbot(){
-        git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" "${@}"
+        git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" \
+            -c "url.https://${GITHUB_TOKEN}:x-oauth-basic@github.com/.insteadOf=https://github.com/" \
+            "${@}"
     }
     gitbot checkout master && gitbot pull
 
@@ -438,7 +437,9 @@ mark_collector_release() {
     gitbot push origin "${branch_name}"
 
     # RS-487: create_update_pr.sh needs to be fixed so it is not Circle CI dependent.
-    require_environment "CIRCLE_USERNAME"
+    export CIRCLE_USERNAME=roxbot
+    export CIRCLE_PULL_REQUEST="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
+    export GITHUB_TOKEN_FOR_PRS="${GITHUB_TOKEN}"
     /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
 }
 
@@ -466,7 +467,22 @@ get_base_ref() {
     if is_CIRCLECI; then
         echo "${CIRCLE_BRANCH}"
     elif is_OPENSHIFT_CI; then
-        jq -r '.refs[0].base_ref' <<<"$CLONEREFS_OPTIONS"
+        if [[ -n "${PULL_BASE_REF:-}" ]]; then
+            # presubmit, postsubmit and batch runs
+            # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
+            echo "${PULL_BASE_REF}"
+        elif [[ -n "${JOB_SPEC:-}" ]]; then
+            # periodics
+            # OpenShift CI adds 'extra_refs'
+            local base_ref
+            base_ref="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].base_ref')" || die "invalid JOB_SPEC yaml"
+            if [[ "$base_ref" == "null" ]]; then
+                die "expect: base_ref in JOB_SEC.extra_refs[0]"
+            fi
+            echo "${base_ref}"
+        else
+            die "Expect PULL_BASE_REF or JOB_SPEC"
+        fi
     else
         die "unsupported"
     fi
@@ -477,7 +493,25 @@ get_repo_full_name() {
         # CIRCLE_REPOSITORY_URL=git@github.com:stackrox/stackrox.git
         echo "${CIRCLE_REPOSITORY_URL:15:-4}"
     elif is_OPENSHIFT_CI; then
-        jq -r .base.repo.full_name <<<"$(get_pr_details)"
+        if [[ -n "${REPO_OWNER:-}" ]]; then
+            # presubmit, postsubmit and batch runs
+            # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
+            [[ -n "${REPO_NAME:-}" ]] || die "expect: REPO_NAME"
+            echo "${REPO_OWNER}/${REPO_NAME}"
+        elif [[ -n "${JOB_SPEC:-}" ]]; then
+            # periodics
+            # OpenShift CI adds 'extra_refs'
+            local org
+            local repo
+            org="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].org')" || die "invalid JOB_SPEC yaml"
+            repo="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].repo')" || die "invalid JOB_SPEC yaml"
+            if [[ "$org" == "null" ]] || [[ "$repo" == "null" ]]; then
+                die "expect: org and repo in JOB_SEC.extra_refs[0]"
+            fi
+            echo "${org}/${repo}"
+        else
+            die "Expect REPO_OWNER/NAME or JOB_SPEC"
+        fi
     else
         die "unsupported"
     fi
@@ -679,7 +713,11 @@ gate_merge_job() {
     run_on_tags="$(get_var_from_job_config run_on_tags "$job_config")"
 
     local base_ref
-    base_ref="$(get_base_ref)"
+    base_ref="$(get_base_ref)" || {
+        info "Warning: error running get_base_ref():"
+        echo "${base_ref}"
+        info "will continue with tests."
+    }
 
     if [[ "${base_ref}" == "master" && "${run_on_master}" == "true" ]]; then
         info "$job will run because this is master and run_on_master==true"
@@ -691,7 +729,7 @@ gate_merge_job() {
         return
     fi
 
-    info "$job will be skipped"
+    info "$job will be skipped - neither master/run_on_master or tagged/run_on_tags"
     exit 0
 }
 
@@ -730,12 +768,34 @@ openshift_ci_mods() {
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
+}
 
-    # NAMESPACE is injected by OpenShift CI for the cluster running tests but
-    # can have side effects for stackrox tests e.g. with helm.
+openshift_ci_e2e_mods() {
+    # NAMESPACE is injected by OpenShift CI for the cluster that is running the
+    # tests but this can have side effects for stackrox tests due to its use as
+    # the default namespace e.g. with helm.
     if [[ -n "${NAMESPACE:-}" ]]; then
         export OPENSHIFT_CI_NAMESPACE="$NAMESPACE"
         unset NAMESPACE
+    fi
+
+    # Similarly the incoming KUBECONFIG is best avoided.
+    if [[ -n "${KUBECONFIG:-}" ]]; then
+        info "There is an incoming KUBECONFIG in ${KUBECONFIG}"
+        export OPENSHIFT_CI_KUBECONFIG="$KUBECONFIG"
+    fi
+    KUBECONFIG="$(mktemp)"
+    info "KUBECONFIG set: ${KUBECONFIG}"
+    export KUBECONFIG
+
+    # KUBERNETES_{PORT,SERVICE} env values also interact with commandline kubectl tests
+    if env | grep -e ^KUBERNETES_; then
+        local envfile
+        envfile="$(mktemp)"
+        info "Will clear ^KUBERNETES_ env"
+        env | grep -e ^KUBERNETES_ | cut -d= -f1 | awk '{ print "unset", $1 }' > "$envfile"
+        # shellcheck disable=SC1090
+        source "$envfile"
     fi
 }
 

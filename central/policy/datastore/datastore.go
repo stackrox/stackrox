@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
+	"github.com/stackrox/rox/central/policy/store/boltdb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -23,7 +24,7 @@ type DataStore interface {
 
 	GetPolicy(ctx context.Context, id string) (*storage.Policy, bool, error)
 	GetAllPolicies(ctx context.Context) ([]*storage.Policy, error)
-	GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, []error, error)
+	GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, error)
 	GetPolicyByName(ctx context.Context, name string) (*storage.Policy, bool, error)
 
 	AddPolicy(context.Context, *storage.Policy) (string, error)
@@ -53,7 +54,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, c
 }
 
 // newWithoutDefaults should be used only for testing purposes.
-func newWithoutDefaults(storage store.Store, indexer index.Indexer, searcher search.Searcher, clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore) DataStore {
+func newWithoutDefaults(storage boltdb.Store, indexer index.Indexer, searcher search.Searcher, clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore) DataStore {
 	return &datastoreImpl{
 		storage:           storage,
 		indexer:           indexer,

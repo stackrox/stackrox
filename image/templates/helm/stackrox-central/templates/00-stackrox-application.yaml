@@ -111,6 +111,8 @@ spec:
       kind: StorageClass
     - group: networking.istio.io
       kind: DestinationRule
+{{- if ._rox.system.enablePodSecurityPolicies }}
     - group: policy
       kind: PodSecurityPolicy
+{{- end }}
 {{- end }}

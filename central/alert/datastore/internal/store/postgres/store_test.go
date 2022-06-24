@@ -94,6 +94,9 @@ func (s *AlertsStoreSuite) TestStore() {
 	alertCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, alertCount)
+	alertCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(alertCount)
 
 	alertExists, err := store.Exists(ctx, alert.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundAlert)
+	s.NoError(store.Delete(withNoAccessCtx, alert.GetId()))
 
 	var alerts []*storage.Alert
 	for i := 0; i < 200; i++ {

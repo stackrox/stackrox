@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -35,7 +36,7 @@ func New(dacky *dackbox.DackBox) store.Store {
 	}
 }
 
-func (b *storeImpl) Exists(id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -50,7 +51,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 	return exists, nil
 }
 
-func (b *storeImpl) Count() (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, typ)
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -67,7 +68,7 @@ func (b *storeImpl) Count() (int, error) {
 	return count, nil
 }
 
-func (b *storeImpl) GetAll() ([]*storage.NodeComponentEdge, error) {
+func (b *storeImpl) GetAll(_ context.Context) ([]*storage.NodeComponentEdge, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, typ)
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -88,7 +89,7 @@ func (b *storeImpl) GetAll() ([]*storage.NodeComponentEdge, error) {
 	return ret, nil
 }
 
-func (b *storeImpl) Get(id string) (*storage.NodeComponentEdge, bool, error) {
+func (b *storeImpl) Get(_ context.Context, id string) (*storage.NodeComponentEdge, bool, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, typ)
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -105,7 +106,7 @@ func (b *storeImpl) Get(id string) (*storage.NodeComponentEdge, bool, error) {
 	return msg.(*storage.NodeComponentEdge), true, err
 }
 
-func (b *storeImpl) GetBatch(ids []string) ([]*storage.NodeComponentEdge, []int, error) {
+func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.NodeComponentEdge, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, typ)
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()

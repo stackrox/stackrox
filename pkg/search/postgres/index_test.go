@@ -405,6 +405,26 @@ func (s *IndexSuite) TestFloat() {
 			q:               search.NewQueryBuilder().AddStrings(search.TestFloat, ">=-2").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
 		},
+		{
+			desc:            "range (none matching)",
+			q:               search.NewQueryBuilder().AddStrings(search.TestFloat, "-2-5").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{},
+		},
+		{
+			desc:            "range + exact match",
+			q:               search.NewQueryBuilder().AddStrings(search.TestFloat, "-2-5", "-2").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
+		},
+		{
+			desc:            "range matches one",
+			q:               search.NewQueryBuilder().AddStrings(search.TestFloat, "5-8").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc:            "range matches both",
+			q:               search.NewQueryBuilder().AddStrings(search.TestFloat, "-5-8").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
+		},
 	})
 }
 
@@ -538,7 +558,6 @@ func (s *IndexSuite) TestTime() {
 	testStruct2020Mar09Noon := s.getStruct(4, func(s *storage.TestMultiKeyStruct) {
 		s.Timestamp = ts2020Mar09Noon
 	})
-	_ = testStruct2029Mar09Noon
 
 	s.runTestCases([]testCase{
 		{
@@ -565,6 +584,16 @@ func (s *IndexSuite) TestTime() {
 			desc:            "> duration (this test will fail in 2029, but hopefully it's not still being run then)",
 			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "> 1d").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct2021Mar09Noon, testStruct2020Mar09Noon, testStruct2022Feb09Noon, testStruct2022Mar09Noon},
+		},
+		{
+			desc:            "range duration (this test will fail in 2027, but hopefully it's not still being run then)",
+			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "1d-2500d").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct2021Mar09Noon, testStruct2020Mar09Noon, testStruct2022Feb09Noon, testStruct2022Mar09Noon},
+		},
+		{
+			desc:            "range duration with negative (this test will fail in 2029, but hopefully it's not still being run then)",
+			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "-3000d-1d").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct2029Mar09Noon},
 		},
 	})
 }
@@ -1268,89 +1297,64 @@ func (s *IndexSuite) TestPagination() {
 
 	for _, testCase := range []struct {
 		desc                   string
-		pagination             *v1.QueryPagination
+		pagination             *search.Pagination
 		orderedExpectedMatches []int
 	}{
 		{
 			"sort ascending",
-			&v1.QueryPagination{
-				Limit:       0,
-				Offset:      0,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
-			},
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString)),
 			[]int{1, 2, 4, 5, 7},
 		},
 		{
 			"sort descending",
-			&v1.QueryPagination{
-				Limit:       0,
-				Offset:      0,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
-			},
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString).Reversed(true)),
 			[]int{7, 5, 4, 2, 1},
 		},
 		{
 			"limit",
-			&v1.QueryPagination{
-				Limit:       3,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
-			},
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString)).Limit(3),
 			[]int{1, 2, 4},
 		},
 		{
 			"limit descending",
-			&v1.QueryPagination{
-				Limit:       3,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
-			},
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString).Reversed(true)).Limit(3),
 			[]int{7, 5, 4},
 		},
 		{
 			"offset",
-			&v1.QueryPagination{
-				Limit:       0,
-				Offset:      2,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
-			},
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString)).Offset(2),
 			[]int{4, 5, 7},
 		},
 		{
 			"offset descending",
-			&v1.QueryPagination{
-				Offset:      2,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
-			},
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString).Reversed(true)).Offset(2),
 			[]int{4, 2, 1},
 		},
 		{
 			"limit + offset",
-			&v1.QueryPagination{
-				Limit:       2,
-				Offset:      2,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
-			},
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString)).Offset(2).Limit(2),
 			[]int{4, 5},
 		},
 		{
 			"limit + offset descending",
-			&v1.QueryPagination{
-				Limit:       2,
-				Offset:      2,
-				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
-			},
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString).Reversed(true)).Offset(2).Limit(2),
 			[]int{4, 2},
+		},
+		{
+			"invalid",
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestString).Reversed(true)).Offset(10).Limit(2),
+			[]int{},
 		},
 	} {
 		s.Run(testCase.desc, func() {
-			q := search.NewQueryBuilder().AddBools(search.TestBool, true).ProtoQuery()
-			q.Pagination = testCase.pagination
+			q := search.NewQueryBuilder().AddBools(search.TestBool, true).WithPagination(testCase.pagination).ProtoQuery()
 			results, err := s.indexer.Search(q)
 			s.Require().NoError(err)
 
 			actualMatches := make([]int, 0, len(results))
 			for resultIdx, r := range results {
 				for i, s := range testStructs {
-					if r.ID == s.Key1+pkgPostgres.IDSeparator+s.Key2 {
+					if r.ID == getID(s) {
 						actualMatches = append(actualMatches, i)
 						break
 					}

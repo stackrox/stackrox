@@ -17,13 +17,15 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/download"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 const (
 	inMemFileSizeThreshold = 1 << 20 // 1MB
 )
 
-func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, outputDir string) error {
+func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, outputDir string, log logger.Logger) error {
 	reader, err := zip.NewReader(contents, contentsLength)
 	if err != nil {
 		return errors.Wrap(err, "could not read from zip")
@@ -39,7 +41,7 @@ func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, 
 		}
 	}
 
-	printf("Successfully wrote %s folder %q\n", bundleType, outputDir)
+	log.InfofLn("Successfully wrote %s folder %q", bundleType, outputDir)
 	return nil
 }
 
@@ -68,10 +70,6 @@ func extractFile(f *zip.File, outputDir string) error {
 	return nil
 }
 
-func printf(val string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, val, args...)
-}
-
 // GetZipOptions specifies a request to download a zip file
 type GetZipOptions struct {
 	Path, Method, BundleType string
@@ -81,7 +79,7 @@ type GetZipOptions struct {
 	OutputDir                string
 }
 
-func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string) error {
+func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string, log logger.Logger) error {
 	outputFile := fileName
 	if outputDir != "" {
 		if err := os.MkdirAll(outputDir, 0755); err != nil {
@@ -101,15 +99,15 @@ func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string) er
 	if err := file.Close(); err != nil {
 		return errors.Wrap(err, "error writing to ZIP file")
 	}
-	printf("Successfully wrote %s zip file to %q \n", bundleType, filepath.Join(outputDir, fileName))
+	log.InfofLn("Successfully wrote %s zip file to %q", bundleType, filepath.Join(outputDir, fileName))
 
 	return nil
 }
 
 // GetZip downloads a zip from the given endpoint.
 // bundleType is used for logging.
-func GetZip(opts GetZipOptions) error {
-	resp, err := common.DoHTTPRequestAndCheck200(opts.Path, opts.Timeout, opts.Method, bytes.NewBuffer(opts.Body))
+func GetZip(opts GetZipOptions, log logger.Logger) error {
+	resp, err := common.DoHTTPRequestAndCheck200(opts.Path, opts.Timeout, opts.Method, bytes.NewBuffer(opts.Body), log)
 	if err != nil {
 		return errors.Wrap(err, "could not download zip")
 	}
@@ -118,21 +116,21 @@ func GetZip(opts GetZipOptions) error {
 	zipFileName, err := download.ParseFilenameFromHeader(resp.Header)
 	if err != nil {
 		zipFileName = fmt.Sprintf("%s.zip", opts.BundleType)
-		printf("Warning: could not obtain output file name from HTTP response: %v.", err)
-		printf("Defaulting to filename %q", zipFileName)
+		log.WarnfLn("could not obtain output file name from HTTP response: %v.", err)
+		log.InfofLn("Defaulting to filename %q", zipFileName)
 	}
 
 	// If containerized, then write a zip file to stdout
 	if roxctl.InMainImage() {
-		if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
+		if _, err := io.Copy(environment.CLIEnvironment().InputOutput().Out(), resp.Body); err != nil {
 			return errors.Wrap(err, "Error writing out zip file")
 		}
-		printf("Successfully wrote %s zip file\n", opts.BundleType)
+		log.InfofLn("Successfully wrote %s zip file", opts.BundleType)
 		return nil
 	}
 
 	if !opts.ExpandZip {
-		return storeZipFile(resp.Body, zipFileName, opts.OutputDir, opts.BundleType)
+		return storeZipFile(resp.Body, zipFileName, opts.OutputDir, opts.BundleType, log)
 	}
 
 	buf := ioutils.NewRWBuf(ioutils.RWBufOptions{MemLimit: inMemFileSizeThreshold})
@@ -152,5 +150,5 @@ func GetZip(opts GetZipOptions) error {
 		outputDir = strings.TrimSuffix(zipFileName, filepath.Ext(zipFileName))
 	}
 
-	return extractZipToFolder(contents, size, opts.BundleType, outputDir)
+	return extractZipToFolder(contents, size, opts.BundleType, outputDir, log)
 }

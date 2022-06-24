@@ -51,9 +51,9 @@ const initialPolicy: ClientPolicy = {
     enforcementActions: [],
     excludedImageNames: [],
     excludedDeploymentScopes: [],
-    SORT_name: '', // For internal use only.
-    SORT_lifecycleStage: '', // For internal use only.
-    SORT_enforcement: false, // For internal use only.
+    SORTName: '', // For internal use only.
+    SORTLifecycleStage: '', // For internal use only.
+    SORTEnforcement: false, // For internal use only.
     policyVersion: '',
     serverPolicySections: [],
     policySections: [

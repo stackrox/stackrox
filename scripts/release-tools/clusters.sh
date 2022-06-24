@@ -17,6 +17,7 @@ main() {
     "Generate Slack message for qa GKE cluster"
     "Create new RC OpenShift cluster"
     "Create new qa GKE cluster"
+    "Create new long-running cluster"
     "Quit"
   )
   if [[ -n "$action" ]]; then
@@ -68,8 +69,16 @@ exec_option() {
         create_qa_gke_cluster
         exit 0
         ;;
+    "${MENU_OPTIONS[7]}"|8)
+        create_long_running_cluster
+        exit 0
+        ;;
     *) echo "invalid option: '$1'";;
   esac
+}
+
+check_docker_login() {
+  docker system info | grep Username
 }
 
 cluster_ready() {
@@ -114,6 +123,36 @@ ensure_cluster_exists() {
   infractl get "${cluster_name}" || die "cluster '${cluster_name}' not found"
 }
 
+wait_for_pods_to_be_ready() {
+  while true; do
+    ready_containers="$(kubectl -n stackrox get pod -o jsonpath='{.items[*].status.containerStatuses[?(@.ready == true)]}')"
+    not_ready_containers="$(kubectl -n stackrox get pod -o jsonpath='{.items[*].status.containerStatuses[?(@.ready == false)]}')"
+    if [[ -n "$ready_containers" && -z "$not_ready_containers" ]]; then
+      break
+    fi
+    sleep 5
+  done
+}
+
+wait_for_pods_with_name() {
+  local name=$1
+
+  while true; do
+    npod="$({ kubectl -n stackrox get pod | grep "$name" || true; } | wc -l)"
+    if ((npod > 0)); then
+      break
+    fi
+    sleep 5
+  done
+}
+
+wait_for_pods_with_names() {
+  for name in "$@"; do
+    wait_for_pods_with_name "$name"
+  done
+  wait_for_pods_to_be_ready
+}
+
 fetch_artifacts() {
   local cluster_name="$1"
 
@@ -125,7 +164,7 @@ fetch_artifacts() {
 }
 
 get_cluster_postfix() {
-  echo "${RELEASE//./-}-rc${RC_NUMBER}-test"
+  echo "${RELEASE//./-}-${PATCH_NUMBER}-rc${RC_NUMBER}"
 }
 
 get_cluster_prefix() {
@@ -135,6 +174,8 @@ get_cluster_prefix() {
     echo "os4-9-demo"
   elif [[ "$cluster_type" == "gke" ]]; then
     echo "qa-demo"
+  elif [[ "$cluster_type" == "long-running" ]]; then
+    echo "$cluster_type"
   else
     die "Unknown cluster type: $cluster_type"
   fi
@@ -191,7 +232,6 @@ create_rc_openshift_cluster() {
 create_qa_gke_cluster() {
   require_binary infractl
 
-  cluster_postfix="$(get_cluster_postfix)"
   [[ -n "${INFRA_TOKEN}" ]] || die "INFRA_TOKEN is not set"
 
   CLUSTER_NAME="$(get_cluster_name gke)"
@@ -210,6 +250,70 @@ create_qa_gke_cluster() {
   export KUBECONFIG="${ARTIFACTS_DIR}/${CLUSTER_NAME}/kubeconfig"
 
   kubectl -n stackrox get pods
+}
+
+create_long_running_cluster() {
+
+  [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
+  [[ -n "$RELEASE" ]] || die "RELEASE undefined"
+  [[ -n "$PATCH_NUMBER" ]] || die "PATCH_NUMBER undefined"
+  check_docker_login || die "Run docker login"
+
+  CLUSTER_NAME="$(get_cluster_name long-running)"
+  export CLUSTER_NAME
+
+  echo "cluster_name= $CLUSTER_NAME"
+  
+  status="$(check_cluster_status "$CLUSTER_NAME")"
+  
+  if does_cluster_exist "$CLUSTER_NAME"; then
+      echo "Unable to create cluster, it exists already"
+  else
+      infractl create gke-default $CLUSTER_NAME --lifespan 168h --arg nodes=5 --wait --slack-me
+  fi
+  
+  # Set your local kubectl context to the remote cluster once the above completes successfully.
+  infractl get $CLUSTER_NAME --json | jq '.Connect' -r | bash
+
+  echo "Connected to cluster"
+  
+  export MAIN_IMAGE_TAG="${RELEASE}.${PATCH_NUMBER}-rc.${RC_NUMBER}"
+  export API_ENDPOINT="localhost:8000"
+  
+  export STORAGE=pvc # Backing storage
+  export STORAGE_CLASS=faster # Runs on an SSD type
+  export STORAGE_SIZE=100 # 100G
+  export MONITORING_SUPPORT=true # Runs monitoring
+  export LOAD_BALANCER=lb
+  
+  toplevel_dir="$(git rev-parse --show-toplevel)"
+  "$toplevel_dir/deploy/k8s/central.sh" # Launches central
+  wait_for_pods_with_names central scanner
+  echo "Launched central"
+  
+  # Open port-forward to central, e.g. with
+  kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
+  sleep 60
+  
+  export ROX_ADMIN_USERNAME=admin
+  
+  export ROX_ADMIN_PASSWORD="$(cat "$toplevel_dir"/deploy/k8s/central-deploy/password)"
+  export ROX_PASSWORD="$ROX_ADMIN_PASSWORD"
+
+  "$toplevel_dir/deploy/k8s/sensor.sh"
+  wait_for_pods_with_names collector sensor
+  echo "Launched sensor"
+
+  kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
+  kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD=long-running
+  wait_for_pods_to_be_ready
+  
+  kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
+  wait_for_pods_to_be_ready
+
+  cd "$toplevel_dir"
+
+  "$(scale/launch_workload.sh np-load)"
 }
 
 cleanup_artifacts() {

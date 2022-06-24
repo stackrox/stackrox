@@ -10,11 +10,13 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/pflag/autobool"
 	"github.com/stackrox/rox/roxctl/sensor/util"
 )
@@ -26,8 +28,8 @@ Use --slim-collector=false if that is not desired.`
 Use --slim-collector if that is not desired.`
 )
 
-func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, createUpgraderSA bool, slimCollectorP *bool, istioVersion string, logger environment.Logger) error {
-	conn, err := common.GetGRPCConnection()
+func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, createUpgraderSA bool, slimCollectorP *bool, istioVersion string, log logger.Logger) error {
+	conn, err := common.GetGRPCConnection(log)
 	if err != nil {
 		return err
 	}
@@ -36,7 +38,7 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, cr
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout)
+	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, log)
 	if err != nil {
 		return errors.Wrapf(err, "error resolving cluster ID for %q", clusterIDOrName)
 	}
@@ -54,9 +56,9 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, cr
 		cluster := resp.GetCluster()
 		slimCollector = cluster.GetSlimCollector()
 		if slimCollector {
-			logger.InfofLn(infoDefaultingToSlimCollector)
+			log.InfofLn(infoDefaultingToSlimCollector)
 		} else {
-			logger.InfofLn(infoDefaultingToComprehensiveCollector)
+			log.InfofLn(infoDefaultingToComprehensiveCollector)
 		}
 	}
 
@@ -67,16 +69,16 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, cr
 		IstioVersion:     istioVersion,
 	}
 
-	if err := util.GetBundle(params, outputDir, timeout); err != nil {
+	if err := util.GetBundle(params, outputDir, timeout, log); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 
 	if slimCollector {
 		env, err := util.RetrieveCentralEnvOrDefault(ctx, service)
 		if err != nil {
-			logger.WarnfLn("Sensor bundle has been created successfully, but it was not possible to retrieve Central's runtime environment information: %v.", err)
+			log.WarnfLn("Sensor bundle has been created successfully, but it was not possible to retrieve Central's runtime environment information: %v.", err)
 		} else if !env.KernelSupportAvailable {
-			logger.WarnfLn(util.WarningSlimCollectorModeWithoutKernelSupport)
+			log.WarnfLn(util.WarningSlimCollectorModeWithoutKernelSupport)
 		}
 	}
 
@@ -95,7 +97,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		RunE: func(c *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				_ = c.Help()
-				return errors.Errorf("Expected exactly one argument, but %d were provided", len(args))
+				return errox.InvalidArgs.Newf("Expected exactly one argument, but %d were provided", len(args))
 			}
 
 			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), createUpgraderSA, slimCollector, istioVersion, cliEnvironment.Logger()); err != nil {

@@ -23,13 +23,15 @@ var (
                    ImageId varchar,
                    ImageComponentId varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ImageId, ImageComponentId),
+                   PRIMARY KEY(Id),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
                )
                `,
 		GormModel: (*ImageComponentEdges)(nil),
-		Indexes:   []string{},
-		Children:  []*postgres.CreateStmts{},
+		Indexes: []string{
+			"create index if not exists imageComponentEdges_ImageId on image_component_edges using hash(ImageId)",
+		},
+		Children: []*postgres.CreateStmts{},
 	}
 
 	// ImageComponentEdgesSchema is the go schema for table `image_component_edges`.
@@ -61,8 +63,8 @@ const (
 type ImageComponentEdges struct {
 	Id               string `gorm:"column:id;type:varchar;primaryKey"`
 	Location         string `gorm:"column:location;type:varchar"`
-	ImageId          string `gorm:"column:imageid;type:varchar;primaryKey"`
-	ImageComponentId string `gorm:"column:imagecomponentid;type:varchar;primaryKey"`
+	ImageId          string `gorm:"column:imageid;type:varchar;index:imagecomponentedges_imageid,type:hash"`
+	ImageComponentId string `gorm:"column:imagecomponentid;type:varchar"`
 	Serialized       []byte `gorm:"column:serialized;type:bytea"`
 	ImagesRef        Images `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

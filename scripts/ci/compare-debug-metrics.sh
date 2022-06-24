@@ -14,8 +14,10 @@ metrics_of_interest=\
 'rox_central_sensor_event_duration,'\
 'process_cpu_seconds_total,'\
 'rox_central_index_op_duration,'\
-'rox_central_badger_op_duration,'\
-'rox_central_rocksdb_op_duration'
+'rox_central_rocksdb_op_duration,'\
+'rox_central_function_segment_duration,'\
+'rox_central_datastore_function_duration,'\
+'rox_central_k8s_event_processing_duration'
 
 main() {
     if [ "$#" -ne 2 ]; then

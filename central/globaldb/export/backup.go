@@ -49,7 +49,7 @@ func BackupPostgres(ctx context.Context, postgresDB *pgxpool.Pool, includeCerts 
 	zipWriter := zip.NewWriter(out)
 	defer utils.IgnoreError(zipWriter.Close)
 
-	if err := generators.PutTarInZip(generators.PutDirectoryInTar(dbs.NewPostgresBackup(postgresDB)), backup.PostgresFileName).WriteTo(ctx, zipWriter); err != nil {
+	if err := generators.PutStreamInZip(dbs.NewPostgresBackup(postgresDB), backup.PostgresFileName).WriteTo(ctx, zipWriter); err != nil {
 		return errors.Wrap(err, "backing up postgres")
 	}
 

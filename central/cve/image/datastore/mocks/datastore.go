@@ -81,10 +81,10 @@ func (mr *MockDataStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
+func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.ImageCVE, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.CVE)
+	ret0, _ := ret[0].(*storage.ImageCVE)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -97,10 +97,10 @@ func (mr *MockDataStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 }
 
 // GetBatch mocks base method.
-func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.CVE, error) {
+func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVE, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBatch", ctx, id)
-	ret0, _ := ret[0].([]*storage.CVE)
+	ret0, _ := ret[0].([]*storage.ImageCVE)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -126,41 +126,41 @@ func (mr *MockDataStoreMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
 }
 
-// SearchCVEs mocks base method.
-func (m *MockDataStore) SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+// SearchImageCVEs mocks base method.
+func (m *MockDataStore) SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchCVEs", ctx, q)
+	ret := m.ctrl.Call(m, "SearchImageCVEs", ctx, q)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchCVEs indicates an expected call of SearchCVEs.
-func (mr *MockDataStoreMockRecorder) SearchCVEs(ctx, q interface{}) *gomock.Call {
+// SearchImageCVEs indicates an expected call of SearchImageCVEs.
+func (mr *MockDataStoreMockRecorder) SearchImageCVEs(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchCVEs), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchImageCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchImageCVEs), ctx, q)
 }
 
-// SearchRawCVEs mocks base method.
-func (m *MockDataStore) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
+// SearchRawImageCVEs mocks base method.
+func (m *MockDataStore) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVE, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawCVEs", ctx, q)
-	ret0, _ := ret[0].([]*storage.CVE)
+	ret := m.ctrl.Call(m, "SearchRawImageCVEs", ctx, q)
+	ret0, _ := ret[0].([]*storage.ImageCVE)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchRawCVEs indicates an expected call of SearchRawCVEs.
-func (mr *MockDataStoreMockRecorder) SearchRawCVEs(ctx, q interface{}) *gomock.Call {
+// SearchRawImageCVEs indicates an expected call of SearchRawImageCVEs.
+func (mr *MockDataStoreMockRecorder) SearchRawImageCVEs(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchRawCVEs), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImageCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchRawImageCVEs), ctx, q)
 }
 
 // Suppress mocks base method.
-func (m *MockDataStore) Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error {
+func (m *MockDataStore) Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, start, duration}
-	for _, a := range ids {
+	for _, a := range cves {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Suppress", varargs...)
@@ -169,17 +169,17 @@ func (m *MockDataStore) Suppress(ctx context.Context, start *types.Timestamp, du
 }
 
 // Suppress indicates an expected call of Suppress.
-func (mr *MockDataStoreMockRecorder) Suppress(ctx, start, duration interface{}, ids ...interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Suppress(ctx, start, duration interface{}, cves ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, start, duration}, ids...)
+	varargs := append([]interface{}{ctx, start, duration}, cves...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Suppress", reflect.TypeOf((*MockDataStore)(nil).Suppress), varargs...)
 }
 
 // Unsuppress mocks base method.
-func (m *MockDataStore) Unsuppress(ctx context.Context, ids ...string) error {
+func (m *MockDataStore) Unsuppress(ctx context.Context, cves ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx}
-	for _, a := range ids {
+	for _, a := range cves {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Unsuppress", varargs...)
@@ -188,8 +188,8 @@ func (m *MockDataStore) Unsuppress(ctx context.Context, ids ...string) error {
 }
 
 // Unsuppress indicates an expected call of Unsuppress.
-func (mr *MockDataStoreMockRecorder) Unsuppress(ctx interface{}, ids ...interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Unsuppress(ctx interface{}, cves ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, ids...)
+	varargs := append([]interface{}{ctx}, cves...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsuppress", reflect.TypeOf((*MockDataStore)(nil).Unsuppress), varargs...)
 }

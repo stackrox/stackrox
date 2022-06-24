@@ -94,6 +94,9 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	serviceAccountCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, serviceAccountCount)
+	serviceAccountCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(serviceAccountCount)
 
 	serviceAccountExists, err := store.Exists(ctx, serviceAccount.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundServiceAccount)
+	s.NoError(store.Delete(withNoAccessCtx, serviceAccount.GetId()))
 
 	var serviceAccounts []*storage.ServiceAccount
 	for i := 0; i < 200; i++ {

@@ -67,6 +67,7 @@ var (
 			reflect.TypeOf(storage.EmbeddedImageScanComponent{}),
 			reflect.TypeOf(storage.EmbeddedNodeScanComponent{}),
 			reflect.TypeOf(types.Timestamp{}),
+			reflect.TypeOf(storage.NodeVulnerability{}),
 		},
 		SkipFields: []generator.TypeAndField{
 			{

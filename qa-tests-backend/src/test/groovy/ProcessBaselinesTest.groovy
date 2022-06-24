@@ -218,9 +218,20 @@ class ProcessBaselinesTest extends BaseSpecification {
         assert deploymentId != null
 
         String containerName = deployment.getName()
-        ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
+        // Need to make sure the processes show up before we lock.
+        def baseline = evaluateWithRetry(30, 4) {
+            def tmpBaseline = ProcessBaselineService.
                  getProcessBaseline(clusterId, deployment, containerName)
+            if (tmpBaseline.elementsList.size() == 0) {
+                throw new RuntimeException(
+                    "No processes in baseline for deployment ${deploymentId} yet. Baseline is ${tmpBaseline}"
+                )
+            }
+            return tmpBaseline
+        }
+
         assert (baseline != null)
+        log.info "Baseline Before locking: ${baseline}"
         assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                  (baseline.key.containerName.equalsIgnoreCase(containerName)))
         assert baseline.elementsList.find { it.element.processName == processName } != null
@@ -228,14 +239,12 @@ class ProcessBaselinesTest extends BaseSpecification {
         List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessBaselines = ProcessBaselineService.
                  lockProcessBaselines(clusterId, deployment, containerName, true)
         assert (!StringUtils.isEmpty(lockProcessBaselines.get(0).getElements(0).getElement().processName))
-        // sleep 30 seconds to allow for propagation to sensor
-        sleep 30000
+
+        // sleep 5 seconds to allow for propagation to sensor
+        sleep 5000
         orchestrator.execInContainer(deployment, "pwd")
 
-        log.info "Locked Process Baseline: ${lockProcessBaselines}"
-
-        // Give the reprocessing some time.
-        sleep 30000
+        log.info "Locked Process Baseline after pwd: ${lockProcessBaselines}"
 
         // check for process baseline violation
         assert waitForViolation(containerName, "Unauthorized Process Execution", 240)

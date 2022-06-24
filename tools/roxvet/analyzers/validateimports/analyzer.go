@@ -206,11 +206,16 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/search/postgres",
 			"pkg/set",
 			"pkg/sliceutils",
+			"pkg/sync",
 			"pkg/testutils",
 			"pkg/utils",
 			"pkg/uuid",
 			"pkg/version",
 		)
+	}
+
+	if validImportRoot == "sensor/debugger" {
+		allowedPackages = append(allowedPackages, "sensor/kubernetes/listener/resources")
 	}
 
 	if validImportRoot == "tools" {

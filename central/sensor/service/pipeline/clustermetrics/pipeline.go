@@ -16,13 +16,34 @@ var log = logging.LoggerForModule()
 // Template design pattern. We define control flow here and defer logic to subclasses.
 //////////////////////////////////////////////////////////////////////////////////////
 
+// MetricsStore persists a measurement of ClusterMetrics.
+//go:generate mockgen-wrapper
+type MetricsStore interface {
+	Set(string, *central.ClusterMetrics)
+}
+
+type prometheusStore struct{}
+
+func (prometheusStore) Set(clusterID string, cm *central.ClusterMetrics) {
+	if cm != nil {
+		metrics.SetClusterMetrics(clusterID, cm)
+	}
+}
+
 // GetPipeline returns an instantiation of this particular pipeline.
 func GetPipeline() pipeline.Fragment {
-	return &pipelineImpl{}
+	return &pipelineImpl{metricsStore: &prometheusStore{}}
+}
+
+// NewPipeline returns a new instance of the pipeline.
+func NewPipeline(metricsStore MetricsStore) pipeline.Fragment {
+	return &pipelineImpl{metricsStore: metricsStore}
 }
 
 type pipelineImpl struct {
 	pipeline.Fragment
+
+	metricsStore MetricsStore
 }
 
 func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
@@ -40,10 +61,10 @@ func (p *pipelineImpl) Run(
 	msg *central.MsgFromSensor,
 	_ common.MessageInjector,
 ) error {
-	if cm := msg.GetClusterMetrics(); cm != nil {
-		metrics.SetClusterMetrics(clusterID, cm)
-	}
+	p.metricsStore.Set(clusterID, msg.GetClusterMetrics())
 	return nil
 }
 
-func (p *pipelineImpl) OnFinish(_ string) {}
+func (p *pipelineImpl) OnFinish(clusterID string) {
+	p.metricsStore.Set(clusterID, &central.ClusterMetrics{})
+}

@@ -18,7 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/mocks"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -359,8 +360,8 @@ func (s *imageScanTestSuite) TestDeprecationNote() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			imgScanCmd := s.defaultImageScanCommand
-			io, _, _, errOut := environment.TestIO()
-			imgScanCmd.env = environment.NewCLIEnvironment(io, printer.DefaultColorPrinter())
+			io, _, _, errOut := io.TestIO()
+			imgScanCmd.env = environment.NewTestCLIEnvironment(s.T(), io, printer.DefaultColorPrinter())
 			cmd := Command(imgScanCmd.env)
 			cmd.Flags().Duration("timeout", 1*time.Minute, "")
 			cmd.Flag("format").Changed = c.formatChanged
@@ -586,4 +587,12 @@ func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatT
 			s.Assert().Equal(string(expectedOutput), out.String())
 		})
 	}
+}
+
+func (s *imageScanTestSuite) TestScan_IncludeSnoozed() {
+	s.Run("disabled by default", func() {
+		envMock, _, _ := s.newTestMockEnvironmentWithConn(nil)
+		cobraCommand := Command(envMock)
+		s.Equal("false", cobraCommand.Flag("include-snoozed").Value.String())
+	})
 }

@@ -1,80 +1,7 @@
 {{- include "srox.init" . -}}
 
-{{- if not ._rox.scanner.disable -}}
-
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner-psp") }}
-  labels:
-    {{- include "srox.labels" (list . "clusterrole" "stackrox-scanner-psp") | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "clusterrole" "stackrox-scanner-psp") | nindent 4 }}
-rules:
-- apiGroups:
-  - policy
-  resources:
-  - podsecuritypolicies
-  resourceNames:
-  - {{ include "srox.globalResourceName" (list . "stackrox-scanner") }}
-  verbs:
-  - use
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: stackrox-scanner-psp
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "srox.labels" (list . "rolebinding" "stackrox-scanner-psp") | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "rolebinding" "stackrox-scanner-psp") | nindent 4 }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner-psp") }}
-subjects:
-  - kind: ServiceAccount
-    name: scanner
-    namespace: {{ .Release.Namespace }}
-
----
-
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner") }}
-  labels:
-    {{- include "srox.labels" (list . "podsecuritypolicy" "stackrox-scanner") | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "podsecuritypolicy" "stackrox-scanner") | nindent 4 }}
-spec:
-  privileged: false
-  allowPrivilegeEscalation: false
-  volumes:
-    - 'configMap'
-    - 'emptyDir'
-    - 'projected'
-    - 'secret'
-    - 'downwardAPI'
-    - 'persistentVolumeClaim'
-  hostNetwork: false
-  hostIPC: false
-  hostPID: false
-  runAsUser:
-    rule: 'RunAsAny'
-  seLinux:
-    rule: 'RunAsAny'
-  supplementalGroups:
-    rule: 'RunAsAny'
-  fsGroup:
-    rule: 'RunAsAny'
-
+{{- if not ._rox.scanner.disable }}
 {{- if and ._rox.env.openshift ._rox.system.createSCCs }}
----
-
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
@@ -147,6 +74,5 @@ subjects:
 - kind: ServiceAccount
   name: scanner
   namespace: {{ .Release.Namespace }}
-{{ end -}}
-
-{{ end -}}
+{{- end }}
+{{- end }}

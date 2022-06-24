@@ -1,8 +1,8 @@
 package upload
 
 import (
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
@@ -38,10 +38,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 func validate(args []string) error {
 	if len(args) > 1 {
-		return errors.Errorf("too many positional arguments (expected 1, got %d)", len(args))
+		return errox.InvalidArgs.Newf("too many positional arguments (expected 1, got %d)", len(args))
 	}
 	if len(args) == 0 {
-		return errors.New("missing <package-file> argument")
+		return errox.InvalidArgs.New("missing <package-file> argument")
 	}
 	return nil
 }

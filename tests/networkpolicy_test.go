@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -114,7 +115,7 @@ func CheckIfCentralHasFeatureFlag(t *testing.T, conn *grpc.ClientConn) bool {
 }
 
 func Test_GetViolationForIngressPolicy(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	if buildinfo.ReleaseBuild || !CheckIfCentralHasFeatureFlag(t, conn) {
 		t.Skip("Feature flag disabled")
 	}

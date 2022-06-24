@@ -10,14 +10,12 @@ import (
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	cveMocks "github.com/stackrox/rox/central/cve/datastore/mocks"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
-	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
@@ -76,8 +74,6 @@ func TestSearchFuncs(t *testing.T) {
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
-		WithCVEDataStore(cveMocks.NewMockDataStore(mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil).
 		Build()
 
@@ -165,8 +161,6 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
@@ -245,8 +239,6 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
@@ -300,8 +292,6 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
@@ -374,8 +364,6 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 

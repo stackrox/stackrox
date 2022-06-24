@@ -106,7 +106,7 @@ func newEnumQueryWhereClause(columnName string, field *pkgSearch.Field, value st
 		var values []interface{}
 		var equivalentGoFuncs []func(interface{}) bool
 		for _, s := range enumValues {
-			entry := createNumericQuery(columnName, prefix, float64(s))
+			entry := createNumericPrefixQuery(columnName, prefix, float64(s))
 			queries = append(queries, entry.Query)
 			values = append(values, entry.Values...)
 			equivalentGoFuncs = append(equivalentGoFuncs, entry.equivalentGoFunc)

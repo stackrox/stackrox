@@ -7,10 +7,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Environment, svc v1.ClusterInitServiceClient, idsOrNames set.StringSet) error {
@@ -27,7 +29,7 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 	}
 
 	if len(idsOrNames) != 0 {
-		return errors.Errorf("could not find init bundle(s) %s", strings.Join(idsOrNames.AsSlice(), ", "))
+		return errox.NotFound.Newf("could not find init bundle(s) %s", strings.Join(idsOrNames.AsSlice(), ", "))
 	}
 
 	revokeResp, err := svc.RevokeInitBundle(ctx, &v1.InitBundleRevokeRequest{Ids: revokeInitBundleIds})
@@ -44,7 +46,7 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 	return nil
 }
 
-func printResponseResult(logger environment.Logger, resp *v1.InitBundleRevokeResponse) {
+func printResponseResult(logger logger.Logger, resp *v1.InitBundleRevokeResponse) {
 	for _, id := range resp.GetInitBundleRevokedIds() {
 		logger.InfofLn("Revoked %q", id)
 	}

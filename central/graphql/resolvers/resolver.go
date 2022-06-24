@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
+	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -36,6 +37,7 @@ import (
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
@@ -75,11 +77,14 @@ type Resolver struct {
 	ComplianceManager           complianceManager.ComplianceManager
 	clusterCVEEdgeDataStore     clusterCVEEdgeDataStore.DataStore
 	ComponentCVEEdgeDataStore   componentCVEEdgeDataStore.DataStore
-	CVEDataStore                imageCVEDataStore.DataStore
+	CVEDataStore                legacyImageCVEDataStore.DataStore
+	ImageCVEDataStore           imageCVEDataStore.DataStore
+	NodeCVEDataStore            nodeCVEDataStore.DataStore
 	DeploymentDataStore         deploymentDatastore.DataStore
 	PodDataStore                podDatastore.DataStore
 	ImageDataStore              imageDatastore.DataStore
 	ImageComponentDataStore     imageComponentDataStore.DataStore
+	NodeComponentDataStore      nodeComponentDataStore.DataStore
 	ImageComponentEdgeDataStore imageComponentEdgeDataStore.DataStore
 	ImageCVEEdgeDataStore       imageCVEEdgeDataStore.DataStore
 	GroupDataStore              groupDataStore.DataStore
@@ -111,13 +116,6 @@ type Resolver struct {
 
 // New returns a Resolver wired into the relevant data stores
 func New() *Resolver {
-	var imageCVEDS imageCVEDataStore.DataStore
-	if features.PostgresDatastore.Enabled() {
-		imageCVEDS = imageCVEDataStore.Singleton()
-	} else {
-		imageCVEDS = legacyImageCVEDataStore.Singleton()
-	}
-
 	resolver := &Resolver{
 		ActiveComponent:             activeComponent.Singleton(),
 		ComplianceAggregator:        aggregation.Singleton(),
@@ -130,7 +128,6 @@ func New() *Resolver {
 		ClusterDataStore:            clusterDatastore.Singleton(),
 		clusterCVEEdgeDataStore:     clusterCVEEdgeDataStore.Singleton(),
 		ComponentCVEEdgeDataStore:   componentCVEEdgeDataStore.Singleton(),
-		CVEDataStore:                imageCVEDS,
 		DeploymentDataStore:         deploymentDatastore.Singleton(),
 		PodDataStore:                podDatastore.Singleton(),
 		ImageDataStore:              imageDatastore.Singleton(),
@@ -162,6 +159,16 @@ func New() *Resolver {
 		vulnReqQueryMgr:             querymgr.Singleton(),
 		vulnReqStore:                vulnReqDataStore.Singleton(),
 		AuditLogger:                 audit.New(processor.Singleton()),
+	}
+	if features.PostgresDatastore.Enabled() {
+		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
+		resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()
+		resolver.NodeComponentDataStore = nodeComponentDataStore.Singleton()
+
+		// TODO: [ROX-11432] All usages of vuln datastore are not gated behind feature flag.
+		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
+	} else {
+		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
 	}
 	return resolver
 }

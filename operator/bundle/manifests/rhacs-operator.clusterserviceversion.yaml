@@ -36,22 +36,16 @@ spec:
       name: centrals.platform.stackrox.io
       resources:
       - kind: Deployment
-        name: central
+        name: ''
         version: v1
       - kind: Route
-        name: central
+        name: ''
         version: v1
       - kind: Secret
-        name: central-htpasswd
+        name: ''
         version: v1
       - kind: Service
-        name: central-loadbalancer
-        version: v1
-      - kind: Deployment
-        name: scanner
-        version: v1
-      - kind: Deployment
-        name: scanner-db
+        name: ''
         version: v1
       specDescriptors:
       - description: Settings for the Central component, which is responsible for
@@ -100,6 +94,11 @@ spec:
           and private key here.
         displayName: User-facing TLS certificate secret
         path: central.defaultTLSSecret
+      - description: Configures monitoring endpoint for Central. The monitoring endpoint
+          allows other services to collect metrics from Central, provided in Prometheus
+          compatible format.
+        displayName: Monitoring
+        path: central.monitoring
       - description: Configures how Central should store its persistent data. You
           can choose between using a persistent volume claim (recommended default),
           and a host path.
@@ -171,6 +170,11 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.nodePort.enabled:true
       - displayName: Enabled
         path: central.exposure.route.enabled
+      - description: Expose Central's monitoring endpoint. A new service, "monitoring",
+          with port 9090, will be created as well as a network policy allowing inbound
+          connections to the port.
+        displayName: Expose Endpoint
+        path: central.monitoring.exposeEndpoint
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
           storage location of persistent data. Recommended for most users.
         displayName: Persistent volume claim
@@ -324,14 +328,11 @@ spec:
       kind: SecuredCluster
       name: securedclusters.platform.stackrox.io
       resources:
-      - kind: Deployment
-        name: admission-control
-        version: v1
       - kind: DaemonSet
-        name: collector
+        name: ''
         version: v1
       - kind: Deployment
-        name: sensor
+        name: ''
         version: v1
       specDescriptors:
       - description: 'The unique name of this cluster, as it will be shown in the

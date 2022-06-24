@@ -61,9 +61,13 @@ var (
 // Singleton returns the singleton reprocessor loop
 func Singleton() Loop {
 	once.Do(func() {
+		var dackboxIndexQueue queue.WaitableQueue
+		if !features.PostgresDatastore.Enabled() {
+			dackboxIndexQueue = dackbox.GetIndexQueue()
+		}
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
 			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
-			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton(), dackbox.GetIndexQueue())
+			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton(), dackboxIndexQueue)
 	})
 	return loop
 }
@@ -122,9 +126,7 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 
 		signatureVerificationSig: concurrency.NewSignal(),
 
-		// Used for testing purposes
-		reprocessingStarted:  concurrency.NewSignal(),
-		reprocessingComplete: concurrency.NewSignal(),
+		reprocessingInProgress: concurrency.NewSignal(),
 
 		connManager: connManager,
 		indexQueue:  indexQueue,
@@ -166,9 +168,8 @@ type loopImpl struct {
 	enrichmentStopped concurrency.Signal
 
 	signatureVerificationSig concurrency.Signal
-	// used for testing
-	reprocessingStarted  concurrency.Signal
-	reprocessingComplete concurrency.Signal
+
+	reprocessingInProgress concurrency.Signal
 
 	connManager connection.Manager
 	indexQueue  queue.WaitableQueue
@@ -293,7 +294,9 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 			defer wg.Add(-1)
 			if individualReprocessFunc(id) {
 				nReprocessed.Inc()
-				l.waitForIndexing()
+				if !features.PostgresDatastore.Enabled() {
+					l.waitForIndexing()
+				}
 			}
 		}(id)
 	}
@@ -333,7 +336,9 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		}
 	}
 
-	l.waitForIndexing()
+	if !features.PostgresDatastore.Enabled() {
+		l.waitForIndexing()
+	}
 
 	return image, true
 }
@@ -503,15 +508,19 @@ func (l *loopImpl) reprocessWatchedImages() {
 }
 
 func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
-	l.reprocessingComplete.Reset()
-	l.reprocessingStarted.Signal()
+	// In case the current reprocessing run takes longer than the ticker (i.e. > 4 hours when using a high number of
+	// images), we shouldn't trigger a parallel reprocessing run.
+	if !l.reprocessingInProgress.IsDone() {
+		return
+	}
+
+	l.reprocessingInProgress.Signal()
 
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
 	l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage, allImagesQuery)
 
-	l.reprocessingStarted.Reset()
-	l.reprocessingComplete.Signal()
+	l.reprocessingInProgress.Reset()
 }
 
 func (l *loopImpl) runSignatureVerificationReprocessing() {

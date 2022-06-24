@@ -10,7 +10,7 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	indexMocks "github.com/stackrox/rox/central/policy/index/mocks"
-	"github.com/stackrox/rox/central/policy/store"
+	"github.com/stackrox/rox/central/policy/store/boltdb"
 	storeMocks "github.com/stackrox/rox/central/policy/store/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -163,18 +163,18 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 	}
 
 	errString := "some error string"
-	errorFail1 := &store.PolicyStoreErrorList{
+	errorFail1 := &boltdb.PolicyStoreErrorList{
 		Errors: []error{
-			&store.NameConflictError{
+			&boltdb.NameConflictError{
 				ErrString:          errString,
 				ExistingPolicyName: fail1Name,
 			},
 		},
 	}
 	fail2Name := "fail 2 name"
-	errorFail2 := &store.PolicyStoreErrorList{
+	errorFail2 := &boltdb.PolicyStoreErrorList{
 		Errors: []error{
-			&store.IDConflictError{
+			&boltdb.IDConflictError{
 				ErrString:          errString,
 				ExistingPolicyName: fail2Name,
 			},

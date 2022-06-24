@@ -18,7 +18,7 @@ func init() {
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("NodeComponent", []string{
-			"fixedIn: String!", // is this needed?
+			"fixedIn: String!",
 			"id: ID!",
 			"nodeComponentLastScanned: Time",
 			"license: License",
@@ -29,10 +29,10 @@ func init() {
 			"nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!",
 			"nodeVulnerabilityCount(query: String, scopeQuery: String): Int!",
 			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
-			"plottedNodeVulnerabilities(query: String): PlottedVulnerabilities!",
+			"plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!",
 			"priority: Int!",
 			"riskScore: Float!",
-			"source: String!", // is this infrastructure ?
+			"source: String!",
 			"topNodeVulnerability: NodeVulnerability",
 			"unusedVarSink(query: String): Int",
 			"version: String!",
@@ -45,7 +45,6 @@ func init() {
 }
 
 // NodeComponentResolver represents a generic resolver of node component fields.
-// Values may come from either an embedded component context, or a top level component context.
 // NOTE: This list is and should remain alphabetically ordered
 type NodeComponentResolver interface {
 	FixedIn(ctx context.Context) string
@@ -59,7 +58,7 @@ type NodeComponentResolver interface {
 	NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error)
 	NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error)
 	NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
-	PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error)
+	PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error)
 	Priority(ctx context.Context) int32
 	RiskScore(ctx context.Context) float64
 	Source(ctx context.Context) string

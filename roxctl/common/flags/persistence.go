@@ -1,8 +1,7 @@
 package flags
 
 import (
-	"fmt"
-
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/renderer"
 )
 
@@ -20,7 +19,7 @@ func (f *PersistenceTypeWrapper) String() string {
 func (f *PersistenceTypeWrapper) Set(input string) error {
 	pt, ok := renderer.StringToPersistentTypes[input]
 	if !ok {
-		return fmt.Errorf("Invalid persistence type: %s", input)
+		return errox.InvalidArgs.Newf("invalid persistence type: %s", input)
 	}
 	*f.PersistenceType = pt
 	return nil

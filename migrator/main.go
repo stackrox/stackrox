@@ -71,6 +71,15 @@ func run() error {
 		return err
 	}
 
+	if features.PostgresDatastore.Enabled() {
+		var gormDB *gorm.DB
+		gormDB, err = postgreshelper.Load(conf)
+		if err != nil {
+			return errors.Wrap(err, "failed to connect to postgres DB")
+		}
+		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
+	}
+
 	if err = dbm.Persist(replica); err != nil {
 		return err
 	}
@@ -110,7 +119,7 @@ func upgrade(conf *config.Config) error {
 	if features.PostgresDatastore.Enabled() {
 		gormDB, postgresDB, err = postgreshelper.Load(conf)
 		if err != nil {
-			return errors.Wrapf(err, "Failed to connect to postgres DB with Gorm %v", err)
+			return errors.Wrap(err, "failed to connect to postgres DB")
 		}
 	}
 
@@ -123,10 +132,6 @@ func upgrade(conf *config.Config) error {
 	})
 	if err != nil {
 		return errors.Wrap(err, "migrations failed")
-	}
-
-	if features.PostgresDatastore.Enabled() {
-		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
 	}
 
 	return nil

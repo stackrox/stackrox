@@ -2,6 +2,7 @@ package listener
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -26,7 +27,7 @@ type SensorEventListener interface {
 }
 
 // New returns a new kubernetes listener.
-func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration) common.SensorComponent {
+func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer) common.SensorComponent {
 	k := &listenerImpl{
 		client:             client,
 		eventsC:            make(chan *central.MsgFromSensor, 10),
@@ -35,6 +36,7 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 		detector:           detector,
 		credentialsManager: createCredentialsManager(client, nodeName),
 		resyncPeriod:       resyncPeriod,
+		traceWriter:        traceWriter,
 	}
 	return k
 }

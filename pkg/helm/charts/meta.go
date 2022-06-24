@@ -53,6 +53,9 @@ type MetaValues struct {
 	AdmissionControllerEnabled       bool
 	AdmissionControlEnforceOnUpdates bool
 	ReleaseBuild                     bool
+
+	AutoSensePodSecurityPolicies bool
+	EnablePodSecurityPolicies    bool // Only used in the Helm chart if AutoSensePodSecurityPolicies is false.
 }
 
 // GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
@@ -80,6 +83,8 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		Operator:                 false,
 		ReleaseBuild:             buildinfo.ReleaseBuild,
 		FeatureFlags:             getFeatureFlags(),
+
+		AutoSensePodSecurityPolicies: true,
 	}
 
 	return &metaValues

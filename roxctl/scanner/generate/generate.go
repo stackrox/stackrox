@@ -13,8 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
 	"github.com/stackrox/rox/roxctl/scanner/clustertype"
 )
@@ -30,6 +32,8 @@ type scannerGenerateCommand struct {
 	outputDir string
 	apiParams apiparams.Scanner
 	timeout   time.Duration
+
+	enablePodSecurityPolicies bool
 
 	// Properties that are injected or constructed.
 	env environment.Environment
@@ -57,8 +61,12 @@ func (cmd *scannerGenerateCommand) validate() error {
 	return nil
 }
 
-func (cmd *scannerGenerateCommand) generate() error {
+func (cmd *scannerGenerateCommand) generate(logger logger.Logger) error {
+	common.LogInfoPsp(logger, cmd.enablePodSecurityPolicies)
+
 	cmd.apiParams.ClusterType = clustertype.Get().String()
+	cmd.apiParams.DisablePodSecurityPolicies = !cmd.enablePodSecurityPolicies
+
 	body, err := json.Marshal(cmd.apiParams)
 	if err != nil {
 		return errors.Wrap(err, "could not marshal scanner params")
@@ -72,7 +80,7 @@ func (cmd *scannerGenerateCommand) generate() error {
 		BundleType: "scanner",
 		ExpandZip:  true,
 		OutputDir:  cmd.outputDir,
-	})
+	}, cmd.env.Logger())
 
 	return errors.Wrap(err, "could not get scanner bundle")
 }
@@ -91,7 +99,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 				return err
 			}
 
-			return scannerGenerateCmd.generate()
+			return scannerGenerateCmd.generate(cliEnvironment.Logger())
 		},
 	}
 
@@ -105,6 +113,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		fmt.Sprintf(
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
+	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 
 	return c
 }

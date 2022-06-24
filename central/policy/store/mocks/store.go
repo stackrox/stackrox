@@ -159,25 +159,19 @@ func (mr *MockStoreMockRecorder) GetKeysToIndex(ctx interface{}) *gomock.Call {
 }
 
 // GetMany mocks base method.
-func (m *MockStore) GetMany(ctx context.Context, ids ...string) ([]*storage.Policy, []int, []error, error) {
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.Policy, []int, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
-	for _, a := range ids {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetMany", varargs...)
+	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
 	ret0, _ := ret[0].([]*storage.Policy)
 	ret1, _ := ret[1].([]int)
-	ret2, _ := ret[2].([]error)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetMany indicates an expected call of GetMany.
-func (mr *MockStoreMockRecorder) GetMany(ctx interface{}, ids ...interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, ids...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
 // RenamePolicyCategory mocks base method.
@@ -195,17 +189,17 @@ func (mr *MockStoreMockRecorder) RenamePolicyCategory(request interface{}) *gomo
 }
 
 // Upsert mocks base method.
-func (m *MockStore) Upsert(ctx context.Context, policy *storage.Policy) error {
+func (m *MockStore) Upsert(ctx context.Context, obj *storage.Policy) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", ctx, policy)
+	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockStoreMockRecorder) Upsert(ctx, policy interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, policy)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, obj)
 }
 
 // UpsertMany mocks base method.

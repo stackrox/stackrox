@@ -38,25 +38,20 @@ import (
 const (
         baseTable = "{{.Table}}"
 
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if gt (len $pks) 1 }}
-        existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} WHERE {{template "whereMatch" $pks}})"
-        getStmt = "SELECT serialized FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
-        deleteStmt = "DELETE FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
-{{- end }}
-
         batchAfter = 100
 
         // using copyFrom, we may not even want to batch.  It would probably be simpler
         // to deal with failures if we just sent it all.  Something to think about as we
         // proceed and move into more e2e and larger performance testing
         batchSize = 10000
+
+        cursorBatchSize = 50
 )
 
 var (
     log = logging.LoggerForModule()
     schema = {{ template "schemaVar" .Schema}}
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) }}
+    {{ if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) -}}
         {{- if $inMigration}}
         targetResource = permissions.ResourceMetadata{}
         {{- else}}
@@ -83,6 +78,10 @@ type Store interface {
     GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
 {{- if not .JoinTable }}
     DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error
+{{- end }}
+{{- if eq .TrimmedType "Policy" }}
+    RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
+    DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
 {{- end }}
 {{- end }}
 
@@ -325,7 +324,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsGloballyScoped }}
+    {{- else if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
     {{- else if and (.Obj.IsDirectlyScoped) (.Obj.IsClusterScope) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}.
@@ -334,7 +333,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     {{ template "defineScopeChecker" "READ_WRITE" }}.
         ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
     {{- end }}
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped)  }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -354,7 +353,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsGloballyScoped }}
+    {{- else if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
@@ -376,7 +375,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
             if ok, err := subScopeChecker.Allowed(ctx); err != nil {
                 return err
             } else if !ok {
-                deniedIds = append(deniedIds, obj.GetId())
+                deniedIds = append(deniedIds, {{ "obj" | .Obj.GetID }})
             }
         }
         if len(deniedIds) != 0 {
@@ -414,7 +413,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
         return 0, err
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
@@ -437,10 +436,8 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
+
     var sacQueryFilter *v1.Query
-{{- end }}
     {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil || !ok {
         return false, err
@@ -452,7 +449,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     } else if !ok {
         return false, nil
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
@@ -468,38 +465,26 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 	}
     {{- end }}
 
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
     q := search.ConjunctionQuery(
         sacQueryFilter,
     {{- range $idx, $pk := $pks}}
         {{- if eq $pk.Name $singlePK.Name }}
         search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- end}}
     {{- end}}
     )
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
-{{- else }}
-    row := s.db.QueryRow(ctx, existsStmt, {{template "argList" $pks}})
-    var exists bool
-    if err := row.Scan(&exists); err != nil {
-    return false, pgutils.ErrNilIfNoRows(err)
-    }
-    return exists, nil
-{{- end }}
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
+
     var sacQueryFilter *v1.Query
-{{- end }}
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.GetAllowed(ctx); err != nil || !ok {
         return nil, false, err
@@ -511,7 +496,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
     } else if !ok {
         return nil, false, nil
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
     scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
@@ -526,15 +511,14 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
         return nil, false, err
 	}
     {{- end }}
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
+
     q := search.ConjunctionQuery(
     sacQueryFilter,
     {{- range $idx, $pk := $pks}}
         {{- if eq $pk.Name $singlePK.Name }}
             search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- else }}
-            search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+            search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- end}}
     {{- end}}
     )
@@ -543,19 +527,6 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
-{{- else }}
-	conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
-	if err != nil {
-	    return nil, false, err
-	}
-	defer release()
-
-	row := conn.QueryRow(ctx, getStmt, {{template "argList" $pks}})
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-{{- end }}
 
 	var msg {{.Type}}
 	if err := proto.Unmarshal(data, &msg); err != nil {
@@ -590,10 +561,8 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
+
     var sacQueryFilter *v1.Query
-{{- end }}
     {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
         return err
@@ -607,7 +576,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
 	if err != nil {
@@ -623,32 +592,18 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 	}
     {{- end }}
 
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
     q := search.ConjunctionQuery(
         sacQueryFilter,
     {{- range $idx, $pk := $pks}}
         {{- if eq $pk.Name $singlePK.Name }}
         search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- end}}
     {{- end}}
     )
 
 	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
-{{- else }}
-    conn, release, err := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
-	if err != nil {
-	    return err
-	}
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, {{template "argList" $pks}}); err != nil {
-		return err
-	}
-	return nil
-{{- end }}
 }
 {{- end}}
 
@@ -669,7 +624,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
     } else if !ok {
         return nil, nil
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
@@ -719,7 +674,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
     } else if !ok {
         return nil, nil, nil
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
 		Resource: targetResource,
@@ -794,7 +749,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
     scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
     if err != nil {
@@ -852,17 +807,27 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
         return err
     }
 {{- end }}
-    rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+		return err
 	}
-	for _, data := range rows {
-		var msg {{.Type}}
-		if err := proto.Unmarshal(data, &msg); err != nil {
-		    return err
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		if err := fn(&msg); err != nil {
-		    return err
+		for _, data := range rows {
+			var msg {{.Type}}
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil
@@ -893,6 +858,16 @@ func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.
 }
 
 //// Stubs for satisfying legacy interfaces
+
+{{- if eq .TrimmedType "Policy" }}
+func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
+    return errors.New("unimplemented")
+}
+
+func (s *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
+    return errors.New("unimplemented")
+}
+{{- end }}
 
 // AckKeysIndexed acknowledges the passed keys were indexed
 func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {

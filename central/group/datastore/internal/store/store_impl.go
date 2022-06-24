@@ -1,11 +1,10 @@
 package store
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	serializePkg "github.com/stackrox/rox/central/group/datastore/serialize"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -150,7 +149,7 @@ func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 func addInTransaction(tx *bolt.Tx, key, value []byte) error {
 	buc := tx.Bucket(groupsBucket)
 	if buc.Get(key) != nil {
-		return fmt.Errorf("group config for %q already exists", key)
+		return errox.AlreadyExists.Newf("group config for %q already exists", key)
 	}
 	return buc.Put(key, value)
 }
@@ -158,7 +157,7 @@ func addInTransaction(tx *bolt.Tx, key, value []byte) error {
 func updateInTransaction(tx *bolt.Tx, key, value []byte) error {
 	buc := tx.Bucket(groupsBucket)
 	if buc.Get(key) == nil {
-		return fmt.Errorf("group config for %q does not exist", key)
+		return errox.NotFound.Newf("group config for %q does not exist", key)
 	}
 	return buc.Put(key, value)
 }
@@ -166,7 +165,7 @@ func updateInTransaction(tx *bolt.Tx, key, value []byte) error {
 func removeInTransaction(tx *bolt.Tx, key []byte) error {
 	buc := tx.Bucket(groupsBucket)
 	if buc.Get(key) == nil {
-		return fmt.Errorf("group config for %q does not exist", key)
+		return errox.NotFound.Newf("group config for %q does not exist", key)
 	}
 	return buc.Delete(key)
 }

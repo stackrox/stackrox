@@ -34,11 +34,6 @@ start: deps
 	@echo "+ $@"
 	yarn start
 
-.PHONY: start-coverage
-start-coverage: deps
-	@echo "+ $@"
-	yarn start:coverage
-
 .PHONY: test
 test: deps $(SOURCES)
 	@echo "+ $@"
@@ -48,16 +43,6 @@ test: deps $(SOURCES)
 test-e2e: deps $(SOURCES)
 	@echo "+ $@"
 	yarn test-e2e
-
-.PHONY: test-e2e-coverage
-test-e2e-coverage: deps $(SOURCES)
-	@echo "+ $@"
-	yarn test-e2e:coverage
-
-.PHONY: test-e2e-demo
-test-e2e-demo: deps $(SOURCES)
-	@echo "+ $@"
-	yarn test-e2e-demo
 
 .PHONY: clean
 clean:

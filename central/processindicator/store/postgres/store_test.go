@@ -94,6 +94,9 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	processIndicatorCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, processIndicatorCount)
+	processIndicatorCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(processIndicatorCount)
 
 	processIndicatorExists, err := store.Exists(ctx, processIndicator.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundProcessIndicator)
+	s.NoError(store.Delete(withNoAccessCtx, processIndicator.GetId()))
 
 	var processIndicators []*storage.ProcessIndicator
 	for i := 0; i < 200; i++ {

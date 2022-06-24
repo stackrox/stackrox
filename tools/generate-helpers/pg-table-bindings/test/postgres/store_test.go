@@ -81,6 +81,8 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundTestSingleKeyStruct)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, testSingleKeyStruct))
 	foundTestSingleKeyStruct, exists, err = store.Get(ctx, testSingleKeyStruct.GetKey())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	testSingleKeyStructCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, testSingleKeyStructCount)
+	testSingleKeyStructCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(testSingleKeyStructCount)
 
 	testSingleKeyStructExists, err := store.Exists(ctx, testSingleKeyStruct.GetKey())
 	s.NoError(err)
 	s.True(testSingleKeyStructExists)
 	s.NoError(store.Upsert(ctx, testSingleKeyStruct))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, testSingleKeyStruct), sac.ErrResourceAccessDenied)
 
 	foundTestSingleKeyStruct, exists, err = store.Get(ctx, testSingleKeyStruct.GetKey())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestSingleKeyStruct)
+	s.NoError(store.Delete(withNoAccessCtx, testSingleKeyStruct.GetKey()))
 
 	var testSingleKeyStructs []*storage.TestSingleKeyStruct
 	for i := 0; i < 200; i++ {

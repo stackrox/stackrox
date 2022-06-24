@@ -217,6 +217,8 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 		}
 	}
 
+	options = append(options, booleanpolicy.ValidateNoFromInDockerfileLine())
+
 	if err := s.convertAndValidate(ctx, request, options...); err != nil {
 		return nil, err
 	}
@@ -436,13 +438,14 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 
 	pChan := make(chan struct{}, dryRunParallelism)
 	alertChan := make(chan *v1.DryRunResponse_Alert)
-	var wg sync.WaitGroup
+	allAlertsProcessedSig := concurrency.NewSignal()
 	go func() {
 		for {
 			select {
 			case alert, ok := <-alertChan:
 				// channel is closed
 				if !ok {
+					allAlertsProcessedSig.Signal()
 					return
 				}
 				resp.Alerts = append(resp.Alerts, alert)
@@ -453,6 +456,7 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 		}
 	}()
 
+	var wg sync.WaitGroup
 	for _, id := range deploymentIds {
 		if err := cancelCtx.Err(); err != nil {
 			return nil, err
@@ -519,7 +523,12 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 
 	wg.Wait()
 	close(alertChan)
-	return &resp, nil
+	select {
+	case <-allAlertsProcessedSig.Done():
+		return &resp, nil
+	case <-cancelCtx.Done():
+		return nil, cancelCtx.Err()
+	}
 }
 
 // DryRunPolicy runs a dry run of the policy and determines what deployments would violate it
@@ -742,29 +751,30 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 
 func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoliciesRequest) (*storage.ExportPoliciesResponse, error) {
 	// missingIndices and policyErrors should not overlap
-	policyList, missingIndices, policyErrors, err := s.policies.GetPolicies(ctx, request.PolicyIds)
+	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.PolicyIds)
 	if err != nil {
 		return nil, err
 	}
-	if len(policyErrors) > 0 {
-		errDetails := &v1.ExportPoliciesErrorList{}
-		for i, missingIndex := range missingIndices {
-			policyError := policyErrors[i].Error()
-			policyID := request.PolicyIds[missingIndex]
-			log.Warnf("A policy error ocurred for id %s: '%v'", policyID, policyError)
-			errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
-				PolicyId: request.PolicyIds[missingIndex],
-				Error: &v1.PolicyError{
-					Error: policyErrors[i].Error(),
-				},
-			})
-		}
+	errDetails := &v1.ExportPoliciesErrorList{}
+	for _, missingIndex := range missingIndices {
+		policyID := request.PolicyIds[missingIndex]
+		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+			PolicyId: policyID,
+			Error: &v1.PolicyError{
+				Error: "not found",
+			},
+		})
+		log.Warnf("A policy error occurred for id %s: not found", policyID)
+
+	}
+	if len(missingIndices) > 0 {
 		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be retrieved. Check the error details for a list of policies that could not be found").WithDetails(errDetails)
 		if err != nil {
 			return nil, utils.Should(errors.Errorf("unexpected error creating status proto: %v", err))
 		}
 		return nil, statusMsg.Err()
 	}
+
 	for _, policy := range policyList {
 		removeInternal(policy)
 	}

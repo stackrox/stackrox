@@ -18,12 +18,6 @@ test_ui_e2e() {
 
     export_test_environment
 
-    if is_OPENSHIFT_CI; then
-        # TODO(RS-494) may provide roxctl
-        make cli-linux
-        install_built_roxctl_in_gopath
-    fi
-
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
@@ -37,7 +31,9 @@ run_ui_e2e_tests() {
     info "Running UI e2e tests"
 
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
-        echo "central-lb ${API_HOSTNAME}" > /tmp/hostaliases
+        local hostname
+        hostname=$("$ROOT/tests/e2e/get_hostname.py" "${API_HOSTNAME}")
+        echo "central-lb ${hostname}" > /tmp/hostaliases
         export HOSTALIASES=/tmp/hostaliases
         export UI_BASE_URL="https://central-lb:443"
     else

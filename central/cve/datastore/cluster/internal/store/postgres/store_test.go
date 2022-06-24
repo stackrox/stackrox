@@ -81,6 +81,8 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundCVE)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, cVE))
 	foundCVE, exists, err = store.Get(ctx, cVE.GetId())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	cVECount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, cVECount)
+	cVECount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(cVECount)
 
 	cVEExists, err := store.Exists(ctx, cVE.GetId())
 	s.NoError(err)
 	s.True(cVEExists)
 	s.NoError(store.Upsert(ctx, cVE))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, cVE), sac.ErrResourceAccessDenied)
 
 	foundCVE, exists, err = store.Get(ctx, cVE.GetId())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundCVE)
+	s.NoError(store.Delete(withNoAccessCtx, cVE.GetId()))
 
 	var cVEs []*storage.CVE
 	for i := 0; i < 200; i++ {

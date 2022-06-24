@@ -12,11 +12,13 @@ export type ListPolicy = {
 };
 
 // TODO supersedes src/Containers/Violations/PatternFly/types/violationTypes.ts
-export type PolicySeverity =
-    | 'LOW_SEVERITY'
-    | 'MEDIUM_SEVERITY'
-    | 'HIGH_SEVERITY'
-    | 'CRITICAL_SEVERITY';
+export const policySeverities = [
+    'LOW_SEVERITY',
+    'MEDIUM_SEVERITY',
+    'HIGH_SEVERITY',
+    'CRITICAL_SEVERITY',
+] as const;
+export type PolicySeverity = typeof policySeverities[number];
 
 // TODO supersedes src/Containers/Violations/PatternFly/types/violationTypes.ts
 export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
@@ -30,6 +32,9 @@ type BasePolicy = {
     exclusions: PolicyExclusion[];
     scope: PolicyScope[];
     enforcementActions: EnforcementAction[];
+    SORTName: string; // For internal use only.
+    SORTLifecycleStage: string; // For internal use only.
+    SORTEnforcement: boolean; // For internal use only.
     policyVersion: string;
     mitreAttackVectors: PolicyMitreAttackVector[];
     readonly criteriaLocked: boolean; // If true, the policy's criteria fields are rendered read-only.
@@ -40,9 +45,6 @@ type BasePolicy = {
 export type ClientPolicy = {
     excludedImageNames: string[]; // For internal use only.
     excludedDeploymentScopes: PolicyExcludedDeployment[]; // For internal use only.
-    SORT_name: string; // For internal use only.
-    SORT_lifecycleStage: string; // For internal use only.
-    SORT_enforcement: boolean; // For internal use only.
     serverPolicySections: PolicySection[]; // For internal use only.
     policySections: ClientPolicySection[]; // value strings converted into objects
 } & BasePolicy;

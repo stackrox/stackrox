@@ -3,7 +3,6 @@ package common
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -12,9 +11,10 @@ import (
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
-const warningMsg = `WARNING: The remote endpoint failed TLS validation. This will be a fatal error in future releases.
+const warningMsg = `The remote endpoint failed TLS validation. This will be a fatal error in future releases.
 Please do one of the following at your earliest convenience:
   1. Obtain a valid certificate for your Central instance/Load Balancer.
   2. Use the --ca option to specify a custom CA certificate (PEM format). This Certificate can be obtained by
@@ -27,6 +27,7 @@ Please do one of the following at your earliest convenience:
 
 type insecureVerifierWithWarning struct {
 	printWarningOnce sync.Once
+	logger           logger.Logger
 }
 
 func (v *insecureVerifierWithWarning) VerifyPeerCertificate(leaf *x509.Certificate, chainRest []*x509.Certificate, conf *tls.Config) error {
@@ -39,16 +40,12 @@ func (v *insecureVerifierWithWarning) VerifyPeerCertificate(leaf *x509.Certifica
 	_, err := leaf.Verify(verifyOpts)
 	if err != nil {
 		v.printWarningOnce.Do(func() {
-			fmt.Fprint(os.Stderr, warningMsg)
-			fmt.Fprintln(os.Stderr, "Certificate validation error:", err.Error())
+			v.logger.WarnfLn(warningMsg)
+			v.logger.ErrfLn("Certificate validation error:", err.Error())
 		})
 	}
 	return nil
 }
-
-var (
-	warningVerifierInstance insecureVerifierWithWarning
-)
 
 // ConnectNames returns the endpoint and (SNI) server name given by the
 // --endpoint and --server-name flags respectively. If no server name is given,
@@ -69,7 +66,7 @@ func ConnectNames() (string, string, error) {
 	return endpoint, serverName, nil
 }
 
-func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
+func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions, error) {
 	_, serverName, err := ConnectNames()
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing central endpoint")
@@ -88,11 +85,13 @@ func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
 			return nil, errors.Errorf("CA certificates file %s contains no certificates!", flags.CAFile())
 		}
 		if flags.SkipTLSValidation() != nil && *flags.SkipTLSValidation() {
-			fmt.Fprintln(os.Stderr, "Warning: --insecure-skip-tls-verify has no effect when --ca is set")
+			logger.WarnfLn("--insecure-skip-tls-verify has no effect when --ca is set")
 		}
 	} else {
 		if flags.SkipTLSValidation() == nil {
-			customVerifier = &warningVerifierInstance
+			customVerifier = &insecureVerifierWithWarning{
+				logger: logger,
+			}
 		} else if *flags.SkipTLSValidation() {
 			skipVerify = true
 		}
@@ -106,8 +105,8 @@ func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
 	}, nil
 }
 
-func tlsConfigForCentral() (*tls.Config, error) {
-	opts, err := tlsConfigOptsForCentral()
+func tlsConfigForCentral(logger logger.Logger) (*tls.Config, error) {
+	opts, err := tlsConfigOptsForCentral(logger)
 	if err != nil {
 		return nil, err
 	}

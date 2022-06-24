@@ -2,11 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Flex, FlexItem, Card, CardBody, Title, Divider } from '@patternfly/react-core';
 
 import { fetchDeployment } from 'services/DeploymentsService';
+import { fetchNetworkPoliciesInNamespace } from 'services/NetworkService';
 import { portExposureLabels } from 'messages/common';
 import ObjectDescriptionList from 'Components/ObjectDescriptionList';
+import { TableComposable, Caption, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import DeploymentOverview from './Deployment/DeploymentOverview';
 import SecurityContext from './Deployment/SecurityContext';
 import ContainerConfiguration from './Deployment/ContainerConfiguration';
+
+type NetworkPolicy = {
+    id: string;
+    name: string;
+};
 
 type PortExposure = 'EXTERNAL' | 'NODE' | 'HOST' | 'INTERNAL' | 'UNSET';
 
@@ -59,9 +66,14 @@ export const formatDeploymentPorts = (ports: Port[] = []): FormattedPort[] => {
     return formattedPorts;
 };
 
+const compareNetworkPolicies = (a: NetworkPolicy, b: NetworkPolicy): number => {
+    return a.name.localeCompare(b.name);
+};
+
 const DeploymentDetails = ({ deployment }) => {
     // attempt to fetch related deployment to selected alert
     const [relatedDeployment, setRelatedDeployment] = useState(deployment);
+    const [namespacePolicies, setNamespacePolicies] = useState([]);
 
     useEffect(() => {
         fetchDeployment(deployment.id).then(
@@ -70,7 +82,15 @@ const DeploymentDetails = ({ deployment }) => {
         );
     }, [deployment.id, setRelatedDeployment]);
 
+    useEffect(() => {
+        fetchNetworkPoliciesInNamespace(deployment.clusterId, deployment.namespace).then(
+            (policies) => setNamespacePolicies(policies.response.networkPolicies),
+            () => setNamespacePolicies([])
+        );
+    }, [deployment.namespace, deployment.clusterId, setNamespacePolicies]);
+
     const deploymentObj = relatedDeployment || deployment;
+    const namespacePoliciesList = namespacePolicies || [];
 
     return (
         <Flex
@@ -129,6 +149,46 @@ const DeploymentDetails = ({ deployment }) => {
                     </FlexItem>
                     <FlexItem>
                         <SecurityContext deployment={relatedDeployment} />
+                    </FlexItem>
+                    <FlexItem>
+                        <Title headingLevel="h3" className="pf-u-my-md">
+                            Network Policy
+                        </Title>
+                        <Divider component="div" />
+                    </FlexItem>
+                    <FlexItem>
+                        <Card isFlat data-testid="network-policy">
+                            <CardBody>
+                                {namespacePoliciesList?.length > 0 ? (
+                                    <TableComposable variant="compact">
+                                        <Caption>
+                                            <Title headingLevel="h3">All network policies</Title>
+                                            in &quot;{deploymentObj.namespace}&quot; namespace
+                                        </Caption>
+                                        <Thead>
+                                            <Tr>
+                                                <Th>Name</Th>
+                                            </Tr>
+                                        </Thead>
+                                        <Tbody>
+                                            {namespacePoliciesList
+                                                .sort(compareNetworkPolicies)
+                                                .map((netpol: NetworkPolicy) => (
+                                                    // TODO(ROX-11034): This should be a link to the Network Policy yaml or detail screen.
+                                                    <Tr key={netpol.id}>
+                                                        <Td dataLabel="Name">{netpol.name}</Td>
+                                                    </Tr>
+                                                ))}
+                                        </Tbody>
+                                    </TableComposable>
+                                ) : (
+                                    <>
+                                        No network policies found in &quot;
+                                        {deploymentObj.namespace}&quot; namespace
+                                    </>
+                                )}
+                            </CardBody>
+                        </Card>
                     </FlexItem>
                 </Flex>
                 <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>

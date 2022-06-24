@@ -6,11 +6,8 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
-	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	componentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -20,7 +17,6 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -52,9 +48,6 @@ type Builder interface {
 	WithRoleStore(store roleDataStore.DataStore) Builder
 	WithRoleBindingStore(store roleBindingDataStore.DataStore) Builder
 	WithClusterDataStore(store clusterDataStore.DataStore) Builder
-	WithCVEDataStore(store cveDataStore.DataStore) Builder
-	WithComponentDataStore(store componentDataStore.DataStore) Builder
-
 	WithAggregator(aggregation.Aggregator) Builder
 
 	Build() Service
@@ -73,8 +66,6 @@ type serviceBuilder struct {
 	roles           roleDataStore.DataStore
 	bindings        roleBindingDataStore.DataStore
 	clusters        clusterDataStore.DataStore
-	cves            cveDataStore.DataStore
-	components      componentDataStore.DataStore
 
 	aggregator aggregation.Aggregator
 }
@@ -149,16 +140,6 @@ func (b *serviceBuilder) WithClusterDataStore(store clusterDataStore.DataStore) 
 	return b
 }
 
-func (b *serviceBuilder) WithCVEDataStore(store cveDataStore.DataStore) Builder {
-	b.cves = store
-	return b
-}
-
-func (b *serviceBuilder) WithComponentDataStore(store componentDataStore.DataStore) Builder {
-	b.components = store
-	return b
-}
-
 func (b *serviceBuilder) Build() Service {
 	s := serviceImpl{
 		alerts:          b.alerts,
@@ -174,8 +155,6 @@ func (b *serviceBuilder) Build() Service {
 		bindings:        b.bindings,
 		aggregator:      b.aggregator,
 		clusters:        b.clusters,
-		cves:            b.cves,
-		components:      b.components,
 	}
 	s.initializeAuthorizer()
 	return &s
@@ -183,15 +162,7 @@ func (b *serviceBuilder) Build() Service {
 
 // NewService returns a new search service
 func NewService() Service {
-	var imageCVEDataStore cveDataStore.DataStore
-	if features.PostgresDatastore.Enabled() {
-		imageCVEDataStore = cveDataStore.Singleton()
-	} else {
-		imageCVEDataStore = legacyImageCVEDataStore.Singleton()
-	}
-	builder := NewBuilder()
-
-	builder = builder.
+	builder := NewBuilder().
 		WithAlertStore(alertDataStore.Singleton()).
 		WithDeploymentStore(deploymentDataStore.Singleton()).
 		WithImageStore(imageDataStore.Singleton()).
@@ -204,9 +175,7 @@ func NewService() Service {
 		WithRoleStore(roleDataStore.Singleton()).
 		WithRoleBindingStore(roleBindingDataStore.Singleton()).
 		WithAggregator(aggregation.Singleton()).
-		WithClusterDataStore(clusterDataStore.Singleton()).
-		WithCVEDataStore(imageCVEDataStore).
-		WithComponentDataStore(componentDataStore.Singleton())
+		WithClusterDataStore(clusterDataStore.Singleton())
 
 	return builder.Build()
 }

@@ -1,11 +1,10 @@
 package download
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 const (
@@ -17,12 +16,12 @@ const (
 func ParseFilenameFromHeader(header http.Header) (string, error) {
 	data := header.Get(contentDispositionHeader)
 	if data == "" {
-		return data, errors.Errorf("missing %s header", contentDispositionHeader)
+		return data, errox.NotFound.Newf("missing %s header", contentDispositionHeader)
 	}
 	oldLen := len(data)
 	data = strings.TrimPrefix(data, "attachment; filename=")
 	if len(data) == oldLen {
-		return "", fmt.Errorf("failed to determine filename from %s header value %q", contentDispositionHeader, data)
+		return "", errox.NotFound.Newf("failed to determine filename from %s header value %q", contentDispositionHeader, data)
 	}
 	return strings.Trim(data, `"`), nil
 }

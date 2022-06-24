@@ -5,9 +5,11 @@ package schema
 import (
 	"reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -16,6 +18,8 @@ var (
 		Table: `
                create table if not exists networkpolicies (
                    Id varchar,
+                   ClusterId varchar,
+                   Namespace varchar,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
@@ -32,6 +36,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NetworkPolicy)(nil)), "networkpolicies")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_POLICIES, "networkpolicy", (*storage.NetworkPolicy)(nil)))
 		RegisterTable(schema, CreateTableNetworkpoliciesStmt)
 		return schema
 	}()
@@ -44,5 +49,7 @@ const (
 // Networkpolicies holds the Gorm model for Postgres table `networkpolicies`.
 type Networkpolicies struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ClusterId  string `gorm:"column:clusterid;type:varchar"`
+	Namespace  string `gorm:"column:namespace;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }
