@@ -258,11 +258,6 @@ func getAllDeployments(messages []*central.MsgFromSensor) map[string]*central.Se
 				events[event.GetDeployment().GetId()] = event
 			}
 		}
-		// if event.GetPod() != nil {
-		//	if event.GetPod().GetId() != "" {
-		//		events[event.GetPod().GetId()] = event
-		//	}
-		//}
 	}
 	return events
 }
