@@ -114,6 +114,10 @@ type AdmissionControlComponentSpec struct {
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
 
 	// Should inline scanning be performed on previously unscanned images during a deployments admission review.
+    //
+    // Valid values are:
+    // - "DoNotScanInline" (default): to skip scanning the image when processing the admission request
+    // - "ScanIfMissing": if the scan results for the image are missing
 	//+kubebuilder:default=DoNotScanInline
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	ContactImageScanners *ImageScanPolicy `json:"contactImageScanners,omitempty"`
@@ -128,6 +132,10 @@ type AdmissionControlComponentSpec struct {
 	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
 
 	// Enables teams to bypass admission control in a monitored manner in the event of an emergency.
+    //
+    // Valid values are:
+    // - "BreakGlassAnnotation" (default): Enables bypassing admission control via the admission.stackrox.io/break-glass annotation
+    // - "Disabled": Disables bypassing admission control
 	//+kubebuilder:default=BreakGlassAnnotation
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6
 	Bypass *BypassPolicy `json:"bypass,omitempty"`
