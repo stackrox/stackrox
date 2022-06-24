@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"context"
+	"log"
 	"testing"
 
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
@@ -16,6 +17,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/rest"
 	k8sConfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -23,6 +25,17 @@ import (
 func MakeFakeClient() *ClientSet {
 	return &ClientSet{
 		k8s: fake.NewSimpleClientset(),
+	}
+}
+
+func MakeFakeClientFromRest(restConfig *rest.Config) *ClientSet {
+	client, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		log.Panicf("Creating Kubernetes clientset: %v", err)
+	}
+
+	return &ClientSet{
+		k8s: client,
 	}
 }
 
