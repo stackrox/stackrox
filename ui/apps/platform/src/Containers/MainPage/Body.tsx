@@ -129,7 +129,6 @@ type DependentRouteComponent = {
 type RouteComponent = IndependentRouteComponent | DependentRouteComponent;
 
 const routeComponents: RouteComponent[] = [
-    // Sidebar Unexpandable1
     {
         basePath: dashboardPath,
         component: AsyncDashboardPage,
@@ -154,7 +153,7 @@ const routeComponents: RouteComponent[] = [
         component: AsyncCompliancePage,
     },
 
-    // Sidebar VulnerabilityManagement
+    // Vulnerability Management
     // More specific paths must precede more generic path in React Router 5.1 but not in 6
     {
         basePath: vulnManagementRiskAcceptancePath,
@@ -169,7 +168,6 @@ const routeComponents: RouteComponent[] = [
         component: AsyncVulnMgmtPage,
     },
 
-    // Sidebar Unexpandable2
     {
         basePath: configManagementPath,
         component: AsyncConfigManagementPage,
@@ -180,7 +178,7 @@ const routeComponents: RouteComponent[] = [
         component: AsyncRiskPage,
     },
 
-    // Sidebar PlatformConfiguration
+    // Platform Configuration
     {
         basePath: clustersBasePath,
         propPath: clustersPathWithParam,

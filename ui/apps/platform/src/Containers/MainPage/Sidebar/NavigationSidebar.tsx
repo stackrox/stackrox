@@ -63,7 +63,7 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
     const filteredPathsPlatformConfiguration =
         unfilteredPathsPlatformConfiguration.filter(isRenderedRoutePath);
 
-    // Special case because nested nav items match only a subset of sub-routes.
+    // Special case for Vulnerability Management because nested nav items match only a subset of sub-routes.
     const isActiveVulnerabilityManagement = pathname.startsWith(vulnManagementPath);
     const isActivePlatformConfiguration = filteredPathsPlatformConfiguration.some(isActiveFilter);
 
