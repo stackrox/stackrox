@@ -461,3 +461,4 @@ bash openshift/central.sh
 
 [circleci-badge]: https://circleci.com/gh/stackrox/stackrox.svg?&style=shield&circle-token=eb5a0b87a6253b4c060d011bbfed4a2f1f516746
 [circleci-link]:  https://circleci.com/gh/stackrox/workflows/stackrox/tree/master
+
