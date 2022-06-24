@@ -1,4 +1,4 @@
-import { Severity } from 'services/AlertsService';
+import { PolicySeverity } from 'types/policy.proto';
 
 const colors = [
     'var(--primary-400)',
@@ -27,7 +27,7 @@ export const fileUploadColors = {
 
 export const defaultColorType = 'base';
 
-export const severityColors: Record<Severity, string> = {
+export const severityColors: Record<PolicySeverity, string> = {
     LOW_SEVERITY: 'var(--color-severity-low)',
     MEDIUM_SEVERITY: 'var(--color-severity-medium)',
     HIGH_SEVERITY: 'var(--color-severity-important)',

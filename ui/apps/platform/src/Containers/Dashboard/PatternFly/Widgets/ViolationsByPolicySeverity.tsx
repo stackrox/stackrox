@@ -26,7 +26,7 @@ function getViewAllLink(searchFilter: SearchFilter) {
     return `${violationsBasePath}${queryString}`;
 }
 
-const mostRecentAlertsQuery = gql`
+export const mostRecentAlertsQuery = gql`
     query mostRecentAlerts($query: String) {
         alerts: violations(
             query: $query
