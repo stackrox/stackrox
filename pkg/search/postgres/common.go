@@ -42,16 +42,23 @@ const (
 )
 
 func replaceVars(s string) string {
+	if len(s) == 0 {
+		return ""
+	}
 	varNum := 1
-	for i := 0; i < len(s)-1; i++ {
-		if s[i] == '$' && s[i+1] == '$' {
-			varStr := strconv.Itoa(varNum)
-			s = s[:i+1] + varStr + s[i+2:]
-			i += len(varStr)
+	var newString strings.Builder
+	newString.Grow(len(s))
+	for i := 0; i < len(s); i++ {
+		if i < len(s)-1 && s[i] == '$' && s[i+1] == '$' {
+			newString.WriteRune('$')
+			newString.WriteString(strconv.Itoa(varNum))
 			varNum++
+			i++
+		} else {
+			newString.WriteByte(s[i])
 		}
 	}
-	return s
+	return newString.String()
 }
 
 type innerJoin struct {
