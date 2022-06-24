@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -16,7 +17,12 @@ var (
 )
 
 type datastoreImpl struct {
-	storage store.Store
+	storage           store.Store
+	formattedSearcher search.Searcher
+}
+
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return ds.formattedSearcher.Search(ctx, q)
 }
 
 // GetImageIntegration is pass-through to the underlying store.

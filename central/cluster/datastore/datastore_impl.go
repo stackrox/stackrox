@@ -481,17 +481,23 @@ func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
-func (ds *datastoreImpl) RemoveImageIntegrationforCluster(ctx context.Context, id string) error {
-	if id == "" {
-		return errors.Wrap(errox.InvalidArgs, "image integration id must be provided")
-	}
-	if err := ds.datastore.RemoveImageIntegration(ctx, id); err != nil {
-		return err
-	}
+func (ds *datastoreImpl) removeImageIntegrationforCluster(ctx context.Context, cluster *storage.Cluster) error {
 
-	if err := ds.integrationManager.Remove(id); err != nil {
-		return err
-	}
+	//q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	//namespaces, err := ds.namespaceDataStore.Search(ctx, q)
+	//if err != nil {
+	//	log.Errorf("failed to get namespaces for removed cluster %s: %v", cluster.GetId(), err)
+	//}
+	//
+	//for _, namespace := range namespaces {
+	//	err = ds.namespaceDataStore.RemoveNamespace(ctx, namespace.ID)
+	//	if err != nil {
+	//		log.Errorf("failed to remove namespace %s in deleted cluster: %v", namespace.ID, err)
+	//	}
+	//}
+	//
+	//if error := nil
+	//return nil
 	return nil
 }
 

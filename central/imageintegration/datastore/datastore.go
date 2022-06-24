@@ -7,6 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -22,11 +23,13 @@ type DataStore interface {
 	AddImageIntegration(ctx context.Context, integration *storage.ImageIntegration) (string, error)
 	UpdateImageIntegration(ctx context.Context, integration *storage.ImageIntegration) error
 	RemoveImageIntegration(ctx context.Context, id string) error
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 }
 
 // New returns an instance of DataStore.
-func New(storage store.Store) DataStore {
+func New(storage store.Store, searcher search.Searcher) DataStore {
 	return &datastoreImpl{
-		storage: storage,
+		storage:           storage,
+		formattedSearcher: searcher,
 	}
 }
