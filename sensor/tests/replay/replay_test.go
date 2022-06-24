@@ -207,7 +207,7 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 				if e, ok := receivedDeployments[id]; !ok {
 					t.Error("Deployment not found")
 				} else {
-					assert.Equal(t, exp.GetDeployment().GetServiceAccountPermissionLevel(), e.GetDeployment().GetServiceAccountPermissionLevel(), "Pod id %s", id)
+					assert.Equal(t, exp.GetDeployment().GetServiceAccountPermissionLevel(), e.GetDeployment().GetServiceAccountPermissionLevel())
 					assert.Equal(t, exp.GetDeployment().GetPorts(), e.GetDeployment().GetPorts())
 					assert.Equal(t, exp.GetDeployment().GetName(), e.GetDeployment().GetName())
 					assert.Equal(t, exp.GetDeployment().GetNamespace(), e.GetDeployment().GetNamespace())
