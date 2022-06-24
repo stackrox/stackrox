@@ -10,6 +10,7 @@ set -euo pipefail
 
 check-pr-fixes() {
     set -xv
+    set +eo pipefail
     echo 'Ensure that all TODO references to fixed tickets are gone'
 
     echo "JOB_SPEC=[${JOB_SPEC:-MISSING JOB_SPEC}]"
