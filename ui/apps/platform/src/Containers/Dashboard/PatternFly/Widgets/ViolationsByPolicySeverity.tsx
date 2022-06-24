@@ -69,8 +69,10 @@ function ViolationsByPolicySeverity() {
         HIGH_SEVERITY: 0,
         CRITICAL_SEVERITY: 0,
     };
+    let totalCount = 0;
     severityCounts.forEach(({ severity, count }) => {
         counts[severity] = parseInt(count, 10);
+        totalCount += counts[severity];
     });
 
     return (
@@ -82,7 +84,11 @@ function ViolationsByPolicySeverity() {
             header={
                 <Flex direction={{ default: 'row' }}>
                     <FlexItem grow={{ default: 'grow' }}>
-                        <Title headingLevel="h2">## policy violations by severity</Title>
+                        <Title headingLevel="h2">
+                            {totalCount === 1
+                                ? `1 policy violation by severity`
+                                : `${totalCount} policy violations by severity`}
+                        </Title>
                     </FlexItem>
                     <FlexItem>
                         <Button
@@ -99,7 +105,7 @@ function ViolationsByPolicySeverity() {
             {severityCounts && recentAlertsData && (
                 <>
                     <PolicyViolationTiles searchFilter={searchFilter} counts={counts} />
-                    <Divider component='div' className="pf-u-my-lg"/>
+                    <Divider component="div" className="pf-u-my-lg" />
                     <MostRecentViolations alerts={recentAlertsData} />
                 </>
             )}
