@@ -1822,6 +1822,10 @@ class Kubernetes implements OrchestratorMain {
     */
 
     def createDeploymentNoWait(Deployment deployment) {
+        createDeploymentNoWaitRetry(deployment, 0, 10)
+    }
+
+    def createDeploymentNoWaitRetry(Deployment deployment, int retry, int maxRetries) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
         // Create service if needed
@@ -1852,21 +1856,28 @@ class Kubernetes implements OrchestratorMain {
                 )
         )
 
-        try {
-            client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-            log.debug "Told the orchestrator to createOrReplace " + deployment.name
-            if (deployment.createLoadBalancer) {
-                waitForLoadBalancer(deployment)
-            }
-            if (deployment.createRoute) {
-                createRoute(deployment.name, deployment.namespace)
-                deployment.routeHost = waitForRouteHost(deployment.name, deployment.namespace)
-            }
-            return true
-        } catch (Exception e) {
-            log.warn("Error creating k8s deployment: ",  e)
-            return false
+      try {
+        log.debug "Telling the orchestrator to createOrReplace " + deployment.name
+        client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
+        log.debug "Told the orchestrator to createOrReplace " + deployment.name
+        if (deployment.createLoadBalancer) {
+          waitForLoadBalancer(deployment)
         }
+        if (deployment.createRoute) {
+          createRoute(deployment.name, deployment.namespace)
+          deployment.routeHost = waitForRouteHost(deployment.name, deployment.namespace)
+        }
+        return true
+      } catch (io.fabric8.kubernetes.client.KubernetesClientException e) {
+        log.warn("Client returned exception when creating k8s deployment: ",  e)
+        if (retry >= maxRetries) {
+          return false
+        }
+        return  createDeploymentNoWaitRetry(deployment, retry+1, maxRetries)
+      } catch (Exception e) {
+        log.warn("Error creating k8s deployment: ",  e)
+        return false
+      }
     }
 
     def waitForDeploymentAndPopulateInfo(Deployment deployment) {
