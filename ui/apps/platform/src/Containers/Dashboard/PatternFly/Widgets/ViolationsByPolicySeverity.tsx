@@ -1,6 +1,6 @@
 import React from 'react';
 import { gql, useQuery } from '@apollo/client';
-import { Flex, FlexItem, Title, Button, Divider } from '@patternfly/react-core';
+import { Flex, FlexItem, Title, Button, Divider, Stack, StackItem } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useURLSearch from 'hooks/useURLSearch';
@@ -113,11 +113,13 @@ function ViolationsByPolicySeverity() {
             }
         >
             {severityCounts && recentAlertsData && (
-                <>
+                <Stack>
                     <PolicyViolationTiles searchFilter={searchFilter} counts={counts} />
                     <Divider component="div" className="pf-u-my-lg" />
-                    <MostRecentViolations alerts={recentAlertsData.alerts} />
-                </>
+                    <StackItem isFilled>
+                        <MostRecentViolations alerts={recentAlertsData.alerts} />
+                    </StackItem>
+                </Stack>
             )}
         </WidgetCard>
     );

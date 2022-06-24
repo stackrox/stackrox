@@ -24,7 +24,7 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
     if (alerts.length === 0) {
         return (
             <EmptyState variant={EmptyStateVariant.xs}>
-                <EmptyStateIcon icon={SearchIcon} />
+                <EmptyStateIcon className="pf-u-font-size-xl" icon={SearchIcon} />
                 <Title headingLevel="h4" size="md">
                     No critical violations were found in the selected scope
                 </Title>
