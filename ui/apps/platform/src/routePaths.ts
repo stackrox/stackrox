@@ -3,8 +3,8 @@
  */
 
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
-import useFeatureFlags, { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import usePermissions, { HasReadAccess } from 'hooks/usePermissions';
+import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import { HasReadAccess } from 'hooks/usePermissions';
 import { FeatureFlagEnvVar } from 'types/featureFlag';
 import { ResourceName } from 'types/roleResources';
 
@@ -272,17 +272,6 @@ export function getIsRenderedRoutePath(
 
         return readAccessPredicate(hasReadAccess);
     };
-}
-
-/*
- * Hook if caller does not need to have predicate functions in its scope.
- * It might be a moot point if pages need usePermissions and hasReadWriteAccess for conditional rendering of buttons.
- */
-export function useRenderedRoutePaths(): IsRenderedRoutePath {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const { hasReadAccess } = usePermissions();
-
-    return getIsRenderedRoutePath(hasReadAccess, isFeatureFlagEnabled);
 }
 
 /*
