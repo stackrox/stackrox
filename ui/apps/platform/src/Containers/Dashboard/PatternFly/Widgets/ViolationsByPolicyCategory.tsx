@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Dropdown,
@@ -23,6 +23,7 @@ import {
     getInteractiveLegendItemStyles,
 } from '@patternfly/react-charts';
 import sortBy from 'lodash/sortBy';
+import cloneDeep from 'lodash/cloneDeep';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import { AlertGroup } from 'services/AlertsService';
@@ -154,6 +155,14 @@ function ViolationsByPolicyCategoryChart({
         [searchFilter]
     );
 
+    // This widget uses a theme with the legend order in the opposite direction
+    // of the PatternFly defaults
+    const chartTheme = useMemo(() => {
+        const theme = cloneDeep(patternflySeverityTheme);
+        theme.legend.colorScale.reverse();
+        return theme;
+    }, []);
+
     const filteredAlertGroups = zeroOutFilteredSeverities(alertGroups, hiddenSeverities);
     const sortedAlertGroups =
         sortType === 'Severity'
@@ -189,12 +198,14 @@ function ViolationsByPolicyCategoryChart({
     });
 
     function getLegendData() {
-        return policySeverities.map((severity) => {
+        const legendData = policySeverities.map((severity) => {
             return {
                 name: severityLabels[severity],
                 ...getInteractiveLegendItemStyles(hiddenSeverities.has(severity)),
             };
         });
+        legendData.reverse();
+        return legendData;
     }
 
     function onLegendClick({ index }: { index: number }) {
@@ -231,7 +242,7 @@ function ViolationsByPolicyCategoryChart({
                     left: 180, // left padding is dependent on the length of the text on the left axis
                     bottom: 55, // Adjusted to accommodate legend
                 }}
-                theme={patternflySeverityTheme}
+                theme={chartTheme}
             >
                 <ChartAxis
                     tickLabelComponent={<LinkableChartLabel linkWith={labelLinkCallback} />}

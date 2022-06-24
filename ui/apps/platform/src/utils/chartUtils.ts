@@ -18,11 +18,11 @@ export const patternflySeverityTheme = {
     ...defaultTheme,
     stack: {
         ...defaultTheme.stack,
-        colorScale: severityColorScale,
+        colorScale: [...severityColorScale],
     },
     legend: {
         ...defaultTheme.legend,
-        colorScale: severityColorScale,
+        colorScale: [...severityColorScale],
     },
     tooltip: {
         style: {
