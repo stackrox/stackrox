@@ -206,7 +206,6 @@ func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker S
 
 type pgSearchHelper struct {
 	resourceMD          permissions.ResourceMetadata
-	optionsMap          search.OptionsMap
 	scopeCheckerFactory scopeCheckerFactory
 }
 

@@ -3,6 +3,8 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "google/protobuf/timestamp.proto";
+
 package storage;
 
 message LoginNotice {
@@ -43,6 +45,13 @@ message AlertRetentionConfig {
     int32 attempted_runtime_retention_duration_days = 5;
 }
 
+// next available tag: 4
+message DecommissionedClusterRetentionConfig {
+    int32 retention_duration_days              = 1;
+    map<string, string> ignore_cluster_labels  = 2;
+    google.protobuf.Timestamp last_updated     = 3;
+}
+
 // next available tag: 6
 message PrivateConfig {
     oneof alert_retention {
@@ -52,7 +61,7 @@ message PrivateConfig {
     }
     int32                    image_retention_duration_days                  = 2;
     int32                    expired_vuln_req_retention_duration_days       = 4;
-    int32                    decommissioned_cluster_retention_duration_days = 5;
+    DecommissionedClusterRetentionConfig decommissioned_cluster_retention   = 5;
 }
 
 

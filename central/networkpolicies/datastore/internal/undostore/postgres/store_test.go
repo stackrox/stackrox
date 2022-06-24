@@ -81,6 +81,8 @@ func (s *NetworkpolicyapplicationundorecordsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNetworkPolicyApplicationUndoRecord)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, networkPolicyApplicationUndoRecord))
 	foundNetworkPolicyApplicationUndoRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoRecord.GetClusterId())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *NetworkpolicyapplicationundorecordsStoreSuite) TestStore() {
 	networkPolicyApplicationUndoRecordCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, networkPolicyApplicationUndoRecordCount)
+	networkPolicyApplicationUndoRecordCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(networkPolicyApplicationUndoRecordCount)
 
 	networkPolicyApplicationUndoRecordExists, err := store.Exists(ctx, networkPolicyApplicationUndoRecord.GetClusterId())
 	s.NoError(err)
 	s.True(networkPolicyApplicationUndoRecordExists)
 	s.NoError(store.Upsert(ctx, networkPolicyApplicationUndoRecord))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, networkPolicyApplicationUndoRecord), sac.ErrResourceAccessDenied)
 
 	foundNetworkPolicyApplicationUndoRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoRecord.GetClusterId())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *NetworkpolicyapplicationundorecordsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkPolicyApplicationUndoRecord)
+	s.NoError(store.Delete(withNoAccessCtx, networkPolicyApplicationUndoRecord.GetClusterId()))
 
 	var networkPolicyApplicationUndoRecords []*storage.NetworkPolicyApplicationUndoRecord
 	for i := 0; i < 200; i++ {

@@ -1909,7 +1909,7 @@ class Kubernetes implements OrchestratorMain {
                 log.debug "Took ${t.SecondsSince()} seconds for k8s deployment ${deploymentName}"
                 return d.getMetadata().getUid()
             }
-            log.debug "${d.getStatus().getReadyReplicas()}/" +
+            log.debug "${d.getStatus().getReadyReplicas() ?: 0}/" +
                     "${d.getSpec().getReplicas()} are in the ready state for ${deploymentName}"
         }
     }

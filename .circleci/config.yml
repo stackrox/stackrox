@@ -385,9 +385,10 @@ restoreDB: &restoreDB
   run:
     name: Restore DB
     command: |
-      # TODO ROX-10087 figure out how to make it work for rocks and postgres
       if [ -z "${ROX_POSTGRES_DATASTORE}" ] || [ "${ROX_POSTGRES_DATASTORE}" == "false" ]; then
         roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore `ls -t central-backup/stackrox_db_* |head -n1`
+      else
+        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore `ls -t central-backup/postgres_db_* |head -n1`
       fi
 
 getPrometheusMetricParser: &getPrometheusMetricParser
@@ -482,7 +483,20 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.41
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.42
+        auth:
+          username: $QUAY_RHACS_ENG_RO_USERNAME
+          password: $QUAY_RHACS_ENG_RO_PASSWORD
+    working_directory: /go/src/github.com/stackrox/rox
+
+  kubectl-client-1-23:
+    parameters:
+      resource_class:
+        type: string
+        default: medium
+    resource_class: << parameters.resource_class >>
+    docker:
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.35 # do not auto upgrade
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -802,28 +816,6 @@ commands:
         command: |
           git submodule update --init
 
-  check-docs-step:
-    parameters:
-      only-on-release:
-        type: boolean
-    steps:
-    - run:
-        name: Verify that docs are up to date
-        command: |
-          source scripts/ci/lib.sh
-          check_docs "${CIRCLE_TAG:-}" "<< parameters.only-on-release >>"
-
-  check-scanner-and-collector-release-step:
-    parameters:
-      fail-on-rc:
-        type: boolean
-    steps:
-    - run:
-        name: Check on release builds that COLLECTOR_VERSION and SCANNER_VERSION are release
-        command: |
-          source scripts/ci/lib.sh
-          check_scanner_and_collector "<< parameters.fail-on-rc >>"
-
   setup-go-build-env:
     steps:
       - run:
@@ -873,6 +865,39 @@ commands:
 
           when: always
 
+  continue-when-in-a-pr-or-nightly-context:
+    steps:
+      - run:
+          name: Continue when in a PR or nightly build context
+          command: |
+            if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
+              echo "This is a PR, will continue with the remaining steps in this job"
+              exit 0
+            fi
+            if .circleci/is-nightly-tag.sh; then
+              echo "This is a nightly build, will continue with the remaining steps in this job"
+              exit 0
+            fi
+            echo "This is not a PR, will skip the remaining steps in this job"
+            circleci step halt
+
+  poll-for-builds-when-not-in-a-pr-or-nightly-context:
+    steps:
+      - run:
+          name: Poll for builds from OpenShift CI when not in a PR or nightly context
+          command: |
+            if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
+              echo "This is a PR, will continue with the remaining steps in this job"
+              exit 0
+            fi
+            if .circleci/is-nightly-tag.sh; then
+              echo "This is a nightly build, will continue with the remaining steps in this job"
+              exit 0
+            fi
+            source scripts/ci/lib.sh
+            poll_for_system_test_images 3600
+            echo "The required images were built"
+
   pre-build-ui:
     parameters:
       branding:
@@ -880,6 +905,7 @@ commands:
         default: stackrox
     steps:
       - checkout
+      - continue-when-in-a-pr-or-nightly-context
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-npm-deps-cache
@@ -932,10 +958,8 @@ commands:
   build:
     steps:
       - checkout-with-submodules
-      - check-docs-step:
-          only-on-release: true
-      - check-scanner-and-collector-release-step:
-          fail-on-rc: false
+      - poll-for-builds-when-not-in-a-pr-or-nightly-context
+      - continue-when-in-a-pr-or-nightly-context
 
       - setup_remote_docker:
           version: << pipeline.parameters.docker_version >>
@@ -1161,7 +1185,7 @@ commands:
       - run:
           name: Destroy OpenShift 4 cluster
           environment:
-            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.18-35-gdd80648215-snapshot
+            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.26
           command: |
             if [ ! -d "$PWD/<< parameters.cluster-name >>" ]; then
               echo "OpenShift 4 Cluster not created (due to missing artifacts), skipping destroy."
@@ -1240,7 +1264,7 @@ commands:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.26 \
               aws destroy
 
   destroy-osd-gcp-cluster:
@@ -1264,7 +1288,7 @@ commands:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e GCP_SA_CREDS_JSON_BASE64="$GCP_SA_CREDS_JSON_BASE64" \
               -e GCP_PROJECT="srox-temp-dev-test" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.26 \
               gcp destroy
 
 
@@ -1388,13 +1412,6 @@ commands:
           command: |
             ./scripts/ci/create-default-psp.sh
 
-  deploy-authz-plugin:
-    steps:
-      - run:
-          name: Deploy Default Authorization Plugin
-          command: |
-            ./scripts/ci/create-scopedaccessserver.sh
-
   deploy-clair:
     parameters:
       cluster-id:
@@ -1502,12 +1519,12 @@ commands:
 
       - deploy-default-psp
       - deploy-webhook-server
-      - deploy-authz-plugin
 
       - *getECRDockerPullPassword
       - *restoreGradle
       - run:
           name: QA Automation Platform Part 1
+          no_output_timeout: 15m
           command: |
             if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
               export CLUSTER=OPENSHIFT
@@ -1540,6 +1557,7 @@ commands:
 
       - run:
           name: QA Automation Platform Part 2
+          no_output_timeout: 15m
           command: |
             if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
               export CLUSTER=OPENSHIFT
@@ -1846,7 +1864,6 @@ commands:
             oc -n stackrox label --overwrite svc sensor kicked="$(date +'%s')"
 
       - deploy-webhook-server
-      - deploy-authz-plugin
 
       - *getECRDockerPullPassword
       - *restoreGradle
@@ -2207,7 +2224,7 @@ commands:
       - run:
           name: Create OpenShift 4 cluster
           environment:
-          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.18-35-gdd80648215-snapshot
+          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.26
           - GCP_PROJECT: stackrox-ci
           command: |
             mkdir $PWD/<< parameters.cluster-name >>
@@ -2253,8 +2270,6 @@ jobs:
             # Cannot use .circleci/is-nightly-tag.sh because this job doesn't have access to git
             if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
               webhook_url="$NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK"
-            elif [[ "$CIRCLE_TAG" =~ << pipeline.parameters.release_rc_tag_bash_regex >> ]]; then
-              webhook_url="$RELEASE_WORKFLOW_NOTIFY_WEBHOOK"
             else
               exit 0
             fi
@@ -2267,7 +2282,7 @@ jobs:
 
   go-postgres-tests:
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.41
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.42
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -2285,26 +2300,6 @@ jobs:
           make go-postgres-unit-tests
     - post-go-unit-tests:
         path: go-unit-release-junit-reports
-
-  # This job checks that the docs/content submodule is pointing to the correct branch in the openshift-docs repo,
-  # and that it is up-to-date. It only runs on RC builds, and is primarily intended as a reminder for the release
-  # manager to inquire about docs and, if available, update the submodule pointer.
-  check-docs-job:
-    executor: custom
-    resource_class: small
-    steps:
-    - checkout-with-submodules
-    - check-docs-step:
-        only-on-release: false
-
-  # This serves as a reminder for the release manager to make sure Scanner and Collector versions are set to release.
-  check-scanner-and-collector-release-job:
-    executor: custom
-    resource_class: small
-    steps:
-    - checkout
-    - check-scanner-and-collector-release-step:
-        fail-on-rc: true
 
   check-generated-files-up-to-date:
     executor: custom
@@ -2354,70 +2349,6 @@ jobs:
             echo 'needs to change due to formatting changes in the generated files.'
             git diff --exit-code HEAD
 
-  check-policy-files-up-to-date:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-
-      - restore-go-mod-cache
-      - setup-go-build-env
-
-      - run:
-          name: Ensure all JSON policies in "./pkg/defaults/policies/" are of latest version. (If this fails, run `policyutil` on failed policies and commit the result.)
-          command: |
-            make deps
-            make policyutil
-            policyutil upgrade -d pkg/defaults/policies/files -o /tmp/policies-in-standard-form --ensure-read-only mitre --ensure-read-only criteria
-            diff pkg/defaults/policies/files /tmp/policies-in-standard-form > /tmp/policies-diff
-            if [[ -s /tmp/policies-diff ]]; then
-              echo 'Found policies that are not in standard form. Check "policies-diff" for affected policies; use "policyutil" to fix them.'
-              cat /tmp/policies-diff
-              exit 1
-            fi
-
-      - ci-artifacts/store:
-          path: /tmp/policies-diff
-          destination: policies-diff
-
-  check-mitre-attack-bundle-up-to-date:
-    executor: custom
-    resource_class: small
-    steps:
-      - run:
-          name: Skipping until ROX-8486 is resolved
-          command: |
-            echo "Skipping until ROX-8486 is resolved"
-            circleci step halt
-
-      - run:
-          name: Determine whether to skip MITRE ATT&CK bundle check
-          command: |
-            if [[ -z "${CIRCLE_TAG}" ]]; then
-              echo "Not a tagged build, skipping MITRE ATT&CK bundle check"
-              circleci step halt
-            fi
-
-      - checkout
-      - restore-go-mod-cache
-      - setup-go-build-env
-
-      - run:
-          name: Ensure MITRE ATT&CK bundle at "./pkg/mitre/files/mitre.json" is up-to-date. (If this fails, run `mitreutil fetch` and commit the result.)
-          command: |
-            make deps
-            make mitre
-            mitre fetch --domain enterprise --out /tmp/enterprise-mitre.json
-            diff pkg/mitre/files/mitre.json /tmp/enterprise-mitre.json > /tmp/mitre-diff
-            if [[ -s /tmp/mitre-diff ]]; then
-              echo 'MITRE ATT&CK bundle at 'pkg/mitre/files/mitre.json' is not up-to-date. Check "mitre-diff" for more informtaion.'
-              cat /tmp/mitre-diff
-              exit 1
-            fi
-      - ci-artifacts/store:
-          path: /tmp/mitre-diff
-          destination: mitre-diff
-
   designated-image-tests:
 
     ###
@@ -2451,14 +2382,14 @@ jobs:
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: ebpf
       - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
+      - POD_SECURITY_POLICIES: "false"
       - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - LOAD_BALANCER: none
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - AUTH0_SUPPORT: false
+      - ROX_DEV_AUTH0_CLIENT_SECRET: ""
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
 
     steps:
@@ -2518,7 +2449,6 @@ jobs:
 
       - deploy-default-psp
       - deploy-webhook-server
-      - deploy-authz-plugin
 
       - *getECRDockerPullPassword
       - *restoreGradle
@@ -2868,7 +2798,7 @@ jobs:
     resource_class: small
     environment:
       - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
+      - POD_SECURITY_POLICIES: "false"
     steps:
       - checkout
       - check-backend-changes
@@ -2989,7 +2919,7 @@ jobs:
           version: 0.2.11-1-geb3414898d
 
   provision-eks-api-e2e-tests:
-    executor: custom
+    executor: kubectl-client-1-23
     resource_class: small
     environment:
       - EKS_AUTOMATION_VERSION: 0.2.17
@@ -3237,7 +3167,7 @@ jobs:
     resource_class: small
     environment:
       GCP_IMAGE_TYPE: "COS"
-      POD_SECURITY_POLICIES: "true"
+      POD_SECURITY_POLICIES: "false"
     steps:
       - checkout
       - check-backend-changes
@@ -3285,6 +3215,7 @@ jobs:
       - SENSOR_HELM_DEPLOY: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
+      - ROX_DECOMMISSIONED_CLUSTER_RETENTION: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
       - ROX_NETPOL_FIELDS: true
       - ROX_NEW_POLICY_CATEGORIES: true
@@ -3373,14 +3304,14 @@ jobs:
           name: Setup for proxy tests
           command: |
             source tests/e2e/run.sh
-            setup_proxy_tests
+            setup_proxy_tests "central-proxy.stackrox.local"
             cci-export PROXY_CERTS_DIR "$PROXY_CERTS_DIR"
 
       - run:
           name: Run proxy tests
           command: |
             source tests/e2e/run.sh
-            run_proxy_tests
+            run_proxy_tests "central-proxy.stackrox.local"
 
       - collect-k8s-logs
       - get-and-store-debug-dump
@@ -3439,6 +3370,7 @@ jobs:
       - SCANNER_SUPPORT: true
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
+      - ROX_DECOMMISSIONED_CLUSTER_RETENTION: true
       - ROX_SYSTEM_HEALTH_PF: true
       - ROX_POLICIES_PATTERNFLY: true
       - ROX_NEW_POLICY_CATEGORIES: true
@@ -3735,7 +3667,7 @@ jobs:
           version: 0.2.11-1-geb3414898d
 
   eks-api-e2e-tests:
-    executor: custom
+    executor: kubectl-client-1-23
     environment:
       - EKS_AUTOMATION_VERSION: 0.2.17
       - LOCAL_PORT: 8000
@@ -3789,7 +3721,6 @@ jobs:
             - *setupClientTLSCerts
 
       - deploy-webhook-server
-      - deploy-authz-plugin
 
       - *getECRDockerPullPassword
       - *restoreGradle
@@ -4112,21 +4043,6 @@ jobs:
   # Post-build jobs to handle built artifacts (like tag, scan and publish images)
   ###
 
-  mark-collector-release:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "7f:08:58:1e:80:80:6e:66:99:9a:37:cb:e9:96:0b:40"
-
-      - run:
-          name: Open a collector PR to add this release to RELEASED_VERSIONS
-          command: |
-            source scripts/ci/lib.sh
-            mark_collector_release "${CIRCLE_TAG}" "${CIRCLE_USERNAME}"
-
   push-release:
     executor: custom
     resource_class: small
@@ -4286,7 +4202,7 @@ jobs:
             git commit --allow-empty -m "Nightly build $(date)"
             NIGHTLY_TAG="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-$(date '+%Y%m%d')"
             git tag "$NIGHTLY_TAG"
-            git push origin "$NIGHTLY_TAG"
+            git push origin --follow-tags
 
       - run:
           name: Remove tags more than 3 days old
@@ -4394,7 +4310,7 @@ jobs:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.26 \
               aws create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
@@ -4427,7 +4343,7 @@ jobs:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e GCP_SA_CREDS_JSON_BASE64="$GCP_SA_CREDS_JSON_BASE64" \
               -e GCP_PROJECT="srox-temp-dev-test" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.26 \
               gcp create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
@@ -4619,10 +4535,6 @@ workflows:
           context: custom-executor-pull
       - check-generated-files-up-to-date:
           <<: *runOnAllTagsWithQuayIOPullCtx
-      - check-policy-files-up-to-date:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - check-mitre-attack-bundle-up-to-date:
-          <<: *runOnAllTagsWithQuayIOPullCtx
       - go-postgres-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-create-parameters:
@@ -4795,14 +4707,6 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - pre-build-cli
-      - mark-collector-release:
-          <<: *runOnlyOnReleaseBuilds
-          context:
-            - custom-executor-pull
-          requires:
-            - build-stackrox
-            - build-rhacs
-            - push-release
 
       - provision-openshift-rosa-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -4820,15 +4724,6 @@ workflows:
           context:
             - osd-cluster-manager
             - quay-rhacs-eng-readonly
-
-      - check-docs-job:
-          <<: *runOnlyOnReleaseCandidateBuilds
-          context:
-          - custom-executor-pull
-      - check-scanner-and-collector-release-job:
-          <<: *runOnlyOnReleaseCandidateBuilds
-          context:
-          - custom-executor-pull
 
       - provision-openshift-aro-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx

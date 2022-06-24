@@ -3,7 +3,7 @@ package probeupload
 import "regexp"
 
 var (
-	moduleNameRegexStr = `(?:[0-9a-f]{64}|\d+\.\d+\.\d+)`
+	moduleNameRegexStr = `(?:[0-9a-f]{64}|\d+\.\d+\.\d+(?:-rc\d+)?)`
 	moduleNameRegex    = regexp.MustCompile(`^` + moduleNameRegexStr + `$`)
 
 	probeNameRegexStr = `collector-(?:ebpf-\d+\.[^/]+\.o|\d+\.[^/]+\.ko)\.gz`

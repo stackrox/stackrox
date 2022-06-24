@@ -40,6 +40,8 @@ var (
 	Image               = newResourceMetadata("Image", permissions.NamespaceScope)
 	// SAC check is not performed directly on ImageComponent resource. It exists here for postgres sac generation to pass.
 	ImageComponent = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
+	// SAC check is not performed directly on ImageCVE resource. It exists here for postgres sac generation to pass.
+	ImageCVE = newResourceMetadata("ImageCVE", permissions.NamespaceScope)
 
 	InstallationInfo = newResourceMetadata("InstallationInfo", permissions.GlobalScope)
 
@@ -173,14 +175,6 @@ func newDeprecatedResourceMetadataWithFeatureFlag(name permissions.Resource, sco
 		disabledResourceToMetadata[name] = md
 	}
 	return md
-}
-
-func newInternalResourceMetadata(name permissions.Resource,
-	scope permissions.ResourceScope) permissions.ResourceMetadata {
-	return permissions.ResourceMetadata{
-		Resource: name,
-		Scope:    scope,
-	}
 }
 
 // ListAll returns a list of all resources.

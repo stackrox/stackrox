@@ -21,8 +21,8 @@ func init() {
 		schema.AddType("ImageVulnerability",
 			append(commonVulnerabilitySubResolvers,
 				"activeState(query: String): ActiveState",
-				"componentCount(query: String): Int!",
-				"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
+				"imageComponentCount(query: String): Int!",
+				"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 				"effectiveVulnerabilityRequest: VulnerabilityRequest",
 				"deploymentCount(query: String): Int!",
 				"deployments(query: String, pagination: Pagination): [Deployment!]!",
@@ -42,8 +42,8 @@ type ImageVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
 	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
-	Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error)
-	ComponentCount(ctx context.Context, args RawQuery) (int32, error)
+	ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error)
+	ImageComponentCount(ctx context.Context, args RawQuery) (int32, error)
 	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
@@ -56,7 +56,7 @@ type ImageVulnerabilityResolver interface {
 func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerability")
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.vulnerabilityV2(ctx, args)
+		return resolver.imageVulnerabilityV2(ctx, args)
 	}
 	// TODO add postgres support
 	return nil, errors.New("Resolver ImageVulnerability does not support postgres yet")
@@ -66,7 +66,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
 	if !features.PostgresDatastore.Enabled() {
-		query := withImageTypeFiltering(q.String())
+		query := withImageCveTypeFiltering(q.String())
 		return resolver.imageVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 	}
 	// TODO add postgres support
@@ -77,7 +77,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
 	if !features.PostgresDatastore.Enabled() {
-		query := withImageTypeFiltering(args.String())
+		query := withImageCveTypeFiltering(args.String())
 		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 	}
 	// TODO add postgres support
@@ -88,16 +88,16 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
 	if !features.PostgresDatastore.Enabled() {
-		query := withImageTypeFiltering(args.String())
+		query := withImageCveTypeFiltering(args.String())
 		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
 	}
 	// TODO add postgres support
 	return nil, errors.New("Resolver ImageVulnCounter does not support postgres yet")
 }
 
-// withImageTypeFiltering adds a conjunction as a raw query to filter vulnerability type by image
+// withImageCveTypeFiltering adds a conjunction as a raw query to filter vulnerability type by image
 // this is needed to support pre postgres requests
-func withImageTypeFiltering(q string) string {
+func withImageCveTypeFiltering(q string) string {
 	return search.AddRawQueriesAsConjunction(q,
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_IMAGE_CVE.String()).Query())
 }

@@ -117,13 +117,22 @@ export function isCompleteSearchFilter(searchFilter: SearchFilter) {
     );
 }
 
+/**
+ * Type Guard to determine if a 2-tuple SearchFilter entry contains a non-empty value
+ */
+function isNonEmptySearchEntry<Key>(
+    entry: [Key, string | string[] | undefined]
+): entry is [Key, string | string[]] {
+    return typeof entry[1] !== 'undefined' && entry[1].length !== 0;
+}
+
 /*
  * Return request query string for search filter. Omit filter criterion:
  * If option does not have value.
  */
 export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter): string {
     return Object.entries(searchFilter)
-        .filter(([, value]) => value.length !== 0)
+        .filter(isNonEmptySearchEntry)
         .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
         .join('+');
 }
@@ -139,4 +148,27 @@ export function getUrlQueryStringForSearchFilter(
             encodeValuesOnly: true,
         }
     );
+}
+
+/**
+ * Helper function to flatten the value from a `SearchFilter` into a single Array.
+ * Array state values stored in the URL are coerced into a singular `string` if they contain
+ * one item, or are `undefined` if the key is not part of the `SearchFilter`.
+ *
+ * @param value The `SearchFilter` value to flatten.
+ * @param fallback Fallback value to use if `value` is undefined. Typically this will be an empty array.
+ *
+ * @returns A one-dimensional array of strings, or the `fallback` value if input is undefined
+ */
+export function flattenFilterValue<UndefinedFallback>(
+    value: string | string[] | undefined,
+    fallback: UndefinedFallback
+): string[] | UndefinedFallback {
+    if (typeof value === 'undefined') {
+        return fallback;
+    }
+    if (Array.isArray(value)) {
+        return value;
+    }
+    return [value];
 }

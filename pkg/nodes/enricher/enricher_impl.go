@@ -15,7 +15,7 @@ import (
 )
 
 type enricherImpl struct {
-	cves cveSuppressor
+	cves CVESuppressor
 
 	lock     sync.RWMutex
 	scanners map[string]types.NodeScannerWithDataSource
@@ -99,13 +99,6 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.N
 	scanStartTime := time.Now()
 	scan, err := scanner.GetNodeScan(node)
 
-	if features.PostgresDatastore.Enabled() {
-		fillV2NodeVulnerabilities(node)
-		for _, component := range node.GetScan().GetComponents() {
-			component.Vulns = nil
-		}
-	}
-
 	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
 	if err != nil {
 		return errors.Wrapf(err, "Error scanning '%s:%s' with scanner %q", node.GetClusterName(), node.GetName(), scanner.Name())
@@ -115,6 +108,12 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.N
 	}
 
 	node.Scan = scan
+	if features.PostgresDatastore.Enabled() {
+		fillV2NodeVulnerabilities(node)
+		for _, component := range node.GetScan().GetComponents() {
+			component.Vulns = nil
+		}
+	}
 	FillScanStats(node)
 
 	return nil

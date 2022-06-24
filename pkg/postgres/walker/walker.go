@@ -8,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoreflect"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -221,18 +222,30 @@ func getProtoBufName(protoBufTag string) string {
 	return ""
 }
 
-func getSearchOptions(ctx context, searchTag string) SearchField {
+func getSearchOptions(ctx context, searchTag string) (SearchField, []DerivedSearchField) {
 	ignored := searchTag == "-"
 	if ignored || searchTag == "" {
 		return SearchField{
 			Ignored: ignored,
+		}, nil
+	}
+	field := stringutils.GetUpTo(searchTag, ",")
+
+	var derivedSearchFields []DerivedSearchField
+	derivedSearchFieldsMap := search.GetFieldsDerivedFrom(field)
+	if len(derivedSearchFieldsMap) > 0 {
+		derivedSearchFields = make([]DerivedSearchField, 0, len(derivedSearchFieldsMap))
+		for fieldName, derivationType := range derivedSearchFieldsMap {
+			derivedSearchFields = append(derivedSearchFields, DerivedSearchField{
+				FieldName:      fieldName,
+				DerivationType: derivationType,
+			})
 		}
 	}
-	fields := strings.Split(searchTag, ",")
 	return SearchField{
-		FieldName: fields[0],
+		FieldName: field,
 		Enabled:   !ctx.searchDisabled,
-	}
+	}, derivedSearchFields
 }
 
 var simpleFieldsMap = map[reflect.Kind]DataType{
@@ -270,14 +283,15 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			continue
 		}
 
-		searchOpts := getSearchOptions(ctx, structField.Tag.Get("search"))
+		searchOpts, derivedFields := getSearchOptions(ctx, structField.Tag.Get("search"))
 		field := Field{
-			Schema:       schema,
-			Name:         structField.Name,
-			ProtoBufName: getProtoBufName(structField.Tag.Get("protobuf")),
-			Search:       searchOpts,
-			Type:         structField.Type.String(),
-			Options:      opts,
+			Schema:              schema,
+			Name:                structField.Name,
+			ProtoBufName:        getProtoBufName(structField.Tag.Get("protobuf")),
+			Search:              searchOpts,
+			DerivedSearchFields: derivedFields,
+			Type:                structField.Type.String(),
+			Options:             opts,
 			ObjectGetter: ObjectGetter{
 				value: ctx.Getter(structField.Name),
 			},

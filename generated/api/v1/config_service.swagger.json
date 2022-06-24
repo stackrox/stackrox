@@ -214,6 +214,26 @@
         }
       }
     },
+    "storageDecommissionedClusterRetentionConfig": {
+      "type": "object",
+      "properties": {
+        "retentionDurationDays": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ignoreClusterLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "next available tag: 4"
+    },
     "storageLoginNotice": {
       "type": "object",
       "properties": {
@@ -244,9 +264,8 @@
           "type": "integer",
           "format": "int32"
         },
-        "decommissionedClusterRetentionDurationDays": {
-          "type": "integer",
-          "format": "int32"
+        "decommissionedClusterRetention": {
+          "$ref": "#/definitions/storageDecommissionedClusterRetentionConfig"
         }
       },
       "title": "next available tag: 6"

@@ -26,11 +26,11 @@ func init() {
 		schema.AddExtraResolvers("Namespace", []string{
 			"cluster: Cluster!",
 			"complianceResults(query: String): [ControlResult!]!",
-			"componentCount(query: String): Int!",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
 			"deploymentCount(query: String): Int!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
 			"failingPolicyCounter(query: String): PolicyCounter",
+			"imageComponentCount(query: String): Int!",
+			"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 			"imageCount(query: String): Int!",
 			"images(query: String, pagination: Pagination): [Image!]!",
 			"imageVulnerabilityCount(query: String): Int!",
@@ -39,7 +39,7 @@ func init() {
 			"k8sRoleCount(query: String): Int!",
 			"k8sRoles(query: String, pagination: Pagination): [K8SRole!]!",
 			"latestViolation(query: String): Time",
-			"plottedVulns(query: String): PlottedVulnerabilities!",
+			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"policies(query: String, pagination: Pagination): [Policy!]!",
 			"policyCount(query: String): Int!",
 			"policyStatus(query: String): PolicyStatus!",
@@ -61,11 +61,17 @@ func init() {
 				"@deprecated(reason: \"use 'imageVulnerabilityCounter'\")",
 			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! " +
 				"@deprecated(reason: \"use 'imageVulnerabilities'\")",
+			"componentCount(query: String): Int!" +
+				"@deprecated(reason: \"use 'imageComponentCount'\")",
+			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!" +
+				"@deprecated(reason: \"use 'imageComponents'\")",
+			"plottedVulns(query: String): PlottedVulnerabilities!" +
+				"@deprecated(reason: \"use 'plottedImageVulnerabilities'\")",
 		}),
-		schema.AddQuery("namespaces(query: String, pagination: Pagination): [Namespace!]!"),
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
 		schema.AddQuery("namespaceCount(query: String): Int!"),
+		schema.AddQuery("namespaces(query: String, pagination: Pagination): [Namespace!]!"),
 	)
 }
 
@@ -487,6 +493,23 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 				AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
 }
 
+func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageComponents")
+	return resolver.root.ImageComponents(resolver.namespaceScopeContext(ctx), args)
+}
+
+func (resolver *namespaceResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageComponents")
+	return resolver.root.ImageComponentCount(resolver.namespaceScopeContext(ctx), args)
+}
+
+func (resolver *namespaceResolver) namespaceScopeContext(ctx context.Context) context.Context {
+	return scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NAMESPACES,
+		ID:    resolver.data.GetMetadata().GetId(),
+	})
+}
+
 func (resolver *namespaceResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Components")
 
@@ -688,6 +711,12 @@ func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args Raw
 func (resolver *namespaceResolver) PlottedVulns(ctx context.Context, args PaginatedQuery) (*PlottedVulnerabilitiesResolver, error) {
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
+}
+
+// PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
+func (resolver *namespaceResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PlottedImageVulnerabilities")
+	return newPlottedImageVulnerabilitiesResolver(resolver.namespaceScopeContext(ctx), resolver.root, args)
 }
 
 func (resolver *namespaceResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

@@ -1,6 +1,7 @@
 package listener
 
 import (
+	"io"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -28,6 +29,7 @@ type listenerImpl struct {
 	configHandler      config.Handler
 	detector           detector.Detector
 	resyncPeriod       time.Duration
+	traceWriter        io.Writer
 }
 
 func (k *listenerImpl) Start() error {

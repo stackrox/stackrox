@@ -94,6 +94,9 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 	networkPolicyCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, networkPolicyCount)
+	networkPolicyCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(networkPolicyCount)
 
 	networkPolicyExists, err := store.Exists(ctx, networkPolicy.GetId())
 	s.NoError(err)
@@ -111,6 +114,7 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkPolicy)
+	s.NoError(store.Delete(withNoAccessCtx, networkPolicy.GetId()))
 
 	var networkPolicys []*storage.NetworkPolicy
 	for i := 0; i < 200; i++ {

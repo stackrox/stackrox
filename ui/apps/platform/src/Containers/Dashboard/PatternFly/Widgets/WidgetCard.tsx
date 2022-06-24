@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Skeleton, Card } from '@patternfly/react-core';
+import { Skeleton, Card, CardBody, CardHeader } from '@patternfly/react-core';
 
 import { defaultChartHeight } from 'utils/chartUtils';
 import WidgetErrorEmptyState from './WidgetErrorEmptyState';
@@ -29,9 +29,11 @@ function WidgetCard({ isLoading, error, header, children }: WidgetCardProps) {
     }
 
     return (
-        <Card>
-            {header}
-            {cardContent}
+        <Card className="pf-u-h-100">
+            <CardHeader>
+                <div className="pf-u-flex-grow-1">{header}</div>
+            </CardHeader>
+            <CardBody>{cardContent}</CardBody>
         </Card>
     );
 }

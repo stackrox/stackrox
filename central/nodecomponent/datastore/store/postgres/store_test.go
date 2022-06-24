@@ -81,6 +81,8 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNodeComponent)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, nodeComponent))
 	foundNodeComponent, exists, err = store.Get(ctx, nodeComponent.GetId())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	nodeComponentCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, nodeComponentCount)
+	nodeComponentCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(nodeComponentCount)
 
 	nodeComponentExists, err := store.Exists(ctx, nodeComponent.GetId())
 	s.NoError(err)
 	s.True(nodeComponentExists)
 	s.NoError(store.Upsert(ctx, nodeComponent))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, nodeComponent), sac.ErrResourceAccessDenied)
 
 	foundNodeComponent, exists, err = store.Get(ctx, nodeComponent.GetId())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNodeComponent)
+	s.NoError(store.Delete(withNoAccessCtx, nodeComponent.GetId()))
 
 	var nodeComponents []*storage.NodeComponent
 	for i := 0; i < 200; i++ {

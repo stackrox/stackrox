@@ -1,6 +1,7 @@
 import queryString from 'qs';
 
-import { ORCHESTRATOR_COMPONENT_KEY } from 'Containers/Navigation/OrchestratorComponentsToggle';
+import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
+
 import axios from './instance';
 
 const networkPoliciesBaseUrl = '/v1/networkpolicies';
@@ -162,7 +163,7 @@ export function fetchNetworkPolicyGraph(clusterId, namespaces, query, modificati
     }
 
     // for openshift filtering toggle
-    if (localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true') {
+    if (localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true') {
         urlParams.scope = {
             query: 'Orchestrator Component:false',
         };
@@ -210,7 +211,7 @@ export function fetchNetworkFlowGraph(clusterId, namespaces, query, date, includ
         urlParams.includePorts = true;
     }
     // for openshift filtering toggle
-    if (localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true') {
+    if (localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true') {
         urlParams.scope = {
             query: 'Orchestrator Component:false',
         };
@@ -220,6 +221,22 @@ export function fetchNetworkFlowGraph(clusterId, namespaces, query, date, includ
         method: 'GET',
         url: `${networkFlowBaseUrl}/cluster/${clusterId}?${params}`,
         timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT,
+    };
+    return axios(options).then((response) => ({
+        response: response.data,
+    }));
+}
+
+/**
+ * Fetches policies details for given array of ids.
+ *
+ * @param {!String} namespaceId
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchNetworkPoliciesInNamespace(clusterId, namespaceId) {
+    const options = {
+        method: 'GET',
+        url: `${networkPoliciesBaseUrl}?cluster_id=${clusterId}&namespace=${namespaceId}`,
     };
     return axios(options).then((response) => ({
         response: response.data,

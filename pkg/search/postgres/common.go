@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -41,7 +42,9 @@ func replaceVars(s string) string {
 	varNum := 1
 	for i := 0; i < len(s)-1; i++ {
 		if s[i] == '$' && s[i+1] == '$' {
-			s = s[:i+1] + fmt.Sprintf("%d", varNum) + s[i+2:]
+			varStr := strconv.Itoa(varNum)
+			s = s[:i+1] + varStr + s[i+2:]
+			i += len(varStr)
 			varNum++
 		}
 	}
@@ -55,14 +58,15 @@ type innerJoin struct {
 }
 
 type query struct {
-	Schema         *walker.Schema
-	QueryType      QueryType
-	SelectedFields []pgsearch.SelectQueryField
-	From           string
-	Where          string
-	Pagination     parsedPaginationQuery
-	InnerJoins     []innerJoin
-	Data           []interface{}
+	Schema            *walker.Schema
+	QueryType         QueryType
+	SelectedFields    []pgsearch.SelectQueryField
+	From              string
+	Where             string
+	Pagination        parsedPaginationQuery
+	InnerJoins        []innerJoin
+	Data              []interface{}
+	GroupByPrimaryKey bool
 }
 
 // ExtraSelectedFieldPaths includes extra fields to add to the select clause.
@@ -123,7 +127,7 @@ func (q *query) DistinctAppliedOnPrimaryKeySelect() bool {
 	// If this involves multiple tables, then we need to wrap the primary key portion in a distinct, because
 	// otherwise there could be multiple rows with the same primary key in the join table.
 	// TODO(viswa): we might be able to do this even more narrowly
-	return len(q.InnerJoins) > 0
+	return len(q.InnerJoins) > 0 && !q.GroupByPrimaryKey
 }
 
 func (q *query) AsSQL() string {
@@ -147,6 +151,15 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(" where ")
 		querySB.WriteString(replaceVars(q.Where))
 	}
+	if q.GroupByPrimaryKey {
+		primaryKeys := q.Schema.PrimaryKeys()
+		primaryKeyPaths := make([]string, 0, len(primaryKeys))
+		for _, pk := range primaryKeys {
+			primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName))
+		}
+		querySB.WriteString(" group by ")
+		querySB.WriteString(strings.Join(primaryKeyPaths, ", "))
+	}
 	if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
 		querySB.WriteString(" ")
 		querySB.WriteString(paginationSQL)
@@ -165,8 +178,9 @@ type parsedPaginationQuery struct {
 }
 
 type orderByEntry struct {
-	Field      pgsearch.SelectQueryField
-	Descending bool
+	Field       pgsearch.SelectQueryField
+	Descending  bool
+	SearchAfter string
 }
 
 func (p *parsedPaginationQuery) AsSQL() string {
@@ -187,29 +201,79 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	return paginationSB.String()
 }
 
-func parsePaginationQuery(pagination *v1.QueryPagination, schema *walker.Schema, queryFields map[string]*walker.Field) (parsedPaginationQuery, error) {
+func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schema *walker.Schema, queryFields map[string]searchFieldMetadata) error {
 	if pagination == nil {
-		return parsedPaginationQuery{}, nil
+		return nil
 	}
 
-	out := parsedPaginationQuery{}
-
-	for _, so := range pagination.GetSortOptions() {
-		dbField := queryFields[so.GetField()]
-		if dbField == nil {
-			return parsedPaginationQuery{}, errors.Errorf("field %s does not exist in table %s or connected tables", so.GetField(), schema.Table)
+	for idx, so := range pagination.GetSortOptions() {
+		if idx != 0 && so.GetSearchAfter() != "" {
+			return errors.New("search after for pagination must be defined for only the first sort option")
 		}
-		out.OrderBys = append(out.OrderBys, orderByEntry{
-			Field: pgsearch.SelectQueryField{
-				SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName),
-				FieldType:  dbField.DataType,
-			},
-			Descending: so.GetReversed(),
-		})
+		if so.GetField() == searchPkg.DocID.String() {
+			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
+				Field: pgsearch.SelectQueryField{
+					SelectPath: qualifyColumn(schema.Table, schema.ID().ColumnName),
+					FieldType:  walker.String,
+				},
+				Descending:  so.GetReversed(),
+				SearchAfter: so.GetSearchAfter(),
+			})
+			continue
+		}
+		fieldMetadata := queryFields[so.GetField()]
+		dbField := fieldMetadata.baseField
+		if dbField == nil {
+			return errors.Errorf("field %s does not exist in table %s or connected tables", so.GetField(), schema.Table)
+		}
+		if fieldMetadata.derivedMetadata == nil {
+			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
+				Field: pgsearch.SelectQueryField{
+					SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName),
+					FieldType:  dbField.DataType,
+				},
+				Descending:  so.GetReversed(),
+				SearchAfter: so.GetSearchAfter(),
+			})
+		} else {
+			switch fieldMetadata.derivedMetadata.DerivationType {
+			case searchPkg.CountDerivationType:
+				querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
+					Field: pgsearch.SelectQueryField{
+						SelectPath: fmt.Sprintf("count(%s)", qualifyColumn(dbField.Schema.Table, dbField.ColumnName)),
+						FieldType:  dbField.DataType,
+					},
+					Descending: so.GetReversed(),
+				})
+				// If we're ordering by a count, we will need to group by the primary key.
+				querySoFar.GroupByPrimaryKey = true
+			}
+		}
 	}
-	out.Limit = int(pagination.GetLimit())
-	out.Offset = int(pagination.GetOffset())
-	return out, nil
+	querySoFar.Pagination.Limit = int(pagination.GetLimit())
+	querySoFar.Pagination.Offset = int(pagination.GetOffset())
+	return nil
+}
+
+func applyPaginationForSearchAfter(query *query) error {
+	pagination := query.Pagination
+	if len(pagination.OrderBys) == 0 {
+		return nil
+	}
+	firstOrderBy := pagination.OrderBys[0]
+	if firstOrderBy.SearchAfter == "" {
+		return nil
+	}
+	if query.Where != "" {
+		query.Where += " and "
+	}
+	operand := ">"
+	if firstOrderBy.Descending {
+		operand = "<"
+	}
+	query.Where += fmt.Sprintf("%s %s $$", firstOrderBy.Field.SelectPath, operand)
+	query.Data = append(query.Data, firstOrderBy.SearchAfter)
+	return nil
 }
 
 func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
@@ -228,22 +292,22 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryTy
 		return nil, nil
 	}
 
-	pagination, err := parsePaginationQuery(q.GetPagination(), schema, dbFields)
-	if err != nil {
-		return nil, err
-	}
-
 	query := &query{
 		Schema:     schema,
 		QueryType:  queryType,
 		InnerJoins: innerJoins,
 		From:       schema.Table,
-		Pagination: pagination,
 	}
 	if queryEntry != nil {
 		query.Where = queryEntry.Where.Query
 		query.Data = queryEntry.Where.Values
 		query.SelectedFields = queryEntry.SelectedFields
+	}
+	if err := populatePagination(query, q.GetPagination(), schema, dbFields); err != nil {
+		return nil, err
+	}
+	if err := applyPaginationForSearchAfter(query); err != nil {
+		return nil, err
 	}
 	return query, nil
 }
@@ -274,7 +338,7 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 func entriesFromQueries(
 	table *walker.Schema,
 	queries []*v1.Query,
-	queryFields map[string]*walker.Field,
+	queryFields map[string]searchFieldMetadata,
 ) ([]*pgsearch.QueryEntry, error) {
 	var entries []*pgsearch.QueryEntry
 	for _, q := range queries {
@@ -290,7 +354,7 @@ func entriesFromQueries(
 	return entries, nil
 }
 
-func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[string]*walker.Field) (*pgsearch.QueryEntry, error) {
+func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[string]searchFieldMetadata) (*pgsearch.QueryEntry, error) {
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
 		switch subBQ := q.GetBaseQuery().Query.(type) {
@@ -301,7 +365,7 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 			}}, nil
 		case *v1.BaseQuery_MatchFieldQuery:
 			qe, err := pgsearch.MatchFieldQuery(
-				queryFields[subBQ.MatchFieldQuery.GetField()],
+				queryFields[subBQ.MatchFieldQuery.GetField()].baseField,
 				subBQ.MatchFieldQuery.GetValue(),
 				subBQ.MatchFieldQuery.GetHighlight(),
 			)
@@ -314,7 +378,7 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
 			var entries []*pgsearch.QueryEntry
 			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
-				qe, err := pgsearch.MatchFieldQuery(queryFields[q.GetField()], q.GetValue(), q.GetHighlight())
+				qe, err := pgsearch.MatchFieldQuery(queryFields[q.GetField()].baseField, q.GetValue(), q.GetHighlight())
 				if err != nil {
 					return nil, err
 				}
@@ -575,10 +639,9 @@ func RunDeleteRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 		return err
 	}
 
-	queryStr := query.AsSQL()
-	_, err = db.Exec(context.Background(), queryStr, query.Data...)
+	_, err = db.Exec(context.Background(), query.AsSQL(), query.Data...)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not delete from %q", schema.Table)
 	}
 	return nil
 }

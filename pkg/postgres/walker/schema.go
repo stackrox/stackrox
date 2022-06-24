@@ -428,11 +428,19 @@ type Field struct {
 	Type string
 
 	// DataType is the internal type
-	DataType  DataType
-	SQLType   string
-	ModelType string
-	Options   PostgresOptions
-	Search    SearchField
+	DataType            DataType
+	SQLType             string
+	ModelType           string
+	Options             PostgresOptions
+	Search              SearchField
+	DerivedSearchFields []DerivedSearchField
+}
+
+// DerivedSearchField represents a search field that's derived.
+// It includes the name of the derived field, as well as the derivation type.
+type DerivedSearchField struct {
+	FieldName      string
+	DerivationType search.DerivationType
 }
 
 // Getter returns the path to the object. If variable is true, then the value is just

@@ -3,6 +3,7 @@
 # Tests part I of qa-tests-backend. Formerly CircleCI gke-api-e2e-tests.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$ROOT/scripts/ci/gcp.sh"
 source "$ROOT/scripts/ci/lib.sh"
 source "$ROOT/scripts/ci/sensor-wait.sh"
 source "$ROOT/tests/e2e/lib.sh"
@@ -18,12 +19,7 @@ test_part_1() {
 
     export_test_environment
 
-    if is_OPENSHIFT_CI; then
-        # TODO(RS-494) may provide roxctl
-        make cli-linux
-        install_built_roxctl_in_gopath
-    fi
-
+    setup_gcp
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
@@ -32,7 +28,6 @@ test_part_1() {
 
     deploy_default_psp
     deploy_webhook_server
-    deploy_authz_plugin
     get_ECR_docker_pull_password
 
     run_tests_part_1
@@ -50,12 +45,6 @@ deploy_webhook_server() {
     certs_dir="$(mktemp -d)"
     "${ROOT}/scripts/ci/create-webhookserver.sh" "${certs_dir}"
     ci_export GENERIC_WEBHOOK_SERVER_CA_CONTENTS "$(cat "${certs_dir}/ca.crt")"
-}
-
-deploy_authz_plugin() {
-    info "Deploy Default Authorization Plugin"
-
-    "${ROOT}/scripts/ci/create-scopedaccessserver.sh"
 }
 
 get_ECR_docker_pull_password() {

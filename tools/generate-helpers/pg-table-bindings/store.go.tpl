@@ -416,7 +416,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
         return 0, err
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
@@ -452,7 +452,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     } else if !ok {
         return false, nil
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
@@ -499,7 +499,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
     } else if !ok {
         return nil, false, nil
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
     scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
@@ -579,7 +579,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
 	if err != nil {
@@ -627,7 +627,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
     } else if !ok {
         return nil, nil
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
@@ -677,7 +677,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
     } else if !ok {
         return nil, nil, nil
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
 		Resource: targetResource,
@@ -752,7 +752,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsDirectlyScoped }}
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
     scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
     if err != nil {

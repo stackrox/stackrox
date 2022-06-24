@@ -38,7 +38,7 @@ func newPlottedNodeVulnerabilitiesResolver(ctx context.Context, root *Resolver, 
 }
 
 // BasicNodeVulnerabilityCounter returns the NodeVulnerabilityCounter for scatter-plot with only total and fixable
-func (pvr *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {
+func (pvr *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounter(_ context.Context) (*VulnerabilityCounterResolver, error) {
 	return &VulnerabilityCounterResolver{
 		all: &VulnerabilityFixableCounterResolver{
 			total:   int32(len(pvr.all)),

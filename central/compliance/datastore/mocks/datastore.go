@@ -12,7 +12,6 @@ import (
 	compliance "github.com/stackrox/rox/central/compliance"
 	datastore "github.com/stackrox/rox/central/compliance/datastore"
 	types "github.com/stackrox/rox/central/compliance/datastore/types"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -83,21 +82,6 @@ func (mr *MockDataStoreMockRecorder) GetLatestRunResultsBatch(ctx, clusterIDs, s
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsBatch", reflect.TypeOf((*MockDataStore)(nil).GetLatestRunResultsBatch), ctx, clusterIDs, standardIDs, flags)
 }
 
-// GetLatestRunResultsForClustersAndStandards mocks base method.
-func (m *MockDataStore) GetLatestRunResultsForClustersAndStandards(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestRunResultsForClustersAndStandards", ctx, clusterIDs, standardIDs, flags)
-	ret0, _ := ret[0].(map[compliance.ClusterStandardPair]types.ResultsWithStatus)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLatestRunResultsForClustersAndStandards indicates an expected call of GetLatestRunResultsForClustersAndStandards.
-func (mr *MockDataStoreMockRecorder) GetLatestRunResultsForClustersAndStandards(ctx, clusterIDs, standardIDs, flags interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsForClustersAndStandards", reflect.TypeOf((*MockDataStore)(nil).GetLatestRunResultsForClustersAndStandards), ctx, clusterIDs, standardIDs, flags)
-}
-
 // GetSpecificRunResults mocks base method.
 func (m *MockDataStore) GetSpecificRunResults(ctx context.Context, clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()
@@ -143,21 +127,6 @@ func (m *MockDataStore) PerformStoredAggregation(ctx context.Context, args *data
 func (mr *MockDataStoreMockRecorder) PerformStoredAggregation(ctx, args interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerformStoredAggregation", reflect.TypeOf((*MockDataStore)(nil).PerformStoredAggregation), ctx, args)
-}
-
-// QueryControlResults mocks base method.
-func (m *MockDataStore) QueryControlResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceControlResult, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QueryControlResults", ctx, query)
-	ret0, _ := ret[0].([]*storage.ComplianceControlResult)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// QueryControlResults indicates an expected call of QueryControlResults.
-func (mr *MockDataStoreMockRecorder) QueryControlResults(ctx, query interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryControlResults", reflect.TypeOf((*MockDataStore)(nil).QueryControlResults), ctx, query)
 }
 
 // StoreComplianceDomain mocks base method.

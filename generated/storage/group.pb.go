@@ -94,13 +94,12 @@ func (m *Group) Clone() *Group {
 	return cloned
 }
 
-// GroupProperties defines the properties of a unique group.
-// Groups apply to users when their properties match. For instance:
-// If the GroupProperties on has a auth_provider_id, then that group applies to all users logged in
-// with that auth provider. If it has a claim key, then it applies to all users with that auth provider
-// and claim key, etc.
-// This can be used to create default groups/roles for All source provider (no fields set), a specific
-// auth provider (only auth_provider_id field set) etc.
+// GroupProperties defines the properties of a group. Groups apply to users when
+// their properties match. For instance:
+//   * If GroupProperties has only an auth_provider_id, then that group applies
+//     to all users logged in with that auth provider.
+//   * If GroupProperties in addition has a claim key, then it applies to all
+//     users with that auth provider and the claim key, etc.
 type GroupProperties struct {
 	AuthProviderId       string   `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty"`
 	Key                  string   `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`

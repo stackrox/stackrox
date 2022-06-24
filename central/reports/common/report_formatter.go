@@ -35,7 +35,7 @@ var (
 	}
 )
 
-type vulnObj struct {
+type imageVulnerability struct {
 	Cve               string        `json:"cve,omitempty"`
 	Severity          string        `json:"severity,omitempty"`
 	FixedByVersion    string        `json:"fixedByVersion,omitempty"`
@@ -44,26 +44,26 @@ type vulnObj struct {
 	Link              string        `json:"link,omitempty"`
 }
 
-type compObj struct {
-	Name  string     `json:"name,omitempty"`
-	Vulns []*vulnObj `json:"vulns,omitempty"`
+type imageComponent struct {
+	Name                 string                `json:"name,omitempty"`
+	ImageVulnerabilities []*imageVulnerability `json:"imageVulnerabilities,omitempty"`
 }
 
-type imgObj struct {
-	Name       *storage.ImageName `json:"name,omitempty"`
-	Components []*compObj         `json:"components,omitempty"`
+type image struct {
+	Name            *storage.ImageName `json:"name,omitempty"`
+	ImageComponents []*imageComponent  `json:"imageComponents,omitempty"`
 }
 
-type depObj struct {
+type deployment struct {
 	Cluster        *storage.Cluster `json:"cluster,omitempty"`
 	Namespace      string           `json:"namespace,omitempty"`
 	DeploymentName string           `json:"name,omitempty"`
-	Images         []*imgObj        `json:"images,omitempty"`
+	Images         []*image         `json:"images,omitempty"`
 }
 
 // Result is the query results of running a single cvefields query and scope query combination
 type Result struct {
-	Deployments []*depObj `json:"deployments,omitempty"`
+	Deployments []*deployment `json:"deployments,omitempty"`
 }
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
@@ -73,8 +73,8 @@ func Format(results []Result) (*bytes.Buffer, error) {
 	for _, r := range results {
 		for _, d := range r.Deployments {
 			for _, i := range d.Images {
-				for _, c := range i.Components {
-					for _, v := range c.Vulns {
+				for _, c := range i.ImageComponents {
+					for _, v := range c.ImageVulnerabilities {
 						discoveredTs := "Not Available"
 						if v.DiscoveredAtImage != nil {
 							discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")

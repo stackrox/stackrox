@@ -81,6 +81,8 @@ func (s *TestChild1StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundTestChild1)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, testChild1))
 	foundTestChild1, exists, err = store.Get(ctx, testChild1.GetId())
 	s.NoError(err)
@@ -90,11 +92,15 @@ func (s *TestChild1StoreSuite) TestStore() {
 	testChild1Count, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, testChild1Count)
+	testChild1Count, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(testChild1Count)
 
 	testChild1Exists, err := store.Exists(ctx, testChild1.GetId())
 	s.NoError(err)
 	s.True(testChild1Exists)
 	s.NoError(store.Upsert(ctx, testChild1))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, testChild1), sac.ErrResourceAccessDenied)
 
 	foundTestChild1, exists, err = store.Get(ctx, testChild1.GetId())
 	s.NoError(err)
@@ -106,6 +112,7 @@ func (s *TestChild1StoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestChild1)
+	s.NoError(store.Delete(withNoAccessCtx, testChild1.GetId()))
 
 	var testChild1s []*storage.TestChild1
 	for i := 0; i < 200; i++ {

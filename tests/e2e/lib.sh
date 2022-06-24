@@ -41,6 +41,7 @@ export_test_environment() {
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
+    ci_export ROX_DECOMMISSIONED_CLUSTER_RETENTION "${ROX_DECOMMISSIONED_CLUSTER_RETENTION:-true}"
     ci_export ROX_NEW_POLICY_CATEGORIES "${ROX_NEW_POLICY_CATEGORIES:-true}"
     ci_export ROX_POLICIES_PATTERNFLY "${ROX_POLICIES_PATTERNFLY:-true}"
     ci_export ROX_SECURITY_METRICS_PHASE_ONE "${ROX_SECURITY_METRICS_PHASE_ONE:-true}"
@@ -250,7 +251,7 @@ collect_and_check_stackrox_logs() {
 
     info "Will collect stackrox logs to $dir and check them"
 
-    ./scripts/ci/collect-service-logs.sh stackrox "$dir"
+    "$TEST_ROOT/scripts/ci/collect-service-logs.sh" stackrox "$dir"
 
     check_stackrox_logs "$dir"
 }

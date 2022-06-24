@@ -1,11 +1,10 @@
 package service
 
 import (
-	"fmt"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 func validate(group *storage.Group) error {
@@ -23,10 +22,10 @@ func validate(group *storage.Group) error {
 
 func validateProps(props *storage.GroupProperties) error {
 	if props.GetAuthProviderId() == "" {
-		return fmt.Errorf("authprovider ID must be set in {%s}", proto.MarshalTextString(props))
+		return errox.InvalidArgs.Newf("authprovider ID must be set in {%s}", proto.MarshalTextString(props))
 	}
 	if props.GetKey() == "" && props.GetValue() != "" {
-		return fmt.Errorf("cannot have a value without a key in {%s}", proto.MarshalTextString(props))
+		return errox.InvalidArgs.Newf("cannot have a value without a key in {%s}", proto.MarshalTextString(props))
 	}
 	return nil
 }

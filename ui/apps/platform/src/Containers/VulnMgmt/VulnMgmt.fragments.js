@@ -85,6 +85,58 @@ export const VULN_CVE_LIST_FRAGMENT = gql`
     }
 `;
 
+export const CLUSTER_CVE_LIST_FRAGMENT = gql`
+    fragment cveFields on ClusterVulnerability {
+        createdAt
+        cve
+        cvss
+        envImpact
+        fixedByVersion
+        id
+        impactScore
+        isFixable(query: $scopeQuery)
+        lastModified
+        lastScanned
+        link
+        publishedOn
+        scoreVersion
+        severity
+        summary
+        suppressActivation
+        suppressExpiry
+        suppressed
+        vulnerabilityState
+        vulnerabilityType
+        vulnerabilityTypes
+    }
+`;
+
+export const NODE_CVE_LIST_FRAGMENT = gql`
+    fragment cveFields on NodeVulnerability {
+        createdAt
+        cve
+        cvss
+        envImpact
+        fixedByVersion
+        id
+        impactScore
+        isFixable(query: $scopeQuery)
+        lastModified
+        lastScanned
+        link
+        publishedOn
+        scoreVersion
+        severity
+        summary
+        suppressActivation
+        suppressExpiry
+        suppressed
+        vulnerabilityState
+        nodeComponentCount
+        nodeCount
+    }
+`;
+
 export const DEPLOYMENT_LIST_FRAGMENT = gql`
     fragment deploymentFields on Deployment {
         id

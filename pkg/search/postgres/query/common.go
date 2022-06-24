@@ -1,6 +1,7 @@
 package pgsearch
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
@@ -81,9 +82,11 @@ func MatchFieldQuery(dbField *walker.Field, value string, highlight bool) (*Quer
 		return nil, nil
 	}
 	// Need to find base value
+	if dbField.Schema.OptionsMap == nil {
+		return nil, errors.Errorf("Options Map for %s does not exist", dbField.Schema.Table)
+	}
 	field, ok := dbField.Schema.OptionsMap.Get(dbField.Search.FieldName)
 	if !ok {
-		log.Infof("Options Map for %s does not have field: %v", dbField.Schema.Table, dbField.Search.FieldName)
 		return nil, nil
 	}
 	return matchFieldQuery(dbField, field, value, highlight)

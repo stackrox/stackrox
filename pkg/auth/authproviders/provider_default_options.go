@@ -34,7 +34,7 @@ func DefaultLoginURL(fn func(authProviderID string) string) ProviderOption {
 	}
 }
 
-const tokenTTL = 30 * 24 * time.Hour
+const tokenTTL = 12 * time.Hour
 
 // DefaultTokenIssuerFromFactory sets the token issuer of the provider from the factory if not already set.
 func DefaultTokenIssuerFromFactory(tf tokens.IssuerFactory) ProviderOption {

@@ -286,7 +286,10 @@ func initializeFieldMetadata() FieldMetadata {
 	f.registerFieldMetadata(fieldnames.DockerfileLine,
 		querybuilders.ForCompound(augmentedobjs.DockerfileLineCustomTag, 2),
 		violationmessages.ImageContextFields,
-		func(*validateConfiguration) *regexp.Regexp {
+		func(c *validateConfiguration) *regexp.Regexp {
+			if c.disallowFromInDockerfileLine {
+				return dockerfileLineValueRegexNoFrom
+			}
 			return dockerfileLineValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},

@@ -331,7 +331,7 @@ var _CVEService_serviceDesc = grpc.ServiceDesc{
 type ImageCVEServiceClient interface {
 	// SuppressCVE suppresses image cves.
 	SuppressCVEs(ctx context.Context, in *SuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
-	// UnsuppressCVE unsuppresse image cves.
+	// UnsuppressCVE unsuppresses image cves.
 	UnsuppressCVEs(ctx context.Context, in *UnsuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -365,7 +365,7 @@ func (c *imageCVEServiceClient) UnsuppressCVEs(ctx context.Context, in *Unsuppre
 type ImageCVEServiceServer interface {
 	// SuppressCVE suppresses image cves.
 	SuppressCVEs(context.Context, *SuppressCVERequest) (*Empty, error)
-	// UnsuppressCVE unsuppresse image cves.
+	// UnsuppressCVE unsuppresses image cves.
 	UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error)
 }
 
@@ -443,7 +443,7 @@ var _ImageCVEService_serviceDesc = grpc.ServiceDesc{
 type NodeCVEServiceClient interface {
 	// SuppressCVE suppresses node cves.
 	SuppressCVEs(ctx context.Context, in *SuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
-	// UnsuppressCVE unsuppresse node cves.
+	// UnsuppressCVE unsuppresses node cves.
 	UnsuppressCVEs(ctx context.Context, in *UnsuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -477,7 +477,7 @@ func (c *nodeCVEServiceClient) UnsuppressCVEs(ctx context.Context, in *Unsuppres
 type NodeCVEServiceServer interface {
 	// SuppressCVE suppresses node cves.
 	SuppressCVEs(context.Context, *SuppressCVERequest) (*Empty, error)
-	// UnsuppressCVE unsuppresse node cves.
+	// UnsuppressCVE unsuppresses node cves.
 	UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error)
 }
 

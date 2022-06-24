@@ -23,8 +23,6 @@ type orScopeCheckerTestSuite struct {
 	scopeChecker2 *mocks.MockScopeChecker
 
 	orScopeChecker sac.ScopeChecker
-
-	ctx context.Context
 }
 
 func (suite *orScopeCheckerTestSuite) SetupTest() {

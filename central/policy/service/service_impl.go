@@ -217,6 +217,8 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 		}
 	}
 
+	options = append(options, booleanpolicy.ValidateNoFromInDockerfileLine())
+
 	if err := s.convertAndValidate(ctx, request, options...); err != nil {
 		return nil, err
 	}
@@ -436,13 +438,14 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 
 	pChan := make(chan struct{}, dryRunParallelism)
 	alertChan := make(chan *v1.DryRunResponse_Alert)
-	var wg sync.WaitGroup
+	allAlertsProcessedSig := concurrency.NewSignal()
 	go func() {
 		for {
 			select {
 			case alert, ok := <-alertChan:
 				// channel is closed
 				if !ok {
+					allAlertsProcessedSig.Signal()
 					return
 				}
 				resp.Alerts = append(resp.Alerts, alert)
@@ -453,6 +456,7 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 		}
 	}()
 
+	var wg sync.WaitGroup
 	for _, id := range deploymentIds {
 		if err := cancelCtx.Err(); err != nil {
 			return nil, err
@@ -519,7 +523,12 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 
 	wg.Wait()
 	close(alertChan)
-	return &resp, nil
+	select {
+	case <-allAlertsProcessedSig.Done():
+		return &resp, nil
+	case <-cancelCtx.Done():
+		return nil, cancelCtx.Err()
+	}
 }
 
 // DryRunPolicy runs a dry run of the policy and determines what deployments would violate it

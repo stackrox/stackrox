@@ -20,8 +20,8 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
                 'Discovered Time',
                 'Published',
             ],
-            1
-        ); // skip 1 additional column to account for checkbox column
+            1 // skip 1 additional column to account for checkbox column
+        );
         cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
             if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
