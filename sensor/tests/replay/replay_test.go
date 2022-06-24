@@ -94,7 +94,7 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 var _ io.Writer = (*TraceWriterWithChannel)(nil)
 
 type TraceWriterWithChannel struct {
-	Destination chan *central.SensorEvent
+	destinationChannel chan *central.SensorEvent
 	// mu mutex to avoid multiple goroutines writing at the same time
 	mu sync.Mutex
 }
@@ -111,7 +111,7 @@ func (tw *TraceWriterWithChannel) Write(b []byte) (int, error) {
 		if err := jsonpb.UnmarshalString(e, event); err != nil {
 			return 0, err
 		}
-		tw.Destination <- event
+		tw.destinationChannel <- event
 	}
 	return 0, nil
 }
@@ -122,14 +122,18 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
 	ackChannel := make(chan *central.SensorEvent)
+	defer close(ackChannel)
 	writer := &TraceWriterWithChannel{
-		Destination: ackChannel,
+		destinationChannel: ackChannel,
 	}
-
+	// Depending on the size of the file the re-sync time may need to be increased.
+	// This is because we need to wait for the event outputs of each kubernetes event before sending the next.
+	// If we receive re-sync events before we finish processing all the events, we might run into unknown behaviour
+	resyncTime := 1 * time.Second
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(suite.fakeClient).
 		WithLocalSensor(true).
-		WithResyncPeriod(1 * time.Second).
+		WithResyncPeriod(resyncTime).
 		WithCentralConnectionFactory(fakeConnectionFactory).
 		WithTraceWriter(writer))
 
@@ -172,19 +176,26 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 				Reader:     eventsReader,
 			}
 			_, errCh := fm.CreateEvents(context.Background())
+			// Wait for all the events to be processed
 			err = <-errCh
 			if err != nil {
 				panic(err)
 			}
+			// We continue to read the ackChannel to avoid blocking
+			ctx, cancelFunc := context.WithCancel(context.Background())
 			go func() {
-				defer close(ackChannel)
-				for range ackChannel {
+				for {
+					select {
+					case <-ackChannel:
+					case <-ctx.Done():
+						return
+					}
 				}
 			}()
-			// Wait resync
-			time.Sleep(5 * time.Second)
+			// Wait for the re-sync to happen
+			time.Sleep(5 * resyncTime)
 			allEvents := suite.fakeCentral.GetAllMessages()
-			// Read sensorOutputFile
+			// Read the sensorOutputFile containing the expected sensor's output
 			expectedEvents, err := readSensorOutputFile(c.sensorOutputFile)
 			if err != nil {
 				panic(err)
@@ -194,7 +205,7 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 			assert.Equal(t, len(expectedDeployments), len(receivedDeployments))
 			for id, exp := range expectedDeployments {
 				if e, ok := receivedDeployments[id]; !ok {
-					t.Error("Event not found")
+					t.Error("Deployment not found")
 				} else {
 					assert.Equal(t, exp.GetDeployment().GetServiceAccountPermissionLevel(), e.GetDeployment().GetServiceAccountPermissionLevel(), "Pod id %s", id)
 					assert.Equal(t, exp.GetDeployment().GetPorts(), e.GetDeployment().GetPorts())
@@ -205,6 +216,19 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 					assert.Equal(t, exp.GetDeployment().GetImagePullSecrets(), e.GetDeployment().GetImagePullSecrets())
 				}
 			}
+			expectedPods := getAllPods(expectedEvents)
+			receivedPods := getAllPods(allEvents)
+			assert.Equal(t, len(expectedPods), len(receivedPods))
+			for id, exp := range expectedPods {
+				if e, ok := receivedPods[id]; !ok {
+					t.Error("Pod not found")
+				} else {
+					assert.Equal(t, exp.GetPod().GetDeploymentId(), e.GetPod().GetDeploymentId())
+					assert.Equal(t, exp.GetPod().GetName(), e.GetPod().GetName())
+					assert.Equal(t, exp.GetPod().GetNamespace(), e.GetPod().GetNamespace())
+				}
+			}
+			cancelFunc()
 		})
 	}
 }
@@ -256,6 +280,19 @@ func getAllDeployments(messages []*central.MsgFromSensor) map[string]*central.Se
 		if event.GetDeployment() != nil {
 			if event.GetDeployment().GetId() != "" {
 				events[event.GetDeployment().GetId()] = event
+			}
+		}
+	}
+	return events
+}
+
+func getAllPods(messages []*central.MsgFromSensor) map[string]*central.SensorEvent {
+	events := make(map[string]*central.SensorEvent)
+	for _, msg := range messages {
+		event := msg.GetEvent()
+		if event.GetPod() != nil {
+			if event.GetPod().GetId() != "" {
+				events[event.GetPod().GetId()] = event
 			}
 		}
 	}

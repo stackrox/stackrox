@@ -432,7 +432,7 @@ func (f *FakeEventsManager) waitOnMode(events []string) error {
 					if !ok {
 						return fmt.Errorf("compare function for resource '%s' not found", resource.Type().String())
 					}
-					if compareFunc(sensorEvent.GetResource(), event) && sensorEvent.GetAction() == event.GetAction() {
+					if compareFunc(sensorEvent.GetResource(), event) {
 						receivedEvents++
 						break
 					}
@@ -442,7 +442,6 @@ func (f *FakeEventsManager) waitOnMode(events []string) error {
 				}
 			}
 		}
-
 	}
 	return nil
 }
