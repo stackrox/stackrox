@@ -42,13 +42,10 @@ case "$ci_job" in
         ;;
     policy-checks)
         "$ROOT/scripts/ci/jobs/check-policy-files.sh"
-        ;;
-    generated-checks)
-        "$ROOT/scripts/ci/jobs/check-generated.sh"
-        ;;
+        ;&
     todo-checks)
         "$ROOT/scripts/ci/jobs/check-todos.sh"
-        ;;
+        ;&
     pr-fixes-checks)
         "$ROOT/scripts/ci/jobs/check-pr-fixes.sh"
         ;;
@@ -60,6 +57,9 @@ case "$ci_job" in
         ;;
     go-unit-tests)
         GOTAGS='' "$ROOT/scripts/ci/jobs/go-unit-tests.sh"
+        ;&
+    generated-checks)
+        "$ROOT/scripts/ci/jobs/check-generated.sh"
         ;;
     go-postgres-tests)
         GOTAGS='' "$ROOT/scripts/ci/jobs/go-postgres-tests.sh"
