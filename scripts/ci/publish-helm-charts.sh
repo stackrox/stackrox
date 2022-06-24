@@ -10,7 +10,7 @@ set -euo pipefail
 user_name='roxbot'
 user_email='roxbot@stackrox.com'
 
-remote_repository="git@github.com:stackrox/release-artifacts.git"
+remote_repository="https://github.com/stackrox/release-artifacts.git"
 remote_subdirectory="helm-charts"
 
 version="$1"

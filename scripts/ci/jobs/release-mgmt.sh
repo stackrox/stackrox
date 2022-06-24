@@ -11,8 +11,6 @@ release_mgmt() {
 
     [[ "${OPENSHIFT_CI:-false}" == "true" ]] || { die "Only supported in OpenShift CI"; }
 
-    export HOME="${HOME:-/tmp}"
-
     local tag
     tag="$(make --quiet tag)"
 
