@@ -246,6 +246,14 @@ class ComplianceTest extends BaseSpecification {
                             counts.put(it.value.overallState, [it.key] as Set)
                 }
             }
+            run.machineConfigResultsMap.each {
+                it.value.controlResultsMap.each {
+                    counts.get(it.value.overallState) ?
+                            counts.get(it.value.overallState).add(it.key) :
+                            counts.put(it.value.overallState, [it.key] as Set)
+                }
+            }
+
             counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS)
                     .removeAll(counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE) ?: [])
             counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS)
