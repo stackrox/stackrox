@@ -1,8 +1,6 @@
 package generate
 
 import (
-	"fmt"
-
 	"github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 )
@@ -18,7 +16,7 @@ func (cmd *netpolGenerateCommand) generateNetpol() error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Network Policy %d:\n%s\n\n", i, yamlPolicy)
+		cmd.env.Logger().PrintfLn("Network Policy %d:\n%s\n\n", i, yamlPolicy)
 	}
 	return nil
 }
