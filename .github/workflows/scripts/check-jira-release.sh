@@ -4,6 +4,11 @@
 #
 set -euo pipefail
 
+cat << EOF > /dev/null
+GitHub variables: $GITHUB_STEP_SUMMARY
+Custom variables: $JIRA_TOKEN $jira_project
+EOF
+
 VERSION="$1"
 
 JIRA_RELEASE_DATE=$(curl --fail -sSL \

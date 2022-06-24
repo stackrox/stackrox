@@ -4,6 +4,11 @@
 #
 set -euo pipefail
 
+cat << EOF > /dev/null
+GitHub variables: $GITHUB_STEP_SUMMARY $GITHUB_SERVER_URL $GITHUB_REPOSITORY $GITHUB_ACTOR
+Custom variables: $main_branch
+EOF
+
 VERSION="$1"
 REF="$2"
 BRANCH="$3"
