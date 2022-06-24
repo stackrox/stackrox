@@ -14,10 +14,8 @@ import objects.K8sServiceAccount
 import objects.K8sSubject
 import services.RbacService
 import services.ServiceAccountService
-import util.Env
 
 import org.junit.experimental.categories.Category
-import spock.lang.IgnoreIf
 import spock.lang.Stepwise
 
 @Stepwise
@@ -53,7 +51,6 @@ class K8sRbacTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null
@@ -155,7 +152,6 @@ class K8sRbacTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify scraped roles"() {
         expect:
         "SR should have the same roles"
@@ -235,7 +231,6 @@ class K8sRbacTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify scraped bindings"() {
         expect:
         "SR should have the same bindings"
