@@ -3,6 +3,8 @@ package fixtures
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/nodes/converter"
 )
 
 ///////////////////////////////
@@ -1062,7 +1064,7 @@ func GetEmbeddedNodeComponent_2_5() *storage.EmbeddedNodeScanComponent {
 // GetScopedNode_1 provides a pseudo-realistic node with scoping information matching the input for
 // dackbox integration testing.
 func GetScopedNode_1(nodeID string, clusterID string) *storage.Node {
-	return &storage.Node{
+	node := &storage.Node{
 		Id:                      nodeID,
 		Name:                    "sherlock-holmes",
 		Taints:                  nil,
@@ -1103,12 +1105,16 @@ func GetScopedNode_1(nodeID string, clusterID string) *storage.Node {
 		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 7.5},
 		Notes:         nil,
 	}
+	if features.PostgresDatastore.Enabled() {
+		converter.FillV2NodeVulnerabilities(node)
+	}
+	return node
 }
 
 // GetScopedNode_2 provides a pseudo-realistic node with scoping information matching the input for
 // dackbox integration testing.
 func GetScopedNode_2(nodeID string, clusterID string) *storage.Node {
-	return &storage.Node{
+	node := &storage.Node{
 		Id:                      nodeID,
 		Name:                    "dr-jekyll",
 		Taints:                  nil,
@@ -1149,4 +1155,8 @@ func GetScopedNode_2(nodeID string, clusterID string) *storage.Node {
 		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 7.8},
 		Notes:         nil,
 	}
+	if features.PostgresDatastore.Enabled() {
+		converter.FillV2NodeVulnerabilities(node)
+	}
+	return node
 }
