@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/random"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
@@ -24,6 +25,8 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	emptyQueryErr = errox.InvalidArgs.New("empty query")
 )
 
 // QueryType describe what type of query to execute
@@ -593,7 +596,7 @@ func RunGetQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Quer
 		return nil, err
 	}
 	if query == nil {
-		return nil, errox.InvalidArgs.New("empty query")
+		return nil, emptyQueryErr
 	}
 
 	queryStr := query.AsSQL()
@@ -611,7 +614,7 @@ func RunGetManyQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		return nil, err
 	}
 	if query == nil {
-		return nil, errox.InvalidArgs.New("empty query")
+		return nil, emptyQueryErr
 	}
 
 	queryStr := query.AsSQL()
@@ -630,6 +633,58 @@ func RunGetManyQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		results = append(results, data)
 	}
 	return results, nil
+}
+
+// RunCursorQueryForSchema creates a cursor against the database
+func RunCursorQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (fetcher func(n int) ([][]byte, error), closer func(), err error) {
+	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "error creating query")
+	}
+	if query == nil {
+		return nil, nil, emptyQueryErr
+	}
+
+	queryStr := query.AsSQL()
+
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating transaction")
+	}
+	closer = func() {
+		if err := tx.Commit(ctx); err != nil {
+			log.Errorf("error comitting cursor transaction: %v", err)
+		}
+	}
+
+	cursor, err := random.GenerateString(16, random.CaseInsensitiveAlpha)
+	if err != nil {
+		closer()
+		return nil, nil, errors.Wrap(err, "creating cursor name")
+	}
+	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
+	if err != nil {
+		closer()
+		return nil, nil, errors.Wrap(err, "creating cursor")
+	}
+
+	return func(n int) ([][]byte, error) {
+		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", n, cursor))
+		if err != nil {
+			return nil, errors.Wrap(err, "advancing in cursor")
+		}
+		defer rows.Close()
+
+		var results [][]byte
+		for rows.Next() {
+			var data []byte
+			if err := rows.Scan(&data); err != nil {
+				return nil, errors.Wrap(err, "scanning row")
+			}
+			results = append(results, data)
+		}
+		return results, nil
+	}, closer, nil
 }
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database
