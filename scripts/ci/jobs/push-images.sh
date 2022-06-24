@@ -20,7 +20,9 @@ push_images() {
     local tag
     tag="$(make --quiet tag)"
 
-    slack_build_notice "$tag"
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        slack_build_notice "$tag"
+    fi
 
     if is_release_version "$tag"; then
         check_docs "${tag}"
