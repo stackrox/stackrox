@@ -121,8 +121,8 @@ type IndependentRouteComponent = {
  */
 type DependentRouteComponent = {
     featureFlagDependency: FeatureFlagEnvVar;
-    componentDisabled: ElementType;
-    componentEnabled: ElementType;
+    componentWhenDisabled: ElementType;
+    componentWhenEnabled: ElementType;
 } & BaseRouteComponent;
 
 type RouteComponent = IndependentRouteComponent | DependentRouteComponent;
@@ -257,13 +257,13 @@ function Body({ isFeatureFlagEnabled, isRenderedRoutePath }: BodyProps): ReactEl
 
                             if ('featureFlagDependency' in routeComponent) {
                                 const {
-                                    componentDisabled,
-                                    componentEnabled,
+                                    componentWhenDisabled,
+                                    componentWhenEnabled,
                                     featureFlagDependency,
                                 } = routeComponent;
                                 const component = isFeatureFlagEnabled(featureFlagDependency)
-                                    ? componentEnabled
-                                    : componentDisabled;
+                                    ? componentWhenEnabled
+                                    : componentWhenDisabled;
                                 return <Route key={basePath} path={path} component={component} />;
                             }
 
