@@ -25,24 +25,15 @@ import {
 } from 'routePaths';
 
 /*
- * Nav item path like violationsBasePath = '/main/violations' is key of routeDescriptorMap and basePathToLabelMap in routePaths.ts
- * not including parameters in path prop of some Route elements like path="/main/violations/:alertId?"
+ * Nav item path like clustersBasePath = '/main/clusters' is key of routeDescriptorMap and basePathToLabelMap in routePaths.ts
+ * not including parameters in path prop of some Route elements like path="/main/clusters/:clusterId?"
  */
-
-const unfilteredPathsUnexpandable1: string[] = [
-    dashboardPath,
-    networkBasePath,
-    violationsBasePath,
-    complianceBasePath,
-];
 
 const unfilteredPathsVulnerabilityManagement: string[] = [
     vulnManagementPath,
     vulnManagementRiskAcceptancePath,
     vulnManagementReportsPath,
 ];
-
-const unfilteredPathsUnexpandable2: string[] = [configManagementPath, riskBasePath];
 
 const unfilteredPathsPlatformConfiguration: string[] = [
     clustersBasePath,
@@ -66,10 +57,8 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
             : (pathname as string).startsWith(routePath);
     }
 
-    const filteredPathsUnexpandable1 = unfilteredPathsUnexpandable1.filter(isRenderedRoutePath);
     const filteredPathsVulnerabilityManagement =
         unfilteredPathsVulnerabilityManagement.filter(isRenderedRoutePath);
-    const filteredPathsUnexpandable2 = unfilteredPathsUnexpandable2.filter(isRenderedRoutePath);
     const filteredPathsPlatformConfiguration =
         unfilteredPathsPlatformConfiguration.filter(isRenderedRoutePath);
 
@@ -90,7 +79,9 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
     const Navigation = (
         <Nav id="nav-primary-simple">
             <NavList id="nav-list-simple">
-                {filteredPathsUnexpandable1.map(navItemMapper)}
+                {[dashboardPath, networkBasePath, violationsBasePath, complianceBasePath]
+                    .filter(isRenderedRoutePath)
+                    .map(navItemMapper)}
                 {filteredPathsVulnerabilityManagement.length !== 0 && (
                     <NavExpandable
                         title="Vulnerability Management"
@@ -100,7 +91,9 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
                         {filteredPathsVulnerabilityManagement.map(navItemMapper)}
                     </NavExpandable>
                 )}
-                {filteredPathsUnexpandable2.map(navItemMapper)}
+                {[configManagementPath, riskBasePath]
+                    .filter(isRenderedRoutePath)
+                    .map(navItemMapper)}
                 {filteredPathsPlatformConfiguration.length !== 0 && (
                     <NavExpandable
                         title="Platform Configuration"

@@ -163,7 +163,6 @@ const renderUnconditionally = readAccessResourceNames([]);
  * buttons might depend on hasReadWriteAccess instead of hasReadAccess
  */
 export const routeDescriptorMap: Record<string, RouteDescriptor> = {
-    // Sidebar Unexpandable1
     [dashboardPath]: {
         readAccessPredicate: renderUnconditionally,
     },
@@ -181,7 +180,7 @@ export const routeDescriptorMap: Record<string, RouteDescriptor> = {
         readAccessPredicate: readAccessResourceNames([]), // Compliance
     },
 
-    // Sidebar VulnerabilityManagement
+    // Vulnerability Management
     [vulnManagementPath]: {
         readAccessPredicate: readAccessResourceNames([]),
     },
@@ -192,7 +191,6 @@ export const routeDescriptorMap: Record<string, RouteDescriptor> = {
         readAccessPredicate: readAccessResourceNames(['VulnerabilityReports']),
     },
 
-    // Sidebar Unexpandable2
     [configManagementPath]: {
         readAccessPredicate: readAccessResourceNames([]),
     },
@@ -200,7 +198,7 @@ export const routeDescriptorMap: Record<string, RouteDescriptor> = {
         readAccessPredicate: readAccessResourceNames([]), // Deployment, and DeploymentExtension?
     },
 
-    // Sidebar PlatformConfiguration
+    // Platform Configuration
     [clustersBasePath]: {
         readAccessPredicate: readAccessResourceNames([]), // Cluster
     },
