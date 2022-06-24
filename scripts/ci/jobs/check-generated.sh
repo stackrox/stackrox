@@ -19,12 +19,15 @@ function generated_files-are-up-to-date() {
     git diff --exit-code HEAD
     { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
 
-    store_test_results /tmp/untracked-new untracked-new
-
     if [[ -s /tmp/untracked-new ]]; then
         # shellcheck disable=SC2016
         echo 'Found new untracked files after running `make proto-generated-srcs` and `make go-generated-srcs`. Did you forget to `git add` generated mocks and protos?'
         cat /tmp/untracked-new
+
+        if is_OPENSHIFT_CI; then
+            cp /tmp/untracked-new "${ARTIFACTS_DIR}/untracked-new"
+        fi
+
         exit 1
     fi
 }

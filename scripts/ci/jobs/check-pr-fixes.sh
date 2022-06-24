@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 
-# This script is intended to be run in OpenShiftCI, and tells you whether any references to tickets
+# This script is intended to be run in CI, and tells you whether any references to tickets
 # claimed to be fixed by this PR are still referenced by a TODO.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
 
-#set -euo pipefail
-set +eo pipefail
+set -euo pipefail
 
 check-pr-fixes() {
     echo 'Ensure that all TODO references to fixed tickets are gone'
