@@ -40,9 +40,7 @@ func move(legacyDB *bolt.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacySt
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
-	var externalBackups []*storage.ExternalBackup
-	var err error
-	externalBackups, err = legacyStore.GetAll(ctx)
+	externalBackups, err := legacyStore.GetAll(ctx)
 	if err != nil {
 		log.WriteToStderr("failed to fetch all externalBackups")
 		return err

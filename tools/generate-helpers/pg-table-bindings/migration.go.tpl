@@ -77,9 +77,9 @@ func move(legacyDB {{if $rocksDB}}*rocksdb.RocksDB{{else}}*bolt.DB{{end}}, gormD
             return err
         }
     {{- else}}
+	    {{- if or $rocksDB (not .GetAll) }}
 	    var {{.Table|lowerCamelCase}} []*{{.Type}}
 	    var err error
-	    {{- if $rocksDB}}
 	    legacyStore.Walk(ctx, func(obj *{{.Type}}) error {
 		    {{.Table|lowerCamelCase}} = append({{.Table|lowerCamelCase}}, obj)
 		    if len({{.Table|lowerCamelCase}}) == 10*batchSize {
@@ -92,7 +92,7 @@ func move(legacyDB {{if $rocksDB}}*rocksdb.RocksDB{{else}}*bolt.DB{{end}}, gormD
 		    return nil
 	    })
 	    {{- else}}
-	    {{.Table|lowerCamelCase}}, err = legacyStore.GetAll(ctx)
+	    {{.Table|lowerCamelCase}}, err := legacyStore.GetAll(ctx)
         if err != nil {
             log.WriteToStderr("failed to fetch all {{.Table|lowerCamelCase}}")
             return err
