@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Patch CHANGELOG.md on the main branch and create a PR.
+# Patches CHANGELOG.md on the main branch and creates a PR.
 #
 set -euo pipefail
 
