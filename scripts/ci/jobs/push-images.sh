@@ -12,6 +12,8 @@ push_images() {
         die "missing args. usage: push_images <brand>"
     fi
 
+    local brand="$1"
+
     info "Images from OpenShift CI builds:"
     env | grep IMAGE || true
 
@@ -31,7 +33,6 @@ push_images() {
         info "Not checking docs/ & version files for non releases"
     fi
 
-    local brand="$1"
     local push_context=""
     local base_ref
     base_ref="$(get_base_ref)" || {
