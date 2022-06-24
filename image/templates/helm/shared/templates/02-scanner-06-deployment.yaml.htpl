@@ -149,10 +149,10 @@ spec:
           defaultMode: 420
           optional: true
           secretName: additional-ca
-      - emptyDir: {}
-        name: scanner-etc-ssl-volume
-      - emptyDir: {}
-        name: scanner-etc-pki-volume
+      - name: scanner-etc-ssl-volume
+        emptyDir: {}
+      - name: scanner-etc-pki-volume
+        emptyDir: {}
       - name: scanner-config-volume
         configMap:
           name: scanner-config
