@@ -20,6 +20,7 @@ var (
 type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
+	SearchCategories(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error)
 }
 

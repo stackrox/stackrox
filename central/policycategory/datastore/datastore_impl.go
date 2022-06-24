@@ -77,7 +77,11 @@ func (ds *datastoreImpl) GetPolicyCategory(ctx context.Context, id string) (*sto
 	return category, true, nil
 }
 
-func (ds *datastoreImpl) SearchPolicyCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error) {
+func (ds *datastoreImpl) SearchPolicyCategories(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	return ds.searcher.SearchCategories(ctx, q)
+}
+
+func (ds *datastoreImpl) SearchRawPolicyCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error) {
 	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}

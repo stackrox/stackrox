@@ -66,7 +66,7 @@ func (s *serviceImpl) GetPolicyCategories(ctx context.Context, query *v1.RawQuer
 		if err != nil {
 			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 		}
-		categories, err := s.policyCategoriesDatastore.SearchPolicyCategories(ctx, parsedQuery)
+		categories, err := s.policyCategoriesDatastore.SearchRawPolicyCategories(ctx, parsedQuery)
 		if err != nil {
 			return nil, err
 		}

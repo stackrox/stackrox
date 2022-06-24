@@ -48,28 +48,43 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (s searcherImpl) SearchRawCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error) {
-	return s.searchCategories(ctx, q)
+	categories, _, err := s.searchCategories(ctx, q)
+	return categories, err
 }
 
-func (s *searcherImpl) searchCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error) {
-	results, err := s.Search(ctx, q)
+func (s searcherImpl) SearchCategories(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	categories, results, err := s.searchCategories(ctx, q)
 	if err != nil {
 		return nil, err
 	}
+	protoResults := make([]*v1.SearchResult, 0, len(categories))
+	for i, c := range categories {
+		protoResults = append(protoResults, convertCategory(c, results[i]))
+	}
+	return protoResults, nil
+}
+
+func (s *searcherImpl) searchCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, []search.Result, error) {
+	results, err := s.Search(ctx, q)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var categories []*storage.PolicyCategory
+	var newResults []search.Result
 	for _, result := range results {
 		category, exists, err := s.storage.Get(ctx, result.ID)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		// The result may not exist if the object was deleted after the search
 		if !exists {
 			continue
 		}
+		newResults = append(newResults, result)
 		categories = append(categories, category)
 	}
-	return categories, nil
+	return categories, newResults, nil
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
@@ -78,4 +93,15 @@ func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, categoryMapping.OptionsMap)
 	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+}
+
+// convertCategory returns proto search result from a category object and the internal search result
+func convertCategory(policy *storage.PolicyCategory, result search.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_POLICY_CATEGORIES,
+		Id:             policy.GetId(),
+		Name:           policy.GetName(),
+		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

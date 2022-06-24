@@ -25,6 +25,7 @@ import (
 	policyIndex "github.com/stackrox/rox/central/policy/index"
 	policySearcher "github.com/stackrox/rox/central/policy/search"
 	policyStoreMocks "github.com/stackrox/rox/central/policy/store/mocks"
+	categoryDataStoreMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	roleBindingsMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
@@ -44,6 +45,7 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -77,6 +79,7 @@ func TestSearchFuncs(t *testing.T) {
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
+		WithCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil).
 		Build()
 
@@ -95,13 +98,19 @@ func TestSearchService(t *testing.T) {
 
 type SearchOperationsTestSuite struct {
 	suite.Suite
+	envIsolator *envisolator.EnvIsolator
 
 	mockCtrl *gomock.Controller
 	rocksDB  *rocksdb.RocksDB
 	boltDB   *bolt.DB
 }
 
+func (s *SearchOperationsTestSuite) SetupSuite() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+}
+
 func (s *SearchOperationsTestSuite) SetupTest() {
+	s.envIsolator.Setenv(features.NewPolicyCategories.EnvVar(), "true")
 	s.mockCtrl = gomock.NewController(s.T())
 	s.rocksDB = rocksdbtest.RocksDBForT(s.T())
 	var err error
@@ -110,6 +119,7 @@ func (s *SearchOperationsTestSuite) SetupTest() {
 }
 
 func (s *SearchOperationsTestSuite) TearDownTest() {
+	s.envIsolator.RestoreAll()
 	s.mockCtrl.Finish()
 	s.rocksDB.Close()
 }
@@ -290,7 +300,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	indexingQ.PushSignal(&finishedIndexing)
 	finishedIndexing.Wait()
 
-	service := NewBuilder().
+	builder := NewBuilder().
 		WithAlertStore(alertsDS).
 		WithDeploymentStore(deploymentDS).
 		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
@@ -303,8 +313,12 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil).
-		Build().(*serviceImpl)
+		WithAggregator(nil)
+
+	if features.NewPolicyCategories.Enabled() {
+		builder = builder.WithCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+	}
+	service := builder.Build().(*serviceImpl)
 
 	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.Name).Query()
 	alertQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, alert.GetDeployment().GetName()).Query()
@@ -366,7 +380,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	indexingQ.PushSignal(&finishedIndexing)
 	finishedIndexing.Wait()
 
-	service := NewBuilder().
+	builder := NewBuilder().
 		WithAlertStore(alertsDS).
 		WithDeploymentStore(deploymentDS).
 		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
@@ -379,8 +393,13 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil).
-		Build().(*serviceImpl)
+		WithAggregator(nil)
+
+	if features.NewPolicyCategories.Enabled() {
+		builder = builder.WithCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+	}
+
+	service := builder.Build().(*serviceImpl)
 
 	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.Name).Query()
 	alertQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, alert.GetDeployment().GetName()).Query()

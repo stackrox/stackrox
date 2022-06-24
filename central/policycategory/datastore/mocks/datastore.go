@@ -11,6 +11,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -49,6 +50,21 @@ func (m *MockDataStore) AddPolicyCategory(arg0 context.Context, arg1 *storage.Po
 func (mr *MockDataStoreMockRecorder) AddPolicyCategory(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPolicyCategory", reflect.TypeOf((*MockDataStore)(nil).AddPolicyCategory), arg0, arg1)
+}
+
+// Count mocks base method.
+func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Count", ctx, q)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Count indicates an expected call of Count.
+func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
 // DeletePolicyCategory mocks base method.
@@ -110,11 +126,26 @@ func (mr *MockDataStoreMockRecorder) RenamePolicyCategory(ctx, id, newName inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenamePolicyCategory", reflect.TypeOf((*MockDataStore)(nil).RenamePolicyCategory), ctx, id, newName)
 }
 
+// Search mocks base method.
+func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, q)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockDataStoreMockRecorder) Search(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
+}
+
 // SearchPolicyCategories mocks base method.
-func (m *MockDataStore) SearchPolicyCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error) {
+func (m *MockDataStore) SearchPolicyCategories(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchPolicyCategories", ctx, q)
-	ret0, _ := ret[0].([]*storage.PolicyCategory)
+	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -123,4 +154,19 @@ func (m *MockDataStore) SearchPolicyCategories(ctx context.Context, q *v1.Query)
 func (mr *MockDataStoreMockRecorder) SearchPolicyCategories(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchPolicyCategories", reflect.TypeOf((*MockDataStore)(nil).SearchPolicyCategories), ctx, q)
+}
+
+// SearchRawPolicyCategories mocks base method.
+func (m *MockDataStore) SearchRawPolicyCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRawPolicyCategories", ctx, q)
+	ret0, _ := ret[0].([]*storage.PolicyCategory)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawPolicyCategories indicates an expected call of SearchRawPolicyCategories.
+func (mr *MockDataStoreMockRecorder) SearchRawPolicyCategories(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawPolicyCategories", reflect.TypeOf((*MockDataStore)(nil).SearchRawPolicyCategories), ctx, q)
 }

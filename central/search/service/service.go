@@ -11,12 +11,14 @@ import (
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	categoryDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -48,6 +50,7 @@ type Builder interface {
 	WithRoleStore(store roleDataStore.DataStore) Builder
 	WithRoleBindingStore(store roleBindingDataStore.DataStore) Builder
 	WithClusterDataStore(store clusterDataStore.DataStore) Builder
+	WithCategoryDataStore(store categoryDataStore.DataStore) Builder
 	WithAggregator(aggregation.Aggregator) Builder
 
 	Build() Service
@@ -66,8 +69,8 @@ type serviceBuilder struct {
 	roles           roleDataStore.DataStore
 	bindings        roleBindingDataStore.DataStore
 	clusters        clusterDataStore.DataStore
-
-	aggregator aggregation.Aggregator
+	categories      categoryDataStore.DataStore
+	aggregator      aggregation.Aggregator
 }
 
 // NewBuilder returns an instance of a builder to build a search service
@@ -140,6 +143,11 @@ func (b *serviceBuilder) WithClusterDataStore(store clusterDataStore.DataStore) 
 	return b
 }
 
+func (b *serviceBuilder) WithCategoryDataStore(store categoryDataStore.DataStore) Builder {
+	b.categories = store
+	return b
+}
+
 func (b *serviceBuilder) Build() Service {
 	s := serviceImpl{
 		alerts:          b.alerts,
@@ -155,6 +163,7 @@ func (b *serviceBuilder) Build() Service {
 		bindings:        b.bindings,
 		aggregator:      b.aggregator,
 		clusters:        b.clusters,
+		categories:      b.categories,
 	}
 	s.initializeAuthorizer()
 	return &s
@@ -177,5 +186,9 @@ func NewService() Service {
 		WithAggregator(aggregation.Singleton()).
 		WithClusterDataStore(clusterDataStore.Singleton())
 
+	if features.NewPolicyCategories.Enabled() {
+		builder = builder.WithCategoryDataStore(categoryDataStore.Singleton())
+
+	}
 	return builder.Build()
 }
