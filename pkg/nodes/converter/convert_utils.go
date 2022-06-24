@@ -44,3 +44,4 @@ func cveInfoScoreVersion(scoreVersion storage.EmbeddedVulnerability_ScoreVersion
 		return storage.CVEInfo_UNKNOWN
 	}
 }
+
