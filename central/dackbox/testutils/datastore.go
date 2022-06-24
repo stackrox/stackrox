@@ -234,7 +234,6 @@ func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() (err error)
 func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 	if features.PostgresDatastore.Enabled() {
 		s.pgtestbase.Teardown(t)
-		return nil
 	} else {
 		err = s.bleveIndex.Close()
 		if err != nil {
@@ -244,8 +243,8 @@ func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 		if err != nil {
 			return err
 		}
-		return nil
 	}
+	return nil
 }
 
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
