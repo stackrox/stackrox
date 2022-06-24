@@ -6,11 +6,8 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
 
-set -euo pipefail
 
 check-pr-fixes() {
-    set -xv
-    set +eo pipefail
     echo 'Ensure that all TODO references to fixed tickets are gone'
 
     echo "JOB_SPEC=[${JOB_SPEC:-MISSING JOB_SPEC}]"
@@ -30,4 +27,20 @@ check-pr-fixes() {
     "$ROOT/scripts/check-todos.sh" "${tickets[@]}"
 }
 
+set +euo pipefail
+set -u
+echo "try with fail on undefined"
+check-pr-fixes
+
+set +euo pipefail
+set -e
+echo "try add fail on nonzero exitcodes"
+check-pr-fixes
+
+set +euo pipefail
+set -o pipefail
+echo "try add fail on piped nonzero exitcodes"
+check-pr-fixes
+
+set -euo pipefail
 check-pr-fixes
