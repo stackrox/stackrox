@@ -1,14 +1,17 @@
 package resource
 
 import (
+	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
 func getLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n string) *central.MsgFromSensor {
@@ -22,47 +25,108 @@ func getLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n strin
 	return lastMessage
 }
 
-func Test_RoleDeploymentDependency(t *testing.T) {
-	testContext, err := NewContext(t)
-	if err != nil {
-		t.Fatalf("failed to create test context: %s", err)
-	}
+func assertLastDeploymentHasPermissionLevel(t *testing.T, messages []*central.MsgFromSensor, permissionLevel storage.PermissionLevel) {
+	lastNginxDeploymentUpdate := getLastMessageWithDeploymentName(messages, "nginx-deployment")
+	require.NotNil(t, lastNginxDeploymentUpdate, "should have found a message for nginx-deployment")
+	deployment := lastNginxDeploymentUpdate.GetEvent().GetDeployment()
+	assert.Equal(
+		t,
+		deployment.ServiceAccountPermissionLevel,
+		permissionLevel,
+		fmt.Sprintf("permission level has to be %s", permissionLevel),
+	)
+}
 
-	testContext.RunPermutationTest(
+type RoleDependencySuite struct {
+	testContext *TestContext
+	suite.Suite
+}
+
+func Test_RoleDependency(t *testing.T) {
+	suite.Run(t, new(RoleDependencySuite))
+}
+
+var _ suite.SetupAllSuite = &RoleDependencySuite{}
+
+func (s *RoleDependencySuite) SetupSuite() {
+	if testContext, err := NewContext(s.T()); err != nil {
+		s.Fail("failed to setup test context: %s", err)
+	} else {
+		s.testContext = testContext
+	}
+}
+
+func (s *RoleDependencySuite) Test_PermutationTest() {
+	s.testContext.RunWithResourcesPermutation(
 		[]yamlTestFile{
-			Nginx,
+			NginxDeployment,
 			NginxRole,
 			NginxRoleBinding,
-		}, "Role Dependency", func(t *testing.T, fakeCentral *centralDebug.FakeService) {
+		}, "Role Dependency", func(t *testing.T, testC *TestContext) {
 			// Test context already takes care of creating and destroying resources
 			time.Sleep(2 * time.Second)
-			lastNginxDeploymentUpdate := getLastMessageWithDeploymentName(fakeCentral.GetAllMessages(), "nginx-deployment")
-			require.NotNil(t, lastNginxDeploymentUpdate, "should have found a message for nginx-deployment")
-			deployment := lastNginxDeploymentUpdate.GetEvent().GetDeployment()
-			assert.Equal(
+			assertLastDeploymentHasPermissionLevel(
 				t,
-				deployment.ServiceAccountPermissionLevel,
+				testC.GetFakeCentral().GetAllMessages(),
 				storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
-				"permission level has to be ELEVATED_IN_NAMESPACE",
 			)
+			testC.GetFakeCentral().ClearReceivedBuffer()
 		},
 	)
+}
 
-	testContext.RunTest(
+func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
+	s.testContext.RunWithResources(
 		[]yamlTestFile{
-			Nginx,
+			NginxDeployment,
 			NginxRole,
-		}, "Permission level is set to None if no binding is found", func(t *testing.T, fakeCentral *centralDebug.FakeService) {
+		}, "Permission level is set to None if no binding is found", func(t *testing.T, testC *TestContext) {
 			// Test context already takes care of creating and destroying resources
 			time.Sleep(2 * time.Second)
-			lastNginxDeploymentUpdate := getLastMessageWithDeploymentName(fakeCentral.GetAllMessages(), "nginx-deployment")
-			require.NotNil(t, lastNginxDeploymentUpdate, "should have found a message for nginx-deployment")
-			deployment := lastNginxDeploymentUpdate.GetEvent().GetDeployment()
-			assert.Equal(
+			assertLastDeploymentHasPermissionLevel(
 				t,
-				deployment.ServiceAccountPermissionLevel,
+				testC.GetFakeCentral().GetAllMessages(),
 				storage.PermissionLevel_NONE,
-				"permission level has to be NONE",
 			)
+			testC.GetFakeCentral().ClearReceivedBuffer()
 		})
+}
+
+func (s *RoleDependencySuite) Test_MultipleDeploymentUpdates() {
+	s.testContext.RunBare("Update permission level", func(t *testing.T, testC *TestContext) {
+		deleteDep, err := testC.ApplyFile(context.Background(), "sensor-integration", NginxDeployment)
+		defer utils.IgnoreError(deleteDep)
+		require.NoError(t, err)
+
+		deleteRoleBinding, err := testC.ApplyFile(context.Background(), "sensor-integration", NginxRoleBinding)
+		defer utils.IgnoreError(deleteRoleBinding)
+		require.NoError(t, err)
+
+		deleteRole, err := testC.ApplyFile(context.Background(), "sensor-integration", NginxRole)
+		defer utils.IgnoreError(deleteRole)
+		require.NoError(t, err)
+
+		// Wait because of re-sync
+		time.Sleep(3 * time.Second)
+
+		assertLastDeploymentHasPermissionLevel(
+			t,
+			testC.GetFakeCentral().GetAllMessages(),
+			storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
+		)
+		testC.GetFakeCentral().ClearReceivedBuffer()
+
+		utils.IgnoreError(deleteRole)
+		utils.IgnoreError(deleteRoleBinding)
+
+		// Wait because of re-sync
+		time.Sleep(3 * time.Second)
+
+		assertLastDeploymentHasPermissionLevel(
+			t,
+			testC.GetFakeCentral().GetAllMessages(),
+			storage.PermissionLevel_NONE,
+		)
+		testC.GetFakeCentral().ClearReceivedBuffer()
+	})
 }

@@ -465,6 +465,13 @@ go-unit-tests: build-prep test-prep
 		done; \
 	done
 
+.PHONE: sensor-integration-test
+sensor-integration-test: build-prep test-prep
+	set -o pipefail ; \
+	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v \
+		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep '^github.com/stackrox/rox/sensor/tests') \
+		| tee test-output/sensor-integration.log
+
 .PHONY: go-postgres-unit-tests
 go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.

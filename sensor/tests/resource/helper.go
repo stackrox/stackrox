@@ -40,10 +40,12 @@ type yamlTestFile struct {
 }
 
 var (
-	Nginx            = yamlTestFile{"Deployment", "nginx.yaml"}
-	NginxRole        = yamlTestFile{"Role", "nginx-role.yaml"}
+	NginxDeployment = yamlTestFile{"Deployment", "nginx.yaml"}
+	NginxRole       = yamlTestFile{"Role", "nginx-role.yaml"}
 	NginxRoleBinding = yamlTestFile{"Binding", "nginx-binding.yaml"}
 )
+
+type TestCallback func(t *testing.T, testContext *TestContext)
 
 type TestContext struct {
 	t               *testing.T
@@ -59,11 +61,13 @@ func NewContext(t *testing.T) (*TestContext, error) {
 	if err != nil {
 		return nil, err
 	}
-	fakeCentral := startSensorAndFakeCentral(envConfig)
+	fakeCentral, startFn := startSensorAndFakeCentral(envConfig)
 	ch := make(chan *central.MsgFromSensor, 100)
 	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
 		ch <- msg
 	})
+
+	startFn()
 	return &TestContext{
 		t, r, envConfig, fakeCentral, ch,
 	}, nil
@@ -89,7 +93,11 @@ func createTestNs(ctx context.Context, r *resources.Resources, name string) (*v1
 	}, nil
 }
 
-func (c *TestContext) RunTest(files []yamlTestFile, name string, testCase func(*testing.T, *centralDebug.FakeService)) {
+func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
+	return c.fakeCentral
+}
+
+func (c *TestContext) RunWithResources(files []yamlTestFile, name string, testCase TestCallback) {
 	c.t.Run(name, func(t *testing.T) {
 		_, removeNamespace, err := createTestNs(context.Background(), c.r, "sensor-integration")
 		defer utils.IgnoreError(removeNamespace)
@@ -98,7 +106,7 @@ func (c *TestContext) RunTest(files []yamlTestFile, name string, testCase func(*
 		}
 		var removeFunctions []func() error
 		for _, file := range files {
-			removeFn, err := c.applyFileWithWait(context.Background(), "sensor-integration", file)
+			removeFn, err := c.ApplyFile(context.Background(), "sensor-integration", file)
 			if err != nil {
 				t.Fatalf("fail to apply resource: %s", err)
 			}
@@ -106,21 +114,30 @@ func (c *TestContext) RunTest(files []yamlTestFile, name string, testCase func(*
 		}
 		defer func() {
 			for _, fn := range removeFunctions {
-				if err := fn(); err != nil {
-					t.Fatalf("failed to remove resource: %s", err)
-				}
+				utils.IgnoreError(fn)
 			}
 		}()
-		testCase(t, c.fakeCentral)
+		testCase(t, c)
+	})
+}
+
+func (c *TestContext) RunBare(name string, testCase TestCallback) {
+	c.t.Run(name, func(t *testing.T) {
+		_, removeNamespace, err := createTestNs(context.Background(), c.r, "sensor-integration")
+		defer utils.IgnoreError(removeNamespace)
+		if err != nil {
+			t.Fatalf("failed to create namespace: %s", err)
+		}
+		testCase(t, c)
 	})
 }
 
 
-func (c *TestContext) RunPermutationTest(files []yamlTestFile, name string, testCase func(*testing.T, *centralDebug.FakeService)) {
+func (c *TestContext) RunWithResourcesPermutation(files []yamlTestFile, name string, testCase TestCallback) {
 	runPermutation(files, 0, func(f []yamlTestFile) {
 		newF := make([]yamlTestFile, len(f))
 		copy(newF, f)
-		c.RunTest(newF, fmt.Sprintf("%s_Permutation_%s", name, permutationKind(newF)), testCase)
+		c.RunWithResources(newF, fmt.Sprintf("%s_Permutation_%s", name, permutationKind(newF)), testCase)
 	})
 }
 
@@ -145,7 +162,7 @@ func runPermutation(files []yamlTestFile, i int, cb func([]yamlTestFile)) {
 	}
 }
 
-func startSensorAndFakeCentral(env *envconf.Config) *centralDebug.FakeService {
+func startSensorAndFakeCentral(env *envconf.Config) (*centralDebug.FakeService, func()) {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../tools/local-sensor/certs/cert.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../tools/local-sensor/certs/key.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../tools/local-sensor/certs/caCert.pem"))
@@ -170,11 +187,10 @@ func startSensorAndFakeCentral(env *envconf.Config) *centralDebug.FakeService {
 		panic(err)
 	}
 
-	go s.Start()
-
-	spyCentral.ConnectionStarted.Wait()
-
-	return fakeCentral
+	return fakeCentral, func() {
+		go s.Start()
+		spyCentral.ConnectionStarted.Wait()
+	}
 }
 
 func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, *centralDebug.FakeService, func()) {
@@ -220,7 +236,7 @@ func objByKind(kind string) k8s.Object {
 	}
 }
 
-func (c *TestContext) applyFileWithWait(ctx context.Context, ns string, file yamlTestFile) (func() error, error) {
+func (c *TestContext) ApplyFile(ctx context.Context, ns string, file yamlTestFile) (func() error, error) {
 	d := os.DirFS("yaml")
 	obj := objByKind(file.kind)
 	if err := decoder.DecodeFile(
@@ -236,23 +252,11 @@ func (c *TestContext) applyFileWithWait(ctx context.Context, ns string, file yam
 		return nil, err
 	}
 
-	var cond condition
-	switch file.kind {
-	case "Deployment":
-		cond = deploymentName(obj.GetName())
-	case "Role":
-		cond = roleName(obj.GetName())
-	case "Binding":
-		cond = bindingName(obj.GetName())
-	default:
-		cond = func(event *central.SensorEvent) bool {
-			// just don't wait if it's something else
-			return true
+	// Only wait for deployment events to be fully processed
+	if file.kind == "Deployment" {
+		if err := c.waitForResource(5 * time.Second, deploymentName(obj.GetName())); err != nil {
+			return nil, err
 		}
-	}
-
-	if err := c.waitForResource(2 * time.Second, cond); err != nil {
-		return nil, err
 	}
 
 	return func() error {
@@ -265,18 +269,6 @@ type condition func(event *central.SensorEvent) bool
 func deploymentName(s string) condition {
 	return func(event *central.SensorEvent) bool {
 		return event.GetDeployment().GetName() == s
-	}
-}
-
-func roleName(s string) condition {
-	return func(event *central.SensorEvent) bool {
-		return event.GetRole().GetName() == s
-	}
-}
-
-func bindingName(s string) condition {
-	return func(event *central.SensorEvent) bool {
-		return event.GetBinding().GetName() == s
 	}
 }
 
