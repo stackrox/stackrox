@@ -39,15 +39,15 @@ esac
 case "$ci_job" in
     style-checks)
         make style
+        ;&
+    pr-fixes-checks)
+        "$ROOT/scripts/ci/jobs/check-pr-fixes.sh"
         ;;
     policy-checks)
         "$ROOT/scripts/ci/jobs/check-policy-files.sh"
         ;&
     todo-checks)
         "$ROOT/scripts/ci/jobs/check-todos.sh"
-        ;&
-    pr-fixes-checks)
-        "$ROOT/scripts/ci/jobs/check-pr-fixes.sh"
         ;;
     mitre-bundles-checks)
         "$ROOT/scripts/ci/jobs/check-mitre-bundles.sh"
