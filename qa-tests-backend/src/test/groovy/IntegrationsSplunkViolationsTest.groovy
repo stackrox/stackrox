@@ -11,11 +11,10 @@ import com.jayway.restassured.response.Response
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 
 import groups.Integration
+import groups.BAT
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
-import spock.lang.IgnoreIf
-import util.Env
 import util.SplunkUtil
 import util.SplunkUtil.SplunkDeployment
 import util.Timer
@@ -100,8 +99,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
     }
 
-    @Category(Integration)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") }) // TODO(ROX-11405) implement search after for Postgres
+    @Category([Integration, BAT])
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
@@ -320,7 +318,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private boolean waitForAlertWithPolicyId(String policyId) {
         retryUntilTrue({
             AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest.newBuilder()
-                    .setQuery("Namespace:${TEST_NAMESPACE},Violation State:*")
+                    .setQuery("Namespace:${TEST_NAMESPACE}+Violation State:*")
                     .build())
                     .asList()
                     .any { a -> a.getPolicy().getId() == policyId }

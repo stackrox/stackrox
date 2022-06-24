@@ -6,6 +6,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -71,8 +72,9 @@ func (s *SingleIndexSuite) TearDownTest() {
 
 func getStruct(id int) *storage.TestSingleKeyStruct {
 	return &storage.TestSingleKeyStruct{
-		Key:  fmt.Sprintf("string-%d", id),
-		Name: fmt.Sprintf("name-%d", id),
+		Key:    fmt.Sprintf("string-%d", id),
+		Name:   fmt.Sprintf("name-%d", id),
+		Uint64: uint64(id),
 	}
 }
 
@@ -101,10 +103,82 @@ func (s *SingleIndexSuite) TestDocIDs() {
 		},
 	} {
 		s.Run(testCase.desc, func() {
-			q := search.NewQueryBuilder().AddDocIDs(testCase.docIDs...).ProtoQuery()
+			so := search.NewSortOption(search.DocID)
+			q := search.NewQueryBuilder().AddDocIDs(testCase.docIDs...).WithPagination(search.NewPagination().AddSortOption(so)).ProtoQuery()
 			results, err := s.indexer.Search(q)
 			s.Require().NoError(err)
 			s.Equal(testCase.docIDs, search.ResultsToIDs(results))
+
+			q = search.NewQueryBuilder().AddDocIDs(testCase.docIDs...).WithPagination(search.NewPagination().AddSortOption(so.Reversed(true))).ProtoQuery()
+			results, err = s.indexer.Search(q)
+			s.Require().NoError(err)
+
+			sort.Sort(sort.Reverse(sort.StringSlice(testCase.docIDs)))
+			s.Equal(testCase.docIDs, search.ResultsToIDs(results))
+		})
+	}
+
+}
+
+func (s *SingleIndexSuite) TestSearchAfter() {
+	var testStructs []*storage.TestSingleKeyStruct
+	for i := 0; i < 4; i++ {
+		obj := getStruct(i)
+		obj.Uint64 = uint64(i / 2)
+		testStructs = append(testStructs, obj)
+	}
+	s.NoError(s.store.UpsertMany(ctx, testStructs))
+
+	for _, testCase := range []struct {
+		desc       string
+		pagination *search.Pagination
+		results    []string
+		valid      bool
+	}{
+		{
+			"none",
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestName)),
+			[]string{"string-0", "string-1", "string-2", "string-3"},
+			true,
+		},
+		{
+			"first",
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestName).SearchAfter("name-0")),
+			[]string{"string-1", "string-2", "string-3"},
+			true,
+		},
+		{
+			"first reverse",
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestName).SearchAfter("name-0").Reversed(true)),
+			[]string{},
+			true,
+		},
+		{
+			"second",
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestName).SearchAfter("name-1")),
+			[]string{"string-2", "string-3"},
+			true,
+		},
+		{
+			"second reverse",
+			search.NewPagination().AddSortOption(search.NewSortOption(search.TestName).SearchAfter("name-1").Reversed(true)),
+			[]string{"string-0"},
+			true,
+		},
+		{
+			"two sorts",
+			search.NewPagination().
+				AddSortOption(search.NewSortOption(search.TestName).SearchAfter("name-0")).
+				AddSortOption(search.NewSortOption(search.TestUint64).SearchAfter("0")),
+			[]string{},
+			false,
+		},
+	} {
+		s.Run(testCase.desc, func() {
+			q := search.NewQueryBuilder().WithPagination(testCase.pagination).ProtoQuery()
+			results, err := s.indexer.Search(q)
+			s.Equal(testCase.valid, err == nil)
+			s.Equal(testCase.results, search.ResultsToIDs(results))
 		})
 	}
 

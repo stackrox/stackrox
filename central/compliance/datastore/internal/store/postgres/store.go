@@ -173,7 +173,7 @@ func (s *storeImpl) getLatestRunMetadata(ctx context.Context, clusterID, standar
 		WithPagination(
 			search.NewPagination().
 				Limit(10).
-				AddSortOption(search.ComplianceRunFinishedTimestamp, true),
+				AddSortOption(search.NewSortOption(search.ComplianceRunFinishedTimestamp).Reversed(true)),
 		).
 		ProtoQuery()
 	metadataSearchResults, err := s.metadataIndex.Search(query)
