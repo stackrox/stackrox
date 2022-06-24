@@ -25,6 +25,7 @@ import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entit
 import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import WatchedImagesDialog from './WatchedImagesDialog';
 
 export const defaultImageSort = [
@@ -34,7 +35,9 @@ export const defaultImageSort = [
     },
 ];
 
-export function getCurriedImageTableColumns(watchedImagesTrigger) {
+export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagEnabled) {
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+
     return function getImageTableColumns(workflowState) {
         const tableColumns = [
             {
@@ -191,12 +194,18 @@ export function getCurriedImageTableColumns(watchedImagesTrigger) {
             },
             {
                 Header: `Components`,
-                entityType: entityTypes.IMAGE_COMPONENT,
+                entityType: isFrontendVMUpdatesEnabled
+                    ? entityTypes.IMAGE_COMPONENT
+                    : entityTypes.COMPONENT,
                 headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => (
                     <TableCountLink
-                        entityType={entityTypes.IMAGE_COMPONENT}
+                        entityType={
+                            isFrontendVMUpdatesEnabled
+                                ? entityTypes.IMAGE_COMPONENT
+                                : entityTypes.COMPONENT
+                        }
                         count={original.componentCount}
                         textOnly={pdf}
                         selectedRowId={original.id}
@@ -231,6 +240,7 @@ const VulnMgmtImages = ({
 }) => {
     const [showWatchedImagesDialog, setShowWatchedImagesDialog] = useState(false);
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const inactiveImageScanningEnabled = workflowState.isBaseList(entityTypes.IMAGE);
 
@@ -277,7 +287,10 @@ const VulnMgmtImages = ({
         </PanelButton>
     ) : null;
 
-    const getImageTableColumns = getCurriedImageTableColumns(toggleWatchedImagesDialog);
+    const getImageTableColumns = getCurriedImageTableColumns(
+        toggleWatchedImagesDialog,
+        isFeatureFlagEnabled
+    );
 
     return (
         <>

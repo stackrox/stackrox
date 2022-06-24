@@ -38,6 +38,7 @@ import {
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 import CVSSSeverityLabel from 'Components/CVSSSeverityLabel';
+import CveType from 'Components/CveType';
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 import { getFilteredCVEColumns } from './ListCVEs.utils';
@@ -78,6 +79,22 @@ export function getCveTableColumns(workflowState) {
             id: cveSortFields.CVE,
             accessor: 'cve',
             sortField: cveSortFields.CVE,
+        },
+        {
+            Header: `Type`,
+            headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                return (
+                    <span className="mx-auto" data-testid="cve-type">
+                        <CveType types={original.vulnerabilityTypes} />
+                    </span>
+                );
+            },
+            id: cveSortFields.CVE_TYPE,
+            accessor: 'vulnerabilityTypes',
+            sortField: cveSortFields.CVE_TYPE,
+            sortable: true,
         },
         {
             Header: `Fixable`,

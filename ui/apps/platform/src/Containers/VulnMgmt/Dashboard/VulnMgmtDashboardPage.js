@@ -24,18 +24,21 @@ import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
 import ClustersWithMostOrchestratorIstioVulnerabilities from '../widgets/ClustersWithMostOrchestratorIstioVulnerabilities';
 
-const entityMenuTypes = [
-    entityTypes.CLUSTER,
-    entityTypes.NAMESPACE,
-    entityTypes.DEPLOYMENT,
-    entityTypes.NODE_COMPONENT,
-    entityTypes.IMAGE_COMPONENT,
-];
+const baseEntityMenuTypes = [entityTypes.CLUSTER, entityTypes.NAMESPACE, entityTypes.DEPLOYMENT];
+const componentMenuType = [entityTypes.COMPONENT];
+const splitComponentMenuTypes = [entityTypes.NODE_COMPONENT, entityTypes.IMAGE_COMPONENT];
 
 const VulnDashboardPage = ({ history }) => {
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
     const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    let entityMenuTypes = [...baseEntityMenuTypes];
+    if (isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES')) {
+        entityMenuTypes = [...baseEntityMenuTypes, ...splitComponentMenuTypes];
+    } else {
+        entityMenuTypes = [...baseEntityMenuTypes, ...componentMenuType];
+    }
 
     const cveFilterButtons = [
         {

@@ -31,8 +31,9 @@ export const useCaseEntityMap = {
         ...baseEntities,
         entityTypes.IMAGE,
         entityTypes.COMPONENT,
-        entityTypes.NODE_COMPONENT,
-        entityTypes.IMAGE_COMPONENT,
+        // @TODO: Uncomment the following and delete the Component type when we move to the new types
+        // entityTypes.NODE_COMPONENT,
+        // entityTypes.IMAGE_COMPONENT,
     ],
 };
 
@@ -88,7 +89,9 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
         // extendedMatches: [entityTypes.POLICY]
     },
     [entityTypes.NODE]: {
-        children: [entityTypes.NODE_COMPONENT],
+        // @TODO: Uncomment this once we're using the new entity
+        // children: [entityTypes.NODE_COMPONENT],
+        children: [entityTypes.COMPONENT],
         parents: [entityTypes.CLUSTER],
         matches: [entityTypes.CONTROL],
     },
@@ -109,7 +112,9 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
         ],
     },
     [entityTypes.IMAGE]: {
-        children: [entityTypes.IMAGE_COMPONENT],
+        // @TODO: Uncomment this once we're using the new entity
+        // children: [entityTypes.IMAGE_COMPONENT],
+        children: [entityTypes.COMPONENT],
         parents: [],
         matches: [entityTypes.DEPLOYMENT],
     },
@@ -122,13 +127,13 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.NODE_COMPONENT]: {
         children: [],
         parents: [],
-        matches: [entityTypes.IMAGE, entityTypes.CVE, entityTypes.NODE],
-        extendedMatches: [entityTypes.DEPLOYMENT],
+        matches: [entityTypes.CVE, entityTypes.NODE],
+        extendedMatches: [],
     },
     [entityTypes.IMAGE_COMPONENT]: {
         children: [],
         parents: [],
-        matches: [entityTypes.IMAGE, entityTypes.CVE, entityTypes.NODE],
+        matches: [entityTypes.IMAGE, entityTypes.CVE],
         extendedMatches: [entityTypes.DEPLOYMENT],
     },
     // TODO: remove this old CVE entity type which encompasses node CVEs, image/component CVEs, k8s CVEs (for clusters)
