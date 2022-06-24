@@ -14,6 +14,8 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/enrichment"
+	"github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -90,7 +92,9 @@ type datastoreImpl struct {
 	idToNameCache simplecache.Cache
 	nameToIDCache simplecache.Cache
 
-	lock sync.Mutex
+	lock               sync.Mutex
+	datastore          datastore.DataStore
+	integrationManager enrichment.Manager
 }
 
 func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
@@ -475,6 +479,20 @@ func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string
 	}
 
 	return ds.clusterStorage.Upsert(ctx, cluster)
+}
+
+func (ds *datastoreImpl) RemoveImageIntegrationforCluster(ctx context.Context, id string) error {
+	if id == "" {
+		return errors.Wrap(errox.InvalidArgs, "image integration id must be provided")
+	}
+	if err := ds.datastore.RemoveImageIntegration(ctx, id); err != nil {
+		return err
+	}
+
+	if err := ds.integrationManager.Remove(id); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error {

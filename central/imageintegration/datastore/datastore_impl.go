@@ -26,7 +26,6 @@ func (ds *datastoreImpl) GetImageIntegration(ctx context.Context, id string) (*s
 	} else if !ok {
 		return nil, false, nil
 	}
-
 	return ds.storage.Get(ctx, id)
 }
 
