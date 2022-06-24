@@ -215,16 +215,16 @@ create_rc_openshift_cluster() {
   oc login --username="$OPENSHIFT_CONSOLE_USERNAME" --password="$OPENSHIFT_CONSOLE_PASSWORD"
 
   export MAIN_TAG="${RELEASE}.0-rc.${RC_NUMBER}"
-  oc -n stackrox set image deploy/central "central=docker.io/stackrox/main:${MAIN_TAG}"
+  oc -n stackrox set image deploy/central "central=quay.io/rhacs-eng/main:${MAIN_TAG}"
   oc -n stackrox patch hpa/scanner -p '{"spec":{"minReplicas":2}}'
-  oc -n stackrox set image deploy/scanner "scanner=docker.io/stackrox/scanner:${MAIN_TAG}"
-  oc -n stackrox set image deploy/scanner-db "db=docker.io/stackrox/scanner-db:${MAIN_TAG}"
-  oc -n stackrox set image deploy/scanner-db "init-db=docker.io/stackrox/scanner-db:${MAIN_TAG}"
+  oc -n stackrox set image deploy/scanner "scanner=quay.io/rhacs-eng/scanner:${MAIN_TAG}"
+  oc -n stackrox set image deploy/scanner-db "db=quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"
+  oc -n stackrox set image deploy/scanner-db "init-db=quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"
   oc -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","env":[{"name":"POD_NAMESPACE","valueFrom":{"fieldRef":{"fieldPath":"metadata.namespace"}}}],"volumeMounts":[{"name":"cache","mountPath":"/var/cache/stackrox"}]}],"volumes":[{"name":"cache","emptyDir":{}}]}}}}'
-  oc -n stackrox set image deploy/sensor "sensor=docker.io/stackrox/main:${MAIN_TAG}"
-  oc -n stackrox set image ds/collector "compliance=docker.io/stackrox/main:${MAIN_TAG}"
-  oc -n stackrox set image ds/collector "collector=docker.io/stackrox/collector:${MAIN_TAG}"
-  oc -n stackrox set image deploy/admission-control "admission-control=docker.io/stackrox/main:${MAIN_TAG}"
+  oc -n stackrox set image deploy/sensor "sensor=quay.io/rhacs-eng/main:${MAIN_TAG}"
+  oc -n stackrox set image ds/collector "compliance=quay.io/rhacs-eng/main:${MAIN_TAG}"
+  oc -n stackrox set image ds/collector "collector=quay.io/rhacs-eng/collector:${MAIN_TAG}"
+  oc -n stackrox set image deploy/admission-control "admission-control=quay.io/rhacs-eng/main:${MAIN_TAG}"
 
   oc -n stackrox get deploy,pods -o wide
 }
@@ -240,7 +240,7 @@ create_qa_gke_cluster() {
   if does_cluster_exist "$CLUSTER_NAME"; then
     echo "Cluster $CLUSTER_NAME already exists"
   else
-    infractl create qa-demo "${CLUSTER_NAME}" --arg "main-image=docker.io/stackrox/main:${RELEASE}.${PATCH_NUMBER}-rc.${RC_NUMBER}" --lifespan "$DEMO_LIFESPAN"
+    infractl create qa-demo "${CLUSTER_NAME}" --arg "main-image=quay.io/rhacs-eng/main:${RELEASE}.${PATCH_NUMBER}-rc.${RC_NUMBER}" --lifespan "$DEMO_LIFESPAN"
   fi
 
   wait_for_cluster_to_be_ready "$CLUSTER_NAME"
