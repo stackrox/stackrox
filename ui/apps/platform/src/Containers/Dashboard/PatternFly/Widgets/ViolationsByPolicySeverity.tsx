@@ -5,10 +5,12 @@ import { Flex, FlexItem, Title, Button, Divider } from '@patternfly/react-core';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useURLSearch from 'hooks/useURLSearch';
 import { violationsBasePath } from 'routePaths';
-
 import { SearchFilter } from 'types/search';
+import { DeploymentAlert } from 'types/alert.proto';
 import { getQueryString } from 'utils/queryStringUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+
+import { severities } from 'constants/severities';
 import WidgetCard from './WidgetCard';
 import MostRecentViolations from './MostRecentViolations';
 import PolicyViolationTiles from './PolicyViolationTiles';
@@ -26,7 +28,7 @@ function getViewAllLink(searchFilter: SearchFilter) {
 
 const mostRecentAlertsQuery = gql`
     query mostRecentAlerts($query: String) {
-        violations(
+        alerts: violations(
             query: $query
             pagination: { limit: 3, sortOption: { field: "Violation Time", reversed: true } }
         ) {
@@ -47,18 +49,24 @@ const mostRecentAlertsQuery = gql`
 
 function ViolationsByPolicySeverity() {
     const { searchFilter } = useURLSearch();
-    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const countsFilterQuery = getRequestQueryStringForSearchFilter(searchFilter);
+    const mostRecentFilterQuery = getRequestQueryStringForSearchFilter({
+        ...searchFilter,
+        Severity: severities.CRITICAL_SEVERITY,
+    });
     const {
         data: alertCountData,
         loading: alertCountLoading,
         error: alertCountError,
-    } = useAlertGroups(query);
+    } = useAlertGroups(countsFilterQuery);
     const {
         data: currentRecentAlertsData,
         previousData: previousRecentAlertsData,
         loading: recentAlertsLoading,
         error: recentAlertsError,
-    } = useQuery(mostRecentAlertsQuery);
+    } = useQuery<{ alerts: Partial<DeploymentAlert>[] }>(mostRecentAlertsQuery, {
+        variables: { query: mostRecentFilterQuery },
+    });
 
     const severityCounts = (alertCountData && alertCountData[0]?.counts) ?? [];
     const recentAlertsData = currentRecentAlertsData || previousRecentAlertsData;
@@ -106,7 +114,7 @@ function ViolationsByPolicySeverity() {
                 <>
                     <PolicyViolationTiles searchFilter={searchFilter} counts={counts} />
                     <Divider component="div" className="pf-u-my-lg" />
-                    <MostRecentViolations alerts={recentAlertsData} />
+                    <MostRecentViolations alerts={recentAlertsData.alerts} />
                 </>
             )}
         </WidgetCard>

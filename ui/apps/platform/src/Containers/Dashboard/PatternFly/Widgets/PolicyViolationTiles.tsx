@@ -21,7 +21,7 @@ function SeverityTile({ severity, violationCount, link }: SeverityTileProps) {
     return (
         <Stack
             style={{ '--pf-severity-tile-color': severityColors[severity] } as CSSProperties}
-            className="pf-severity-tile pf-u-p-md pf-u-align-items-center"
+            className="pf-severity-tile pf-u-px-md pf-u-py-sm pf-u-align-items-center"
         >
             <StackItem className="pf-u-font-weight-bold pf-u-font-size-xl">
                 {violationCount}
@@ -51,12 +51,12 @@ function PolicyViolationTiles({ searchFilter, counts }: PolicyViolationTilesProp
         <Flex direction={{ default: 'row' }}>
             {policySeverities.map((severity) => (
                 <FlexItem
+                    key={severity}
                     style={{ flexBasis: '0px' }}
                     shrink={{ default: 'shrink' }}
                     grow={{ default: 'grow' }}
                 >
                     <SeverityTile
-                        key={severity}
                         severity={severity}
                         violationCount={counts[severity]}
                         link={linkToViolations(searchFilter, severity)}
