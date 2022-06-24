@@ -6,6 +6,7 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 
 import {
     IsRenderedRoutePath,
+    RoutePath,
     basePathToLabelMap,
     dashboardPath,
     networkBasePath,
@@ -29,13 +30,13 @@ import {
  * not including parameters in path prop of some Route elements like path="/main/clusters/:clusterId?"
  */
 
-const unfilteredPathsVulnerabilityManagement: string[] = [
+const unfilteredPathsVulnerabilityManagement: RoutePath[] = [
     vulnManagementPath,
     vulnManagementRiskAcceptancePath,
     vulnManagementReportsPath,
 ];
 
-const unfilteredPathsPlatformConfiguration: string[] = [
+const unfilteredPathsPlatformConfiguration: RoutePath[] = [
     clustersBasePath,
     policiesBasePath,
     integrationsPath,
@@ -51,7 +52,7 @@ type NavigationSidebarProps = {
 function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): ReactElement {
     const { pathname } = useLocation();
 
-    function isActiveFilter(routePath: string): boolean {
+    function isActiveFilter(routePath: RoutePath): boolean {
         return routePath === vulnManagementPath
             ? pathname === routePath
             : (pathname as string).startsWith(routePath);
@@ -66,7 +67,7 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
     const isActiveVulnerabilityManagement = pathname.startsWith(vulnManagementPath);
     const isActivePlatformConfiguration = filteredPathsPlatformConfiguration.some(isActiveFilter);
 
-    function navItemMapper(routePath: string): ReactElement {
+    function navItemMapper(routePath: RoutePath): ReactElement {
         const isActive = isActiveFilter(routePath);
         // Delete nullish coalescing and empty string if we replace string with RoutePath string union type.
         return (

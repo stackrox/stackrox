@@ -4,6 +4,7 @@ import { PageSection } from '@patternfly/react-core';
 
 import {
     IsRenderedRoutePath,
+    RoutePath,
     mainPath,
     dashboardPath,
     dashboardPathPF,
@@ -97,7 +98,7 @@ const AsyncSystemHealthPagePF = asyncComponent(
  * propPath includes parameters like path="/main/violations/:alertId?"
  */
 type BaseRouteComponent = {
-    basePath: string;
+    basePath: RoutePath;
     propPath?: string;
 };
 

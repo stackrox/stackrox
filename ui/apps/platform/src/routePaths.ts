@@ -8,51 +8,53 @@ import { HasReadAccess } from 'hooks/usePermissions';
 import { FeatureFlagEnvVar } from 'types/featureFlag';
 import { ResourceName } from 'types/roleResources';
 
+export type RoutePath = string & { readonly tag: unique symbol };
+
 export const mainPath = '/main';
 export const loginPath = '/login';
 export const testLoginResultsPath = '/test-login-results';
 export const authResponsePrefix = '/auth/response/';
 
-export const dashboardPath = `${mainPath}/dashboard`;
-export const dashboardPathPF = `${mainPath}/dashboard-pf`;
-export const networkBasePath = `${mainPath}/network`;
+export const dashboardPath = `${mainPath}/dashboard` as RoutePath;
+export const dashboardPathPF = `${mainPath}/dashboard-pf` as RoutePath;
+export const networkBasePath = `${mainPath}/network` as RoutePath;
 export const networkPath = `${networkBasePath}/:deploymentId?/:externalType?`;
-export const violationsBasePath = `${mainPath}/violations`;
+export const violationsBasePath = `${mainPath}/violations` as RoutePath;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
-export const clustersBasePath = `${mainPath}/clusters`;
+export const clustersBasePath = `${mainPath}/clusters` as RoutePath;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const clustersListPath = `${mainPath}/clusters-pf`;
-export const integrationsPath = `${mainPath}/integrations`;
+export const integrationsPath = `${mainPath}/integrations` as RoutePath;
 export const integrationsListPath = `${integrationsPath}/:source/:type`;
 export const integrationCreatePath = `${integrationsPath}/:source/:type/create`;
 export const integrationDetailsPath = `${integrationsPath}/:source/:type/view/:id`;
 export const integrationEditPath = `${integrationsPath}/:source/:type/edit/:id`;
 export const policyManagementBasePath = `${mainPath}/policy-management`;
-export const policiesBasePath = `${policyManagementBasePath}/policies`;
+export const policiesBasePath = `${policyManagementBasePath}/policies` as RoutePath;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
 export const deprecatedPoliciesBasePath = `${mainPath}/policies`;
 export const deprecatedPoliciesPath = `${deprecatedPoliciesBasePath}/:policyId?/:command?`;
-export const riskBasePath = `${mainPath}/risk`;
+export const riskBasePath = `${mainPath}/risk` as RoutePath;
 export const riskPath = `${riskBasePath}/:deploymentId?`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
-export const apidocsPath = `${mainPath}/apidocs`;
+export const apidocsPath = `${mainPath}/apidocs` as RoutePath;
 export const accessControlPath = `${mainPath}/access`;
-export const accessControlBasePathV2 = `${mainPath}/access-control`;
+export const accessControlBasePathV2 = `${mainPath}/access-control` as RoutePath;
 export const accessControlPathV2 = `${accessControlBasePathV2}/:entitySegment?/:entityId?`;
-export const userBasePath = `${mainPath}/user`;
+export const userBasePath = `${mainPath}/user` as RoutePath;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
-export const systemConfigPath = `${mainPath}/systemconfig`;
-export const complianceBasePath = `${mainPath}/compliance`;
+export const systemConfigPath = `${mainPath}/systemconfig` as RoutePath;
+export const complianceBasePath = `${mainPath}/compliance` as RoutePath;
 export const compliancePath = `${mainPath}/:context(compliance)`;
-export const configManagementPath = `${mainPath}/configmanagement`;
+export const configManagementPath = `${mainPath}/configmanagement` as RoutePath;
 export const dataRetentionPath = `${mainPath}/retention`;
-export const systemHealthPath = `${mainPath}/system-health`;
-export const systemHealthPathPF = `${mainPath}/system-health-pf`;
+export const systemHealthPath = `${mainPath}/system-health` as RoutePath;
+export const systemHealthPathPF = `${mainPath}/system-health-pf` as RoutePath;
 export const productDocsPath = '/docs/product';
 
 // Vuln Management Paths
 
-export const vulnManagementPath = `${mainPath}/vulnerability-management`;
+export const vulnManagementPath = `${mainPath}/vulnerability-management` as RoutePath;
 export const vulnManagementPoliciesPath = `${vulnManagementPath}/policies`;
 export const vulnManagementCVEsPath = `${vulnManagementPath}/cves`;
 export const vulnManagementImageCVEsPath = `${vulnManagementPath}/image-cves`;
@@ -66,10 +68,11 @@ export const vulnManagementComponentsPath = `${vulnManagementPath}/components`;
 export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 
 // The following paths are not part of the infinite nesting Workflow in Vuln Management
-export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
+export const vulnManagementReportsPath = `${vulnManagementPath}/reports` as RoutePath;
 export const vulnManagementReportsPathWithParam = `${vulnManagementPath}/reports/:reportId`;
 
-export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
+export const vulnManagementRiskAcceptancePath =
+    `${vulnManagementPath}/risk-acceptance` as RoutePath;
 export const vulnManagementPendingApprovalsPath = `${vulnManagementRiskAcceptancePath}/pending-approvals`;
 export const vulnManagementApprovedDeferralsPath = `${vulnManagementRiskAcceptancePath}/approved-deferrals`;
 export const vulnManagementApprovedFalsePositivesPath = `${vulnManagementRiskAcceptancePath}/approved-false-positives`;
@@ -162,7 +165,7 @@ const renderUnconditionally = readAccessResourceNames([]);
  * data might depend on resource requirements for secondary requests
  * buttons might depend on hasReadWriteAccess instead of hasReadAccess
  */
-export const routeDescriptorMap: Record<string, RouteDescriptor> = {
+export const routeDescriptorMap: Record<RoutePath, RouteDescriptor> = {
     [dashboardPath]: {
         readAccessPredicate: renderUnconditionally,
     },
@@ -242,7 +245,7 @@ export const routeDescriptorMap: Record<string, RouteDescriptor> = {
  * Evaluate feature flags and resource requirements for route paths.
  */
 
-export type IsRenderedRoutePath = (routePath: string) => boolean;
+export type IsRenderedRoutePath = (routePath: RoutePath) => boolean;
 
 /*
  * Higher-order function if caller needs to have predicate functions in its scope.
@@ -254,13 +257,8 @@ export function getIsRenderedRoutePath(
     hasReadAccess: HasReadAccess,
     isFeatureFlagEnabled: IsFeatureFlagEnabled
 ): IsRenderedRoutePath {
-    return (routePath: string) => {
+    return (routePath: RoutePath) => {
         const routeDescriptor = routeDescriptorMap[routePath];
-
-        // Delete if we replace string with RoutePath string union type.
-        if (routeDescriptor === undefined) {
-            return true;
-        }
 
         const { featureFlagDependency, readAccessPredicate } = routeDescriptor;
 
