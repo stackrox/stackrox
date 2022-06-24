@@ -6,6 +6,8 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import objects.Deployment
 import objects.GenericNotifier
+import util.Helpers
+
 import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ImageService
@@ -167,6 +169,9 @@ class ImageManagementTest extends BaseSpecification {
                     .build()
         )
         def scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
+        // CVE needs to be saved into the DB
+        Helpers.sleepWithRetryBackoff(1000)
+
         assert scanResults.alertsList.find { x -> x.policy.id == policy.id } != null
 
         when:
@@ -174,13 +179,16 @@ class ImageManagementTest extends BaseSpecification {
 
         def cve = "CVE-2019-14697"
         CVEService.suppressImageCVE(cve)
+        Helpers.sleepWithRetryBackoff(1000)
 
         scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
+
         assert scanResults.alertsList.find { x -> x.policy.id == policy.id } == null
 
         and:
         "Unsuppress CVE"
         CVEService.unsuppressImageCVE(cve)
+        Helpers.sleepWithRetryBackoff(1000)
 
         scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
 
@@ -255,7 +263,8 @@ class ImageManagementTest extends BaseSpecification {
 
         def cve = "CVE-2010-0928"
 
-       CVEService.suppressImageCVE(cve)
+        CVEService.suppressImageCVE(cve)
+        Helpers.sleepWithRetryBackoff(1000)
 
         when:
         def scanIncludeSnoozed = ImageService.scanImage("library/nginx:1.10", true)
@@ -271,6 +280,7 @@ class ImageManagementTest extends BaseSpecification {
         assert !hasOpenSSLVuln(getExcludeSnoozed)
 
         CVEService.unsuppressImageCVE(cve)
+        Helpers.sleepWithRetryBackoff(1000)
 
         def unsuppressedScan = ImageService.scanImage("library/nginx:1.10", false)
         def unsuppressedGet  = ImageService.getImage(image.id, false)
