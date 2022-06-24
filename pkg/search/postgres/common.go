@@ -178,8 +178,9 @@ type parsedPaginationQuery struct {
 }
 
 type orderByEntry struct {
-	Field      pgsearch.SelectQueryField
-	Descending bool
+	Field       pgsearch.SelectQueryField
+	Descending  bool
+	SearchAfter string
 }
 
 func (p *parsedPaginationQuery) AsSQL() string {
@@ -205,7 +206,21 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 		return nil
 	}
 
-	for _, so := range pagination.GetSortOptions() {
+	for idx, so := range pagination.GetSortOptions() {
+		if idx != 0 && so.GetSearchAfter() != "" {
+			return errors.New("search after for pagination must be defined for only the first sort option")
+		}
+		if so.GetField() == searchPkg.DocID.String() {
+			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
+				Field: pgsearch.SelectQueryField{
+					SelectPath: qualifyColumn(schema.Table, schema.ID().ColumnName),
+					FieldType:  walker.String,
+				},
+				Descending:  so.GetReversed(),
+				SearchAfter: so.GetSearchAfter(),
+			})
+			continue
+		}
 		fieldMetadata := queryFields[so.GetField()]
 		dbField := fieldMetadata.baseField
 		if dbField == nil {
@@ -217,7 +232,8 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 					SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName),
 					FieldType:  dbField.DataType,
 				},
-				Descending: so.GetReversed(),
+				Descending:  so.GetReversed(),
+				SearchAfter: so.GetSearchAfter(),
 			})
 		} else {
 			switch fieldMetadata.derivedMetadata.DerivationType {
@@ -236,6 +252,27 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 	}
 	querySoFar.Pagination.Limit = int(pagination.GetLimit())
 	querySoFar.Pagination.Offset = int(pagination.GetOffset())
+	return nil
+}
+
+func applyPaginationForSearchAfter(query *query) error {
+	pagination := query.Pagination
+	if len(pagination.OrderBys) == 0 {
+		return nil
+	}
+	firstOrderBy := pagination.OrderBys[0]
+	if firstOrderBy.SearchAfter == "" {
+		return nil
+	}
+	if query.Where != "" {
+		query.Where += " and "
+	}
+	operand := ">"
+	if firstOrderBy.Descending {
+		operand = "<"
+	}
+	query.Where += fmt.Sprintf("%s %s $$", firstOrderBy.Field.SelectPath, operand)
+	query.Data = append(query.Data, firstOrderBy.SearchAfter)
 	return nil
 }
 
@@ -267,6 +304,9 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryTy
 		query.SelectedFields = queryEntry.SelectedFields
 	}
 	if err := populatePagination(query, q.GetPagination(), schema, dbFields); err != nil {
+		return nil, err
+	}
+	if err := applyPaginationForSearchAfter(query); err != nil {
 		return nil, err
 	}
 	return query, nil

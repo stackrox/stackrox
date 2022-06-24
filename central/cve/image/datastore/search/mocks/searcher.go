@@ -67,32 +67,32 @@ func (mr *MockSearcherMockRecorder) Search(ctx, query interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), ctx, query)
 }
 
-// SearchCVEs mocks base method.
-func (m *MockSearcher) SearchCVEs(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+// SearchImageCVEs mocks base method.
+func (m *MockSearcher) SearchImageCVEs(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchCVEs", arg0, arg1)
+	ret := m.ctrl.Call(m, "SearchImageCVEs", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchCVEs indicates an expected call of SearchCVEs.
-func (mr *MockSearcherMockRecorder) SearchCVEs(arg0, arg1 interface{}) *gomock.Call {
+// SearchImageCVEs indicates an expected call of SearchImageCVEs.
+func (mr *MockSearcherMockRecorder) SearchImageCVEs(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCVEs", reflect.TypeOf((*MockSearcher)(nil).SearchCVEs), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchImageCVEs", reflect.TypeOf((*MockSearcher)(nil).SearchImageCVEs), arg0, arg1)
 }
 
-// SearchRawCVEs mocks base method.
-func (m *MockSearcher) SearchRawCVEs(ctx context.Context, query *v1.Query) ([]*storage.CVE, error) {
+// SearchRawImageCVEs mocks base method.
+func (m *MockSearcher) SearchRawImageCVEs(ctx context.Context, query *v1.Query) ([]*storage.ImageCVE, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawCVEs", ctx, query)
-	ret0, _ := ret[0].([]*storage.CVE)
+	ret := m.ctrl.Call(m, "SearchRawImageCVEs", ctx, query)
+	ret0, _ := ret[0].([]*storage.ImageCVE)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchRawCVEs indicates an expected call of SearchRawCVEs.
-func (mr *MockSearcherMockRecorder) SearchRawCVEs(ctx, query interface{}) *gomock.Call {
+// SearchRawImageCVEs indicates an expected call of SearchRawImageCVEs.
+func (mr *MockSearcherMockRecorder) SearchRawImageCVEs(ctx, query interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawCVEs", reflect.TypeOf((*MockSearcher)(nil).SearchRawCVEs), ctx, query)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImageCVEs", reflect.TypeOf((*MockSearcher)(nil).SearchRawImageCVEs), ctx, query)
 }

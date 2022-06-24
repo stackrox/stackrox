@@ -44,7 +44,6 @@ test_upgrade() {
 
     preamble
     setup_deployment_env false false
-    install_built_roxctl_in_gopath
     remove_existing_stackrox_resources
 
     info "Deploying central"
@@ -73,11 +72,6 @@ preamble() {
         TEST_HOST_OS="linux"
     else
         die "Only linux or darwin are supported for this test"
-    fi
-
-    if is_OPENSHIFT_CI; then
-        # TODO RS-494 will provide the binaries
-        make cli-linux upgrader
     fi
 
     require_executable "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl"
