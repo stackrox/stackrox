@@ -44,6 +44,15 @@ func NewFromNodeVulnerability(vuln *storage.NodeVulnerability) VulnI {
 	}
 }
 
+func NewFromNodeCVE(vuln *storage.NodeCVE) VulnI {
+	return &vulnScoreInfo{
+		severity:     vuln.GetSeverity(),
+		cvssV3:       vuln.GetCveBaseInfo().GetCvssV3(),
+		cvssv2:       vuln.GetCveBaseInfo().GetCvssV2(),
+		scoreVersion: vuln.GetCveBaseInfo().GetScoreVersion(),
+	}
+}
+
 type vulnScoreInfo struct {
 	severity     storage.VulnerabilitySeverity
 	cvssv2       *storage.CVSSV2

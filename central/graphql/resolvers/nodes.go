@@ -109,11 +109,11 @@ func (resolver *Resolver) NodeCount(ctx context.Context, args RawQuery) (int32, 
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.NodeGlobalDataStore.Search(ctx, query)
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return nodeLoader.CountFromQuery(ctx, query)
 }
 
 func (resolver *nodeResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
