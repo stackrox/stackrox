@@ -1070,7 +1070,7 @@ func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []
 	}
 
 	cveIDs, err := func() ([]string, error) {
-		rows, err := s.db.Query(ctx, "select id from "+imageCVEsTable+" where cvebaseinfo_cve = $1")
+		rows, err := s.db.Query(ctx, "select id from "+imageCVEsTable+" where cvebaseinfo_cve = $1", cve)
 		if err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
