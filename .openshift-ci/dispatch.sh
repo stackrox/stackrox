@@ -46,7 +46,7 @@ fi
 if [[ -f "$ROOT/scripts/ci/jobs/${ci_job}.sh" ]]; then
     job_script="$ROOT/scripts/ci/jobs/${ci_job}.sh"
 elif [[ -f "$ROOT/scripts/ci/jobs/${ci_job}.py" ]]; then
-    job_script="$ROOT/scripts/ci/jobs/${ci_job}.py"
+    job_script="$ROOT/scripts/ci/jobs/${ci_job//-/_}.py"
 else
     # For ease of initial integration this function does not fail when the
     # job is unknown.
