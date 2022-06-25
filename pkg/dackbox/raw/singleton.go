@@ -27,7 +27,9 @@ var (
 
 	duckBox *dackbox.DackBox
 
-	once sync.Once
+	initialized sync.Once
+
+	lazyStarted sync.Once
 )
 
 // GetGlobalDackBox returns the global dackbox.DackBox instance.
@@ -49,7 +51,7 @@ func GetKeyFence() concurrency.KeyFence {
 }
 
 func initialize() {
-	once.Do(func() {
+	initialized.Do(func() {
 		rocksdbInstance.RegisterBucket(GraphBucket, "Graph Keys")
 		rocksdbInstance.RegisterBucket(DirtyBucket, "Dirty Keys")
 		rocksdbInstance.RegisterBucket(ReindexIfMissingBucket, "Bucket for reindexed state")
@@ -69,8 +71,10 @@ func initialize() {
 // StartIndexer starts lazy indexer
 func StartIndexer(index bleve.Index) {
 	initialize()
-	lazy := indexer.NewLazy(toIndex, registry, index, duckBox.AckIndexed)
-	lazy.Start()
+	lazyStarted.Do(func() {
+		lazy := indexer.NewLazy(toIndex, registry, index, duckBox.AckIndexed)
+		lazy.Start()
+	})
 }
 
 // IndexRegister registers bucket for indexing
