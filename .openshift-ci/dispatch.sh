@@ -54,4 +54,4 @@ else
     exit 0
 fi
 
-"${job_script}"
+"${job_script}" "$@"
