@@ -40,7 +40,11 @@ func GetRocksDB() *rocksdb.RocksDB {
 func startMonitoringRocksDB(db *rocksdb.RocksDB) {
 	ticker := time.NewTicker(gatherFrequency)
 	for range ticker.C {
-		rocksdbInstance.UpdatePrefixSizeMetrics()
+		rocksdbInstance.WalkBucket(
+			func(prefix []byte, prefixString string, objType string) {
+				rocksMetrics.UpdateRocksDBPrefixSizeMetric(GetRocksDB(), prefix, prefixString, objType)
+			},
+		)
 		size, err := fileutils.DirectorySize(rocksMetrics.GetRocksDBPath(option.CentralOptions.DBPathBase))
 		if err != nil {
 			log.Errorf("error getting rocksdb directory size: %v", err)
