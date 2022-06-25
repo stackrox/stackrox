@@ -65,7 +65,7 @@ case "$ci_job" in
         "$ROOT/scripts/ci/jobs/ui-unit-tests.sh"
         ;;
     local-roxctl-tests)
-        "$ROOT/scripts/ci/jobs/local_roxctl-tests.sh"
+        "$ROOT/scripts/ci/jobs/local-roxctl-tests.sh"
         ;;
     test-binary-build-commands)
         "$ROOT/scripts/ci/jobs/test-binary-build-commands.sh"
