@@ -142,8 +142,8 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 
 	if mapsIntersect(clusterRetentionConfig.GetIgnoreClusterLabels(), cluster.GetLabels()) {
 		return &v1.DecommissionedClusterRetentionInfo{
-			RetentionInfo: &v1.DecommissionedClusterRetentionInfo_IsProtectedCluster{
-				IsProtectedCluster: true,
+			RetentionInfo: &v1.DecommissionedClusterRetentionInfo_IsExcluded{
+				IsExcluded: true,
 			},
 		}, nil
 	}

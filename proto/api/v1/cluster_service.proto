@@ -27,7 +27,7 @@ enum LoadBalancerType {
 message DecommissionedClusterRetentionInfo {
     oneof RetentionInfo {
         // indicates whether a cluster is protected from deletion
-        bool is_protected_cluster    = 1;
+        bool is_excluded           = 1;
         // days after which cluster will be deleted if sensor health remains UNHEALTHY
         int32 days_until_deletion  = 2;
     }

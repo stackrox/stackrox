@@ -16,10 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 )
 
 var (
+	log        = logging.LoggerForModule()
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
 			"/v1.ConfigService/GetPublicConfig",
@@ -104,6 +106,7 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.Conf
 	if config == nil {
 		return &storage.Config{}, nil
 	}
+	log.Info("Get Config: Config returned is %v", config)
 	return config, nil
 }
 

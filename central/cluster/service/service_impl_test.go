@@ -102,13 +102,13 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 		},
 		"UNHEALTHY cluster with label matching ignored labels": {
 			cluster: &storage.Cluster{
-				Id:     "UNHEALTHY cluster with a label matching an ignored label",
+				Id:     "UNHEALTHY cluster matching a label to ignore the cluster",
 				Labels: map[string]string{"k2": "v2"},
 				HealthStatus: &storage.ClusterHealthStatus{
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 				},
 			},
-			expected: "is_protected_cluster:true",
+			expected: "is_excluded:true",
 		},
 		"UNHEALTHY cluster with last contact time after config creation time": {
 			cluster: &storage.Cluster{
@@ -166,7 +166,7 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 			},
 		},
 		{
-			Id:     "UNHEALTHY cluster with a label matching an ignored label",
+			Id:     "UNHEALTHY cluster matching a label to ignore the cluster",
 			Labels: map[string]string{"k2": "v2"},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,

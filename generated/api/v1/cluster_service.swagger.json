@@ -885,7 +885,7 @@
     "v1DecommissionedClusterRetentionInfo": {
       "type": "object",
       "properties": {
-        "isProtectedCluster": {
+        "isExcluded": {
           "type": "boolean",
           "title": "indicates whether a cluster is protected from deletion"
         },
