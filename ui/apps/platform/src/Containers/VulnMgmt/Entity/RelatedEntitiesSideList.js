@@ -34,7 +34,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
         .map((containEntity) => {
             const count = data[countKeyMap[containEntity]];
-            const entityLabel = entityLabels[containEntity];
+            const entityLabel = entityLabels[containEntity].toUpperCase();
             return {
                 count,
                 label: pluralize(entityLabel, count),
