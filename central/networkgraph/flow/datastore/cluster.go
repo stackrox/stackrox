@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/rocksdb"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"gorm.io/gorm"
@@ -37,6 +38,8 @@ func GetTestPostgresClusterDataStore(ctx context.Context, t *testing.T, pool *pg
 	dbstore := postgres.NewClusterStore(pool)
 	configStore := graphConfigDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
 	networkTreeMgr := networktree.Singleton()
+	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
+	networkTreeMgr.Initialize(entitiesByCluster)
 	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil)
 }
 
@@ -45,5 +48,7 @@ func GetTestRocksBleveClusterDataStore(t *testing.T, rocksengine *rocksdbBase.Ro
 	dbstore := rocksdb.NewClusterStore(rocksengine)
 	configStore := graphConfigDS.GetTestRocksBleveDataStore(t, rocksengine)
 	networkTreeMgr := networktree.Singleton()
+	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
+	networkTreeMgr.Initialize(entitiesByCluster)
 	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil)
 }

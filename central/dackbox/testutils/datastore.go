@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -53,9 +54,13 @@ type DackboxTestDataStore interface {
 	GetBleveIndex() bleve.Index
 	GetDackbox() *dackbox.DackBox
 	GetKeyFence() concurrency.KeyFence
+	GetIndexQ() queue.WaitableQueue
 	// Data injection
 	PushImageToVulnerabilitiesGraph() error
 	PushNodeToVulnerabilitiesGraph() error
+	// Data cleanup
+	CleanImageToVulnerabilitiesGraph() error
+	CleanNodeToVulnerabilitiesGraph() error
 	// Post test cleanup (TearDown)
 	Cleanup() error
 }
@@ -68,12 +73,18 @@ type dackboxTestDataStoreImpl struct {
 	bleveIndex  bleve.Index
 	dacky       *dackbox.DackBox
 	keyFence    concurrency.KeyFence
+	indexQ      queue.WaitableQueue
 
 	// DataStores
 	namespaceStore  namespaceDataStore.DataStore
 	deploymentStore deploymentDataStore.DataStore
 	imageStore      imageDataStore.DataStore
 	nodeStore       nodeDataStore.DataStore
+
+	storedNodes       []string
+	storedImages      []string
+	storedDeployments []string
+	storedNamespaces  []string
 }
 
 func (s *dackboxTestDataStoreImpl) GetPostgresPool() *pgxpool.Pool {
@@ -96,6 +107,10 @@ func (s *dackboxTestDataStoreImpl) GetKeyFence() concurrency.KeyFence {
 	return s.keyFence
 }
 
+func (s *dackboxTestDataStoreImpl) GetIndexQ() queue.WaitableQueue {
+	return s.indexQ
+}
+
 func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() error {
 	var err error
 	ctx := sac.WithAllAccess(context.Background())
@@ -109,26 +124,32 @@ func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() error {
 	if err != nil {
 		return err
 	}
+	s.storedNamespaces = append(s.storedNamespaces, testNamespace1.GetId())
 	err = s.namespaceStore.AddNamespace(ctx, testNamespace2)
 	if err != nil {
 		return err
 	}
+	s.storedNamespaces = append(s.storedNamespaces, testNamespace2.GetId())
 	err = s.imageStore.UpsertImage(ctx, testImage1)
 	if err != nil {
 		return err
 	}
+	s.storedImages = append(s.storedImages, testImage1.GetId())
 	err = s.imageStore.UpsertImage(ctx, testImage2)
 	if err != nil {
 		return err
 	}
+	s.storedImages = append(s.storedImages, testImage2.GetId())
 	err = s.deploymentStore.UpsertDeployment(ctx, testDeployment1)
 	if err != nil {
 		return err
 	}
+	s.storedDeployments = append(s.storedDeployments, testDeployment1.GetId())
 	err = s.deploymentStore.UpsertDeployment(ctx, testDeployment2)
 	if err != nil {
 		return err
 	}
+	s.storedDeployments = append(s.storedDeployments, testDeployment2.GetId())
 	return nil
 }
 
@@ -141,10 +162,12 @@ func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph() error {
 	if err != nil {
 		return err
 	}
+	s.storedNodes = append(s.storedNodes, testNode1.GetId())
 	err = s.nodeStore.UpsertNode(ctx, testNode2)
 	if err != nil {
 		return err
 	}
+	s.storedNodes = append(s.storedNodes, testNode2.GetId())
 	return nil
 
 }
@@ -165,6 +188,58 @@ func (s *dackboxTestDataStoreImpl) Cleanup() error {
 		}
 		return nil
 	}
+}
+
+func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() error {
+	ctx := sac.WithAllAccess(context.Background())
+	var err error
+	storedDeployments := s.storedDeployments
+	for _, deploymentID := range storedDeployments {
+		deployment, found, err := s.deploymentStore.GetDeployment(ctx, deploymentID)
+		if err != nil {
+			return err
+		}
+		if !found {
+			continue
+		}
+		fmt.Println("cleaning deployment", deploymentID)
+		err = s.deploymentStore.RemoveDeployment(ctx, deployment.GetClusterId(), deploymentID)
+		if err != nil {
+			return err
+		}
+	}
+	s.storedDeployments = s.storedDeployments[:0]
+	storedImages := s.storedImages
+	for _, imageID := range storedImages {
+		err = s.imageStore.DeleteImages(ctx, imageID)
+		if err != nil {
+			return err
+		}
+	}
+	s.storedImages = s.storedImages[:0]
+	storedNamespaces := s.storedNamespaces
+	for _, namespaceID := range storedNamespaces {
+		err := s.namespaceStore.RemoveNamespace(ctx, namespaceID)
+		if err != nil {
+			return err
+		}
+	}
+	s.storedNamespaces = s.storedNamespaces[:0]
+	return nil
+}
+
+func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() error {
+	ctx := sac.WithAllAccess(context.Background())
+	var err error
+	storedNodes := s.storedNodes
+	for _, nodeID := range storedNodes {
+		err = s.nodeStore.DeleteNodes(ctx, nodeID)
+		if err != nil {
+			return err
+		}
+	}
+	s.storedNodes = s.storedNodes[:0]
+	return nil
 }
 
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
@@ -193,13 +268,13 @@ func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 			return nil, err
 		}
 		s.keyFence = concurrency.NewKeyFence()
-		indexQ := queue.NewWaitableQueue()
-		s.dacky, err = dackbox.NewRocksDBDackBox(s.rocksEngine, indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
+		s.indexQ = queue.NewWaitableQueue()
+		s.dacky, err = dackbox.NewRocksDBDackBox(s.rocksEngine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
 		if err != nil {
 			return nil, err
 		}
 		reg := indexer.NewWrapperRegistry()
-		indexer.NewLazy(indexQ, reg, s.bleveIndex, s.dacky.AckIndexed).Start()
+		indexer.NewLazy(s.indexQ, reg, s.bleveIndex, s.dacky.AckIndexed).Start()
 		reg.RegisterWrapper(activeComponentDackbox.Bucket, activeComponentIndex.Wrapper{})
 		reg.RegisterWrapper(clusterCVEEdgeDackbox.Bucket, clusterCVEEdgeIndex.Wrapper{})
 		reg.RegisterWrapper(componentCVEEdgeDackbox.Bucket, componentCVEEdgeIndex.Wrapper{})
@@ -216,5 +291,9 @@ func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 		s.deploymentStore = deploymentDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
 		s.namespaceStore = namespaceDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
 	}
+	s.storedDeployments = make([]string, 0)
+	s.storedNamespaces = make([]string, 0)
+	s.storedImages = make([]string, 0)
+	s.storedNodes = make([]string, 0)
 	return s, nil
 }
