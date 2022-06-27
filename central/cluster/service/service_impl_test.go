@@ -191,7 +191,7 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 	}
 
 	expectedIds := []string{
-		"UNHEALTHY cluster with a label matching an ignored label",
+		"UNHEALTHY cluster matching a label to ignore the cluster",
 		"UNHEALTHY cluster with last contact time after config creation time",
 		"UNHEALTHY cluster with last contact time before config creation time",
 	}
