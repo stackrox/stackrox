@@ -30,6 +30,7 @@ import AgingImagesChart, {
     TimeRangeTuple,
     timeRangeTupleIndices,
 } from './AgingImagesChart';
+import isResourceScoped from '../utils';
 
 export const imageCountQuery = gql`
     query agingImagesQuery($query0: String, $query1: String, $query2: String, $query3: String) {
@@ -73,7 +74,7 @@ function getWidgetTitle(
             return selectedTimeRanges[index].enabled;
         }) ?? 0;
 
-    const isActiveImages = Boolean(searchFilter.Cluster) || Boolean(searchFilter['Namespace ID']);
+    const isActiveImages = isResourceScoped(searchFilter);
 
     if (isActiveImages) {
         return `${totalImages} Active aging ${pluralize('image', totalImages)}`;
