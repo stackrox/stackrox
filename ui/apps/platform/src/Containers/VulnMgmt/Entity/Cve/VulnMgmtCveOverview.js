@@ -111,7 +111,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
 
     // TODO: change the CveType to handle one of the new split types: IMAGE_CVE, NODE_CVE, or CLUSTER_CVE
     //       but for now, we are going to translate the new data to the old type format
-    const cveType = Object.keys(entityContext).shift();
+    const cveType = Object.keys(newEntityContext).shift();
     const legacyTypeList =
         cveType === entityTypes.CVE || cveType === entityTypes.CLUSTER_CVE
             ? vulnerabilityTypes
