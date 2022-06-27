@@ -30,13 +30,13 @@ import {
  * not including parameters in path prop of some Route elements like path="/main/clusters/:clusterId?"
  */
 
-const unfilteredPathsVulnerabilityManagement: RoutePath[] = [
+const vulnerabilityManagementPaths: RoutePath[] = [
     vulnManagementPath,
     vulnManagementRiskAcceptancePath,
     vulnManagementReportsPath,
 ];
 
-const unfilteredPathsPlatformConfiguration: RoutePath[] = [
+const platformConfigurationPaths: RoutePath[] = [
     clustersBasePath,
     policiesBasePath,
     integrationsPath,
@@ -58,14 +58,15 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
             : (pathname as string).startsWith(routePath);
     }
 
-    const filteredPathsVulnerabilityManagement =
-        unfilteredPathsVulnerabilityManagement.filter(isRenderedRoutePath);
-    const filteredPathsPlatformConfiguration =
-        unfilteredPathsPlatformConfiguration.filter(isRenderedRoutePath);
+    const vulnerabilityManagementFilteredPaths =
+        vulnerabilityManagementPaths.filter(isRenderedRoutePath);
+    const platformConfigurationFilteredPaths =
+        platformConfigurationPaths.filter(isRenderedRoutePath);
 
     // Special case for Vulnerability Management because nested nav items match only a subset of sub-routes.
-    const isActiveVulnerabilityManagement = pathname.startsWith(vulnManagementPath);
-    const isActivePlatformConfiguration = filteredPathsPlatformConfiguration.some(isActiveFilter);
+    const isVulnerabilityManagementPathActive = pathname.startsWith(vulnManagementPath);
+    const isPlatformConfigurationPathActive =
+        platformConfigurationFilteredPaths.some(isActiveFilter);
 
     function navItemMapper(routePath: RoutePath): ReactElement {
         const isActive = isActiveFilter(routePath);
@@ -82,25 +83,25 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
                 {[dashboardPath, networkBasePath, violationsBasePath, complianceBasePath]
                     .filter(isRenderedRoutePath)
                     .map(navItemMapper)}
-                {filteredPathsVulnerabilityManagement.length !== 0 && (
+                {vulnerabilityManagementFilteredPaths.length !== 0 && (
                     <NavExpandable
                         title="Vulnerability Management"
-                        isActive={isActiveVulnerabilityManagement}
-                        isExpanded={isActiveVulnerabilityManagement}
+                        isActive={isVulnerabilityManagementPathActive}
+                        isExpanded={isVulnerabilityManagementPathActive}
                     >
-                        {filteredPathsVulnerabilityManagement.map(navItemMapper)}
+                        {vulnerabilityManagementFilteredPaths.map(navItemMapper)}
                     </NavExpandable>
                 )}
                 {[configManagementPath, riskBasePath]
                     .filter(isRenderedRoutePath)
                     .map(navItemMapper)}
-                {filteredPathsPlatformConfiguration.length !== 0 && (
+                {platformConfigurationFilteredPaths.length !== 0 && (
                     <NavExpandable
                         title="Platform Configuration"
-                        isActive={isActivePlatformConfiguration}
-                        isExpanded={isActivePlatformConfiguration}
+                        isActive={isPlatformConfigurationPathActive}
+                        isExpanded={isPlatformConfigurationPathActive}
                     >
-                        {filteredPathsPlatformConfiguration.map(navItemMapper)}
+                        {platformConfigurationFilteredPaths.map(navItemMapper)}
                     </NavExpandable>
                 )}
             </NavList>
