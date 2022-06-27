@@ -14,6 +14,7 @@ import ScopeBar from './ScopeBar';
 
 import ViolationsByPolicyCategory from './Widgets/ViolationsByPolicyCategory';
 import DeploymentsAtMostRisk from './Widgets/DeploymentsAtMostRisk';
+import AgingImages from './Widgets/AgingImages';
 
 function DashboardPage() {
     return (
@@ -47,6 +48,9 @@ function DashboardPage() {
                     </GridItem>
                     <GridItem lg={6}>
                         <ViolationsByPolicyCategory />
+                    </GridItem>
+                    <GridItem lg={6}>
+                        <AgingImages />
                     </GridItem>
                 </Grid>
             </PageSection>
