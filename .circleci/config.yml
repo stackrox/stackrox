@@ -247,69 +247,6 @@ waitForSensorK8s: &waitForSensorK8s
     command: |
       ./scripts/ci/sensor-wait.sh
 
-determineWhetherToRunUIDevServer: &determineWhetherToRunUIDevServer
-  run:
-    name: Determine whether to run the UI dev server
-    command: |
-      if .circleci/pr_has_label.sh ci-ui-e2e-coverage; then
-        echo "Running UI E2Es against the dev server with code instrumentation due to the presence of the ci-ui-e2e-coverage label."
-        # it's a dev server, so all logic to run dev server still applies
-        cci-export RUN_UI_DEV_SERVER true
-        cci-export UI_E2E_COLLECT_COVERAGE true
-      elif .circleci/pr_has_label.sh ci-ui-dev-server; then
-        echo "Running UI E2Es against the dev server due to the presence of the ci-ui-dev-server label."
-        cci-export RUN_UI_DEV_SERVER true
-      else
-        echo "Running UI E2Es against the production server. Apply the ci-ui-dev-server label to your PR to run against the dev server."
-        cci-export RUN_UI_DEV_SERVER false
-      fi
-
-runUIDevServer: &runUIDevServer
-  run:
-    name: Run the UI dev server
-    command: |
-      if [ "${RUN_UI_DEV_SERVER}" = "true" ]; then
-        export YARN_START_TARGET="https://${API_ENDPOINT}"
-        if [ "${UI_E2E_COLLECT_COVERAGE}" = "true" ]; then
-          make -C ui start-coverage
-        else
-          make -C ui start
-        fi
-      fi
-    background: true
-
-waitForUIDevServer: &waitForUIDevServer
-  run:
-    name: Wait for the UI dev server to be up
-    command: |
-      if [ "${RUN_UI_DEV_SERVER}" = "true" ]; then
-        # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-        curl -k --max-time 60 --retry 50 --retry-connrefused -4 --retry-delay 5 --retry-max-time 300 https://localhost:3000/
-      else
-        echo "Not running the dev server, skipping..."
-      fi
-
-runUIE2E: &runUIE2E
-  run:
-    name: UI e2e tests
-    command: |
-      if [ "${RUN_UI_DEV_SERVER}" = "true" ]; then
-        export UI_BASE_URL="https://localhost:3000"
-      else
-        if [[ "${LOAD_BALANCER}" == "lb" ]]; then
-          sudo sh -c "echo >>/etc/hosts ${API_HOSTNAME} central-lb"
-          export UI_BASE_URL="https://central-lb:443"
-        else
-          export UI_BASE_URL="https://localhost:${LOCAL_PORT}"
-        fi
-      fi
-
-      if [ "${UI_E2E_COLLECT_COVERAGE}" = "true" ]; then
-        make -C ui test-e2e-coverage
-      else
-        make -C ui test-e2e
-      fi
-
 downloadDiagnosticBundle: &downloadDiagnosticBundle
   run:
     name: Download diagnostic bundle
@@ -343,15 +280,6 @@ storeProfilingResults: &storeProfilingResults
   ci-artifacts/store:
     path: /tmp/pprof.zip
     destination: pprof.zip
-
-storeUITestReports: &storeUITestReports
-  store_test_results:
-    path: ui/test-results/reports
-
-storeUITestArtifacts: &storeUITestArtifacts
-  ci-artifacts/store:
-    path: ui/test-results/artifacts
-    destination: ui-test-artifacts
 
 storeQATestResults: &storeQATestResults
   store_test_results:
@@ -2770,29 +2698,6 @@ jobs:
   # Note: cluster provisioning job names used as resource label values, they must contain only letters and '-'
   ###
 
-  provision-gke-api-nongroovy-tests:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-      - check-backend-changes
-      - check-label-to-skip-tests:
-          label: ci-no-api-tests
-      - provision-gke-cluster:
-          cluster-id: api-nongroovy-tests
-          num-nodes: 2
-
-  provision-gke-ui-e2e-tests:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-      - check-label-to-skip-tests:
-          label: ci-no-ui-tests
-      - provision-gke-cluster:
-          cluster-id: ui-e2e-tests
-          num-nodes: 2
-
   provision-gke-postgres-api-e2e-tests:
     executor: custom
     resource_class: small
@@ -3025,54 +2930,6 @@ jobs:
       - destroy-aks-cluster:
           when: on_fail
 
-  provision-openshift-4-api-e2e-tests:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-      - check-to-run:
-          label: ci-openshift-4-tests
-          run-on-master: true
-          run-on-tags: true
-      - check-backend-changes
-
-      - setup_remote_docker
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - *loginToGCR
-      - create-openshift-4-cluster:
-          cluster-name: openshift-4
-
-      - run:
-          name: Validate Kubeconfig
-          command: |
-            ls -lh $PWD/openshift-4/data
-            export KUBECONFIG=$PWD/openshift-4/data/auth/kubeconfig
-            sudo chown "$USER" $PWD/openshift-4/data/auth/kubeconfig
-            oc get nodes
-
-      - run:
-          name: Deployment Compliance Operator
-          command: |
-            export KUBECONFIG=$PWD/openshift-4/data/auth/kubeconfig
-            ./scripts/ci/complianceoperator/create.sh
-
-      - ci-artifacts/store:
-          path: openshift-4
-          destination: openshift-4
-
-      - build-liveness-check
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - openshift-4
-
-      - destroy-openshift-4-cluster:
-          when: on_fail
-
   provision-openshift-4-operator-e2e-tests:
     executor: custom
     resource_class: small
@@ -3179,234 +3036,8 @@ jobs:
   ###
   # Test jobs against built artifacts
   # Recommended naming format: {cluster_type}-[{flavor}-]{test_target_type}-{any_test_name}-tests
-  #   e.g. 'gke-ui-e2e-tests' or 'openshift-crio-api-e2e-tests'
+  #   e.g. 'openshift-crio-api-e2e-tests'
   ###
-
-  gke-api-nongroovy-tests:
-    executor:
-      name: custom
-      resource_class: medium
-    environment:
-      - MONITORING_SUPPORT: false
-      - SCANNER_SUPPORT: true
-      - LOAD_BALANCER: lb
-      - ROX_PLAINTEXT_ENDPOINTS: "8080,grpc@8081"
-      - ROXDEPLOY_CONFIG_FILE_MAP: "scripts/ci/endpoints/endpoints.yaml"
-      - SENSOR_HELM_DEPLOY: true
-      - ROX_BASELINE_GENERATION_DURATION: 1m
-      - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
-      - ROX_DECOMMISSIONED_CLUSTER_RETENTION: true
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
-      - ROX_NETPOL_FIELDS: true
-      - ROX_NEW_POLICY_CATEGORIES: true
-
-    steps:
-      - checkout
-      - check-backend-changes
-
-      - check-label-to-skip-tests:
-          label: ci-no-api-tests
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - restore-go-mod-cache
-      - setup-go-build-env
-      - run:
-          name: Retrieving missing dependencies
-          command: make deps
-
-      - *setupRoxctl
-      - setup_remote_docker
-      - setup-gcp
-      - setup-dep-env
-
-      - attach-gke-cluster:
-          cluster-id: api-nongroovy-tests
-      - remove-existing-stackrox-resources
-
-      - run:
-          name: Export Trusted CA file for ca_setup_test.go
-          command: cci-export TRUSTED_CA_FILE "$PWD/tests/bad-ca/untrusted-root-badssl-com.pem"
-
-      - *setupGoogleAppCreds
-      - *setupLicense
-
-      - *setupDefaultTLSCerts
-
-      - run:
-          name: Create Compliance Operator YAMLs
-          command: |
-             ./tests/complianceoperator/create.sh
-
-      - deploy-stackrox:
-          validate-autoupgrade-label: true
-          post-central-deploy-steps:
-            - *setupClientTLSCerts
-            - setup-egress-proxies
-
-      - run:
-          name: Preparation for endpoints_test.go
-          command: |
-            source tests/e2e/run.sh
-            prepare_for_endpoints_test
-            cci-export "SERVICE_CA_FILE" "$SERVICE_CA_FILE"
-            cci-export "SERVICE_CERT_FILE" "$SERVICE_CERT_FILE"
-            cci-export "SERVICE_KEY_FILE" "$SERVICE_KEY_FILE"
-
-      - run:
-          name: Run roxctl Bats tests that require a running cluster
-          command: |
-            source tests/e2e/run.sh
-            # Bats tests from the 'cluster' folder require running central
-            MAIN_TAG=$(make --quiet tag) \
-              run_roxctl_bats_tests "roxctl-test-output" "cluster"
-
-      - store-test-results-and-artifacts:
-          path: roxctl-test-output
-
-      - run:
-          name: Run roxctl tests
-          command: |
-            source tests/e2e/run.sh
-            MAIN_TAG=$(make --quiet tag) \
-            run_roxctl_tests
-
-      - run:
-          name: Run API tests
-          command: |
-            make -C tests
-
-      - store-test-results-and-artifacts:
-          path: tests/all-tests-results
-
-      - run:
-          name: Setup for proxy tests
-          command: |
-            source tests/e2e/run.sh
-            setup_proxy_tests "central-proxy.stackrox.local"
-            cci-export PROXY_CERTS_DIR "$PROXY_CERTS_DIR"
-
-      - run:
-          name: Run proxy tests
-          command: |
-            source tests/e2e/run.sh
-            run_proxy_tests "central-proxy.stackrox.local"
-
-      - collect-k8s-logs
-      - get-and-store-debug-dump
-      - get-and-store-diagnostic-bundle
-      - get-central-data
-      - *backupCentral
-      - *storeCentralBackupArtifact
-      - check-stackrox-logs
-
-      - run:
-          name: Destructive API tests
-          command: |
-            make -C tests destructive-tests
-
-      - store-test-results-and-artifacts:
-          path: tests/destructive-tests-results
-
-      - run:
-          name: Deploy and restore DB to version 56.1
-          command: |
-            source tests/e2e/lib.sh
-            restore_56_1_backup
-
-      - *waitForAPI
-
-      - run:
-          name: Run tests relating to external backups
-          command: |
-            make -C tests external-backup-tests
-
-      - store-test-results-and-artifacts:
-          path: tests/external-backup-tests-results
-
-      - run:
-          name: Collect final stackrox logs
-          command: |
-            ./scripts/ci/collect-service-logs.sh stackrox /tmp/final-stackrox-logs
-          when: always
-
-      - ci-artifacts/store:
-          path: /tmp/final-stackrox-logs
-          destination: final-stackrox-logs
-
-      - get-central-data:
-          destination: final-central-data
-
-      - store-k8s-logs
-      - teardown-gke
-
-  gke-ui-e2e-tests:
-    executor:
-      name: custom
-      resource_class: medium+
-    environment:
-      - MONITORING_SUPPORT: false
-      - SCANNER_SUPPORT: true
-      - LOAD_BALANCER: lb
-      - OUTPUT_FORMAT: helm
-      - ROX_DECOMMISSIONED_CLUSTER_RETENTION: true
-      - ROX_SYSTEM_HEALTH_PF: true
-      - ROX_POLICIES_PATTERNFLY: true
-      - ROX_NEW_POLICY_CATEGORIES: true
-      - ROX_SECURITY_METRICS_PHASE_ONE: true
-      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-
-    steps:
-      - checkout
-      - check-label-to-skip-tests:
-          label: ci-no-ui-tests
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - *setupRoxctl
-      - setup_remote_docker
-      - setup-gcp
-      - setup-dep-env
-
-      - attach-gke-cluster:
-          cluster-id: ui-e2e-tests
-      - remove-existing-stackrox-resources
-
-      - *setupGoogleAppCreds
-      - *setupLicense
-      - *setupDefaultTLSCerts
-
-      - deploy-stackrox:
-          validate-autoupgrade-label: true
-          post-central-deploy-steps:
-            - *setupClientTLSCerts
-            - setup-egress-proxies
-
-      - restore-npm-deps-cache
-      - *determineWhetherToRunUIDevServer
-      - *runUIDevServer
-      - *waitForUIDevServer
-      - *runUIE2E
-
-      - *downloadDiagnosticBundle
-      - *storeDiagnosticBundle
-
-      - collect-k8s-logs
-      - get-and-store-debug-dump
-      - get-and-store-diagnostic-bundle
-      - get-central-data
-      - *backupCentral
-      - *storeCentralBackupArtifact
-      - *restoreDB
-      - check-stackrox-logs
-      - store-k8s-logs
-
-      - teardown-gke
-
-      - *storeUITestReports
-      - *storeUITestArtifacts
 
   gke-postgres-api-e2e-tests:
     executor: custom
@@ -3769,44 +3400,6 @@ jobs:
           destroy-cluster:
             - *loginToGCR
             - destroy-aks-cluster:
-                when: always
-
-  openshift-4-api-e2e-tests:
-    executor: custom
-    environment:
-      - LOCAL_PORT: 443
-      - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: false
-      - SCANNER_SUPPORT: true
-      - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - LOAD_BALANCER: lb
-      - ADMISSION_CONTROLLER: true
-      - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_BASELINE_GENERATION_DURATION: 1m
-
-    steps:
-      - run-qa-tests:
-          cluster-id: openshift-4-api-e2e-tests
-          sensor-deploy-flavor: helm
-          orchestrator-flavor: openshift
-          determine-whether-to-run:
-            - check-to-run:
-                label: ci-openshift-4-tests
-                run-on-master: true
-                run-on-tags: true
-          use-websocket: true
-          is-gke-cluster: false
-          connect-to-cluster:
-            - run:
-                name: Restore KUBECONFIG
-                command: |
-                  ls -lh $PWD/openshift-4/data
-                  cci-export KUBECONFIG "$PWD/openshift-4/data/auth/kubeconfig"
-                  oc get nodes
-          destroy-cluster:
-            - *loginToGCR
-            - destroy-openshift-4-cluster:
                 when: always
 
   openshift-4-operator-e2e-tests:
@@ -4451,24 +4044,6 @@ workflows:
           <<: *runOnAllTagsWithPushCtx
       - build-scale-monitoring-and-mock-server:
           <<: *runOnAllTagsWithPushCtx
-      - provision-gke-api-nongroovy-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-api-nongroovy-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-stackrox
-            - build-rhacs
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-api-nongroovy-tests
-      - provision-gke-ui-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-ui-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-stackrox
-            - build-rhacs
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-ui-e2e-tests
       - provision-gke-postgres-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - gke-postgres-api-e2e-tests:
@@ -4542,15 +4117,6 @@ workflows:
       #       - build-rhacs
       #       - build-scale-monitoring-and-mock-server
       #       - provision-aks-api-e2e-tests
-      - provision-openshift-4-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - openshift-4-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-stackrox
-            - build-rhacs
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-4-api-e2e-tests
       - provision-openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - provision-openshift-4-6-operator-e2e-tests:
