@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     Dropdown,
@@ -139,6 +139,11 @@ function tooltipForCategory(
         .join('\n');
 }
 
+// This widget uses a theme with the legend order in the opposite direction
+// of the PatternFly defaults
+const chartTheme = cloneDeep(patternflySeverityTheme);
+chartTheme.legend.colorScale.reverse();
+
 function ViolationsByPolicyCategoryChart({
     alertGroups,
     sortType,
@@ -154,14 +159,6 @@ function ViolationsByPolicyCategoryChart({
         ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text), searchFilter),
         [searchFilter]
     );
-
-    // This widget uses a theme with the legend order in the opposite direction
-    // of the PatternFly defaults
-    const chartTheme = useMemo(() => {
-        const theme = cloneDeep(patternflySeverityTheme);
-        theme.legend.colorScale.reverse();
-        return theme;
-    }, []);
 
     const filteredAlertGroups = zeroOutFilteredSeverities(alertGroups, hiddenSeverities);
     const sortedAlertGroups =
