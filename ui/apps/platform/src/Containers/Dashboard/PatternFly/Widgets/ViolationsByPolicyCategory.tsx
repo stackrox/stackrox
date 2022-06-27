@@ -47,6 +47,10 @@ import { SearchFilter } from 'types/search';
 import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 
+// The ordering of the legend and the hidden severities runs from Critical->Low
+// so we reverse the order of the default Low->Critical in most cases.
+const severitiesCriticalToLow = [...policySeverities].reverse();
+
 /**
  * This function iterates an array of AlertGroups and zeros out severities that
  * have been filtered by the user in the widget's legend.
@@ -132,9 +136,8 @@ function tooltipForCategory(
     countsBySeverity: CountsBySeverity,
     hiddenSeverities: Set<PolicySeverity>
 ): string {
-    return policySeverities
+    return severitiesCriticalToLow
         .filter((severity) => !hiddenSeverities.has(severity))
-        .reverse()
         .map((severity) => `${severityLabels[severity]}: ${countsBySeverity[severity][category]}`)
         .join('\n');
 }
@@ -169,6 +172,8 @@ function ViolationsByPolicyCategoryChart({
     const topOrderedGroups = sortedAlertGroups.slice(0, 5).reverse();
     const countsBySeverity = getCountsBySeverity(topOrderedGroups);
 
+    // The bars run opposite to the severity display in the rest of the widget, so we iterate the original
+    // order of Low->Critical
     const bars = policySeverities.map((severity) => {
         const counts = countsBySeverity[severity];
         const data = Object.entries(counts).map(([group, count]) => ({
@@ -195,19 +200,18 @@ function ViolationsByPolicyCategoryChart({
     });
 
     function getLegendData() {
-        const legendData = policySeverities.map((severity) => {
+        const legendData = severitiesCriticalToLow.map((severity) => {
             return {
                 name: severityLabels[severity],
                 ...getInteractiveLegendItemStyles(hiddenSeverities.has(severity)),
             };
         });
-        legendData.reverse();
         return legendData;
     }
 
     function onLegendClick({ index }: { index: number }) {
         const newHidden = new Set(hiddenSeverities);
-        const targetSeverity = policySeverities[index];
+        const targetSeverity = severitiesCriticalToLow[index];
         if (newHidden.has(targetSeverity)) {
             newHidden.delete(targetSeverity);
             // Do not allow the user to disable all severities
@@ -226,7 +230,7 @@ function ViolationsByPolicyCategoryChart({
                 domainPadding={{ x: [20, 20] }}
                 events={getInteractiveLegendEvents({
                     chartNames: [Object.values(severityLabels)],
-                    isHidden: (index) => hiddenSeverities.has(policySeverities[index]),
+                    isHidden: (index) => hiddenSeverities.has(severitiesCriticalToLow[index]),
                     legendName: 'legend',
                     onLegendClick,
                 })}
