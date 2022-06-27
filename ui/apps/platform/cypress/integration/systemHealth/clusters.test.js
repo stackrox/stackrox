@@ -1,12 +1,17 @@
 import { clustersUrl } from '../../constants/ClustersPage';
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
-import {
-    setClock,
-    visitSystemHealth,
-    visitSystemHealthWithClustersFixture,
-    visitSystemHealthWithClustersFixtureFilteredByNames,
-} from '../../helpers/systemHealth';
+import { setClock, visitSystemHealth } from '../../helpers/systemHealth';
+
+function visitSystemHealthWithClustersFixtureFilteredByNames(fixturePath, clusterNames) {
+    cy.fixture(fixturePath).then(({ clusters }) => {
+        visitSystemHealth({
+            clusters: {
+                body: { clusters: clusters.filter(({ name }) => clusterNames.includes(name)) },
+            },
+        });
+    });
+}
 
 describe('System Health Clusters without fixture', () => {
     withAuth();
@@ -33,7 +38,9 @@ describe('System Health Clusters with fixture', () => {
 
     it('should have counts in Cluster Overview', () => {
         setClock(currentDatetime); // call before visit
-        visitSystemHealthWithClustersFixture(clustersFixturePath);
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
 
         const widgetSelector = selectors.clusters.widgets.clusterOverview;
 
@@ -63,7 +70,9 @@ describe('System Health Clusters with fixture', () => {
 
     it('should have counts in Collector Status', () => {
         setClock(currentDatetime); // call before visit
-        visitSystemHealthWithClustersFixture(clustersFixturePath);
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
 
         const widgetSelector = selectors.clusters.widgets.collectorStatus;
         let total = 0;
@@ -91,7 +100,9 @@ describe('System Health Clusters with fixture', () => {
 
     it('should have counts in Sensor Status', () => {
         setClock(currentDatetime); // call before visit
-        visitSystemHealthWithClustersFixture(clustersFixturePath);
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
 
         const widgetSelector = selectors.clusters.widgets.sensorStatus;
         let total = 0;
@@ -119,7 +130,9 @@ describe('System Health Clusters with fixture', () => {
 
     it('should have counts in Sensor Updgrade', () => {
         setClock(currentDatetime); // call before visit
-        visitSystemHealthWithClustersFixture(clustersFixturePath);
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
 
         const widgetSelector = selectors.clusters.widgets.sensorUpgrade;
         let total = 0;
@@ -143,7 +156,9 @@ describe('System Health Clusters with fixture', () => {
 
     it('should have counts in Credential Expiration', () => {
         setClock(currentDatetime); // call before visit
-        visitSystemHealthWithClustersFixture(clustersFixturePath);
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
 
         const widgetSelector = selectors.clusters.widgets.credentialExpiration;
         let total = 0;

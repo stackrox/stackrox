@@ -6,40 +6,39 @@ import { visit } from './visit';
 
 // visit
 
+const routeMatcherMap = {
+    alerts: {
+        method: 'GET',
+        url: api.alerts.alertsWithQuery,
+    },
+    alertscount: {
+        method: 'GET',
+        url: api.alerts.alertsCountWithQuery,
+    },
+};
+
 export function visitViolationsFromLeftNav() {
-    cy.intercept('GET', api.alerts.alertsWithQuery).as('getAlerts');
-    cy.intercept('GET', api.alerts.alertsCountWithQuery).as('getAlertsCount');
+    visitFromLeftNav('Violations', { routeMatcherMap });
 
-    visitFromLeftNav('Violations');
-
-    cy.wait(['@getAlerts', '@getAlertsCount']);
     cy.get('h1:contains("Violations")');
 }
 
-export function visitViolations() {
-    cy.intercept('GET', api.alerts.alertsWithQuery).as('getAlerts');
-    cy.intercept('GET', api.alerts.alertsCountWithQuery).as('getAlertsCount');
+export function visitViolations(staticResponseMap) {
+    visit(url, { routeMatcherMap }, staticResponseMap);
 
-    visit(url);
-
-    cy.wait(['@getAlerts', '@getAlertsCount']);
     cy.get('h1:contains("Violations")');
 }
 
 export function visitViolationsWithFixture(fixturePath) {
     cy.fixture(fixturePath).then(({ alerts }) => {
         const count = alerts.length;
+        const staticResponseMap = {
+            alerts: { body: { alerts } },
+            alertscount: { body: { count } },
+        };
 
-        cy.intercept('GET', api.alerts.alertsWithQuery, {
-            body: { alerts },
-        }).as('getAlerts');
-        cy.intercept('GET', api.alerts.alertsCountWithQuery, {
-            body: { count },
-        }).as('getAlertsCount');
+        visit(url, { routeMatcherMap }, staticResponseMap);
 
-        visit(url);
-
-        cy.wait(['@getAlerts', '@getAlertsCount']);
         cy.get('h1:contains("Violations")');
     });
 }
@@ -47,17 +46,13 @@ export function visitViolationsWithFixture(fixturePath) {
 export function visitViolationsWithUncaughtException() {
     const alerts = [{ id: 'broken one' }];
     const count = alerts.length;
+    const staticResponseMap = {
+        alerts: { body: { alerts } },
+        alertscount: { body: { count } },
+    };
 
-    cy.intercept('GET', api.alerts.alertsWithQuery, {
-        body: { alerts },
-    }).as('getAlerts');
-    cy.intercept('GET', api.alerts.alertsCountWithQuery, {
-        body: { count },
-    }).as('getAlertsCount');
+    visit(url, { routeMatcherMap }, staticResponseMap);
 
-    visit(url);
-
-    cy.wait(['@getAlerts', '@getAlertsCount']);
     // Do not get h1 because goal of this function is to render error boundary.
 }
 
@@ -71,12 +66,12 @@ export function visitViolationFromTableWithFixture(fixturePath) {
 
         cy.intercept('GET', `${api.alerts.alerts}/${id}`, {
             body: alert,
-        }).as('getAlert');
+        }).as('alerts/id');
 
         // Make sure the policy name matches only one row in the table.
         cy.get(`td[data-label="Policy"] a:contains("${name}")`).click();
 
-        cy.wait('@getAlert');
+        cy.wait('@alerts/id');
         cy.get(`${selectors.details.title}:contains("${name}")`);
     });
 }
@@ -91,11 +86,11 @@ export function visitViolationWithFixture(fixturePath) {
 
         cy.intercept('GET', `${api.alerts.alerts}/${id}`, {
             body: alert,
-        }).as('getAlert');
+        }).as('alerts/id');
 
         visit(`${url}/${id}`);
 
-        cy.wait('@getAlert');
+        cy.wait('@alerts/id');
         cy.get(`${selectors.details.title}:contains("${name}")`);
     });
 }
@@ -106,12 +101,12 @@ export function visitViolationWithFixture(fixturePath) {
  * Assume that current location is violations table without fixture.
  */
 export function sortViolationsTableByColumn(columnHeadText) {
-    cy.intercept('GET', api.alerts.alertsWithQuery).as('getAlerts');
-    cy.intercept('GET', api.alerts.alertsCountWithQuery).as('getAlertsCount');
+    cy.intercept('GET', api.alerts.alertsWithQuery).as('alerts');
+    cy.intercept('GET', api.alerts.alertsCountWithQuery).as('alertscount');
 
     cy.get(`th:contains("${columnHeadText}")`).click();
 
-    cy.wait(['@getAlerts', '@getAlertsCount']);
+    cy.wait(['@alerts', '@alertscount']);
 }
 
 /*
@@ -120,10 +115,10 @@ export function sortViolationsTableByColumn(columnHeadText) {
 export function clickDeploymentTabWithFixture(fixturePath) {
     cy.intercept('GET', api.risks.getDeployment, {
         fixture: fixturePath,
-    }).as('getDeployment');
+    }).as('deployments/id');
 
     cy.get(selectors.details.deploymentTab).click();
 
-    cy.wait('@getDeployment');
+    cy.wait('@deployments/id');
     cy.get(selectors.details.deploymentTab).should('have.class', 'pf-m-current');
 }
