@@ -44,7 +44,7 @@ test_e2e() {
     [[ ! -f FAIL ]] || die "e2e tests failed"
 
     info "Sensor k8s integration tests"
-    make test-integration-test || touch FAIL
+    make sensor-integration-test || touch FAIL
     store_test_results "test-output/sensor-integration.log" "sensor-integration"
     [[ ! -f FAIL ]] || die "e2e tests failed"
 
