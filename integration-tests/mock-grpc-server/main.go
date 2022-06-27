@@ -53,9 +53,9 @@ func (s *signalServer) PushSignals(stream sensorAPI.SignalService_PushSignalsSer
 		fmt.Printf("Process: ")
 		fmt.Printf("    name: %s\n", processSignal.GetName())
 		fmt.Printf("    file-path: %s\n", processSignal.GetExecFilePath())
-		fmt.Printf("    uid: %s\n", processSignal.GetUid())
-		fmt.Printf("    gid: %s\n", processSignal.GetGid())
-		fmt.Printf("    pid: %s\n", processSignal.GetPid())
+		fmt.Printf("    uid: %d\n", processSignal.GetUid())
+		fmt.Printf("    gid: %d\n", processSignal.GetGid())
+		fmt.Printf("    pid: %d\n", processSignal.GetPid())
 		fmt.Printf("    args: %s\n", processSignal.GetArgs())
 
 		processInfo := fmt.Sprintf("%s:%s:%d:%d:%d:%s", processSignal.GetName(), processSignal.GetExecFilePath(), processSignal.GetUid(), processSignal.GetGid(), processSignal.GetPid(), processSignal.GetArgs())
