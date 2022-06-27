@@ -268,7 +268,7 @@ function ViolationsByPolicyCategory() {
         queryFilter['Lifecycle Stage'] = LIFECYCLE_STAGES.RUNTIME;
     }
     const query = getRequestQueryStringForSearchFilter(queryFilter);
-    const { data: alertGroups, loading, error } = useAlertGroups('CATEGORY', query);
+    const { data: alertGroups, loading, error } = useAlertGroups(query, 'CATEGORY');
 
     return (
         <WidgetCard
