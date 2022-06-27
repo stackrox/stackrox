@@ -15,6 +15,10 @@ const routeMatcherMap = {
         method: 'GET',
         url: api.risks.deploymentsCount,
     },
+    searchOptions: {
+        method: 'POST',
+        url: api.graphql('searchOptions'),
+    },
 };
 
 export function visitRiskDeployments() {
