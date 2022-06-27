@@ -764,58 +764,39 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(id)), func() error {
-		return s.deleteNodeTree(ctx, conn, id)
-	})
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.deleteNodeTree(ctx, tx, id); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
-func (s *storeImpl) deleteNodeTree(ctx context.Context, conn *pgxpool.Conn, nodeIDs ...string) error {
+func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeIDs ...string) error {
 	// Delete nodes.
-	if _, err := conn.Exec(ctx, "delete from "+nodesTable+" where Id = ANY($1::text[])", nodeIDs); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+nodesTable+" where Id = ANY($1::text[])", nodeIDs); err != nil {
 		return err
 	}
-	// Node-components edges have ON DELETE CASCADE referential constraint on nodeid, therefore, no need to explicitly trigger deletion.
+	// Node-components edges have ON DELETE CASCADE referential constraint on `nodeid`, therefore, no need to explicitly trigger deletion.
 
-	// Get orphaned node components.
-	rows, err := s.db.Query(ctx, "select id from "+nodeComponentsTable+" where not exists (select "+nodeComponentsTable+".id FROM "+nodeComponentsTable+", "+nodeComponentEdgesTable+" WHERE "+nodeComponentsTable+".id = "+nodeComponentEdgesTable+".nodecomponentid)")
-	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
-	}
-	ids, err := scanIDs(rows)
-	if err != nil {
+	// Delete orphaned node components.
+	if _, err := tx.Exec(ctx, "delete from "+nodeComponentsTable+" where not exists (select "+nodeComponentsTable+".id FROM "+nodeComponentsTable+", "+nodeComponentEdgesTable+" WHERE "+nodeComponentsTable+".id = "+nodeComponentEdgesTable+".nodecomponentid)"); err != nil {
 		return err
 	}
-
-	err = s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(bytes(ids)...), func() error {
-		// Delete orphaned node components.
-		if _, err := conn.Exec(ctx, "delete from "+nodeComponentsTable+" where id = ANY($1::text[])", ids); err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	// Get orphaned node vulns.
-	rows, err = s.db.Query(ctx, "select id from "+nodeCVEsTable+" where not exists (select "+nodeCVEsTable+".id FROM "+nodeCVEsTable+", "+componentCVEEdgesTable+" WHERE "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)")
-	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
-	}
-	ids, err = scanIDs(rows)
-	if err != nil {
-		return err
-	}
-
-	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(bytes(ids)...), func() error {
-		// Delete orphaned node components.
-		if _, err := conn.Exec(ctx, "delete from "+nodeCVEsTable+" where id = ANY($1::text[])", ids); err != nil {
-			return err
-		}
-		return nil
-	})
 
 	// Component-CVE edges have ON DELETE CASCADE referential constraint on component id, therefore, no need to explicitly trigger deletion.
+
+	// Delete orphaned cves.
+	if _, err := tx.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+nodeCVEsTable+".id FROM "+nodeCVEsTable+", "+componentCVEEdgesTable+" WHERE "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)"); err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetIDs returns all the IDs for the store

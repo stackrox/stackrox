@@ -862,55 +862,36 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(id)), func() error {
-		return s.deleteImageTree(ctx, conn, id)
-	})
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.deleteImageTree(ctx, tx, id); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
 }
 
-func (s *storeImpl) deleteImageTree(ctx context.Context, conn *pgxpool.Conn, imageIDs ...string) error {
+func (s *storeImpl) deleteImageTree(ctx context.Context, tx pgx.Tx, imageIDs ...string) error {
 	// Delete from image table.
-	if _, err := conn.Exec(ctx, "delete from "+imagesTable+" where Id = ANY($1::text[])", imageIDs); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+imagesTable+" where Id = ANY($1::text[])", imageIDs); err != nil {
 		return err
 	}
 
-	// Get orphaned image components.
-	rows, err := s.db.Query(ctx, "select id from "+imageComponentsTable+" where not exists (select "+imageComponentsTable+".id FROM "+imageComponentsTable+", "+imageComponentEdgesTable+" WHERE "+imageComponentsTable+".id = "+imageComponentEdgesTable+".imagecomponentid)")
-	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
-	}
-	ids, err := scanIDs(rows)
+	// Delete orphaned image components.
+	_, err := tx.Exec(ctx, "delete from "+imageComponentsTable+" where not exists (select "+imageComponentsTable+".id FROM "+imageComponentsTable+", "+imageComponentEdgesTable+" WHERE "+imageComponentsTable+".id = "+imageComponentEdgesTable+".imagecomponentid)")
 	if err != nil {
 		return err
 	}
 
-	err = s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(bytes(ids)...), func() error {
-		// Delete orphaned image components.
-		if _, err := conn.Exec(ctx, "delete from "+imageComponentsTable+" where id = ANY($1::text[])", ids); err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
+	// Delete orphaned cves.
+	if _, err := tx.Exec(ctx, "delete from "+imageCVEsTable+" where not exists (select "+imageCVEsTable+".id FROM "+imageCVEsTable+", "+componentCVEEdgesTable+" WHERE "+imageCVEsTable+".id = "+componentCVEEdgesTable+".imagecveid)"); err != nil {
 		return err
 	}
-
-	// Get orphaned image vulns.
-	rows, err = s.db.Query(ctx, "select id from "+imageCVEsTable+" where not exists (select "+imageCVEsTable+".id FROM "+imageCVEsTable+", "+componentCVEEdgesTable+" WHERE "+imageCVEsTable+".id = "+componentCVEEdgesTable+".imagecveid)")
-	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
-	}
-	ids, err = scanIDs(rows)
-	if err != nil {
-		return err
-	}
-
-	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(bytes(ids)...), func() error {
-		// Delete orphaned image components.
-		if _, err := conn.Exec(ctx, "delete from "+imageCVEsTable+" where id = ANY($1::text[])", ids); err != nil {
-			return err
-		}
-		return nil
-	})
+	return nil
 }
 
 // GetIDs returns all the IDs for the store

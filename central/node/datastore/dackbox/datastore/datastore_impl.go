@@ -100,9 +100,14 @@ func (ds *datastoreImpl) SearchRawNodes(ctx context.Context, q *v1.Query) ([]*st
 
 // CountNodes delegates to the underlying store.
 func (ds *datastoreImpl) CountNodes(ctx context.Context) (int, error) {
-	if ok, err := nodesSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	} else if ok {
+	ok := true
+	if !features.PostgresDatastore.Enabled() {
+		var err error
+		if ok, err = nodesSAC.ReadAllowed(ctx); err != nil {
+			return 0, err
+		}
+	}
+	if ok {
 		return ds.storage.Count(ctx)
 	}
 
@@ -110,6 +115,10 @@ func (ds *datastoreImpl) CountNodes(ctx context.Context) (int, error) {
 }
 
 func (ds *datastoreImpl) canReadNode(ctx context.Context, id string) (bool, error) {
+	if features.PostgresDatastore.Enabled() {
+		return true, nil
+	}
+
 	if ok, err := nodesSAC.ReadAllowed(ctx); err != nil {
 		return false, err
 	} else if ok {
