@@ -369,7 +369,7 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 		return nil, err
 	}
 
-	vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, args)
+	vulnResolver, err := resolver.topNodeVulnV2Query(ctx, args)
 	if err != nil || vulnResolver == nil {
 		return nil, err
 	}
@@ -384,7 +384,11 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 	}
 
 	if !features.PostgresDatastore.Enabled() {
-		vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, args)
+		query, err := resolver.getTopNodeVulnQuery(args)
+		if err != nil {
+			return nil, err
+		}
+		vulnResolver, err := resolver.topNodeVulnV2Query(ctx, query)
 		if err != nil || vulnResolver == nil {
 			return nil, err
 		}
@@ -394,7 +398,7 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 	return nil, errors.New("Sub-resolver TopNodeVulnerability in Node does not support postgres yet")
 }
 
-func (resolver *nodeResolver) unwrappedTopVulnQuery(ctx context.Context, args RawQuery) (*cVEResolver, error) {
+func (resolver *nodeResolver) getTopNodeVulnQuery(args RawQuery) (*v1.Query, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -419,7 +423,10 @@ func (resolver *nodeResolver) unwrappedTopVulnQuery(ctx context.Context, args Ra
 		Limit:  1,
 		Offset: 0,
 	}
+	return query, nil
+}
 
+func (resolver *nodeResolver) topNodeVulnV2Query(ctx context.Context, query *v1.Query) (*cVEResolver, error) {
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err
@@ -482,12 +489,7 @@ func (resolver *nodeResolver) NodeVulnerabilities(ctx context.Context, args Pagi
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeVulnerabilities(resolver.nodeScopeContext(ctx), args)
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilities in Node does not support postgres yet")
+	return resolver.root.NodeVulnerabilities(resolver.nodeScopeContext(ctx), args)
 }
 
 // NodeVulnerabilityCount returns the number of vulnerabilities the node has.
@@ -496,12 +498,7 @@ func (resolver *nodeResolver) NodeVulnerabilityCount(ctx context.Context, args R
 	if err := readNodes(ctx); err != nil {
 		return 0, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeVulnerabilityCount(resolver.nodeScopeContext(ctx), args)
-	}
-	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeVulnerabilityCount in Node does not support postgres yet")
+	return resolver.root.NodeVulnerabilityCount(resolver.nodeScopeContext(ctx), args)
 }
 
 // NodeVulnerabilityCounter resolves the number of different types of vulnerabilities contained in a node.
@@ -510,12 +507,7 @@ func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeVulnCounter(resolver.nodeScopeContext(ctx), args)
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in Node does not support postgres yet")
+	return resolver.root.NodeVulnCounter(resolver.nodeScopeContext(ctx), args)
 }
 
 // PlottedVulns returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
