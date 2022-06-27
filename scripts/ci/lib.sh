@@ -479,10 +479,8 @@ is_tagged() {
     [[ -n "$tags" ]]
 }
 
-is_nightly_tag() {
-    local tags
-    tags="$(git tag --contains)"
-    [[ "$tags" =~ nightly ]]
+is_nightly_run() {
+    [[ "${CIRCLE_TAG:-}" =~ ^nightly- ]]
 }
 
 is_in_PR_context() {
@@ -826,6 +824,20 @@ openshift_ci_e2e_mods() {
         env | grep -e ^KUBERNETES_ | cut -d= -f1 | awk '{ print "unset", $1 }' > "$envfile"
         # shellcheck disable=SC1090
         source "$envfile"
+    fi
+}
+
+handle_nightly_runs() {
+    if ! is_OPENSHIFT_CI; then
+        die "Only for OpenShift CI"
+    fi
+
+    local nightly_tag
+    nightly_tag="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-$(date '+%Y%m%d')"
+    if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
+        ci_export CIRCLE_TAG "${nightly_tag}"
+    elif is_in_PR_context && pr_has_label "simulate-nightly-run"; then
+        ci_export CIRCLE_TAG "${nightly_tag}"
     fi
 }
 

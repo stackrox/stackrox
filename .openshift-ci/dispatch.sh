@@ -11,6 +11,7 @@ for cred in /tmp/secret/**/[A-Z]*; do
 done
 
 openshift_ci_mods
+handle_nightly_runs
 
 function hold() {
     while [[ -e /tmp/hold ]]; do
