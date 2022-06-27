@@ -3,6 +3,7 @@ package schema
 import (
 	"context"
 	"strings"
+	"testing"
 
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -71,6 +72,14 @@ func ApplyAllSchemas(ctx context.Context, gormDB *gorm.DB) {
 		if strings.HasPrefix(rt.Schema.Table, "test_") {
 			continue
 		}
+		log.Debugf("Applying schema for table %s", rt.Schema.Table)
+		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)
+	}
+}
+
+// ApplyAllSchemasIncludingTests creates or auto migrate according to the current schema including test schemas
+func ApplyAllSchemasIncludingTests(ctx context.Context, gormDB *gorm.DB, t testing.TB) {
+	for _, rt := range getAllRegisteredTablesInOrder() {
 		log.Debugf("Applying schema for table %s", rt.Schema.Table)
 		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)
 	}

@@ -62,7 +62,7 @@ func ForT(t testing.TB) *TestPostgres {
 
 	// Create all the tables for the database
 	gormDB := OpenGormDB(t, sourceWithDatabase)
-	pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
+	pkgSchema.ApplyAllSchemasIncludingTests(context.Background(), gormDB, t)
 	CloseGormDB(t, gormDB)
 
 	// initialize pool to be used
