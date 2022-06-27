@@ -135,9 +135,9 @@ class Kubernetes implements OrchestratorMain {
         // "any namespace" requests to be scoped to the default project.
         this.client.configuration.namespace = null
         this.client.configuration.setRollingTimeout(60 * 60 * 1000)
-        this.client.configuration.setRequestTimeout(30 * 1000)
-        this.client.configuration.setConnectionTimeout(30 * 1000)
-        this.client.configuration.setWebsocketTimeout(30 * 1000)
+        this.client.configuration.setRequestTimeout(20*1000)
+        this.client.configuration.setConnectionTimeout(20*1000)
+        this.client.configuration.setWebsocketTimeout(20*1000)
         this.deployments = this.client.apps().deployments()
         this.daemonsets = this.client.apps().daemonSets()
         this.statefulsets = this.client.apps().statefulSets()
@@ -1857,7 +1857,6 @@ class Kubernetes implements OrchestratorMain {
         )
 
       try {
-        log.debug "Telling the orchestrator to createOrReplace " + deployment.name
         client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
         log.debug "Told the orchestrator to createOrReplace " + deployment.name
         if (deployment.createLoadBalancer) {
@@ -1871,7 +1870,7 @@ class Kubernetes implements OrchestratorMain {
       } catch (io.fabric8.kubernetes.client.KubernetesClientException e) {
         log.warn("Client returned exception when creating k8s deployment: ",  e)
         if (retry >= maxRetries) {
-          log.debug "No more retries. Retried " + maxRetries + " times already"
+          log.debug "No more retries. Retried " + retry + " times out of " + maxRetries + " already"
           return false
         }
         log.debug "Retrying. Retry " + retry+1 + " out of " + maxRetries
