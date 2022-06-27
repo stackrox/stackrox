@@ -12,7 +12,6 @@ import { actions as apiTokenActions } from 'reducers/apitokens';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 const fetchIntegrationsActionMap = {
-    authPlugins: actions.fetchAuthPlugins.request(),
     authProviders: authActions.fetchAuthProviders.request(),
     backups: actions.fetchBackups.request(),
     imageIntegrations: actions.fetchImageIntegrations.request(),
@@ -30,10 +29,6 @@ function* fetchIntegrationWrapper(source, action) {
     } catch (error) {
         yield put(action.failure(error));
     }
-}
-
-function* getAuthPlugins() {
-    yield call(fetchIntegrationWrapper, 'authPlugins', actions.fetchAuthPlugins);
 }
 
 function* getBackups() {
@@ -57,13 +52,9 @@ function* getSignatureIntegrations() {
 }
 
 function* watchLocation() {
-    const effects = [
-        getImageIntegrations,
-        getSignatureIntegrations,
-        getNotifiers,
-        getBackups,
-        getAuthPlugins,
-    ].map((fetchFunc) => takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc));
+    const effects = [getImageIntegrations, getSignatureIntegrations, getNotifiers, getBackups].map(
+        (fetchFunc) => takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
+    );
     yield all([...effects, takeEveryNewlyMatchedLocation(networkPath, getNotifiers)]);
 }
 
@@ -77,9 +68,6 @@ function* watchFetchRequest() {
             types.FETCH_NOTIFIERS.REQUEST,
         ]);
         switch (action.type) {
-            case types.FETCH_AUTH_PLUGINS.REQUEST:
-                yield fork(getAuthPlugins);
-                break;
             case types.FETCH_BACKUPS.REQUEST:
                 yield fork(getBackups);
                 break;

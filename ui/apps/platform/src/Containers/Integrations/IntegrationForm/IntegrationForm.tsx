@@ -32,8 +32,6 @@ import GcsIntegrationForm from './Forms/GcsIntegrationForm';
 // auth plugins
 import ApiTokenIntegrationForm from './Forms/ApiTokenIntegrationForm';
 import ClusterInitBundleIntegrationForm from './Forms/ClusterInitBundleIntegrationForm';
-// authorization plugins
-import ScopedAccessPluginIntegrationForm from './Forms/ScopedAccessPluginIntegrationForm';
 // signature integrations
 import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 
@@ -89,9 +87,6 @@ const ComponentFormMap = {
     authProviders: {
         apitoken: ApiTokenIntegrationForm,
         clusterInitBundle: ClusterInitBundleIntegrationForm,
-    },
-    authPlugins: {
-        scopedAccess: ScopedAccessPluginIntegrationForm,
     },
 } as Record<IntegrationSource, Record<IntegrationType, FunctionComponent<FormProps>>>;
 
