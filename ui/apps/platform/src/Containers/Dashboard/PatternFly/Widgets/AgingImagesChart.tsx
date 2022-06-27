@@ -14,6 +14,7 @@ import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLa
 import { SearchFilter } from 'types/search';
 import { vulnManagementImagesPath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
+import isResourceScoped from '../utils';
 
 // The available time buckets for this widget will always be a set of '4', so we can
 // narrow the types to a tuple here for safer indexing throughout this component.
@@ -48,9 +49,7 @@ function linkForAgingImages(searchFilter: SearchFilter, ageRange: number) {
 }
 
 function yAxisTitle(searchFilter: SearchFilter) {
-    const isActiveImages = Boolean(searchFilter.Cluster) || Boolean(searchFilter['Namespace ID']);
-
-    return isActiveImages ? 'Active images' : 'All images';
+    return isResourceScoped(searchFilter) ? 'Active images' : 'All images';
 }
 
 // `datum` for these callbacks will refer to the index number of the bar in the chart. This index
