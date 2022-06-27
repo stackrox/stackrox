@@ -369,7 +369,11 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 		return nil, err
 	}
 
-	vulnResolver, err := resolver.topNodeVulnV2Query(ctx, args)
+	query, err := resolver.getTopVulnV1Query(args)
+	if err != nil {
+		return nil, err
+	}
+	vulnResolver, err := resolver.topVulnCVELoaderQuery(ctx, query)
 	if err != nil || vulnResolver == nil {
 		return nil, err
 	}
@@ -383,22 +387,25 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 		return nil, err
 	}
 
-	if !features.PostgresDatastore.Enabled() {
-		query, err := resolver.getTopNodeVulnQuery(args)
-		if err != nil {
-			return nil, err
-		}
-		vulnResolver, err := resolver.topNodeVulnV2Query(ctx, query)
-		if err != nil || vulnResolver == nil {
-			return nil, err
-		}
-		return vulnResolver, nil
+	query, err := resolver.getTopVulnV1Query(args)
+	if err != nil {
+		return nil, err
 	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver TopNodeVulnerability in Node does not support postgres yet")
+
+	var vulnResolver NodeVulnerabilityResolver
+	if !features.PostgresDatastore.Enabled() {
+		vulnResolver, err = resolver.topVulnCVELoaderQuery(ctx, query)
+	} else {
+		vulnResolver, err = resolver.topVulnNodeCVELoaderQuery(ctx, query)
+	}
+
+	if err != nil || vulnResolver == nil {
+		return nil, err
+	}
+	return vulnResolver, nil
 }
 
-func (resolver *nodeResolver) getTopNodeVulnQuery(args RawQuery) (*v1.Query, error) {
+func (resolver *nodeResolver) getTopVulnV1Query(args RawQuery) (*v1.Query, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -426,7 +433,7 @@ func (resolver *nodeResolver) getTopNodeVulnQuery(args RawQuery) (*v1.Query, err
 	return query, nil
 }
 
-func (resolver *nodeResolver) topNodeVulnV2Query(ctx context.Context, query *v1.Query) (*cVEResolver, error) {
+func (resolver *nodeResolver) topVulnCVELoaderQuery(ctx context.Context, query *v1.Query) (*cVEResolver, error) {
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err
@@ -440,6 +447,22 @@ func (resolver *nodeResolver) topNodeVulnV2Query(ctx context.Context, query *v1.
 		return nil, errors.New("multiple vulnerabilities matched for top node vulnerability")
 	}
 	return &cVEResolver{root: resolver.root, data: vulns[0]}, nil
+}
+
+func (resolver *nodeResolver) topVulnNodeCVELoaderQuery(ctx context.Context, query *v1.Query) (*nodeCVEResolver, error) {
+	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	vulns, err := vulnLoader.FromQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	} else if len(vulns) == 0 {
+		return nil, err
+	} else if len(vulns) > 1 {
+		return nil, errors.New("multiple vulnerabilities matched for top node vulnerability")
+	}
+	return &nodeCVEResolver{root: resolver.root, data: vulns[0]}, nil
 }
 
 func (resolver *nodeResolver) getNodeRawQuery() string {
