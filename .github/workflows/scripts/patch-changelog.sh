@@ -17,7 +17,14 @@ check_not_empty() {
 VERSION="$1"
 REF="$2"
 BRANCH="$3"
-DRY_RUN="$4"
+
+create_pr() {
+    gh pr create \
+    --title "$TITLE" \
+    --base "$main_branch" \
+    --body "Cutting \`CHANGELOG.md\` after the $BRANCH branch." \
+    --assignee "$GITHUB_ACTOR"
+}
 
 check_not_empty \
     GITHUB_STEP_SUMMARY GITHUB_SERVER_URL GITHUB_REPOSITORY GITHUB_ACTOR \
@@ -58,11 +65,7 @@ if ! git diff-index --quiet HEAD; then
     PR_URL=""
     if [ "$DRY_RUN" != "true" ]; then
         git push --set-upstream origin "$CHANGELOG_BRANCH"
-        PR_URL=$(gh pr create \
-            --title "$TITLE" \
-            --base "$main_branch" \
-            --body "Cutting \`CHANGELOG.md\` after the $BRANCH branch." \
-            --assignee "$GITHUB_ACTOR")
+        PR_URL=$(create_pr)
     fi
     # TODO: Add labels to skip CI runs
 

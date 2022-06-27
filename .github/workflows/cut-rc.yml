@@ -22,6 +22,8 @@ env:
   docs_repository: openshift/openshift-docs
   jira_projects: ROX, RS, RTOOLS
   slack_channel: C03KSV3N6N8 #test-release-automation
+  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/${SCRIPT}?ref=${main_branch}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[inputs.dry-run != 'true'] }}
 
 jobs:
   variables:
@@ -34,63 +36,18 @@ jobs:
     name: Check Jira tickets for release
     needs: variables
     runs-on: ubuntu-latest
-    env:
-      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
     steps:
       - name: Query JIRA
         env:
-          JQL: >-
-            project IN (${{env.jira_projects}})
-            AND fixVersion IN (\"${{needs.variables.outputs.release-patch}}\",
-            \"${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}\")
-            AND status != CLOSED
-            AND Component != Documentation
-            AND type != Epic
-            ORDER BY assignee
-
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
-          GH_MD_FORMAT_LINE=$(cat << EOF
-          "* [\(.key)](https://issues.redhat.com/browse/\(.key)): **"+(.fields.assignee.displayName // "unassigned")+"** (\(.fields.status.name)) — _"+(.fields.summary | gsub (" +$";""))+"_"
-          EOF
-          )
-
-          ISSUES=$(curl --fail -sSL --get --data-urlencode "jql=$JQL" \
-            -H "Authorization: Bearer $JIRA_TOKEN" \
-            -H "Accept: application/json" \
-            "https://issues.redhat.com/rest/api/2/search" \
-          | jq -r ".issues[] | $GH_MD_FORMAT_LINE" \
-          | sort)
-
-          if [ -n "$ISSUES" ]; then
-            cat << EOF >> $GITHUB_STEP_SUMMARY
-          The following Jira issues are still open for release ${{needs.variables.outputs.release-patch}}:
-
-          $ISSUES
-
-          Contact the assignees to clarify the status.
-          EOF
-            echo "::error::There are non-closed Jira issues for version ${{needs.variables.outputs.release-patch}}."
-
-            OPEN_ISSUES=$(curl --fail -sSL --get --data-urlencode "jql=$JQL" \
-            -H "Authorization: Bearer $JIRA_TOKEN" \
-            -H "Accept: application/json" \
-            "https://issues.redhat.com/rest/api/2/search")
-
-            echo "Open issues: $OPEN_ISSUES"
-
-            if [ "${{inputs.dry-run}}" != "true" ]; then
-              echo "$OPEN_ISSUES" | jq -r ".issues[] | .key" | while read -r KEY; do
-                curl --fail -sSL -X POST \
-                  -H "Authorization: Bearer $JIRA_TOKEN" \
-                  --data '{"body": "Release ${{needs.variables.outputs.release-patch}} is ongoing. Please update the status of this issue and notify the release engineer."}' \
-                  -H "Content-Type: application/json" \
-                  "https://issues.redhat.com/rest/api/2/issue/$KEY/comment"
-              done
-            fi
-
-            exit 1
-          fi
-          echo "All issues for Jira release ${{needs.variables.outputs.release-patch}} are closed." >> $GITHUB_STEP_SUMMARY
+          set -uo pipefail
+          SCRIPT="check-jira-issues.sh"
+          gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
+            "${{env.jira_projects}}" \
+            "${{needs.variables.outputs.release}}" \
+            "${{needs.variables.outputs.patch}}" \
+            "${{needs.variables.outputs.release-patch}}"
 
   postpone-prs:
     name: Postpone open PRs
@@ -172,105 +129,13 @@ jobs:
         name: Cherry-pick commits from the main branch
         id: cherry-pick
         run: |
-          set -u
-          SLACK_MESSAGE_FILE=$(mktemp)
-          EMPTY=""
-          PR_COMMITS=$(gh pr list -s closed \
-            --search "milestone:${{needs.variables.outputs.milestone}}" \
-            --base "${{env.main_branch}}" \
-            --json number,url,mergeCommit,author,title \
-            --jq '.[] | "\(.number)\t\(.url)\t\(.mergeCommit.oid)\t\(.author.login)\t\(.title)"')
+          set -uo pipefail
+          SCRIPT="cherry-pick.sh"
+          gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
+            "${{needs.variables.outputs.milestone}}" \
+            "${{needs.variables.outputs.branch}}" \
+            "${{needs.variables.outputs.release-patch}}"
 
-          if [ -n "$PR_COMMITS" ]; then
-            echo "Commits of closed PRs:"
-            echo "$PR_COMMITS"
-            echo "..."
-          fi
-
-          FORK_POINT=$(diff -u \
-            <(git rev-list --first-parent ${{needs.variables.outputs.branch}}) \
-            <(git rev-list --first-parent ${{env.main_branch}}) \
-            | sed -ne 's/^ //p' | head -1)
-
-          echo "::debug::Fork point: $FORK_POINT"
-
-          echo "$PR_COMMITS" | while read -r PR_COMMIT; do
-            if [ -z "$PR_COMMIT" ]; then break; fi
-
-            IFS=$'\t' read -r PR URL COMMIT AUTHOR TITLE <<< $PR_COMMIT
-            # Skip commits merged before branching.
-            if git merge-base --is-ancestor "$COMMIT" HEAD; then
-              echo "::debug::$COMMIT is already on the release branch"
-              continue
-            fi
-
-
-            # Find commits with the specific commit message after the fork point
-            # to not cherry-pick twice the same commit.
-            ALREADY_PICKED_CHERRIES=$(git log \
-              --grep "^(cherry picked from commit $COMMIT)\$" --format='%H' \
-              HEAD...$FORK_POINT)
-
-            if [ -z "$ALREADY_PICKED_CHERRIES" ]; then
-              if git cherry-pick -x "$COMMIT"; then
-                echo "Cherry-picked $COMMIT from PR $PR" >> $GITHUB_STEP_SUMMARY
-
-                [ "${{inputs.dry-run}}" != "true" ] && \
-                gh pr comment $PR --body "Merge commit has been cherry-picked to branch \`${{needs.variables.outputs.branch}}\`."
-
-                EMPTY=false
-              else
-                git cherry-pick --abort
-
-                [ "${{inputs.dry-run}}" != "true" ] && \
-                gh pr comment $PR --body "Please merge the changes to branch \`${{needs.variables.outputs.branch}}\`."
-
-                cat << EOF >> $GITHUB_STEP_SUMMARY
-          * [PR $PR]($URL) by **${AUTHOR}** (_${TITLE}_) could not be cherry-picked. Merge commit: \`$COMMIT\`.
-          EOF
-                echo "- <$URL|PR $PR> by *$AUTHOR* — $TITLE" \
-                >> "$SLACK_MESSAGE_FILE"
-              fi
-            else
-              echo "Already picked cherries for commit $COMMIT:"
-              echo "$ALREADY_PICKED_CHERRIES"
-              echo "..."
-            fi
-          done
-
-          git push
-          if [ -n "$EMPTY" ]; then
-            echo "Cherry-picked commits have been pushed to the release branch." >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Replace % with %25 and join lines with %0A:
-          FAILED="$(sed ':a; N; $!ba; s/%/%25/g; s/\n/%0A/g' $SLACK_MESSAGE_FILE)"
-          rm -f "$SLACK_MESSAGE_FILE"
-
-          if [ -n "$FAILED" ]; then
-            echo "::set-output name=bad-cherries::$FAILED"
-            cat << EOF >> $GITHUB_STEP_SUMMARY
-
-          As some of the PRs could not be cherry-picked, please help the authors to merge their changes to the release branch via opening PRs.
-          The commands may look like the following (mind the placeholders):
-
-              # In the directory of the ${{github.repository}} clone:
-              git switch "${{env.main_branch}}"
-              git pull
-              git switch --create <AUTHOR>/merge-pr-<PR NUMBER>-"${{needs.variables.outputs.release-patch}}" \\
-                "${{needs.variables.outputs.branch}}"
-              git cherry-pick -x <MERGE COMMIT SHA>
-
-              # Proceed to resolve merge conflicts. Once done:
-              git push --set-upstream origin \$(git branch --show-current)
-
-              # Create PR to the release branch (assuming 'gh' is installed):
-              gh create pr --base "${{needs.variables.outputs.branch}}" --fill \\
-                --milestone "${{needs.variables.outputs.milestone}}"
-
-          EOF
-            exit 1
-          fi
       - name: Post to Slack
         if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
         env:

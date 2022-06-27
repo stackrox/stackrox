@@ -24,6 +24,7 @@ env:
   main_branch: master
   jira_project: ROX
   script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/${SCRIPT}?ref=${main_branch}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[inputs.dry-run != 'true'] }}
 
 jobs:
   check-jira:
@@ -164,7 +165,7 @@ jobs:
           set -uo pipefail
           SCRIPT="patch-changelog.sh"
           gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
-            "${{inputs.version}}" "${{inputs.ref}}" "${{needs.variables.outputs.branch}}" "${{inputs.dry-run}}"
+            "${{inputs.version}}" "${{inputs.ref}}" "${{needs.variables.outputs.branch}}"
 
   milestone:
     name: Create milestone

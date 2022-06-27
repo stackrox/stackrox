@@ -1,0 +1,138 @@
+#!/bin/bash
+#
+# Tries to cherry-pick merge commits from the main branch to the release branch.
+# Adds comments to the original PRs of the problematic commits.
+#
+set -euo pipefail
+
+cat <<EOF >/dev/null
+GitHub variables: $GITHUB_REPOSITORY
+Custom variables: $DRY_RUN $main_branch
+EOF
+
+MILESTONE="$1"
+BRANCH="$2"
+RELEASE_PATCH="$3"
+
+# Source common.sh.
+if [ -n "$CI" ]; then
+    # shellcheck source=/dev/null
+    source /dev/stdin <<<"$(gh api -H 'Accept: application/vnd.github.v3.raw' \
+        "/repos/$GITHUB_REPOSITORY/contents/.github/workflows/scripts/common.sh?ref=${main_branch}")"
+fi
+
+SLACK_MESSAGE_FILE=$(mktemp)
+
+cherry_pick() {
+    IFS=$'\t' read -r PR URL COMMIT AUTHOR TITLE <<<"$1"
+
+    # Skip commits merged before branching.
+    if git merge-base --is-ancestor "$COMMIT" HEAD; then
+        gh_log debug "$COMMIT is already on the release branch"
+        return 0
+    fi
+
+    # Find commits with the specific commit message after the fork point
+    # to not cherry-pick twice the same commit.
+    ALREADY_PICKED_CHERRIES=$(git log \
+        --grep "^(cherry picked from commit $COMMIT)\$" --format='%H' \
+        HEAD..."$FORK_POINT")
+
+    if [ -n "$ALREADY_PICKED_CHERRIES" ]; then
+        gh_summary "Already picked cherries for commit $COMMIT:\n\`\`\`\n$ALREADY_PICKED_CHERRIES\n\`\`\`"
+        return 0
+    fi
+
+    if git cherry-pick -x "$COMMIT"; then
+        gh_summary "Cherry-picked $COMMIT from PR $PR"
+
+        [ "$DRY_RUN" != "true" ] &&
+            gh pr comment "$PR" --body "Merge commit has been cherry-picked to branch \`$BRANCH\`."
+
+        return 1
+    else
+        git cherry-pick --abort
+
+        [ "$DRY_RUN" != "true" ] &&
+            gh pr comment "$PR" --body "Please merge the changes to branch \`$BRANCH\`."
+
+        gh_summary "* [PR $PR]($URL) by **${AUTHOR}** (_${TITLE}_) could not be cherry-picked. Merge commit: \`$COMMIT\`."
+
+        echo "- <$URL|PR $PR> by *$AUTHOR* — $TITLE" \
+            >>"$SLACK_MESSAGE_FILE"
+    fi
+
+    return 0
+}
+
+find_fork_point() {
+    set +o pipefail
+    diff -u \
+        <(git rev-list --first-parent "$1") \
+        <(git rev-list --first-parent "$2") |
+        sed -ne 's/^ //p' |
+        head -1
+    set -o pipefail
+}
+
+PR_COMMITS=$(gh pr list -s merged \
+    --search "milestone:$MILESTONE" \
+    --base "$main_branch" \
+    --json number,url,mergeCommit,author,title \
+    --jq '.[] | "\(.number)\t\(.url)\t\(.mergeCommit.oid)\t\(.author.login)\t\(.title)"')
+
+if [ -n "$PR_COMMITS" ]; then
+    echo "Commits of merged PRs:"
+    echo "$PR_COMMITS"
+    echo "..."
+fi
+
+FORK_POINT=$(find_fork_point "$BRANCH" "$main_branch")
+
+gh_log debug "Fork point: $FORK_POINT"
+
+if [ -n "$PR_COMMITS" ]; then
+    PICKED=0
+    while read -r PR_COMMIT; do
+        cherry_pick "$PR_COMMIT"
+        PICKED=$((PICKED + $?))
+    done <<<"$PR_COMMITS"
+
+    if [ "$PICKED" -gt 0 ]; then
+        [ "$DRY_RUN" != "true" ] &&
+            git push
+
+        gh_summary "Cherry-picked commits have been pushed to the release branch."
+    fi
+fi
+
+# Replace % with %25 and join lines with %0A:
+FAILED="$(sed ':a; N; $!ba; s/%/%25/g; s/\n/%0A/g' "$SLACK_MESSAGE_FILE")"
+
+rm -f "$SLACK_MESSAGE_FILE"
+
+if [ -n "$FAILED" ]; then
+    gh_output bad-cherries "$FAILED"
+    gh_summary <<EOF
+
+As some of the PRs could not be cherry-picked, please help the authors to merge
+their changes to the release branch via opening PRs.
+
+The commands may look like the following (mind the placeholders):
+
+    # In the directory of the $GITHUB_REPOSITORY clone:
+    git switch "$main_branch"
+    git pull
+    git switch --create <AUTHOR>/merge-pr-<PR NUMBER>-"$RELEASE_PATCH" \\
+      "$BRANCH"
+    git cherry-pick -x <MERGE COMMIT SHA>
+
+    # Proceed to resolve merge conflicts. Once done:
+    git push --set-upstream origin \$(git branch --show-current)
+
+    # Create PR to the release branch (assuming 'gh' is installed):
+    gh create pr --base "$BRANCH" --fill \\
+      --milestone "$MILESTONE"
+EOF
+    exit 1
+fi
