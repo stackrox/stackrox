@@ -41,7 +41,11 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-import { LifecycleStage, policySeverities, PolicySeverity } from 'types/policy.proto';
+import {
+    LifecycleStage,
+    policySeverities as severitiesLowToCritical,
+    PolicySeverity,
+} from 'types/policy.proto';
 
 import { SearchFilter } from 'types/search';
 import useAlertGroups from '../hooks/useAlertGroups';
@@ -49,7 +53,7 @@ import WidgetCard from './WidgetCard';
 
 // The ordering of the legend and the hidden severities runs from Critical->Low
 // so we reverse the order of the default Low->Critical in most cases.
-const severitiesCriticalToLow = [...policySeverities].reverse();
+const severitiesCriticalToLow = [...severitiesLowToCritical].reverse();
 
 /**
  * This function iterates an array of AlertGroups and zeros out severities that
@@ -174,7 +178,7 @@ function ViolationsByPolicyCategoryChart({
 
     // The bars run opposite to the severity display in the rest of the widget, so we iterate the original
     // order of Low->Critical
-    const bars = policySeverities.map((severity) => {
+    const bars = severitiesLowToCritical.map((severity) => {
         const counts = countsBySeverity[severity];
         const data = Object.entries(counts).map(([group, count]) => ({
             name: severity,
