@@ -80,9 +80,17 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
     const Navigation = (
         <Nav id="nav-primary-simple">
             <NavList id="nav-list-simple">
-                {[dashboardPath, networkBasePath, violationsBasePath, complianceBasePath]
-                    .filter(isRenderedRoutePath)
-                    .map(navItemMapper)}
+                {
+                    // prettier-ignore
+                    [
+                        dashboardPath,
+                        networkBasePath,
+                        violationsBasePath,
+                        complianceBasePath
+                    ]
+                        .filter(isRenderedRoutePath)
+                        .map(navItemMapper)
+                }
                 {vulnerabilityManagementFilteredPaths.length !== 0 && (
                     <NavExpandable
                         title="Vulnerability Management"
@@ -92,9 +100,15 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
                         {vulnerabilityManagementFilteredPaths.map(navItemMapper)}
                     </NavExpandable>
                 )}
-                {[configManagementPath, riskBasePath]
-                    .filter(isRenderedRoutePath)
-                    .map(navItemMapper)}
+                {
+                    // prettier-ignore
+                    [
+                        configManagementPath,
+                        riskBasePath
+                    ]
+                        .filter(isRenderedRoutePath)
+                        .map(navItemMapper)
+                }
                 {platformConfigurationFilteredPaths.length !== 0 && (
                     <NavExpandable
                         title="Platform Configuration"
