@@ -832,12 +832,12 @@ handle_nightly_runs() {
         die "Only for OpenShift CI"
     fi
 
-    local nightly_tag
-    nightly_tag="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-$(date '+%Y%m%d')"
+    local nightly_tag_prefix
+    nightly_tag_prefix="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-"
     if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
-        ci_export CIRCLE_TAG "${nightly_tag}"
+        ci_export CIRCLE_TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
     elif is_in_PR_context && pr_has_label "simulate-nightly-run"; then
-        ci_export CIRCLE_TAG "${nightly_tag}"
+        ci_export CIRCLE_TAG "${nightly_tag_prefix}${BUILD_ID: -8}"
     fi
 }
 
