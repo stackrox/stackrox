@@ -1,0 +1,7 @@
+li.default-category {
+    color: var(--pf-c-simple-list__item-link--Color);
+}
+
+li.custom-category {
+    color: var(--pf-c-simple-list__item-link--m-current--Color);
+}

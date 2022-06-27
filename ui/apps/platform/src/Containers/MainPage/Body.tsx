@@ -12,6 +12,7 @@ import {
     clustersListPath,
     integrationsPath,
     policiesPath,
+    policyManagementBasePath,
     deprecatedPoliciesPath,
     riskPath,
     apidocsPath,
@@ -58,7 +59,9 @@ const AsyncIntegrationsPage = asyncComponent(
 );
 const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
 
-const AsyncPolicyManagementPage = asyncComponent(() => import('Containers/Policies/PoliciesPage'));
+const AsyncPolicyManagementPage = asyncComponent(
+    () => import('Containers/Policies/PolicyManagementPage')
+);
 
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
@@ -115,7 +118,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />
                     <Route path={integrationsPath} component={AsyncIntegrationsPage} />
-                    <Route path={policiesPath} component={AsyncPolicyManagementPage} />
+                    <Route path={policyManagementBasePath} component={AsyncPolicyManagementPage} />
                     <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
                     <Route path={riskPath} component={AsyncRiskPage} />
                     <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
