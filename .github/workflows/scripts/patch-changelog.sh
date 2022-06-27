@@ -4,15 +4,27 @@
 #
 set -euo pipefail
 
-cat << EOF > /dev/null
-GitHub variables: $GITHUB_STEP_SUMMARY $GITHUB_SERVER_URL $GITHUB_REPOSITORY $GITHUB_ACTOR
-Custom variables: $main_branch
-EOF
+check_not_empty() {
+    local VAR
+    typeset -n VAR
+    VAR="$1"
+    if [ -z "${VAR:-}" ]; then
+        echo "::error::Variable $1 is not set or empty"
+        exit 1
+    fi
+}
 
 VERSION="$1"
 REF="$2"
 BRANCH="$3"
 DRY_RUN="$4"
+
+for VAR in \
+    GITHUB_STEP_SUMMARY GITHUB_SERVER_URL GITHUB_REPOSITORY GITHUB_ACTOR \
+    main_branch \
+    VERSION REF BRANCH DRY_RUN; do
+    check_not_empty "$VAR"
+done
 
 if grep "^## \[${VERSION}\]$" CHANGELOG.md; then
     echo "\`CHANGELOG.md@$REF\` has got already the \`[$VERSION]\` section." >>"$GITHUB_STEP_SUMMARY"
