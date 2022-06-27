@@ -7,6 +7,6 @@ what cluster the visible namespaces belong to.
   position: sticky;
   top: calc(var(--pf-c-select__menu--PaddingTop) * -1);
   border-bottom: 1px solid var(--pf-global--BorderColor--100);
-  background-color: var(--pf-global--BackgroundColor--light-100);
+  background-color: var(--pf-c-select__menu--BackgroundColor);
   z-index: 1;
 }
