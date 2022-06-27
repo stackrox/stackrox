@@ -87,7 +87,7 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                         <Td dataLabel={columnNames.criticalCves}>
                             <SecurityIcon
                                 className="pf-u-display-inline pf-u-mr-xs"
-                                color={severityColors.critical}
+                                color={severityColors.CRITICAL_SEVERITY}
                             />
                             <span>
                                 {cveStatusOption === 'Fixable'
@@ -98,7 +98,7 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                         <Td className="pf-u-pr-0" dataLabel={columnNames.importantCves}>
                             <SecurityIcon
                                 className="pf-u-display-inline pf-u-mr-xs"
-                                color={severityColors.important}
+                                color={severityColors.HIGH_SEVERITY}
                             />
                             {cveStatusOption === 'Fixable'
                                 ? `${vulnCounter.important.fixable} fixable`

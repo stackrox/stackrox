@@ -4,7 +4,7 @@ import { CancellableRequest } from 'services/cancellationUtils';
 export type UseRestQueryReturn<ReturnType> = {
     data: ReturnType | undefined;
     loading: boolean;
-    error: Error | undefined;
+    error?: Error;
 };
 
 export default function useRestQuery<ReturnType>(
