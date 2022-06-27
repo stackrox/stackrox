@@ -1,9 +1,9 @@
 package datastore
 
 import (
+	acIndexer "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store/dackbox"
 	"github.com/stackrox/rox/central/activecomponent/datastore/search"
-	acIndexer "github.com/stackrox/rox/central/activecomponent/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
 	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"

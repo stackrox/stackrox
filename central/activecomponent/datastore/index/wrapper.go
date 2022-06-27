@@ -3,7 +3,6 @@ package index
 import (
 	"github.com/gogo/protobuf/proto"
 	activeComponentDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	"github.com/stackrox/rox/central/activecomponent/index/internal"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -19,7 +18,7 @@ func (ir Wrapper) Wrap(key []byte, msg proto.Message) (string, interface{}) {
 	}
 
 	return id, &activeComponentWrapper{
-		ActiveComponent: internal.ConvertToIndexContexts(msg.(*storage.ActiveComponent)),
+		ActiveComponent: msg.(*storage.ActiveComponent),
 		Type:            v1.SearchCategory_ACTIVE_COMPONENT.String(),
 	}
 }

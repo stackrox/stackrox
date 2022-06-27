@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/activecomponent/index/internal"
-	"github.com/stackrox/rox/central/activecomponent/index/mappings"
+	"github.com/stackrox/rox/central/activecomponent/datastore/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -22,8 +22,8 @@ type indexerImpl struct {
 }
 
 type activeComponentWrapper struct {
-	ActiveComponent *internal.IndexedContexts `json:"active_component"`
-	Type            string                    `json:"type"`
+	ActiveComponent *storage.ActiveComponent `json:"active_component"`
+	Type            string                   `json:"type"`
 }
 
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
