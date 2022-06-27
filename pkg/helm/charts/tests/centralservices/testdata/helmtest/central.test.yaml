@@ -17,8 +17,8 @@ tests:
     .configmaps["central-config"].data.["central-config.yaml"] | assertThat(length != 0)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
     verifyNodeAffinities(.deployments["central"])
-    .networkpolicies["central"] | assertThat(length != null)
-    .networkpolicies["central-db"] | assertThat(length != null)
+    .networkpolicys["central"] | assertThat(. != null)
+    .networkpolicys["central-db"] | assertThat(. != null)
     .deployments["central"] | assertThat(. != null)
     .services["central"] | assertThat(. != null)
 
