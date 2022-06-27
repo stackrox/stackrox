@@ -17,10 +17,17 @@ tests:
     .configmaps["central-config"].data.["central-config.yaml"] | assertThat(length != 0)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
     verifyNodeAffinities(.deployments["central"])
-    .networkpolicys["central"] | assertThat(. != null)
-    .networkpolicys["central-db"] | assertThat(. != null)
+    .networkpolicys["allow-ext-to-central"] | assertThat(. != null)
+    .networkpolicys["central-db"] | assertThat(. == null)
     .deployments["central"] | assertThat(. != null)
     .services["central"] | assertThat(. != null)
+
+- name: "central with DB enabled"
+  values:
+    central:
+      enableCentralDB: true
+  expect:
+    .networkpolicys["central-db"] | assertThat(. != null)
 
 - name: "central with deprecated PodSecurityPolicies enabled"
   values:
