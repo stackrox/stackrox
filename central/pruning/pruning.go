@@ -33,14 +33,17 @@ import (
 )
 
 const (
-	pruneInterval      = 1 * time.Hour
+	pruneFreq          = 1
+	pruneInterval      = pruneFreq * time.Hour
 	orphanWindow       = 30 * time.Minute
 	baselineBatchLimit = 10000
+	clusterGCFreq      = 24 * pruneFreq
 )
 
 var (
-	log        = logging.LoggerForModule()
-	pruningCtx = sac.WithAllAccess(context.Background())
+	log             = logging.LoggerForModule()
+	pruningCtx      = sac.WithAllAccess(context.Background())
+	clusterGCTicker = 1
 )
 
 // GarbageCollector implements a generic garbage collection mechanism
@@ -129,6 +132,12 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOrphanedResources()
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
+
+	if clusterGCTicker == clusterGCFreq {
+		clusterGCTicker = 1
+	} else {
+		clusterGCTicker++
+	}
 
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
@@ -483,6 +492,10 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 			log.Error(err)
 		}
 	}
+}
+
+func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
+
 }
 
 func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, pruneAllRuntimeAfter, pruneDeletedRuntimeAfter, pruneAttemptedDeployAfter, pruneAttemptedRuntimeAfter int32) {
