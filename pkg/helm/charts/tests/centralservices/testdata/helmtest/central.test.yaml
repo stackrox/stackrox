@@ -55,7 +55,6 @@ tests:
     .rolebindings["central-use-scc"] | assertThat(. == null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
     verifyNodeAffinities(.deployments["central"])
-    .networkpolicys["central"].spec.ingress | assertThat(length == 0)
 
 - name: "central with OpenShift 4 and disabled SCCs"
   server:
@@ -74,4 +73,3 @@ tests:
     .securitycontextconstraints["stackrox-central"] | assertThat(. == null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
     verifyNodeAffinities(.deployments["central"])
-    .networkpolicys["central"].spec.ingress | assertThat(length == 0)
