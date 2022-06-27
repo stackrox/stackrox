@@ -6,8 +6,8 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"syscall"
 	"strconv"
+	"syscall"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
