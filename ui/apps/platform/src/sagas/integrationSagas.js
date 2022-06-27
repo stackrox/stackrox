@@ -7,12 +7,10 @@ import * as AuthService from 'services/AuthService';
 import * as BackupIntegrationsService from 'services/BackupIntegrationsService';
 import { actions, types } from 'reducers/integrations';
 import { actions as notificationActions } from 'reducers/notifications';
-import { actions as authActions } from 'reducers/auth';
 import { actions as apiTokenActions } from 'reducers/apitokens';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 const fetchIntegrationsActionMap = {
-    authProviders: authActions.fetchAuthProviders.request(),
     backups: actions.fetchBackups.request(),
     imageIntegrations: actions.fetchImageIntegrations.request(),
     signatureIntegrations: actions.fetchSignatureIntegrations.request(),
@@ -61,7 +59,6 @@ function* watchLocation() {
 function* watchFetchRequest() {
     while (true) {
         const action = yield take([
-            types.FETCH_AUTH_PLUGINS.REQUEST,
             types.FETCH_BACKUPS.REQUEST,
             types.FETCH_IMAGE_INTEGRATIONS.REQUEST,
             types.FETCH_SIGNATURE_INTEGRATIONS.REQUEST,
