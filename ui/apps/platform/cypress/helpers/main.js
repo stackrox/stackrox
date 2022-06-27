@@ -7,20 +7,20 @@ import { visit } from './visit';
 // visit helpers
 
 export function visitMainDashboardFromLeftNav() {
-    cy.intercept('GET', api.risks.riskyDeployments).as('riskyDeployments');
+    cy.intercept('GET', api.risks.riskyDeployments).as('deploymentswithprocessinfo');
 
     cy.get(`${navSelectors.navLinks}:contains("Dashboard")`).click();
 
-    cy.wait('@riskyDeployments');
+    cy.wait('@deploymentswithprocessinfo');
     cy.get('h1:contains("Dashboard")');
 }
 
-export function visitMainDashboard() {
-    cy.intercept('GET', api.risks.riskyDeployments).as('riskyDeployments');
+export function visitMainDashboard(requestConfig, staticResponseMap) {
+    cy.intercept('GET', api.risks.riskyDeployments).as('deploymentswithprocessinfo');
 
-    visit(url);
+    visit(url, requestConfig, staticResponseMap);
 
-    cy.wait('@riskyDeployments');
+    cy.wait('@deploymentswithprocessinfo');
     cy.get('h1:contains("Dashboard")');
 }
 
@@ -30,11 +30,11 @@ export function visitMainDashboardPF() {
 }
 
 export function visitMainDashboardViaRedirectFromUrl(redirectFromUrl) {
-    cy.intercept('GET', api.risks.riskyDeployments).as('riskyDeployments');
+    cy.intercept('GET', api.risks.riskyDeployments).as('deploymentswithprocessinfo');
 
     visit(redirectFromUrl);
 
-    cy.wait('@riskyDeployments');
+    cy.wait('@deploymentswithprocessinfo');
     cy.location('pathname').should('eq', url);
     cy.get('h1:contains("Dashboard")');
 }
