@@ -4,6 +4,8 @@ import { EventCallbackInterface, EventPropTypeInterface } from 'victory-core';
 
 import { severityColors } from 'constants/visuals/colors';
 
+export const solidBlueChartColor = 'var(--pf-global--palette--blue-400)';
+
 export const severityColorScale = Object.values(severityColors);
 
 // Clone default PatternFly chart themes
