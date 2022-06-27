@@ -27,6 +27,32 @@ spec:
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          # Central-db is single-homed, so avoid preemptible nodes.
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: cloud.google.com/gke-preemptible
+                operator: NotIn
+                values:
+                - "true"
+          - weight: 50
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+          - weight: 25
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/compute
+                operator: Exists
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
       serviceAccountName: central-db
       initContainers:
       - name: init-db
