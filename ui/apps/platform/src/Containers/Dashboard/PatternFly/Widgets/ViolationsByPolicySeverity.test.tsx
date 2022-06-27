@@ -42,21 +42,17 @@ jest.mock('hooks/useResizeObserver', () => ({
 jest.mock('Containers/Dashboard/PatternFly/hooks/useAlertGroups', () => ({
     __esModule: true,
     default: () => ({
-        data: {
-            data: {
-                groups: [
-                    {
-                        group: '',
-                        counts: [
-                            { severity: 'LOW_SEVERITY', count: '220' },
-                            { severity: 'MEDIUM_SEVERITY', count: '70' },
-                            { severity: 'HIGH_SEVERITY', count: '140' },
-                            { severity: 'CRITICAL_SEVERITY', count: '3' },
-                        ],
-                    },
+        data: [
+            {
+                group: '',
+                counts: [
+                    { severity: 'LOW_SEVERITY', count: '220' },
+                    { severity: 'MEDIUM_SEVERITY', count: '70' },
+                    { severity: 'HIGH_SEVERITY', count: '140' },
+                    { severity: 'CRITICAL_SEVERITY', count: '3' },
                 ],
             },
-        },
+        ],
         loading: false,
         error: undefined,
     }),
@@ -113,10 +109,10 @@ describe('Violations by policy severity widget', () => {
         expect(history.location.search).toContain('sortOption[field]=Severity');
 
         // Test links from the violation count tiles
-        await user.click(await screen.findByRole('link', { name: 'Low' }));
+        await user.click(await screen.findByRole('link', { name: '220 Low' }));
         expect(history.location.pathname).toBe(`${violationsBasePath}`);
         expect(history.location.search).toContain('[Severity]=LOW_SEVERITY');
-        await user.click(await screen.findByRole('link', { name: 'Critical' }));
+        await user.click(await screen.findByRole('link', { name: '3 Critical' }));
         expect(history.location.pathname).toBe(`${violationsBasePath}`);
         expect(history.location.search).toContain('[Severity]=CRITICAL_SEVERITY');
 
