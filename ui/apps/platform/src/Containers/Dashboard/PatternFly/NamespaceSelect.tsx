@@ -13,6 +13,8 @@ import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import { flattenFilterValue } from 'utils/searchUtils';
 import { Cluster } from './types';
 
+import './NamespaceSelect.css';
+
 const selectAll: unique symbol = Symbol('Select-All-Namespaces');
 
 function createOptions(clusters: Cluster[], filterValue?: string) {
@@ -20,12 +22,18 @@ function createOptions(clusters: Cluster[], filterValue?: string) {
 
     if (filterValue) {
         clusters.forEach(({ name: clusterName, namespaces }) => {
-            const namespacesToShow = namespaces.filter(({ metadata: { name } }) => {
-                return name.toLowerCase().includes(filterValue);
-            });
+            // If the search filter matches the name of the cluster, include all that cluster's
+            // namespaces.
+            if (clusterName.toLowerCase().includes(filterValue)) {
+                clustersToShow.push({ name: clusterName, namespaces });
+            } else {
+                const namespacesToShow = namespaces.filter(({ metadata: { name } }) => {
+                    return name.toLowerCase().includes(filterValue);
+                });
 
-            if (namespacesToShow.length > 0) {
-                clustersToShow.push({ name: clusterName, namespaces: namespacesToShow });
+                if (namespacesToShow.length > 0) {
+                    clustersToShow.push({ name: clusterName, namespaces: namespacesToShow });
+                }
             }
         });
     } else {
@@ -88,6 +96,7 @@ function NamespaceSelect({
 
     return (
         <Select
+            className="namespace-select"
             variant={SelectVariant.checkbox}
             isOpen={isOpen}
             onToggle={onToggle}
