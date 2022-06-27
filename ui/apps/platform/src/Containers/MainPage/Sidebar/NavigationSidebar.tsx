@@ -5,7 +5,7 @@ import { Nav, NavExpandable, NavItem, NavList, PageSidebar } from '@patternfly/r
 import LinkShim from 'Components/PatternFly/LinkShim';
 
 import {
-    IsRenderedRoutePath,
+    IsRoutePathRendered,
     RoutePath,
     basePathToLabelMap,
     dashboardPath,
@@ -46,10 +46,10 @@ const platformConfigurationPaths: RoutePath[] = [
 ];
 
 type NavigationSidebarProps = {
-    isRenderedRoutePath: IsRenderedRoutePath;
+    isRoutePathRendered: IsRoutePathRendered;
 };
 
-function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): ReactElement {
+function NavigationSidebar({ isRoutePathRendered }: NavigationSidebarProps): ReactElement {
     const { pathname } = useLocation();
 
     function isActiveFilter(routePath: RoutePath): boolean {
@@ -59,9 +59,9 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
     }
 
     const vulnerabilityManagementFilteredPaths =
-        vulnerabilityManagementPaths.filter(isRenderedRoutePath);
+        vulnerabilityManagementPaths.filter(isRoutePathRendered);
     const platformConfigurationFilteredPaths =
-        platformConfigurationPaths.filter(isRenderedRoutePath);
+        platformConfigurationPaths.filter(isRoutePathRendered);
 
     // Special case for Vulnerability Management because nested nav items match only a subset of sub-routes.
     const isVulnerabilityManagementPathActive = pathname.startsWith(vulnManagementPath);
@@ -88,7 +88,7 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
                         violationsBasePath,
                         complianceBasePath
                     ]
-                        .filter(isRenderedRoutePath)
+                        .filter(isRoutePathRendered)
                         .map(navItemMapper)
                 }
                 {vulnerabilityManagementFilteredPaths.length !== 0 && (
@@ -106,7 +106,7 @@ function NavigationSidebar({ isRenderedRoutePath }: NavigationSidebarProps): Rea
                         configManagementPath,
                         riskBasePath
                     ]
-                        .filter(isRenderedRoutePath)
+                        .filter(isRoutePathRendered)
                         .map(navItemMapper)
                 }
                 {platformConfigurationFilteredPaths.length !== 0 && (

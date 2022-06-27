@@ -3,7 +3,7 @@ import { Redirect, Route, Switch } from 'react-router-dom';
 import { PageSection } from '@patternfly/react-core';
 
 import {
-    IsRenderedRoutePath,
+    IsRoutePathRendered,
     RoutePath,
     mainPath,
     dashboardPath,
@@ -231,10 +231,10 @@ const routeComponents: RouteComponent[] = [
 
 type BodyProps = {
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
-    isRenderedRoutePath: IsRenderedRoutePath;
+    isRoutePathRendered: IsRoutePathRendered;
 };
 
-function Body({ isFeatureFlagEnabled, isRenderedRoutePath }: BodyProps): ReactElement {
+function Body({ isFeatureFlagEnabled, isRoutePathRendered }: BodyProps): ReactElement {
     const { isDarkMode } = useTheme();
 
     return (
@@ -249,7 +249,7 @@ function Body({ isFeatureFlagEnabled, isRenderedRoutePath }: BodyProps): ReactEl
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
                     {routeComponents
-                        .filter(({ basePath }) => isRenderedRoutePath(basePath))
+                        .filter(({ basePath }) => isRoutePathRendered(basePath))
                         .map((routeComponent) => {
                             const { basePath, propPath } = routeComponent;
                             const path = propPath ?? basePath;

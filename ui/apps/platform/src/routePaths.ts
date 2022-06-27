@@ -245,18 +245,18 @@ export const routeDescriptorMap: Record<RoutePath, RouteDescriptor> = {
  * Evaluate feature flags and resource requirements for route paths.
  */
 
-export type IsRenderedRoutePath = (routePath: RoutePath) => boolean;
+export type IsRoutePathRendered = (routePath: RoutePath) => boolean;
 
 /*
  * Higher-order function if caller needs to have predicate functions in its scope.
  * For example, MainPath because:
- * Body needs both isFeatureFlagEnabled and isRenderedRoutePath.
- * NaviationSidebar needs only isRenderedRoutePath.
+ * Body needs both isFeatureFlagEnabled and isRoutePathRendered.
+ * NaviationSidebar needs only isRoutePathRendered.
  */
-export function getIsRenderedRoutePath(
+export function getIsRoutePathRendered(
     hasReadAccess: HasReadAccess,
     isFeatureFlagEnabled: IsFeatureFlagEnabled
-): IsRenderedRoutePath {
+): IsRoutePathRendered {
     return (routePath: RoutePath) => {
         const routeDescriptor = routeDescriptorMap[routePath];
 
