@@ -36,10 +36,6 @@ import WidgetCard from './WidgetCard';
 
 const fieldIdPrefix = 'compliance-levels-by-standard';
 
-function getViewAllLink(searchFilter: SearchFilter) {
-    return `${complianceBasePath}?${getUrlQueryStringForSearchFilter(searchFilter)}`;
-}
-
 // Adapted from `processData` function in the original DashboardCompliance.js code
 function processData(
     searchFilter: SearchFilter,
@@ -169,11 +165,7 @@ function ComplianceLevelsByStandard() {
                                 </FormGroup>
                             </Form>
                         </Dropdown>
-                        <Button
-                            variant="secondary"
-                            component={LinkShim}
-                            href={getViewAllLink(searchFilter)}
-                        >
+                        <Button variant="secondary" component={LinkShim} href={complianceBasePath}>
                             View all
                         </Button>
                     </FlexItem>
