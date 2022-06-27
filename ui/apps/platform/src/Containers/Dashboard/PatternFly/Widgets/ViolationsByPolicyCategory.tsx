@@ -23,6 +23,7 @@ import {
     getInteractiveLegendItemStyles,
 } from '@patternfly/react-charts';
 import sortBy from 'lodash/sortBy';
+import cloneDeep from 'lodash/cloneDeep';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import { AlertGroup } from 'services/AlertsService';
@@ -138,6 +139,11 @@ function tooltipForCategory(
         .join('\n');
 }
 
+// This widget uses a theme with the legend order in the opposite direction
+// of the PatternFly defaults
+const chartTheme = cloneDeep(patternflySeverityTheme);
+chartTheme.legend.colorScale.reverse();
+
 function ViolationsByPolicyCategoryChart({
     alertGroups,
     sortType,
@@ -189,12 +195,14 @@ function ViolationsByPolicyCategoryChart({
     });
 
     function getLegendData() {
-        return policySeverities.map((severity) => {
+        const legendData = policySeverities.map((severity) => {
             return {
                 name: severityLabels[severity],
                 ...getInteractiveLegendItemStyles(hiddenSeverities.has(severity)),
             };
         });
+        legendData.reverse();
+        return legendData;
     }
 
     function onLegendClick({ index }: { index: number }) {
@@ -231,7 +239,7 @@ function ViolationsByPolicyCategoryChart({
                     left: 180, // left padding is dependent on the length of the text on the left axis
                     bottom: 55, // Adjusted to accommodate legend
                 }}
-                theme={patternflySeverityTheme}
+                theme={chartTheme}
             >
                 <ChartAxis
                     tickLabelComponent={<LinkableChartLabel linkWith={labelLinkCallback} />}
