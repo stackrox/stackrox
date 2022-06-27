@@ -30,8 +30,8 @@ qa-tests-backend/test-images/registry-image/tomcat-files/web.xml
 roxctl/helm/derivelocalvalues/testdata/k8s-resources/*.yaml
 scale/image/fixtures/scrape.json
 scale/mocksensor/image_names.go
-sensor/tests/replay/data/central-out.bin
-sensor/tests/replay/data/trace.jsonl
+sensor/tests/replay/data/safety-net-central-out.bin
+sensor/tests/replay/data/safety-net-trace.jsonl
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg
 ui/yarn.lock

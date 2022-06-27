@@ -13,7 +13,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
@@ -95,13 +94,9 @@ var _ io.Writer = (*TraceWriterWithChannel)(nil)
 
 type TraceWriterWithChannel struct {
 	destinationChannel chan *central.SensorEvent
-	// mu mutex to avoid multiple goroutines writing at the same time
-	mu sync.Mutex
 }
 
 func (tw *TraceWriterWithChannel) Write(b []byte) (int, error) {
-	tw.mu.Lock()
-	defer tw.mu.Unlock()
 	msg := resources.InformerK8sMsg{}
 	if err := json.Unmarshal(b, &msg); err != nil {
 		return 0, err
@@ -151,8 +146,8 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 		sensorOutputFile string
 	}{
 		"Safety net test": {
-			k8sEventsFile:    "data/trace.jsonl",
-			sensorOutputFile: "data/central-out.bin",
+			k8sEventsFile:    "data/safety-net-k8s-trace.jsonl",
+			sensorOutputFile: "data/safety-net-central-out.bin",
 		},
 	}
 	for name, c := range cases {

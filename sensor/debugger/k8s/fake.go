@@ -419,23 +419,12 @@ func (f *FakeEventsManager) waitOnMode(events []string) error {
 				if !more {
 					return errors.New("channel closed")
 				}
-				for _, e := range events {
-					sensorEvent := &central.SensorEvent{}
-					if err := jsonpb.UnmarshalString(e, sensorEvent); err != nil {
-						return fmt.Errorf("error unmarshaling '%s'", e)
-					}
-					if sensorEvent.GetResource() == nil {
-						return fmt.Errorf("resource not found in sensor event '%s'", e)
-					}
-					resource := reflect.ValueOf(sensorEvent.GetResource())
-					compareFunc, ok := sensorEventCompareFunctions[resource.Type().String()]
-					if !ok {
-						return fmt.Errorf("compare function for resource '%s' not found", resource.Type().String())
-					}
-					if compareFunc(sensorEvent.GetResource(), event) {
-						receivedEvents++
-						break
-					}
+				eventFound, err := isEventInSlice(event, events)
+				if err != nil {
+					return err
+				}
+				if eventFound {
+					receivedEvents++
 				}
 				if receivedEvents == len(events) {
 					return nil
@@ -444,4 +433,26 @@ func (f *FakeEventsManager) waitOnMode(events []string) error {
 		}
 	}
 	return nil
+}
+
+// isEventInSlice checks whether a SensorEvent is in a slice of events or not
+func isEventInSlice(event *central.SensorEvent, events []string) (bool, error) {
+	for _, e := range events {
+		sensorEvent := &central.SensorEvent{}
+		if err := jsonpb.UnmarshalString(e, sensorEvent); err != nil {
+			return false, fmt.Errorf("error unmarshaling '%s'", e)
+		}
+		if sensorEvent.GetResource() == nil {
+			return false, fmt.Errorf("resource not found in sensor event '%s'", e)
+		}
+		resource := reflect.ValueOf(sensorEvent.GetResource())
+		compareFunc, ok := sensorEventCompareFunctions[resource.Type().String()]
+		if !ok {
+			return false, fmt.Errorf("compare function for resource '%s' not found", resource.Type().String())
+		}
+		if compareFunc(sensorEvent.GetResource(), event) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
