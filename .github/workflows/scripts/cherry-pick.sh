@@ -5,21 +5,16 @@
 #
 set -euo pipefail
 
-cat <<EOF >/dev/null
-GitHub variables: $GITHUB_REPOSITORY
-Custom variables: $DRY_RUN $main_branch
-EOF
-
 MILESTONE="$1"
 BRANCH="$2"
 RELEASE_PATCH="$3"
 
-# Source common.sh.
-if [ -n "$CI" ]; then
-    # shellcheck source=/dev/null
-    source /dev/stdin <<<"$(gh api -H 'Accept: application/vnd.github.v3.raw' \
-        "/repos/$GITHUB_REPOSITORY/contents/.github/workflows/scripts/common.sh?ref=${main_branch}")"
-fi
+for VAR in \
+    GITHUB_REPOSITORY \
+    DRY_RUN main_branch \
+    MILESTONE BRANCH RELEASE_PATCH; do
+    check_not_empty "$VAR"
+done
 
 SLACK_MESSAGE_FILE=$(mktemp)
 

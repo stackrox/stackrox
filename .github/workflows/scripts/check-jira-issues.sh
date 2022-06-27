@@ -5,16 +5,16 @@
 #
 set -euo pipefail
 
-cat <<EOF >/dev/null
-GitHub variables: $GITHUB_STEP_SUMMARY
-Custom variables: $JIRA_TOKEN $DRY_RUN
-EOF
-
 PROJECTS="$1"
 RELEASE="$2"
 PATCH="$3"
 RELEASE_PATCH="$4"
 
+for VAR in \
+    JIRA_TOKEN DRY_RUN \
+    PROJECTS RELEASE PATCH RELEASE_PATCH; do
+    check_not_empty "$VAR"
+done
 
 JQL="project IN ($PROJECTS) \
 AND fixVersion IN (\"$RELEASE_PATCH\", \"$RELEASE.$PATCH\") \
@@ -53,11 +53,11 @@ EOF
 ISSUES=$(get_issues | jq -r ".issues[] | $GH_MD_FORMAT_LINE" | sort)
 
 if [ -z "$ISSUES" ]; then
-    echo "All issues for Jira release $RELEASE_PATCH are closed." >>"$GITHUB_STEP_SUMMARY"
+    gh_summary "All issues for Jira release $RELEASE_PATCH are closed."
     exit 0
 fi
 
-cat <<EOF >>"$GITHUB_STEP_SUMMARY"
+gh_summary <<EOF
 The following Jira issues are still open for release $RELEASE_PATCH:
 
 $ISSUES
@@ -65,7 +65,7 @@ $ISSUES
 Contact the assignees to clarify the status.
 EOF
 
-echo "::error::There are non-closed Jira issues for version $RELEASE_PATCH."
+gh_log error "There are non-closed Jira issues for version $RELEASE_PATCH."
 
 OPEN_ISSUES=$(get_issues)
 

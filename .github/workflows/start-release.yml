@@ -25,30 +25,34 @@ env:
   jira_project: ROX
   script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/${SCRIPT}?ref=${main_branch}
   DRY_RUN: ${{ fromJSON('["true", "false"]')[inputs.dry-run != 'true'] }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
 
 jobs:
   check-jira:
     name: Check Jira release
     runs-on: ubuntu-latest
-    env:
-      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       release-date: ${{steps.check-jira-release.outputs.date}}
     steps:
       - name: Check that Jira release ${{inputs.version}} is not released
         id: check-jira-release
+        env:
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
+          SCRIPT="common.sh"
+          source /dev/stdin <<<"$(gh api -H "$ACCEPT_RAW" "${{env.script_url}}")"
+
           SCRIPT="check-jira-release.sh"
-          gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             "${{inputs.version}}"
 
   variables:
     name: Setup variables
     uses: ./.github/workflows/variables.yml
     with:
-      version: ${{inputs.version}}
+      version: ${{github.event.inputs.version}}
 
   check-docs-branch:
     name: Check documentation branch
@@ -163,8 +167,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
+          SCRIPT="common.sh"
+          source /dev/stdin <<<"$(gh api -H "$ACCEPT_RAW" "${{env.script_url}}")"
+
           SCRIPT="patch-changelog.sh"
-          gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             "${{inputs.version}}" "${{inputs.ref}}" "${{needs.variables.outputs.branch}}"
 
   milestone:

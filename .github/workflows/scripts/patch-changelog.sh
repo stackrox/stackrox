@@ -4,19 +4,14 @@
 #
 set -euo pipefail
 
-check_not_empty() {
-    for V in "$@"; do
-        typeset -n VAR="$V"
-        if [ -z "${VAR:-}" ]; then
-            echo "::error::Variable $V is not set or empty"
-            exit 1
-        fi
-    done
-}
-
 VERSION="$1"
 REF="$2"
 BRANCH="$3"
+
+check_not_empty \
+    GITHUB_SERVER_URL GITHUB_REPOSITORY GITHUB_ACTOR \
+    DRY_RUN main_branch \
+    VERSION REF BRANCH
 
 create_pr() {
     gh pr create \
@@ -26,13 +21,8 @@ create_pr() {
     --assignee "$GITHUB_ACTOR"
 }
 
-check_not_empty \
-    GITHUB_STEP_SUMMARY GITHUB_SERVER_URL GITHUB_REPOSITORY GITHUB_ACTOR \
-    main_branch \
-    VERSION REF BRANCH DRY_RUN
-
 if grep "^## \[${VERSION}\]$" CHANGELOG.md; then
-    echo "\`CHANGELOG.md@$REF\` has got already the \`[$VERSION]\` section." >>"$GITHUB_STEP_SUMMARY"
+    gh_summary "\`CHANGELOG.md@$REF\` has got already the \`[$VERSION]\` section."
     exit 0
 fi
 
@@ -40,17 +30,17 @@ CHANGELOG_BRANCH="automation/changelog-$VERSION"
 TITLE="Advance \`CHANGELOG.md\` to the next release"
 
 if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"; then
-    echo "Branch \`$CHANGELOG_BRANCH\` already exists." >>"$GITHUB_STEP_SUMMARY"
+    gh_summary "Branch \`$CHANGELOG_BRANCH\` already exists."
 
     mapfile -t EXISTING_PR <<<"$(gh pr list --head "$CHANGELOG_BRANCH" --search "$TITLE in:title" --state open --json number,url --jq ".[] | .number,.url")"
     if [ "${#EXISTING_PR[@]}" -eq 2 ]; then
-        echo ":arrow_right: There is already an open [PR ${EXISTING_PR[0]}](${EXISTING_PR[1]})," \
+        gh_summary ":arrow_right: There is already an open [PR ${EXISTING_PR[0]}](${EXISTING_PR[1]})," \
             "which needs to be merged, ensuring all lines added to \`CHANGELOG.md\` after the release branch are listed" \
-            "above the \`[${VERSION}]\` section." >>"$GITHUB_STEP_SUMMARY"
+            "above the \`[${VERSION}]\` section."
     else
-        echo ":arrow_right: There is no open PR from this branch. Please open a PR to the $main_branch if" \
+        gh_summary ":arrow_right: There is no open PR from this branch. Please open a PR to the $main_branch if" \
             "\`[CHANGELOG.md](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/$main_branch/CHANGELOG.md)\`" \
-            "still needs to be updated." >>"$GITHUB_STEP_SUMMARY"
+            "still needs to be updated."
     fi
     exit 0
 fi
@@ -69,5 +59,5 @@ if ! git diff-index --quiet HEAD; then
     fi
     # TODO: Add labels to skip CI runs
 
-    echo "::notice::Review and merge the [PR]($PR_URL) that has been created for the \`$main_branch\` branch with advanced \`CHANGELOG.md\`."
+    gh_log notice "Review and merge the [PR]($PR_URL) that has been created for the \`$main_branch\` branch with advanced \`CHANGELOG.md\`."
 fi

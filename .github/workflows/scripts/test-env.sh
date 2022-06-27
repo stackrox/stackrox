@@ -1,6 +1,8 @@
 #!/bin/bash
-set -eu
-
+#
+# Sets some necessary variables up for local testing.
+# JIRA_TOKEN still has to be set manually.
+#
 export GITHUB_STEP_SUMMARY=/dev/stdout
 GITHUB_ACTOR="$(git config --get user.email)"
 export GITHUB_ACTOR
