@@ -3,17 +3,14 @@ package pgtest
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/random"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"k8s.io/utils/env"
 
@@ -27,7 +24,7 @@ type TestPostgres struct {
 
 func createDatabase(t testing.TB, database string) {
 	// Bootstrap the test database by connecting to the default postgres database and running create
-	sourceWithPostgresDatabase := getConnectionStringWithDatabaseName("postgres")
+	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName("postgres")
 	db, err := sql.Open("postgres", sourceWithPostgresDatabase)
 	require.NoError(t, err)
 
@@ -38,7 +35,7 @@ func createDatabase(t testing.TB, database string) {
 
 func dropDatabase(t testing.TB, database string) {
 	// Bootstrap the test database by connecting to the default postgres database and running create
-	sourceWithPostgresDatabase := getConnectionStringWithDatabaseName("postgres")
+	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName("postgres")
 	db, err := sql.Open("postgres", sourceWithPostgresDatabase)
 	require.NoError(t, err)
 
@@ -57,7 +54,7 @@ func ForT(t testing.TB) *TestPostgres {
 	// Bootstrap the test database by connecting to the default postgres database and running create
 	createDatabase(t, database)
 
-	sourceWithDatabase := getConnectionStringWithDatabaseName(database)
+	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(database)
 	ctx := context.Background()
 
 	// Create all the tables for the database
@@ -86,42 +83,15 @@ func (tp *TestPostgres) Teardown(t testing.TB) {
 
 // GetConnectionString returns a connection string for integration testing with Postgres
 func GetConnectionString(_ *testing.T) string {
-	return getConnectionStringWithDatabaseName(env.GetString("POSTGRES_DB", "postgres"))
-}
-
-func getConnectionStringWithDatabaseName(name string) string {
-	return fmt.Sprintf("%s database=%s", getConnectionStringWithoutDatabaseName(), name)
-}
-
-func getConnectionStringWithoutDatabaseName() string {
-	user := os.Getenv("USER")
-	if _, ok := os.LookupEnv("CI"); ok {
-		user = "postgres"
-	}
-	pass := env.GetString("POSTGRES_PASSWORD", "")
-	host := env.GetString("POSTGRES_HOST", "localhost")
-	src := fmt.Sprintf("host=%s port=5432 user=%s sslmode=disable statement_timeout=600000", host, user)
-	if pass != "" {
-		src += fmt.Sprintf(" password=%s", pass)
-	}
-	return src
+	return conn.GetConnectionStringWithDatabaseName(env.GetString("POSTGRES_DB", "postgres"))
 }
 
 // OpenGormDB opens a Gorm DB to the Postgres DB
 func OpenGormDB(t testing.TB, source string) *gorm.DB {
-	gormDB, err := gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
-	require.NoError(t, err, "failed to connect to connect with gorm db")
-	return gormDB
+	return conn.OpenGormDB(t, source)
 }
 
 // CloseGormDB closes connection to a Gorm DB
 func CloseGormDB(t testing.TB, db *gorm.DB) {
-	if db == nil {
-		return
-	}
-	genericDB, err := db.DB()
-	require.NoError(t, err)
-	if err == nil {
-		_ = genericDB.Close()
-	}
+	conn.CloseGormDB(t, db)
 }
