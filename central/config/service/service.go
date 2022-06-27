@@ -106,7 +106,6 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.Conf
 	if config == nil {
 		return &storage.Config{}, nil
 	}
-	log.Info("Get Config: Config returned is %v", config)
 	return config, nil
 }
 
