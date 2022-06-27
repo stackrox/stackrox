@@ -19,7 +19,7 @@ function generated_files-are-up-to-date() {
 
     if [[ -s /tmp/untracked-new ]]; then
         # shellcheck disable=SC2016
-        echo 'Found new untracked files after running `make proto-generated-srcs` and `make go-generated-srcs`. Did you forget to `git add` generated mocks and protos?'
+        echo 'ERROR: Found new untracked files after running `make proto-generated-srcs` and `make go-generated-srcs`. Did you forget to `git add` generated mocks and protos?'
         cat /tmp/untracked-new
 
         if is_OPENSHIFT_CI; then
