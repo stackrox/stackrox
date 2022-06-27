@@ -415,10 +415,7 @@ func (f *FakeEventsManager) waitOnMode(events []string) error {
 			select {
 			case <-timeout:
 				return errors.New("timeout reached waiting for event")
-			case event, more := <-f.AckChannel:
-				if !more {
-					return errors.New("channel closed")
-				}
+			case event := <-f.AckChannel:
 				eventFound, err := isEventInSlice(event, events)
 				if err != nil {
 					return err
