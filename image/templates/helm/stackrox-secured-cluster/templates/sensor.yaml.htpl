@@ -47,16 +47,16 @@ spec:
                     operator: NotIn
                     values:
                     - "true"
+            - weight: 50
+              preference:
+                matchExpressions:
+                - key: node-role.kubernetes.io/infra
+                  operator: Exists
             - weight: 25
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/compute
                     operator: Exists
-            - weight: 75
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/infra
-                    operator: DoesNotExist
             - weight: 100
               preference:
                 matchExpressions:
