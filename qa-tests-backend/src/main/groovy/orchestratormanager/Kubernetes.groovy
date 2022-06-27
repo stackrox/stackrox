@@ -1822,10 +1822,10 @@ class Kubernetes implements OrchestratorMain {
     */
 
     def createDeploymentNoWait(Deployment deployment) {
-        createDeploymentNoWaitRetry(deployment, 0, 10)
+        createDeploymentNoWaitWithRetry(deployment, 0, 10)
     }
 
-    def createDeploymentNoWaitRetry(Deployment deployment, int retry, int maxRetries) {
+    def createDeploymentNoWaitWithRetry(Deployment deployment, int retry, int maxRetries) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
         // Create service if needed
@@ -1874,7 +1874,7 @@ class Kubernetes implements OrchestratorMain {
                 return false
             }
             log.debug "Retrying. Retry " + retry+1 + " out of " + maxRetries
-            return  createDeploymentNoWaitRetry(deployment, retry+1, maxRetries)
+            return createDeploymentNoWaitWithRetry(deployment, retry+1, maxRetries)
         } catch (Exception e) {
             log.warn("Error creating k8s deployment: ",  e)
             return false
