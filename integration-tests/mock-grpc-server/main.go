@@ -48,15 +48,9 @@ func (s *signalServer) PushSignals(stream sensorAPI.SignalService_PushSignalsSer
 		var processSignal *storage.ProcessSignal
 		if signal != nil && signal.GetSignal() != nil && signal.GetSignal().GetProcessSignal() != nil {
 			processSignal = signal.GetSignal().GetProcessSignal()
+		} else {
+			continue
 		}
-
-		fmt.Printf("Process: ")
-		fmt.Printf("    name: %s\n", processSignal.GetName())
-		fmt.Printf("    file-path: %s\n", processSignal.GetExecFilePath())
-		fmt.Printf("    uid: %d\n", processSignal.GetUid())
-		fmt.Printf("    gid: %d\n", processSignal.GetGid())
-		fmt.Printf("    pid: %d\n", processSignal.GetPid())
-		fmt.Printf("    args: %s\n", processSignal.GetArgs())
 
 		processInfo := fmt.Sprintf("%s:%s:%d:%d:%d:%s", processSignal.GetName(), processSignal.GetExecFilePath(), processSignal.GetUid(), processSignal.GetGid(), processSignal.GetPid(), processSignal.GetArgs())
 		fmt.Printf("ProcessInfo: %s %s\n", processSignal.GetContainerId(), processInfo)
