@@ -33,6 +33,7 @@ import { cveSortFields } from 'constants/sortFields';
 import { snoozeDurations, durations } from 'constants/timeWindows';
 import {
     VULN_CVE_LIST_FRAGMENT,
+    IMAGE_CVE_LIST_FRAGMENT,
     NODE_CVE_LIST_FRAGMENT,
     CLUSTER_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
@@ -51,7 +52,14 @@ export const defaultCveSort = [
 
 export function getCveTableColumns(workflowState) {
     // to determine whether to show the counts as links in the table when not in pure CVE state
-    const inFindingsSection = workflowState.getCurrentEntity().entityType !== entityTypes.CVE;
+    const currentEntityType = workflowState.getCurrentEntity().entityType;
+    const isCveType = [
+        entityTypes.CVE, // TODO: remove this type after it's removed from workflow
+        entityTypes.IMAGE_CVE,
+        entityTypes.NODE_CVE,
+        entityTypes.CLUSTER_CVE,
+    ].includes(currentEntityType);
+    const inFindingsSection = !isCveType;
 
     const tableColumns = [
         {
@@ -282,7 +290,7 @@ const VulnMgmtCves = ({
     let cveQuery = '';
 
     switch (cveType) {
-        case 'NODE_CVE': {
+        case entityTypes.NODE_CVE: {
             cveQuery = gql`
                 query getNodeCves($query: String, $scopeQuery: String, $pagination: Pagination) {
                     results: nodeVulnerabilities(query: $query, pagination: $pagination) {
@@ -294,7 +302,7 @@ const VulnMgmtCves = ({
             `;
             break;
         }
-        case 'CLUSTER_CVE': {
+        case entityTypes.CLUSTER_CVE: {
             cveQuery = gql`
                 query getClusterCves($query: String, $scopeQuery: String, $pagination: Pagination) {
                     results: clusterVulnerabilities(query: $query, pagination: $pagination) {
@@ -306,7 +314,20 @@ const VulnMgmtCves = ({
             `;
             break;
         }
-        case 'CVE':
+        case entityTypes.IMAGE_CVE: {
+            cveQuery = gql`
+                query getImageCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                    results: imageVulnerabilities(query: $query, pagination: $pagination) {
+                        ...cveFields
+                    }
+                    count: imageVulnerabilityCount(query: $query)
+                }
+                ${IMAGE_CVE_LIST_FRAGMENT}
+            `;
+            break;
+        }
+        // TODO: remove the deprecated one-CVE-to-rule-them-all type, and move default case to IMAGE_CVE
+        case entityTypes.CVE:
         default: {
             cveQuery = gql`
                 query getCves($query: String, $scopeQuery: String, $pagination: Pagination) {
