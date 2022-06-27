@@ -4,7 +4,7 @@ import { CancellableRequest } from 'services/cancellationUtils';
 export type UseRestQueryReturn<ReturnType> = {
     data: ReturnType | undefined;
     loading: boolean;
-    error: Error | null;
+    error: Error | undefined;
 };
 
 export default function useRestQuery<ReturnType>(
@@ -12,18 +12,18 @@ export default function useRestQuery<ReturnType>(
 ): UseRestQueryReturn<ReturnType> {
     const [data, setData] = useState<ReturnType>();
     const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<Error | null>(null);
+    const [error, setError] = useState<Error | undefined>();
 
     useEffect(() => {
         const { request, cancel } = cancellableRequestFn();
 
-        setError(null);
+        setError(undefined);
 
         request
             .then((result) => {
                 setData(result);
                 setLoading(false);
-                setError(null);
+                setError(undefined);
             })
             .catch((err) => {
                 setLoading(true);
