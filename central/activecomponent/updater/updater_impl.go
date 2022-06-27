@@ -66,6 +66,9 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 
 	// Create or update executable cache
 	execToComponents := u.getExecToComponentsMap(scan)
+
+	log.Infof("%s - %+v", image.GetId(), execToComponents)
+
 	u.executableCache.Add(image.GetId(), &imageExecutable{execToComponents: execToComponents, scannerVersion: scannerVersion})
 
 	log.Debugf("Executable cache updated for image %s of scan version %s with %d paths", image.GetId(), scannerVersion, len(execToComponents))
@@ -153,6 +156,8 @@ func (u *updaterImpl) updateForDeployment(ctx context.Context, deploymentID stri
 			return errors.Wrapf(err, "failed to get active executables for deployment %s container %s", deploymentID, update.ContainerName)
 		}
 
+		log.Infof("Exec to components: %s %+v", deploymentID, execPaths)
+
 		activeContext := &storage.ActiveComponent_ActiveContext{ContainerName: update.ContainerName, ImageId: update.ImageID}
 		for _, execPath := range execPaths.AsSlice() {
 			componentIDs, ok := execToComponents[execPath]
@@ -169,9 +174,12 @@ func (u *updaterImpl) updateForDeployment(ctx context.Context, deploymentID stri
 				if _, ok = containerNameSet[update.ContainerName]; !ok {
 					containerNameSet[update.ContainerName] = activeContext
 				}
+				log.Infof("Container name set: %+v", containerNameSet)
 			}
 		}
 	}
+	log.Infof("createActiveComponentsAndUpdateDb: %s %+v %+v", deploymentID, idToContainers, containersToRemove)
+
 	return u.createActiveComponentsAndUpdateDb(ctx, deploymentID, idToContainers, containersToRemove)
 }
 
