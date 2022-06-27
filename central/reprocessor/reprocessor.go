@@ -126,9 +126,7 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 
 		signatureVerificationSig: concurrency.NewSignal(),
 
-		// Used for testing purposes
-		reprocessingStarted:  concurrency.NewSignal(),
-		reprocessingComplete: concurrency.NewSignal(),
+		reprocessingInProgress: concurrency.NewSignal(),
 
 		connManager: connManager,
 		indexQueue:  indexQueue,
@@ -170,9 +168,8 @@ type loopImpl struct {
 	enrichmentStopped concurrency.Signal
 
 	signatureVerificationSig concurrency.Signal
-	// used for testing
-	reprocessingStarted  concurrency.Signal
-	reprocessingComplete concurrency.Signal
+
+	reprocessingInProgress concurrency.Signal
 
 	connManager connection.Manager
 	indexQueue  queue.WaitableQueue
@@ -511,15 +508,19 @@ func (l *loopImpl) reprocessWatchedImages() {
 }
 
 func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
-	l.reprocessingComplete.Reset()
-	l.reprocessingStarted.Signal()
+	// In case the current reprocessing run takes longer than the ticker (i.e. > 4 hours when using a high number of
+	// images), we shouldn't trigger a parallel reprocessing run.
+	if !l.reprocessingInProgress.IsDone() {
+		return
+	}
+
+	l.reprocessingInProgress.Signal()
 
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
 	l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage, allImagesQuery)
 
-	l.reprocessingStarted.Reset()
-	l.reprocessingComplete.Signal()
+	l.reprocessingInProgress.Reset()
 }
 
 func (l *loopImpl) runSignatureVerificationReprocessing() {
