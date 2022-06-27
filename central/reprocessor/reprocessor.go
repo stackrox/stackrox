@@ -189,10 +189,8 @@ func (l *loopImpl) Start() {
 	go l.riskLoop()
 	go l.enrichLoop()
 
-	if features.ActiveVulnManagement.Enabled() {
-		l.activeComponentTicker = time.NewTicker(l.activeComponentTickerDuration)
-		go l.activeComponentLoop()
-	}
+	l.activeComponentTicker = time.NewTicker(l.activeComponentTickerDuration)
+	go l.activeComponentLoop()
 }
 
 // Stop stops the enrich and detect loop.
@@ -200,9 +198,7 @@ func (l *loopImpl) Stop() {
 	l.stopSig.Signal()
 	l.riskStopped.Wait()
 	l.enrichmentStopped.Wait()
-	if features.ActiveVulnManagement.Enabled() {
-		l.activeComponentStopped.Wait()
-	}
+	l.activeComponentStopped.Wait()
 }
 
 func (l *loopImpl) ShortCircuit() {
