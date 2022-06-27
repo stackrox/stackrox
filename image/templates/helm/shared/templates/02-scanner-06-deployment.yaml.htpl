@@ -47,31 +47,23 @@ spec:
                 matchLabels:
                   app: scanner
               topologyKey: kubernetes.io/hostname
-        {{- if ._rox.env.openshift }}
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 50
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/infra
-                    operator: In
-                    values:
-                    - "true"
+                    operator: Exists
             - weight: 25
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/compute
-                    operator: In
-                    values:
-                    - "true"
+                    operator: Exists
             - weight: 100
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/master
-                    operator: NotIn
-                    values:
-                    - "true"
-      {{- end }}
+                    operator: DoesNotExist
       containers:
       - name: scanner
         [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
@@ -217,29 +209,21 @@ spec:
                     operator: NotIn
                     values:
                     - "true"
-            {{ if ._rox.env.openshift }}
             - weight: 50
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/infra
-                    operator: In
-                    values:
-                    - "true"
+                    operator: Exists
             - weight: 25
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/compute
-                    operator: In
-                    values:
-                    - "true"
+                    operator: Exists
             - weight: 100
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/master
-                    operator: NotIn
-                    values:
-                    - "true"
-            {{- end }}
+                    operator: DoesNotExist
       initContainers:
         - name: init-db
           [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]

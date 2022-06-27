@@ -47,29 +47,21 @@ spec:
                     operator: NotIn
                     values:
                     - "true"
-            {{- if ._rox.env.openshift }}
             - weight: 50
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/infra
-                    operator: In
-                    values:
-                    - "true"
+                    operator: Exists
             - weight: 25
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/compute
-                    operator: In
-                    values:
-                    - "true"
+                    operator: Exists
             - weight: 100
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/master
-                    operator: NotIn
-                    values:
-                    - "true"
-            {{- end}}
+                    operator: DoesNotExist
       serviceAccountName: central
       securityContext:
         fsGroup: 4000
