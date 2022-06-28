@@ -25,6 +25,7 @@ message GetPolicyCategoriesResponse {
 }
 
 // Note: Needed to rename these messages, since we cannot deprecate the existing category messages in policy_service.proto until 72
+// In 72, once older messages are deprecated, these messages will be renamed.
 message NewRenamePolicyCategoryRequest {
     string id = 1;
     string new_category_name = 2;
