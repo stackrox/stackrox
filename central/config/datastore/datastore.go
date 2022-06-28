@@ -54,25 +54,23 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 	}
 
 	if clusterRetentionConf := config.GetPrivateConfig().GetDecommissionedClusterRetention(); clusterRetentionConf != nil {
-		hasUpdate, err := d.hasClusterRetentionConfigUpdate(ctx, clusterRetentionConf)
+		oldConf, err := d.getClusterRetentionConfig(ctx)
 		if err != nil {
 			return err
 		}
+		if oldConf != nil {
+			clusterRetentionConf.CreatedAt = oldConf.GetCreatedAt()
+		} else {
+			clusterRetentionConf.CreatedAt = types.TimestampNow()
+		}
+
+		hasUpdate := !clusterRetentionConfigsEqual(oldConf, clusterRetentionConf)
 
 		if hasUpdate {
 			clusterRetentionConf.LastUpdated = types.TimestampNow()
 		}
 	}
 	return d.store.Upsert(ctx, config)
-}
-
-func (d *datastoreImpl) hasClusterRetentionConfigUpdate(ctx context.Context,
-	newConf *storage.DecommissionedClusterRetentionConfig) (bool, error) {
-	conf, err := d.getClusterRetentionConfig(ctx)
-	if err != nil {
-		return false, err
-	}
-	return !clusterRetentionConfigsEqual(conf, newConf), nil
 }
 
 func (d *datastoreImpl) getClusterRetentionConfig(ctx context.Context) (*storage.DecommissionedClusterRetentionConfig, error) {

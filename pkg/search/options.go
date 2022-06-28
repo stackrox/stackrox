@@ -31,6 +31,7 @@ var (
 	CollectorStatus        = newFieldLabel("Collector Status")
 	AdmissionControlStatus = newFieldLabel("Admission Control Status")
 	ScannerStatus          = newFieldLabel("Scanner Status")
+	LastContactTime        = newFieldLabel("Last Contact")
 
 	PolicyID       = newFieldLabel("Policy ID")
 	Enforcement    = newFieldLabel("Enforcement")
