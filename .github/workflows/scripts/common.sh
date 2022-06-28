@@ -20,12 +20,13 @@ gh_output() {
 export -f gh_output
 
 check_not_empty() {
-    local VAR
-    typeset -n VAR="$1"
-    if [ -z "${VAR:-}" ]; then
-        gh_log error "Variable $1 is not set or empty"
-        exit 1
-    fi
+    for V in "$@"; do
+        typeset -n VAR="$V"
+        if [ -z "${VAR:-}" ]; then
+            gh_log error "Variable $V is not set or empty"
+            exit 1
+        fi
+    done
 }
 export -f check_not_empty
 

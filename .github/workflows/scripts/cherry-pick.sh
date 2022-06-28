@@ -9,12 +9,10 @@ MILESTONE="$1"
 BRANCH="$2"
 RELEASE_PATCH="$3"
 
-for VAR in \
+check_not_empty \
     GITHUB_REPOSITORY \
     DRY_RUN main_branch \
-    MILESTONE BRANCH RELEASE_PATCH; do
-    check_not_empty "$VAR"
-done
+    MILESTONE BRANCH RELEASE_PATCH
 
 SLACK_MESSAGE_FILE=$(mktemp)
 

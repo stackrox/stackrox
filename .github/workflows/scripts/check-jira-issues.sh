@@ -10,11 +10,9 @@ RELEASE="$2"
 PATCH="$3"
 RELEASE_PATCH="$4"
 
-for VAR in \
+check_not_empty \
     JIRA_TOKEN DRY_RUN \
-    PROJECTS RELEASE PATCH RELEASE_PATCH; do
-    check_not_empty "$VAR"
-done
+    PROJECTS RELEASE PATCH RELEASE_PATCH
 
 JQL="project IN ($PROJECTS) \
 AND fixVersion IN (\"$RELEASE_PATCH\", \"$RELEASE.$PATCH\") \
