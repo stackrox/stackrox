@@ -409,18 +409,11 @@ func (f *FakeEventsManager) waitOnMode(events []string) error {
 		if len(events) == 0 {
 			return nil
 		}
-		receivedEvents := 0
-		var unmarshalledEvents []*central.SensorEvent
-		for _, e := range events {
-			sensorEvent := &central.SensorEvent{}
-			if err := jsonpb.UnmarshalString(e, sensorEvent); err != nil {
-				return fmt.Errorf("error unmarshaling '%s'", e)
-			}
-			if sensorEvent.GetResource() == nil {
-				return fmt.Errorf("resource not found in sensor event '%s'", e)
-			}
-			unmarshalledEvents = append(unmarshalledEvents, sensorEvent)
+		unmarshalledEvents, err := toSensorEventSlice(events)
+		if err != nil {
+			return err
 		}
+		receivedEvents := 0
 		for {
 			timeout := time.After(5 * time.Second)
 			select {
@@ -456,4 +449,20 @@ func isEventInSlice(event *central.SensorEvent, events []*central.SensorEvent) (
 		}
 	}
 	return false, nil
+}
+
+// toSensorEventSlice transforms a slice of strings representing SensorEvents into a slice of SensorEvents
+func toSensorEventSlice(events []string) ([]*central.SensorEvent, error) {
+	var unmarshalledEvents []*central.SensorEvent
+	for _, e := range events {
+		sensorEvent := &central.SensorEvent{}
+		if err := jsonpb.UnmarshalString(e, sensorEvent); err != nil {
+			return nil, fmt.Errorf("error unmarshaling '%s'", e)
+		}
+		if sensorEvent.GetResource() == nil {
+			return nil, fmt.Errorf("resource not found in sensor event '%s'", e)
+		}
+		unmarshalledEvents = append(unmarshalledEvents, sensorEvent)
+	}
+	return unmarshalledEvents, nil
 }
