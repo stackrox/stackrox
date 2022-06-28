@@ -1,14 +1,5 @@
 import React from 'react';
-import {
-    Divider,
-    Flex,
-    FlexItem,
-    Grid,
-    GridItem,
-    PageSection,
-    Text,
-    Title,
-} from '@patternfly/react-core';
+import { Divider, Flex, FlexItem, PageSection, Text, Title } from '@patternfly/react-core';
 import SummaryCounts from './SummaryCounts';
 import ScopeBar from './ScopeBar';
 
@@ -18,6 +9,8 @@ import DeploymentsAtMostRisk from './Widgets/DeploymentsAtMostRisk';
 import AgingImages from './Widgets/AgingImages';
 import ViolationsByPolicySeverity from './Widgets/ViolationsByPolicySeverity';
 import ComplianceLevelsByStandard from './Widgets/ComplianceLevelsByStandard';
+
+import './DashboardPage.css';
 
 function DashboardPage() {
     return (
@@ -45,26 +38,14 @@ function DashboardPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection>
-                <Grid hasGutter style={{ gridAutoRows: 'max-content' }}>
-                    <GridItem lg={6}>
-                        <ViolationsByPolicySeverity />
-                    </GridItem>
-                    <GridItem lg={6}>
-                        <ImagesAtMostRisk />
-                    </GridItem>
-                    <GridItem lg={6}>
-                        <DeploymentsAtMostRisk />
-                    </GridItem>
-                    <GridItem lg={6}>
-                        <ViolationsByPolicyCategory />
-                    </GridItem>
-                    <GridItem lg={6}>
-                        <AgingImages />
-                    </GridItem>
-                    <GridItem lg={6}>
-                        <ComplianceLevelsByStandard />
-                    </GridItem>
-                </Grid>
+                <div className="widget-grid">
+                    <ViolationsByPolicySeverity />
+                    <ImagesAtMostRisk />
+                    <DeploymentsAtMostRisk />
+                    <ViolationsByPolicyCategory />
+                    <AgingImages />
+                    <ComplianceLevelsByStandard />
+                </div>
             </PageSection>
         </>
     );
