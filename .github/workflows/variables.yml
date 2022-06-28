@@ -46,9 +46,11 @@ jobs:
       rc: ${{steps.parse.outputs.rc}}
       name: ${{steps.parse.outputs.name}}
       dash-name: ${{steps.parse.outputs.dash-name}}
-      next-rc: ${{steps.parse.outputs.next-milestone}}
+      next-rc: ${{steps.parse.outputs.next-rc}}
     steps:
       - id: parse
+        env:
+          REGEX: 's/^([0-9]+\.[0-9]+)\.([0-9]+)(-([[:alnum:]]+(-[[:alnum:]]+)*))?(-rc\.([0-9]+))?$/\1 \2 \4 \7/p'
         run: |
           set -u
           # Allowed versions examples:
@@ -57,11 +59,9 @@ jobs:
           # 1.2.3-alnum
           # 1.2.3-alnum-alnum
           # 1.2.3-alnum-rc.4
-
-          read RELEASE PATCH_NUMBER RELEASE_NAME RC_NUMBER <<< \
-          $(sed -rn 's/^([0-9]+\.[0-9]+)\.([0-9]+)(-([[:alnum:]]+(-[[:alnum:]]+)*))?(-rc\.([0-9]+))?$/\1 \2 \4 \7/p' <<< ${{inputs.version}})
-          if [ -z "$RELEASE" -o -z "$PATCH_NUMBER"]; then
-            echo "::error::Cannot parse ${{inputs.version}}: should be in a form of `X.X.X-rc.X`, where `X` is a decimal number."
+          read -r RELEASE PATCH_NUMBER RELEASE_NAME RC_NUMBER <<<"$(sed -rn "$REGEX" <<<"${{inputs.version}}")"
+          if [ -z "$RELEASE" ] || [ -z "$PATCH_NUMBER" ]; then
+            echo "::error::Cannot parse ${{inputs.version}}: should be in a form of \`X.X.X[-name][-rc.X]\`, where \`X\` is a decimal number."
             exit 1
           fi
           if [ -z "$RC_NUMBER" ]; then RC_NUMBER=1; fi
