@@ -15,7 +15,7 @@ tests:
     .serviceaccounts["central"] | assertThat(. != null)
     .secrets["central-htpasswd"].stringData.htpasswd | assertThat(length > 0)
     .configmaps["central-config"].data.["central-config.yaml"] | assertThat(length > 0)
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
     .networkpolicys["allow-ext-to-central"] | assertThat(. != null)
     .networkpolicys["central-db"] | assertThat(. == null)
@@ -53,7 +53,7 @@ tests:
     .securitycontextconstraints["stackrox-central"] | .users[0] | assertThat(contains("system:serviceaccount:stackrox:central"))
     .roles["use-central-scc"] | assertThat(. == null)
     .rolebindings["central-use-scc"] | assertThat(. == null)
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
 
 - name: "central with OpenShift 4 and disabled SCCs"
@@ -71,5 +71,5 @@ tests:
     .roles["use-central-scc"] | assertThat(. != null)
     .rolebindings["central-use-scc"] | assertThat(. != null)
     .securitycontextconstraints["stackrox-central"] | assertThat(. == null)
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])

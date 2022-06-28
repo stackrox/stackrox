@@ -15,6 +15,11 @@ defs: |
         | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/master" ) | [
           assertThat(.weight == 100),
           assertThat(.preference.matchExpressions[0].operator == "DoesNotExist")
+        ]),
+      (obj.spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
+        | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/control-plane" ) | [
+          assertThat(.weight == 100),
+          assertThat(.preference.matchExpressions[0].operator == "DoesNotExist")
         ])
     ][];
 

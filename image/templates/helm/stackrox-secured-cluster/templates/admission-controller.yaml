@@ -35,10 +35,17 @@ spec:
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
+            # node-role.kubernetes.io/master is replaced by node-role.kubernetes.io/control-plane from certain version
+            # of k8s. We apply both to be compatible with any k8s version.
             - weight: 50
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/master
+                    operator: Exists
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
                     operator: Exists
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
