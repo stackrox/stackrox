@@ -5,6 +5,9 @@ load "../../test_helpers.bats"
 
 function setup() {
     export CI=true
+    unset OPENSHIFT_CI
+    unset PULL_NUMBER
+    unset CLONEREFS_OPTIONS
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 }
 
