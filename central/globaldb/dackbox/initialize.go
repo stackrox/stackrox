@@ -132,7 +132,7 @@ func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, dirtyBucket []byte
 
 	for _, initialized := range initializedBuckets {
 		// Register the wrapper to index the objects.
-		rawDackbox.IndexRegister(initialized.bucket, initialized.wrapper)
+		rawDackbox.RegisterIndex(initialized.bucket, initialized.wrapper)
 
 		if err := queueBucketForIndexing(dacky, indexQ, initialized.category, dirtyBucket, initialized.bucket, initialized.reader); err != nil {
 			return errors.Wrap(err, "unable to initialize dackbox, initialization function failed")
