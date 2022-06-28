@@ -121,7 +121,7 @@
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}}",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ],
@@ -209,7 +209,7 @@
           "exemplar": true,
           "expr": "go_memstats_heap_alloc_bytes{instance=~\"$Instance\"} / 1024^2",
           "interval": "",
-          "legendFormat": "{{instance}}: alloc",
+          "legendFormat": "{{job}}: alloc",
           "refId": "A"
         },
         {
@@ -220,7 +220,7 @@
           "exemplar": true,
           "expr": "go_memstats_heap_inuse_bytes{instance=~\"$Instance\"} / 1024^2",
           "interval": "",
-          "legendFormat": "{{instance}}: inuse",
+          "legendFormat": "{{job}}: inuse",
           "refId": "B"
         },
         {
@@ -231,7 +231,7 @@
           "exemplar": true,
           "expr": "go_memstats_heap_idle_bytes{instance=~\"$Instance\"} / 1024^2",
           "interval": "",
-          "legendFormat": "{{instance}}: idle",
+          "legendFormat": "{{job}}: idle",
           "refId": "C"
         }
       ],

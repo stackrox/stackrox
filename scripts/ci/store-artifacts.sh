@@ -81,14 +81,25 @@ set_gs_path_vars() {
     GS_URL="gs://roxci-artifacts"
 
     if is_OPENSHIFT_CI; then
-        require_environment "REPO_NAME"
+        local repo
+        if [[ -n "${REPO_NAME:-}" ]]; then
+            # presubmit, postsubmit and batch runs
+            # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
+            repo="${REPO_NAME}"
+        elif [[ -n "${JOB_SPEC:-}" ]]; then
+            # periodics
+            # OpenShift CI adds 'extra_refs'
+            repo="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].repo')" || die "invalid JOB_SPEC yaml"
+            if [[ "$repo" == "null" ]]; then
+                die "expect: repo in JOB_SEC.extra_refs[0]"
+            fi
+        else
+            die "Expect REPO_OWNER/NAME or JOB_SPEC"
+        fi
         require_environment "BUILD_ID"
         require_environment "JOB_NAME"
-        if [ -z "${PULL_PULL_SHA:-}" ] && [ -z "${PULL_BASE_SHA:-}" ]; then
-            die "There is no ID suitable to separate artifacts for this commit"
-        fi
-        local workflow_id="${PULL_PULL_SHA:-${PULL_BASE_SHA}}"
-        WORKFLOW_SUBDIR="${REPO_NAME}/${workflow_id}"
+        local workflow_id="${PULL_PULL_SHA:-${PULL_BASE_SHA:-nightly-$(date '+%Y%m%d')}}"
+        WORKFLOW_SUBDIR="${repo}/${workflow_id}"
         JOB_SUBDIR="${BUILD_ID}-${JOB_NAME}"
         GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
     elif is_CIRCLECI; then
