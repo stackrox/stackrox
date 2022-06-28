@@ -1853,7 +1853,7 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            Helpers.withRetry(10,1) {
+            withRetry(10,1) {
                 client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
                 log.debug "Told the orchestrator to createOrReplace " + deployment.name
             }
