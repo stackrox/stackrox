@@ -488,9 +488,11 @@ is_in_PR_context() {
         return 0
     elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
         return 0
-    elif is_OPENSHIFT_CI; then
+    elif is_OPENSHIFT_CI && [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
         # bin, test-bin, images
-        get_pr_details > /dev/null 2>&1 && return 0
+        local pull_request
+        pull_request=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].number' 2>&1) || return 1
+        [[ "$pull_request" =~ ^[0-9]+$ ]] && return 0
     fi
 
     return 1
@@ -850,7 +852,8 @@ handle_nightly_runs() {
         if [[ -n "${PULL_PULL_SHA:-}" ]]; then
             sha="${PULL_PULL_SHA}"
         else
-            sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha')
+            sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || die "Cannot find pull sha"
+            [[ "$sha" != "null" ]] || die "Cannot find pull sha"
         fi
         ci_export CIRCLE_TAG "${nightly_tag_prefix}${sha:0:8}"
     fi
