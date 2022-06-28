@@ -202,6 +202,14 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 				opts.Reference = &foreignKeyRef{}
 			}
 			opts.Reference.NoConstraint = true
+		case field == "directional":
+			if ignoreFKs {
+				continue
+			}
+			if opts.Reference == nil {
+				opts.Reference = &foreignKeyRef{}
+			}
+			opts.Reference.Directional = true
 		case field == "ignore-fks":
 			opts.IgnoreChildFKs = true
 		case field == "":
