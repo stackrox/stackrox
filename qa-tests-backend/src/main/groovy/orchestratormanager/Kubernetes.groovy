@@ -106,6 +106,7 @@ import objects.Secret
 import objects.SecretKeyRef
 import okhttp3.Response
 import util.Timer
+import util.Helpers
 
 @Slf4j
 class Kubernetes implements OrchestratorMain {
@@ -1853,9 +1854,10 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            withRetry(10,1) {
+            Helpers.withRetry(10,1) {
                 client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-                log.debug "Told the orchestrator to createOrReplace " + deployment.name
+                int att = Helpers.getAttemptCount()
+                log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". Attempt " + att + " of 10"
             }
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
