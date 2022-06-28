@@ -313,6 +313,7 @@ var (
 	TestChild2Val            = newFieldLabel("Test Child2 Val")
 	TestParent3ID            = newFieldLabel("Test Parent3 ID")
 	TestParent3Val           = newFieldLabel("Test Parent3 Val")
+	TestShortCircuitID       = newFieldLabel("Test ShortCircuit ID")
 
 	// Derived test fields
 	TestGrandparentCount = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)

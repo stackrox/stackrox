@@ -64,6 +64,7 @@ func init() {
 		&storage.TestParent2{}:         resources.Namespace,
 		&storage.TestChild2{}:          resources.Namespace,
 		&storage.TestParent3{}:         resources.Namespace,
+		&storage.TestShortCircuit{}:    resources.Namespace,
 	} {
 		typeRegistry[fmt.Sprintf("%T", s)] = string(r.GetResource())
 	}
