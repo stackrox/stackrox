@@ -54,25 +54,16 @@ func (s *serviceImpl) GetPolicyCategory(ctx context.Context, id *v1.ResourceByID
 func (s *serviceImpl) GetPolicyCategories(ctx context.Context, query *v1.RawQuery) (*v1.GetPolicyCategoriesResponse, error) {
 	resp := new(v1.GetPolicyCategoriesResponse)
 
-	if query.GetQuery() == "" {
-		categories, err := s.policyCategoriesDatastore.GetAllPolicyCategories(ctx)
-		if err != nil {
-			return nil, err
-		}
-		resp.Categories = s.convertCategoriesToV1Categories(categories)
-
-	} else {
-		parsedQuery, err := search.ParseQuery(query.GetQuery())
-		if err != nil {
-			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-		}
-		categories, err := s.policyCategoriesDatastore.SearchRawPolicyCategories(ctx, parsedQuery)
-		if err != nil {
-			return nil, err
-		}
-		resp.Categories = s.convertCategoriesToV1Categories(categories)
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-
+	categories, err := s.policyCategoriesDatastore.SearchRawPolicyCategories(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+	resp.Categories = s.convertCategoriesToV1Categories(categories)
+	
 	return resp, nil
 }
 

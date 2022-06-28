@@ -95,7 +95,7 @@ func (ds *datastoreImpl) GetAllPolicyCategories(ctx context.Context) ([]*storage
 	}
 
 	var categories []*storage.PolicyCategory
-	err := ds.storage.Walk(policyCategoryCtx, func(category *storage.PolicyCategory) error {
+	err := ds.storage.Walk(ctx, func(category *storage.PolicyCategory) error {
 		categories = append(categories, category)
 		return nil
 	})

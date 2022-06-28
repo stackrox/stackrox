@@ -188,7 +188,6 @@ func NewService() Service {
 
 	if features.NewPolicyCategories.Enabled() {
 		builder = builder.WithCategoryDataStore(categoryDataStore.Singleton())
-
 	}
 	return builder.Build()
 }
