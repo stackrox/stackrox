@@ -261,9 +261,13 @@ class ComplianceTest extends BaseSpecification {
                     .removeAll(counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE) ?: [])
             counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS)
                     .removeAll(counts.get(ComplianceState.COMPLIANCE_STATE_ERROR) ?: [])
-            assert result.numPassing == counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS)?.size() ?: 0
-            assert result.numFailing == counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE)?.size() ?: 0 +
-                    counts.get(ComplianceState.COMPLIANCE_STATE_ERROR)?.size() ?: 0
+
+            def countPassing = (counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS) ?: []).size()
+            assert result.numPassing == countPassing
+
+            def countFailing == (counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE) ?: []).size() +
+                    (counts.get(ComplianceState.COMPLIANCE_STATE_ERROR) ?: []).size()
+            assert result.numFailing == countFailing
         }
     }
 
