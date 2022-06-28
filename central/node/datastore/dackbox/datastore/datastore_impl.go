@@ -208,6 +208,7 @@ func (ds *datastoreImpl) UpsertNode(ctx context.Context, node *storage.Node) err
 	ds.updateComponentRisk(node)
 	enricher.FillScanStats(node)
 
+	log.Infof("upserting node %s", node.GetId())
 	if err := ds.storage.Upsert(ctx, node); err != nil {
 		return err
 	}

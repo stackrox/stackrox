@@ -138,6 +138,7 @@ func (s *storeImpl) insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage
 		if err := copyFromNodeComponents(ctx, tx, components...); err != nil {
 			return err
 		}
+		log.Infof("upserted node components")
 		if err := copyFromNodeComponentEdges(ctx, tx, nodeComponentEdges...); err != nil {
 			return err
 		}
@@ -424,7 +425,7 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 }
 
 func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bool, error) {
-	oldNode, found, err := s.Get(ctx, node.GetId())
+	oldNode, found, err := s.GetNodeMetadata(ctx, node.GetId())
 	if err != nil {
 		return false, false, err
 	}
@@ -472,6 +473,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 		if err != nil {
 			return err
 		}
+		log.Infof("metadataUpdated %v scanUpdated %v", metadataUpdated, scanUpdated)
 		if !metadataUpdated && !scanUpdated {
 			return nil
 		}
@@ -486,6 +488,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 			return tx.Commit(ctx)
 		})
 		if err != nil {
+			log.Error(err)
 			return err
 		}
 	}
