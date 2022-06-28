@@ -3,6 +3,7 @@ package enricher
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
@@ -202,9 +203,14 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 func setImageNotes(image *storage.Image, imageNoteSet map[storage.Image_Note]struct{}) {
 	image.Notes = image.Notes[:0]
+	notes := make([]storage.Image_Note, 0, len(imageNoteSet))
 	for note := range imageNoteSet {
-		image.Notes = append(image.Notes, note)
+		notes = append(notes, note)
 	}
+	sort.SliceStable(notes, func(i, j int) bool {
+		return notes[i] < notes[j]
+	})
+	image.Notes = notes
 }
 
 // updateImageFromDatabase will update the values of the given image from an existing image within the database
