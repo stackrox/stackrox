@@ -1,4 +1,12 @@
-This folder contains hooks to run OpenShift CI jobs. 
+This folder supports OpenShift CI from https://github.com/openshift/release/tree/master/ci-operator/config/stackrox/stackrox
+
+- [dispatch.sh](dispatch.sh) is the entrypoint for tests and builds (binary_build_commands, test_binary_build_commands).
+- [build/](build) is for openshift/release image support.
+- *.py provides some semantics useful to e2e and system tests e.g.:
+  - create a cluster
+  - run test
+  - gather and examine state
+  - teardown
 
 ## Workflow aliases for test/format/lint
 
