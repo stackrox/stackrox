@@ -35,6 +35,9 @@ func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.D
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresClusterDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) ClusterDataStore {
+	postgres.Destroy(ctx, pool)
+	// The following line is there to ensure the creation of the needed tables.
+	_ = postgres.CreateTableAndNewStore(ctx, pool, gormDB, "dummyClusterID")
 	dbstore := postgres.NewClusterStore(pool)
 	configStore := graphConfigDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
 	networkTreeMgr := networktree.Singleton()
