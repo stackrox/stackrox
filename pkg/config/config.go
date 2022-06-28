@@ -17,7 +17,7 @@ var (
 var (
 	defaultBucketFillFraction = 0.5
 	defaultCompactionState    = true
-	defaultDBSource           = "host=central-db.stackrox port=5432 database=postgres user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=1 pool_max_conns=90"
+	defaultDBSource           = "host=central-db.stackrox port=5432 database=postgres user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=90 pool_max_conns=490"
 
 	once   sync.Once
 	config *Config
