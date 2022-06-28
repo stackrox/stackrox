@@ -10,7 +10,14 @@ for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
 done
 
+info "Current Status:"
+"$ROOT/status.sh" || true
+
 openshift_ci_mods
+handle_nightly_runs
+
+info "Status after mods:"
+"$ROOT/status.sh" || true
 
 function hold() {
     while [[ -e /tmp/hold ]]; do
@@ -36,61 +43,22 @@ case "$ci_job" in
         ;;
 esac
 
-case "$ci_job" in
-    style-checks)
-        make style
-        ;;
-    policy-checks)
-        "$ROOT/scripts/ci/jobs/check-policy-files.sh"
-        ;;
-    mitre-bundles-checks)
-        "$ROOT/scripts/ci/jobs/check-mitre-bundles.sh"
-        ;;
-    go-unit-tests-release)
-        GOTAGS=release "$ROOT/scripts/ci/jobs/go-unit-tests.sh"
-        ;;
-    go-unit-tests)
-        GOTAGS='' "$ROOT/scripts/ci/jobs/go-unit-tests.sh"
-        ;;
-    go-postgres-tests)
-        GOTAGS='' "$ROOT/scripts/ci/jobs/go-postgres-tests.sh"
-        ;;
-    integration-unit-tests)
-        "$ROOT/scripts/ci/jobs/integration-unit-tests.sh"
-        ;;
-    shell-unit-tests)
-        "$ROOT/scripts/ci/jobs/shell-unit-tests.sh"
-        ;;
-    ui-unit-tests)
-        "$ROOT/scripts/ci/jobs/ui-unit-tests.sh"
-        ;;
-    test-binary-build-commands)
-        "$ROOT/scripts/ci/jobs/test-binary-build-commands.sh"
-        ;;
-    push-images)
-        "$ROOT/scripts/ci/jobs/push-images.sh" "$@"
-        ;;
-    release-mgmt)
-        "$ROOT/scripts/ci/jobs/release-mgmt.sh" "$@"
-        ;;
-    gke-qa-e2e-tests)
-        "$ROOT/.openshift-ci/gke_qa_e2e_test.py"
-        ;;
-    gke-nongroovy-e2e-tests)
-        "$ROOT/.openshift-ci/gke_nongroovy_e2e_test.py"
-        ;;
-    openshift-4-qa-e2e-tests)
-        "$ROOT/.openshift-ci/openshift_4_qa_e2e_test.py"
-        ;;
-    gke-upgrade-tests)
-        "$ROOT/.openshift-ci/gke_upgrade_test.py"
-        ;;
-    gke-ui-e2e-tests)
-        "$ROOT/.openshift-ci/gke_ui_e2e_test.py"
-        ;;
-    *)
-        # For ease of initial integration this function does not fail when the
-        # job is unknown.
-        info "nothing to see here: ${ci_job}"
-        exit 0
-esac
+export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
+
+if ! [[ "$ci_job" =~ [a-z-]+ ]]; then
+    # don't exec possibly untrusted scripts
+    die "untrusted job: $ci_job"
+fi
+
+if [[ -f "$ROOT/scripts/ci/jobs/${ci_job}.sh" ]]; then
+    job_script="$ROOT/scripts/ci/jobs/${ci_job}.sh"
+elif [[ -f "$ROOT/scripts/ci/jobs/${ci_job//-/_}.py" ]]; then
+    job_script="$ROOT/scripts/ci/jobs/${ci_job//-/_}.py"
+else
+    # For ease of initial integration this function does not fail when the
+    # job is unknown.
+    info "nothing to see here: ${ci_job}"
+    exit 0
+fi
+
+"${job_script}" "$@"

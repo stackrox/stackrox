@@ -44,8 +44,9 @@ jobs:
             AND fixVersion IN (\"${{needs.variables.outputs.release-patch}}\",
             \"${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}\")
             AND status != CLOSED
-            AND Component != Documentation AND type != Epic
-            order by assignee
+            AND Component != Documentation
+            AND type != Epic
+            ORDER BY assignee
 
         run: |
           GH_MD_FORMAT_LINE=$(cat << EOF
@@ -66,7 +67,7 @@ jobs:
 
           $ISSUES
 
-          Please contact the assignees to clarify the status.
+          Contact the assignees to clarify the status.
           EOF
             echo "::error::There are non-closed Jira issues for version ${{needs.variables.outputs.release-patch}}."
 
@@ -81,7 +82,7 @@ jobs:
               echo "$OPEN_ISSUES" | jq -r ".issues[] | .key" | while read -r KEY; do
                 curl --fail -sSL -X POST \
                   -H "Authorization: Bearer $JIRA_TOKEN" \
-                  --data '{"body": "Release ${{needs.variables.outputs.release-patch}} is ongoing. Please update the status."}' \
+                  --data '{"body": "Release ${{needs.variables.outputs.release-patch}} is ongoing. Please update the status of this issue and notify the release engineer."}' \
                   -H "Content-Type: application/json" \
                   "https://issues.redhat.com/rest/api/2/issue/$KEY/comment"
               done
@@ -281,7 +282,7 @@ jobs:
             { "blocks": [
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":red_circle: *Couldn't close upstream milestone ${{needs.variables.outputs.milestone}} on <${{github.repositoryUrl}}|${{github.repository}}>.*" }},
+            ":red_circle: *Couldn't close upstream milestone ${{needs.variables.outputs.milestone}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             "*Couldn't cherry-pick the following PRs
@@ -295,7 +296,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ">
-            Repository: <${{github.repositoryUrl}}|${{github.repository}}>\n>
+            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
             Milestone: <${{github.event.milestone.html_url}}|${{needs.variables.outputs.milestone}}>\n>
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}
@@ -376,7 +377,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":white_check_mark: *Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.rc}}>
-            of <${{github.repositoryUrl}}|${{github.repository}}> has been published on GitHub*" }},
+            of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub*" }},
 
             { "type": "divider" },
 
@@ -582,7 +583,7 @@ jobs:
           payload: >-
             { "blocks": [
               { "type": "section", "text": { "type": "mrkdwn", "text":
-              ":red_circle: *Couldn't create test clusters for ${{needs.variables.outputs.milestone}} milestone of <${{github.repositoryUrl}}|${{github.repository}}>.*" }},
+              ":red_circle: *Couldn't create test clusters for ${{needs.variables.outputs.milestone}} milestone of <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
 
             { "type": "divider" },
 
@@ -593,7 +594,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ">
-            Repository: <${{github.repositoryUrl}}|${{github.repository}}>\n>
+            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
             Milestone: ${{needs.variables.outputs.milestone}}\n>
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}

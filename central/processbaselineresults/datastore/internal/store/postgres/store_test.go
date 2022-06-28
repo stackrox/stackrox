@@ -24,7 +24,7 @@ type ProcessBaselineResultsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
-	pool        *pgxpool.Pool
+	testDB      *pgtest.TestPostgres
 }
 
 func TestProcessBaselineResultsStore(t *testing.T) {
@@ -53,20 +53,19 @@ func (s *ProcessBaselineResultsStoreSuite) SetupSuite() {
 	s.pool = pool
 	gormDB := pgtest.OpenGormDB(s.T(), source, false)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *ProcessBaselineResultsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE process_baseline_results CASCADE")
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE process_baseline_results CASCADE")
 	s.T().Log("process_baseline_results", tag)
 	s.NoError(err)
 }
 
 func (s *ProcessBaselineResultsStoreSuite) TearDownSuite() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 

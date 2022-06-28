@@ -164,7 +164,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                         />
                     </div>
                 </CollapsibleSection>
-                <CollapsibleSection title="Image Findings">
+                <CollapsibleSection id="image-findings" title="Image Findings">
                     <div className="flex pdf-page pdf-stretch pdf-new rounded relative mb-4 ml-4 mr-4 pb-20">
                         {/* TODO: replace these 3 repeated Fixable CVEs tabs with tabs for
                             Observed, Deferred, and False Postive CVEs tables */}

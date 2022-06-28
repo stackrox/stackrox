@@ -39,8 +39,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ServiceIdentitiesSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.ServiceIdentitiesSchema
+
 	targetResource = resources.ServiceIdentity
 )
 

@@ -25,7 +25,7 @@ var (
 
 	globalKeyLock concurrency.KeyFence
 
-	duckBox *dackbox.DackBox
+	dackBox *dackbox.DackBox
 
 	initialized sync.Once
 
@@ -35,7 +35,7 @@ var (
 // GetGlobalDackBox returns the global dackbox.DackBox instance.
 func GetGlobalDackBox() *dackbox.DackBox {
 	initialize()
-	return duckBox
+	return dackBox
 }
 
 // GetIndexQueue returns the queue of items waiting to be indexed.
@@ -61,7 +61,7 @@ func initialize() {
 		globalKeyLock = concurrency.NewKeyFence()
 
 		var err error
-		duckBox, err = dackbox.NewRocksDBDackBox(rocksdbInstance.GetRocksDB(), toIndex, GraphBucket, DirtyBucket, ReindexIfMissingBucket)
+		dackBox, err = dackbox.NewRocksDBDackBox(rocksdbInstance.GetRocksDB(), toIndex, GraphBucket, DirtyBucket, ReindexIfMissingBucket)
 		if err != nil {
 			log.Panicf("could not load stored indices: %v", err)
 		}
@@ -72,12 +72,12 @@ func initialize() {
 func StartIndexer(index bleve.Index) {
 	initialize()
 	lazyStarted.Do(func() {
-		lazy := indexer.NewLazy(toIndex, registry, index, duckBox.AckIndexed)
+		lazy := indexer.NewLazy(toIndex, registry, index, dackBox.AckIndexed)
 		lazy.Start()
 	})
 }
 
-// IndexRegister registers bucket for indexing
-func IndexRegister(prefix []byte, wrapper indexer.Wrapper) {
+// RegisterIndex registers bucket for indexing
+func RegisterIndex(prefix []byte, wrapper indexer.Wrapper) {
 	registry.RegisterWrapper(prefix, wrapper)
 }

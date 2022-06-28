@@ -22,7 +22,7 @@ type NetworkpolicyapplicationundorecordsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
-	pool        *pgxpool.Pool
+	testDB      *pgtest.TestPostgres
 }
 
 func TestNetworkpolicyapplicationundorecordsStore(t *testing.T) {
@@ -51,20 +51,19 @@ func (s *NetworkpolicyapplicationundorecordsStoreSuite) SetupSuite() {
 	s.pool = pool
 	gormDB := pgtest.OpenGormDB(s.T(), source, false)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *NetworkpolicyapplicationundorecordsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE networkpolicyapplicationundorecords CASCADE")
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE networkpolicyapplicationundorecords CASCADE")
 	s.T().Log("networkpolicyapplicationundorecords", tag)
 	s.NoError(err)
 }
 
 func (s *NetworkpolicyapplicationundorecordsStoreSuite) TearDownSuite() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 

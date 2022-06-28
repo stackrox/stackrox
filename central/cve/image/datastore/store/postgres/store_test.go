@@ -22,7 +22,7 @@ type ImageCvesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
-	pool        *pgxpool.Pool
+	testDB      *pgtest.TestPostgres
 }
 
 func TestImageCvesStore(t *testing.T) {
@@ -51,20 +51,19 @@ func (s *ImageCvesStoreSuite) SetupSuite() {
 	s.pool = pool
 	gormDB := pgtest.OpenGormDB(s.T(), source, false)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *ImageCvesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE image_cves CASCADE")
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE image_cves CASCADE")
 	s.T().Log("image_cves", tag)
 	s.NoError(err)
 }
 
 func (s *ImageCvesStoreSuite) TearDownSuite() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 

@@ -72,7 +72,7 @@ export type AlertQueryGroupBy = 'UNSET' | 'CATEGORY' | 'CLUSTER';
 
 type SummaryAlertCountsFilters = {
     'request.query': string;
-    group_by: AlertQueryGroupBy;
+    group_by?: AlertQueryGroupBy;
 };
 
 /*

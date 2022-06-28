@@ -41,8 +41,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ProcessIndicatorsSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.ProcessIndicatorsSchema
+
 	targetResource = resources.Indicator
 )
 

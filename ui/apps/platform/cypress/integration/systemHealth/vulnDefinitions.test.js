@@ -1,10 +1,6 @@
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
-import {
-    setClock,
-    visitSystemHealth,
-    visitSystemHealthWithVulnerabilityDefinitionsTimestamp,
-} from '../../helpers/systemHealth';
+import { setClock, visitSystemHealth } from '../../helpers/systemHealth';
 
 const nbsp = '\u00A0';
 
@@ -31,7 +27,9 @@ describe('System Health Vulnerability Definitions with fixture', () => {
         const lastUpdatedTimestamp = '2020-12-09T03:04:59.377369440Z';
 
         setClock(currentDatetime); // call before visit
-        visitSystemHealthWithVulnerabilityDefinitionsTimestamp(lastUpdatedTimestamp);
+        visitSystemHealth({
+            'integrationhealth/vulndefinitions': { body: { lastUpdatedTimestamp } },
+        });
 
         const { vulnDefinitions } = selectors;
         cy.get(vulnDefinitions.header).should('have.text', 'Vulnerability Definitions');

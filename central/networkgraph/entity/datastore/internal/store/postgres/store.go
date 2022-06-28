@@ -40,8 +40,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NetworkEntitiesSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.NetworkEntitiesSchema
+
 	targetResource = resources.NetworkGraph
 )
 

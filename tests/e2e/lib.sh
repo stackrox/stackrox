@@ -46,6 +46,7 @@ export_test_environment() {
     ci_export ROX_POLICIES_PATTERNFLY "${ROX_POLICIES_PATTERNFLY:-true}"
     ci_export ROX_SECURITY_METRICS_PHASE_ONE "${ROX_SECURITY_METRICS_PHASE_ONE:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
+    ci_export ROX_FRONTEND_VM_UPDATES "${ROX_FRONTEND_VM_UPDATES:-true}"
 }
 
 deploy_central() {
@@ -53,7 +54,7 @@ deploy_central() {
 
     # If we're running a nightly build or race condition check, then set CGO_CHECKS=true so that central is
     # deployed with strict checks
-    if is_nightly_tag || pr_has_label ci-race-tests; then
+    if is_nightly_run || pr_has_label ci-race-tests; then
         ci_export CGO_CHECKS "true"
     fi
 

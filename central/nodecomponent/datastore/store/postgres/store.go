@@ -40,8 +40,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NodeComponentsSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.NodeComponentsSchema
+
 	targetResource = resources.NodeComponent
 )
 

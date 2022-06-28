@@ -33,6 +33,8 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
 )
 
 var (
@@ -418,17 +420,27 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.IntegrationHe
 	if ok, err := permissionCheckerSingleton().WalkAllowed(ctx); err != nil || !ok {
 		return err
 	}
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+		return err
 	}
-	for _, data := range rows {
-		var msg storage.IntegrationHealth
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		if err := fn(&msg); err != nil {
-			return err
+		for _, data := range rows {
+			var msg storage.IntegrationHealth
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil

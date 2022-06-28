@@ -39,8 +39,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ReportConfigurationsSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.ReportConfigurationsSchema
+
 	targetResource = resources.VulnerabilityReports
 )
 

@@ -64,7 +64,7 @@ var postgresPluginFile string
 
 var (
 	schemaTemplate            = newTemplate(schemaFile)
-	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage store", singletonFile}, "\n"))
+	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
 	singletonTestTemplate     = newTemplate(singletonTestFile)
 	storeTemplate             = newTemplate(strings.Join([]string{storeCommonFile, storeFile}, "\n"))
 	storeTestTemplate         = newTemplate(storeTestFile)

@@ -41,8 +41,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.RoleBindingsSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.RoleBindingsSchema
+
 	targetResource = resources.K8sRoleBinding
 )
 
