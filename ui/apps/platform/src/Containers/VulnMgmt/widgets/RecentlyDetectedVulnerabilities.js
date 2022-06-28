@@ -22,7 +22,7 @@ export const RECENTLY_DETECTED_VULNERABILITIES = gql`
         $pagination: Pagination
     ) {
         results: vulnerabilities(query: $query, pagination: $pagination) {
-            id: cve
+            id
             cve
             cvss
             scoreVersion
