@@ -265,7 +265,7 @@ class ComplianceTest extends BaseSpecification {
             def countPassing = (counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS) ?: []).size()
             assert result.numPassing == countPassing
 
-            def countFailing == (counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE) ?: []).size() +
+            def countFailing = (counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE) ?: []).size() +
                     (counts.get(ComplianceState.COMPLIANCE_STATE_ERROR) ?: []).size()
             assert result.numFailing == countFailing
         }
