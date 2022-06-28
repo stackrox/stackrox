@@ -67,5 +67,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve
 
 // NewWithPostgres returns a new instance of DataStore using the input store, indexer, and searcher.
 func NewWithPostgres(storage store.Store, indexer nodeIndexer.Indexer, searcher search.Searcher, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
-	return newDatastoreImpl(storage, indexer, searcher, risks, nodeRanker, nodeComponentRanker)
+	ds := newDatastoreImpl(storage, indexer, searcher, risks, nodeRanker, nodeComponentRanker)
+	ds.initializeRankers()
+	return ds
 }

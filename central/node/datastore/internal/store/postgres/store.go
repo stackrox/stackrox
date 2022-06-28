@@ -13,17 +13,12 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/node/datastore/internal/store/common/v2"
 	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
@@ -497,7 +492,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 	return nil
 }
 
-// Upsert upserts image into the store.
+// Upsert upserts node into the store.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Node")
 
@@ -548,51 +543,31 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID s
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Node")
 
-	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
+	row := s.db.QueryRow(ctx, "SELECT COUNT(*) FROM "+nodesTable)
+	var count int
+	if err := row.Scan(&count); err != nil {
 		return 0, err
 	}
-	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
+	return count, nil
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Node")
 
-	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return false, err
+	row := s.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM "+nodesTable+" WHERE Id = $1)", id)
+	var exists bool
+	if err := row.Scan(&exists); err != nil {
+		return false, pgutils.ErrNilIfNoRows(err)
 	}
-	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return false, err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	return exists, nil
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Node")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
 	if err != nil {
 		return nil, false, err
 	}
@@ -633,7 +608,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 
 	if len(componentEdgeMap) != len(componentMap) {
 		utils.Should(
-			errors.Errorf("Number of node component from edges (%d) is unexpected (%d) for node %s (id=%s)",
+			errors.Errorf("Number of node component from edges (%d) is unexpected (expected=%d) for node %s (id=%s)",
 				len(componentEdgeMap), len(componentMap), node.GetName(), node.GetId()),
 		)
 	}
@@ -802,27 +777,20 @@ func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeIDs ...st
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NodeIDs")
-	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	rows, err := s.db.Query(ctx, "SELECT Id FROM "+nodesTable)
 	if err != nil {
-		return nil, err
+		return nil, pgutils.ErrNilIfNoRows(err)
 	}
-	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, err
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
 	}
-	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]string, 0, len(result))
-	for _, entry := range result {
-		ids = append(ids, entry.ID)
-	}
-
 	return ids, nil
 }
 
@@ -867,7 +835,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Node,
 	return elems, missingIndices, nil
 }
 
-// GetNodeMetadata gets the image without scan/component data.
+// GetNodeMetadata gets the node without scan/component data.
 func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeMetadata")
 
