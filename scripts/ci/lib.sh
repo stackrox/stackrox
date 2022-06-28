@@ -387,6 +387,40 @@ check_scanner_and_collector_versions() {
     info "The scanner and collector versions are release versions"
 }
 
+push_release() {
+    info "Push release artifacts"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_release <tag>"
+    fi
+
+    local tag="$1"
+
+    info "Push roxctl to gs://sr-roxc & gs://rhacs-openshift-mirror-src/assets"
+
+    setup_gcp
+
+    local temp_dir
+    temp_dir="$(mktemp -d)"
+    "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/prepare.sh" . "${temp_dir}"
+    "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/publish.sh" "${temp_dir}" "${tag}" "gs://sr-roxc"
+    "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/publish.sh" "${temp_dir}" "${tag}" "gs://rhacs-openshift-mirror-src/assets"
+
+    info "Publish Helm charts to github repository stackrox/release-artifacts and create a PR"
+
+    local central_services_chart_dir
+    local secured_cluster_services_chart_dir
+    central_services_chart_dir="$(mktemp -d)"
+    secured_cluster_services_chart_dir="$(mktemp -d)"
+    roxctl helm output central-services --image-defaults=stackrox.io --output-dir "${central_services_chart_dir}/stackrox"
+    roxctl helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
+    roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
+    roxctl helm output secured-cluster-services --image-defaults=stackrox.io --output-dir "${secured_cluster_services_chart_dir}/stackrox"
+    roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
+    roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
+    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
+}
+
 mark_collector_release() {
     info "Create a PR for collector to add this release to its RELEASED_VERSIONS file"
 
@@ -396,10 +430,6 @@ mark_collector_release() {
 
     local tag="$1"
     local username="roxbot"
-
-    if ! is_release_version "$tag"; then
-        die "A release version is required. Got $tag"
-    fi
 
     info "Check out collector source code"
 

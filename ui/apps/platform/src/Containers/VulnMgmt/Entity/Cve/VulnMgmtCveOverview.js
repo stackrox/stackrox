@@ -109,11 +109,19 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const severityStyle = getSeverityChipType(cvss);
     const newEntityContext = { ...entityContext, [entityTypes.CVE]: cve };
 
+    // TODO: change the CveType to handle one of the new split types: IMAGE_CVE, NODE_CVE, or CLUSTER_CVE
+    //       but for now, we are going to translate the new data to the old type format
+    const cveType = Object.keys(newEntityContext).shift();
+    const legacyTypeList =
+        cveType === entityTypes.CVE || cveType === entityTypes.CLUSTER_CVE
+            ? vulnerabilityTypes
+            : [cveType];
+
     return (
         <div className="flex h-full" data-testid="entity-overview">
             <div className="flex flex-col flex-grow min-w-0">
                 <CollapsibleSection title="CVE Summary">
-                    <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-6 xxxl:grid-gap-8 grid-columns-1 lg:grid-columns-2 xl:grid-columns-3 mb-4">
+                    <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-6 xxxl:grid-gap-8 lg:grid-columns-2 xl:grid-columns-3 mb-4">
                         <Widget
                             header="Description & Details"
                             headerComponents={linkToMoreInfo}
@@ -142,7 +150,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                                             className="w-full md:w-auto p-4 border-base-400 border-l"
                                             data-testid="cve-type"
                                         >
-                                            <CveType context="callout" types={vulnerabilityTypes} />
+                                            <CveType context="callout" types={legacyTypeList} />
                                         </span>
                                         <span className="w-full md:w-auto p-4 border-base-400 border-l">
                                             <LabelChip

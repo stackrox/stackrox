@@ -31,6 +31,9 @@ jobs:
   check-jira:
     name: Check Jira release
     runs-on: ubuntu-latest
+    env:
+      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       release-date: ${{steps.check-jira-release.outputs.date}}
     steps:

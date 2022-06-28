@@ -30,8 +30,12 @@ function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement 
     } = row;
 
     // TODO: refactor check for vulnerability types in follow-up PR
-    const isImageVuln = vulnerabilityTypes?.includes('IMAGE_CVE');
+    const isImageVuln =
+        entityType === entityTypes.IMAGE_CVE ||
+        // TODO: remove this part of the conditional, after the deprecated one-CVE-to-rule-them-all type is removed
+        vulnerabilityTypes?.includes('IMAGE_CVE');
     const isNodeVuln = entityType === entityTypes.NODE_CVE;
+    const isClusterVuln = entityType === entityTypes.CLUSTER_CVE;
 
     // Only show entity counts on relevant pages. Node count is not currently supported.
     return (
@@ -66,7 +70,7 @@ function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement 
             )}
             {/* TODO: strengthen check for COMPONENT context to distinguish check
                 between IMAGE_COMPONENT and NODE_COMPONENT in later PR */}
-            {!isNodeVuln && !entityContext[resourceTypes.COMPONENT] && (
+            {!isClusterVuln && !entityContext[resourceTypes.COMPONENT] && (
                 <TableCountLink
                     entityType={resourceTypes.COMPONENT}
                     count={componentCount}

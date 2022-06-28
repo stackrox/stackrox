@@ -18,7 +18,9 @@ export function getFilteredCVEColumns(columns, workflowState) {
 
     const currentEntityType = workflowState.getCurrentEntityType();
 
-    // No need to show entities in the node component context.
+    const shouldKeepDiscoveredTime = currentEntityType !== entityTypes.CLUSTER_CVE;
+
+    // No need to show entities in the node component or cluster context.
     const shouldKeepEntitiesColumn =
         (!workflowState.isPrecedingSingle(entityTypes.COMPONENT) ||
             !workflowState.getSingleAncestorOfType(entityTypes.NODE)) &&
@@ -38,6 +40,9 @@ export function getFilteredCVEColumns(columns, workflowState) {
             }
             case 'fixedByVersion': {
                 return shouldKeepFixedByColumn;
+            }
+            case 'createdAt': {
+                return shouldKeepDiscoveredTime;
             }
             case 'discoveredAtImage': {
                 return shouldKeepDiscoveredAtImageColumn;

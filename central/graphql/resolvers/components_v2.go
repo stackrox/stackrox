@@ -507,9 +507,6 @@ func (eicr *imageComponentResolver) DeploymentCount(ctx context.Context, args Ra
 
 // ActiveState shows the activeness of a component in a deployment context.
 func (eicr *imageComponentResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
-	if !features.ActiveVulnManagement.Enabled() {
-		return nil, nil
-	}
 	scopeQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
