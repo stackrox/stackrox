@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
@@ -47,11 +48,13 @@ func (s *signalServer) PushSignals(stream sensorAPI.SignalService_PushSignalsSer
 		var processSignal *storage.ProcessSignal
 		if signal != nil && signal.GetSignal() != nil && signal.GetSignal().GetProcessSignal() != nil {
 			processSignal = signal.GetSignal().GetProcessSignal()
+		} else {
+			continue
 		}
 
-		processInfo := fmt.Sprintf("%s:%s:%d:%d", processSignal.GetName(), processSignal.GetExecFilePath(), processSignal.GetUid(), processSignal.GetGid())
+		processInfo := fmt.Sprintf("%s:%s:%d:%d:%d:%s", processSignal.GetName(), processSignal.GetExecFilePath(), processSignal.GetUid(), processSignal.GetGid(), processSignal.GetPid(), processSignal.GetArgs())
 		fmt.Printf("ProcessInfo: %s %s\n", processSignal.GetContainerId(), processInfo)
-		if err := s.UpdateProcessSignals(processSignal.GetName(), processInfo); err != nil {
+		if err := s.UpdateProcessSignals(processSignal.GetContainerId(), processSignal.GetName(), processInfo); err != nil {
 			return err
 		}
 
@@ -101,10 +104,24 @@ func boltDB(path string) (db *bolt.DB, err error) {
 	return db, err
 }
 
-func (s *signalServer) UpdateProcessSignals(processName string, processInfo string) error {
+func (s *signalServer) UpdateProcessSignals(containerID string, processName string, processInfo string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		b, _ := tx.CreateBucketIfNotExists([]byte(processBucket))
-		return b.Put([]byte(processName), []byte(processInfo))
+		b, err := tx.CreateBucketIfNotExists([]byte(processBucket))
+		if err != nil {
+			return err
+		}
+
+		c, err := b.CreateBucketIfNotExists([]byte(containerID))
+		if err != nil {
+			return err
+		}
+
+		idx, err := c.NextSequence()
+		if err != nil {
+			return err
+		}
+
+		return c.Put([]byte(strconv.FormatUint(idx, 10)), []byte(processInfo))
 	})
 }
 
