@@ -410,13 +410,24 @@ func (f *FakeEventsManager) waitOnMode(events []string) error {
 			return nil
 		}
 		receivedEvents := 0
+		var unmarshalledEvents []*central.SensorEvent
+		for _, e := range events {
+			sensorEvent := &central.SensorEvent{}
+			if err := jsonpb.UnmarshalString(e, sensorEvent); err != nil {
+				return fmt.Errorf("error unmarshaling '%s'", e)
+			}
+			if sensorEvent.GetResource() == nil {
+				return fmt.Errorf("resource not found in sensor event '%s'", e)
+			}
+			unmarshalledEvents = append(unmarshalledEvents, sensorEvent)
+		}
 		for {
 			timeout := time.After(5 * time.Second)
 			select {
 			case <-timeout:
 				return errors.New("timeout reached waiting for event")
 			case event := <-f.AckChannel:
-				eventFound, err := isEventInSlice(event, events)
+				eventFound, err := isEventInSlice(event, unmarshalledEvents)
 				if err != nil {
 					return err
 				}
@@ -433,19 +444,12 @@ func (f *FakeEventsManager) waitOnMode(events []string) error {
 }
 
 // isEventInSlice checks whether a SensorEvent is in a slice of events or not
-func isEventInSlice(event *central.SensorEvent, events []string) (bool, error) {
-	for _, e := range events {
-		sensorEvent := &central.SensorEvent{}
-		if err := jsonpb.UnmarshalString(e, sensorEvent); err != nil {
-			return false, fmt.Errorf("error unmarshaling '%s'", e)
-		}
-		if sensorEvent.GetResource() == nil {
-			return false, fmt.Errorf("resource not found in sensor event '%s'", e)
-		}
-		resource := reflect.ValueOf(sensorEvent.GetResource())
-		compareFunc, ok := sensorEventCompareFunctions[resource.Type().String()]
+func isEventInSlice(event *central.SensorEvent, events []*central.SensorEvent) (bool, error) {
+	for _, sensorEvent := range events {
+		resource := reflect.TypeOf(sensorEvent.GetResource())
+		compareFunc, ok := sensorEventCompareFunctions[resource.String()]
 		if !ok {
-			return false, fmt.Errorf("compare function for resource '%s' not found", resource.Type().String())
+			return false, fmt.Errorf("compare function for resource '%s' not found", resource.String())
 		}
 		if compareFunc(sensorEvent.GetResource(), event) {
 			return true, nil

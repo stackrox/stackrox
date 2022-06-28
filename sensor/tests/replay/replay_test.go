@@ -195,8 +195,8 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 			if err != nil {
 				panic(err)
 			}
-			expectedDeployments := getAllDeployments(expectedEvents)
-			receivedDeployments := getAllDeployments(allEvents)
+			expectedDeployments := getLastStateFromDeployments(expectedEvents)
+			receivedDeployments := getLastStateFromDeployments(allEvents)
 			assert.Equal(t, len(expectedDeployments), len(receivedDeployments))
 			for id, exp := range expectedDeployments {
 				if e, ok := receivedDeployments[id]; !ok {
@@ -211,8 +211,8 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 					assert.Equal(t, exp.GetDeployment().GetImagePullSecrets(), e.GetDeployment().GetImagePullSecrets())
 				}
 			}
-			expectedPods := getAllPods(expectedEvents)
-			receivedPods := getAllPods(allEvents)
+			expectedPods := getLastStateFromPods(expectedEvents)
+			receivedPods := getLastStateFromPods(allEvents)
 			assert.Equal(t, len(expectedPods), len(receivedPods))
 			for id, exp := range expectedPods {
 				if e, ok := receivedPods[id]; !ok {
@@ -268,7 +268,7 @@ func readSensorOutputFile(fname string) ([]*central.MsgFromSensor, error) {
 	return msgs, nil
 }
 
-func getAllDeployments(messages []*central.MsgFromSensor) map[string]*central.SensorEvent {
+func getLastStateFromDeployments(messages []*central.MsgFromSensor) map[string]*central.SensorEvent {
 	events := make(map[string]*central.SensorEvent)
 	for _, msg := range messages {
 		event := msg.GetEvent()
@@ -281,7 +281,7 @@ func getAllDeployments(messages []*central.MsgFromSensor) map[string]*central.Se
 	return events
 }
 
-func getAllPods(messages []*central.MsgFromSensor) map[string]*central.SensorEvent {
+func getLastStateFromPods(messages []*central.MsgFromSensor) map[string]*central.SensorEvent {
 	events := make(map[string]*central.SensorEvent)
 	for _, msg := range messages {
 		event := msg.GetEvent()
