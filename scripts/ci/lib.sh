@@ -850,7 +850,13 @@ handle_nightly_runs() {
     if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
         ci_export CIRCLE_TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
     elif is_in_PR_context && pr_has_label "simulate-nightly-run"; then
-        ci_export CIRCLE_TAG "${nightly_tag_prefix}${PULL_PULL_SHA:0:8}"
+        local sha
+        if [[ -n "${PULL_PULL_SHA:-}" ]]; then
+            sha="${PULL_PULL_SHA}"
+        else
+            sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha')
+        fi
+        ci_export CIRCLE_TAG "${nightly_tag_prefix}${sha:0:8}"
     fi
 }
 
