@@ -45,17 +45,22 @@ Please update the status of this issue and notify the release engineer.\"}" \
         "https://issues.redhat.com/rest/api/2/issue/$1/comment"
 }
 
-GH_MD_FORMAT_LINE=$(
-    cat <<EOF
+get_issues_summary() {
+    read -r GH_MD_FORMAT_LINE <<EOF
 "* [\(.key)](https://issues.redhat.com/browse/\(.key)): **" \
 + (.fields.assignee.displayName // "unassigned") \
 + "** (\(.fields.status.name)) — _" \
 + (.fields.summary | gsub (" +$";"")) \
 + "_"
 EOF
-)
+    get_issues | jq -r ".issues[] | $GH_MD_FORMAT_LINE" | sort
+}
 
-ISSUES=$(get_issues | jq -r ".issues[] | $GH_MD_FORMAT_LINE" | sort)
+get_open_issues() {
+    get_issues | jq -r '.issues[] | "\(.key) - \(.fields.assignee.displayName)"' | sort
+}
+
+ISSUES=$(get_issues_summary)
 
 if [ -z "$ISSUES" ]; then
     gh_summary "All issues for Jira release $RELEASE_PATCH are closed."
@@ -72,15 +77,15 @@ EOF
 
 gh_log error "There are non-closed Jira issues for version $RELEASE_PATCH."
 
-OPEN_ISSUES=$(get_issues)
+OPEN_ISSUES=$(get_open_issues)
 
 echo "Open issues:"
-echo "$OPEN_ISSUES" | jq -r '.issues[] | "\(.key) - \(.fields.assignee.displayName)"' | sort
+echo "$OPEN_ISSUES"
 
 if [ "$DRY_RUN" != "true" ]; then
-    echo "$OPEN_ISSUES" | jq -r ".issues[] | .key" | while read -r KEY; do
+    while read -r KEY; do
         comment_issue "$KEY"
-    done
+    done <<<"$OPEN_ISSUES"
 fi
 
 exit 1
