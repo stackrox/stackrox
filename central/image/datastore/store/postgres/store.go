@@ -516,7 +516,7 @@ func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string,
 }
 
 func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, bool, error) {
-	oldImage, found, err := s.Get(ctx, image.GetId())
+	oldImage, found, err := s.GetImageMetadata(ctx, image.GetId())
 	if err != nil {
 		return false, false, err
 	}

@@ -24,7 +24,6 @@ func initialize() {
 		indexer := postgres.NewIndexer(globaldb.GetPostgres())
 		searcher := search.NewV2(storage, indexer)
 		ad = NewWithPostgres(storage, indexer, searcher, riskDS.Singleton(), ranking.NodeRanker(), ranking.NodeComponentRanker())
-		log.Infof("node postgres init complete")
 		return
 	}
 
