@@ -60,7 +60,7 @@ export const VULN_CVE_ONLY_FRAGMENT = gql`
 // TODO: remove this fragment after switch to Image/Node/Cluster vuln types
 export const VULN_CVE_DETAIL_FRAGMENT = gql`
     fragment cveFields on EmbeddedVulnerability {
-        id: cve
+        id
         cve
         vulnerabilityTypes
         envImpact
@@ -216,7 +216,7 @@ export const CLUSTER_CVE_DETAIL_FRAGMENT = gql`
 
 export const VULN_CVE_LIST_FRAGMENT = gql`
     fragment cveFields on EmbeddedVulnerability {
-        id: cve
+        id
         cve
         cvss
         vulnerabilityTypes

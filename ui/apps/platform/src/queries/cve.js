@@ -3,7 +3,7 @@ import { gql } from '@apollo/client';
 export const CVE_NAME = gql`
     query getCveName($id: ID!) {
         vulnerability(id: $id) {
-            id: cve
+            id
             name: cve
             cve
         }
