@@ -479,14 +479,23 @@ is_tagged() {
     [[ -n "$tags" ]]
 }
 
-is_nightly_tag() {
-    local tags
-    tags="$(git tag --contains)"
-    [[ "$tags" =~ nightly ]]
+is_nightly_run() {
+    [[ "${CIRCLE_TAG:-}" =~ ^nightly- ]]
 }
 
 is_in_PR_context() {
-    (is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]) || (is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]])
+    if is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
+        return 0
+    elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
+        return 0
+    elif is_OPENSHIFT_CI && [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+        # bin, test-bin, images
+        local pull_request
+        pull_request=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].number' 2>&1) || return 1
+        [[ "$pull_request" =~ ^[0-9]+$ ]] && return 0
+    fi
+
+    return 1
 }
 
 is_openshift_CI_rehearse_PR() {
@@ -826,6 +835,27 @@ openshift_ci_e2e_mods() {
         env | grep -e ^KUBERNETES_ | cut -d= -f1 | awk '{ print "unset", $1 }' > "$envfile"
         # shellcheck disable=SC1090
         source "$envfile"
+    fi
+}
+
+handle_nightly_runs() {
+    if ! is_OPENSHIFT_CI; then
+        die "Only for OpenShift CI"
+    fi
+
+    local nightly_tag_prefix
+    nightly_tag_prefix="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-"
+    if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
+        ci_export CIRCLE_TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
+    elif is_in_PR_context && pr_has_label "simulate-nightly-run"; then
+        local sha
+        if [[ -n "${PULL_PULL_SHA:-}" ]]; then
+            sha="${PULL_PULL_SHA}"
+        else
+            sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || die "Cannot find pull sha"
+            [[ "$sha" != "null" ]] || die "Cannot find pull sha"
+        fi
+        ci_export CIRCLE_TAG "${nightly_tag_prefix}${sha:0:8}"
     fi
 }
 

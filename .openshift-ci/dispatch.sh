@@ -10,7 +10,14 @@ for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
 done
 
+info "Current Status:"
+"$ROOT/status.sh" || true
+
 openshift_ci_mods
+handle_nightly_runs
+
+info "Status after mods:"
+"$ROOT/status.sh" || true
 
 function hold() {
     while [[ -e /tmp/hold ]]; do
