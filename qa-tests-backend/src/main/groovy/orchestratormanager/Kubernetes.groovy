@@ -1822,10 +1822,6 @@ class Kubernetes implements OrchestratorMain {
     */
 
     def createDeploymentNoWait(Deployment deployment) {
-        createDeploymentNoWaitWithRetry(deployment, 0, 10)
-    }
-
-    def createDeploymentNoWaitWithRetry(Deployment deployment, int retry, int maxRetries) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
         // Create service if needed
@@ -1857,8 +1853,10 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-            log.debug "Told the orchestrator to createOrReplace " + deployment.name
+            Helpers.withRetry(10,1) {
+                client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
+                log.debug "Told the orchestrator to createOrReplace " + deployment.name
+            }
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
             }
@@ -1867,14 +1865,6 @@ class Kubernetes implements OrchestratorMain {
                 deployment.routeHost = waitForRouteHost(deployment.name, deployment.namespace)
             }
             return true
-        } catch (io.fabric8.kubernetes.client.KubernetesClientException e) {
-            log.warn("Client returned exception when creating k8s deployment: ",  e)
-            if (retry >= maxRetries) {
-                log.debug "No more retries. Retried " + retry + " times out of " + maxRetries + " already"
-                return false
-            }
-            log.debug "Retrying. Retry " + retry+1 + " out of " + maxRetries
-            return createDeploymentNoWaitWithRetry(deployment, retry+1, maxRetries)
         } catch (Exception e) {
             log.warn("Error creating k8s deployment: ",  e)
             return false
