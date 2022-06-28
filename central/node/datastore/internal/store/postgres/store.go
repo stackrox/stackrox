@@ -542,12 +542,13 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID s
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Node")
-
+	log.Info("counting nodes")
 	row := s.db.QueryRow(ctx, "SELECT COUNT(*) FROM "+nodesTable)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0, err
 	}
+	log.Infof("#nodes %d", count)
 	return count, nil
 }
 
@@ -648,6 +649,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 		}
 		nodeParts.Children = append(nodeParts.Children, child)
 	}
+	log.Infof("merging node parts for %s", nodeID)
 	return common.Merge(nodeParts), true, nil
 }
 

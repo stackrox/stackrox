@@ -142,14 +142,14 @@ func (ds *datastoreImpl) GetNode(ctx context.Context, id string) (*storage.Node,
 			return nil, false, err
 		}
 	}
-
+	log.Infof("fetching node %s", id)
 	node, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
 
 	ds.updateNodePriority(node)
-
+	log.Infof("found node %s", id)
 	return node, true, nil
 }
 
@@ -164,17 +164,21 @@ func (ds *datastoreImpl) GetNodesBatch(ctx context.Context, ids []string) ([]*st
 		}
 	}
 
+	log.Infof("fetching nodes %v", ids)
+
 	if ok {
 		nodes, _, err = ds.storage.GetMany(ctx, ids)
 		if err != nil {
 			return nil, err
 		}
+		log.Infof("found nodes %v", ids)
 	} else {
 		idsQuery := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.NodeID, ids...).ProtoQuery()
 		nodes, err = ds.SearchRawNodes(ctx, idsQuery)
 		if err != nil {
 			return nil, err
 		}
+		log.Infof("found nodes %v", ids)
 	}
 
 	ds.updateNodePriority(nodes...)
@@ -283,6 +287,6 @@ func (ds *datastoreImpl) updateNodePriority(nodes ...*storage.Node) {
 
 func (ds *datastoreImpl) updateComponentRisk(node *storage.Node) {
 	for _, component := range node.GetScan().GetComponents() {
-		component.RiskScore = ds.nodeComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), ""))
+		component.RiskScore = ds.nodeComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), node.GetScan().GetOperatingSystem()))
 	}
 }
