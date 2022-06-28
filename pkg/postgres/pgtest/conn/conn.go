@@ -1,4 +1,4 @@
-package pgtest
+package conn
 
 import (
 	"fmt"
@@ -14,25 +14,33 @@ import (
 
 // GetConnectionString returns a connection string for integration testing with Postgres
 func GetConnectionString(_ *testing.T) string {
+	return GetConnectionStringWithDatabaseName(env.GetString("POSTGRES_DB", "postgres"))
+}
+
+// GetConnectionStringWithDatabaseName returns a connection string with the passed database
+func GetConnectionStringWithDatabaseName(database string) string {
 	user := os.Getenv("USER")
 	if _, ok := os.LookupEnv("CI"); ok {
 		user = "postgres"
 	}
 	pass := env.GetString("POSTGRES_PASSWORD", "")
-	database := env.GetString("POSTGRES_DB", "postgres")
 	host := env.GetString("POSTGRES_HOST", "localhost")
-	return fmt.Sprintf("host=%s port=5432 database=%s user=%s password=%s sslmode=disable statement_timeout=600000", host, database, user, pass)
+	src := fmt.Sprintf("host=%s port=5432 user=%s database=%s sslmode=disable statement_timeout=600000", host, user, database)
+	if pass != "" {
+		src += fmt.Sprintf(" password=%s", pass)
+	}
+	return src
 }
 
 // OpenGormDB opens a Gorm DB to the Postgres DB
-func OpenGormDB(t *testing.T, source string) *gorm.DB {
+func OpenGormDB(t testing.TB, source string) *gorm.DB {
 	gormDB, err := gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
 	require.NoError(t, err, "failed to connect to connect with gorm db")
 	return gormDB
 }
 
 // CloseGormDB closes connection to a Gorm DB
-func CloseGormDB(t *testing.T, db *gorm.DB) {
+func CloseGormDB(t testing.TB, db *gorm.DB) {
 	if db == nil {
 		return
 	}

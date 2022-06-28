@@ -117,12 +117,30 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
         matches: [entityTypes.IMAGE, entityTypes.CVE, entityTypes.NODE],
         extendedMatches: [entityTypes.DEPLOYMENT],
     },
-    // technically this CVE entity type encompasses node CVEs, image/component CVEs, k8s CVEs (for clusters)
+    // TODO: remove this old CVE entity type which encompasses node CVEs, image/component CVEs, k8s CVEs (for clusters)
     [entityTypes.CVE]: {
         children: [],
         parents: [],
         matches: [entityTypes.COMPONENT],
         extendedMatches: [entityTypes.IMAGE, entityTypes.DEPLOYMENT, entityTypes.NODE],
+    },
+    [entityTypes.IMAGE_CVE]: {
+        children: [],
+        parents: [],
+        matches: [entityTypes.COMPONENT],
+        extendedMatches: [entityTypes.IMAGE, entityTypes.DEPLOYMENT],
+    },
+    [entityTypes.NODE_CVE]: {
+        children: [],
+        parents: [],
+        matches: [entityTypes.COMPONENT],
+        extendedMatches: [entityTypes.NODE],
+    },
+    [entityTypes.CLUSTER_CVE]: {
+        children: [],
+        parents: [],
+        matches: [],
+        extendedMatches: [entityTypes.CLUSTER],
     },
     [entityTypes.CONTROL]: {
         children: [],

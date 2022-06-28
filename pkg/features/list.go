@@ -18,9 +18,6 @@ var (
 	// ComplianceOperatorCheckResults enables getting compliance results from the compliance operator
 	ComplianceOperatorCheckResults = registerFeature("Enable fetching of compliance operator results", "ROX_COMPLIANCE_OPERATOR_INTEGRATION", true)
 
-	// ActiveVulnManagement enables detection of active vulnerabilities
-	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", true)
-
 	// SystemHealthPatternFly enables the Pattern Fly version of System Health page. (used in the front-end app only)
 	SystemHealthPatternFly = registerFeature("Enable Pattern Fly version of System Health page", "ROX_SYSTEM_HEALTH_PF", false)
 

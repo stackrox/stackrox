@@ -51,7 +51,7 @@ describe('Risk page', () => {
                 'eq',
                 '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=true'
             );
-            cy.wait('@getDeploymentsWithProcessInfo'); // assume intercept in visitRiskDeployments
+            cy.wait('@deploymentswithprocessinfo'); // assume intercept in visitRiskDeployments
             cy.get(priorityColumnHeadingSelector).should('have.class', '-sort-desc');
             cy.get(`${RiskPageSelectors.table.dataRows} .rt-td:nth-child(5)`).then(
                 ($priorityCells) => {

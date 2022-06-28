@@ -16,7 +16,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/features"
 	pkgPostgres "github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
@@ -56,8 +56,11 @@ func (s *SchemaTestSuite) SetupSuite() {
 
 	ctx := sac.WithAllAccess(context.Background())
 
-	source := pgtest.GetConnectionString(s.T())
+	source := conn.GetConnectionString(s.T())
+
 	config, err := pgxpool.ParseConfig(source)
+	s.NoError(err)
+
 	s.connConfig = config.ConnConfig
 
 	s.Require().NoError(err)
@@ -67,7 +70,7 @@ func (s *SchemaTestSuite) SetupSuite() {
 	s.ctx = ctx
 	s.pool = pool
 	s.Require().NoError(err)
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
+	s.gormDB = conn.OpenGormDB(s.T(), source)
 
 	_, err = s.pool.Exec(s.ctx, "DROP SCHEMA public CASCADE")
 	s.Require().NoError(err)
@@ -81,7 +84,7 @@ func (s *SchemaTestSuite) TearDownSuite() {
 		return
 	}
 	s.pool.Close()
-	pgtest.CloseGormDB(s.T(), s.gormDB)
+	conn.CloseGormDB(s.T(), s.gormDB)
 }
 
 func (s *SchemaTestSuite) TestGormConsistentWithSQL() {

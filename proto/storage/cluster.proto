@@ -296,7 +296,7 @@ message ClusterHealthStatus {
 
     // For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
     // this timestamp will be updated by central pipeline when message is processed
-    google.protobuf.Timestamp last_contact                      = 5;
+    google.protobuf.Timestamp last_contact                      = 5 [(gogoproto.moretags) = "search:\"Last Contact,store\""];;
 
     // To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
     bool                      health_info_complete              = 6;
