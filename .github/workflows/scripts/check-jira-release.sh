@@ -5,14 +5,15 @@
 set -euo pipefail
 
 VERSION="$1"
+PROJECT="$2"
 
 check_not_empty \
-    JIRA_TOKEN jira_project \
-    VERSION
+    JIRA_TOKEN \
+    VERSION PROJECT
 
 JIRA_RELEASE_DATE=$(curl --fail -sSL \
     -H "Authorization: Bearer $JIRA_TOKEN" \
-    "https://issues.redhat.com/rest/api/2/project/$jira_project/versions" |
+    "https://issues.redhat.com/rest/api/2/project/$PROJECT/versions" |
     jq -r ".[] | select(.name == \"$VERSION\" and .released == false) | .releaseDate")
 
 if [ -z "$JIRA_RELEASE_DATE" ]; then

@@ -46,7 +46,8 @@ jobs:
 
           SCRIPT="check-jira-release.sh"
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
-            "${{inputs.version}}"
+            "${{inputs.version}}" \
+            "${{env.jira_project}}"
 
   variables:
     name: Setup variables

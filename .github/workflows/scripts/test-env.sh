@@ -9,7 +9,6 @@ export GITHUB_ACTOR
 export GITHUB_REPOSITORY=stackrox/stackrox
 export GITHUB_SERVER_URL=https://github.com
 
-export jira_project=ROX
 export main_branch=master
 
 export DRY_RUN=true
