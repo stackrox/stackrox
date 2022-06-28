@@ -484,7 +484,16 @@ is_nightly_run() {
 }
 
 is_in_PR_context() {
-    (is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]) || (is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]])
+    if is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
+        return 0
+    elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
+        return 0
+    elif is_OPENSHIFT_CI; then
+        # bin, test-bin, images
+        get_pr_details > /dev/null 2>&1 || return "$?"
+    fi
+
+    return 1
 }
 
 is_openshift_CI_rehearse_PR() {
