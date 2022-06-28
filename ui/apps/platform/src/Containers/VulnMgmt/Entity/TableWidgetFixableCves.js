@@ -8,7 +8,7 @@ import Loader from 'Components/Loader';
 import { getCveTableColumns, defaultCveSort } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import {
     NODE_CVE_LIST_FRAGMENT,
-    IMAGE_CVE_LIST_FRAGMENT,
+    VULN_IMAGE_CVE_LIST_FRAGMENT,
     VULN_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
@@ -51,7 +51,7 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
         queryVulnCounterFieldName = 'imageVulnerabilityCounter';
         queryVulnsFieldName = 'imageVulnerabilities';
         queryCVEFieldsName = 'imageCVEFields';
-        queryFragment = IMAGE_CVE_LIST_FRAGMENT;
+        queryFragment = VULN_IMAGE_CVE_LIST_FRAGMENT;
     }
 
     // `id` field is not needed in result,

@@ -243,7 +243,7 @@ export const VULN_CVE_LIST_FRAGMENT = gql`
 `;
 
 export const IMAGE_CVE_LIST_FRAGMENT = gql`
-    fragment cveFields on ImageVulnerability {
+    fragment imageCVEFields on ImageVulnerability {
         createdAt
         cve
         cvss
@@ -320,8 +320,8 @@ export const NODE_CVE_LIST_FRAGMENT = gql`
         suppressExpiry
         suppressed
         vulnerabilityState
-        componentCount: nodeComponentCount(query: $query)
-        nodeCount(query: $query)
+        componentCount: nodeComponentCount
+        nodeCount
     }
 `;
 
