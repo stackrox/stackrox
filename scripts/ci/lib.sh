@@ -490,7 +490,7 @@ is_in_PR_context() {
         return 0
     elif is_OPENSHIFT_CI; then
         # bin, test-bin, images
-        get_pr_details > /dev/null 2>&1 || return "$?"
+        get_pr_details > /dev/null 2>&1 && return 0
     fi
 
     return 1
