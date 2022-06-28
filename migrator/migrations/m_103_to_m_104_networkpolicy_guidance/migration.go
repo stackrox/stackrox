@@ -27,7 +27,7 @@ var (
 	//go:embed policies_before_and_after
 	policyDiffFS embed.FS
 
-	// We will want to migrate only if the existing policy sections and title haven't changed.
+	// We want to migrate only if the existing policy sections and title haven't changed.
 	fieldsToCompare = []policymigrationhelper.FieldComparator{
 		policymigrationhelper.DescriptionComparator,
 		policymigrationhelper.RationaleComparator,
