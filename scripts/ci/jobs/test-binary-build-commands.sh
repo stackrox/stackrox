@@ -8,6 +8,9 @@ set -euo pipefail
 make_test_bin() {
     info "Making test-bin"
 
+    info "Current Status:"
+    "$ROOT/status.sh" || true
+
     make cli upgrader
     install_built_roxctl_in_gopath
 }
