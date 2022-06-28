@@ -130,11 +130,12 @@ func init() {
 func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, dirtyBucket []byte) error {
 	synchronized := concurrency.NewSignal()
 
+	globalIndex := globalindex.GetGlobalIndex()
 	for _, initialized := range initializedBuckets {
 		// Register the wrapper to index the objects.
 		rawDackbox.RegisterIndex(initialized.bucket, initialized.wrapper)
 
-		if err := queueBucketForIndexing(dacky, indexQ, initialized.category, dirtyBucket, initialized.bucket, initialized.reader); err != nil {
+		if err := queueBucketForIndexing(dacky, globalIndex, indexQ, initialized.category, dirtyBucket, initialized.bucket, initialized.reader); err != nil {
 			return errors.Wrap(err, "unable to initialize dackbox, initialization function failed")
 		}
 
@@ -143,7 +144,7 @@ func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, dirtyBucket []byte
 		indexQ.PushSignal(&synchronized)
 		synchronized.Wait()
 
-		if err := markInitialIndexingComplete(globalindex.GetGlobalIndex(), []byte(initialized.category.String())); err != nil {
+		if err := markInitialIndexingComplete(globalIndex, []byte(initialized.category.String())); err != nil {
 			return errors.Wrap(err, "setting initial indexing complete")
 		}
 	}
@@ -162,7 +163,7 @@ func needsInitialIndexing(index bleve.Index, bucket []byte) (bool, error) {
 	return !bytes.Equal([]byte("old"), data), nil
 }
 
-func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, category v1.SearchCategory, dirtyBucket, bucket []byte, reader crud.Reader) error {
+func queueBucketForIndexing(dacky *dackbox.DackBox, index bleve.Index, indexQ queue.WaitableQueue, category v1.SearchCategory, dirtyBucket, bucket []byte, reader crud.Reader) error {
 	defer debug.FreeOSMemory()
 
 	txn, err := dacky.NewReadOnlyTransaction()
@@ -174,7 +175,6 @@ func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, 
 	// Read all keys that need re-indexing.
 	var keys [][]byte
 
-	index := globalindex.GetGlobalIndex()
 	needsReindex, err := needsInitialIndexing(index, []byte(category.String()))
 	if err != nil {
 		return err
