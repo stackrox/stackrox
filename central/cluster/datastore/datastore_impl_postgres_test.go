@@ -92,10 +92,10 @@ func (s *ClusterPostgresDataStoreTestSuite) TearDownSuite() {
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) TestSearchClusterStatus() {
-	ctx := sac.WithAllAccess()
+	ctx := sac.WithAllAccess(context.Background())
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ClusterStatus, storage.ClusterHealthStatus_UNHEALTHY.String()).ProtoQuery()
-	res, err := s.clusterDataStore.Search(ctx, query)
+	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterStatus, storage.ClusterHealthStatus_UNHEALTHY.String()).ProtoQuery()
+	res, err := s.clusterDatastore.Search(ctx, query)
 	s.NoError(err)
 	s.Equal(0, len(res))
 }
