@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Patches CHANGELOG.md on the main branch and creates a PR.
 #
@@ -9,9 +9,15 @@ REF="$2"
 BRANCH="$3"
 
 check_not_empty \
-    GITHUB_SERVER_URL GITHUB_REPOSITORY GITHUB_ACTOR \
-    DRY_RUN main_branch \
-    VERSION REF BRANCH
+    VERSION \
+    REF \
+    BRANCH \
+    \
+    GITHUB_SERVER_URL \
+    GITHUB_REPOSITORY \
+    GITHUB_ACTOR \
+    DRY_RUN \
+    main_branch
 
 create_pr() {
     gh pr create \

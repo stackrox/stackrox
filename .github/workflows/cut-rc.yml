@@ -18,11 +18,11 @@ on:
         type: boolean
 
 env:
-  main_branch: master
+  main_branch: ${{github.event.repository.default_branch}}
   docs_repository: openshift/openshift-docs
   jira_projects: ROX, RS, RTOOLS
   slack_channel: C03KSV3N6N8 #test-release-automation
-  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/${SCRIPT}?ref=${main_branch}
+  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{github.event.repository.default_branch}}
   DRY_RUN: ${{ fromJSON('["true", "false"]')[inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
 
@@ -44,11 +44,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
-          SCRIPT="common.sh"
-          source /dev/stdin <<<"$(gh api -H "$ACCEPT_RAW" "${{env.script_url}}")"
-
-          SCRIPT="check-jira-issues.sh"
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            check-jira-issues \
             "${{env.jira_projects}}" \
             "${{needs.variables.outputs.release}}" \
             "${{needs.variables.outputs.patch}}" \
@@ -135,11 +132,8 @@ jobs:
         id: cherry-pick
         run: |
           set -uo pipefail
-          SCRIPT="common.sh"
-          source /dev/stdin <<<"$(gh api -H "$ACCEPT_RAW" "${{env.script_url}}")"
-
-          SCRIPT="cherry-pick.sh"
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            cherry-pick \
             "${{needs.variables.outputs.milestone}}" \
             "${{needs.variables.outputs.branch}}" \
             "${{needs.variables.outputs.release-patch}}"

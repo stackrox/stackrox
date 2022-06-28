@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Sets some necessary variables up for local testing.
 # JIRA_TOKEN still has to be set manually.

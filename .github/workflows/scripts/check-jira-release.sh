@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Queries Jira for the release date.
 #
@@ -8,8 +8,10 @@ VERSION="$1"
 PROJECT="$2"
 
 check_not_empty \
-    JIRA_TOKEN \
-    VERSION PROJECT
+    VERSION \
+    PROJECT \
+    \
+    JIRA_TOKEN
 
 JIRA_RELEASE_DATE=$(curl --fail -sSL \
     -H "Authorization: Bearer $JIRA_TOKEN" \

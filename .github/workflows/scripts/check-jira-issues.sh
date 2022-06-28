@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Checks if there are open issues for the given release
 # and adds comments to such issues.
@@ -11,8 +11,13 @@ PATCH="$3"
 RELEASE_PATCH="$4"
 
 check_not_empty \
-    JIRA_TOKEN DRY_RUN \
-    PROJECTS RELEASE PATCH RELEASE_PATCH
+    PROJECTS \
+    RELEASE \
+    PATCH \
+    RELEASE_PATCH \
+    \
+    JIRA_TOKEN \
+    DRY_RUN
 
 # TODO: Jira returns 400 if requested fixVersion does not exist. That means
 # the named release must exist on Jira, which is not given.
@@ -70,7 +75,7 @@ gh_log error "There are non-closed Jira issues for version $RELEASE_PATCH."
 OPEN_ISSUES=$(get_issues)
 
 echo "Open issues:"
-echo "$OPEN_ISSUES" | jq -r '.issues[] | "\(.key) - \(.fields.assignee.displayName)"'
+echo "$OPEN_ISSUES" | jq -r '.issues[] | "\(.key) - \(.fields.assignee.displayName)"' | sort
 
 if [ "$DRY_RUN" != "true" ]; then
     echo "$OPEN_ISSUES" | jq -r ".issues[] | .key" | while read -r KEY; do

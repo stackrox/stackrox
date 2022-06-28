@@ -21,9 +21,9 @@ on:
 env:
   docs_repository: openshift/openshift-docs
   slack_channel: C03KSV3N6N8 #test-release-automation
-  main_branch: master
+  main_branch: ${{github.event.repository.default_branch}}
   jira_project: ROX
-  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/${SCRIPT}?ref=${main_branch}
+  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{github.event.repository.default_branch}}
   DRY_RUN: ${{ fromJSON('["true", "false"]')[inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
 
@@ -44,11 +44,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
-          SCRIPT="common.sh"
-          source /dev/stdin <<<"$(gh api -H "$ACCEPT_RAW" "${{env.script_url}}")"
-
-          SCRIPT="check-jira-release.sh"
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            check-jira-release \
             "${{inputs.version}}" \
             "${{env.jira_project}}"
 
@@ -171,12 +168,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
-          SCRIPT="common.sh"
-          source /dev/stdin <<<"$(gh api -H "$ACCEPT_RAW" "${{env.script_url}}")"
-
-          SCRIPT="patch-changelog.sh"
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
-            "${{inputs.version}}" "${{inputs.ref}}" "${{needs.variables.outputs.branch}}"
+            patch-changelog \
+            "${{inputs.version}}" \
+            "${{inputs.ref}}" \
+            "${{needs.variables.outputs.branch}}"
 
   milestone:
     name: Create milestone

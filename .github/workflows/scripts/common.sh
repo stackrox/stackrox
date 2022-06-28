@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # The output appears in a dedicated emphasized GitHub step box.
 # Multiple lines are not supported.
@@ -43,3 +43,14 @@ gh_summary() {
     fi >>"$GITHUB_STEP_SUMMARY"
 }
 export -f gh_summary
+
+if [ "$#" -gt 0 ]; then
+    SCRIPT="$1"
+    check_not_empty \
+        SCRIPT \
+        GITHUB_REPOSITORY \
+        main_branch
+    URL="/repos/$GITHUB_REPOSITORY/contents/.github/workflows/scripts/$SCRIPT.sh?ref=$main_branch"
+    shift
+    gh api -H "Accept: application/vnd.github.v3.raw" "$URL" | bash -s -- "$@"
+fi

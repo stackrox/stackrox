@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Tries to cherry-pick merge commits from the main branch to the release branch.
 # Adds comments to the original PRs of the problematic commits.
@@ -10,9 +10,13 @@ BRANCH="$2"
 RELEASE_PATCH="$3"
 
 check_not_empty \
+    MILESTONE \
+    BRANCH \
+    RELEASE_PATCH \
+    \
     GITHUB_REPOSITORY \
-    DRY_RUN main_branch \
-    MILESTONE BRANCH RELEASE_PATCH
+    DRY_RUN \
+    main_branch
 
 SLACK_MESSAGE_FILE=$(mktemp)
 
