@@ -66,3 +66,5 @@ data:
           path: /etc/grafana/provisioning/dashboards
   central.json: |-
 {{ .Files.Get "dashboards/central.json" | indent 4 }}
+  dataplane.json: |-
+{{ .Files.Get "dashboards/dataplane.json" | indent 4 }}
