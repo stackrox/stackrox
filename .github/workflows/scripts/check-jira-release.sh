@@ -5,23 +5,21 @@
 set -euo pipefail
 
 check_not_empty() {
-    local VAR
-    typeset -n VAR
-    VAR="$1"
-    if [ -z "${VAR:-}" ]; then
-        echo "::error::Variable $1 is not set or empty"
-        exit 1
-    fi
+    for V in "$@"; do
+        typeset -n VAR="$V"
+        if [ -z "${VAR:-}" ]; then
+            echo "::error::Variable $V is not set or empty"
+            exit 1
+        fi
+    done
 }
 
 VERSION="$1"
 
-for VAR in \
+check_not_empty \
     GITHUB_STEP_SUMMARY \
     JIRA_TOKEN jira_project \
-    VERSION; do
-    check_not_empty "$VAR"
-done
+    VERSION
 
 JIRA_RELEASE_DATE=$(curl --fail -sSL \
     -H "Authorization: Bearer $JIRA_TOKEN" \
