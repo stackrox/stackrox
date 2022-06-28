@@ -14,8 +14,10 @@ check_not_empty \
     JIRA_TOKEN DRY_RUN \
     PROJECTS RELEASE PATCH RELEASE_PATCH
 
+# TODO: Jira returns 400 if requested fixVersion does not exist. That means
+# the named release must exist on Jira, which is not given.
 JQL="project IN ($PROJECTS) \
-AND fixVersion IN (\"$RELEASE_PATCH\", \"$RELEASE.$PATCH\") \
+AND fixVersion IN (\"$RELEASE.$PATCH\") \
 AND status != CLOSED \
 AND Component != Documentation \
 AND type != Epic \
