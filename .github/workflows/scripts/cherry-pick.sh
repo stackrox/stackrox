@@ -20,13 +20,14 @@ check_not_empty \
 
 SLACK_MESSAGE_FILE=$(mktemp)
 
+# Increments PICKED variable if managed to pick a cherry.
 cherry_pick() {
     IFS=$'\t' read -r PR URL COMMIT AUTHOR TITLE <<<"$1"
 
     # Skip commits merged before branching.
     if git merge-base --is-ancestor "$COMMIT" HEAD; then
         gh_log debug "$COMMIT is already on the release branch"
-        return 0
+        return
     fi
 
     # Find commits with the specific commit message after the fork point
@@ -37,7 +38,7 @@ cherry_pick() {
 
     if [ -n "$ALREADY_PICKED_CHERRIES" ]; then
         gh_summary "Already picked cherries for commit $COMMIT:\n\`\`\`\n$ALREADY_PICKED_CHERRIES\n\`\`\`"
-        return 0
+        return
     fi
 
     if git cherry-pick -x "$COMMIT"; then
@@ -46,7 +47,7 @@ cherry_pick() {
         [ "$DRY_RUN" != "true" ] &&
             gh pr comment "$PR" --body "Merge commit has been cherry-picked to branch \`$BRANCH\`."
 
-        return 1
+        PICKED=$((PICKED+1))
     else
         git cherry-pick --abort
 
@@ -58,8 +59,6 @@ cherry_pick() {
         echo "- <$URL|PR $PR> by *$AUTHOR* — $TITLE" \
             >>"$SLACK_MESSAGE_FILE"
     fi
-
-    return 0
 }
 
 find_fork_point() {
@@ -92,7 +91,6 @@ if [ -n "$PR_COMMITS" ]; then
     PICKED=0
     while read -r PR_COMMIT; do
         cherry_pick "$PR_COMMIT"
-        PICKED=$((PICKED + $?))
     done <<<"$PR_COMMITS"
 
     if [ "$PICKED" -gt 0 ]; then
