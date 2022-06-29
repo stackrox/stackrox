@@ -133,7 +133,7 @@ func GetEmbeddedImageCVE_4567_0002() *storage.EmbeddedVulnerability {
 		Cvss:         7.5,
 		Summary:      "Find some inspiring quote on an evil topic to insert here.",
 		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: ""},
+		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.1.1"},
 		ScoreVersion: storage.EmbeddedVulnerability_V3,
 		CvssV2: &storage.CVSSV2{
 			Vector:              "AV:N/AC:L/Au:N/C:N/I:P/A:N",
@@ -398,7 +398,7 @@ func GetEmbeddedImageCVE_2345_0007() *storage.EmbeddedVulnerability {
 		Cvss:         5.9,
 		Summary:      "Find some inspiring quote on an evil topic to insert here.",
 		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: ""},
+		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.5.6"},
 		ScoreVersion: storage.EmbeddedVulnerability_V3,
 		CvssV2: &storage.CVSSV2{
 			Vector:              "AV:N/AC:M/Au:N/C:N/I:P/A:N",
@@ -505,7 +505,7 @@ func GetEmbeddedImageComponent_1s2_3() *storage.EmbeddedImageScanComponent {
 		Location:      "",
 		SetTopCvss:    &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: 7.5},
 		RiskScore:     1.1625,
-		FixedBy:       "1.2.5",
+		FixedBy:       "",
 		Executables:   []*storage.EmbeddedImageScanComponent_Executable{},
 	}
 }
@@ -545,7 +545,7 @@ func GetEmbeddedImageComponent_2_5() *storage.EmbeddedImageScanComponent {
 		Location:      "",
 		SetTopCvss:    &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: 7.8},
 		RiskScore:     0.0,
-		FixedBy:       "",
+		FixedBy:       "2.5.6",
 		Executables: []*storage.EmbeddedImageScanComponent_Executable{
 			{
 				Path: "/murderous/cane",
