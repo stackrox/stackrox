@@ -34,8 +34,8 @@ import { SearchFilter } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
-import PolicyManagementHeader from '../PolicyManagementHeader';
-import PolicyManagementSubHeader from '../PolicyManagementSubHeader';
+import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
+import PolicyManagementSubHeader from 'Containers/PolicyManagement/PolicyManagementSubHeader';
 import ImportPolicyJSONModal from '../Modal/ImportPolicyJSONModal';
 import PoliciesTable from './PoliciesTable';
 

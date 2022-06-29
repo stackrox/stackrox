@@ -14,7 +14,8 @@ import {
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getPolicyCategories } from 'services/PoliciesService';
-import PolicyManagementHeader from '../PolicyManagementHeader';
+import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
+import PolicyCategoriesListSection from './PolicyCategoriesListSection';
 
 function PolicyCategoriesPage(): React.ReactElement {
     const [isLoading, setIsLoading] = useState(false);
@@ -40,8 +41,8 @@ function PolicyCategoriesPage(): React.ReactElement {
         );
     }
 
-    if (!isLoading && !errorMessage) {
-        pageContent = <div>hi</div>;
+    if (!isLoading && !errorMessage && policyCategories.length > 0) {
+        pageContent = <PolicyCategoriesListSection policyCategories={policyCategories} />;
     }
 
     useEffect(() => {

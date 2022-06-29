@@ -60,7 +60,7 @@ const AsyncIntegrationsPage = asyncComponent(
 const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
 
 const AsyncPolicyManagementPage = asyncComponent(
-    () => import('Containers/Policies/PolicyManagementPage')
+    () => import('Containers/PolicyManagement/PolicyManagementPage')
 );
 
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));

@@ -7,8 +7,8 @@ import {
     deprecatedPoliciesBasePath,
     policyCategoriesPath,
 } from 'routePaths';
-import PoliciesPage from './PoliciesPage';
-import PolicyCategoriesPage from './PolicyCategories/PolicyCategoriesPage';
+import PoliciesPage from 'Containers/Policies/PoliciesPage';
+import PolicyCategoriesPage from 'Containers/PolicyCategories/PolicyCategoriesPage';
 
 function PolicyManagementPage() {
     return (
