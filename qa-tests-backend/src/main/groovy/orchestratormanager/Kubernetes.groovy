@@ -345,7 +345,7 @@ class Kubernetes implements OrchestratorMain {
     Boolean restartPodByLabelWithExecKill(String ns, Map<String, String> labels) {
         Pod pod = getPodsByLabel(ns, labels).get(0)
         int prevRestartCount = pod.status.containerStatuses.get(0).restartCount
-        execInContainerByPodName(pod.metadata.name, pod.metadata.namespace, "kill 1 &")
+        execInContainerByPodName(pod.metadata.name, pod.metadata.namespace, "kill 1")
         log.debug "Killed pod ${pod.metadata.name}"
         return waitForPodRestart(pod.metadata.namespace, pod.metadata.name, prevRestartCount, 25, 5)
     }
