@@ -941,6 +941,22 @@ func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuer
 	return timestamp(edge.GetFirstImageOccurrence())
 }
 
+func (resolver *cVEResolver) CveBaseInfo(_ context.Context) (*cVEInfoResolver, error) {
+	return nil, nil
+}
+
+func (resolver *cVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
+	return resolver.SuppressActivation(ctx)
+}
+
+func (resolver *cVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
+	return resolver.SuppressExpiry(ctx)
+}
+
+func (resolver *cVEResolver) Snoozed(ctx context.Context) bool {
+	return resolver.Suppressed(ctx)
+}
+
 // ActiveState shows the activeness of a vulnerability in a deployment context.
 func (resolver *cVEResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
 	scopeQuery, err := args.AsV1QueryOrEmpty()

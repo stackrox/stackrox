@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
@@ -23,7 +22,6 @@ func init() {
 			"activeState(query: String): ActiveState",
 			"deploymentCount(query: String, scopeQuery: String): Int!",
 			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
-			"fixedIn: String! @deprecated(reason: \"use 'fixedBy'\")",
 			"imageCount(query: String, scopeQuery: String): Int!",
 			"images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!",
 			"imageVulnerabilityCount(query: String, scopeQuery: String): Int!",
@@ -34,6 +32,10 @@ func init() {
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"topImageVulnerability: ImageVulnerability",
 			"unusedVarSink(query: String): Int",
+		}),
+		// deprecated fields
+		schema.AddExtraResolvers("ImageComponent", []string{
+			"fixedIn: String! @deprecated(reason: \"use 'fixedBy'\")",
 		}),
 		schema.AddQuery("imageComponent(id: ID): ImageComponent"),
 		schema.AddQuery("imageComponents(query: String, scopeQuery: String, pagination: Pagination): [ImageComponent!]!"),
@@ -81,8 +83,9 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 	if !features.PostgresDatastore.Enabled() {
 		return resolver.imageComponentV2(ctx, args)
 	}
+	return resolver.wrapImageComponent(resolver.ImageComponentDataStore.Get(ctx, string(*args.ID)))
 	// TODO : Add postgres support
-	return nil, errors.New("Resolver ImageComponent does not support postgres yet")
+	//return nil, errors.New("Resolver ImageComponent does not support postgres yet")
 }
 
 // ImageComponents returns image components that match the input query.
@@ -93,8 +96,33 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 
 		return resolver.imageComponentsV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 	}
+
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers, err := resolver.wrapImageComponents(resolver.ImageComponentDataStore.SearchRawImageComponents(ctx, query))
+
+	//componentLoader, err := loaders.GetComponentLoader(ctx)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	//resolvers, err := resolver.wrapImageComponents(componentLoader.FromQuery(ctx, query))
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	ret := make([]ImageComponentResolver, 0, len(resolvers))
+	for _, res := range resolvers {
+		res.ctx = ctx
+		ret = append(ret, res)
+	}
+	return ret, err
+
 	// TODO : Add postgres support
-	return nil, errors.New("Resolver ImageComponents does not support postgres yet")
+	//return nil, errors.New("Resolver ImageComponents does not support postgres yet")
 }
 
 // ImageComponentCount returns count of image components that match the input query
@@ -105,8 +133,17 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 
 		return resolver.componentCountV2(ctx, RawQuery{Query: &query})
 	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+
+	ret, err := resolver.ImageComponentDataStore.Count(ctx, query)
+
+	return int32(ret), err
 	// TODO : Add postgres support
-	return 0, errors.New("Resolver ImageComponentCount does not support postgres yet")
+	//return 0, errors.New("Resolver ImageComponentCount does not support postgres yet")
 }
 
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard

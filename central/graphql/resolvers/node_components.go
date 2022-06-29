@@ -17,27 +17,24 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered
-		schema.AddType("NodeComponent", []string{
-			"fixedIn: String!",
-			"id: ID!",
-			"nodeComponentLastScanned: Time",
+		schema.AddExtraResolvers("NodeComponent", []string{
 			"license: License",
 			"location(query: String): String!",
-			"name: String!",
-			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
+			"nodeComponentLastScanned: Time",
 			"nodeCount(query: String, scopeQuery: String): Int!",
+			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
 			"nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!",
 			"nodeVulnerabilityCount(query: String, scopeQuery: String): Int!",
 			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!",
-			"priority: Int!",
-			"riskScore: Float!",
 			"source: String!",
 			"topNodeVulnerability: NodeVulnerability",
 			"unusedVarSink(query: String): Int",
-			"version: String!",
 		}),
-
+		// deprecated fields
+		schema.AddExtraResolvers("NodeComponent", []string{
+			"fixedIn: String! @deprecated(reason: \"use 'fixedBy'\")",
+		}),
 		schema.AddQuery("nodeComponent(id: ID): NodeComponent"),
 		schema.AddQuery("nodeComponents(query: String, scopeQuery: String, pagination: Pagination): [NodeComponent!]!"),
 		schema.AddQuery("nodeComponentCount(query: String): Int!"),
@@ -58,6 +55,7 @@ type NodeComponentResolver interface {
 	NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error)
 	NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error)
 	NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
+	OperatingSystem(ctx context.Context) string
 	PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error)
 	Priority(ctx context.Context) int32
 	RiskScore(ctx context.Context) float64
