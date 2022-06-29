@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
@@ -25,7 +26,8 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
-	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, schema.NodesSchema.OptionsMap)
+	scopedSafeSearcher := postgres.WithScoping(safeSearcher)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(scopedSafeSearcher, schema.NodesSchema.OptionsMap)
 	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
 }
 
