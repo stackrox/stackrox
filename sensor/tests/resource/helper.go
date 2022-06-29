@@ -34,15 +34,15 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-type yamlTestFile struct {
-	kind string
-	file string
+type YamlTestFile struct {
+	Kind string
+	File string
 }
 
 var (
-	NginxDeployment = yamlTestFile{"Deployment", "nginx.yaml"}
-	NginxRole       = yamlTestFile{"Role", "nginx-role.yaml"}
-	NginxRoleBinding = yamlTestFile{"Binding", "nginx-binding.yaml"}
+	NginxDeployment = YamlTestFile{"Deployment", "nginx.yaml"}
+	NginxRole       = YamlTestFile{"Role", "nginx-role.yaml"}
+	NginxRoleBinding = YamlTestFile{"Binding", "nginx-binding.yaml"}
 )
 
 type TestCallback func(t *testing.T, testContext *TestContext)
@@ -97,7 +97,7 @@ func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
 	return c.fakeCentral
 }
 
-func (c *TestContext) RunWithResources(files []yamlTestFile, name string, testCase TestCallback) {
+func (c *TestContext) RunWithResources(files []YamlTestFile, name string, testCase TestCallback) {
 	c.t.Run(name, func(t *testing.T) {
 		_, removeNamespace, err := createTestNs(context.Background(), c.r, "sensor-integration")
 		defer utils.IgnoreError(removeNamespace)
@@ -133,23 +133,23 @@ func (c *TestContext) RunBare(name string, testCase TestCallback) {
 }
 
 
-func (c *TestContext) RunWithResourcesPermutation(files []yamlTestFile, name string, testCase TestCallback) {
-	runPermutation(files, 0, func(f []yamlTestFile) {
-		newF := make([]yamlTestFile, len(f))
+func (c *TestContext) RunWithResourcesPermutation(files []YamlTestFile, name string, testCase TestCallback) {
+	runPermutation(files, 0, func(f []YamlTestFile) {
+		newF := make([]YamlTestFile, len(f))
 		copy(newF, f)
 		c.RunWithResources(newF, fmt.Sprintf("%s_Permutation_%s", name, permutationKind(newF)), testCase)
 	})
 }
 
-func permutationKind(perm []yamlTestFile) string {
+func permutationKind(perm []YamlTestFile) string {
 	kinds := make([]string, len(perm))
 	for i, p := range perm {
-		kinds[i] = p.kind
+		kinds[i] = p.Kind
 	}
 	return strings.Join(kinds, "_")
 }
 
-func runPermutation(files []yamlTestFile, i int, cb func([]yamlTestFile)) {
+func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
 	if i > len(files) {
 		cb(files)
 		return
@@ -163,10 +163,10 @@ func runPermutation(files []yamlTestFile, i int, cb func([]yamlTestFile)) {
 }
 
 func startSensorAndFakeCentral(env *envconf.Config) (*centralDebug.FakeService, func()) {
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../tools/local-sensor/certs/cert.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../tools/local-sensor/certs/key.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../tools/local-sensor/certs/caCert.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "../../../tools/local-sensor/certs/caKey.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../../tools/local-sensor/certs/cert.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../../tools/local-sensor/certs/key.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../../tools/local-sensor/certs/caCert.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "../../../../tools/local-sensor/certs/caKey.pem"))
 
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
 		message.SensorHello("1234"),
@@ -236,12 +236,12 @@ func objByKind(kind string) k8s.Object {
 	}
 }
 
-func (c *TestContext) ApplyFile(ctx context.Context, ns string, file yamlTestFile) (func() error, error) {
-	d := os.DirFS("yaml")
-	obj := objByKind(file.kind)
+func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFile) (func() error, error) {
+	d := os.DirFS("../yaml")
+	obj := objByKind(file.Kind)
 	if err := decoder.DecodeFile(
 		d,
-		file.file,
+		file.File,
 		obj,
 		decoder.MutateNamespace(ns),
 	); err != nil {
@@ -253,7 +253,7 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file yamlTestFil
 	}
 
 	// Only wait for deployment events to be fully processed
-	if file.kind == "Deployment" {
+	if file.Kind == "Deployment" {
 		if err := c.waitForResource(5 * time.Second, deploymentName(obj.GetName())); err != nil {
 			return nil, err
 		}

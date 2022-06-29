@@ -1,4 +1,4 @@
-package resource
+package role
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/tests/resource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -38,7 +39,7 @@ func assertLastDeploymentHasPermissionLevel(t *testing.T, messages []*central.Ms
 }
 
 type RoleDependencySuite struct {
-	testContext *TestContext
+	testContext *resource.TestContext
 	suite.Suite
 }
 
@@ -49,7 +50,7 @@ func Test_RoleDependency(t *testing.T) {
 var _ suite.SetupAllSuite = &RoleDependencySuite{}
 
 func (s *RoleDependencySuite) SetupSuite() {
-	if testContext, err := NewContext(s.T()); err != nil {
+	if testContext, err := resource.NewContext(s.T()); err != nil {
 		s.Fail("failed to setup test context: %s", err)
 	} else {
 		s.testContext = testContext
@@ -58,11 +59,11 @@ func (s *RoleDependencySuite) SetupSuite() {
 
 func (s *RoleDependencySuite) Test_PermutationTest() {
 	s.testContext.RunWithResourcesPermutation(
-		[]yamlTestFile{
-			NginxDeployment,
-			NginxRole,
-			NginxRoleBinding,
-		}, "Role Dependency", func(t *testing.T, testC *TestContext) {
+		[]resource.YamlTestFile{
+			resource.NginxDeployment,
+			resource.NginxRole,
+			resource.NginxRoleBinding,
+		}, "Role Dependency", func(t *testing.T, testC *resource.TestContext) {
 			// Test context already takes care of creating and destroying resources
 			time.Sleep(2 * time.Second)
 			assertLastDeploymentHasPermissionLevel(
@@ -77,10 +78,10 @@ func (s *RoleDependencySuite) Test_PermutationTest() {
 
 func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 	s.testContext.RunWithResources(
-		[]yamlTestFile{
-			NginxDeployment,
-			NginxRole,
-		}, "Permission level is set to None if no binding is found", func(t *testing.T, testC *TestContext) {
+		[]resource.YamlTestFile{
+			resource.NginxDeployment,
+			resource.NginxRole,
+		}, "Permission level is set to None if no binding is found", func(t *testing.T, testC *resource.TestContext) {
 			// Test context already takes care of creating and destroying resources
 			time.Sleep(2 * time.Second)
 			assertLastDeploymentHasPermissionLevel(
@@ -93,16 +94,16 @@ func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 }
 
 func (s *RoleDependencySuite) Test_MultipleDeploymentUpdates() {
-	s.testContext.RunBare("Update permission level", func(t *testing.T, testC *TestContext) {
-		deleteDep, err := testC.ApplyFile(context.Background(), "sensor-integration", NginxDeployment)
+	s.testContext.RunBare("Update permission level", func(t *testing.T, testC *resource.TestContext) {
+		deleteDep, err := testC.ApplyFile(context.Background(), "sensor-integration", resource.NginxDeployment)
 		defer utils.IgnoreError(deleteDep)
 		require.NoError(t, err)
 
-		deleteRoleBinding, err := testC.ApplyFile(context.Background(), "sensor-integration", NginxRoleBinding)
+		deleteRoleBinding, err := testC.ApplyFile(context.Background(), "sensor-integration", resource.NginxRoleBinding)
 		defer utils.IgnoreError(deleteRoleBinding)
 		require.NoError(t, err)
 
-		deleteRole, err := testC.ApplyFile(context.Background(), "sensor-integration", NginxRole)
+		deleteRole, err := testC.ApplyFile(context.Background(), "sensor-integration", resource.NginxRole)
 		defer utils.IgnoreError(deleteRole)
 		require.NoError(t, err)
 

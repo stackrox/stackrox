@@ -467,10 +467,11 @@ go-unit-tests: build-prep test-prep
 
 .PHONE: sensor-integration-test
 sensor-integration-test: build-prep test-prep
-	set -o pipefail ; \
-	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep '^github.com/stackrox/rox/sensor/tests') \
-		| tee test-output/sensor-integration.log
+	set -eo pipefail ; \
+	for package in $(shell git ls-files ./sensor/tests | grep '_test.go' | xargs -n 1 dirname | uniq | sort | sed -e 's/sensor\/tests\///'); do \
+		CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
+		| tee test-output/$$(echo $$package | sed -e 's/\//\_/').integration.log; \
+	done \
 
 .PHONY: go-postgres-unit-tests
 go-postgres-unit-tests: build-prep test-prep
