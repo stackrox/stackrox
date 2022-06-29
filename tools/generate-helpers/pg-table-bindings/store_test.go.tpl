@@ -30,7 +30,7 @@ type {{$namePrefix}}StoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store Store
-	pool *pgxpool.Pool
+	testDB *pgtest.TestPostgres
 }
 
 func Test{{$namePrefix}}Store(t *testing.T) {
@@ -46,33 +46,19 @@ func (s *{{$namePrefix}}StoreSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.Require().NoError(err)
-
-	Destroy(ctx, pool)
-
-	s.pool = pool
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *{{$namePrefix}}StoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE {{ .Schema.Table }} CASCADE")
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE {{ .Schema.Table }} CASCADE")
 	s.T().Log("{{ .Schema.Table }}", tag)
 	s.NoError(err)
 }
 
 func (s *{{$namePrefix}}StoreSuite) TearDownSuite() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+    s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
@@ -90,7 +76,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
     {{if and (not .JoinTable) (eq (len .Schema.RelationshipsToDefineAsForeignKeys) 0) -}}
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped)}}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     withNoAccessCtx := sac.WithNoAccess(ctx)
     {{- end }}
 
@@ -104,7 +90,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(1, {{$name}}Count)
 
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
     {{$name}}Count, err = store.Count(withNoAccessCtx)
     s.NoError(err)
     s.Zero({{$name}}Count)
@@ -114,7 +100,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.True({{$name}}Exists)
 	s.NoError(store.Upsert(ctx, {{$name}}))
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped)}}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
 	s.ErrorIs(store.Upsert(withNoAccessCtx, {{$name}}), sac.ErrResourceAccessDenied)
     {{- end }}
 
@@ -129,9 +115,11 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
+	{{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
     s.ErrorIs(store.Delete(withNoAccessCtx, {{template "paramList" $}}), sac.ErrResourceAccessDenied)
-    {{- end }}
+	{{- else }}
+	s.NoError(store.Delete(withNoAccessCtx, {{template "paramList" $}}))
+	{{- end }}
 
 	var {{$name}}s []*{{.Type}}
     for i := 0; i < 200; i++ {

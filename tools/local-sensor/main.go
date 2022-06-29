@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -61,6 +62,7 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 
 type localSensorConfig struct {
 	Duration           time.Duration
+	OutputFormat       string
 	CentralOutput      string
 	RecordK8sEnabled   bool
 	RecordK8sFile      string
@@ -72,10 +74,56 @@ type localSensorConfig struct {
 	Delay              time.Duration
 }
 
+const (
+	jsonFormat string = "json"
+	rawFormat  string = "raw"
+)
+
+func writeOutputInJSONFormat(messages []*central.MsgFromSensor, start, end time.Time, outfile string) {
+	dateFormat := "02.01.15 11:06:39"
+	data, err := json.Marshal(&sensorMessagesJSONOutput{
+		ScenarioStart:      start.Format(dateFormat),
+		ScenarioEnd:        end.Format(dateFormat),
+		MessagesFromSensor: messages,
+	})
+	utils.CrashOnError(err)
+	utils.CrashOnError(os.WriteFile(outfile, data, 0644))
+}
+
+func writeOutputInBinaryFormat(messages []*central.MsgFromSensor, _, _ time.Time, outfile string) {
+	file, err := os.OpenFile(outfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	defer func() {
+		utils.CrashOnError(file.Close())
+	}()
+	utils.CrashOnError(err)
+	for _, m := range messages {
+		d, err := m.Marshal()
+		utils.CrashOnError(err)
+		buf := make([]byte, 4)
+		binary.LittleEndian.PutUint32(buf, uint32(len(d)))
+		_, err = file.Write(buf)
+		utils.CrashOnError(err)
+		_, err = file.Write(d)
+		utils.CrashOnError(err)
+	}
+	utils.CrashOnError(file.Sync())
+}
+
+var validFormats = map[string]func([]*central.MsgFromSensor, time.Time, time.Time, string){
+	jsonFormat: writeOutputInJSONFormat,
+	rawFormat:  writeOutputInBinaryFormat,
+}
+
+func isValidOutputFormat(format string) bool {
+	_, ok := validFormats[format]
+	return ok
+}
+
 func mustGetCommandLineArgs() localSensorConfig {
 	sensorConfig := localSensorConfig{
 		Verbose:            false,
 		Duration:           0,
+		OutputFormat:       "json",
 		CentralOutput:      "central-out.json",
 		RecordK8sEnabled:   false,
 		RecordK8sFile:      "k8s-trace.jsonl",
@@ -88,6 +136,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.BoolVar(&sensorConfig.Verbose, "verbose", sensorConfig.Verbose, "prints all messages to stdout as well as to the output file")
 	flag.DurationVar(&sensorConfig.Duration, "duration", sensorConfig.Duration, "duration that the scenario should run (leave it empty to run it without timeout)")
 	flag.StringVar(&sensorConfig.CentralOutput, "central-out", sensorConfig.CentralOutput, "file to store the events that would be sent to central")
+	flag.StringVar(&sensorConfig.OutputFormat, "format", sensorConfig.OutputFormat, "format of sensor's events file: 'raw' or 'json'")
 	flag.BoolVar(&sensorConfig.RecordK8sEnabled, "record", sensorConfig.RecordK8sEnabled, "whether to record a trace with k8s events")
 	flag.StringVar(&sensorConfig.RecordK8sFile, "record-out", sensorConfig.RecordK8sFile, "a file where recorded trace would be stored")
 	flag.BoolVar(&sensorConfig.ReplayK8sEnabled, "replay", sensorConfig.ReplayK8sEnabled, "whether to reply recorded a trace with k8s events")
@@ -110,11 +159,15 @@ func mustGetCommandLineArgs() localSensorConfig {
 		log.Fatalf("trace source empty")
 	}
 
+	if !isValidOutputFormat(sensorConfig.OutputFormat) {
+		log.Fatalf("invalid format '%s'", sensorConfig.OutputFormat)
+	}
+
 	sensorConfig.ReplayK8sTraceFile = path.Clean(sensorConfig.ReplayK8sTraceFile)
 	return sensorConfig
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string, cancelFunc context.CancelFunc) {
+func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string, outputFormat string, cancelFunc context.CancelFunc) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
@@ -122,7 +175,7 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 	cancelFunc()
 	endTime := time.Now()
 	allMessages := fakeCentral.GetAllMessages()
-	dumpMessages(allMessages, startTime, endTime, outfile)
+	dumpMessages(allMessages, startTime, endTime, outfile, outputFormat)
 	os.Exit(0)
 }
 
@@ -160,7 +213,7 @@ func main() {
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	go registerHostKillSignals(startTime, fakeCentral, localConfig.CentralOutput, cancelFunc)
+	go registerHostKillSignals(startTime, fakeCentral, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc)
 
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	defer shutdownFakeServer()
@@ -232,7 +285,7 @@ func main() {
 	<-time.Tick(localConfig.Duration)
 	endTime := time.Now()
 	allMessages := fakeCentral.GetAllMessages()
-	dumpMessages(allMessages, startTime, endTime, localConfig.CentralOutput)
+	dumpMessages(allMessages, startTime, endTime, localConfig.CentralOutput, localConfig.OutputFormat)
 
 	spyCentral.KillSwitch.Signal()
 }
@@ -243,14 +296,11 @@ type sensorMessagesJSONOutput struct {
 	MessagesFromSensor []*central.MsgFromSensor `json:"messages_from_sensor"`
 }
 
-func dumpMessages(messages []*central.MsgFromSensor, start, end time.Time, outfile string) {
-	dateFormat := "02.01.15 11:06:39"
+func dumpMessages(messages []*central.MsgFromSensor, start, end time.Time, outfile string, outputFormat string) {
 	log.Printf("Dumping all sensor messages to file: %s\n", outfile)
-	data, err := json.Marshal(&sensorMessagesJSONOutput{
-		ScenarioStart:      start.Format(dateFormat),
-		ScenarioEnd:        end.Format(dateFormat),
-		MessagesFromSensor: messages,
-	})
-	utils.CrashOnError(err)
-	utils.CrashOnError(os.WriteFile(outfile, data, 0644))
+	f, ok := validFormats[outputFormat]
+	if !ok {
+		log.Fatalf("invalid format '%s'", outputFormat)
+	}
+	f(messages, start, end, outfile)
 }

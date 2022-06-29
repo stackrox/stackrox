@@ -55,6 +55,12 @@ func IsLeapYear(year int) bool {
 	return year%4 == 0 && (year%100 != 0 || year%400 == 0)
 }
 
+// TimeDiffDays returns the duration t1 - t2 in days
+func TimeDiffDays(t1 time.Time, t2 time.Time) int {
+	hours := int(t1.Sub(t2).Hours())
+	return hours / HoursInDay
+}
+
 // Date is a representation of a time point (in some time zone) with second granularity.
 type Date struct {
 	Year, Month, Day, Hour, Minute, Second int

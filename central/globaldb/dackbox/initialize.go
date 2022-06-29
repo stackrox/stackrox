@@ -6,7 +6,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/pkg/errors"
 	activeComponentDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/index"
+	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	clusterCVEEdgeDackBox "github.com/stackrox/rox/central/clustercveedge/dackbox"
 	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
+	rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/debug"
@@ -67,28 +68,10 @@ var (
 			wrapper:  clusterCVEEdgeIndex.Wrapper{},
 		},
 		{
-			bucket:   imagecomponentDackBox.Bucket,
-			reader:   imagecomponentDackBox.Reader,
-			category: v1.SearchCategory_IMAGE_COMPONENTS,
-			wrapper:  imagecomponentIndex.Wrapper{},
-		},
-		{
 			bucket:   activeComponentDackBox.Bucket,
 			reader:   activeComponentDackBox.Reader,
 			category: v1.SearchCategory_ACTIVE_COMPONENT,
 			wrapper:  activeComponentIndex.Wrapper{},
-		},
-		{
-			bucket:   nodeComponentEdgeDackBox.Bucket,
-			reader:   nodeComponentEdgeDackBox.Reader,
-			category: v1.SearchCategory_NODE_COMPONENT_EDGE,
-			wrapper:  nodeComponentEdgeIndex.Wrapper{},
-		},
-		{
-			bucket:   nodeDackBox.Bucket,
-			reader:   nodeDackBox.Reader,
-			category: v1.SearchCategory_NODES,
-			wrapper:  nodeIndex.Wrapper{},
 		},
 	}
 )
@@ -109,6 +92,12 @@ func init() {
 				wrapper:  imageIndex.Wrapper{},
 			},
 			{
+				bucket:   imagecomponentDackBox.Bucket,
+				reader:   imagecomponentDackBox.Reader,
+				category: v1.SearchCategory_IMAGE_COMPONENTS,
+				wrapper:  imagecomponentIndex.Wrapper{},
+			},
+			{
 				bucket:   deploymentDackBox.Bucket,
 				reader:   deploymentDackBox.Reader,
 				category: v1.SearchCategory_DEPLOYMENTS,
@@ -120,18 +109,30 @@ func init() {
 				category: v1.SearchCategory_IMAGE_VULN_EDGE,
 				wrapper:  imageCVEEdgeIndex.Wrapper{},
 			},
+			{
+				bucket:   nodeDackBox.Bucket,
+				reader:   nodeDackBox.Reader,
+				category: v1.SearchCategory_NODES,
+				wrapper:  nodeIndex.Wrapper{},
+			},
+			{
+				bucket:   nodeComponentEdgeDackBox.Bucket,
+				reader:   nodeComponentEdgeDackBox.Reader,
+				category: v1.SearchCategory_NODE_COMPONENT_EDGE,
+				wrapper:  nodeComponentEdgeIndex.Wrapper{},
+			},
 		}
 		initializedBuckets = append(initializedBuckets, migratedBuckets...)
 	}
 }
 
 // Init runs all registered initialization functions.
-func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, registry indexer.WrapperRegistry, reindexBucket, dirtyBucket, reindexValue []byte) error {
+func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, dirtyBucket []byte) error {
 	synchronized := concurrency.NewSignal()
 
 	for _, initialized := range initializedBuckets {
 		// Register the wrapper to index the objects.
-		registry.RegisterWrapper(initialized.bucket, initialized.wrapper)
+		rawDackbox.RegisterIndex(initialized.bucket, initialized.wrapper)
 
 		if err := queueBucketForIndexing(dacky, indexQ, initialized.category, dirtyBucket, initialized.bucket, initialized.reader); err != nil {
 			return errors.Wrap(err, "unable to initialize dackbox, initialization function failed")

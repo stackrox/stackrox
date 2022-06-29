@@ -116,6 +116,10 @@ build_main_and_bundles() {
     "$ROOT/status.sh" || true
 
     openshift_ci_mods
+    handle_nightly_runs
+
+    info "Status after mods:"
+    "$ROOT/status.sh" || true
 
     info "Make the main image Dockerfile"
     make "$ROOT/image/rhel/Dockerfile.gen"

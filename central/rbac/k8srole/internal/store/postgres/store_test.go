@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -24,7 +23,7 @@ type K8sRolesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
-	pool        *pgxpool.Pool
+	testDB      *pgtest.TestPostgres
 }
 
 func TestK8sRolesStore(t *testing.T) {
@@ -40,33 +39,19 @@ func (s *K8sRolesStoreSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.Require().NoError(err)
-
-	Destroy(ctx, pool)
-
-	s.pool = pool
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *K8sRolesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE k8s_roles CASCADE")
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE k8s_roles CASCADE")
 	s.T().Log("k8s_roles", tag)
 	s.NoError(err)
 }
 
 func (s *K8sRolesStoreSuite) TearDownSuite() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
@@ -94,6 +79,9 @@ func (s *K8sRolesStoreSuite) TestStore() {
 	k8SRoleCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, k8SRoleCount)
+	k8SRoleCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(k8SRoleCount)
 
 	k8SRoleExists, err := store.Exists(ctx, k8SRole.GetId())
 	s.NoError(err)
@@ -111,6 +99,7 @@ func (s *K8sRolesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundK8SRole)
+	s.NoError(store.Delete(withNoAccessCtx, k8SRole.GetId()))
 
 	var k8SRoles []*storage.K8SRole
 	for i := 0; i < 200; i++ {

@@ -8,7 +8,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -22,7 +21,7 @@ type ClusterCvesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
-	pool        *pgxpool.Pool
+	testDB      *pgtest.TestPostgres
 }
 
 func TestClusterCvesStore(t *testing.T) {
@@ -38,33 +37,19 @@ func (s *ClusterCvesStoreSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.Require().NoError(err)
-
-	Destroy(ctx, pool)
-
-	s.pool = pool
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *ClusterCvesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE cluster_cves CASCADE")
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE cluster_cves CASCADE")
 	s.T().Log("cluster_cves", tag)
 	s.NoError(err)
 }
 
 func (s *ClusterCvesStoreSuite) TearDownSuite() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
@@ -81,6 +66,8 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundCVE)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, cVE))
 	foundCVE, exists, err = store.Get(ctx, cVE.GetId())
 	s.NoError(err)
@@ -90,11 +77,15 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	cVECount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, cVECount)
+	cVECount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(cVECount)
 
 	cVEExists, err := store.Exists(ctx, cVE.GetId())
 	s.NoError(err)
 	s.True(cVEExists)
 	s.NoError(store.Upsert(ctx, cVE))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, cVE), sac.ErrResourceAccessDenied)
 
 	foundCVE, exists, err = store.Get(ctx, cVE.GetId())
 	s.NoError(err)
@@ -106,6 +97,7 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundCVE)
+	s.NoError(store.Delete(withNoAccessCtx, cVE.GetId()))
 
 	var cVEs []*storage.CVE
 	for i := 0; i < 200; i++ {

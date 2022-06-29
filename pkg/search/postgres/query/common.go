@@ -1,6 +1,8 @@
 package pgsearch
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -77,7 +79,7 @@ func NewTrueQuery() *QueryEntry {
 }
 
 // MatchFieldQuery is a simple query that performs operations on a single field.
-func MatchFieldQuery(dbField *walker.Field, value string, highlight bool) (*QueryEntry, error) {
+func MatchFieldQuery(dbField *walker.Field, value string, highlight bool, now time.Time) (*QueryEntry, error) {
 	if dbField == nil {
 		return nil, nil
 	}
@@ -87,8 +89,7 @@ func MatchFieldQuery(dbField *walker.Field, value string, highlight bool) (*Quer
 	}
 	field, ok := dbField.Schema.OptionsMap.Get(dbField.Search.FieldName)
 	if !ok {
-		log.Infof("Options Map for %s does not have field: %v", dbField.Schema.Table, dbField.Search.FieldName)
 		return nil, nil
 	}
-	return matchFieldQuery(dbField, field, value, highlight)
+	return matchFieldQuery(dbField, field, value, highlight, now)
 }

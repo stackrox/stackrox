@@ -10,7 +10,7 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/image/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"

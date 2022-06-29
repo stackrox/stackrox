@@ -8,7 +8,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -22,7 +21,7 @@ type NodeComponentsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
-	pool        *pgxpool.Pool
+	testDB      *pgtest.TestPostgres
 }
 
 func TestNodeComponentsStore(t *testing.T) {
@@ -38,33 +37,19 @@ func (s *NodeComponentsStoreSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.Require().NoError(err)
-
-	Destroy(ctx, pool)
-
-	s.pool = pool
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *NodeComponentsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE node_components CASCADE")
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE node_components CASCADE")
 	s.T().Log("node_components", tag)
 	s.NoError(err)
 }
 
 func (s *NodeComponentsStoreSuite) TearDownSuite() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
@@ -81,6 +66,8 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNodeComponent)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, nodeComponent))
 	foundNodeComponent, exists, err = store.Get(ctx, nodeComponent.GetId())
 	s.NoError(err)
@@ -90,11 +77,15 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	nodeComponentCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, nodeComponentCount)
+	nodeComponentCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(nodeComponentCount)
 
 	nodeComponentExists, err := store.Exists(ctx, nodeComponent.GetId())
 	s.NoError(err)
 	s.True(nodeComponentExists)
 	s.NoError(store.Upsert(ctx, nodeComponent))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, nodeComponent), sac.ErrResourceAccessDenied)
 
 	foundNodeComponent, exists, err = store.Get(ctx, nodeComponent.GetId())
 	s.NoError(err)
@@ -106,6 +97,7 @@ func (s *NodeComponentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNodeComponent)
+	s.NoError(store.Delete(withNoAccessCtx, nodeComponent.GetId()))
 
 	var nodeComponents []*storage.NodeComponent
 	for i := 0; i < 200; i++ {

@@ -8,7 +8,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -22,7 +21,7 @@ type TestMultiKeyStructsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
-	pool        *pgxpool.Pool
+	testDB      *pgtest.TestPostgres
 }
 
 func TestTestMultiKeyStructsStore(t *testing.T) {
@@ -38,33 +37,19 @@ func (s *TestMultiKeyStructsStoreSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.Require().NoError(err)
-
-	Destroy(ctx, pool)
-
-	s.pool = pool
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *TestMultiKeyStructsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE test_multi_key_structs CASCADE")
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE test_multi_key_structs CASCADE")
 	s.T().Log("test_multi_key_structs", tag)
 	s.NoError(err)
 }
 
 func (s *TestMultiKeyStructsStoreSuite) TearDownSuite() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
@@ -81,6 +66,8 @@ func (s *TestMultiKeyStructsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundTestMultiKeyStruct)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, testMultiKeyStruct))
 	foundTestMultiKeyStruct, exists, err = store.Get(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
@@ -90,11 +77,15 @@ func (s *TestMultiKeyStructsStoreSuite) TestStore() {
 	testMultiKeyStructCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, testMultiKeyStructCount)
+	testMultiKeyStructCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(testMultiKeyStructCount)
 
 	testMultiKeyStructExists, err := store.Exists(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.True(testMultiKeyStructExists)
 	s.NoError(store.Upsert(ctx, testMultiKeyStruct))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, testMultiKeyStruct), sac.ErrResourceAccessDenied)
 
 	foundTestMultiKeyStruct, exists, err = store.Get(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
@@ -106,6 +97,7 @@ func (s *TestMultiKeyStructsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestMultiKeyStruct)
+	s.NoError(store.Delete(withNoAccessCtx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2()))
 
 	var testMultiKeyStructs []*storage.TestMultiKeyStruct
 	for i := 0; i < 200; i++ {

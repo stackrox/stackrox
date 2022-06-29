@@ -1,0 +1,30 @@
+name: Finish Release
+on:
+  release:
+    types: [released]
+
+env:
+  slack_channel: C03KSV3N6N8 #test-release-automation
+
+jobs:
+  notify:
+    name: Notify about ${{github.event.release.title}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          channel-id: ${{env.slack_channel}}
+          payload: >-
+            { "blocks": [
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":white_check_mark: *<${{github.event.release.url}} | ${{github.event.release.name}}> has been published on GitHub.*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":arrow_right: Look for a CI generated PR created in `stackrox/release-artifacts` repository
+            and confirm that members of the `@release-publishers` Slack group got notified about
+            it.\n\n":arrow_right: Let's trigger the downstream release!" }}
+            ]}

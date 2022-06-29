@@ -34,17 +34,19 @@ export_test_environment() {
     ci_export ADMISSION_CONTROLLER "${ADMISSION_CONTROLLER:-true}"
     ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-ebpf}"
     ci_export GCP_IMAGE_TYPE "${GCP_IMAGE_TYPE:-COS}"
-    ci_export LOAD_BALANCER "${LOAD_BALANCER:-none}"
+    ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
     ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
     ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
     ci_export SCANNER_SUPPORT "${SCANNER_SUPPORT:-true}"
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
+    ci_export ROX_DECOMMISSIONED_CLUSTER_RETENTION "${ROX_DECOMMISSIONED_CLUSTER_RETENTION:-true}"
     ci_export ROX_NEW_POLICY_CATEGORIES "${ROX_NEW_POLICY_CATEGORIES:-true}"
     ci_export ROX_POLICIES_PATTERNFLY "${ROX_POLICIES_PATTERNFLY:-true}"
     ci_export ROX_SECURITY_METRICS_PHASE_ONE "${ROX_SECURITY_METRICS_PHASE_ONE:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
+    ci_export ROX_FRONTEND_VM_UPDATES "${ROX_FRONTEND_VM_UPDATES:-true}"
 }
 
 deploy_central() {
@@ -52,7 +54,7 @@ deploy_central() {
 
     # If we're running a nightly build or race condition check, then set CGO_CHECKS=true so that central is
     # deployed with strict checks
-    if is_nightly_tag || pr_has_label ci-race-tests; then
+    if is_nightly_run || pr_has_label ci-race-tests; then
         ci_export CGO_CHECKS "true"
     fi
 

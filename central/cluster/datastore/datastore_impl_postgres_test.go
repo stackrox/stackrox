@@ -91,6 +91,18 @@ func (s *ClusterPostgresDataStoreTestSuite) TearDownSuite() {
 	s.envIsolator.RestoreAll()
 }
 
+func (s *ClusterPostgresDataStoreTestSuite) TestSearchClusterStatus() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	// At some point in the postgres migration, the following query did trigger an error
+	// because of a missing options map in the cluster health status schema.
+	// This test is there to ensure the search does not end in error for technical reasons.
+	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterStatus, storage.ClusterHealthStatus_UNHEALTHY.String()).ProtoQuery()
+	res, err := s.clusterDatastore.Search(ctx, query)
+	s.NoError(err)
+	s.Equal(0, len(res))
+}
+
 func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	ctx := sac.WithAllAccess(context.Background())
 

@@ -116,6 +116,11 @@
   {{ $_ := set $env "platform" $platform }}
 {{ end }}
 
+[<- if .AutoSensePodSecurityPolicies >]
+{{/* Detect enablePodSecurityPolicies */}}
+{{ include "srox.autoSensePodSecurityPolicies" (list $) }}
+[<- end >]
+
 {{/* Apply defaults */}}
 {{ $defaultsCfg := dict }}
 {{ $platformCfgFile := dict }}

@@ -29,6 +29,7 @@ import (
 	testParent1 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testparent1"
 	testParent2 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testparent2"
 	testParent3 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testparent3"
+	testShortCircuit "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testshortcircuit"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -72,6 +73,7 @@ type GraphQueriesTestSuite struct {
 	testGGrandchild1Store  testGGrandchild1.Store
 	testG2Grandchild1Store testG2Grandchild1.Store
 	testG3Grandchild1Store testG3Grandchild1.Store
+	testShortCircuitStore  testShortCircuit.Store
 }
 
 func (s *GraphQueriesTestSuite) SetupTest() {
@@ -93,7 +95,6 @@ func (s *GraphQueriesTestSuite) SetupTest() {
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	s.pool = pool
 	s.testGrandparentStore = testGrandparent.CreateTableAndNewStore(testCtx, pool, gormDB)
-	s.testGrandparentStore = testGrandparent.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.testChild1Store = testChild1.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.testChild2Store = testChild2.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.testParent1Store = testParent1.CreateTableAndNewStore(testCtx, pool, gormDB)
@@ -103,6 +104,7 @@ func (s *GraphQueriesTestSuite) SetupTest() {
 	s.testGGrandchild1Store = testGGrandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.testG2Grandchild1Store = testG2Grandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.testG3Grandchild1Store = testG3Grandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testShortCircuitStore = testShortCircuit.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.initializeTestGraph()
 }
 
@@ -170,6 +172,14 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 		Id:  "3",
 		Val: "Child13",
 	}))
+	s.Require().NoError(s.testChild1Store.Upsert(testCtx, &storage.TestChild1{
+		Id:  "4",
+		Val: "Child14",
+	}))
+	s.Require().NoError(s.testChild1Store.Upsert(testCtx, &storage.TestChild1{
+		Id:  "5",
+		Val: "Child15",
+	}))
 
 	s.Require().NoError(s.testGrandChild1Store.Upsert(testCtx, &storage.TestGrandChild1{
 		Id:       "1",
@@ -201,6 +211,23 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 		Id:  "3",
 		Val: "GGrandchild11",
 	}))
+	s.Require().NoError(s.testG2Grandchild1Store.Upsert(testCtx, &storage.TestG2GrandChild1{
+		Id:       "5",
+		ParentId: "3",
+		ChildId:  "10",
+		Val:      "g2GrandChild15",
+	}))
+	s.Require().NoError(s.testG2Grandchild1Store.Upsert(testCtx, &storage.TestG2GrandChild1{
+		Id:       "6",
+		ParentId: "3",
+		ChildId:  "10",
+		Val:      "g2GrandChild16",
+	}))
+	s.Require().NoError(s.testShortCircuitStore.Upsert(testCtx, &storage.TestShortCircuit{
+		Id:             "3",
+		ChildId:        "5",
+		G2GrandchildId: "5",
+	}))
 }
 
 func (s *GraphQueriesTestSuite) mustRunQuery(typeName string, q *v1.Query) []search.Result {
@@ -209,12 +236,16 @@ func (s *GraphQueriesTestSuite) mustRunQuery(typeName string, q *v1.Query) []sea
 	return res
 }
 
-func (s *GraphQueriesTestSuite) assertResultsHaveIDs(results []search.Result, expectedIDs ...string) {
+func (s *GraphQueriesTestSuite) assertResultsHaveIDs(results []search.Result, orderMatters bool, expectedIDs ...string) {
 	idsFromResult := make([]string, 0, len(results))
 	for _, res := range results {
 		idsFromResult = append(idsFromResult, res.ID)
 	}
-	s.ElementsMatch(idsFromResult, expectedIDs)
+	if orderMatters {
+		s.Equal(idsFromResult, expectedIDs)
+	} else {
+		s.ElementsMatch(idsFromResult, expectedIDs)
+	}
 }
 
 type graphQueryTestCase struct {
@@ -230,21 +261,11 @@ type graphQueryTestCase struct {
 
 	expectedResultIDs []string
 
-	only bool
+	orderMatters bool
 }
 
 func (s *GraphQueriesTestSuite) runTestCases(testCases []graphQueryTestCase) {
-	var onlyExists bool
-	for _, c := range testCases {
-		if c.only {
-			onlyExists = true
-			break
-		}
-	}
 	for _, testCase := range testCases {
-		if onlyExists && !testCase.only {
-			continue
-		}
 		s.Run(testCase.desc, func() {
 			q := testCase.q
 			if q == nil {
@@ -258,7 +279,7 @@ func (s *GraphQueriesTestSuite) runTestCases(testCases []graphQueryTestCase) {
 				s.Require().Empty(testCase.queryStrings, "both query and queryStrings specified")
 			}
 			res := s.mustRunQuery(testCase.queriedType, q)
-			s.assertResultsHaveIDs(res, testCase.expectedResultIDs...)
+			s.assertResultsHaveIDs(res, testCase.orderMatters, testCase.expectedResultIDs...)
 		})
 	}
 }
@@ -282,6 +303,81 @@ func (s *GraphQueriesTestSuite) TestQueriesOnGrandParentValue() {
 			queriedType:       "testchild1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
 			expectedResultIDs: []string{"1", "2", "3"},
+		},
+	})
+}
+
+func (s *GraphQueriesTestSuite) TestShortCircuit() {
+	s.runTestCases([]graphQueryTestCase{
+		// Test short circuit as path
+		{
+			desc:              "no query",
+			queriedType:       "testshortcircuit",
+			q:                 search.NewQueryBuilder().ProtoQuery(),
+			orderMatters:      false,
+			expectedResultIDs: []string{"3"},
+		},
+		{
+			desc:              "one query - one table - 1 match",
+			queriedType:       "testshortcircuit",
+			q:                 search.NewQueryBuilder().AddExactMatches(search.TestChild1Val, "Child15").ProtoQuery(),
+			orderMatters:      false,
+			expectedResultIDs: []string{"3"},
+		},
+		{
+			desc:              "one query - one table - match",
+			queriedType:       "testshortcircuit",
+			q:                 search.NewQueryBuilder().AddExactMatches(search.TestChild1Val, "no match").ProtoQuery(),
+			orderMatters:      false,
+			expectedResultIDs: []string{},
+		},
+		{
+			desc:              "two queries - two tables",
+			queriedType:       "testshortcircuit",
+			q:                 search.NewQueryBuilder().AddExactMatches(search.TestChild1Val, "Child15").AddExactMatches(search.TestG2Grandchild1Val, "g2GrandChild15").ProtoQuery(),
+			orderMatters:      false,
+			expectedResultIDs: []string{"3"},
+		},
+		// Test short circuit as fastest path (but does not exist)
+		{
+			desc:              "query that _would_ pass through short circuit",
+			queriedType:       "testchild1",
+			q:                 search.NewQueryBuilder().AddExactMatches(search.TestG2Grandchild1Val, "g2GrandChild16").ProtoQuery(),
+			orderMatters:      false,
+			expectedResultIDs: []string{"2"},
+		},
+	})
+}
+
+func (s *GraphQueriesTestSuite) TestDerived() {
+	s.runTestCases([]graphQueryTestCase{
+		{
+			desc:              "one-hop count",
+			queriedType:       "testgrandparent",
+			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestParent1Count.String()}}}},
+			orderMatters:      true,
+			expectedResultIDs: []string{"2", "1"},
+		},
+		{
+			desc:              "one-hop count (reversed)",
+			queriedType:       "testgrandparent",
+			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestParent1Count.String(), Reversed: true}}}},
+			orderMatters:      true,
+			expectedResultIDs: []string{"1", "2"},
+		},
+		{
+			desc:              "two-hop count",
+			queriedType:       "testgrandparent",
+			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestChild1Count.String()}}}},
+			orderMatters:      true,
+			expectedResultIDs: []string{"2", "1"},
+		},
+		{
+			desc:              "two-hop count (reversed)",
+			queriedType:       "testgrandparent",
+			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestChild1Count.String(), Reversed: true}}}},
+			orderMatters:      true,
+			expectedResultIDs: []string{"1", "2"},
 		},
 	})
 }

@@ -12,7 +12,11 @@ import {
 import SummaryCounts from './SummaryCounts';
 import ScopeBar from './ScopeBar';
 
+import ImagesAtMostRisk from './Widgets/ImagesAtMostRisk';
 import ViolationsByPolicyCategory from './Widgets/ViolationsByPolicyCategory';
+import DeploymentsAtMostRisk from './Widgets/DeploymentsAtMostRisk';
+import AgingImages from './Widgets/AgingImages';
+import ViolationsByPolicySeverity from './Widgets/ViolationsByPolicySeverity';
 
 function DashboardPage() {
     return (
@@ -40,9 +44,21 @@ function DashboardPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection>
-                <Grid hasGutter>
+                <Grid hasGutter style={{ gridAutoRows: 'max-content' }}>
+                    <GridItem lg={6}>
+                        <ViolationsByPolicySeverity />
+                    </GridItem>
+                    <GridItem lg={6}>
+                        <ImagesAtMostRisk />
+                    </GridItem>
+                    <GridItem lg={6}>
+                        <DeploymentsAtMostRisk />
+                    </GridItem>
                     <GridItem lg={6}>
                         <ViolationsByPolicyCategory />
+                    </GridItem>
+                    <GridItem lg={6}>
+                        <AgingImages />
                     </GridItem>
                 </Grid>
             </PageSection>

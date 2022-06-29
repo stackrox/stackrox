@@ -5,6 +5,7 @@ package postgres
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -18,6 +19,49 @@ import (
 var (
 	deploymentBaseSchema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 )
+
+func TestReplaceVars(t *testing.T) {
+	cases := []struct {
+		query  string
+		result string
+	}{
+		{
+			query:  "",
+			result: "",
+		},
+		{
+			"$$",
+			"$1",
+		},
+		{
+			query:  "select * from table where column > $$ and true",
+			result: "select * from table where column > $1 and true",
+		},
+		{
+			"$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$",
+			"$1 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.query, func(t *testing.T) {
+			assert.Equal(t, c.result, replaceVars(c.query))
+		})
+	}
+}
+
+func BenchmarkReplaceVars(b *testing.B) {
+	veryLongString := strings.Repeat("$$ ", 1000)
+	b.Run("short", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			replaceVars("$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$")
+		}
+	})
+	b.Run("long", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			replaceVars(veryLongString)
+		}
+	})
+}
 
 func TestMultiTableQueries(t *testing.T) {
 	t.Parallel()

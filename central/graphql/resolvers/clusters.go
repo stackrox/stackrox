@@ -74,6 +74,7 @@ func init() {
 			"openShiftClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!",
 			"openShiftClusterVulnerabilityCount(query: String): Int!",
 			"passingControls(query: String): [ComplianceControl!]!",
+			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!",
 			"policies(query: String, pagination: Pagination): [Policy!]!",
 			"policyCount(query: String): Int!",
@@ -114,8 +115,6 @@ func init() {
 				"@deprecated(reason: \"use 'openShiftClusterVulnerabilities'\")",
 			"openShiftVulnCount(query: String): Int! " +
 				"@deprecated(reason: \"use 'openShiftClusterVulnerabilityCount'\")",
-			"plottedVulns(query: String): PlottedVulnerabilities!" +
-				"@deprecated(reason: \"use 'plottedNodeVulnerabilities' or 'plottedImageVulnerabilities'\")",
 		}),
 		schema.AddQuery("clusters(query: String, pagination: Pagination): [Cluster!]!"),
 		schema.AddQuery("clusterCount(query: String): Int!"),
@@ -1119,11 +1118,6 @@ func (resolver *clusterResolver) LatestViolation(ctx context.Context, args RawQu
 	return getLatestViolationTime(ctx, resolver.root, q)
 }
 
-func (resolver *clusterResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
-}
-
 // PlottedNodeVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *clusterResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlottedNodeVulnerabilities")
@@ -1134,6 +1128,12 @@ func (resolver *clusterResolver) PlottedNodeVulnerabilities(ctx context.Context,
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver PlottedNodeVulnerabilities in Cluster does not support postgres yet")
+}
+
+// PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
+func (resolver *clusterResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlottedImageVulnerabilities")
+	return newPlottedImageVulnerabilitiesResolver(resolver.withClusterScope(ctx), resolver.root, args)
 }
 
 func (resolver *clusterResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

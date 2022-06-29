@@ -2,7 +2,9 @@ package datastore
 
 import (
 	"context"
+	"reflect"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/config/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -51,5 +53,42 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 		return sac.ErrResourceAccessDenied
 	}
 
+	if clusterRetentionConf := config.GetPrivateConfig().GetDecommissionedClusterRetention(); clusterRetentionConf != nil {
+		oldConf, err := d.getClusterRetentionConfig(ctx)
+		if err != nil {
+			return err
+		}
+		if oldConf != nil {
+			clusterRetentionConf.CreatedAt = oldConf.GetCreatedAt()
+		} else {
+			clusterRetentionConf.CreatedAt = types.TimestampNow()
+		}
+
+		hasUpdate := !clusterRetentionConfigsEqual(oldConf, clusterRetentionConf)
+
+		if hasUpdate {
+			clusterRetentionConf.LastUpdated = types.TimestampNow()
+		}
+	}
 	return d.store.Upsert(ctx, config)
+}
+
+func (d *datastoreImpl) getClusterRetentionConfig(ctx context.Context) (*storage.DecommissionedClusterRetentionConfig, error) {
+	conf, err := d.GetConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return conf.GetPrivateConfig().GetDecommissionedClusterRetention(), nil
+}
+
+func clusterRetentionConfigsEqual(c1 *storage.DecommissionedClusterRetentionConfig,
+	c2 *storage.DecommissionedClusterRetentionConfig) bool {
+	if c1 == nil && c2 == nil {
+		return true
+	}
+	if c1 == nil || c2 == nil {
+		return false
+	}
+	return c1.GetRetentionDurationDays() == c2.GetRetentionDurationDays() &&
+		reflect.DeepEqual(c1.GetIgnoreClusterLabels(), c2.GetIgnoreClusterLabels())
 }

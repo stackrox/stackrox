@@ -66,7 +66,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
 	if !features.PostgresDatastore.Enabled() {
-		query := withImageTypeFiltering(q.String())
+		query := withImageCveTypeFiltering(q.String())
 		return resolver.imageVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 	}
 	// TODO add postgres support
@@ -77,7 +77,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
 	if !features.PostgresDatastore.Enabled() {
-		query := withImageTypeFiltering(args.String())
+		query := withImageCveTypeFiltering(args.String())
 		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 	}
 	// TODO add postgres support
@@ -88,16 +88,16 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
 	if !features.PostgresDatastore.Enabled() {
-		query := withImageTypeFiltering(args.String())
+		query := withImageCveTypeFiltering(args.String())
 		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
 	}
 	// TODO add postgres support
 	return nil, errors.New("Resolver ImageVulnCounter does not support postgres yet")
 }
 
-// withImageTypeFiltering adds a conjunction as a raw query to filter vulnerability type by image
+// withImageCveTypeFiltering adds a conjunction as a raw query to filter vulnerability type by image
 // this is needed to support pre postgres requests
-func withImageTypeFiltering(q string) string {
+func withImageCveTypeFiltering(q string) string {
 	return search.AddRawQueriesAsConjunction(q,
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_IMAGE_CVE.String()).Query())
 }

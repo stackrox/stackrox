@@ -88,7 +88,7 @@ func (suite *ActiveComponentStoreTestSuite) TestUpsertDelete() {
 	expectedMapToContainerNames := make(map[int][]string)
 	for _, testCase := range testCases {
 		suite.T().Run(testCase.name, func(t *testing.T) {
-			var acs []*converter.CompleteActiveComponent
+			var acs []*storage.ActiveComponent
 			activeContext := make(map[string]*storage.ActiveComponent_ActiveContext)
 			for _, containerName := range testCase.containerNames {
 				activeContext[containerName] = &storage.ActiveComponent_ActiveContext{
@@ -98,13 +98,11 @@ func (suite *ActiveComponentStoreTestSuite) TestUpsertDelete() {
 			for upsert := range testCase.upserts {
 				deploymentID := deployments[upsert/3]
 				componentID := imageComponents[upsert%3]
-				ac := &converter.CompleteActiveComponent{
-					DeploymentID: deploymentID,
-					ComponentID:  componentID,
-					ActiveComponent: &storage.ActiveComponent{
-						Id:             converter.ComposeID(deploymentID, componentID),
-						ActiveContexts: activeContext,
-					},
+				ac := &storage.ActiveComponent{
+					Id:                  converter.ComposeID(deploymentID, componentID),
+					DeploymentId:        deploymentID,
+					ComponentId:         componentID,
+					ActiveContextsSlice: converter.ConvertActiveContextsMapToSlice(activeContext),
 				}
 				acs = append(acs, ac)
 				expectedMapToContainerNames[upsert] = testCase.containerNames
@@ -140,8 +138,8 @@ func (suite *ActiveComponentStoreTestSuite) verify(deployments, imageComponents 
 		ac, exist, err := suite.store.Get(id)
 		suite.Assert().NoError(err)
 		suite.Assert().True(exist)
-		suite.Assert().Len(ac.ActiveContexts, len(containerNames))
-		for _, context := range ac.ActiveContexts {
+		suite.Assert().Len(ac.GetActiveContextsSlice(), len(containerNames))
+		for _, context := range ac.GetActiveContextsSlice() {
 			suite.Assert().Contains(containerNames, context.ContainerName)
 		}
 		tos := dackTxn.Graph().GetRefsToPrefix(componentDackBox.BucketHandler.GetKey(componentID), acDackBox.Bucket)

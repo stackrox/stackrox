@@ -8,7 +8,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -22,7 +21,7 @@ type NodeCvesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
-	pool        *pgxpool.Pool
+	testDB      *pgtest.TestPostgres
 }
 
 func TestNodeCvesStore(t *testing.T) {
@@ -38,33 +37,19 @@ func (s *NodeCvesStoreSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.Require().NoError(err)
-
-	Destroy(ctx, pool)
-
-	s.pool = pool
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *NodeCvesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE node_cves CASCADE")
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE node_cves CASCADE")
 	s.T().Log("node_cves", tag)
 	s.NoError(err)
 }
 
 func (s *NodeCvesStoreSuite) TearDownSuite() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
@@ -81,6 +66,8 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNodeCVE)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, nodeCVE))
 	foundNodeCVE, exists, err = store.Get(ctx, nodeCVE.GetId())
 	s.NoError(err)
@@ -90,11 +77,15 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	nodeCVECount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, nodeCVECount)
+	nodeCVECount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(nodeCVECount)
 
 	nodeCVEExists, err := store.Exists(ctx, nodeCVE.GetId())
 	s.NoError(err)
 	s.True(nodeCVEExists)
 	s.NoError(store.Upsert(ctx, nodeCVE))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, nodeCVE), sac.ErrResourceAccessDenied)
 
 	foundNodeCVE, exists, err = store.Get(ctx, nodeCVE.GetId())
 	s.NoError(err)
@@ -106,6 +97,7 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNodeCVE)
+	s.NoError(store.Delete(withNoAccessCtx, nodeCVE.GetId()))
 
 	var nodeCVEs []*storage.NodeCVE
 	for i := 0; i < 200; i++ {

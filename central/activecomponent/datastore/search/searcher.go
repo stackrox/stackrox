@@ -3,8 +3,8 @@ package search
 import (
 	"context"
 
+	acIndexer "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
-	acIndexer "github.com/stackrox/rox/central/activecomponent/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"

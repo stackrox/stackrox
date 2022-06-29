@@ -87,6 +87,7 @@ export const clusters = {
     single: 'v1/clusters/**',
     list: 'v1/clusters',
     clusterDefaults: '/v1/cluster-defaults',
+    sensorUpgradesConfig: '/v1/sensorupgrades/config',
     zip: 'api/extensions/clusters/zip',
 };
 
@@ -222,6 +223,9 @@ const vulnMgmtEntitiesOp = {
     clusters: 'getClusters',
     components: 'getComponents',
     cves: 'getCves',
+    'image-cves': 'getImageCves',
+    'node-cves': 'getNodeCves',
+    'cluster-cves': 'getClusterCves',
     deployments: 'getDeployments',
     images: 'getImages',
     namespaces: 'getNamespaces',

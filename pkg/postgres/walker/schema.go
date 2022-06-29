@@ -320,7 +320,9 @@ func (s *Schema) ResolveReferences(schemaProvider func(messageTypeName string) *
 		fieldRef.ColumnName = columnNameInOtherSchema
 
 		addColumnPairToRelationshipsSlice(&s.References, s, otherTable, f.ColumnName, columnNameInOtherSchema, fieldRef.NoConstraint)
-		addColumnPairToRelationshipsSlice(&otherTable.ReferencedBy, otherTable, s, columnNameInOtherSchema, f.ColumnName, fieldRef.NoConstraint)
+		if !fieldRef.Directional {
+			addColumnPairToRelationshipsSlice(&otherTable.ReferencedBy, otherTable, s, columnNameInOtherSchema, f.ColumnName, fieldRef.NoConstraint)
+		}
 	}
 
 	for _, child := range s.Children {
@@ -385,6 +387,9 @@ type foreignKeyRef struct {
 	// If true, this column (foreign key) depends on a column in other table, but does not have a constraint.
 	NoConstraint bool
 
+	// If true, this means that we only want to create a graph edge out from this field and not have it be bi-directional
+	Directional bool
+
 	// The referenced schema and column name are what we ultimately need for the foreign key reference.
 	// However, we don't want to put this information in the proto message itself, since we
 	// don't want to bleed that level of detail from the  SQL implementation into the proto.
@@ -428,11 +433,19 @@ type Field struct {
 	Type string
 
 	// DataType is the internal type
-	DataType  DataType
-	SQLType   string
-	ModelType string
-	Options   PostgresOptions
-	Search    SearchField
+	DataType            DataType
+	SQLType             string
+	ModelType           string
+	Options             PostgresOptions
+	Search              SearchField
+	DerivedSearchFields []DerivedSearchField
+}
+
+// DerivedSearchField represents a search field that's derived.
+// It includes the name of the derived field, as well as the derivation type.
+type DerivedSearchField struct {
+	FieldName      string
+	DerivationType search.DerivationType
 }
 
 // Getter returns the path to the object. If variable is true, then the value is just

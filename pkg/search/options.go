@@ -2,8 +2,6 @@ package search
 
 import (
 	"strings"
-
-	"github.com/stackrox/rox/pkg/set"
 )
 
 // A FieldLabel is the label we use to refer to a search field, as a human-readable shortcut.
@@ -13,8 +11,6 @@ type FieldLabel string
 
 // This block enumerates all valid FieldLabels.
 var (
-	FieldLabelSet = set.NewStringSet()
-
 	// DocID is a special value for document identifier in the Bleve index.
 	// Every document we put in the index has identifier. In most cases we simply get this identifier from
 	// entity.GetId(), unless the getter is overridden in the call to blevebindings-wrapper with --id-func argument.
@@ -35,6 +31,7 @@ var (
 	CollectorStatus        = newFieldLabel("Collector Status")
 	AdmissionControlStatus = newFieldLabel("Admission Control Status")
 	ScannerStatus          = newFieldLabel("Scanner Status")
+	LastContactTime        = newFieldLabel("Last Contact")
 
 	PolicyID       = newFieldLabel("Policy ID")
 	Enforcement    = newFieldLabel("Enforcement")
@@ -244,10 +241,10 @@ var (
 	SORTEnforcement    = newFieldLabel("SORT_Enforcement")
 
 	// Following are derived fields
-	NamespaceCount  = newFieldLabel("Namespace Count")
-	DeploymentCount = newFieldLabel("Deployment Count")
-	ImageCount      = newFieldLabel("Image Count")
-	NodeCount       = newFieldLabel("Node Count")
+	NamespaceCount  = newDerivedFieldLabel("Namespace Count", NamespaceID, CountDerivationType)
+	DeploymentCount = newDerivedFieldLabel("Deployment Count", DeploymentID, CountDerivationType)
+	ImageCount      = newDerivedFieldLabel("Image Count", ImageSHA, CountDerivationType)
+	NodeCount       = newDerivedFieldLabel("Node Count", NodeID, CountDerivationType)
 
 	// External network sources fields
 	DefaultExternalSource = newFieldLabel("Default External Source")
@@ -267,6 +264,10 @@ var (
 	RequestExpiresWhenFixed     = newFieldLabel("Request Expires When Fixed")
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
 	UserName                    = newFieldLabel("User Name")
+
+	ComplianceDomainID             = newFieldLabel("Compliance Domain ID")
+	ComplianceRunID                = newFieldLabel("Compliance Run ID")
+	ComplianceRunFinishedTimestamp = newFieldLabel("Compliance Run Finished Timestamp")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
@@ -313,20 +314,79 @@ var (
 	TestChild2Val            = newFieldLabel("Test Child2 Val")
 	TestParent3ID            = newFieldLabel("Test Parent3 ID")
 	TestParent3Val           = newFieldLabel("Test Parent3 Val")
+	TestShortCircuitID       = newFieldLabel("Test ShortCircuit ID")
 
-	ComplianceDomainID             = newFieldLabel("Compliance Domain ID")
-	ComplianceRunID                = newFieldLabel("Compliance Run ID")
-	ComplianceRunFinishedTimestamp = newFieldLabel("Compliance Run Finished Timestamp")
+	// Derived test fields
+	TestGrandparentCount = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
+	TestParent1Count     = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
+	TestChild1Count      = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
 )
 
-func newFieldLabel(s string) FieldLabel {
-	if added := FieldLabelSet.Add(s); !added {
+func init() {
+	derivationsByField = make(map[string]map[string]DerivationType)
+	for k, metadata := range allFieldLabels {
+		if metadata != nil {
+			derivedFromLower := strings.ToLower(string(metadata.DerivedFrom))
+			subMap, exists := derivationsByField[derivedFromLower]
+			if !exists {
+				subMap = make(map[string]DerivationType)
+				derivationsByField[derivedFromLower] = subMap
+			}
+			subMap[k] = metadata.DerivationType
+		}
+	}
+}
+
+var (
+	allFieldLabels     = make(map[string]*DerivedFieldLabelMetadata)
+	derivationsByField map[string]map[string]DerivationType
+)
+
+// IsValidFieldLabel returns whether this is a known, valid field label.
+func IsValidFieldLabel(s string) bool {
+	_, ok := allFieldLabels[strings.ToLower(s)]
+	return ok
+}
+
+// GetFieldsDerivedFrom gets the fields derived from the given search field.
+func GetFieldsDerivedFrom(s string) map[string]DerivationType {
+	return derivationsByField[strings.ToLower(s)]
+}
+
+func newFieldLabelWithMetadata(s string, metadata *DerivedFieldLabelMetadata) FieldLabel {
+	lowerS := strings.ToLower(s)
+	if _, exists := allFieldLabels[lowerS]; exists {
 		log.Fatalf("Field label %q has already been added", s)
 	}
-	FieldLabelSet.Add(strings.ToLower(s))
+	allFieldLabels[lowerS] = metadata
 	return FieldLabel(s)
+}
+
+func newFieldLabel(s string) FieldLabel {
+	return newFieldLabelWithMetadata(s, nil)
+}
+
+func newDerivedFieldLabel(s string, derivedFrom FieldLabel, derivationType DerivationType) FieldLabel {
+	return newFieldLabelWithMetadata(s, &DerivedFieldLabelMetadata{
+		DerivedFrom:    derivedFrom,
+		DerivationType: derivationType,
+	})
 }
 
 func (f FieldLabel) String() string {
 	return string(f)
 }
+
+// DerivedFieldLabelMetadata includes metadata showing that a field is derived.
+type DerivedFieldLabelMetadata struct {
+	DerivedFrom    FieldLabel
+	DerivationType DerivationType
+}
+
+// DerivationType represents a type of derivation.
+type DerivationType int
+
+// This block enumerates all supported derivation types.
+const (
+	CountDerivationType DerivationType = iota
+)

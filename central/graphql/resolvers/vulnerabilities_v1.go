@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -462,9 +461,6 @@ func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, q
 
 // ActiveState shows the activeness of a vulnerability in a deployment context.
 func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, _ RawQuery) (*activeStateResolver, error) {
-	if !features.ActiveVulnManagement.Enabled() {
-		return nil, nil
-	}
 	deploymentID := getDeploymentScope(nil, ctx, evr.ctx)
 	if deploymentID == "" {
 		return nil, nil

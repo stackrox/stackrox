@@ -11,10 +11,12 @@ import com.jayway.restassured.response.Response
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 
 import groups.Integration
+import groups.BAT
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
 import util.SplunkUtil
+import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
 import org.junit.Rule
@@ -37,11 +39,27 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static final String TEST_NAMESPACE = "qa-splunk-violation"
     private static final String SPLUNK_INPUT_NAME = "stackrox-violations-input"
 
+    private SplunkDeployment splunkDeployment
+
     def setupSpec() {
-        // when using "Analyst" api token to access central Splunk violations endpoint
-        // authorisation plugin prevents violations from being returned
-        // this leads to no violations being propagated to Splunk
-        disableAuthzPlugin()
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
+
+        orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
+        addStackroxImagePullSecret(TEST_NAMESPACE)
+    }
+
+    def cleanupSpec() {
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
+    }
+
+    def setup() {
+        splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE, false)
+    }
+
+    def cleanup() {
+        if (splunkDeployment) {
+            tearDownSplunk(orchestrator, splunkDeployment)
+        }
     }
 
     private void configureSplunkTA(SplunkUtil.SplunkDeployment splunkDeployment, String centralHost) {
@@ -81,15 +99,12 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
     }
 
-    @Category(Integration)
+    @Category([Integration, BAT])
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
-        orchestrator.deleteNamespace(TEST_NAMESPACE)
-        orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
-        addStackroxImagePullSecret(TEST_NAMESPACE)
         String centralHost = orchestrator.getServiceIP("central", "stackrox")
-        def splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE, false)
+
         configureSplunkTA(splunkDeployment, centralHost)
         triggerProcessViolation(splunkDeployment)
         triggerNetworkFlowViolation(splunkDeployment, centralHost)
@@ -102,10 +117,10 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 15; i++) {
             log.info "Attempt ${i} to get violations from Splunk"
             def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
-            TimeUnit.SECONDS.sleep(10)
+            TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
             if (response != null) {
@@ -131,13 +146,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         for (result in results) {
             validateCimMappings(result)
         }
-
-        cleanup:
-        "remove splunk"
-        if (splunkDeployment) {
-            tearDownSplunk(orchestrator, splunkDeployment)
-        }
-        orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
 
     private static void validateCimMappings(Map<String, String> result) {
@@ -310,7 +318,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private boolean waitForAlertWithPolicyId(String policyId) {
         retryUntilTrue({
             AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest.newBuilder()
-                    .setQuery("Namespace:${TEST_NAMESPACE},Violation State:*")
+                    .setQuery("Namespace:${TEST_NAMESPACE}+Violation State:*")
                     .build())
                     .asList()
                     .any { a -> a.getPolicy().getId() == policyId }

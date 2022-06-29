@@ -1,6 +1,6 @@
 import React, { ReactElement, useContext } from 'react';
 
-import { ResourceType, resourceTypes } from 'constants/entityTypes';
+import entityTypes, { ResourceType, resourceTypes } from 'constants/entityTypes';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import workflowStateContext from 'Containers/workflowStateContext';
 
@@ -10,6 +10,7 @@ type TableCountLinksProps = {
         deploymentCount: number;
         imageCount: number;
         componentCount: number;
+        nodeCount?: number;
         id: string;
     };
     textOnly: boolean;
@@ -17,10 +18,24 @@ type TableCountLinksProps = {
 
 function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement {
     const workflowState = useContext(workflowStateContext);
+    const entityType = workflowState.getCurrentEntityType();
     const entityContext = workflowState.getEntityContext() as Record<ResourceType, string>;
-    const { vulnerabilityTypes, deploymentCount, imageCount, componentCount, id } = row;
+    const {
+        vulnerabilityTypes,
+        deploymentCount,
+        imageCount,
+        componentCount,
+        nodeCount = 0,
+        id,
+    } = row;
 
-    const isImageVuln = vulnerabilityTypes.includes('IMAGE_CVE');
+    // TODO: refactor check for vulnerability types in follow-up PR
+    const isImageVuln =
+        entityType === entityTypes.IMAGE_CVE ||
+        // TODO: remove this part of the conditional, after the deprecated one-CVE-to-rule-them-all type is removed
+        vulnerabilityTypes?.includes('IMAGE_CVE');
+    const isNodeVuln = entityType === entityTypes.NODE_CVE;
+    const isClusterVuln = entityType === entityTypes.CLUSTER_CVE;
 
     // Only show entity counts on relevant pages. Node count is not currently supported.
     return (
@@ -45,7 +60,17 @@ function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement 
                         selectedRowId={id}
                     />
                 )}
-            {!entityContext[resourceTypes.COMPONENT] && (
+            {isNodeVuln && !entityContext[resourceTypes.NODE] && (
+                <TableCountLink
+                    entityType={resourceTypes.NODE}
+                    count={nodeCount}
+                    textOnly={textOnly}
+                    selectedRowId={id}
+                />
+            )}
+            {/* TODO: strengthen check for COMPONENT context to distinguish check
+                between IMAGE_COMPONENT and NODE_COMPONENT in later PR */}
+            {!isClusterVuln && !entityContext[resourceTypes.COMPONENT] && (
                 <TableCountLink
                     entityType={resourceTypes.COMPONENT}
                     count={componentCount}

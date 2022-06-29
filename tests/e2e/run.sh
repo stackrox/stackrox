@@ -17,12 +17,11 @@ test_e2e() {
 
     require_environment "KUBECONFIG"
 
-    QUAY_REPO="rhacs-eng"
-    if is_CI; then
-        REGISTRY="quay.io/$QUAY_REPO"
-    else
-        REGISTRY="stackrox"
-    fi
+    export_test_environment
+
+    export SENSOR_HELM_DEPLOY=true
+    export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
+    export ROX_NETPOL_FIELDS=true
 
     test_preamble
     setup_deployment_env false false
@@ -65,12 +64,6 @@ test_e2e() {
 }
 
 test_preamble() {
-    if is_OPENSHIFT_CI; then
-        # TODO(RS-494) may provide roxctl
-        make cli-linux
-        install_built_roxctl_in_gopath
-    fi
-
     require_executable "roxctl"
 
     if ! is_CI; then
@@ -90,17 +83,16 @@ test_preamble() {
         export MAIN_TAG
     fi
 
-    export SCANNER_SUPPORT=true
-    export LOAD_BALANCER=lb
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
     export ROXDEPLOY_CONFIG_FILE_MAP="$ROOT/scripts/ci/endpoints/endpoints.yaml"
-    export SENSOR_HELM_DEPLOY=true
-    export ROX_ACTIVE_VULN_MANAGEMENT=true
-    export ROX_BASELINE_GENERATION_DURATION=1m
-    export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
-    export ROX_NETPOL_FIELDS=true
-    export ROX_NEW_POLICY_CATEGORIES=true
     
+    QUAY_REPO="rhacs-eng"
+    if is_CI; then
+        REGISTRY="quay.io/$QUAY_REPO"
+    else
+        REGISTRY="stackrox"
+    fi
+
     SCANNER_IMAGE="$REGISTRY/scanner:$(cat "$ROOT"/SCANNER_VERSION)"
     export SCANNER_IMAGE
     SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat "$ROOT"/SCANNER_VERSION)"

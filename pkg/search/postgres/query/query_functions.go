@@ -2,6 +2,7 @@ package pgsearch
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -16,6 +17,8 @@ type queryAndFieldContext struct {
 	value          string
 	highlight      bool
 	queryModifiers []pkgSearch.QueryModifier
+
+	now time.Time
 }
 
 func qeWithSelectFieldIfNeeded(ctx *queryAndFieldContext, whereClause *WhereClause, postTransformFunc func(interface{}) interface{}) *QueryEntry {
@@ -46,7 +49,7 @@ var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 	// Map is handled separately.
 }
 
-func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string, highlight bool) (*QueryEntry, error) {
+func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string, highlight bool, now time.Time) (*QueryEntry, error) {
 	qualifiedColName := dbField.Schema.Table + "." + dbField.ColumnName
 
 	ctx := &queryAndFieldContext{
@@ -55,6 +58,7 @@ func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string
 		dbField:             dbField,
 		highlight:           highlight,
 		value:               value,
+		now:                 now,
 	}
 
 	// Special case: wildcard

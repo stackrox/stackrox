@@ -18,7 +18,7 @@ func AddTimeoutWithDefault(c *cobra.Command, defaultDuration time.Duration) {
 
 // AddTimeout adds a timeout flag to the given command, with the global default value.
 func AddTimeout(c *cobra.Command) {
-	AddTimeoutWithDefault(c, 10*time.Second)
+	AddTimeoutWithDefault(c, 30*time.Second)
 }
 
 // Timeout returns the set timeout.

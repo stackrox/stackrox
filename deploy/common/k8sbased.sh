@@ -2,7 +2,7 @@
 
 function realpath {
 	[[ -n "$1" ]] || return 0
-	python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
+	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
 }
 
 function launch_service {
@@ -190,8 +190,8 @@ function launch_central {
     	add_args "--with-config-file=${ROXDEPLOY_CONFIG_FILE_MAP}"
     fi
 
-    if [[ "$POD_SECURITY_POLICIES" == "false" ]]; then
-      add_args "--enable-pod-security-policies=false"
+    if [[ "$POD_SECURITY_POLICIES" == "true" ]]; then
+      add_args "--enable-pod-security-policies"
     fi
 
     local unzip_dir="${k8s_dir}/central-deploy/"
@@ -292,9 +292,9 @@ function launch_central {
         )
       fi
 
-      if [[ "$POD_SECURITY_POLICIES" == "false" ]]; then
+      if [[ "$POD_SECURITY_POLICIES" == "true" ]]; then
         helm_args+=(
-          --set system.enablePodSecurityPolicies=false
+          --set system.enablePodSecurityPolicies=true
         )
       fi
 
@@ -403,8 +403,8 @@ function launch_central {
     echo "Successfully deployed Central!"
 
     echo "Access the UI at: https://${API_ENDPOINT}"
-    if [[ "$AUTH0_SUPPORT" == "true" ]]; then
-        setup_auth0 "${API_ENDPOINT}"
+    if [[ "${ROX_DEV_AUTH0_CLIENT_SECRET}" != "" ]]; then
+        setup_auth0 "${API_ENDPOINT}" "${ROX_DEV_AUTH0_CLIENT_SECRET}"
     fi
 }
 

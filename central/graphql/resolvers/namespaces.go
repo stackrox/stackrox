@@ -39,6 +39,7 @@ func init() {
 			"k8sRoleCount(query: String): Int!",
 			"k8sRoles(query: String, pagination: Pagination): [K8SRole!]!",
 			"latestViolation(query: String): Time",
+			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"policies(query: String, pagination: Pagination): [Policy!]!",
 			"policyCount(query: String): Int!",
 			"policyStatus(query: String): PolicyStatus!",
@@ -51,8 +52,6 @@ func init() {
 			"serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!",
 			"unusedVarSink(query: String): Int",
 			"risk: Risk",
-
-			"plottedVulns(query: String): PlottedVulnerabilities!", // TODO
 		}),
 		// deprecated fields
 		schema.AddExtraResolvers("Namespace", []string{
@@ -66,6 +65,8 @@ func init() {
 				"@deprecated(reason: \"use 'imageComponentCount'\")",
 			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!" +
 				"@deprecated(reason: \"use 'imageComponents'\")",
+			"plottedVulns(query: String): PlottedVulnerabilities!" +
+				"@deprecated(reason: \"use 'plottedImageVulnerabilities'\")",
 		}),
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
@@ -710,6 +711,12 @@ func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args Raw
 func (resolver *namespaceResolver) PlottedVulns(ctx context.Context, args PaginatedQuery) (*PlottedVulnerabilitiesResolver, error) {
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
+}
+
+// PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
+func (resolver *namespaceResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PlottedImageVulnerabilities")
+	return newPlottedImageVulnerabilitiesResolver(resolver.namespaceScopeContext(ctx), resolver.root, args)
 }
 
 func (resolver *namespaceResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

@@ -9,43 +9,29 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	rocksdbInstance "github.com/stackrox/rox/pkg/rocksdb/instance"
 	rocksMetrics "github.com/stackrox/rox/pkg/rocksdb/metrics"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	rocksInit sync.Once
-	rocksDB   *rocksdb.RocksDB
 
-	registeredBuckets []registeredBucket
+	rocksDB *rocksdb.RocksDB
 
 	log = logging.LoggerForModule()
 )
 
-type registeredBucket struct {
-	prefix       []byte
-	prefixString string
-	objType      string
-}
-
 // RegisterBucket registers a bucket to have metrics pulled from it
 func RegisterBucket(bucketName []byte, objType string) {
-	registeredBuckets = append(registeredBuckets, registeredBucket{
-		prefixString: string(bucketName),
-		prefix:       bucketName,
-		objType:      objType,
-	})
+	rocksdbInstance.RegisterBucket(bucketName, objType)
 }
 
 // GetRocksDB returns the global rocksdb instance
 func GetRocksDB() *rocksdb.RocksDB {
 	postgres.LogCallerOnPostgres("GetRocksDB")
 	rocksInit.Do(func() {
-		db, err := rocksdb.New(rocksMetrics.GetRocksDBPath(option.CentralOptions.DBPathBase))
-		if err != nil {
-			panic(err)
-		}
-		rocksDB = db
+		rocksDB = rocksdbInstance.GetRocksDB()
 		go startMonitoringRocksDB(rocksDB)
 	})
 	return rocksDB
@@ -54,10 +40,11 @@ func GetRocksDB() *rocksdb.RocksDB {
 func startMonitoringRocksDB(db *rocksdb.RocksDB) {
 	ticker := time.NewTicker(gatherFrequency)
 	for range ticker.C {
-		for _, bucket := range registeredBuckets {
-			rocksMetrics.UpdateRocksDBPrefixSizeMetric(db, bucket.prefix, bucket.prefixString, bucket.objType)
-		}
-
+		rocksdbInstance.WalkBucket(
+			func(prefix []byte, prefixString string, objType string) {
+				rocksMetrics.UpdateRocksDBPrefixSizeMetric(GetRocksDB(), prefix, prefixString, objType)
+			},
+		)
 		size, err := fileutils.DirectorySize(rocksMetrics.GetRocksDBPath(option.CentralOptions.DBPathBase))
 		if err != nil {
 			log.Errorf("error getting rocksdb directory size: %v", err)

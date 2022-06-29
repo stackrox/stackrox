@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -64,21 +67,14 @@ var (
 	postgresDB                 *pgxpool.Pool
 	pgSync                     sync.Once
 
-	postgresQueryTimeout = 10 * time.Second
+	// PostgresQueryTimeout - Postgres query timeout value
+	PostgresQueryTimeout = 10 * time.Second
 )
 
 // GetPostgres returns a global database instance
 func GetPostgres() *pgxpool.Pool {
 	pgSync.Do(func() {
-		centralConfig := config.GetConfig()
-		password, err := os.ReadFile(dbPasswordFile)
-		if err != nil {
-			log.Fatalf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
-			return
-		}
-		source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
-
-		config, err := pgxpool.ParseConfig(source)
+		_, config, err := GetPostgresConfig()
 		if err != nil {
 			log.Fatalf("Could not parse postgres config: %v", err)
 		}
@@ -104,8 +100,49 @@ func GetPostgres() *pgxpool.Pool {
 	return postgresDB
 }
 
+// GetPostgresConfig - gets the configuration used to connect to Postgres
+func GetPostgresConfig() (map[string]string, *pgxpool.Config, error) {
+	centralConfig := config.GetConfig()
+	password, err := os.ReadFile(dbPasswordFile)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "pgsql: could not load password file %q", dbPasswordFile)
+	}
+	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
+
+	config, err := pgxpool.ParseConfig(source)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "Could not parse postgres config")
+	}
+
+	sourceMap, err := ParseSource(source)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "Could not parse postgres source")
+	}
+
+	return sourceMap, config, nil
+}
+
+// ParseSource - parses source string into a map for easier use
+func ParseSource(source string) (map[string]string, error) {
+	if source == "" {
+		return nil, errors.New("source string is empty")
+	}
+
+	sourceSlice := strings.Fields(source)
+	sourceMap := make(map[string]string)
+	for _, pair := range sourceSlice {
+		// Due to the possibility that the password could potentially have an = we
+		// need to ensure that we get the entire password
+		key, value := stringutils.Split2(pair, "=")
+
+		sourceMap[key] = strings.TrimSpace(value)
+	}
+
+	return sourceMap, nil
+}
+
 func collectPostgresStats(db *pgxpool.Pool) {
-	ctx, cancel := context.WithTimeout(context.Background(), postgresQueryTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
 	defer cancel()
 	row, err := db.Query(ctx, tableQuery)
 	if err != nil {

@@ -8,7 +8,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -22,7 +21,7 @@ type TestGrandparentsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
-	pool        *pgxpool.Pool
+	testDB      *pgtest.TestPostgres
 }
 
 func TestTestGrandparentsStore(t *testing.T) {
@@ -38,33 +37,19 @@ func (s *TestGrandparentsStoreSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.Require().NoError(err)
-
-	Destroy(ctx, pool)
-
-	s.pool = pool
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *TestGrandparentsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE test_grandparents CASCADE")
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE test_grandparents CASCADE")
 	s.T().Log("test_grandparents", tag)
 	s.NoError(err)
 }
 
 func (s *TestGrandparentsStoreSuite) TearDownSuite() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
@@ -81,6 +66,8 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundTestGrandparent)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, testGrandparent))
 	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())
 	s.NoError(err)
@@ -90,11 +77,15 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	testGrandparentCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, testGrandparentCount)
+	testGrandparentCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(testGrandparentCount)
 
 	testGrandparentExists, err := store.Exists(ctx, testGrandparent.GetId())
 	s.NoError(err)
 	s.True(testGrandparentExists)
 	s.NoError(store.Upsert(ctx, testGrandparent))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, testGrandparent), sac.ErrResourceAccessDenied)
 
 	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())
 	s.NoError(err)
@@ -106,6 +97,7 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestGrandparent)
+	s.NoError(store.Delete(withNoAccessCtx, testGrandparent.GetId()))
 
 	var testGrandparents []*storage.TestGrandparent
 	for i := 0; i < 200; i++ {

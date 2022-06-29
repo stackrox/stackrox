@@ -9,7 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,6 +31,8 @@ type CreateMode int
 const (
 	// Delay sleeps a specific duration between the creation of each event
 	Delay CreateMode = iota
+	// ChannelAck waits to receive certain events between the creation of each event
+	ChannelAck
 )
 
 const (
@@ -61,6 +65,8 @@ var minimumResourcesMap = map[string]int{
 type FakeEventsManager struct {
 	// Delay the sleep duration between the creation of each event (if CreteMode is Delay)
 	Delay time.Duration
+	// AckChannel the channel from which we will receive the events (if CreateMode is ChannelAck)
+	AckChannel chan *central.SensorEvent
 	// Mode the creation mode (at the moment there is only one mode implemented)
 	Mode CreateMode
 	// Client the k8s ClientSet
@@ -73,16 +79,95 @@ type FakeEventsManager struct {
 	resourceMap map[string]interface{}
 }
 
+const (
+	createAction string = "CREATE_RESOURCE"
+	updateAction string = "UPDATE_RESOURCE"
+	removeAction string = "REMOVE_RESOURCE"
+)
+
 var actionToMethod = map[string]string{
-	"CREATE_RESOURCE": "Create",
-	"UPDATE_RESOURCE": "Update",
-	"DELETE_RESOURCE": "Delete",
+	createAction: "Create",
+	updateAction: "Update",
+	removeAction: "Delete",
 }
 
 var actionToOptions = map[string]interface{}{
-	"CREATE_RESOURCE": metav1.CreateOptions{},
-	"UPDATE_RESOURCE": metav1.UpdateOptions{},
-	"DELETE_RESOURCE": metav1.DeleteOptions{},
+	createAction: metav1.CreateOptions{},
+	updateAction: metav1.UpdateOptions{},
+	removeAction: metav1.DeleteOptions{},
+}
+
+var sensorEventCompareFunctions = map[string]func(interface{}, *central.SensorEvent) bool{
+	"*central.SensorEvent_NetworkPolicy": func(expected interface{}, event *central.SensorEvent) bool {
+		resource := expected.(*central.SensorEvent_NetworkPolicy)
+		if event.GetNetworkPolicy() == nil {
+			return false
+		}
+		return event.GetNetworkPolicy().GetId() == resource.NetworkPolicy.GetId()
+	},
+	"*central.SensorEvent_Deployment": func(expected interface{}, event *central.SensorEvent) bool {
+		resource := expected.(*central.SensorEvent_Deployment)
+		if event.GetDeployment() == nil {
+			return false
+		}
+		return event.GetDeployment().GetId() == resource.Deployment.GetId()
+	},
+	"*central.SensorEvent_Pod": func(expected interface{}, event *central.SensorEvent) bool {
+		resource := expected.(*central.SensorEvent_Pod)
+		if event.GetPod() == nil {
+			return false
+		}
+		return event.GetPod().GetId() == resource.Pod.GetId()
+	},
+	"*central.SensorEvent_Namespace": func(expected interface{}, event *central.SensorEvent) bool {
+		resource := expected.(*central.SensorEvent_Namespace)
+		if event.GetNamespace() == nil {
+			return false
+		}
+		return event.GetNamespace().GetId() == resource.Namespace.GetId()
+	},
+	"*central.SensorEvent_Secret": func(expected interface{}, event *central.SensorEvent) bool {
+		resource := expected.(*central.SensorEvent_Secret)
+		if event.GetSecret() == nil {
+			return false
+		}
+		return event.GetSecret().GetId() == resource.Secret.GetId()
+	},
+	"*central.SensorEvent_Node": func(expected interface{}, event *central.SensorEvent) bool {
+		resource := expected.(*central.SensorEvent_Node)
+		if event.GetNode() == nil {
+			return false
+		}
+		return event.GetNode().GetId() == resource.Node.GetId()
+	},
+	"*central.SensorEvent_ServiceAccount": func(expected interface{}, event *central.SensorEvent) bool {
+		resource := expected.(*central.SensorEvent_ServiceAccount)
+		if event.GetServiceAccount() == nil {
+			return false
+		}
+		return event.GetServiceAccount().GetId() == resource.ServiceAccount.GetId()
+	},
+	"*central.SensorEvent_Role": func(expected interface{}, event *central.SensorEvent) bool {
+		resource := expected.(*central.SensorEvent_Role)
+		if event.GetRole() == nil {
+			return false
+		}
+		return event.GetRole().GetId() == resource.Role.GetId()
+	},
+	"*central.SensorEvent_Binding": func(expected interface{}, event *central.SensorEvent) bool {
+		resource := expected.(*central.SensorEvent_Binding)
+		if event.GetBinding() == nil {
+			return false
+		}
+		return event.GetBinding().GetId() == resource.Binding.GetId()
+	},
+	"*central.SensorEvent_ImageIntegration": func(expected interface{}, event *central.SensorEvent) bool {
+		resource := expected.(*central.SensorEvent_ImageIntegration)
+		if event.GetImageIntegration() == nil {
+			return false
+		}
+		return event.GetImageIntegration().GetId() == resource.ImageIntegration.GetId()
+	},
 }
 
 // Init initializes the FakeEventsManager
@@ -216,7 +301,10 @@ func (f *FakeEventsManager) eventsCreation() (<-chan string, <-chan error) {
 				errorCh <- errors.Wrapf(err, "cannot create event for %s", msg.ObjectType)
 				return
 			}
-			f.waitOnMode()
+			if err = f.waitOnMode(msg.EventsOutput); err != nil {
+				errorCh <- err
+				return
+			}
 		}
 	}()
 	return ch, errorCh
@@ -248,6 +336,15 @@ func getNamespace(resource reflect.Value) string {
 	return values[0].String()
 }
 
+// getName returns the name from a resource
+func getName(resource reflect.Value) string {
+	values := resource.MethodByName("GetName").Call([]reflect.Value{})
+	if len(values) != 1 {
+		return ""
+	}
+	return values[0].String()
+}
+
 // handleRunOp handles the execution of runOp
 func (f *FakeEventsManager) handleRunOp(action, kind string, ch chan<- string, client, object reflect.Value) error {
 	returnVals := runOp(action, client, object)
@@ -256,7 +353,7 @@ func (f *FakeEventsManager) handleRunOp(action, kind string, ch chan<- string, c
 	}
 	errInt := returnVals[len(returnVals)-1].Interface()
 	if errInt == nil {
-		if action == "CREATE_RESOURCE" {
+		if action == createAction {
 			ch <- kind
 		}
 		return nil
@@ -289,20 +386,83 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan<- 
 	}
 	cl := clFunc(getNamespace(reflect.ValueOf(r)))
 
-	err = f.handleRunOp(msg.Action, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
-	if k8sErrors.IsNotFound(err) && msg.Action == "UPDATE_RESOURCE" {
-		return f.handleRunOp("CREATE_RESOURCE", kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
+	if msg.Action == removeAction {
+		return f.handleRunOp(msg.Action, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(getName(reflect.ValueOf(r))))
 	}
-	if k8sErrors.IsAlreadyExists(err) && msg.Action == "CREATE_RESOURCE" {
-		return f.handleRunOp("UPDATE_RESOURCE", kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
+	err = f.handleRunOp(msg.Action, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
+	if k8sErrors.IsNotFound(err) && msg.Action == updateAction {
+		return f.handleRunOp(createAction, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
+	}
+	if k8sErrors.IsAlreadyExists(err) && msg.Action == createAction {
+		return f.handleRunOp(updateAction, kind, ch, reflect.ValueOf(cl), reflect.ValueOf(r))
 	}
 	return err
 }
 
 // waitOnMode waits depending on the mode
-func (f *FakeEventsManager) waitOnMode() {
+func (f *FakeEventsManager) waitOnMode(events []string) error {
 	switch f.Mode {
 	case Delay:
 		time.Sleep(f.Delay)
+		return nil
+	case ChannelAck:
+		if len(events) == 0 {
+			return nil
+		}
+		unmarshalledEvents, err := toSensorEventSlice(events)
+		if err != nil {
+			return err
+		}
+		receivedEvents := 0
+		for {
+			timeout := time.After(5 * time.Second)
+			select {
+			case <-timeout:
+				return errors.New("timeout reached waiting for event")
+			case event := <-f.AckChannel:
+				eventFound, err := isEventInSlice(event, unmarshalledEvents)
+				if err != nil {
+					return err
+				}
+				if eventFound {
+					receivedEvents++
+				}
+				if receivedEvents == len(events) {
+					return nil
+				}
+			}
+		}
 	}
+	return nil
+}
+
+// isEventInSlice checks whether a SensorEvent is in a slice of events or not
+func isEventInSlice(event *central.SensorEvent, events []*central.SensorEvent) (bool, error) {
+	for _, sensorEvent := range events {
+		resource := reflect.TypeOf(sensorEvent.GetResource())
+		compareFunc, ok := sensorEventCompareFunctions[resource.String()]
+		if !ok {
+			return false, fmt.Errorf("compare function for resource '%s' not found", resource.String())
+		}
+		if compareFunc(sensorEvent.GetResource(), event) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// toSensorEventSlice transforms a slice of strings representing SensorEvents into a slice of SensorEvents
+func toSensorEventSlice(events []string) ([]*central.SensorEvent, error) {
+	var unmarshalledEvents []*central.SensorEvent
+	for _, e := range events {
+		sensorEvent := &central.SensorEvent{}
+		if err := jsonpb.UnmarshalString(e, sensorEvent); err != nil {
+			return nil, fmt.Errorf("error unmarshaling '%s'", e)
+		}
+		if sensorEvent.GetResource() == nil {
+			return nil, fmt.Errorf("resource not found in sensor event '%s'", e)
+		}
+		unmarshalledEvents = append(unmarshalledEvents, sensorEvent)
+	}
+	return unmarshalledEvents, nil
 }

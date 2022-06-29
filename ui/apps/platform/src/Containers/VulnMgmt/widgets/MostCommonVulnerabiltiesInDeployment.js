@@ -22,7 +22,7 @@ const MOST_COMMON_VULNERABILITIES = gql`
         $vulnPagination: Pagination
     ) {
         results: vulnerabilities(query: $query, pagination: $vulnPagination) {
-            id: cve
+            id
             cve
             cvss
             scoreVersion

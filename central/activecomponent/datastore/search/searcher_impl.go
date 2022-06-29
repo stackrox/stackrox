@@ -3,8 +3,8 @@ package search
 import (
 	"context"
 
+	activeComponentMappings "github.com/stackrox/rox/central/activecomponent/datastore/index/mappings"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
-	activeComponentMappings "github.com/stackrox/rox/central/activecomponent/index/mappings"
 	activeComponentSAC "github.com/stackrox/rox/central/activecomponent/sac"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/dackbox"

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -24,7 +23,7 @@ type NetworkpoliciesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
-	pool        *pgxpool.Pool
+	testDB      *pgtest.TestPostgres
 }
 
 func TestNetworkpoliciesStore(t *testing.T) {
@@ -40,33 +39,19 @@ func (s *NetworkpoliciesStoreSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.Require().NoError(err)
-
-	Destroy(ctx, pool)
-
-	s.pool = pool
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
 func (s *NetworkpoliciesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.pool.Exec(ctx, "TRUNCATE networkpolicies CASCADE")
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE networkpolicies CASCADE")
 	s.T().Log("networkpolicies", tag)
 	s.NoError(err)
 }
 
 func (s *NetworkpoliciesStoreSuite) TearDownSuite() {
-	if s.pool != nil {
-		s.pool.Close()
-	}
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
@@ -94,6 +79,9 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 	networkPolicyCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, networkPolicyCount)
+	networkPolicyCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(networkPolicyCount)
 
 	networkPolicyExists, err := store.Exists(ctx, networkPolicy.GetId())
 	s.NoError(err)
@@ -111,6 +99,7 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkPolicy)
+	s.NoError(store.Delete(withNoAccessCtx, networkPolicy.GetId()))
 
 	var networkPolicys []*storage.NetworkPolicy
 	for i := 0; i < 200; i++ {
