@@ -8,9 +8,28 @@ import (
 )
 
 func getPlottedVulnsIdsAndFixableCount(ctx context.Context, root *Resolver, args RawQuery) ([]string, int, error) {
-	q, err := args.AsV1QueryOrEmpty()
+	query, err := getPlottedVulnsV1Query(args)
 	if err != nil {
 		return nil, 0, err
+	}
+	all, err := root.CVEDataStore.Search(ctx, query)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	fixable, err := root.CVEDataStore.Count(ctx,
+		search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return search.ResultsToIDs(all), fixable, nil
+}
+
+func getPlottedVulnsV1Query(args RawQuery) (*v1.Query, error) {
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
 	}
 
 	q = tryUnsuppressedQuery(q)
@@ -22,18 +41,7 @@ func getPlottedVulnsIdsAndFixableCount(ctx context.Context, root *Resolver, args
 			},
 		},
 	}
-	all, err := root.CVEDataStore.Search(ctx, q)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	fixable, err := root.CVEDataStore.Count(ctx,
-		search.ConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return search.ResultsToIDs(all), fixable, nil
+	return q, nil
 }
 
 func unwrappedPlottedVulnerabilities(ctx context.Context, resolver *Resolver, cveIds []string, args PaginatedQuery) ([]*cVEResolver, error) {

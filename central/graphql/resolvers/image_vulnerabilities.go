@@ -33,6 +33,7 @@ func init() {
 				"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 				"imageCount(query: String): Int!",
 				"images(query: String, pagination: Pagination): [Image!]!",
+				"vulnerabilityState: String!",
 			)),
 		schema.AddQuery("imageVulnerability(id: ID): ImageVulnerability"),
 		schema.AddQuery("imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!"),
@@ -54,6 +55,7 @@ type ImageVulnerabilityResolver interface {
 	ImageComponentCount(ctx context.Context, args RawQuery) (int32, error)
 	ImageCount(ctx context.Context, args RawQuery) (int32, error)
 	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
+	VulnerabilityState(ctx context.Context) string
 }
 
 // ImageVulnerability returns a vulnerability of the given id

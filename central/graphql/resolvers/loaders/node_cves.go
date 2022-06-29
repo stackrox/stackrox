@@ -9,7 +9,6 @@ import (
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -56,10 +55,6 @@ type nodeCVELoaderImpl struct {
 
 	ds nodeCVEDataStore.DataStore
 }
-
-//func enrichNodeCVESeverity(value *storage.NodeCVE) {
-//	value.Severity = cvss.VulnToSeverity(cvss.NewFromNodeCVE(value))
-//}
 
 // FromIDs loads a set of nodeCVEs from a set of ids.
 func (idl *nodeCVELoaderImpl) FromIDs(ctx context.Context, ids []string) ([]*storage.NodeCVE, error) {
@@ -109,9 +104,6 @@ func (idl *nodeCVELoaderImpl) load(ctx context.Context, ids []string) ([]*storag
 		if err != nil {
 			return nil, err
 		}
-		for _, cve := range nodeCves {
-			cve.Severity = cvss.VulnToSeverity(cvss.NewFromNodeCVE(cve))
-		}
 		idl.setAll(nodeCves)
 		nodeCves, missing = idl.readAll(ids)
 	}
@@ -120,7 +112,7 @@ func (idl *nodeCVELoaderImpl) load(ctx context.Context, ids []string) ([]*storag
 		for _, m := range missing {
 			missingIDs = append(missingIDs, ids[m])
 		}
-		return nil, errors.Errorf("not all cves could be found: %s", strings.Join(missingIDs, ","))
+		return nil, errors.Errorf("not all node cves could be found: %s", strings.Join(missingIDs, ","))
 	}
 	return nodeCves, nil
 }

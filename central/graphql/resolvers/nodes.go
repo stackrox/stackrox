@@ -369,7 +369,7 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 		return nil, err
 	}
 
-	query, err := resolver.getTopVulnV1Query(args)
+	query, err := resolver.getTopNodeCVEV1Query(args)
 	if err != nil {
 		return nil, err
 	}
@@ -387,7 +387,7 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 		return nil, err
 	}
 
-	query, err := resolver.getTopVulnV1Query(args)
+	query, err := resolver.getTopNodeCVEV1Query(args)
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +405,7 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 	return vulnResolver, nil
 }
 
-func (resolver *nodeResolver) getTopVulnV1Query(args RawQuery) (*v1.Query, error) {
+func (resolver *nodeResolver) getTopNodeCVEV1Query(args RawQuery) (*v1.Query, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err

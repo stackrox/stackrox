@@ -52,41 +52,8 @@ func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (
 	if !features.PostgresDatastore.Enabled() {
 		return resolver.nodeVulnerabilityV2(ctx, args)
 	}
-	return resolver.nodeCveV2(ctx, args)
-}
 
-// NodeVulnerabilities resolves a set of vulnerabilities based on a query.
-func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, q PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilities")
-	if !features.PostgresDatastore.Enabled() {
-		query := withNodeCveTypeFiltering(q.String())
-		return resolver.nodeVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
-	}
-	return resolver.nodeCvesV2(ctx, q)
-}
-
-// NodeVulnerabilityCount returns count of all clusters across infrastructure
-func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCount")
-	if !features.PostgresDatastore.Enabled() {
-		query := withNodeCveTypeFiltering(args.String())
-		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
-	}
-	return resolver.nodeCveCountV2(ctx, args)
-}
-
-// NodeVulnCounter returns a VulnerabilityCounterResolver for the input query.s
-func (resolver *Resolver) NodeVulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCounter")
-	if !features.PostgresDatastore.Enabled() {
-		query := withNodeCveTypeFiltering(args.String())
-		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
-	}
-	return resolver.nodeCveCounterV2(ctx, args)
-}
-
-func (resolver *Resolver) nodeCveV2(ctx context.Context, args IDQuery) (NodeVulnerabilityResolver, error) {
-	if err := readCVEs(ctx); err != nil {
+	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
 	vuln, exists, err := resolver.NodeCVEDataStore.Get(ctx, string(*args.ID))
@@ -104,8 +71,15 @@ func (resolver *Resolver) nodeCveV2(ctx context.Context, args IDQuery) (NodeVuln
 	return vulnResolver, nil
 }
 
-func (resolver *Resolver) nodeCvesV2(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
-	if err := readCVEs(ctx); err != nil {
+// NodeVulnerabilities resolves a set of vulnerabilities based on a query.
+func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilities")
+	if !features.PostgresDatastore.Enabled() {
+		query := withNodeCveTypeFiltering(args.String())
+		return resolver.nodeVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	}
+
+	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
 	query, err := args.AsV1QueryOrEmpty()
@@ -113,7 +87,16 @@ func (resolver *Resolver) nodeCvesV2(ctx context.Context, args PaginatedQuery) (
 		return nil, err
 	}
 
-	vulnResolvers, err := resolver.nodeCvesV2Query(ctx, query)
+	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query = tryUnsuppressedQuery(query)
+
+	vulns, err := vulnLoader.FromQuery(ctx, query)
+	vulnResolvers, err := resolver.wrapNodeCVEs(vulns, err)
+
 	if err != nil {
 		return nil, err
 	}
@@ -126,21 +109,15 @@ func (resolver *Resolver) nodeCvesV2(ctx context.Context, args PaginatedQuery) (
 	return ret, nil
 }
 
-func (resolver *Resolver) nodeCvesV2Query(ctx context.Context, query *v1.Query) ([]*nodeCVEResolver, error) {
-	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
-	if err != nil {
-		return nil, err
+// NodeVulnerabilityCount returns count of all clusters across infrastructure
+func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCount")
+	if !features.PostgresDatastore.Enabled() {
+		query := withNodeCveTypeFiltering(args.String())
+		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 	}
 
-	query = tryUnsuppressedQuery(query)
-
-	vulns, err := vulnLoader.FromQuery(ctx, query)
-	vulnResolvers, err := resolver.wrapNodeCVEs(vulns, err)
-	return vulnResolvers, err
-}
-
-func (resolver *Resolver) nodeCveCountV2(ctx context.Context, args RawQuery) (int32, error) {
-	if err := readCVEs(ctx); err != nil {
+	if err := readNodes(ctx); err != nil {
 		return 0, err
 	}
 	query, err := args.AsV1QueryOrEmpty()
@@ -157,18 +134,21 @@ func (resolver *Resolver) nodeCveCountV2(ctx context.Context, args RawQuery) (in
 	return vulnLoader.CountFromQuery(ctx, query)
 }
 
-func (resolver *Resolver) nodeCveCounterV2(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	if err := readCVEs(ctx); err != nil {
+// NodeVulnCounter returns a VulnerabilityCounterResolver for the input query.s
+func (resolver *Resolver) NodeVulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCounter")
+	if !features.PostgresDatastore.Enabled() {
+		query := withNodeCveTypeFiltering(args.String())
+		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
+	}
+
+	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	return resolver.nodeCveCounterV2Query(ctx, query)
-}
-
-func (resolver *Resolver) nodeCveCounterV2Query(ctx context.Context, query *v1.Query) (*VulnerabilityCounterResolver, error) {
 	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
 	if err != nil {
 		return nil, err
@@ -202,48 +182,25 @@ func (resolver *nodeCVEResolver) CVE(ctx context.Context) string {
 
 // EnvImpact is the fraction of nodes that contain the nodeCVE
 func (resolver *nodeCVEResolver) EnvImpact(ctx context.Context) (float64, error) {
-	n, d, err := resolver.getEnvImpactComponentsForNodeCVE(ctx)
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	if d == 0 {
-		return 0, nil
+	numNodes, err := nodeLoader.CountAll(ctx)
+	if err != nil || numNodes == 0 {
+		return 0, err
 	}
-	return float64(n) / float64(d), nil
-}
 
-func (resolver *nodeCVEResolver) getEnvImpactComponentsForNodeCVE(ctx context.Context) (numerator, denominator int, err error) {
-	allNodesCount, err := resolver.root.NodeGlobalDataStore.CountAllNodes(ctx)
-	if err != nil {
-		return 0, 0, err
+	query := resolver.getNodeCVEQuery()
+	numNodesWithCVE, err := nodeLoader.CountFromQuery(ctx, query)
+	if err != nil || numNodesWithCVE == 0 {
+		return 0, err
 	}
-	if allNodesCount == 0 {
-		return 0, 0, nil
-	}
-	nodeLoader, err := loaders.GetNodeLoader(ctx)
-	if err != nil {
-		return 0, 0, err
-	}
-	withThisCVECount, err := nodeLoader.CountFromQuery(resolver.withNodeVulnerabilityScope(ctx), search.EmptyQuery())
-	if err != nil {
-		return 0, 0, err
-	}
-	return int(withThisCVECount), allNodesCount, nil
-}
-
-func (resolver *nodeCVEResolver) withNodeVulnerabilityScope(ctx context.Context) context.Context {
-	return scoped.Context(ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
-		Level: v1.SearchCategory_NODE_VULNERABILITIES,
-	})
+	return float64(numNodesWithCVE) / float64(numNodes), nil
 }
 
 // FixedByVersion returns the version of the parent component that removes this CVE
-func (resolver *nodeCVEResolver) FixedByVersion(ctx context.Context) (string, error) {
-	return resolver.getNodeComponentFixedByVersion(ctx)
-}
-
-func (resolver *nodeCVEResolver) getNodeComponentFixedByVersion(_ context.Context) (string, error) {
+func (resolver *nodeCVEResolver) FixedByVersion(_ context.Context) (string, error) {
 	scope, hasScope := scoped.GetScope(resolver.ctx)
 	if !hasScope {
 		return "", nil
@@ -267,49 +224,22 @@ func (resolver *nodeCVEResolver) ID(ctx context.Context) graphql.ID {
 
 // IsFixable returns whether node CVE is fixable by any component
 func (resolver *nodeCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
-	// TODO : Why do we remove this field query and then add it back again in addScopeContextOrNodeCVEQuery ?
-	q, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVE))
+	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVE))
 	if err != nil {
 		return false, err
 	}
 
-	ctx, query := resolver.addScopeContextOrNodeCVEQuery(q)
+	scope, ok := scoped.GetScope(resolver.ctx)
+	if !ok || scope.Level != v1.SearchCategory_NODE_VULNERABILITIES {
+		query = search.ConjunctionQuery(query, resolver.getNodeCVEQuery())
+	}
+
 	query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
 	count, err := resolver.root.NodeComponentCVEEdgeDataStore.Count(ctx, query)
 	if err != nil {
 		return false, err
 	}
 	return count != 0, nil
-}
-
-func (resolver *nodeCVEResolver) addScopeContextOrNodeCVEQuery(query *v1.Query) (context.Context, *v1.Query) {
-	ctx := resolver.ctx
-	scope, ok := scoped.GetScope(ctx)
-	if !ok {
-		return resolver.withNodeVulnerabilityScope(ctx), query
-	}
-	// If the scope is not set to node vulnerabilities then
-	// we need to add a query to scope the search to the current nodeCVE
-	if scope.Level != v1.SearchCategory_NODE_VULNERABILITIES {
-		return ctx, search.ConjunctionQuery(query, resolver.getNodeCVEQuery())
-	}
-
-	return ctx, query
-}
-
-func (resolver *nodeCVEResolver) addScopeContextOrNodeCVERawQuery(query string) (context.Context, string) {
-	ctx := resolver.ctx
-	scope, ok := scoped.GetScope(ctx)
-	if !ok {
-		return resolver.withNodeVulnerabilityScope(ctx), query
-	}
-	// If the scope is not set to node vulnerabilities then
-	// we need to add a query to scope the search to the current nodeCVE
-	if scope.Level != v1.SearchCategory_NODE_VULNERABILITIES {
-		return ctx, search.AddRawQueriesAsConjunction(query, resolver.getNodeCVERawQuery())
-	}
-
-	return ctx, query
 }
 
 func (resolver *nodeCVEResolver) getNodeCVEQuery() *v1.Query {
@@ -345,7 +275,7 @@ func (resolver *nodeCVEResolver) LastScanned(ctx context.Context) (*graphql.Time
 		},
 	}
 
-	nodes, err := nodeLoader.FromQuery(resolver.withNodeVulnerabilityScope(ctx), q)
+	nodes, err := nodeLoader.FromQuery(ctx, search.ConjunctionQuery(q, resolver.getNodeCVEQuery()))
 	if err != nil || len(nodes) == 0 {
 		return nil, err
 	} else if len(nodes) > 1 {
@@ -414,12 +344,6 @@ func (resolver *nodeCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver
 	return nil
 }
 
-// VulnerabilityState returns the effective state of the node CVE (observed, deferred or marked as false positive).
-func (resolver *nodeCVEResolver) VulnerabilityState(ctx context.Context) string {
-	//TODO Should this be removed from nodeVulnerabilities graphQL ?
-	return ""
-}
-
 // NodeComponentCount is the number of node components that contain the node CVE.
 func (resolver *nodeCVEResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	//TODO implement me (ROX-11299)
@@ -434,13 +358,21 @@ func (resolver *nodeCVEResolver) NodeComponents(ctx context.Context, args Pagina
 
 // NodeCount is the number of nodes that contain the node CVE
 func (resolver *nodeCVEResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
-	ctx, query := resolver.addScopeContextOrNodeCVERawQuery(args.String())
+	scope, ok := scoped.GetScope(resolver.ctx)
+	query := args.String()
+	if !ok || scope.Level != v1.SearchCategory_NODE_VULNERABILITIES {
+		query = search.AddRawQueriesAsConjunction(query, resolver.getNodeCVERawQuery())
+	}
 	return resolver.root.NodeCount(ctx, RawQuery{Query: &query})
 }
 
 // Nodes are the nodes that contain the node CVE
 func (resolver *nodeCVEResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
-	ctx, query := resolver.addScopeContextOrNodeCVERawQuery(args.String())
+	scope, ok := scoped.GetScope(resolver.ctx)
+	query := args.String()
+	if !ok || scope.Level != v1.SearchCategory_NODE_VULNERABILITIES {
+		query = search.AddRawQueriesAsConjunction(query, resolver.getNodeCVERawQuery())
+	}
 	return resolver.root.Nodes(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
