@@ -1,8 +1,6 @@
 import React from 'react';
 import { SimpleList, SimpleListItem } from '@patternfly/react-core';
 
-import './PolicyCategoriesList.css';
-
 type PolicyCategoriesListProps = {
     // policyCategories: {
     //     id: string;
@@ -26,15 +24,6 @@ function PolicyCategoriesList({ policyCategories }: PolicyCategoriesListProps) {
                     {name}
                 </SimpleListItem>
             ))}
-            {/* {policyCategories.map(({ id, name, isDefault }) => (
-                <SimpleListItem
-                    key={id}
-                    onClick={() => {}}
-                    componentClassName={isDefault ? 'default-category' : 'custom-category'}
-                >
-                    {name}
-                </SimpleListItem>
-            ))} */}
         </SimpleList>
     );
 }
