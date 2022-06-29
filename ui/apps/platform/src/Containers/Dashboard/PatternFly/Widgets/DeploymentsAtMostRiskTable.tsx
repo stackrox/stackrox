@@ -43,7 +43,7 @@ function DeploymentsAtMostRiskTable({
             </Thead>
             <Tbody>
                 {deployments.map(({ id, name, cluster, namespace, priority }) => (
-                    <Tr key={name}>
+                    <Tr key={id}>
                         <Td className="pf-u-pl-0" dataLabel={columnNames.deployment}>
                             <Link to={riskPageLinkToDeployment(id, name, searchFilter)}>
                                 {name}
