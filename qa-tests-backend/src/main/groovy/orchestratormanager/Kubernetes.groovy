@@ -89,6 +89,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation
 import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
+import org.apache.commons.exec.CommandLine
 
 import common.YamlGenerator
 import objects.ConfigMap
@@ -1759,6 +1760,12 @@ class Kubernetes implements OrchestratorMain {
         final def execStatusChannel = new ByteArrayOutputStream()
         ExecStatus execStatus = ExecStatus.UNKNOWN
         String execMessage = null
+        final String[] splitCmd = CommandLine.parse(cmd).with {
+            final List<String> result = new ArrayList()
+            result.add(it.getExecutable())
+            result.addAll(it.getArguments())
+            return result.toArray()
+        }
         log.debug("Exec-ing the following command in pod {}: {}", name, cmd)
         try {
             final ExecWatch execCmd = client.pods()
@@ -1768,7 +1775,7 @@ class Kubernetes implements OrchestratorMain {
                     .writingError(errorStream)
                     .writingErrorChannel(execStatusChannel)
                     .usingListener(listener)
-                    .exec(cmd.split(" ")) // TODO: revisit this splitting
+                    .exec(splitCmd)
             try {
                 completion.get(30, TimeUnit.SECONDS)
                 (execStatus, execMessage) = parseExecStatus(execStatusChannel.toString())
