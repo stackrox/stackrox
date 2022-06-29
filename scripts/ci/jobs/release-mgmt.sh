@@ -14,12 +14,12 @@ release_mgmt() {
     local tag
     tag="$(make --quiet tag)"
 
+    local pre_release_warnings=()
+
     if is_release_version "$tag"; then
         push_release "$tag"
         mark_collector_release "$tag"
     elif is_RC_version "$tag"; then
-        local pre_release_warnings=()
-
         if ! check_docs "${tag}"; then
             pre_release_warnings+=("docs/ is not valid for a release.")
         fi
@@ -28,13 +28,18 @@ release_mgmt() {
             pre_release_warnings+=("SCANNER_VERSION and COLLECTOR_VERSION need to also be release.")
         fi
 
-        if [[ "${#pre_release_warnings[@]}" != "0" ]]; then
-            info "ERROR: Issues were found:"
-            for issue in "${pre_release_warnings[@]}"; do
-                echo -e "\t$issue"
-            done
-            exit 1
-        fi
+    fi
+
+    "$ROOT/release/scripts/scan-images-with-roxctl.sh" || {
+        pre_release_warnings+=("Errors were found in image scans.")
+    }
+
+    if [[ "${#pre_release_warnings[@]}" != "0" ]]; then
+        info "ERROR: Issues were found:"
+        for issue in "${pre_release_warnings[@]}"; do
+            echo -e "\t$issue"
+        done
+        exit 1
     fi
 }
 
