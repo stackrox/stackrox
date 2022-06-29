@@ -37,10 +37,11 @@ func (k *kubernetesOrchestrator) GetNodeScrapeConfig(nodeName string) (*orchestr
 		return nil, err
 	}
 
-	_, isMasterNode := node.GetLabels()["node-role.kubernetes.io/master"]
+	_, hasMasterNodeLabel := node.GetLabels()["node-role.kubernetes.io/master"]
+	_, hasControlPlaneNodeLabel := node.GetLabels()["node-role.kubernetes.io/control-plane"]
 
 	return &orchestrator.NodeScrapeConfig{
 		ContainerRuntimeVersion: node.Status.NodeInfo.ContainerRuntimeVersion,
-		IsMasterNode:            isMasterNode,
+		IsMasterNode:            hasMasterNodeLabel || hasControlPlaneNodeLabel,
 	}, nil
 }
