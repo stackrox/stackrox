@@ -49,7 +49,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const CVES_QUERY = gql`
         query getCves($query: String) {
             results: vulnerabilities(query: $query) {
-                id: cve
+                id
                 cve
                 summary
                 vulnerabilityTypes

@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/process/filter"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
@@ -194,9 +193,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
 
-	if features.ActiveVulnManagement.Enabled() {
-		m.processAggregator.Add(indicatorSlice)
-	}
+	m.processAggregator.Add(indicatorSlice)
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
 

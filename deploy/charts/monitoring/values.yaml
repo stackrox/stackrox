@@ -1,5 +1,5 @@
 image: null
-grafanaImage: grafana/grafana:8.4.7
+grafanaImage: grafana/grafana:7.5.15
 prometheusImage: prom/prometheus:v2.34.0
 password: stackrox
 

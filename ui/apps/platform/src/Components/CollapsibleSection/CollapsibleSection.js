@@ -8,6 +8,7 @@ import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv
 const iconClass = 'bg-base-100 border-2 border-base-400 rounded-full h-5 w-5';
 
 const CollapsibleSection = ({
+    id,
     title,
     children,
     headerComponents,
@@ -29,7 +30,7 @@ const CollapsibleSection = ({
     );
 
     return (
-        <div className="border-b border-base-300" data-testid={dataTestId}>
+        <div id={id} className="border-b border-base-300" data-testid={dataTestId}>
             <header className={`flex flex-1 w-full ${headerClassName}`}>
                 <div className="flex flex-1">
                     <div
@@ -49,6 +50,7 @@ const CollapsibleSection = ({
 };
 
 CollapsibleSection.propTypes = {
+    id: PropTypes.string,
     title: PropTypes.string.isRequired,
     children: PropTypes.node.isRequired,
     headerClassName: PropTypes.string,
@@ -59,6 +61,7 @@ CollapsibleSection.propTypes = {
 };
 
 CollapsibleSection.defaultProps = {
+    id: null,
     headerClassName: 'py-4',
     headerComponents: null,
     titleClassName: 'p-4 text-xl',

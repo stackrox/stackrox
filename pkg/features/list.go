@@ -18,9 +18,6 @@ var (
 	// ComplianceOperatorCheckResults enables getting compliance results from the compliance operator
 	ComplianceOperatorCheckResults = registerFeature("Enable fetching of compliance operator results", "ROX_COMPLIANCE_OPERATOR_INTEGRATION", true)
 
-	// ActiveVulnManagement enables detection of active vulnerabilities
-	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", true)
-
 	// SystemHealthPatternFly enables the Pattern Fly version of System Health page. (used in the front-end app only)
 	SystemHealthPatternFly = registerFeature("Enable Pattern Fly version of System Health page", "ROX_SYSTEM_HEALTH_PF", false)
 
@@ -35,6 +32,9 @@ var (
 
 	// PostgresDatastore enables Postgres datastore.
 	PostgresDatastore = registerFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", false)
+
+	// FrontendVMUpdates enables Frontend VM Updates.
+	FrontendVMUpdates = registerFeature("Enable Frontend VM Updates", "ROX_FRONTEND_VM_UDPATES", false)
 
 	// ECRAutoIntegration enables detection of ECR-based deployments to generate auto-integrations from ECR auth tokens.
 	ECRAutoIntegration = registerFeature("Enable ECR auto-integrations when running on AWS nodes", "ROX_ECR_AUTO_INTEGRATION", true)

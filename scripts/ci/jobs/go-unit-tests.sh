@@ -6,7 +6,10 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 
 go_unit_tests() {
+    GOTAGS="${GOTAGS:-}"
+
     info "Starting go unit tests (GOTAGS=${GOTAGS})"
+
     if [[ "$GOTAGS" == "release" ]]; then
         export ROX_IMAGE_FLAVOR=stackrox.io
     else

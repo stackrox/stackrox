@@ -23,6 +23,7 @@ env:
   slack_channel: C03KSV3N6N8 #test-release-automation
   main_branch: master
   jira_project: ROX
+  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/${SCRIPT}?ref=${main_branch}
 
 jobs:
   check-jira:
@@ -30,24 +31,17 @@ jobs:
     runs-on: ubuntu-latest
     env:
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       release-date: ${{steps.check-jira-release.outputs.date}}
     steps:
       - name: Check that Jira release ${{inputs.version}} is not released
         id: check-jira-release
         run: |
-          set -u
-          JIRA_RELEASE_DATE="$(curl --fail -sSL \
-            -H "Authorization: Bearer $JIRA_TOKEN" \
-            "https://issues.redhat.com/rest/api/2/project/${{env.jira_project}}/versions" \
-          | jq -r '.[] | select(.name == "${{inputs.version}}" and .released == false) | .releaseDate')"
-
-          if [ -z "$JIRA_RELEASE_DATE" ]; then
-            echo "::error::Couldn't find unreleased JIRA release \`${{inputs.version}}\`."
-          else
-            echo "Release date: $JIRA_RELEASE_DATE" >> $GITHUB_STEP_SUMMARY
-            echo "::set-output name=date::$JIRA_RELEASE_DATE"
-          fi
+          set -uo pipefail
+          SCRIPT="check-jira-release.sh"
+          gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
+            "${{inputs.version}}"
 
   variables:
     name: Setup variables
@@ -77,7 +71,7 @@ jobs:
             { "blocks": [
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":red_circle: *Cannot proceed with upstream release ${{needs.variables.outputs.release-patch}} on <${{github.repositoryUrl}}|${{github.repository}}>.*" }},
+            ":red_circle: *Cannot proceed with upstream release ${{needs.variables.outputs.release-patch}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             "There has been no documentation branch created in
@@ -86,13 +80,13 @@ jobs:
             { "type": "divider" },
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":arrow_right: *Please create branch
+            ":arrow_right: *Create branch
             `${{needs.variables.outputs.docs-branch}}` from the `rhacs-docs`
             branch in `${{env.docs_repository}}` repository and then restart the workflow.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ">
-            Repository: <${{github.repositoryUrl}}|${{github.repository}}>\n>
+            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
             Release: ${{needs.variables.outputs.release-patch}}\n>
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}
@@ -132,7 +126,7 @@ jobs:
           git add .gitmodules docs/content
           if ! git diff-index --quiet HEAD; then
             git commit -am "Docs update for release ${{needs.variables.outputs.milestone}}"
-            echo "Documents submodule updated on release branch." >> $GITHUB_STEP_SUMMARY
+            echo "Documents submodule has been updated on the release branch." >> $GITHUB_STEP_SUMMARY
           fi
       - name: Update the changelog
         if: steps.check-existing.outputs.branch-exists == 'false'
@@ -141,7 +135,7 @@ jobs:
           git add CHANGELOG.md
           if ! git diff-index --quiet HEAD; then
             git commit --message "Changelog for ${{inputs.version}}"
-            echo "\`CHANGELOG.md\` updated on release branch." >> $GITHUB_STEP_SUMMARY
+            echo "\`CHANGELOG.md\` has been updated on the release branch." >> $GITHUB_STEP_SUMMARY
           fi
       - name: Push changes
         if: inputs.dry-run != 'true' && steps.check-existing.outputs.branch-exists == 'false'
@@ -156,39 +150,21 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
         with:
+          # Working on `inputs.ref` instead of `env.main_branch` may help
+          # to spot changes happened to CHANGELOG.md after `inputs.ref`.
           ref: ${{inputs.ref}}
       - name: Initialize mandatory git config
         run: |
           git config user.name "${{github.event.sender.login}}"
           git config user.email noreply@github.com
-      - name: Patch CHANGELOG.md on ${{env.main_branch}} branch
+      - name: Patch CHANGELOG.md on ${{inputs.ref}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -u
-          CHANGELOG_BRANCH="automation/changelog-${{inputs.version}}"
-          if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"; then
-            echo "Branch \`$CHANGELOG_BRANCH\` already exists."
-            exit 0
-          fi
-          git switch --create "$CHANGELOG_BRANCH"
-          sed -i "s/## \[NEXT RELEASE\]/\\0\n\n## [${{inputs.version}}]/" CHANGELOG.md
-          git add CHANGELOG.md
-          if ! git diff-index --quiet HEAD; then
-            git commit --message "Next version in changelog after ${{inputs.version}}"
-
-            if [ "${{inputs.dry-run}}" != "true" ]; then
-              git push --set-upstream origin "$CHANGELOG_BRANCH"
-              gh pr create \
-                --title "Advance \`CHANGELOG.md\` to the next release" \
-                --base "${{env.main_branch}}" \
-                --body "Cutting \`CHANGELOG.md\` after the ${{needs.variables.outputs.branch}} branch." \
-                --assignee "${{github.event.sender.login}}"
-            fi
-            # TODO: Add labels to skip CI runs
-
-            echo "A PR created on \`${{env.main_branch}}\` branch with advanced \`CHANGELOG.md\`." >> $GITHUB_STEP_SUMMARY
-          fi
+          set -uo pipefail
+          SCRIPT="patch-changelog.sh"
+          gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
+            "${{inputs.version}}" "${{inputs.ref}}" "${{needs.variables.outputs.branch}}" "${{inputs.dry-run}}"
 
   milestone:
     name: Create milestone
@@ -207,9 +183,46 @@ jobs:
             2>&1); then
 
             if grep "HTTP 422" <<< "$http_code"; then
-              echo "Milestone ${{needs.variables.outputs.milestone}} already exists." >> $GITHUB_STEP_SUMMARY
+              echo "::notice::Milestone ${{needs.variables.outputs.milestone}} already exists. Close it once it's finished."
             else
               echo "::error::Couldn't create milestone ${{needs.variables.outputs.milestone}}: $http_code"
               exit 1
             fi
+          else
+            echo "::notice::Milestone ${{needs.variables.outputs.milestone}} has been created. Close it once it's finished."
           fi
+
+  notify:
+    name: Notify everybody
+    needs: [variables, branch, milestone]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          channel-id: ${{env.slack_channel}}
+          payload: >-
+            { "blocks": [
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":white_check_mark: *Upstream release ${{needs.variables.outputs.release-patch}}
+            has been triggered on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            "Branch `${{needs.variables.outputs.branch}}`
+            and milestone `${{needs.variables.outputs.milestone}}`
+            have been created.\n\nPRs merged to the ${{env.main_branch}} branch
+            and assigned to RC milestones will be cherry-picked when closing the respective milestones.
+            For the urgent fixes that must go exclusively to this release
+            open PRs to the `${{needs.variables.outputs.branch}}` branch." }},
+
+            { "type": "divider" },
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ">
+            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
+            Release: ${{needs.variables.outputs.release-patch}}\n>
+            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
+            ]}

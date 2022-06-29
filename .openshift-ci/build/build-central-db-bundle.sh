@@ -24,6 +24,10 @@ build_central-db-bundle() {
     "$ROOT/status.sh" || true
 
     openshift_ci_mods
+    handle_nightly_runs
+
+    info "Status after mods:"
+    "$ROOT/status.sh" || true
 
     info "Make the central-db image Dockerfile"
     make "$ROOT/image/postgres/Dockerfile.gen"

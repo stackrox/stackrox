@@ -3,10 +3,9 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/activecomponent/converter"
+	"github.com/stackrox/rox/central/activecomponent/datastore/index"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	"github.com/stackrox/rox/central/activecomponent/datastore/search"
-	"github.com/stackrox/rox/central/activecomponent/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -23,7 +22,7 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ActiveComponent, bool, error)
 	GetBatch(ctx context.Context, ids []string) ([]*storage.ActiveComponent, error)
 
-	UpsertBatch(ctx context.Context, activeComponents []*converter.CompleteActiveComponent) error
+	UpsertBatch(ctx context.Context, activeComponents []*storage.ActiveComponent) error
 	DeleteBatch(ctx context.Context, ids ...string) error
 }
 

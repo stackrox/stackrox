@@ -85,8 +85,8 @@ describe('Dashboard security metrics phase one action widgets', () => {
         cy.get(widgetSelectors.optionsToggle).click();
 
         // Toggle off low and medium violations
-        cy.get(widgetSelectors.legendLabel(0)).click();
-        cy.get(widgetSelectors.legendLabel(1)).click();
+        cy.get(widgetSelectors.legendLabel(2)).click();
+        cy.get(widgetSelectors.legendLabel(3)).click();
 
         cy.get(`${widgetSelectors.axisLabel(0, 4)}:contains('Network Tools')`);
         cy.get(`${widgetSelectors.axisLabel(0, 3)}:contains('Privileges')`);

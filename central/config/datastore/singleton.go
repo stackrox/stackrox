@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	configStore "github.com/stackrox/rox/central/config/store"
 	"github.com/stackrox/rox/central/config/store/bolt"
 	"github.com/stackrox/rox/central/config/store/postgres"
@@ -40,11 +39,6 @@ var (
 
 	d DataStore
 
-	defaultClusterRetentionConfig = storage.DecommissionedClusterRetentionConfig{
-		RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
-		LastUpdated:           types.TimestampNow(),
-	}
-
 	defaultPrivateConfig = storage.PrivateConfig{
 		ImageRetentionDurationDays: DefaultImageRetention,
 		AlertRetention: &storage.PrivateConfig_AlertConfig{
@@ -57,7 +51,9 @@ var (
 			},
 		},
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
-		DecommissionedClusterRetention:      &defaultClusterRetentionConfig,
+		DecommissionedClusterRetention: &storage.DecommissionedClusterRetentionConfig{
+			RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
+		},
 	}
 )
 
@@ -86,7 +82,7 @@ func initialize() {
 		privateConfig = &defaultPrivateConfig
 		needsUpsert = true
 	} else if config.GetPrivateConfig().GetDecommissionedClusterRetention() == nil {
-		privateConfig.DecommissionedClusterRetention = &defaultClusterRetentionConfig
+		privateConfig.DecommissionedClusterRetention = defaultPrivateConfig.GetDecommissionedClusterRetention()
 		needsUpsert = true
 	}
 

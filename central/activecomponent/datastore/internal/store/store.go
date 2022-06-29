@@ -1,7 +1,6 @@
 package store
 
 import (
-	"github.com/stackrox/rox/central/activecomponent/converter"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -12,6 +11,6 @@ type Store interface {
 	Get(id string) (*storage.ActiveComponent, bool, error)
 	GetBatch(ids []string) ([]*storage.ActiveComponent, []int, error)
 
-	UpsertBatch(activeComponents []*converter.CompleteActiveComponent) error
+	UpsertBatch(activeComponents []*storage.ActiveComponent) error
 	DeleteBatch(ids ...string) error
 }

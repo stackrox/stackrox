@@ -1,43 +1,78 @@
 import * as api from '../constants/apiEndpoints';
 import { headingPlural, selectors, url } from '../constants/CompliancePage';
 
+import { interceptRequests, waitForResponses } from './request';
 import { visit } from './visit';
 
-const opnamesForDashboard = [
+const routeMatcherMap = {};
+[
     'clustersCount',
     'namespacesCount',
     'nodesCount',
     'deploymentsCount',
     'runStatuses',
+    'getAggregatedResults', // 4 requests
     'getComplianceStandards',
-];
+    'complianceStandards', // 6 requests
+].forEach((opname) => {
+    routeMatcherMap[opname] = {
+        method: 'POST',
+        url: api.graphql(opname),
+    };
+});
 
-const standardNames = [
+/*
+ * getAggregatedResults opname has 4 requests with 2 duplicates for CLUSTER.
+ * Each entity alias has a predicate to match the payload of the corresponding request.
+ */
+const getAggregatedResults = {};
+['CLUSTER', 'NAMESPACE', 'NODE'].forEach((entity) => {
+    getAggregatedResults[entity] = (req) => {
+        const { groupBy, unit } = req.body.variables;
+        // "variables": { "groupBy": ["STANDARD", "CLUSTER"], "unit": "CHECK" }
+        return (
+            Array.isArray(groupBy) &&
+            groupBy[0] === 'STANDARD' &&
+            groupBy[1] === entity &&
+            unit === 'CHECK'
+        );
+    };
+});
+
+/*
+ * complianceStandards opname has 6 requests.
+ * Each standard name alias has a predicate to match the payload of the corresponding request.
+ */
+const complianceStandards = {};
+[
     'CIS Docker v1.2.0',
     'CIS Kubernetes v1.5',
     'HIPAA 164',
     'NIST SP 800-190',
     'NIST SP 800-53',
     'PCI DSS 3.2.1',
-];
+].forEach((standardName) => {
+    complianceStandards[standardName] = (req) => {
+        const { where } = req.body.variables;
+        return where === `Standard:${standardName}`;
+    };
+});
+
+const opnameAliasesMap = {
+    getAggregatedResults,
+    complianceStandards,
+};
+
+const waitOptions = {
+    requestTimeout: 10000, // because so many requests
+    responseTimeout: 20000, // for 6 complianceStandards responses
+};
+
+const requestConfig = { routeMatcherMap, opnameAliasesMap, waitOptions };
 
 export function visitComplianceDashboard() {
-    opnamesForDashboard.forEach((opname) => {
-        cy.intercept('POST', api.graphql(opname)).as(opname);
-    });
-    // Intercept requests for compliance standards, which have same opname but different value in payload.
-    cy.intercept('POST', api.graphql('complianceStandards'), (req) => {
-        const { where } = req.body.variables;
-        const alias = standardNames.find((standardName) => where === `Standard:${standardName}`);
-        if (typeof alias === 'string') {
-            req.alias = alias;
-        }
-    });
+    visit(url.dashboard, requestConfig);
 
-    visit(url.dashboard);
-
-    cy.wait(opnamesForDashboard.map((opname) => `@${opname}`));
-    cy.wait(standardNames.map((standardName) => `@${standardName}`));
     cy.get('h1:contains("Compliance")');
 }
 
@@ -46,30 +81,15 @@ export function visitComplianceDashboard() {
  */
 export function scanCompliance() {
     cy.intercept('POST', api.graphql('triggerScan')).as('triggerScan');
-    opnamesForDashboard.forEach((opname) => {
-        cy.intercept('POST', api.graphql(opname)).as(opname);
-    });
-    // Intercept requests for compliance standards, which have same opname but different value in payload.
-    cy.intercept('POST', api.graphql('complianceStandards'), (req) => {
-        const { where } = req.body.variables;
-        const alias = standardNames.find((standardName) => where === `Standard:${standardName}`);
-        if (typeof alias === 'string') {
-            req.alias = alias;
-        }
-    });
+    interceptRequests(requestConfig);
 
     cy.get(selectors.scanButton).should('not.have.attr', 'disabled');
     cy.get(selectors.scanButton).click();
     cy.get(selectors.scanButton).should('have.attr', 'disabled');
 
-    cy.wait('@triggerScan'); // request occurs immediately
-    cy.wait(
-        opnamesForDashboard.map((opname) => `@${opname}`),
-        {
-            requestTimeout: 30000, // increase from default 5 seconds until requests occur
-        }
-    );
-    cy.wait(standardNames.map((standardName) => `@${standardName}`));
+    cy.wait('@triggerScan');
+    waitForResponses(requestConfig);
+
     cy.get(selectors.scanButton).click().should('not.have.attr', 'disabled');
 }
 
