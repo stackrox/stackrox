@@ -1,12 +1,10 @@
 package conn
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
