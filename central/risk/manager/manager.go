@@ -169,7 +169,7 @@ func (e *managerImpl) calculateAndUpsertNodeRisk(node *storage.Node) error {
 
 	// We want to compute and store risk for node components when node risk is reprocessed.
 	for _, c := range node.GetScan().GetComponents() {
-		e.reprocessNodeComponentRisk(c)
+		e.reprocessNodeComponentRisk(c, node.GetScan().GetOperatingSystem())
 	}
 
 	node.RiskScore = risk.Score
@@ -207,7 +207,7 @@ func (e *managerImpl) calculateAndUpsertImageRisk(image *storage.Image) error {
 
 	// We want to compute and store risk for image components when image risk is reprocessed.
 	for _, component := range image.GetScan().GetComponents() {
-		e.reprocessImageComponentRisk(component)
+		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem())
 	}
 
 	image.RiskScore = risk.Score
@@ -234,16 +234,16 @@ func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 
 // reprocessImageComponentRisk will reprocess risk of image components and save the results.
 // Image Component ID is generated as <component_name>:<component_version>
-func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent) {
+func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent, os string) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "ImageComponent")
 
-	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent))
+	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent), os)
 	if risk == nil {
 		return
 	}
 
 	oldScore := e.imageComponentRanker.GetScoreForID(
-		scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), ""))
+		scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), os))
 	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
 		log.Errorf("Error reprocessing risk for image component %s v%s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
 	}
@@ -258,10 +258,10 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 
 // reprocessNodeComponentRisk will reprocess risk of node components and save the results.
 // Node Component ID is generated as <component_name>:<component_version>
-func (e *managerImpl) reprocessNodeComponentRisk(nodeComponent *storage.EmbeddedNodeScanComponent) {
+func (e *managerImpl) reprocessNodeComponentRisk(nodeComponent *storage.EmbeddedNodeScanComponent, os string) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "NodeComponent")
 
-	risk := e.nodeComponentScorer.Score(allAccessCtx, scancomponent.NewFromNodeComponent(nodeComponent))
+	risk := e.nodeComponentScorer.Score(allAccessCtx, scancomponent.NewFromNodeComponent(nodeComponent), os)
 	if risk == nil {
 		return
 	}
