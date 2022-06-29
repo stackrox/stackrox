@@ -1,20 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-    EmptyState,
-    EmptyStateIcon,
-    EmptyStateVariant,
-    Flex,
-    Title,
-    Truncate,
-} from '@patternfly/react-core';
+import { Flex, Title, Truncate } from '@patternfly/react-core';
 import { TableComposable, Tbody, Tr, Td } from '@patternfly/react-table';
-import { SearchIcon, SecurityIcon } from '@patternfly/react-icons';
+import { SecurityIcon } from '@patternfly/react-icons';
 
 import { DeploymentAlert } from 'types/alert.proto';
 import { violationsBasePath } from 'routePaths';
 import { severityColors } from 'constants/visuals/colors';
 import { getDateTime } from 'utils/dateUtils';
+import NoDataEmptyState from './NoDataEmptyState';
 
 export type MostRecentViolationsProps = {
     alerts: DeploymentAlert[];
@@ -22,14 +16,7 @@ export type MostRecentViolationsProps = {
 
 function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
     if (alerts.length === 0) {
-        return (
-            <EmptyState variant={EmptyStateVariant.xs}>
-                <EmptyStateIcon className="pf-u-font-size-xl" icon={SearchIcon} />
-                <Title headingLevel="h4" size="md">
-                    No critical violations were found in the selected scope
-                </Title>
-            </EmptyState>
-        );
+        return <NoDataEmptyState />;
     }
 
     return (
