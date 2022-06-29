@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Full RC number (A.B.C-rc.D)
+        description: Full RC version (A.B.C[-N]-rc.D)
         required: true
-        default: 0.0.0-rc.1
+        default: 0.0.0-test-rc.1
         type: string
       dry-run:
         description: Dry-run
@@ -28,7 +28,7 @@ jobs:
     name: Setup variables
     uses: ./.github/workflows/variables.yml
     with:
-      version: ${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
+      version: ${{format('{0}{1}', github.event.milestone.title, inputs.version)}}
 
   check-jira:
     name: Check Jira tickets for release
@@ -41,10 +41,12 @@ jobs:
         env:
           JQL: >-
             project IN (${{env.jira_projects}})
-            AND fixVersion = \"${{needs.variables.outputs.release-patch}}\"
+            AND fixVersion IN (\"${{needs.variables.outputs.release-patch}}\",
+            \"${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}\")
             AND status != CLOSED
-            AND Component != Documentation AND type != Epic
-            order by assignee
+            AND Component != Documentation
+            AND type != Epic
+            ORDER BY assignee
 
         run: |
           GH_MD_FORMAT_LINE=$(cat << EOF
@@ -65,7 +67,7 @@ jobs:
 
           $ISSUES
 
-          Please contact the assignees to clarify the status.
+          Contact the assignees to clarify the status.
           EOF
             echo "::error::There are non-closed Jira issues for version ${{needs.variables.outputs.release-patch}}."
 
@@ -76,11 +78,11 @@ jobs:
 
             echo "Open issues: $OPEN_ISSUES"
 
-            if [ "${{github.event.inputs.dry-run}}" != "true" ]; then
+            if [ "${{inputs.dry-run}}" != "true" ]; then
               echo "$OPEN_ISSUES" | jq -r ".issues[] | .key" | while read -r KEY; do
                 curl --fail -sSL -X POST \
                   -H "Authorization: Bearer $JIRA_TOKEN" \
-                  --data '{"body": "Release ${{needs.variables.outputs.release-patch}} is ongoing. Please update the status."}' \
+                  --data '{"body": "Release ${{needs.variables.outputs.release-patch}} is ongoing. Please update the status of this issue and notify the release engineer."}' \
                   -H "Content-Type: application/json" \
                   "https://issues.redhat.com/rest/api/2/issue/$KEY/comment"
               done
@@ -111,7 +113,7 @@ jobs:
           fi
 
       - name: Create next milestone
-        if: github.event.inputs.dry-run != 'true' && steps.check.outputs.open-issues != ''
+        if: inputs.dry-run != 'true' && steps.check.outputs.open-issues != ''
         run: |
           set -u
           if ! http_code=$(gh api --silent -X POST \
@@ -141,7 +143,7 @@ jobs:
           echo "The following PRs are still open: $PRS"
 
           for PR in $PRS; do
-            [ "${{github.event.inputs.dry-run}}" != "true" ] && \
+            [ "${{inputs.dry-run}}" != "true" ] && \
             gh pr edit $PR \
               --milestone "${{needs.variables.outputs.next-milestone}}" \
               --repo "${{github.repository}}"
@@ -213,14 +215,14 @@ jobs:
               if git cherry-pick -x "$COMMIT"; then
                 echo "Cherry-picked $COMMIT from PR $PR" >> $GITHUB_STEP_SUMMARY
 
-                [ "${{github.event.inputs.dry-run}}" != "true" ] && \
+                [ "${{inputs.dry-run}}" != "true" ] && \
                 gh pr comment $PR --body "Merge commit has been cherry-picked to branch \`${{needs.variables.outputs.branch}}\`."
 
                 EMPTY=false
               else
                 git cherry-pick --abort
 
-                [ "${{github.event.inputs.dry-run}}" != "true" ] && \
+                [ "${{inputs.dry-run}}" != "true" ] && \
                 gh pr comment $PR --body "Please merge the changes to branch \`${{needs.variables.outputs.branch}}\`."
 
                 cat << EOF >> $GITHUB_STEP_SUMMARY
@@ -280,7 +282,7 @@ jobs:
             { "blocks": [
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":red_circle: *Couldn't close upstream milestone ${{needs.variables.outputs.milestone}} on <${{github.repositoryUrl}}|${{github.repository}}>.*" }},
+            ":red_circle: *Couldn't close upstream milestone ${{needs.variables.outputs.milestone}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             "*Couldn't cherry-pick the following PRs
@@ -294,7 +296,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ">
-            Repository: <${{github.repositoryUrl}}|${{github.repository}}>\n>
+            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
             Milestone: <${{github.event.milestone.html_url}}|${{needs.variables.outputs.milestone}}>\n>
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}
@@ -323,7 +325,7 @@ jobs:
         run: |
           git tag --annotate "${{needs.variables.outputs.milestone}}" --message ""
       - name: Push
-        if: github.event.inputs.dry-run != 'true'
+        if: inputs.dry-run != 'true'
         run: |
           git push --follow-tags
       - run: |
@@ -338,7 +340,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Reopen milestone ${{needs.variables.outputs.milestone}}
-        if: github.event.inputs.dry-run != 'true'
+        if: inputs.dry-run != 'true'
         run: |
           gh api "repos/${{github.repository}}/milestones/${{needs.variables.outputs.milestone}}" \
             -X PATCH -f state=open
@@ -354,7 +356,7 @@ jobs:
     steps:
       - name: Create GitHub Pre-release
         id: pre-release
-        if: github.event.inputs.dry-run != 'true'
+        if: inputs.dry-run != 'true'
         run: |
           URL=$(gh release create "${{needs.variables.outputs.milestone}}" \
             --prerelease \
@@ -375,7 +377,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":white_check_mark: *Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.rc}}>
-            of <${{github.repositoryUrl}}|${{github.repository}}> has been published on GitHub*" }},
+            of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub*" }},
 
             { "type": "divider" },
 
@@ -392,7 +394,7 @@ jobs:
   create-k8s-cluster:
     name: Create k8s cluster
     needs: [variables, cut-rc]
-    if: github.event.inputs.dry-run != 'true'
+    if: inputs.dry-run != 'true'
     uses: ./.github/workflows/create-cluster.yml
     with:
       flavor: qa-demo
@@ -403,7 +405,7 @@ jobs:
   create-os4-cluster:
     name: Create OS4 cluster
     needs: [variables, cut-rc]
-    if: github.event.inputs.dry-run != 'true'
+    if: inputs.dry-run != 'true'
     uses: ./.github/workflows/create-cluster.yml
     with:
       flavor: openshift-4-demo
@@ -489,7 +491,7 @@ jobs:
     name: Create GKE long-running cluster
     needs: [variables, cut-rc]
     if: >-
-      github.event.inputs.dry-run != 'true' &&
+      inputs.dry-run != 'true' &&
       needs.variables.outputs.rc == '1'
     uses: ./.github/workflows/create-cluster.yml
     with:
@@ -581,7 +583,7 @@ jobs:
           payload: >-
             { "blocks": [
               { "type": "section", "text": { "type": "mrkdwn", "text":
-              ":red_circle: *Couldn't create test clusters for ${{needs.variables.outputs.milestone}} milestone of <${{github.repositoryUrl}}|${{github.repository}}>.*" }},
+              ":red_circle: *Couldn't create test clusters for ${{needs.variables.outputs.milestone}} milestone of <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
 
             { "type": "divider" },
 
@@ -592,7 +594,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ">
-            Repository: <${{github.repositoryUrl}}|${{github.repository}}>\n>
+            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
             Milestone: ${{needs.variables.outputs.milestone}}\n>
             Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
             ]}

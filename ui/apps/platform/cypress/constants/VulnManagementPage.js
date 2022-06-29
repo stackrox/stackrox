@@ -17,6 +17,9 @@ export const url = {
         nodes: `${baseURL}/nodes`,
         components: `${baseURL}/components`,
         cves: `${baseURL}/cves`,
+        'image-cves': `${baseURL}/image-cves`,
+        'node-cves': `${baseURL}/node-cves`,
+        'cluster-cves': `${baseURL}/cluster-cves`,
         image: `${baseURL}/image`,
         cve: `${baseURL}/cve`,
         policy: `${baseURL}/policy`,
@@ -40,6 +43,9 @@ export const headingPlural = {
     clusters: 'clusters',
     components: 'components',
     cves: 'CVES',
+    'image-cves': 'Image CVES',
+    'node-cves': 'Node CVES',
+    'cluster-cves': 'Platform CVES',
     deployments: 'deployments',
     images: 'images',
     namespaces: 'namespaces',
@@ -107,6 +113,7 @@ export const sidePanelListEntityPageSelectors = {
     deploymentTileLink: "[data-testid='DEPLOYMENT-tile-link']",
     policyTileLink: "[data-testid='POLICY-tile-link']",
     cveTileLink: '[data-testid="CVE-tile-link"]',
+    nodeTileLink: '[data-testid="NODE-tile-link"]',
     tabButton: '[data-testid="tabs"] button',
     getSidePanelTabHeader: (title) => {
         return `[data-testid="widget-header"] > .w-full:contains('${title}')`;

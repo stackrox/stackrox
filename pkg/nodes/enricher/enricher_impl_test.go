@@ -5,8 +5,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
@@ -56,6 +58,12 @@ func (f *fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) 
 				Vulns: []*storage.EmbeddedVulnerability{
 					{
 						Cve: "CVE-2020-1234",
+					},
+					{
+						Cve: "CVE-2021-1234",
+					},
+					{
+						Cve: "CVE-2022-1234",
 					},
 				},
 			},
@@ -134,6 +142,60 @@ func TestEnricherFlow(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, c.fns, fns)
+		})
+	}
+}
+
+func TestEnricherFlowWithPostgres(t *testing.T) {
+	envIsolator := envisolator.NewEnvIsolator(t)
+	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	defer envIsolator.RestoreAll()
+
+	if !features.PostgresDatastore.Enabled() {
+		t.Skip("Skip postgres store tests")
+		t.SkipNow()
+	}
+
+	cases := []struct {
+		name string
+		node *storage.Node
+
+		fns types.NodeScannerWithDataSource
+	}{
+		{
+			name: "node already has scan",
+			node: &storage.Node{
+				Id:   "id",
+				Scan: &storage.NodeScan{},
+			},
+			fns: newFakeNodeScannerWithDataSource(opts{
+				requestedScan: true,
+			}),
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			fns := newFakeNodeScannerWithDataSource(opts{})
+
+			enricherImpl := &enricherImpl{
+				cves: &fakeCVESuppressor{},
+				scanners: map[string]types.NodeScannerWithDataSource{
+					fns.GetNodeScanner().Type(): fns,
+				},
+				metrics: newMetrics(pkgMetrics.CentralSubsystem),
+			}
+
+			err := enricherImpl.EnrichNode(c.node)
+			require.NoError(t, err)
+
+			for _, c := range c.node.GetScan().GetComponents() {
+				// `vulnerabilities` is the new field.
+				assert.NotNil(t, c.GetVulnerabilities())
+			}
 		})
 	}
 }
@@ -263,6 +325,128 @@ func TestFillScanStats(t *testing.T) {
 							Vulns: []*storage.EmbeddedVulnerability{
 								{
 									Cve: "cve-3",
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedVulns:        3,
+			expectedFixableVulns: 0,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(t.Name(), func(t *testing.T) {
+			FillScanStats(c.node)
+			assert.Equal(t, c.expectedVulns, c.node.GetCves())
+			assert.Equal(t, c.expectedFixableVulns, c.node.GetFixableCves())
+		})
+	}
+}
+
+func TestFillScanStatsWithPostgres(t *testing.T) {
+	envIsolator := envisolator.NewEnvIsolator(t)
+	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	defer envIsolator.RestoreAll()
+
+	if !features.PostgresDatastore.Enabled() {
+		t.Skip("Skip postgres store tests")
+		t.SkipNow()
+	}
+
+	cases := []struct {
+		node                 *storage.Node
+		expectedVulns        int32
+		expectedFixableVulns int32
+	}{
+		{
+			node: &storage.Node{
+				Id: "node-1",
+				Scan: &storage.NodeScan{
+					Components: []*storage.EmbeddedNodeScanComponent{
+						{
+							Vulnerabilities: []*storage.NodeVulnerability{
+								{
+									CveBaseInfo: &storage.CVEInfo{
+										Cve: "cve-1",
+									},
+									SetFixedBy: &storage.NodeVulnerability_FixedBy{
+										FixedBy: "blah",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedVulns:        1,
+			expectedFixableVulns: 1,
+		},
+		{
+			node: &storage.Node{
+				Id: "node-1",
+				Scan: &storage.NodeScan{
+					Components: []*storage.EmbeddedNodeScanComponent{
+						{
+							Vulnerabilities: []*storage.NodeVulnerability{
+								{
+									CveBaseInfo: &storage.CVEInfo{
+										Cve: "cve-1",
+									},
+									SetFixedBy: &storage.NodeVulnerability_FixedBy{
+										FixedBy: "blah",
+									},
+								},
+							},
+						},
+						{
+							Vulnerabilities: []*storage.NodeVulnerability{
+								{
+									CveBaseInfo: &storage.CVEInfo{
+										Cve: "cve-2",
+									},
+									SetFixedBy: &storage.NodeVulnerability_FixedBy{
+										FixedBy: "blah",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedVulns:        2,
+			expectedFixableVulns: 2,
+		},
+		{
+			node: &storage.Node{
+				Id: "node-1",
+				Scan: &storage.NodeScan{
+					Components: []*storage.EmbeddedNodeScanComponent{
+						{
+							Vulnerabilities: []*storage.NodeVulnerability{
+								{
+									CveBaseInfo: &storage.CVEInfo{
+										Cve: "cve-1",
+									},
+								},
+							},
+						},
+						{
+							Vulnerabilities: []*storage.NodeVulnerability{
+								{
+									CveBaseInfo: &storage.CVEInfo{
+										Cve: "cve-2",
+									},
+								},
+							},
+						},
+						{
+							Vulnerabilities: []*storage.NodeVulnerability{
+								{
+									CveBaseInfo: &storage.CVEInfo{
+										Cve: "cve-3",
+									},
 								},
 							},
 						},

@@ -126,10 +126,6 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 
 		signatureVerificationSig: concurrency.NewSignal(),
 
-		// Used for testing purposes
-		reprocessingStarted:  concurrency.NewSignal(),
-		reprocessingComplete: concurrency.NewSignal(),
-
 		connManager: connManager,
 		indexQueue:  indexQueue,
 	}
@@ -170,9 +166,8 @@ type loopImpl struct {
 	enrichmentStopped concurrency.Signal
 
 	signatureVerificationSig concurrency.Signal
-	// used for testing
-	reprocessingStarted  concurrency.Signal
-	reprocessingComplete concurrency.Signal
+
+	reprocessingInProgress concurrency.Flag
 
 	connManager connection.Manager
 	indexQueue  queue.WaitableQueue
@@ -192,10 +187,8 @@ func (l *loopImpl) Start() {
 	go l.riskLoop()
 	go l.enrichLoop()
 
-	if features.ActiveVulnManagement.Enabled() {
-		l.activeComponentTicker = time.NewTicker(l.activeComponentTickerDuration)
-		go l.activeComponentLoop()
-	}
+	l.activeComponentTicker = time.NewTicker(l.activeComponentTickerDuration)
+	go l.activeComponentLoop()
 }
 
 // Stop stops the enrich and detect loop.
@@ -203,9 +196,7 @@ func (l *loopImpl) Stop() {
 	l.stopSig.Signal()
 	l.riskStopped.Wait()
 	l.enrichmentStopped.Wait()
-	if features.ActiveVulnManagement.Enabled() {
-		l.activeComponentStopped.Wait()
-	}
+	l.activeComponentStopped.Wait()
 }
 
 func (l *loopImpl) ShortCircuit() {
@@ -511,15 +502,16 @@ func (l *loopImpl) reprocessWatchedImages() {
 }
 
 func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
-	l.reprocessingComplete.Reset()
-	l.reprocessingStarted.Signal()
-
+	// In case the current reprocessing run takes longer than the ticker (i.e. > 4 hours when using a high number of
+	// images), we shouldn't trigger a parallel reprocessing run.
+	if l.reprocessingInProgress.TestAndSet(true) {
+		return
+	}
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
 	l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage, allImagesQuery)
 
-	l.reprocessingStarted.Reset()
-	l.reprocessingComplete.Signal()
+	l.reprocessingInProgress.Set(false)
 }
 
 func (l *loopImpl) runSignatureVerificationReprocessing() {

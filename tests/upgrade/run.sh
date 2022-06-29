@@ -14,13 +14,17 @@ source "$TEST_ROOT/tests/scripts/setup-certs.sh"
 source "$TEST_ROOT/tests/e2e/lib.sh"
 
 test_upgrade() {
-    info "Starting test"
+    info "Starting upgrade test"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: test_upgrade <log-output-dir>"
     fi
 
     local log_output_dir="$1"
+
+    require_environment "KUBECONFIG"
+
+    export_test_environment
 
     REPO_FOR_TIME_TRAVEL="/tmp/rox-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
@@ -32,8 +36,6 @@ test_upgrade() {
     fi
 
     export STORAGE="pvc"
-    export LOAD_BALANCER="lb"
-    export MONITORING_SUPPORT="false"
     export CLUSTER_TYPE_FOR_TEST=K8S
     require_environment "LONGTERM_LICENSE"
     export ROX_LICENSE_KEY="${LONGTERM_LICENSE}"
@@ -44,7 +46,6 @@ test_upgrade() {
 
     preamble
     setup_deployment_env false false
-    install_built_roxctl_in_gopath
     remove_existing_stackrox_resources
 
     info "Deploying central"
@@ -73,11 +74,6 @@ preamble() {
         TEST_HOST_OS="linux"
     else
         die "Only linux or darwin are supported for this test"
-    fi
-
-    if is_OPENSHIFT_CI; then
-        # TODO RS-494 will provide the binaries
-        make cli-linux upgrader
     fi
 
     require_executable "$TEST_ROOT/bin/$TEST_HOST_OS/roxctl"

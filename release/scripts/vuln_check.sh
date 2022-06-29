@@ -104,12 +104,15 @@ compare_fixable_vulns "docs" "$DOCS_PRERELEASE_TAG"
 
 # check collector images
 compare_fixable_vulns "collector" "${COLLECTOR_TAG}-slim"
+compare_fixable_vulns "collector" "${COLLECTOR_TAG}"
 
 # check scanner images
 compare_fixable_vulns "scanner" "$SCANNER_TAG"
+compare_fixable_vulns "scanner-slim" "$SCANNER_TAG"
 
 # check scanner-db images
 compare_fixable_vulns "scanner-db" "$SCANNER_TAG"
+compare_fixable_vulns "scanner-db-slim" "$SCANNER_TAG"
 
 # if fixable vulns found, return 1 so CI can fail the job
 [ "$FAIL_SCRIPT" = true ] && exit 1 || exit 0

@@ -36,7 +36,6 @@ import spock.lang.Shared
 import spock.lang.Unroll
 
 @Category(BAT)
-@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
 class SACTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA1 = "sac-deploymentnginx-qa1"
     static final private String NAMESPACE_QA1 = "qa-test1"
@@ -290,7 +289,6 @@ class SACTest extends BaseSpecification {
         deleteSecret(DEPLOYMENT_QA2.namespace)
     }
 
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify GetSummaryCounts using a token with all access receives all results"() {
         when:
         "GetSummaryCounts is called using a token with all access"
@@ -314,7 +312,6 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify alerts count is scoped"() {
         given:
         def query = SSOC.RawQuery.newBuilder().setQuery(
@@ -336,7 +333,6 @@ class SACTest extends BaseSpecification {
         assert 2 * alertsCount("getSummaryCountsToken") == alertsCount(ALLACCESSTOKEN)
     }
 
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify ListSecrets using a token without access receives no results"() {
         when:
         "ListSecrets is called using a token without view access to Secrets"
@@ -352,7 +348,6 @@ class SACTest extends BaseSpecification {
         deleteSecret(DEPLOYMENT_QA1.namespace)
     }
 
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify ListSecrets using a token with access receives some results"() {
         when:
         "ListSecrets is called using a token with view access to Secrets"
@@ -394,7 +389,6 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Search on #category resources using the #tokenName token returns >= #minReturned results"() {
         when:
         "A search is performed using the given token"
@@ -412,7 +406,6 @@ class SACTest extends BaseSpecification {
         "searchAlertsToken" | "Deployment" | 1
     }
 
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Search using the allAccessToken returns results for all search categories"() {
         when:
         "A search is performed using the allAccessToken"
@@ -458,7 +451,6 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Autocomplete on #category resources using the #tokenName token returns >= to #minReturned results"() {
         when:
         "Autocomplete is called using the given token"
@@ -500,7 +492,6 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify using the #tokenName token with the #service service returns >= to #minNumReturned results"() {
         when:
         "The service under test is called using the given token"
@@ -531,7 +522,6 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Namespace service SAC is enforced properly when using the #tokenName token"() {
         when:
         "We try to get one namespace we have access to and one namespace we don't have access to "

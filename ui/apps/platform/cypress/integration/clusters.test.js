@@ -6,7 +6,6 @@ import withAuth from '../helpers/basicAuth';
 import {
     visitClusters,
     visitClustersFromLeftNav,
-    visitClustersWithFixture,
     visitClustersWithFixtureMetadataDatetime,
     visitClusterByNameWithFixture,
     visitClusterByNameWithFixtureMetadataDatetime,
@@ -251,7 +250,9 @@ describe('Cluster management', () => {
 
     it('should indicate which clusters are managed by Helm and the Operator', () => {
         const fixturePath = 'clusters/health.json';
-        visitClustersWithFixture(fixturePath);
+        visitClusters({
+            clusters: { fixture: fixturePath },
+        });
 
         const helmIndicator = '[data-testid="cluster-name"] img[alt="Managed by Helm"]';
         const k8sOperatorIndicator =

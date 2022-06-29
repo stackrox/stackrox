@@ -4,16 +4,19 @@ import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceSta
 import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_WRITE_ACCESS
 import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuilder
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
+
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
 import com.google.protobuf.util.Timestamps
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
+
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
@@ -246,13 +249,25 @@ class ComplianceTest extends BaseSpecification {
                             counts.put(it.value.overallState, [it.key] as Set)
                 }
             }
+            run.machineConfigResultsMap.each {
+                it.value.controlResultsMap.each {
+                    counts.get(it.value.overallState) ?
+                            counts.get(it.value.overallState).add(it.key) :
+                            counts.put(it.value.overallState, [it.key] as Set)
+                }
+            }
+
             counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS)
                     .removeAll(counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE) ?: [])
             counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS)
                     .removeAll(counts.get(ComplianceState.COMPLIANCE_STATE_ERROR) ?: [])
-            assert result.numPassing == counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS)?.size() ?: 0
-            assert result.numFailing == counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE)?.size() ?: 0 +
-                    counts.get(ComplianceState.COMPLIANCE_STATE_ERROR)?.size() ?: 0
+
+            def countPassing = (counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS) ?: []).size()
+            assert result.numPassing == countPassing
+
+            def countFailing = (counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE) ?: []).size() +
+                    (counts.get(ComplianceState.COMPLIANCE_STATE_ERROR) ?: []).size()
+            assert result.numFailing == countFailing
         }
     }
 
@@ -554,7 +569,7 @@ class ComplianceTest extends BaseSpecification {
         def hasMaster = false
         for (objects.Node node : orchNodes) {
             for (String label : node.getLabels().keySet()) {
-                if (label == "node-role.kubernetes.io/master") {
+                if (label == "node-role.kubernetes.io/master" || label == "node-role.kubernetes.io/control-plane") {
                     hasMaster = true
                     break
                 }
@@ -1373,7 +1388,6 @@ class ComplianceTest extends BaseSpecification {
     }
 
     @Category([BAT])
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify ComplianceRuns with SAC on clusters with wildcard"() {
         def otherClusterName = "disallowedCluster"
 

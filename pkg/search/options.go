@@ -31,6 +31,7 @@ var (
 	CollectorStatus        = newFieldLabel("Collector Status")
 	AdmissionControlStatus = newFieldLabel("Admission Control Status")
 	ScannerStatus          = newFieldLabel("Scanner Status")
+	LastContactTime        = newFieldLabel("Last Contact")
 
 	PolicyID       = newFieldLabel("Policy ID")
 	Enforcement    = newFieldLabel("Enforcement")
@@ -313,6 +314,7 @@ var (
 	TestChild2Val            = newFieldLabel("Test Child2 Val")
 	TestParent3ID            = newFieldLabel("Test Parent3 ID")
 	TestParent3Val           = newFieldLabel("Test Parent3 Val")
+	TestShortCircuitID       = newFieldLabel("Test ShortCircuit ID")
 
 	// Derived test fields
 	TestGrandparentCount = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)

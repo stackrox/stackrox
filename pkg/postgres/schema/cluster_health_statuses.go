@@ -5,10 +5,13 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -22,6 +25,7 @@ var (
                    OverallHealthStatus integer,
                    AdmissionControlHealthStatus integer,
                    ScannerHealthStatus integer,
+                   LastContact timestamp,
                    serialized bytea,
                    PRIMARY KEY(Id),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (Id) REFERENCES clusters(Id) ON DELETE CASCADE
@@ -46,6 +50,7 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_HEALTH, "clusterhealthstatus", (*storage.ClusterHealthStatus)(nil)))
 		RegisterTable(schema, CreateTableClusterHealthStatusesStmt)
 		return schema
 	}()
@@ -63,6 +68,7 @@ type ClusterHealthStatuses struct {
 	OverallHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:overallhealthstatus;type:integer"`
 	AdmissionControlHealthStatus storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:admissioncontrolhealthstatus;type:integer"`
 	ScannerHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:scannerhealthstatus;type:integer"`
+	LastContact                  *time.Time                                    `gorm:"column:lastcontact;type:timestamp"`
 	Serialized                   []byte                                        `gorm:"column:serialized;type:bytea"`
 	ClustersRef                  Clusters                                      `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

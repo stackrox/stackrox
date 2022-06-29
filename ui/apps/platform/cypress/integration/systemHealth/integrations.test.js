@@ -1,12 +1,7 @@
 import { url as integrationsUrl } from '../../constants/IntegrationsPage';
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
-import {
-    visitSystemHealth,
-    visitSystemHealthWithBackupIntegrations,
-    visitSystemHealthWithImageIntegrations,
-    visitSystemHealthWithNotifierIntegrations,
-} from '../../helpers/systemHealth';
+import { visitSystemHealth } from '../../helpers/systemHealth';
 
 describe('System Health Integrations local deployment', () => {
     withAuth();
@@ -51,7 +46,12 @@ describe('System Health Integrations local deployment', () => {
 describe('System Health Integrations fixtures', () => {
     withAuth();
     it('should not have count in healthy text for backup integrations', () => {
-        visitSystemHealthWithBackupIntegrations([], []);
+        const externalBackups = [];
+        const integrationHealth = [];
+        visitSystemHealth({
+            externalbackups: { body: { externalBackups } },
+            'integrationhealth/externalbackups': { body: { integrationHealth } },
+        });
 
         const { healthyText, widgets } = selectors.integrations;
         cy.get(`${widgets.backupIntegrations} ${healthyText}`).should(
@@ -104,7 +104,10 @@ describe('System Health Integrations fixtures', () => {
                 lastTimestamp: '2020-12-09T15:15:38.327627700Z',
             },
         ];
-        visitSystemHealthWithImageIntegrations(integrations, integrationHealth);
+        visitSystemHealth({
+            imageintegrations: { body: { integrations } },
+            'integrationhealth/imageintegrations': { body: { integrationHealth } },
+        });
 
         const { healthyText, widgets } = selectors.integrations;
         cy.get(`${widgets.imageIntegrations} ${healthyText}`).should(
@@ -131,7 +134,10 @@ describe('System Health Integrations fixtures', () => {
                 lastTimestamp: '2020-12-09T17:52:18.743384877Z',
             },
         ];
-        visitSystemHealthWithNotifierIntegrations(notifiers, integrationHealth);
+        visitSystemHealth({
+            notifiers: { body: { notifiers } },
+            'integrationhealth/notifiers': { body: { integrationHealth } },
+        });
 
         const { healthyText, widgets } = selectors.integrations;
         cy.get(`${widgets.notifierIntegrations} ${healthyText}`).should(
@@ -159,7 +165,10 @@ describe('System Health Integrations fixtures', () => {
                 lastTimestamp: '2020-12-04T00:38:17.906318735Z',
             },
         ];
-        visitSystemHealthWithImageIntegrations(integrations, integrationHealth);
+        visitSystemHealth({
+            imageintegrations: { body: { integrations } },
+            'integrationhealth/imageintegrations': { body: { integrationHealth } },
+        });
 
         const { integrationLabel, integrationName, widgets } = selectors.integrations;
 

@@ -387,6 +387,40 @@ check_scanner_and_collector_versions() {
     info "The scanner and collector versions are release versions"
 }
 
+push_release() {
+    info "Push release artifacts"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_release <tag>"
+    fi
+
+    local tag="$1"
+
+    info "Push roxctl to gs://sr-roxc & gs://rhacs-openshift-mirror-src/assets"
+
+    setup_gcp
+
+    local temp_dir
+    temp_dir="$(mktemp -d)"
+    "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/prepare.sh" . "${temp_dir}"
+    "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/publish.sh" "${temp_dir}" "${tag}" "gs://sr-roxc"
+    "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/publish.sh" "${temp_dir}" "${tag}" "gs://rhacs-openshift-mirror-src/assets"
+
+    info "Publish Helm charts to github repository stackrox/release-artifacts and create a PR"
+
+    local central_services_chart_dir
+    local secured_cluster_services_chart_dir
+    central_services_chart_dir="$(mktemp -d)"
+    secured_cluster_services_chart_dir="$(mktemp -d)"
+    roxctl helm output central-services --image-defaults=stackrox.io --output-dir "${central_services_chart_dir}/stackrox"
+    roxctl helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
+    roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
+    roxctl helm output secured-cluster-services --image-defaults=stackrox.io --output-dir "${secured_cluster_services_chart_dir}/stackrox"
+    roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
+    roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
+    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
+}
+
 mark_collector_release() {
     info "Create a PR for collector to add this release to its RELEASED_VERSIONS file"
 
@@ -396,10 +430,6 @@ mark_collector_release() {
 
     local tag="$1"
     local username="roxbot"
-
-    if ! is_release_version "$tag"; then
-        die "A release version is required. Got $tag"
-    fi
 
     info "Check out collector source code"
 
@@ -449,14 +479,23 @@ is_tagged() {
     [[ -n "$tags" ]]
 }
 
-is_nightly_tag() {
-    local tags
-    tags="$(git tag --contains)"
-    [[ "$tags" =~ nightly ]]
+is_nightly_run() {
+    [[ "${CIRCLE_TAG:-}" =~ ^nightly- ]]
 }
 
 is_in_PR_context() {
-    (is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]) || (is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]])
+    if is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
+        return 0
+    elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
+        return 0
+    elif is_OPENSHIFT_CI && [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+        # bin, test-bin, images
+        local pull_request
+        pull_request=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].number' 2>&1) || return 1
+        [[ "$pull_request" =~ ^[0-9]+$ ]] && return 0
+    fi
+
+    return 1
 }
 
 is_openshift_CI_rehearse_PR() {
@@ -796,6 +835,27 @@ openshift_ci_e2e_mods() {
         env | grep -e ^KUBERNETES_ | cut -d= -f1 | awk '{ print "unset", $1 }' > "$envfile"
         # shellcheck disable=SC1090
         source "$envfile"
+    fi
+}
+
+handle_nightly_runs() {
+    if ! is_OPENSHIFT_CI; then
+        die "Only for OpenShift CI"
+    fi
+
+    local nightly_tag_prefix
+    nightly_tag_prefix="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-"
+    if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
+        ci_export CIRCLE_TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
+    elif is_in_PR_context && pr_has_label "simulate-nightly-run"; then
+        local sha
+        if [[ -n "${PULL_PULL_SHA:-}" ]]; then
+            sha="${PULL_PULL_SHA}"
+        else
+            sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || die "Cannot find pull sha"
+            [[ "$sha" != "null" ]] || die "Cannot find pull sha"
+        fi
+        ci_export CIRCLE_TAG "${nightly_tag_prefix}${sha:0:8}"
     fi
 }
 

@@ -86,18 +86,145 @@ func (LoadBalancerType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e08f99f642c8548a, []int{1}
 }
 
+// next available tag: 3
+type DecommissionedClusterRetentionInfo struct {
+	// Types that are valid to be assigned to RetentionInfo:
+	//	*DecommissionedClusterRetentionInfo_IsExcluded
+	//	*DecommissionedClusterRetentionInfo_DaysUntilDeletion
+	RetentionInfo        isDecommissionedClusterRetentionInfo_RetentionInfo `protobuf_oneof:"RetentionInfo"`
+	XXX_NoUnkeyedLiteral struct{}                                           `json:"-"`
+	XXX_unrecognized     []byte                                             `json:"-"`
+	XXX_sizecache        int32                                              `json:"-"`
+}
+
+func (m *DecommissionedClusterRetentionInfo) Reset()         { *m = DecommissionedClusterRetentionInfo{} }
+func (m *DecommissionedClusterRetentionInfo) String() string { return proto.CompactTextString(m) }
+func (*DecommissionedClusterRetentionInfo) ProtoMessage()    {}
+func (*DecommissionedClusterRetentionInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e08f99f642c8548a, []int{0}
+}
+func (m *DecommissionedClusterRetentionInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DecommissionedClusterRetentionInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DecommissionedClusterRetentionInfo.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DecommissionedClusterRetentionInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DecommissionedClusterRetentionInfo.Merge(m, src)
+}
+func (m *DecommissionedClusterRetentionInfo) XXX_Size() int {
+	return m.Size()
+}
+func (m *DecommissionedClusterRetentionInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_DecommissionedClusterRetentionInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DecommissionedClusterRetentionInfo proto.InternalMessageInfo
+
+type isDecommissionedClusterRetentionInfo_RetentionInfo interface {
+	isDecommissionedClusterRetentionInfo_RetentionInfo()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isDecommissionedClusterRetentionInfo_RetentionInfo
+}
+
+type DecommissionedClusterRetentionInfo_IsExcluded struct {
+	IsExcluded bool `protobuf:"varint,1,opt,name=is_excluded,json=isExcluded,proto3,oneof" json:"is_excluded,omitempty"`
+}
+type DecommissionedClusterRetentionInfo_DaysUntilDeletion struct {
+	DaysUntilDeletion int32 `protobuf:"varint,2,opt,name=days_until_deletion,json=daysUntilDeletion,proto3,oneof" json:"days_until_deletion,omitempty"`
+}
+
+func (*DecommissionedClusterRetentionInfo_IsExcluded) isDecommissionedClusterRetentionInfo_RetentionInfo() {
+}
+func (m *DecommissionedClusterRetentionInfo_IsExcluded) Clone() isDecommissionedClusterRetentionInfo_RetentionInfo {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DecommissionedClusterRetentionInfo_IsExcluded)
+	*cloned = *m
+
+	return cloned
+}
+func (*DecommissionedClusterRetentionInfo_DaysUntilDeletion) isDecommissionedClusterRetentionInfo_RetentionInfo() {
+}
+func (m *DecommissionedClusterRetentionInfo_DaysUntilDeletion) Clone() isDecommissionedClusterRetentionInfo_RetentionInfo {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DecommissionedClusterRetentionInfo_DaysUntilDeletion)
+	*cloned = *m
+
+	return cloned
+}
+
+func (m *DecommissionedClusterRetentionInfo) GetRetentionInfo() isDecommissionedClusterRetentionInfo_RetentionInfo {
+	if m != nil {
+		return m.RetentionInfo
+	}
+	return nil
+}
+
+func (m *DecommissionedClusterRetentionInfo) GetIsExcluded() bool {
+	if x, ok := m.GetRetentionInfo().(*DecommissionedClusterRetentionInfo_IsExcluded); ok {
+		return x.IsExcluded
+	}
+	return false
+}
+
+func (m *DecommissionedClusterRetentionInfo) GetDaysUntilDeletion() int32 {
+	if x, ok := m.GetRetentionInfo().(*DecommissionedClusterRetentionInfo_DaysUntilDeletion); ok {
+		return x.DaysUntilDeletion
+	}
+	return 0
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*DecommissionedClusterRetentionInfo) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*DecommissionedClusterRetentionInfo_IsExcluded)(nil),
+		(*DecommissionedClusterRetentionInfo_DaysUntilDeletion)(nil),
+	}
+}
+
+func (m *DecommissionedClusterRetentionInfo) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DecommissionedClusterRetentionInfo) Clone() *DecommissionedClusterRetentionInfo {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DecommissionedClusterRetentionInfo)
+	*cloned = *m
+
+	if m.RetentionInfo != nil {
+		cloned.RetentionInfo = m.RetentionInfo.Clone()
+	}
+	return cloned
+}
+
 type ClusterResponse struct {
-	Cluster              *storage.Cluster `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Cluster              *storage.Cluster                    `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	ClusterRetentionInfo *DecommissionedClusterRetentionInfo `protobuf:"bytes,2,opt,name=cluster_retention_info,json=clusterRetentionInfo,proto3" json:"cluster_retention_info,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                            `json:"-"`
+	XXX_unrecognized     []byte                              `json:"-"`
+	XXX_sizecache        int32                               `json:"-"`
 }
 
 func (m *ClusterResponse) Reset()         { *m = ClusterResponse{} }
 func (m *ClusterResponse) String() string { return proto.CompactTextString(m) }
 func (*ClusterResponse) ProtoMessage()    {}
 func (*ClusterResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08f99f642c8548a, []int{0}
+	return fileDescriptor_e08f99f642c8548a, []int{1}
 }
 func (m *ClusterResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -133,6 +260,13 @@ func (m *ClusterResponse) GetCluster() *storage.Cluster {
 	return nil
 }
 
+func (m *ClusterResponse) GetClusterRetentionInfo() *DecommissionedClusterRetentionInfo {
+	if m != nil {
+		return m.ClusterRetentionInfo
+	}
+	return nil
+}
+
 func (m *ClusterResponse) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -144,6 +278,7 @@ func (m *ClusterResponse) Clone() *ClusterResponse {
 	*cloned = *m
 
 	cloned.Cluster = m.Cluster.Clone()
+	cloned.ClusterRetentionInfo = m.ClusterRetentionInfo.Clone()
 	return cloned
 }
 
@@ -160,7 +295,7 @@ func (m *ClusterDefaultsResponse) Reset()         { *m = ClusterDefaultsResponse
 func (m *ClusterDefaultsResponse) String() string { return proto.CompactTextString(m) }
 func (*ClusterDefaultsResponse) ProtoMessage()    {}
 func (*ClusterDefaultsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08f99f642c8548a, []int{1}
+	return fileDescriptor_e08f99f642c8548a, []int{2}
 }
 func (m *ClusterDefaultsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -224,17 +359,19 @@ func (m *ClusterDefaultsResponse) Clone() *ClusterDefaultsResponse {
 }
 
 type ClustersList struct {
-	Clusters             []*storage.Cluster `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
+	Clusters []*storage.Cluster `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	// Maps 'UNHEALTHY' clusters' IDs to their retention info
+	ClusterIdToRetentionInfo map[string]*DecommissionedClusterRetentionInfo `protobuf:"bytes,2,rep,name=cluster_id_to_retention_info,json=clusterIdToRetentionInfo,proto3" json:"cluster_id_to_retention_info,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral     struct{}                                       `json:"-"`
+	XXX_unrecognized         []byte                                         `json:"-"`
+	XXX_sizecache            int32                                          `json:"-"`
 }
 
 func (m *ClustersList) Reset()         { *m = ClustersList{} }
 func (m *ClustersList) String() string { return proto.CompactTextString(m) }
 func (*ClustersList) ProtoMessage()    {}
 func (*ClustersList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08f99f642c8548a, []int{2}
+	return fileDescriptor_e08f99f642c8548a, []int{3}
 }
 func (m *ClustersList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -270,6 +407,13 @@ func (m *ClustersList) GetClusters() []*storage.Cluster {
 	return nil
 }
 
+func (m *ClustersList) GetClusterIdToRetentionInfo() map[string]*DecommissionedClusterRetentionInfo {
+	if m != nil {
+		return m.ClusterIdToRetentionInfo
+	}
+	return nil
+}
+
 func (m *ClustersList) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -286,6 +430,12 @@ func (m *ClustersList) Clone() *ClustersList {
 			cloned.Clusters[idx] = v.Clone()
 		}
 	}
+	if m.ClusterIdToRetentionInfo != nil {
+		cloned.ClusterIdToRetentionInfo = make(map[string]*DecommissionedClusterRetentionInfo, len(m.ClusterIdToRetentionInfo))
+		for k, v := range m.ClusterIdToRetentionInfo {
+			cloned.ClusterIdToRetentionInfo[k] = v.Clone()
+		}
+	}
 	return cloned
 }
 
@@ -300,7 +450,7 @@ func (m *GetClustersRequest) Reset()         { *m = GetClustersRequest{} }
 func (m *GetClustersRequest) String() string { return proto.CompactTextString(m) }
 func (*GetClustersRequest) ProtoMessage()    {}
 func (*GetClustersRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08f99f642c8548a, []int{3}
+	return fileDescriptor_e08f99f642c8548a, []int{4}
 }
 func (m *GetClustersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -361,7 +511,7 @@ func (m *KernelSupportAvailableResponse) Reset()         { *m = KernelSupportAva
 func (m *KernelSupportAvailableResponse) String() string { return proto.CompactTextString(m) }
 func (*KernelSupportAvailableResponse) ProtoMessage()    {}
 func (*KernelSupportAvailableResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e08f99f642c8548a, []int{4}
+	return fileDescriptor_e08f99f642c8548a, []int{5}
 }
 func (m *KernelSupportAvailableResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -413,9 +563,11 @@ func (m *KernelSupportAvailableResponse) Clone() *KernelSupportAvailableResponse
 func init() {
 	proto.RegisterEnum("v1.DeploymentFormat", DeploymentFormat_name, DeploymentFormat_value)
 	proto.RegisterEnum("v1.LoadBalancerType", LoadBalancerType_name, LoadBalancerType_value)
+	proto.RegisterType((*DecommissionedClusterRetentionInfo)(nil), "v1.DecommissionedClusterRetentionInfo")
 	proto.RegisterType((*ClusterResponse)(nil), "v1.ClusterResponse")
 	proto.RegisterType((*ClusterDefaultsResponse)(nil), "v1.ClusterDefaultsResponse")
 	proto.RegisterType((*ClustersList)(nil), "v1.ClustersList")
+	proto.RegisterMapType((map[string]*DecommissionedClusterRetentionInfo)(nil), "v1.ClustersList.ClusterIdToRetentionInfoEntry")
 	proto.RegisterType((*GetClustersRequest)(nil), "v1.GetClustersRequest")
 	proto.RegisterType((*KernelSupportAvailableResponse)(nil), "v1.KernelSupportAvailableResponse")
 }
@@ -423,52 +575,63 @@ func init() {
 func init() { proto.RegisterFile("api/v1/cluster_service.proto", fileDescriptor_e08f99f642c8548a) }
 
 var fileDescriptor_e08f99f642c8548a = []byte{
-	// 711 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xcf, 0x4f, 0xdb, 0x48,
-	0x14, 0xce, 0x18, 0x58, 0xc8, 0x04, 0x16, 0x33, 0xe1, 0x47, 0xc8, 0xa2, 0x08, 0xf9, 0xc4, 0x66,
-	0x37, 0x8e, 0xc2, 0xee, 0x61, 0x85, 0xd8, 0x43, 0x42, 0x5c, 0x8a, 0x08, 0x09, 0x35, 0x01, 0x55,
-	0x3d, 0xd4, 0x1a, 0xc2, 0x6b, 0x64, 0xe1, 0x78, 0x8c, 0x67, 0x6c, 0x35, 0xaa, 0x2a, 0x55, 0x3d,
-	0xf5, 0xde, 0x4b, 0xff, 0xa1, 0x4a, 0x3d, 0x56, 0xea, 0x3f, 0x50, 0xd1, 0xfe, 0x1f, 0xad, 0xfc,
-	0x13, 0x17, 0x52, 0xa4, 0xde, 0xec, 0xef, 0x7d, 0xef, 0x7b, 0xef, 0x7b, 0xf3, 0x66, 0xf0, 0x06,
-	0x75, 0xcc, 0xba, 0xdf, 0xa8, 0x0f, 0x2c, 0x8f, 0x0b, 0x70, 0x0d, 0x0e, 0xae, 0x6f, 0x0e, 0x40,
-	0x75, 0x5c, 0x26, 0x18, 0x91, 0xfc, 0x46, 0x79, 0x63, 0xc8, 0xd8, 0xd0, 0x82, 0x7a, 0x40, 0xa4,
-	0xb6, 0xcd, 0x04, 0x15, 0x26, 0xb3, 0x79, 0xc4, 0x28, 0x17, 0x93, 0x7c, 0x36, 0x1a, 0x31, 0x3b,
-	0x06, 0x49, 0x0c, 0xc2, 0xc8, 0x11, 0xe3, 0x18, 0x5b, 0xe1, 0x82, 0xb9, 0x74, 0x08, 0x49, 0xa5,
-	0x08, 0x56, 0xfe, 0xc7, 0x8b, 0x7b, 0x11, 0xa0, 0x03, 0x77, 0x98, 0xcd, 0x81, 0x54, 0xf1, 0x6c,
-	0xcc, 0x29, 0xa1, 0x4d, 0xb4, 0x55, 0xd8, 0x96, 0xd5, 0x38, 0x57, 0x4d, 0xa8, 0x09, 0x41, 0x79,
-	0x8f, 0xf0, 0x5a, 0x0c, 0xb6, 0xe1, 0x19, 0xf5, 0x2c, 0xc1, 0x53, 0x9d, 0x6d, 0xbc, 0x32, 0xa2,
-	0xa6, 0x6d, 0x98, 0x23, 0x3a, 0x04, 0xc3, 0x05, 0x87, 0x71, 0x53, 0x30, 0x77, 0x1c, 0xaa, 0xe6,
-	0xf5, 0x62, 0x10, 0x3c, 0x08, 0x62, 0x7a, 0x1a, 0x22, 0xbb, 0xb8, 0x3c, 0x60, 0x96, 0x05, 0x03,
-	0xc1, 0xdc, 0xbb, 0x89, 0x52, 0x98, 0x58, 0x4a, 0x19, 0xb7, 0xb3, 0xff, 0xc3, 0xa5, 0x4b, 0x70,
-	0x6d, 0xb0, 0x0c, 0xee, 0x39, 0x0e, 0x73, 0x85, 0x41, 0x7d, 0x6a, 0x5a, 0xf4, 0xdc, 0x82, 0xd2,
-	0xd4, 0x26, 0xda, 0x9a, 0xd3, 0x57, 0xa3, 0xf8, 0x49, 0x14, 0x6e, 0x26, 0x51, 0x65, 0x17, 0xcf,
-	0xc7, 0x36, 0x78, 0xc7, 0xe4, 0x82, 0xfc, 0x8d, 0xe7, 0x62, 0x8b, 0xbc, 0x84, 0x36, 0xa7, 0x26,
-	0x0e, 0x21, 0x65, 0x28, 0x55, 0x4c, 0xf6, 0x41, 0x24, 0x02, 0x3a, 0x5c, 0x79, 0xc0, 0x05, 0x59,
-	0xc6, 0x33, 0x57, 0x1e, 0xa4, 0x7e, 0xa3, 0x1f, 0xe5, 0x29, 0xae, 0x1c, 0x4e, 0xec, 0x21, 0x9d,
-	0xdb, 0x7d, 0x2e, 0xd0, 0x7d, 0x2e, 0x76, 0xa4, 0x12, 0xaa, 0xee, 0x60, 0xb9, 0x0d, 0x8e, 0xc5,
-	0xc6, 0x23, 0xb0, 0xc5, 0x03, 0xe6, 0x8e, 0xa8, 0x20, 0x05, 0x3c, 0x7b, 0x78, 0xda, 0xd2, 0xf6,
-	0xfa, 0x1d, 0x39, 0x47, 0xe6, 0xf0, 0xf4, 0x43, 0xad, 0x73, 0x24, 0x23, 0xb2, 0x88, 0x0b, 0xc1,
-	0x97, 0x71, 0xd6, 0xec, 0x9c, 0x6a, 0x27, 0xb2, 0x54, 0x3d, 0xc0, 0x72, 0x87, 0xd1, 0x8b, 0x16,
-	0xb5, 0xa8, 0x3d, 0x00, 0xb7, 0x3f, 0x76, 0x20, 0xa0, 0x77, 0x7b, 0x5d, 0x4d, 0xce, 0x91, 0x25,
-	0xbc, 0xd0, 0xe9, 0x35, 0xdb, 0x46, 0xab, 0xd9, 0x69, 0x76, 0xf7, 0x34, 0x5d, 0x46, 0x64, 0x01,
-	0xe7, 0xbb, 0xbd, 0xb6, 0x66, 0x1c, 0xf7, 0xf4, 0xbe, 0x2c, 0x91, 0x3c, 0x9e, 0xd1, 0x7b, 0xa7,
-	0x7d, 0x4d, 0x9e, 0xda, 0xfe, 0x36, 0x9d, 0x2e, 0x16, 0x3f, 0x89, 0x76, 0x9a, 0x1c, 0xe1, 0x42,
-	0x66, 0x4c, 0x64, 0x55, 0xf5, 0x1b, 0xea, 0xdd, 0xb9, 0x95, 0xe5, 0x00, 0xcf, 0x9e, 0x86, 0xb2,
-	0xfc, 0xfa, 0xd3, 0xd7, 0xb7, 0xd2, 0xef, 0x64, 0x3e, 0x73, 0x53, 0x38, 0xe9, 0x62, 0x7c, 0x93,
-	0x4d, 0xc2, 0x2c, 0x1d, 0x38, 0xf3, 0xdc, 0x01, 0xb4, 0xc6, 0x07, 0xed, 0x72, 0x31, 0xa3, 0x93,
-	0x0c, 0x57, 0x59, 0x0f, 0xa5, 0x8a, 0x64, 0x29, 0x2b, 0x55, 0x7f, 0x61, 0x5e, 0xbc, 0x0c, 0xda,
-	0x3b, 0x66, 0x3c, 0x23, 0x78, 0xeb, 0xc0, 0x27, 0x0b, 0xae, 0x85, 0x82, 0x4b, 0xca, 0x0f, 0xbd,
-	0xed, 0xa0, 0x2a, 0x79, 0x84, 0xf1, 0xb1, 0xf7, 0xab, 0x6a, 0x1b, 0xa1, 0xda, 0x6a, 0xf9, 0x6e,
-	0x7b, 0x81, 0xe4, 0x3e, 0x5e, 0x68, 0x83, 0x05, 0x02, 0x7e, 0x6e, 0x3a, 0x1f, 0x20, 0x5a, 0x70,
-	0xef, 0x13, 0xab, 0xd5, 0x09, 0x56, 0x5f, 0x21, 0xbc, 0xbe, 0x0f, 0x62, 0xf2, 0x22, 0x92, 0x1b,
-	0x8d, 0xb2, 0x12, 0x7c, 0xde, 0xbf, 0xaf, 0xca, 0xbf, 0x61, 0x9d, 0xbf, 0xc8, 0x9f, 0xd9, 0x3a,
-	0x35, 0xb0, 0xfd, 0x7a, 0xb4, 0xa6, 0xb5, 0x78, 0x8d, 0x6b, 0xe9, 0x1a, 0xbf, 0x91, 0x10, 0x31,
-	0xf0, 0xda, 0xcd, 0xe9, 0xc5, 0x6f, 0xc7, 0x19, 0xb5, 0x3c, 0xe0, 0xd9, 0xfa, 0x7f, 0x64, 0x86,
-	0x74, 0xfb, 0x81, 0x49, 0x86, 0x45, 0x96, 0x33, 0x85, 0x6b, 0x17, 0x31, 0xab, 0xa5, 0x7e, 0xb8,
-	0xae, 0xa0, 0x8f, 0xd7, 0x15, 0xf4, 0xf9, 0xba, 0x82, 0xde, 0x7d, 0xa9, 0xe4, 0x70, 0xc9, 0x64,
-	0x2a, 0x17, 0x74, 0x70, 0xe9, 0xb2, 0xe7, 0xd1, 0xf3, 0xa7, 0x52, 0xc7, 0x54, 0xfd, 0xc6, 0x13,
-	0xc9, 0x6f, 0x3c, 0xce, 0x9d, 0xff, 0x16, 0x62, 0xff, 0x7c, 0x0f, 0x00, 0x00, 0xff, 0xff, 0x6f,
-	0xc4, 0x75, 0x61, 0x94, 0x05, 0x00, 0x00,
+	// 886 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0x4f, 0x6f, 0xe3, 0x54,
+	0x10, 0x8f, 0xdd, 0x2d, 0xdb, 0x4e, 0xb6, 0xd4, 0x7d, 0xe9, 0xb6, 0xd9, 0x50, 0xa2, 0xe2, 0x03,
+	0x5a, 0x02, 0x75, 0x48, 0xe1, 0xb0, 0xaa, 0xf6, 0x92, 0x34, 0xa6, 0x8d, 0x36, 0x9b, 0x14, 0x37,
+	0x5d, 0x21, 0x84, 0xb0, 0xbc, 0xf6, 0xb4, 0x7a, 0xaa, 0xe3, 0xe7, 0xf5, 0x7b, 0x8e, 0x36, 0x42,
+	0x48, 0x88, 0x13, 0xe2, 0xca, 0x05, 0x89, 0x13, 0x1f, 0x06, 0x89, 0x23, 0x12, 0x5f, 0x00, 0x15,
+	0xbe, 0x07, 0xe8, 0xf9, 0x4f, 0xea, 0xb6, 0xd9, 0xa2, 0xde, 0x5e, 0xe6, 0x37, 0xf3, 0x9b, 0x99,
+	0xdf, 0x8c, 0x27, 0xb0, 0xe5, 0x84, 0xb4, 0x39, 0x69, 0x35, 0x5d, 0x3f, 0xe6, 0x02, 0x23, 0x9b,
+	0x63, 0x34, 0xa1, 0x2e, 0x1a, 0x61, 0xc4, 0x04, 0x23, 0xea, 0xa4, 0x55, 0xdb, 0x3a, 0x63, 0xec,
+	0xcc, 0xc7, 0xa6, 0x74, 0x74, 0x82, 0x80, 0x09, 0x47, 0x50, 0x16, 0xf0, 0xd4, 0xa3, 0x56, 0xc9,
+	0xe3, 0xd9, 0x78, 0xcc, 0x82, 0xcc, 0x48, 0x32, 0x23, 0x8e, 0x43, 0x31, 0xcd, 0x6c, 0x0f, 0xb9,
+	0x60, 0x91, 0x73, 0x86, 0x79, 0xa6, 0xd4, 0xac, 0xff, 0xa8, 0x80, 0xde, 0x45, 0x19, 0x4d, 0x39,
+	0xa7, 0x2c, 0x40, 0x6f, 0x3f, 0xc5, 0x2d, 0x14, 0x18, 0xc8, 0x4c, 0xbd, 0xe0, 0x94, 0x91, 0xf7,
+	0xa0, 0x4c, 0xb9, 0x8d, 0xaf, 0x5d, 0x3f, 0xf6, 0xd0, 0xab, 0x2a, 0xdb, 0xca, 0xe3, 0xa5, 0xc3,
+	0x92, 0x05, 0x94, 0x9b, 0x99, 0x8d, 0x7c, 0x0c, 0x15, 0xcf, 0x99, 0x72, 0x3b, 0x0e, 0x04, 0xf5,
+	0x6d, 0x0f, 0x7d, 0x94, 0xd1, 0x55, 0x75, 0x5b, 0x79, 0xbc, 0x78, 0x58, 0xb2, 0xd6, 0x24, 0x78,
+	0x22, 0xb1, 0x6e, 0x06, 0x75, 0x56, 0x61, 0xe5, 0x4a, 0x16, 0xfd, 0x17, 0x05, 0x56, 0x67, 0xe9,
+	0x79, 0xc8, 0x02, 0x8e, 0xa4, 0x01, 0xf7, 0xb3, 0x8a, 0x93, 0xac, 0xe5, 0x5d, 0xcd, 0xc8, 0x3a,
+	0x31, 0x72, 0xd7, 0xdc, 0x81, 0x7c, 0x05, 0x1b, 0xb9, 0x8e, 0x51, 0x4e, 0x6c, 0xd3, 0xe0, 0x94,
+	0x25, 0x55, 0x94, 0x77, 0xdf, 0x37, 0x26, 0x2d, 0xe3, 0xff, 0xbb, 0xb5, 0xd6, 0xdd, 0x39, 0x56,
+	0xfd, 0x37, 0x05, 0x36, 0x33, 0xf7, 0x2e, 0x9e, 0x3a, 0xb1, 0x2f, 0xf8, 0xac, 0xca, 0x5d, 0x78,
+	0x38, 0x76, 0x68, 0x60, 0xd3, 0xb1, 0x73, 0x86, 0x76, 0x84, 0x21, 0xe3, 0x54, 0xb0, 0x68, 0x9a,
+	0xd4, 0xbc, 0x6c, 0x55, 0x24, 0xd8, 0x93, 0x98, 0x35, 0x83, 0xc8, 0x53, 0xa8, 0xb9, 0xcc, 0xf7,
+	0xd1, 0x15, 0x2c, 0xba, 0x19, 0xa8, 0x26, 0x81, 0xd5, 0x99, 0xc7, 0xf5, 0xe8, 0x27, 0x50, 0x3d,
+	0xc7, 0x28, 0x40, 0xdf, 0xe6, 0x71, 0x18, 0xb2, 0x48, 0xd8, 0xce, 0xc4, 0xa1, 0xbe, 0xf3, 0xd2,
+	0xc7, 0xea, 0x82, 0x1c, 0x8f, 0xb5, 0x91, 0xe2, 0xc7, 0x29, 0xdc, 0xce, 0x51, 0xfd, 0x57, 0x15,
+	0x1e, 0x64, 0x7d, 0xf0, 0x3e, 0xe5, 0x82, 0x7c, 0x04, 0x4b, 0x59, 0xc3, 0xbc, 0xaa, 0x6c, 0x2f,
+	0xcc, 0xd5, 0x78, 0xe6, 0x41, 0x02, 0xd8, 0xca, 0x45, 0xa6, 0x9e, 0x2d, 0xd8, 0x4d, 0xa9, 0x25,
+	0x83, 0x21, 0xa5, 0x2e, 0x66, 0xc9, 0x7f, 0xf4, 0xbc, 0x11, 0xbb, 0xa2, 0xab, 0x19, 0x88, 0x68,
+	0x6a, 0x55, 0xdd, 0x37, 0xc0, 0x35, 0x0e, 0xef, 0xde, 0x1a, 0x4a, 0x34, 0x58, 0x38, 0xc7, 0x5c,
+	0x69, 0xf9, 0x24, 0x4f, 0x61, 0x71, 0xe2, 0xf8, 0x31, 0xde, 0x71, 0xec, 0x69, 0xd0, 0x9e, 0xfa,
+	0x44, 0xd1, 0x1b, 0x40, 0x0e, 0x50, 0xe4, 0xf5, 0x5b, 0xf8, 0x2a, 0x46, 0x2e, 0xc8, 0x3a, 0x2c,
+	0xbe, 0x8a, 0x71, 0x36, 0xd5, 0xf4, 0x87, 0xfe, 0x35, 0xd4, 0x9f, 0xcd, 0x55, 0x7a, 0xb6, 0x1d,
+	0xb7, 0xcd, 0x4a, 0xb9, 0x6d, 0x56, 0x7b, 0x6a, 0x55, 0x69, 0xec, 0x81, 0xd6, 0xc5, 0xd0, 0x67,
+	0xd3, 0x31, 0x06, 0xe2, 0x33, 0x16, 0x8d, 0x1d, 0x41, 0xca, 0x70, 0xff, 0xd9, 0x49, 0xc7, 0xdc,
+	0x1f, 0xf5, 0xb5, 0x12, 0x59, 0x82, 0x7b, 0x87, 0x66, 0xff, 0xb9, 0xa6, 0x90, 0x55, 0x28, 0xcb,
+	0x97, 0xfd, 0xa2, 0xdd, 0x3f, 0x31, 0x8f, 0x35, 0xb5, 0xd1, 0x03, 0xad, 0xcf, 0x1c, 0xaf, 0xe3,
+	0xf8, 0x4e, 0xe0, 0x62, 0x34, 0x9a, 0x86, 0x28, 0xdd, 0x07, 0xc3, 0x81, 0xa9, 0x95, 0xc8, 0x1a,
+	0xac, 0xf4, 0x87, 0xed, 0xae, 0xdd, 0x69, 0xf7, 0xdb, 0x83, 0x7d, 0xd3, 0xd2, 0x14, 0xb2, 0x02,
+	0xcb, 0x83, 0x61, 0xd7, 0xb4, 0x8f, 0x86, 0xd6, 0x48, 0x53, 0xc9, 0x32, 0x2c, 0x5a, 0xc3, 0x93,
+	0x91, 0xa9, 0x2d, 0xec, 0xfe, 0x7b, 0x6f, 0xf6, 0x71, 0xf2, 0xe3, 0xf4, 0x4a, 0x91, 0xe7, 0x50,
+	0x2e, 0xc8, 0x44, 0x36, 0xa4, 0xd0, 0x37, 0x75, 0xab, 0x69, 0xd7, 0x97, 0x41, 0x5f, 0xff, 0xfe,
+	0xcf, 0x7f, 0x7e, 0x52, 0xdf, 0x26, 0x0f, 0x0a, 0xb7, 0x8f, 0x93, 0x01, 0xc0, 0x65, 0x34, 0x49,
+	0xa2, 0x2c, 0xe4, 0x2c, 0x8e, 0x5c, 0xec, 0x4c, 0x7b, 0xdd, 0x5a, 0xa5, 0xc0, 0x93, 0x8b, 0xab,
+	0x3f, 0x4a, 0xa8, 0x2a, 0x64, 0xad, 0x48, 0xd5, 0xfc, 0x86, 0x7a, 0xdf, 0xca, 0xf2, 0x8e, 0x18,
+	0x2f, 0x10, 0x5e, 0xdb, 0xea, 0xf9, 0x84, 0x9b, 0x09, 0xe1, 0x9a, 0x7e, 0xa5, 0xb6, 0x3d, 0xa5,
+	0x41, 0x3e, 0x07, 0x38, 0x8a, 0xef, 0xca, 0xb6, 0x95, 0xb0, 0x6d, 0xd4, 0x6e, 0x96, 0x27, 0x29,
+	0x0f, 0x60, 0x25, 0x39, 0x87, 0xf8, 0xe6, 0xa6, 0x97, 0xa5, 0xc5, 0x94, 0x97, 0x3c, 0x6f, 0xb5,
+	0x31, 0xa7, 0xd5, 0xef, 0x14, 0x78, 0x74, 0x80, 0x62, 0xfe, 0x22, 0x92, 0x4b, 0x8e, 0x9a, 0x2e,
+	0x9f, 0xb7, 0xef, 0xab, 0xfe, 0x69, 0x92, 0xe7, 0x43, 0xf2, 0x41, 0x31, 0xcf, 0x0e, 0x06, 0x93,
+	0x66, 0xba, 0xa6, 0x3b, 0xd9, 0x1a, 0xef, 0xcc, 0xd6, 0xf8, 0x07, 0x55, 0x21, 0x36, 0x6c, 0x5e,
+	0x4e, 0x2f, 0xbb, 0x90, 0x2f, 0xe4, 0x17, 0xc5, 0x8b, 0xf9, 0xdf, 0x29, 0x88, 0x74, 0xfd, 0x8c,
+	0xe6, 0x62, 0x91, 0xf5, 0x42, 0xe2, 0x1d, 0x2f, 0xf3, 0xea, 0x18, 0xbf, 0x5f, 0xd4, 0x95, 0x3f,
+	0x2e, 0xea, 0xca, 0x5f, 0x17, 0x75, 0xe5, 0xe7, 0xbf, 0xeb, 0x25, 0xa8, 0x52, 0x66, 0x70, 0xe1,
+	0xb8, 0xe7, 0x11, 0x7b, 0x9d, 0xfe, 0xa1, 0x19, 0x4e, 0x48, 0x8d, 0x49, 0xeb, 0x4b, 0x75, 0xd2,
+	0xfa, 0xa2, 0xf4, 0xf2, 0xad, 0xc4, 0xf6, 0xc9, 0x7f, 0x01, 0x00, 0x00, 0xff, 0xff, 0xef, 0x07,
+	0x9b, 0x58, 0x66, 0x07, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -770,6 +933,71 @@ var _ClustersService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/cluster_service.proto",
 }
 
+func (m *DecommissionedClusterRetentionInfo) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DecommissionedClusterRetentionInfo) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DecommissionedClusterRetentionInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.RetentionInfo != nil {
+		{
+			size := m.RetentionInfo.Size()
+			i -= size
+			if _, err := m.RetentionInfo.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DecommissionedClusterRetentionInfo_IsExcluded) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DecommissionedClusterRetentionInfo_IsExcluded) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i--
+	if m.IsExcluded {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x8
+	return len(dAtA) - i, nil
+}
+func (m *DecommissionedClusterRetentionInfo_DaysUntilDeletion) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DecommissionedClusterRetentionInfo_DaysUntilDeletion) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i = encodeVarintClusterService(dAtA, i, uint64(m.DaysUntilDeletion))
+	i--
+	dAtA[i] = 0x10
+	return len(dAtA) - i, nil
+}
 func (m *ClusterResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -793,6 +1021,18 @@ func (m *ClusterResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ClusterRetentionInfo != nil {
+		{
+			size, err := m.ClusterRetentionInfo.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintClusterService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
 	}
 	if m.Cluster != nil {
 		{
@@ -883,6 +1123,32 @@ func (m *ClustersList) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ClusterIdToRetentionInfo) > 0 {
+		for k := range m.ClusterIdToRetentionInfo {
+			v := m.ClusterIdToRetentionInfo[k]
+			baseI := i
+			if v != nil {
+				{
+					size, err := v.MarshalToSizedBuffer(dAtA[:i])
+					if err != nil {
+						return 0, err
+					}
+					i -= size
+					i = encodeVarintClusterService(dAtA, i, uint64(size))
+				}
+				i--
+				dAtA[i] = 0x12
+			}
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintClusterService(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintClusterService(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x12
+		}
 	}
 	if len(m.Clusters) > 0 {
 		for iNdEx := len(m.Clusters) - 1; iNdEx >= 0; iNdEx-- {
@@ -983,6 +1249,39 @@ func encodeVarintClusterService(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *DecommissionedClusterRetentionInfo) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.RetentionInfo != nil {
+		n += m.RetentionInfo.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DecommissionedClusterRetentionInfo_IsExcluded) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 2
+	return n
+}
+func (m *DecommissionedClusterRetentionInfo_DaysUntilDeletion) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 1 + sovClusterService(uint64(m.DaysUntilDeletion))
+	return n
+}
 func (m *ClusterResponse) Size() (n int) {
 	if m == nil {
 		return 0
@@ -991,6 +1290,10 @@ func (m *ClusterResponse) Size() (n int) {
 	_ = l
 	if m.Cluster != nil {
 		l = m.Cluster.Size()
+		n += 1 + l + sovClusterService(uint64(l))
+	}
+	if m.ClusterRetentionInfo != nil {
+		l = m.ClusterRetentionInfo.Size()
 		n += 1 + l + sovClusterService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -1032,6 +1335,19 @@ func (m *ClustersList) Size() (n int) {
 		for _, e := range m.Clusters {
 			l = e.Size()
 			n += 1 + l + sovClusterService(uint64(l))
+		}
+	}
+	if len(m.ClusterIdToRetentionInfo) > 0 {
+		for k, v := range m.ClusterIdToRetentionInfo {
+			_ = k
+			_ = v
+			l = 0
+			if v != nil {
+				l = v.Size()
+				l += 1 + sovClusterService(uint64(l))
+			}
+			mapEntrySize := 1 + len(k) + sovClusterService(uint64(len(k))) + l
+			n += mapEntrySize + 1 + sovClusterService(uint64(mapEntrySize))
 		}
 	}
 	if m.XXX_unrecognized != nil {
@@ -1076,6 +1392,98 @@ func sovClusterService(x uint64) (n int) {
 }
 func sozClusterService(x uint64) (n int) {
 	return sovClusterService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *DecommissionedClusterRetentionInfo) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowClusterService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DecommissionedClusterRetentionInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DecommissionedClusterRetentionInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsExcluded", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.RetentionInfo = &DecommissionedClusterRetentionInfo_IsExcluded{b}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DaysUntilDeletion", wireType)
+			}
+			var v int32
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RetentionInfo = &DecommissionedClusterRetentionInfo_DaysUntilDeletion{v}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipClusterService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthClusterService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *ClusterResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -1139,6 +1547,42 @@ func (m *ClusterResponse) Unmarshal(dAtA []byte) error {
 				m.Cluster = &storage.Cluster{}
 			}
 			if err := m.Cluster.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterRetentionInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthClusterService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthClusterService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ClusterRetentionInfo == nil {
+				m.ClusterRetentionInfo = &DecommissionedClusterRetentionInfo{}
+			}
+			if err := m.ClusterRetentionInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1361,6 +1805,135 @@ func (m *ClustersList) Unmarshal(dAtA []byte) error {
 			if err := m.Clusters[len(m.Clusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterIdToRetentionInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthClusterService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthClusterService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ClusterIdToRetentionInfo == nil {
+				m.ClusterIdToRetentionInfo = make(map[string]*DecommissionedClusterRetentionInfo)
+			}
+			var mapkey string
+			var mapvalue *DecommissionedClusterRetentionInfo
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowClusterService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowClusterService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthClusterService
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthClusterService
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var mapmsglen int
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowClusterService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapmsglen |= int(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					if mapmsglen < 0 {
+						return ErrInvalidLengthClusterService
+					}
+					postmsgIndex := iNdEx + mapmsglen
+					if postmsgIndex < 0 {
+						return ErrInvalidLengthClusterService
+					}
+					if postmsgIndex > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = &DecommissionedClusterRetentionInfo{}
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
+						return err
+					}
+					iNdEx = postmsgIndex
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipClusterService(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthClusterService
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.ClusterIdToRetentionInfo[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

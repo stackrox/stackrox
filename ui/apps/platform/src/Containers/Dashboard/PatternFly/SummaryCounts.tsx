@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import Raven from 'raven-js';
 import pluralize from 'pluralize';
-import { Alert, Button, ButtonVariant, Skeleton, Split, Stack } from '@patternfly/react-core';
+import {
+    Alert,
+    Button,
+    ButtonVariant,
+    Skeleton,
+    Split,
+    SplitItem,
+    Stack,
+} from '@patternfly/react-core';
 
 import {
     clustersBasePath,
@@ -46,8 +54,15 @@ const tileLinks: Record<TileEntity, string> = {
     Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
 };
 
+const locale = window.navigator.language ?? 'en-US';
+const dateFormatter = new Intl.DateTimeFormat(locale);
+const timeFormatter = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: 'numeric' });
+
 function SummaryCounts() {
-    const { loading, error, data } = useQuery<SummaryCountsResponse>(SUMMARY_COUNTS);
+    const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+    const { loading, error, data } = useQuery<SummaryCountsResponse>(SUMMARY_COUNTS, {
+        onCompleted: () => setLastUpdate(new Date()),
+    });
 
     if (loading) {
         return (
@@ -80,24 +95,36 @@ function SummaryCounts() {
     };
 
     return (
-        <Split className="pf-u-flex-wrap">
-            {tileEntityTypes.map((tileEntity) => (
-                <Button
-                    key={tileEntity}
-                    variant={ButtonVariant.link}
-                    component={LinkShim}
-                    href={tileLinks[tileEntity]}
-                >
-                    <Stack className="pf-u-px-xs pf-u-px-sm-on-xl pf-u-align-items-center">
-                        <span className="pf-u-font-size-lg-on-md pf-u-font-size-sm pf-u-font-weight-bold">
-                            {tileData[tileEntity]}
-                        </span>
-                        <span className="pf-u-font-size-md-on-md pf-u-font-size-xs">
-                            {pluralize(tileEntity, tileData[tileEntity])}
-                        </span>
-                    </Stack>
-                </Button>
-            ))}
+        <Split className="pf-u-align-items-center">
+            <SplitItem isFilled>
+                <Split className="pf-u-flex-wrap">
+                    {tileEntityTypes.map((tileEntity) => (
+                        <Button
+                            key={tileEntity}
+                            variant={ButtonVariant.link}
+                            component={LinkShim}
+                            href={tileLinks[tileEntity]}
+                        >
+                            <Stack className="pf-u-px-xs pf-u-px-sm-on-xl pf-u-align-items-center">
+                                <span className="pf-u-font-size-lg-on-md pf-u-font-size-sm pf-u-font-weight-bold">
+                                    {tileData[tileEntity]}
+                                </span>
+                                <span className="pf-u-font-size-md-on-md pf-u-font-size-xs">
+                                    {pluralize(tileEntity, tileData[tileEntity])}
+                                </span>
+                            </Stack>
+                        </Button>
+                    ))}
+                </Split>
+            </SplitItem>
+            <div
+                style={{ fontStyle: 'italic' }}
+                className="pf-u-color-200 pf-u-font-size-sm pf-u-mr-md pf-u-mr-lg-on-lg"
+            >
+                {`Last updated ${dateFormatter.format(lastUpdate)} at ${timeFormatter.format(
+                    lastUpdate
+                )}`}
+            </div>
         </Split>
     );
 }
