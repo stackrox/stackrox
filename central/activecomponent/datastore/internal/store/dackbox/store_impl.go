@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	acConverter "github.com/stackrox/rox/central/activecomponent/converter"
 	acDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
@@ -105,7 +104,7 @@ func (s *storeImpl) GetBatch(ids []string) ([]*storage.ActiveComponent, []int, e
 	return ret, missing, nil
 }
 
-func (s *storeImpl) UpsertBatch(updates []*acConverter.CompleteActiveComponent) error {
+func (s *storeImpl) UpsertBatch(updates []*storage.ActiveComponent) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.UpsertAll, "ActiveComponent")
 	batch := batcher.New(len(updates), batchSize)
 	for {
@@ -121,7 +120,7 @@ func (s *storeImpl) UpsertBatch(updates []*acConverter.CompleteActiveComponent) 
 	return nil
 }
 
-func (s *storeImpl) upsertActiveComponents(acs []*acConverter.CompleteActiveComponent) error {
+func (s *storeImpl) upsertActiveComponents(acs []*storage.ActiveComponent) error {
 	keysToUpsert := gatherKeysForUpsert(acs)
 	keysToLock := concurrency.DiscreteKeySet(keysToUpsert...)
 	return s.keyFence.DoStatusWithLock(keysToLock, func() error {
@@ -133,13 +132,13 @@ func (s *storeImpl) upsertActiveComponents(acs []*acConverter.CompleteActiveComp
 
 		g := txn.Graph()
 		for _, ac := range acs {
-			err = s.upserter.UpsertIn(nil, ac.ActiveComponent, txn)
+			err = s.upserter.UpsertIn(nil, ac, txn)
 			if err != nil {
 				return err
 			}
-			acKey := acDackBox.BucketHandler.GetKey(ac.ActiveComponent.GetId())
-			g.AddRefs(deploymentDackBox.BucketHandler.GetKey(ac.DeploymentID), acKey)
-			g.AddRefs(acKey, componentDackBox.BucketHandler.GetKey(ac.ComponentID))
+			acKey := acDackBox.BucketHandler.GetKey(ac.GetId())
+			g.AddRefs(deploymentDackBox.BucketHandler.GetKey(ac.GetDeploymentId()), acKey)
+			g.AddRefs(acKey, componentDackBox.BucketHandler.GetKey(ac.GetComponentId()))
 		}
 		return txn.Commit()
 	})
@@ -183,13 +182,13 @@ func (s *storeImpl) deleteNoBatch(keys ...[]byte) error {
 	return dackTxn.Commit()
 }
 
-func gatherKeysForUpsert(acs []*acConverter.CompleteActiveComponent) [][]byte {
+func gatherKeysForUpsert(acs []*storage.ActiveComponent) [][]byte {
 	var allKeys [][]byte
 	for _, ac := range acs {
 		allKeys = append(allKeys,
-			componentDackBox.BucketHandler.GetKey(ac.ComponentID),
-			deploymentDackBox.BucketHandler.GetKey(ac.DeploymentID),
-			acDackBox.BucketHandler.GetKey(ac.ActiveComponent.GetId()),
+			componentDackBox.BucketHandler.GetKey(ac.GetComponentId()),
+			deploymentDackBox.BucketHandler.GetKey(ac.GetDeploymentId()),
+			acDackBox.BucketHandler.GetKey(ac.GetId()),
 		)
 	}
 	return allKeys

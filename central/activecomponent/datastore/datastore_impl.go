@@ -4,10 +4,9 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/activecomponent/converter"
+	"github.com/stackrox/rox/central/activecomponent/datastore/index"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	"github.com/stackrox/rox/central/activecomponent/datastore/search"
-	"github.com/stackrox/rox/central/activecomponent/index"
 	sacFilters "github.com/stackrox/rox/central/activecomponent/sac"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -86,7 +85,7 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 }
 
 // UpsertBatch inserts active components
-func (ds *datastoreImpl) UpsertBatch(ctx context.Context, acs []*converter.CompleteActiveComponent) error {
+func (ds *datastoreImpl) UpsertBatch(ctx context.Context, acs []*storage.ActiveComponent) error {
 	if ok, err := deploymentSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
