@@ -34,16 +34,6 @@ func EmbeddedVulnerabilityToNodeVulnerability(vuln *storage.EmbeddedVulnerabilit
 	}
 }
 
-// FillV2NodeVulnerabilities populates the Vulnerabilities node scan component field from the Vulns one.
-func FillV2NodeVulnerabilities(node *storage.Node) {
-	for _, component := range node.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			nodeVuln := EmbeddedVulnerabilityToNodeVulnerability(vuln)
-			component.Vulnerabilities = append(component.Vulnerabilities, nodeVuln)
-		}
-	}
-}
-
 func cveInfoScoreVersion(scoreVersion storage.EmbeddedVulnerability_ScoreVersion) storage.CVEInfo_ScoreVersion {
 	switch scoreVersion {
 	case storage.EmbeddedVulnerability_V3:
