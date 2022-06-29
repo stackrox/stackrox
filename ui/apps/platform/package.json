@@ -77,7 +77,7 @@
         "react-spinners": "^0.10.4",
         "react-table": "^7.6.2",
         "react-table-6": "^6.11.0",
-        "react-toastify": "^7.0.3",
+        "react-toastify": "^9.0.5",
         "react-transition-group": "^4.4.1",
         "react-truncate": "^2.4.0",
         "react-vis": "^1.11.5",
