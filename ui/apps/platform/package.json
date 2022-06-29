@@ -81,7 +81,7 @@
         "react-transition-group": "^4.4.1",
         "react-truncate": "^2.4.0",
         "react-vis": "^1.11.5",
-        "recharts": "^1.8.5",
+        "recharts": "^2.1.12",
         "redoc": "^2.0.0-rc.65",
         "redux": "^4.1.2",
         "redux-form": "^8.3.7",
