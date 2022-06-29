@@ -1,5 +1,5 @@
 import * as api from '../constants/apiEndpoints';
-import { pfUrl, url } from '../constants/DashboardPage';
+import { url } from '../constants/DashboardPage';
 import navSelectors from '../selectors/navigation';
 
 import { visit } from './visit';
@@ -26,7 +26,7 @@ export function visitMainDashboard(requestConfig, staticResponseMap) {
 
 // TODO Make this the default once phase one of the PF Dashboard is enabled
 export function visitMainDashboardPF() {
-    visit(pfUrl);
+    visit(url);
 }
 
 export function visitMainDashboardViaRedirectFromUrl(redirectFromUrl) {
