@@ -14,8 +14,7 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/enrichment"
-	"github.com/stackrox/rox/central/imageintegration/datastore"
+	imageintegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -92,9 +91,8 @@ type datastoreImpl struct {
 	idToNameCache simplecache.Cache
 	nameToIDCache simplecache.Cache
 
-	lock               sync.Mutex
-	datastore          datastore.DataStore
-	integrationManager enrichment.Manager
+	lock                      sync.Mutex
+	imageintegrationDataStore imageintegrationDataStore.DataStore
 }
 
 func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
@@ -481,24 +479,19 @@ func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
-func (ds *datastoreImpl) removeImageIntegrationforCluster(ctx context.Context, cluster *storage.Cluster) error {
+func (ds *datastoreImpl) removeImageIntegrationByClusterId(ctx context.Context, cluster *storage.Cluster) {
 
-	//q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
-	//namespaces, err := ds.namespaceDataStore.Search(ctx, q)
-	//if err != nil {
-	//	log.Errorf("failed to get namespaces for removed cluster %s: %v", cluster.GetId(), err)
-	//}
-	//
-	//for _, namespace := range namespaces {
-	//	err = ds.namespaceDataStore.RemoveNamespace(ctx, namespace.ID)
-	//	if err != nil {
-	//		log.Errorf("failed to remove namespace %s in deleted cluster: %v", namespace.ID, err)
-	//	}
-	//}
-	//
-	//if error := nil
-	//return nil
-	return nil
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	imageintegrations, err := ds.imageintegrationDataStore.Search(ctx, q)
+	if err != nil {
+		log.Errorf("failed to get image integrations for removed cluster %s: %v", cluster.GetId(), err)
+	}
+	for _, imageintegration := range imageintegrations {
+		err = ds.imageintegrationDataStore.RemoveImageIntegration(ctx, imageintegration.ID)
+		if err != nil {
+			log.Errorf("failed to remove image integration %s in deleted cluster: %v", imageintegration.ID, err)
+		}
+	}
 }
 
 func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error {
