@@ -317,6 +317,6 @@ func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 
 func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {
 	for _, component := range image.GetScan().GetComponents() {
-		component.RiskScore = ds.imageComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), ""))
+		component.RiskScore = ds.imageComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
 	}
 }
