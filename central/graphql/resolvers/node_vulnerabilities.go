@@ -243,11 +243,11 @@ func (resolver *nodeCVEResolver) IsFixable(ctx context.Context, args RawQuery) (
 }
 
 func (resolver *nodeCVEResolver) getNodeCVEQuery() *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).ProtoQuery()
+	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 }
 
 func (resolver *nodeCVEResolver) getNodeCVERawQuery() string {
-	return search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).Query()
+	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).Query()
 }
 
 // LastModified is the time this node CVE was last modified in the system

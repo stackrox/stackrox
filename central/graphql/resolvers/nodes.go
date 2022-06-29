@@ -373,7 +373,7 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 	if err != nil {
 		return nil, err
 	}
-	vulnResolver, err := resolver.topVulnCVELoaderQuery(ctx, query)
+	vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, query)
 	if err != nil || vulnResolver == nil {
 		return nil, err
 	}
@@ -392,17 +392,27 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 		return nil, err
 	}
 
-	var vulnResolver NodeVulnerabilityResolver
 	if !features.PostgresDatastore.Enabled() {
-		vulnResolver, err = resolver.topVulnCVELoaderQuery(ctx, query)
-	} else {
-		vulnResolver, err = resolver.topVulnNodeCVELoaderQuery(ctx, query)
+		vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, query)
+		if err != nil || vulnResolver == nil {
+			return nil, err
+		}
+		return vulnResolver, nil
 	}
 
-	if err != nil || vulnResolver == nil {
+	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
+	if err != nil {
 		return nil, err
 	}
-	return vulnResolver, nil
+	vulns, err := vulnLoader.FromQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	} else if len(vulns) == 0 {
+		return nil, err
+	} else if len(vulns) > 1 {
+		return nil, errors.New("multiple vulnerabilities matched for top node vulnerability")
+	}
+	return &nodeCVEResolver{root: resolver.root, data: vulns[0]}, nil
 }
 
 func (resolver *nodeResolver) getTopNodeCVEV1Query(args RawQuery) (*v1.Query, error) {
@@ -433,7 +443,7 @@ func (resolver *nodeResolver) getTopNodeCVEV1Query(args RawQuery) (*v1.Query, er
 	return query, nil
 }
 
-func (resolver *nodeResolver) topVulnCVELoaderQuery(ctx context.Context, query *v1.Query) (*cVEResolver, error) {
+func (resolver *nodeResolver) unwrappedTopVulnQuery(ctx context.Context, query *v1.Query) (*cVEResolver, error) {
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err
@@ -447,22 +457,6 @@ func (resolver *nodeResolver) topVulnCVELoaderQuery(ctx context.Context, query *
 		return nil, errors.New("multiple vulnerabilities matched for top node vulnerability")
 	}
 	return &cVEResolver{root: resolver.root, data: vulns[0]}, nil
-}
-
-func (resolver *nodeResolver) topVulnNodeCVELoaderQuery(ctx context.Context, query *v1.Query) (*nodeCVEResolver, error) {
-	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	vulns, err := vulnLoader.FromQuery(ctx, query)
-	if err != nil {
-		return nil, err
-	} else if len(vulns) == 0 {
-		return nil, err
-	} else if len(vulns) > 1 {
-		return nil, errors.New("multiple vulnerabilities matched for top node vulnerability")
-	}
-	return &nodeCVEResolver{root: resolver.root, data: vulns[0]}, nil
 }
 
 func (resolver *nodeResolver) getNodeRawQuery() string {
@@ -546,11 +540,7 @@ func (resolver *nodeResolver) PlottedVulns(ctx context.Context, args RawQuery) (
 // PlottedNodeVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "PlottedNodeVulnerabilities")
-	if !features.PostgresDatastore.Enabled() {
-		return newPlottedNodeVulnerabilitiesResolver(resolver.nodeScopeContext(ctx), resolver.root, args)
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver PlottedNodeVulnerabilities in Node does not support postgres yet")
+	return newPlottedNodeVulnerabilitiesResolver(resolver.nodeScopeContext(ctx), resolver.root, args)
 }
 
 func (resolver *nodeResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
