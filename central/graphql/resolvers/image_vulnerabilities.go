@@ -360,9 +360,6 @@ func (resolver *imageCVEResolver) VulnerabilityState(ctx context.Context) string
 }
 
 func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
-	if !features.ActiveVulnManagement.Enabled() {
-		return nil, nil
-	}
 	scopeQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
