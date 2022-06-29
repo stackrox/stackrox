@@ -171,7 +171,7 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 }
 
 func convertImageToImageScan(metadata *storage.ImageMetadata, image *v1.Image) *storage.ImageScan {
-	components := convertFeatures(metadata, image.GetFeatures())
+	components := convertFeatures(metadata, image.GetFeatures(), image.Namespace)
 	return &storage.ImageScan{
 		ScanTime:        gogoProto.TimestampNow(),
 		Components:      components,
@@ -179,12 +179,12 @@ func convertImageToImageScan(metadata *storage.ImageMetadata, image *v1.Image) *
 	}
 }
 
-func convertFeatures(metadata *storage.ImageMetadata, features []*v1.Feature) []*storage.EmbeddedImageScanComponent {
+func convertFeatures(metadata *storage.ImageMetadata, features []*v1.Feature, os string) []*storage.EmbeddedImageScanComponent {
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
 
 	components := make([]*storage.EmbeddedImageScanComponent, 0, len(features))
 	for _, feature := range features {
-		convertedComponent := convertFeature(feature)
+		convertedComponent := convertFeature(feature, os)
 		if val, ok := layerSHAToIndex[feature.GetAddedByLayer()]; ok {
 			convertedComponent.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
 				LayerIndex: val,
@@ -196,7 +196,7 @@ func convertFeatures(metadata *storage.ImageMetadata, features []*v1.Feature) []
 	return components
 }
 
-func convertFeature(feature *v1.Feature) *storage.EmbeddedImageScanComponent {
+func convertFeature(feature *v1.Feature, os string) *storage.EmbeddedImageScanComponent {
 	component := &storage.EmbeddedImageScanComponent{
 		Name:     feature.GetName(),
 		Version:  feature.GetVersion(),
@@ -212,7 +212,7 @@ func convertFeature(feature *v1.Feature) *storage.EmbeddedImageScanComponent {
 	for _, executable := range feature.GetProvidedExecutables() {
 		imageComponentIds := make([]string, 0, len(executable.GetRequiredFeatures()))
 		for _, f := range executable.GetRequiredFeatures() {
-			imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), ""))
+			imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), os))
 		}
 		exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.GetPath(), Dependencies: imageComponentIds}
 		executables = append(executables, exec)

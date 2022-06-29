@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -41,7 +42,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) store.Store {
 	}
 }
 
-func (s *storeImpl) Exists(id string) (bool, error) {
+func (s *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	dackTxn, err := s.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -56,7 +57,7 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 	return exists, nil
 }
 
-func (s *storeImpl) Get(id string) (*storage.ActiveComponent, bool, error) {
+func (s *storeImpl) Get(_ context.Context, id string) (*storage.ActiveComponent, bool, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ActiveComponent")
 
 	dackTxn, err := s.dacky.NewReadOnlyTransaction()
@@ -73,7 +74,7 @@ func (s *storeImpl) Get(id string) (*storage.ActiveComponent, bool, error) {
 	return msg.(*storage.ActiveComponent), msg != nil, err
 }
 
-func (s *storeImpl) GetBatch(ids []string) ([]*storage.ActiveComponent, []int, error) {
+func (s *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.ActiveComponent, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "ActiveComponent")
 
 	dackTxn, err := s.dacky.NewReadOnlyTransaction()
@@ -104,7 +105,7 @@ func (s *storeImpl) GetBatch(ids []string) ([]*storage.ActiveComponent, []int, e
 	return ret, missing, nil
 }
 
-func (s *storeImpl) UpsertBatch(updates []*storage.ActiveComponent) error {
+func (s *storeImpl) UpsertMany(_ context.Context, updates []*storage.ActiveComponent) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.UpsertAll, "ActiveComponent")
 	batch := batcher.New(len(updates), batchSize)
 	for {
@@ -144,7 +145,7 @@ func (s *storeImpl) upsertActiveComponents(acs []*storage.ActiveComponent) error
 	})
 }
 
-func (s *storeImpl) DeleteBatch(ids ...string) error {
+func (s *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "ActiveComponent")
 
 	keysToDelete := acDackBox.BucketHandler.GetKeys(ids...)
