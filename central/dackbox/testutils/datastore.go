@@ -66,6 +66,7 @@ type DackboxTestDataStore interface {
 }
 
 type dackboxTestDataStoreImpl struct {
+	t *testing.T
 	// Pool for postgres mode
 	pgtestbase *pgtest.TestPostgres
 	// Elements for rocksdb+bleve mode
@@ -301,7 +302,9 @@ func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() error {
 
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	var err error
-	s := &dackboxTestDataStoreImpl{}
+	s := &dackboxTestDataStoreImpl{
+		t: t,
+	}
 	if features.PostgresDatastore.Enabled() {
 		s.pgtestbase = pgtest.ForT(t)
 		s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
