@@ -40,7 +40,7 @@ func (ds *searcherImpl) SearchRawActiveComponents(ctx context.Context, q *v1.Que
 	}
 
 	ids := search.ResultsToIDs(results)
-	activeComponents, _, err := ds.storage.GetBatch(ids)
+	activeComponents, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

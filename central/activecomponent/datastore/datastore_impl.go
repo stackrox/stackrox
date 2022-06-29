@@ -42,7 +42,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ActiveCom
 		return nil, false, err
 	}
 
-	activeComponent, found, err := ds.storage.Get(id)
+	activeComponent, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -55,7 +55,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, err
 	}
 
-	found, err := ds.storage.Exists(id)
+	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
 	}
@@ -68,7 +68,7 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 
-	activeComponents, _, err := ds.storage.GetBatch(filteredIDs)
+	activeComponents, _, err := ds.storage.GetMany(ctx, filteredIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (ds *datastoreImpl) UpsertBatch(ctx context.Context, acs []*storage.ActiveC
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := ds.storage.UpsertBatch(acs); err != nil {
+	if err := ds.storage.UpsertMany(ctx, acs); err != nil {
 		return errors.Wrap(err, "upserting active components to store")
 	}
 	return nil
@@ -106,7 +106,7 @@ func (ds *datastoreImpl) DeleteBatch(ctx context.Context, ids ...string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := ds.storage.DeleteBatch(ids...); err != nil {
+	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		return errors.Wrap(err, "deleting active components")
 	}
 	return nil
