@@ -128,8 +128,10 @@ describe('Compliance levels by standard dashboard widget', () => {
         });
 
         // Sort by descending
-        await user.click(screen.getByRole('button', { name: 'Options' }));
-        await user.click(screen.getByRole('button', { name: 'Descending' }));
+        await act(async () => {
+            await user.click(screen.getByRole('button', { name: 'Options' }));
+            await user.click(screen.getByRole('button', { name: 'Descending' }));
+        });
 
         await waitFor(async () => {
             const descendingPercentages = await getBarPercentages();
