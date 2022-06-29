@@ -40,8 +40,6 @@ var (
 	Image               = newResourceMetadata("Image", permissions.NamespaceScope)
 	// SAC check is not performed directly on ImageComponent resource. It exists here for postgres sac generation to pass.
 	ImageComponent = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
-	// SAC check is not performed directly on ImageCVE resource. It exists here for postgres sac generation to pass.
-	ImageCVE = newResourceMetadata("ImageCVE", permissions.NamespaceScope)
 
 	InstallationInfo = newResourceMetadata("InstallationInfo", permissions.GlobalScope)
 
@@ -55,9 +53,7 @@ var (
 	NetworkPolicy  = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
 	Node           = newResourceMetadata("Node", permissions.ClusterScope)
 	// SAC check is not performed directly on NodeComponent resource. It exists here for postgres sac generation to pass.
-	NodeComponent = newResourceMetadata("NodeComponent", permissions.ClusterScope)
-	// SAC check is not performed directly on NodeCVE resource. It exists here for postgres sac generation to pass.
-	NodeCVE                          = newResourceMetadata("NodeCVE", permissions.ClusterScope)
+	NodeComponent                    = newResourceMetadata("NodeComponent", permissions.ClusterScope)
 	Policy                           = newResourceMetadata("Policy", permissions.GlobalScope)
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
