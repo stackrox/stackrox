@@ -279,7 +279,7 @@ spec:
         env:
           {{- include "srox.envVars" (list . "deployment" "scanner-db" "db") | nindent 10 }}
         ports:
-        - name: postgresql
+        - name: tcp-postgresql
           protocol: TCP
           containerPort: 5432
         resources:
