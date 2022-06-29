@@ -84,6 +84,14 @@ spec:
             mountPath: /var/lib/grafana
       - name: prometheus
         image: {{ required "A Prometheus image is required" .Values.prometheusImage }}
+        command: ["/bin/prometheus"]
+        # The arguments are set explicitly such that the data path is `/var/prometheus`,
+        # because it allows write access under read only root file systems.
+        args:
+          - "--config.file=/etc/prometheus/prometheus.yml"
+          - "--storage.tsdb.path=/var/prometheus"
+          - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+          - "--web.console.templates=/usr/share/prometheus/consoles"
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
@@ -95,16 +103,7 @@ spec:
             mountPath: /etc/prometheus
             readOnly: true
           - name: prometheus-data-volume
-            mountPath: /prometheus
-      # This is a workaround for Prometheus not being able to write logs on persisted
-      # volumes when running on gke in combination with `readOnlyRootFilesystem: true`.
-      initContainers:
-        - name: changemod
-          image: busybox:1.35.0
-          command: ["/bin/chmod", "-R", "777", "/prometheus"]
-          volumeMounts:
-          - name: prometheus-data-volume
-            mountPath: /prometheus
+            mountPath: /var/prometheus
       volumes:
       - name: monitoring-ui-volume
         secret:
