@@ -13,10 +13,6 @@ from post_tests import PostClusterTest, FinalPost
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
-# Override test env defaults here:
-# (for defaults see: tests/e2e/lib.sh export_test_environment())
-os.environ["LOAD_BALANCER"] = "lb"
-
 ClusterTestRunner(
     cluster=GKECluster("nongroovy-test"),
     pre_test=PreSystemTests(),
