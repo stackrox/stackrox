@@ -8,6 +8,11 @@ body {
     font-family: var(--pf-global--FontFamily--sans-serif) !important;
 }
 
+/* overrides the default link styling in Tailwind (`inherit`) with PF's default blue */
+.pf-c-page__main-section a {
+    color: var(--pf-global--link--Color);
+}
+
 .pf-c-page__sidebar {
     --pf-c-page__sidebar-body--PaddingTop: 0;
 }
