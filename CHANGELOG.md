@@ -36,6 +36,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - PodSecurityPolicies can be disabled when generating deployment bundles and when configuring the Helm charts. The Helm charts also support auto-sensing
   availability of the PodSecurityPolicies API. PodSecurityPolicies must be disabled when deploying to Kubernetes >= v1.25.
 - ROX-11533: Fixed preferred node affinity for Central, Sensor and Scanner pods so that OpenShift Infra nodes are favored more than Compute nodes. Match expressions will also prefer not scheduling on Control Plane nodes on both Kubernetes and OpenShift clusters, including kube versions 1.25 and newer.
+- ROX-10948: A new default policy added to detect if a deployment is running with a container that has allowPrivilegeEscalation set to true. The policy is enabled by default.
+- ROX-10699: A new default policy added to detect if a deployment has any service that is externally exposed through any methods. The policy is disabled by default.
 
 ## [70.0]
 
