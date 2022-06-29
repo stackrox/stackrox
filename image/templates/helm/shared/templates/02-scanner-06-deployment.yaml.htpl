@@ -141,6 +141,9 @@ spec:
           mountPath: /run/secrets/stackrox.io/secrets
           readOnly: true
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
       serviceAccountName: scanner
       volumes:
       - name: additional-ca-volume
@@ -262,9 +265,6 @@ spec:
             - name: scanner-db-password
               mountPath: /run/secrets/stackrox.io/secrets
               readOnly: true
-          securityContext:
-            runAsUser: 70
-            runAsGroup: 70
       containers:
       - name: db
         [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
@@ -284,9 +284,6 @@ spec:
           containerPort: 5432
         resources:
           {{- ._rox.scanner._dbResources | nindent 10 }}
-        securityContext:
-          runAsUser: 70
-          runAsGroup: 70
         volumeMounts:
           - name: scanner-db-data
             mountPath: /var/lib/postgresql/data
@@ -296,6 +293,9 @@ spec:
       serviceAccountName: scanner
       securityContext:
         fsGroup: 70
+        runAsGroup: 70
+        runAsNonRoot: true
+        runAsUser: 70
       volumes:
       - name: scanner-config-volume
         configMap:
