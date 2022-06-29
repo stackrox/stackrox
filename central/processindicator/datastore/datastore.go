@@ -19,8 +19,6 @@ import (
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
 )
 
 // DataStore represents the interface to access data.

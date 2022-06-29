@@ -19,8 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
 )
 
 // DataStore wraps storage, indexer, and searcher for ProcessBaselines.

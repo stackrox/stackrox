@@ -36,7 +36,6 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"gorm.io/gorm"
 )
 
 // DataStore is an intermediary to AlertStorage.
