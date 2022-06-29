@@ -18,9 +18,11 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -178,6 +180,17 @@ func (s *acUpdaterTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
+func (s *acUpdaterTestSuite) assertHasContainer(contexts []*storage.ActiveComponent_ActiveContext, container string) {
+	var found bool
+	for _, ctx := range contexts {
+		if ctx.GetContainerName() == container {
+			found = true
+			break
+		}
+	}
+	s.True(found)
+}
+
 func (s *acUpdaterTestSuite) TestUpdater() {
 	imageID := "image1"
 	updater := &updaterImpl{
@@ -234,40 +247,46 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 		func(ctx context.Context, query *v1.Query) ([]search.Result, error) {
 			return []search.Result{{ID: imageID}}, nil
 		})
-	s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(func(_ context.Context, acs []*acConverter.CompleteActiveComponent) {
+	s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(func(_ context.Context, acs []*storage.ActiveComponent) {
 		s.Assert().Equal(2, len(acs))
 		for _, ac := range acs {
-			deploymentID, componentID, err := acConverter.DecomposeID(ac.ActiveComponent.GetId())
-			s.Assert().NoError(err)
 			// Deployment C does not have image1.
-			s.Assert().NotEqual(deploymentID, mockDeployments[2].GetId())
-			imageComponent, err := edges.FromString(componentID)
-			s.Assert().NoError(err)
-			s.Assert().True(strings.HasPrefix(imageComponent.ParentID, mockImage.GetId()))
-			s.Assert().NotEqual(imageComponent.ParentID, mockImage.GetScan().GetComponents()[2].GetName())
-			s.Assert().Len(ac.ActiveComponent.ActiveContexts, 1)
+			s.Assert().NotEqual(ac.GetDeploymentId(), mockDeployments[2].GetId())
+
+			var imageComponent string
+			if features.PostgresDatastore.Enabled() {
+				imageComponent = postgres.IDToParts(ac.GetComponentId())[0]
+			} else {
+				edge, err := edges.FromString(ac.GetComponentId())
+				s.NoError(err)
+				imageComponent = edge.ParentID
+			}
+
+			s.Assert().True(strings.HasPrefix(imageComponent, mockImage.GetId()))
+			s.Assert().NotEqual(imageComponent, mockImage.GetScan().GetComponents()[2].GetName())
+			s.Assert().Len(ac.GetActiveContextsSlice(), 1)
 
 			var expectedComponent *storage.EmbeddedImageScanComponent
 			var expectedContainer string
-			if deploymentID == mockDeployments[0].Id {
+			if ac.GetDeploymentId() == mockDeployments[0].Id {
 				expectedContainer = mockIndicators[0].ContainerName
 				// Component 1 or 2
 				expectedComponent = mockImage.GetScan().GetComponents()[0]
-				if imageComponent.ParentID != mockImage.GetScan().GetComponents()[0].GetName() {
+				if imageComponent != mockImage.GetScan().GetComponents()[0].GetName() {
 					expectedComponent = mockImage.GetScan().GetComponents()[1]
 				}
 			} else {
-				s.Assert().Equal(deploymentID, mockDeployments[1].Id)
+				s.Assert().Equal(ac.GetDeploymentId(), mockDeployments[1].Id)
 				expectedContainer = mockIndicators[1].ContainerName
 				// Component 1 or 4
 				expectedComponent = mockImage.GetScan().GetComponents()[0]
-				if imageComponent.ParentID != mockImage.GetScan().GetComponents()[0].GetName() {
+				if imageComponent != mockImage.GetScan().GetComponents()[0].GetName() {
 					expectedComponent = mockImage.GetScan().GetComponents()[3]
 				}
 			}
-			s.Assert().Contains(ac.ActiveComponent.ActiveContexts, expectedContainer)
-			s.Assert().True(strings.HasSuffix(imageComponent.ParentID, expectedComponent.GetName()))
-			s.Assert().Equal(componentID, scancomponent.ComponentID(expectedComponent.GetName(), expectedComponent.GetVersion(), ""))
+			s.assertHasContainer(ac.GetActiveContextsSlice(), expectedContainer)
+			s.Assert().True(strings.HasSuffix(imageComponent, expectedComponent.GetName()))
+			s.Assert().Equal(ac.GetComponentId(), scancomponent.ComponentID(expectedComponent.GetName(), expectedComponent.GetVersion(), ""))
 		}
 	})
 
@@ -878,11 +897,12 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					for componentID, containerNames := range testCase.existingAcs {
 						acID := acConverter.ComposeID(deployment.GetId(), componentID)
 						ac := &storage.ActiveComponent{
-							Id:             acID,
-							ActiveContexts: make(map[string]*storage.ActiveComponent_ActiveContext),
+							Id:           acID,
+							ComponentId:  componentID,
+							DeploymentId: deployment.GetId(),
 						}
 						for containerName := range containerNames {
-							ac.ActiveContexts[containerName] = &storage.ActiveComponent_ActiveContext{ContainerName: containerName, ImageId: existingImageID}
+							ac.ActiveContextsSlice = append(ac.ActiveContextsSlice, &storage.ActiveComponent_ActiveContext{ContainerName: containerName, ImageId: existingImageID})
 						}
 						ret = append(ret, ac)
 					}
@@ -902,14 +922,15 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 							continue
 						}
 						ac := &storage.ActiveComponent{
-							Id:             acID,
-							ActiveContexts: make(map[string]*storage.ActiveComponent_ActiveContext),
+							Id:           acID,
+							ComponentId:  componentID,
+							DeploymentId: deployment.GetId(),
 						}
 						for containerName := range containerNames {
-							ac.ActiveContexts[containerName] = &storage.ActiveComponent_ActiveContext{
+							ac.ActiveContextsSlice = append(ac.ActiveContextsSlice, &storage.ActiveComponent_ActiveContext{
 								ContainerName: containerName,
 								ImageId:       existingImageID,
-							}
+							})
 						}
 						ret = append(ret, ac)
 					}
@@ -929,26 +950,25 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					})
 			}
 			if len(testCase.acsToUpdate) > 0 {
-				s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(func(_ context.Context, acs []*acConverter.CompleteActiveComponent) {
+				s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(func(_ context.Context, acs []*storage.ActiveComponent) {
 					// Verify active components
 					assert.Equal(t, len(testCase.acsToUpdate), len(acs))
-					actualAcs := make(map[string]*acConverter.CompleteActiveComponent, len(acs))
+					actualAcs := make(map[string]*storage.ActiveComponent, len(acs))
 					for _, ac := range acs {
-						_, _, err := acConverter.DecomposeID(ac.ActiveComponent.GetId())
+						_, _, err := acConverter.DecomposeID(ac.GetId())
 						assert.NoError(t, err)
-						actualAcs[ac.ActiveComponent.GetId()] = ac
+						actualAcs[ac.GetId()] = ac
 					}
 
 					for componentID, expectedContexts := range testCase.acsToUpdate {
 						acID := acConverter.ComposeID(deployment.GetId(), componentID)
 						assert.Contains(t, actualAcs, acID)
-						assert.Equal(t, deployment.GetId(), actualAcs[acID].DeploymentID)
-						assert.Equal(t, componentID, actualAcs[acID].ComponentID)
-						assert.Equal(t, acID, actualAcs[acID].ActiveComponent.GetId())
-						assert.Equal(t, len(expectedContexts), len(actualAcs[acID].ActiveComponent.ActiveContexts))
-						for containerName, activeContext := range actualAcs[acID].ActiveComponent.ActiveContexts {
-							assert.Contains(t, expectedContexts, containerName)
-							assert.Equal(t, containerName, activeContext.GetContainerName())
+						assert.Equal(t, deployment.GetId(), actualAcs[acID].GetDeploymentId())
+						assert.Equal(t, componentID, actualAcs[acID].GetComponentId())
+						assert.Equal(t, acID, actualAcs[acID].GetId())
+						assert.Equal(t, len(expectedContexts), len(actualAcs[acID].ActiveContextsSlice))
+						for _, activeContext := range actualAcs[acID].ActiveContextsSlice {
+							assert.Contains(t, expectedContexts, activeContext.GetContainerName())
 							assert.Equal(t, image.GetId(), activeContext.GetImageId())
 						}
 					}

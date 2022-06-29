@@ -8,7 +8,7 @@ import (
 	"github.com/blevesearch/bleve/analysis/token/lowercase"
 	"github.com/blevesearch/bleve/analysis/tokenizer/whitespace"
 	"github.com/blevesearch/bleve/mapping"
-	activeComponentMappings "github.com/stackrox/rox/central/activecomponent/index/mappings"
+	activeComponentMappings "github.com/stackrox/rox/central/activecomponent/datastore/index/mappings"
 	alertMapping "github.com/stackrox/rox/central/alert/mappings"
 	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterVulnEdgeMapping "github.com/stackrox/rox/central/clustercveedge/mappings"

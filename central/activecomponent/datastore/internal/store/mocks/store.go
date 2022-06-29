@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	converter "github.com/stackrox/rox/central/activecomponent/converter"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -101,7 +100,7 @@ func (mr *MockStoreMockRecorder) GetBatch(ids interface{}) *gomock.Call {
 }
 
 // UpsertBatch mocks base method.
-func (m *MockStore) UpsertBatch(activeComponents []*converter.CompleteActiveComponent) error {
+func (m *MockStore) UpsertBatch(activeComponents []*storage.ActiveComponent) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertBatch", activeComponents)
 	ret0, _ := ret[0].(error)

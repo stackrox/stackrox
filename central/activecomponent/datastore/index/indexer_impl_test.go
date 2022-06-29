@@ -45,8 +45,8 @@ func (suite *ActiveComponentIndexTestSuite) TestIndexing() {
 	id := converter.ComposeID(deploymentID, componentID)
 	ac := &storage.ActiveComponent{
 		Id: id,
-		ActiveContexts: map[string]*storage.ActiveComponent_ActiveContext{
-			containerName: {
+		ActiveContextsSlice: []*storage.ActiveComponent_ActiveContext{
+			{
 				ContainerName: containerName,
 				ImageId:       imageID,
 			},
