@@ -251,6 +251,8 @@ Then go to https://localhost:8000/ in your web browser.
 
 The following tools are necessary to test code and build image(s):
 
+<details><summary>Click to expand</summary>
+  
 * [Make](https://www.gnu.org/software/make/)
 * [Go](https://golang.org/dl/)
   * Get the version specified in [EXPECTED_GO_VERSION](./EXPECTED_GO_VERSION).
@@ -281,8 +283,10 @@ The following tools are necessary to test code and build image(s):
  sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
  ```
 
- For more info, see <https://github.com/nodejs/node-gyp/issues/569>
+For more info, see <https://github.com/nodejs/node-gyp/issues/569>
 
+</details>  
+  
 #### Clone StackRox
 <details><summary>Click to expand</summary>
 
