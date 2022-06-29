@@ -423,8 +423,8 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 	return err
 }
 
-func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bool, error) {
-	oldNode, found, err := s.GetNodeMetadata(ctx, node.GetId())
+func (s *storeImpl) isUpdated(ctx context.Context, conn *pgxpool.Conn, node *storage.Node) (bool, bool, error) {
+	oldNode, found, err := s.getNodeMetadata(ctx, conn, node.GetId())
 	if err != nil {
 		return false, false, err
 	}
@@ -468,7 +468,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 		if !s.noUpdateTimestamps {
 			obj.LastUpdated = iTime
 		}
-		metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
+		metadataUpdated, scanUpdated, err := s.isUpdated(ctx, conn, obj)
 		if err != nil {
 			return err
 		}
@@ -697,7 +697,7 @@ func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (m
 }
 
 func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentCVERelations")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentCVEEdges")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+componentCVEEdgesTable+" WHERE nodecomponentid = ANY($1::text[])", componentIDs)
 	if err != nil {
@@ -760,14 +760,14 @@ func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeIDs ...st
 	// Node-components edges have ON DELETE CASCADE referential constraint on `nodeid`, therefore, no need to explicitly trigger deletion.
 
 	// Delete orphaned node components.
-	if _, err := tx.Exec(ctx, "delete from "+nodeComponentsTable+" where not exists (select "+nodeComponentsTable+".id FROM "+nodeComponentsTable+", "+nodeComponentEdgesTable+" WHERE "+nodeComponentsTable+".id = "+nodeComponentEdgesTable+".nodecomponentid)"); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+nodeComponentsTable+" where not exists (select "+nodeComponentEdgesTable+".nodecomponentid FROM "+nodeComponentEdgesTable+")"); err != nil {
 		return err
 	}
 
 	// Component-CVE edges have ON DELETE CASCADE referential constraint on component id, therefore, no need to explicitly trigger deletion.
 
 	// Delete orphaned cves.
-	if _, err := tx.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+nodeCVEsTable+".id FROM "+nodeCVEsTable+", "+componentCVEEdgesTable+" WHERE "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)"); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+componentCVEEdgesTable+".nodecveid FROM "+componentCVEEdgesTable+")"); err != nil {
 		return err
 	}
 	return nil
@@ -844,6 +844,10 @@ func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.No
 	}
 	defer release()
 
+	return s.getNodeMetadata(ctx, conn, id)
+}
+
+func (s *storeImpl) getNodeMetadata(ctx context.Context, conn *pgxpool.Conn, id string) (*storage.Node, bool, error) {
 	row := conn.QueryRow(ctx, getNodeMetaStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {

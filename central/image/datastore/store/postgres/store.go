@@ -123,36 +123,36 @@ func (s *storeImpl) insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storag
 		return nil
 	}
 
-	components, vulns, imageComponentRelations, componentCVERelations, imageCVERelations := getPartsAsSlice(common.Split(obj, scanUpdated))
+	components, vulns, imageComponentEdges, componentCVEEdges, imageCVEEdges := getPartsAsSlice(common.Split(obj, scanUpdated))
 	keys := gatherKeysFromParts(components, vulns)
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
 		if err := copyFromImageComponents(ctx, tx, components...); err != nil {
 			return err
 		}
-		if err := copyFromImageComponentRelations(ctx, tx, imageComponentRelations...); err != nil {
+		if err := copyFromImageComponentEdges(ctx, tx, imageComponentEdges...); err != nil {
 			return err
 		}
 		if err := copyFromImageCves(ctx, tx, iTime, vulns...); err != nil {
 			return err
 		}
-		if err := copyFromImageComponentCVERelations(ctx, tx, obj.GetScan().GetOperatingSystem(), componentCVERelations...); err != nil {
+		if err := copyFromImageComponentCVEEdges(ctx, tx, obj.GetScan().GetOperatingSystem(), componentCVEEdges...); err != nil {
 			return err
 		}
-		return copyFromImageCVERelations(ctx, tx, iTime, imageCVERelations...)
+		return copyFromImageCVEEdges(ctx, tx, iTime, imageCVEEdges...)
 	})
 }
 
 func getPartsAsSlice(parts common.ImageParts) ([]*storage.ImageComponent, []*storage.ImageCVE, []*storage.ImageComponentEdge, []*storage.ComponentCVEEdge, []*storage.ImageCVEEdge) {
 	components := make([]*storage.ImageComponent, 0, len(parts.Children))
-	imageComponentRelations := make([]*storage.ImageComponentEdge, 0, len(parts.Children))
+	imageComponentEdges := make([]*storage.ImageComponentEdge, 0, len(parts.Children))
 	vulnMap := make(map[string]*storage.ImageCVE)
-	var componentCVERelations []*storage.ComponentCVEEdge
+	var componentCVEEdges []*storage.ComponentCVEEdge
 	for _, child := range parts.Children {
 		components = append(components, child.Component)
-		imageComponentRelations = append(imageComponentRelations, child.Edge)
+		imageComponentEdges = append(imageComponentEdges, child.Edge)
 		for _, gChild := range child.Children {
-			componentCVERelations = append(componentCVERelations, gChild.Edge)
+			componentCVEEdges = append(componentCVEEdges, gChild.Edge)
 			vulnMap[gChild.CVE.GetId()] = gChild.CVE
 		}
 	}
@@ -164,11 +164,10 @@ func getPartsAsSlice(parts common.ImageParts) ([]*storage.ImageComponent, []*sto
 	for _, imageCVEEdge := range parts.ImageCVEEdges {
 		imageCVEEdges = append(imageCVEEdges, imageCVEEdge)
 	}
-	return components, vulns, imageComponentRelations, componentCVERelations, imageCVEEdges
+	return components, vulns, imageComponentEdges, componentCVEEdges, imageCVEEdges
 }
 
 func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLayer, imageID string, idx int) error {
-
 	values := []interface{}{
 		// parent primary keys start
 		imageID,
@@ -248,7 +247,7 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 	return err
 }
 
-func copyFromImageComponentRelations(ctx context.Context, tx pgx.Tx, objs ...*storage.ImageComponentEdge) error {
+func copyFromImageComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.ImageComponentEdge) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -381,7 +380,7 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 	return err
 }
 
-func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, os string, objs ...*storage.ComponentCVEEdge) error {
+func copyFromImageComponentCVEEdges(ctx context.Context, tx pgx.Tx, os string, objs ...*storage.ComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -440,7 +439,7 @@ func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, os strin
 	return err
 }
 
-func copyFromImageCVERelations(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.ImageCVEEdge) error {
+func copyFromImageCVEEdges(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.ImageCVEEdge) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -515,8 +514,8 @@ func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string,
 	return nil
 }
 
-func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, bool, error) {
-	oldImage, found, err := s.GetImageMetadata(ctx, image.GetId())
+func (s *storeImpl) isUpdated(ctx context.Context, conn *pgxpool.Conn, image *storage.Image) (bool, bool, error) {
+	oldImage, found, err := s.getImageMetadata(ctx, conn, image.GetId())
 	if err != nil {
 		return false, false, err
 	}
@@ -567,7 +566,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Image) error {
 		if !s.noUpdateTimestamps {
 			obj.LastUpdated = iTime
 		}
-		metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
+		metadataUpdated, scanUpdated, err := s.isUpdated(ctx, conn, obj)
 		if err != nil {
 			return err
 		}
@@ -882,13 +881,13 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, tx pgx.Tx, imageIDs ...
 	}
 
 	// Delete orphaned image components.
-	_, err := tx.Exec(ctx, "delete from "+imageComponentsTable+" where not exists (select "+imageComponentsTable+".id FROM "+imageComponentsTable+", "+imageComponentEdgesTable+" WHERE "+imageComponentsTable+".id = "+imageComponentEdgesTable+".imagecomponentid)")
+	_, err := tx.Exec(ctx, "delete from "+imageComponentsTable+" where not exists (select "+imageComponentEdgesTable+".imagecomponentid FROM "+imageComponentEdgesTable+")")
 	if err != nil {
 		return err
 	}
 
 	// Delete orphaned cves.
-	if _, err := tx.Exec(ctx, "delete from "+imageCVEsTable+" where not exists (select "+imageCVEsTable+".id FROM "+imageCVEsTable+", "+componentCVEEdgesTable+" WHERE "+imageCVEsTable+".id = "+componentCVEEdgesTable+".imagecveid)"); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+imageCVEsTable+" where not exists (select "+componentCVEEdgesTable+".imagecveid FROM "+componentCVEEdgesTable+")"); err != nil {
 		return err
 	}
 	return nil
@@ -1025,6 +1024,10 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 	}
 	defer release()
 
+	return s.getImageMetadata(ctx, conn, id)
+}
+
+func (s *storeImpl) getImageMetadata(ctx context.Context, conn *pgxpool.Conn, id string) (*storage.Image, bool, error) {
 	row := conn.QueryRow(ctx, getImageMetaStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
