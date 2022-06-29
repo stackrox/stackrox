@@ -6,6 +6,7 @@ var (
 	migrateFromRegex = regexp.MustCompile(`^(rocksdb|boltdb):\S+$`)
 )
 
+// MigrationOptions hold options to generate migrations
 type MigrationOptions struct {
 	MigrateFromDB     string
 	MigrateFromBucket string

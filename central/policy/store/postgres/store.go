@@ -39,9 +39,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.PoliciesSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.PoliciesSchema
 	targetResource = resources.Policy
 )
 

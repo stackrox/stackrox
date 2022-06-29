@@ -40,9 +40,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.ProcessBaselinesSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.ProcessBaselinesSchema
 	targetResource = permissions.ResourceMetadata{}
 )
 

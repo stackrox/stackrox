@@ -39,9 +39,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.PermissionSetsSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.PermissionSetsSchema
 	targetResource = resources.Role
 )
 

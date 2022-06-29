@@ -40,9 +40,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.ClusterCvesSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.ClusterCvesSchema
 	targetResource = resources.CVE
 )
 

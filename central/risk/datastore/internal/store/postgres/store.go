@@ -41,9 +41,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.RisksSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.RisksSchema
 	targetResource = resources.Risk
 )
 

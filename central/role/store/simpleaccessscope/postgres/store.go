@@ -39,9 +39,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.SimpleAccessScopesSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.SimpleAccessScopesSchema
 	targetResource = resources.Role
 )
 

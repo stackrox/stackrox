@@ -63,8 +63,8 @@ func (s *undoStore) Upsert(ctx context.Context, record *storage.NetworkPolicyApp
 	})
 }
 
-func (b *undoStore) Walk(_ context.Context, fn func(np *storage.NetworkPolicyApplicationUndoRecord) error) error {
-	return b.db.View(func(tx *bolt.Tx) error {
+func (s *undoStore) Walk(_ context.Context, fn func(np *storage.NetworkPolicyApplicationUndoRecord) error) error {
+	return s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(undoBucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var np storage.NetworkPolicyApplicationUndoRecord

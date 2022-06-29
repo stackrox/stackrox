@@ -40,9 +40,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.TestMultiKeyStructsSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.TestMultiKeyStructsSchema
 	targetResource = resources.Namespace
 )
 

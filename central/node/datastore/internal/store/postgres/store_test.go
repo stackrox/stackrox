@@ -52,7 +52,7 @@ func (s *NodesStoreSuite) TestStore() {
 
 	Destroy(ctx, pool)
 
-	gormDB := pgtest.OpenGormDB(s.T(), source)
+	gormDB := pgtest.OpenGormDB(s.T(), source, false)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	store := CreateTableAndNewStore(ctx, s.T(), pool, gormDB, false)
 

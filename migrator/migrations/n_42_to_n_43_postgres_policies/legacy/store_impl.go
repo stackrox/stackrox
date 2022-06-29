@@ -380,8 +380,8 @@ func (s *storeImpl) verifySettingFieldsAreUnchanged(newPolicy *storage.Policy) e
 	})
 }
 
-func (b *storeImpl) Walk(_ context.Context, fn func(np *storage.Policy) error) error {
-	return b.View(func(tx *bolt.Tx) error {
+func (s *storeImpl) Walk(_ context.Context, fn func(np *storage.Policy) error) error {
+	return s.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policyBucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var np storage.Policy

@@ -41,9 +41,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.ComplianceRunMetadataSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.ComplianceRunMetadataSchema
 	targetResource = resources.Compliance
 )
 

@@ -14,9 +14,11 @@ import (
 	"gorm.io/gorm"
 	"k8s.io/utils/env"
 
+	// unknow reason
 	_ "github.com/lib/pq"
 )
 
+// TestPostgres refers to Postgres database for testing
 type TestPostgres struct {
 	*pgxpool.Pool
 	database string
@@ -94,4 +96,9 @@ func OpenGormDB(t testing.TB, source string, disableConstraint bool) *gorm.DB {
 // CloseGormDB closes connection to a Gorm DB
 func CloseGormDB(t testing.TB, db *gorm.DB) {
 	conn.CloseGormDB(t, db)
+}
+
+// CleanUpDB removes public schema together with all tables
+func CleanUpDB(ctx context.Context, t *testing.T, pool *pgxpool.Pool) {
+	conn.CleanUpDB(ctx, t, pool)
 }

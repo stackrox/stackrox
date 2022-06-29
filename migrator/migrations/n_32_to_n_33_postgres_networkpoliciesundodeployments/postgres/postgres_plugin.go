@@ -39,9 +39,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.NetworkpoliciesundodeploymentsSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.NetworkpoliciesundodeploymentsSchema
 	targetResource = permissions.ResourceMetadata{}
 )
 

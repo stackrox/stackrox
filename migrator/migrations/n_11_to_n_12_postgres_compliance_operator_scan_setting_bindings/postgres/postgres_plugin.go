@@ -39,9 +39,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.ComplianceOperatorScanSettingBindingsSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.ComplianceOperatorScanSettingBindingsSchema
 	targetResource = permissions.ResourceMetadata{}
 )
 

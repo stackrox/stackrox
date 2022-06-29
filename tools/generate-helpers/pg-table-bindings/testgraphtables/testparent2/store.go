@@ -40,9 +40,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.TestParent2Schema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.TestParent2Schema
 	targetResource = resources.Namespace
 )
 

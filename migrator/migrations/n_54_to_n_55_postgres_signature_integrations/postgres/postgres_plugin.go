@@ -39,9 +39,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.SignatureIntegrationsSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.SignatureIntegrationsSchema
 	targetResource = permissions.ResourceMetadata{}
 )
 

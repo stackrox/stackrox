@@ -40,9 +40,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.ServiceAccountsSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.ServiceAccountsSchema
 	targetResource = permissions.ResourceMetadata{}
 )
 

@@ -39,9 +39,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.NetworkGraphConfigsSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.NetworkGraphConfigsSchema
 	targetResource = permissions.ResourceMetadata{}
 )
 

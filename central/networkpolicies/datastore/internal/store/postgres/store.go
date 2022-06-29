@@ -41,9 +41,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.NetworkpoliciesSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.NetworkpoliciesSchema
 	targetResource = resources.NetworkPolicy
 )
 

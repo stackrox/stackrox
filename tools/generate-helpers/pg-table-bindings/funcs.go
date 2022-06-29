@@ -124,13 +124,13 @@ func strDict(values ...interface{}) (map[string]interface{}, error) {
 }
 
 var funcMap = template.FuncMap{
-	"lowerCamelCase":    lowerCamelCase,
-	"upperCamelCase":    upperCamelCase,
-	"valueExpansion":    valueExpansion,
-	"lowerCase":         strings.ToLower,
-	"storageToResource": storageToResource,
-	"concatWith":        concatWith,
-	"strDict":           strDict,
+	"lowerCamelCase":               lowerCamelCase,
+	"upperCamelCase":               upperCamelCase,
+	"valueExpansion":               valueExpansion,
+	"lowerCase":                    strings.ToLower,
+	"storageToResource":            storageToResource,
+	"concatWith":                   concatWith,
+	"strDict":                      strDict,
 	"searchFieldNameInOtherSchema": searchFieldNameInOtherSchema,
 	"pluralType": func(s string) string {
 		if s[len(s)-1] == 'y' {

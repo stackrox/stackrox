@@ -41,9 +41,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.DeploymentsSchema
-
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.DeploymentsSchema
 	targetResource = resources.Deployment
 )
 

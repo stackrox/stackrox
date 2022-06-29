@@ -59,7 +59,8 @@ func CloseGormDB(t testing.TB, db *gorm.DB) {
 	}
 }
 
-func CleanUpDB(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
+// CleanUpDB removes public schema together with all tables
+func CleanUpDB(ctx context.Context, t *testing.T, pool *pgxpool.Pool) {
 	_, err := pool.Exec(ctx, "DROP SCHEMA public CASCADE")
 	require.NoError(t, err)
 	_, err = pool.Exec(ctx, "CREATE SCHEMA public")

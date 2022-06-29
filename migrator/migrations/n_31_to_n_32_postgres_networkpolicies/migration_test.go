@@ -62,14 +62,14 @@ func (s *postgresMigrationSuite) SetupTest() {
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
 	s.Require().NoError(err)
-	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
+	pgtest.CleanUpDB(s.ctx, s.T(), s.pool)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source, true)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
 	testutils.TearDownDB(s.legacyDB)
 	_ = s.gormDB.Migrator().DropTable(pkgSchema.CreateTableNetworkpoliciesStmt.GormModel)
-	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
+	pgtest.CleanUpDB(s.ctx, s.T(), s.pool)
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
