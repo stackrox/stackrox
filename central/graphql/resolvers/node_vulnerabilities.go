@@ -346,13 +346,13 @@ func (resolver *nodeCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver
 
 // NodeComponentCount is the number of node components that contain the node CVE.
 func (resolver *nodeCVEResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	//TODO implement me (ROX-11299)
+	// TODO implement me (ROX-11299)
 	panic("implement me")
 }
 
 // NodeComponents are the node components that contain the node CVE.
 func (resolver *nodeCVEResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
-	//TODO implement me (ROX-11299)
+	// TODO implement me (ROX-11299)
 	panic("implement me")
 }
 
