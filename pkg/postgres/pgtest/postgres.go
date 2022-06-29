@@ -58,7 +58,7 @@ func ForT(t testing.TB) *TestPostgres {
 	ctx := context.Background()
 
 	// Create all the tables for the database
-	gormDB := OpenGormDB(t, sourceWithDatabase)
+	gormDB := OpenGormDB(t, sourceWithDatabase, false)
 	pkgSchema.ApplyAllSchemasIncludingTests(context.Background(), gormDB, t)
 	CloseGormDB(t, gormDB)
 
@@ -87,8 +87,8 @@ func GetConnectionString(_ *testing.T) string {
 }
 
 // OpenGormDB opens a Gorm DB to the Postgres DB
-func OpenGormDB(t testing.TB, source string) *gorm.DB {
-	return conn.OpenGormDB(t, source)
+func OpenGormDB(t testing.TB, source string, disableConstraint bool) *gorm.DB {
+	return conn.OpenGormDB(t, source, disableConstraint)
 }
 
 // CloseGormDB closes connection to a Gorm DB

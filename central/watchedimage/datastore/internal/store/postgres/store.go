@@ -39,8 +39,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.WatchedImagesSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.WatchedImagesSchema
+
 	targetResource = resources.WatchedImage
 )
 

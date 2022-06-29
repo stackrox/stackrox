@@ -40,8 +40,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.TestShortCircuitsSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.TestShortCircuitsSchema
+
 	targetResource = resources.Namespace
 )
 

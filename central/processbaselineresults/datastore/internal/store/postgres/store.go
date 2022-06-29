@@ -41,8 +41,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ProcessBaselineResultsSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.ProcessBaselineResultsSchema
+
 	targetResource = resources.ProcessWhitelist
 )
 

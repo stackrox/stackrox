@@ -31,7 +31,7 @@ func TestStore(t *testing.T) {
 
 	Destroy(ctx, pool)
 
-	gormDB := pgtest.OpenGormDB(t, source)
+	gormDB := pgtest.OpenGormDB(t, source, false)
 	defer pgtest.CloseGormDB(t, gormDB)
 	store := CreateTableAndNewStore(ctx, pool, gormDB)
 

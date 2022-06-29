@@ -41,8 +41,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NetworkBaselinesSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.NetworkBaselinesSchema
+
 	targetResource = resources.NetworkBaseline
 )
 

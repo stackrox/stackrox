@@ -39,8 +39,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.LogImbuesSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.LogImbuesSchema
+
 	targetResource = resources.DebugLogs
 )
 

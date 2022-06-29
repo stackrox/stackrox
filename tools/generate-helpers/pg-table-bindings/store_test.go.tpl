@@ -46,6 +46,19 @@ func (s *{{$namePrefix}}StoreSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
+	ctx := sac.WithAllAccess(context.Background())
+
+	source := pgtest.GetConnectionString(s.T())
+	config, err := pgxpool.ParseConfig(source)
+	s.Require().NoError(err)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
+	s.Require().NoError(err)
+
+	Destroy(ctx, pool)
+
+	s.pool = pool
+	gormDB := pgtest.OpenGormDB(s.T(), source, false)
+	defer pgtest.CloseGormDB(s.T(), gormDB)
 	s.testDB = pgtest.ForT(s.T())
 	s.store = New(s.testDB.Pool)
 }

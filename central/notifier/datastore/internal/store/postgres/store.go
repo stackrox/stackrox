@@ -39,8 +39,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NotifiersSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.NotifiersSchema
+
 	targetResource = resources.Notifier
 )
 

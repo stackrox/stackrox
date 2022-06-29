@@ -40,8 +40,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ImageCvesSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.ImageCvesSchema
+
 	targetResource = resources.ImageCVE
 )
 

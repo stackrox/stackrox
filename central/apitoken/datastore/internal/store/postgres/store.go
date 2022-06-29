@@ -39,8 +39,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ApiTokensSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.ApiTokensSchema
+
 	targetResource = resources.Integration
 )
 

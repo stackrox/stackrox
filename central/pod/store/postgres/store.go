@@ -41,8 +41,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.PodsSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.PodsSchema
+
 	targetResource = resources.Deployment
 )
 

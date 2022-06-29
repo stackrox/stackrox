@@ -39,8 +39,9 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ExternalBackupsSchema
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.ExternalBackupsSchema
+
 	targetResource = resources.BackupPlugins
 )
 

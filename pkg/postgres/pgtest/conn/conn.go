@@ -1,10 +1,12 @@
 package conn
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
@@ -33,8 +35,14 @@ func GetConnectionStringWithDatabaseName(database string) string {
 }
 
 // OpenGormDB opens a Gorm DB to the Postgres DB
-func OpenGormDB(t testing.TB, source string) *gorm.DB {
-	gormDB, err := gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+func OpenGormDB(t testing.TB, source string, disableConstraint bool) *gorm.DB {
+	gormDB, err := gorm.Open(
+		postgres.Open(source),
+		&gorm.Config{
+			NamingStrategy:                           pgutils.NamingStrategy,
+			DisableForeignKeyConstraintWhenMigrating: disableConstraint,
+		},
+	)
 	require.NoError(t, err, "failed to connect to connect with gorm db")
 	return gormDB
 }
@@ -49,4 +57,11 @@ func CloseGormDB(t testing.TB, db *gorm.DB) {
 	if err == nil {
 		_ = genericDB.Close()
 	}
+}
+
+func CleanUpDB(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
+	_, err := pool.Exec(ctx, "DROP SCHEMA public CASCADE")
+	require.NoError(t, err)
+	_, err = pool.Exec(ctx, "CREATE SCHEMA public")
+	require.NoError(t, err)
 }
