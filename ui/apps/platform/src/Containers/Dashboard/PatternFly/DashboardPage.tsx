@@ -1,5 +1,5 @@
 import React from 'react';
-import { Divider, Flex, FlexItem, PageSection, Text, Title } from '@patternfly/react-core';
+import { Divider, Flex, FlexItem, Gallery, PageSection, Text, Title } from '@patternfly/react-core';
 import SummaryCounts from './SummaryCounts';
 import ScopeBar from './ScopeBar';
 
@@ -10,7 +10,9 @@ import AgingImages from './Widgets/AgingImages';
 import ViolationsByPolicySeverity from './Widgets/ViolationsByPolicySeverity';
 import ComplianceLevelsByStandard from './Widgets/ComplianceLevelsByStandard';
 
-import './DashboardPage.css';
+// This value is an estimate of the minimum size the widgets need to be to
+// ensure the heading and options do not wrap and break layout.
+const minWidgetWidth = 510;
 
 function DashboardPage() {
     return (
@@ -38,14 +40,14 @@ function DashboardPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection>
-                <div className="widget-grid">
+                <Gallery hasGutter minWidths={{ default: `${minWidgetWidth}px` }}>
                     <ViolationsByPolicySeverity />
                     <ImagesAtMostRisk />
                     <DeploymentsAtMostRisk />
                     <ViolationsByPolicyCategory />
                     <AgingImages />
                     <ComplianceLevelsByStandard />
-                </div>
+                </Gallery>
             </PageSection>
         </>
     );
