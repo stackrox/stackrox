@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -213,14 +212,10 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
 	if features.PostgresDatastore.Enabled() {
-		ctx := context.Background()
 		pool := s.dackboxTestStore.GetPostgresPool()
-		src := pgtest.GetConnectionString(s.T())
-		gormDB := pgtest.OpenGormDB(s.T(), src)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.imageCVEStore, err = imageCVEDataStore.GetTestPostgresDataStore(ctx, s.T(), pool, gormDB)
+		s.imageCVEStore, err = imageCVEDataStore.GetTestPostgresDataStore(s.T(), pool)
 		s.Require().NoError(err)
-		s.nodeCVEStore, err = nodeCVEDataStore.GetTestPostgresDataStore(ctx, s.T(), pool, gormDB)
+		s.nodeCVEStore, err = nodeCVEDataStore.GetTestPostgresDataStore(s.T(), pool)
 		s.Require().NoError(err)
 	} else {
 		dacky := s.dackboxTestStore.GetDackbox()

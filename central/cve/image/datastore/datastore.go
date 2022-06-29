@@ -14,7 +14,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"gorm.io/gorm"
 )
 
 // DataStore is an intermediary to CVE storage.
@@ -50,9 +49,8 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) (DataStore, error) {
-	postgres.Destroy(ctx, pool)
-	dbstore := postgres.CreateTableAndNewStore(ctx, pool, gormDB)
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgres.New(pool)
 	indexer := postgres.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
 	return New(dbstore, indexer, searcher)

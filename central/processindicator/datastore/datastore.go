@@ -19,8 +19,6 @@ import (
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
 )
 
 // DataStore represents the interface to access data.
@@ -64,22 +62,17 @@ func New(store store.Store, indexer index.Indexer, searcher search.Searcher, pru
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) DataStore {
-	postgres.Destroy(ctx, pool)
-	dbstore := postgres.CreateTableAndNewStore(ctx, pool, gormDB)
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgres.New(pool)
 	indexer := postgres.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
-	datastore, err := New(dbstore, indexer, searcher, nil)
-	assert.NoError(t, err)
-	return datastore
+	return New(dbstore, indexer, searcher, nil)
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) DataStore {
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
 	dbstore := rocksdb.New(rocksengine)
 	indexer := index.New(bleveIndex)
 	searcher := search.New(dbstore, indexer)
-	datastore, err := New(dbstore, indexer, searcher, nil)
-	assert.NoError(t, err)
-	return datastore
+	return New(dbstore, indexer, searcher, nil)
 }

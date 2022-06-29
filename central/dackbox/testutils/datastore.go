@@ -66,8 +66,9 @@ type DackboxTestDataStore interface {
 }
 
 type dackboxTestDataStoreImpl struct {
+	t *testing.T
 	// Pool for postgres mode
-	pool *pgxpool.Pool
+	pgtestbase *pgtest.TestPostgres
 	// Elements for rocksdb+bleve mode
 	rocksEngine *rocksPkg.RocksDB
 	bleveIndex  bleve.Index
@@ -88,7 +89,7 @@ type dackboxTestDataStoreImpl struct {
 }
 
 func (s *dackboxTestDataStoreImpl) GetPostgresPool() *pgxpool.Pool {
-	return s.pool
+	return s.pgtestbase.Pool
 }
 
 func (s *dackboxTestDataStoreImpl) GetRocksEngine() *rocksPkg.RocksDB {
@@ -174,7 +175,7 @@ func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph() error {
 
 func (s *dackboxTestDataStoreImpl) Cleanup() error {
 	if features.PostgresDatastore.Enabled() {
-		s.pool.Close()
+		s.pgtestbase.Teardown(s.t)
 		return nil
 	} else {
 		var err error
@@ -244,20 +245,27 @@ func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() error {
 
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	var err error
-	s := &dackboxTestDataStoreImpl{}
+	s := &dackboxTestDataStoreImpl{
+		t: t,
+	}
 	if features.PostgresDatastore.Enabled() {
-		ctx := context.Background()
-		configSrc := pgtest.GetConnectionString(t)
-		s.pool, err = pgtest.GetPostgresPool(ctx, t)
+		s.pgtestbase = pgtest.ForT(t)
+		s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
 		if err != nil {
 			return nil, err
 		}
-		gormDB := pgtest.OpenGormDB(t, configSrc)
-		defer pgtest.CloseGormDB(t, gormDB)
-		s.nodeStore = nodeDataStore.GetTestPostgresDataStore(ctx, t, s.pool, gormDB)
-		s.imageStore = imageDataStore.GetTestPostgresDataStore(ctx, t, s.pool, gormDB)
-		s.deploymentStore = deploymentDataStore.GetTestPostgresDataStore(ctx, t, s.pool, gormDB)
-		s.namespaceStore = namespaceDataStore.GetTestPostgresDataStore(ctx, t, s.pool, gormDB)
+		s.imageStore, err = imageDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+		if err != nil {
+			return nil, err
+		}
+		s.deploymentStore, err = deploymentDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+		if err != nil {
+			return nil, err
+		}
+		s.namespaceStore, err = namespaceDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		s.rocksEngine, err = rocksPkg.NewTemp("dackboxtest")
 		if err != nil {
@@ -286,10 +294,22 @@ func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 		reg.RegisterWrapper(imageCVEEdgeDackbox.Bucket, imageCVEEdgeIndex.Wrapper{})
 		reg.RegisterWrapper(nodeDackbox.Bucket, nodeIndex.Wrapper{})
 		reg.RegisterWrapper(nodeComponentEdgeDackbox.Bucket, nodeComponentEdgeIndex.Wrapper{})
-		s.nodeStore = nodeDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		s.imageStore = imageDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		s.deploymentStore = deploymentDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		s.namespaceStore = namespaceDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
+		s.nodeStore, err = nodeDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
+		if err != nil {
+			return nil, err
+		}
+		s.imageStore, err = imageDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
+		if err != nil {
+			return nil, err
+		}
+		s.deploymentStore, err = deploymentDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
+		if err != nil {
+			return nil, err
+		}
+		s.namespaceStore, err = namespaceDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
+		if err != nil {
+			return nil, err
+		}
 	}
 	s.storedDeployments = make([]string, 0)
 	s.storedNamespaces = make([]string, 0)

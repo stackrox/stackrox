@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
-	"gorm.io/gorm"
 )
 
 // DataStore wraps storage, indexer, and searcher for ProcessBaselineResults.
@@ -30,14 +29,13 @@ func New(storage store.Store) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) DataStore {
-	postgres.Destroy(ctx, pool)
-	dbstore := postgres.CreateTableAndNewStore(ctx, pool, gormDB)
-	return New(dbstore)
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgres.New(pool)
+	return New(dbstore), nil
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) DataStore {
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
 	dbstore := rocksdb.New(rocksengine)
-	return New(dbstore)
+	return New(dbstore), nil
 }

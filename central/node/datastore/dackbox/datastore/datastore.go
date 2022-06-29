@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"gorm.io/gorm"
 )
 
 // DataStore is an intermediary to NodeStorage.
@@ -76,21 +75,26 @@ func NewWithPostgres(storage store.Store, indexer nodeIndexer.Indexer, searcher 
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) DataStore {
-	postgresStore.Destroy(ctx, pool)
-	dbstore := postgresStore.CreateTableAndNewStore(ctx, t, pool, gormDB, false)
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgresStore.New(pool, false)
 	indexer := postgresStore.NewIndexer(pool)
 	searcher := search.NewV2(dbstore, indexer)
-	riskStore := riskDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
+	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
 	nodeRanker := ranking.NodeRanker()
 	nodeComponentRanker := ranking.NodeComponentRanker()
-	return NewWithPostgres(dbstore, indexer, searcher, riskStore, nodeRanker, nodeComponentRanker)
+	return NewWithPostgres(dbstore, indexer, searcher, riskStore, nodeRanker, nodeComponentRanker), nil
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) DataStore {
-	riskStore := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
+	riskStore, err := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
+	if err != nil {
+		return nil, err
+	}
 	nodeRanker := ranking.NodeRanker()
 	nodeComponentRanker := ranking.NodeComponentRanker()
-	return New(dacky, keyFence, bleveIndex, riskStore, nodeRanker, nodeComponentRanker)
+	return New(dacky, keyFence, bleveIndex, riskStore, nodeRanker, nodeComponentRanker), nil
 }

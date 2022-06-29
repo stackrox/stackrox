@@ -15,7 +15,6 @@ import (
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
-	"gorm.io/gorm"
 )
 
 const (
@@ -51,15 +50,15 @@ func New(s store.Store) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) DataStore {
-	dbstore := postgres.CreateTableAndNewStore(ctx, pool, gormDB)
-	return New(dbstore)
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgres.New(pool)
+	return New(dbstore), nil
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) DataStore {
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
 	dbstore := rocksdb.New(rocksengine)
-	return New(dbstore)
+	return New(dbstore), nil
 }
 
 func (d *datastoreImpl) initDefaultConfig(ctx context.Context) error {

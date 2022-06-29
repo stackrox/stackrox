@@ -45,7 +45,6 @@ const (
 	SearchCategory_PROCESS_INDICATORS       SearchCategory = 6
 	SearchCategory_COMPLIANCE               SearchCategory = 7
 	SearchCategory_CLUSTERS                 SearchCategory = 8
-	SearchCategory_CLUSTER_HEALTH           SearchCategory = 45
 	SearchCategory_NAMESPACES               SearchCategory = 9
 	SearchCategory_NODES                    SearchCategory = 10
 	SearchCategory_NODE_COMPONENTS          SearchCategory = 38
@@ -94,7 +93,6 @@ var SearchCategory_name = map[int32]string{
 	6:  "PROCESS_INDICATORS",
 	7:  "COMPLIANCE",
 	8:  "CLUSTERS",
-	45: "CLUSTER_HEALTH",
 	9:  "NAMESPACES",
 	10: "NODES",
 	38: "NODE_COMPONENTS",
@@ -143,7 +141,6 @@ var SearchCategory_value = map[string]int32{
 	"PROCESS_INDICATORS":       6,
 	"COMPLIANCE":               7,
 	"CLUSTERS":                 8,
-	"CLUSTER_HEALTH":           45,
 	"NAMESPACES":               9,
 	"NODES":                    10,
 	"NODE_COMPONENTS":          38,

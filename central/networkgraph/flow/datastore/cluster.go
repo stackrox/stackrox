@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
-	"gorm.io/gorm"
 )
 
 // ClusterDataStore stores the network edges per cluster.
@@ -34,24 +33,27 @@ func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.D
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresClusterDataStore(ctx context.Context, t *testing.T, pool *pgxpool.Pool, gormDB *gorm.DB) ClusterDataStore {
-	postgres.Destroy(ctx, pool)
-	// The following line is there to ensure the creation of the needed tables.
-	_ = postgres.CreateTableAndNewStore(ctx, pool, gormDB, "dummyClusterID")
+func GetTestPostgresClusterDataStore(t *testing.T, pool *pgxpool.Pool) (ClusterDataStore, error) {
 	dbstore := postgres.NewClusterStore(pool)
-	configStore := graphConfigDS.GetTestPostgresDataStore(ctx, t, pool, gormDB)
+	configStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
 	networkTreeMgr := networktree.Singleton()
 	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
 	networkTreeMgr.Initialize(entitiesByCluster)
-	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil)
+	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil), nil
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveClusterDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) ClusterDataStore {
+func GetTestRocksBleveClusterDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) (ClusterDataStore, error) {
 	dbstore := rocksdb.NewClusterStore(rocksengine)
-	configStore := graphConfigDS.GetTestRocksBleveDataStore(t, rocksengine)
+	configStore, err := graphConfigDS.GetTestRocksBleveDataStore(t, rocksengine)
+	if err != nil {
+		return nil, err
+	}
 	networkTreeMgr := networktree.Singleton()
 	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
 	networkTreeMgr.Initialize(entitiesByCluster)
-	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil)
+	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil), nil
 }

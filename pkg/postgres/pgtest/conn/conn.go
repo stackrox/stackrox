@@ -1,12 +1,10 @@
 package conn
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
@@ -32,16 +30,6 @@ func GetConnectionStringWithDatabaseName(database string) string {
 		src += fmt.Sprintf(" password=%s", pass)
 	}
 	return src
-}
-
-// GetPostgresPool returns a connected pool object for integration testing with Postgres.
-func GetPostgresPool(ctx context.Context, t *testing.T) (*pgxpool.Pool, error) {
-	configSource := GetConnectionString(t)
-	config, err := pgxpool.ParseConfig(configSource)
-	if err != nil {
-		return nil, err
-	}
-	return pgxpool.ConnectConfig(ctx, config)
 }
 
 // OpenGormDB opens a Gorm DB to the Postgres DB.
