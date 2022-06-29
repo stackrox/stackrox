@@ -40,7 +40,14 @@ function DashboardPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection>
-                <Gallery hasGutter minWidths={{ default: `${minWidgetWidth}px` }}>
+                <Gallery
+                    style={{
+                        // Ensure the grid has never grows large enough to show 4 columns
+                        maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
+                    }}
+                    hasGutter
+                    minWidths={{ default: `${minWidgetWidth}px` }}
+                >
                     <ViolationsByPolicySeverity />
                     <ImagesAtMostRisk />
                     <DeploymentsAtMostRisk />
