@@ -63,6 +63,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
 	github.com/kisielk/sqlstruct v0.0.0-20210630145711-dae28ed37023 // indirect
+	github.com/klauspost/compress v1.15.4
 	github.com/lib/pq v1.10.6
 	github.com/machinebox/graphql v0.2.2
 	github.com/magiconair/properties v1.8.6

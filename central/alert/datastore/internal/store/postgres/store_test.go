@@ -19,6 +19,32 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+func TestCompression(t *testing.T) {
+	alert := &storage.Alert{}
+
+	err := testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter)
+	if err != nil {
+		panic(err)
+	}
+
+	data, err := alert.Marshal()
+	if err != nil {
+		panic(err)
+	}
+
+	compressed, err := compress(data)
+	if err != nil {
+		panic(err)
+	}
+	log.Infof("data %d vs compressed %d", len(data), len(compressed))
+
+	decompressed, err := decompress(compressed)
+	if err != nil {
+		panic(err)
+	}
+	log.Infof("data %d vs decompressed %d", len(data), len(decompressed))
+}
+
 type AlertsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
