@@ -32,6 +32,7 @@ import AgingImagesChart, {
     getTimeFilterOption,
 } from './AgingImagesChart';
 import isResourceScoped from '../utils';
+import NoDataEmptyState from './NoDataEmptyState';
 
 export const imageCountQuery = gql`
     query agingImagesQuery($query0: String, $query1: String, $query2: String, $query3: String) {
@@ -157,6 +158,11 @@ function AgingImages() {
         variables,
     });
     const timeRangeCounts = data ?? previousData;
+    const isCountsDataEmpty =
+        timeRangeCounts &&
+        Object.values(timeRangeCounts).every(
+            (value, index) => !timeRanges[index].enabled || value === 0
+        );
 
     let inputError: Error | undefined;
     let errorTitle: string | undefined;
@@ -254,12 +260,14 @@ function AgingImages() {
                 </Flex>
             }
         >
-            {timeRangeCounts && (
+            {timeRangeCounts && !isCountsDataEmpty ? (
                 <AgingImagesChart
                     searchFilter={searchFilter}
                     timeRanges={timeRanges}
                     timeRangeCounts={timeRangeCounts}
                 />
+            ) : (
+                <NoDataEmptyState />
             )}
         </WidgetCard>
     );

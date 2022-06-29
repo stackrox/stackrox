@@ -33,6 +33,7 @@ import { complianceBasePath, urlEntityListTypes } from 'routePaths';
 import { standardLabels } from 'messages/standards';
 import ComplianceLevelsByStandardChart, { ComplianceData } from './ComplianceLevelsByStandardChart';
 import WidgetCard from './WidgetCard';
+import NoDataEmptyState from './NoDataEmptyState';
 
 const fieldIdPrefix = 'compliance-levels-by-standard';
 
@@ -172,7 +173,11 @@ function ComplianceLevelsByStandard() {
                 </Flex>
             }
         >
-            {complianceData && <ComplianceLevelsByStandardChart complianceData={complianceData} />}
+            {complianceData && complianceData.length > 0 ? (
+                <ComplianceLevelsByStandardChart complianceData={complianceData} />
+            ) : (
+                <NoDataEmptyState />
+            )}
         </WidgetCard>
     );
 }

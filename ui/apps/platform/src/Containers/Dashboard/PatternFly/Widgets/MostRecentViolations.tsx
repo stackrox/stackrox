@@ -8,17 +8,12 @@ import { DeploymentAlert } from 'types/alert.proto';
 import { violationsBasePath } from 'routePaths';
 import { severityColors } from 'constants/visuals/colors';
 import { getDateTime } from 'utils/dateUtils';
-import NoDataEmptyState from './NoDataEmptyState';
 
 export type MostRecentViolationsProps = {
     alerts: DeploymentAlert[];
 };
 
 function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
-    if (alerts.length === 0) {
-        return <NoDataEmptyState />;
-    }
-
     return (
         <>
             <Title headingLevel="h5" className="pf-u-mb-sm">
