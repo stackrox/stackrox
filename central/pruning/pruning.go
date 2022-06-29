@@ -25,11 +25,14 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/timeutil"
 )
 
 const (
@@ -495,7 +498,73 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 }
 
 func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
+	if !features.DecommissionedClusterRetention.Enabled() {
+		return
+	}
+	clusterRetention := config.GetDecommissionedClusterRetention()
+	retentionDays := int64(clusterRetention.GetRetentionDurationDays())
+	if retentionDays == 0 {
+		log.Info("[Cluster Pruning] pruning is disabled")
+		return
+	}
+	lastUpdateTime, err := types.TimestampFromProto(clusterRetention.GetLastUpdated())
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	if timeutil.TimeDiffDays(time.Now(), lastUpdateTime) < 1 {
+		// Allow 24 hr grace period after a change in config
+		log.Info("[Cluster Pruning] skipping pruning to allow 24 hr grace period after a recent change in cluster retention config")
+		return
+	}
 
+	configCreationTime, err := types.TimestampFromProto(clusterRetention.GetCreatedAt())
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	if timeutil.TimeDiffDays(time.Now(), configCreationTime) < int(retentionDays) {
+		// In this case, the deployments that became unhealthy after config creation would also be unhealthy for fewer than retention days
+		// and pruning can be skipped
+		return
+	}
+
+	allClusterCount, err := g.clusters.CountClusters(pruningCtx)
+	if err != nil {
+		log.Errorf("[Cluster Pruning] error counting clusters: %v", err)
+	}
+	if allClusterCount <= 1 {
+		log.Info("[Cluster Pruning] skipping pruning because there aren't enough clusters")
+	}
+
+	query := search.NewQueryBuilder().
+		AddDays(search.LastContactTime, retentionDays).
+		AddExactMatches(search.SensorStatus, storage.ClusterHealthStatus_UNHEALTHY.String()).ProtoQuery()
+	clusters, err := g.clusters.SearchRawClusters(pruningCtx, query)
+	if err != nil {
+		log.Errorf("[Cluster Pruning] error searching for clusters: %v", err)
+		return
+	}
+
+	clustersToPrune := make([]string, 0)
+	for _, cluster := range clusters {
+		if sliceutils.MapsIntersect(clusterRetention.GetIgnoreClusterLabels(), cluster.GetLabels()) {
+			log.Infof("[Cluster Pruning] skipping excluded cluster with id %s", cluster.GetId())
+			continue
+		}
+		// TODO : Skip if the cluster is running central
+		clustersToPrune = append(clustersToPrune, cluster.GetId())
+	}
+
+	if len(clustersToPrune) > 0 {
+		for _, clusterId := range clustersToPrune {
+			log.Infof("[Cluster Pruning] Removing cluster with ID %s", clusterId)
+			if err := g.clusters.RemoveCluster(pruningCtx, clusterId, nil); err != nil {
+				log.Error(err)
+				return
+			}
+		}
+	}
 }
 
 func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, pruneAllRuntimeAfter, pruneDeletedRuntimeAfter, pruneAttemptedDeployAfter, pruneAttemptedRuntimeAfter int32) {

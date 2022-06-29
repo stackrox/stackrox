@@ -51,3 +51,17 @@ func Map(slice, mapFunc interface{}) interface{} {
 	}
 	return outSlice.Interface()
 }
+
+// MapsIntersect returns true there is at least one key-value pair that is present in both maps
+// If both, or either maps are empty, it returns false
+// TODO : Implement this so that it can take map[interface{}]interface{}
+func MapsIntersect(m1 map[string]string, m2 map[string]string) bool {
+	for k, v := range m1 {
+		if val, exists := m2[k]; exists {
+			if reflect.DeepEqual(v, val) {
+				return true
+			}
+		}
+	}
+	return false
+}
