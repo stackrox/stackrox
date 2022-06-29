@@ -569,7 +569,7 @@ class ComplianceTest extends BaseSpecification {
         def hasMaster = false
         for (objects.Node node : orchNodes) {
             for (String label : node.getLabels().keySet()) {
-                if (label == "node-role.kubernetes.io/master") {
+                if (label == "node-role.kubernetes.io/master" || label == "node-role.kubernetes.io/control-plane") {
                     hasMaster = true
                     break
                 }

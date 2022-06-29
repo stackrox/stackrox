@@ -13,12 +13,21 @@ tests:
 - name: "central with default settings"
   expect: |
     .serviceaccounts["central"] | assertThat(. != null)
-    .secrets["central-htpasswd"].stringData.htpasswd | assertThat(length != 0)
-    .configmaps["central-config"].data.["central-config.yaml"] | assertThat(length != 0)
-    .networkpolicies["central"] | assertThat(length != null)
-    .networkpolicies["central-db"] | assertThat(length != null)
+    .secrets["central-htpasswd"].stringData.htpasswd | assertThat(length > 0)
+    .configmaps["central-config"].data.["central-config.yaml"] | assertThat(length > 0)
+    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    verifyNodeAffinities(.deployments["central"])
+    .networkpolicys["allow-ext-to-central"] | assertThat(. != null)
+    .networkpolicys["central-db"] | assertThat(. == null)
     .deployments["central"] | assertThat(. != null)
     .services["central"] | assertThat(. != null)
+
+- name: "central with DB enabled"
+  values:
+    central:
+      enableCentralDB: true
+  expect:
+    .networkpolicys["central-db"] | assertThat(. != null)
 
 - name: "central with deprecated PodSecurityPolicies enabled"
   values:
@@ -44,23 +53,8 @@ tests:
     .securitycontextconstraints["stackrox-central"] | .users[0] | assertThat(contains("system:serviceaccount:stackrox:central"))
     .roles["use-central-scc"] | assertThat(. == null)
     .rolebindings["central-use-scc"] | assertThat(. == null)
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
-      | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/infra" ) | [
-        assertThat(.weight == 50),
-        assertThat(.preference.matchExpressions[0].operator == "In")
-      ]
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
-      | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/compute" ) | [
-        assertThat(.weight == 25),
-        assertThat(.preference.matchExpressions[0].operator == "In")
-      ]
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
-      | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/master" ) | [
-        assertThat(.weight == 100),
-        assertThat(.preference.matchExpressions[0].operator == "NotIn")
-      ]
-    .networkpolicys["central"].spec.ingress | assertThat(length == 0)
+    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    verifyNodeAffinities(.deployments["central"])
 
 - name: "central with OpenShift 4 and disabled SCCs"
   server:
@@ -77,20 +71,5 @@ tests:
     .roles["use-central-scc"] | assertThat(. != null)
     .rolebindings["central-use-scc"] | assertThat(. != null)
     .securitycontextconstraints["stackrox-central"] | assertThat(. == null)
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
-      | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/infra" ) | [
-        assertThat(.weight == 50),
-        assertThat(.preference.matchExpressions[0].operator == "In")
-      ]
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
-      | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/compute" ) | [
-        assertThat(.weight == 25),
-        assertThat(.preference.matchExpressions[0].operator == "In")
-      ]
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
-      | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/master" ) | [
-        assertThat(.weight == 100),
-        assertThat(.preference.matchExpressions[0].operator == "NotIn")
-      ]
-    .networkpolicys["central"].spec.ingress | assertThat(length == 0)
+    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    verifyNodeAffinities(.deployments["central"])
