@@ -209,8 +209,8 @@ func (resolver *nodeCVEResolver) FixedByVersion(_ context.Context) (string, erro
 		return "", nil
 	}
 	edgeID := edges.EdgeID{ParentID: scope.ID, ChildID: resolver.data.GetId()}.ToString()
-	edge, found, err := resolver.root.NodeComponentCVEEdgeDataStore.Get(resolver.ctx, edgeID)
-	if err != nil || !found {
+	edge, _, err := resolver.root.NodeComponentCVEEdgeDataStore.Get(resolver.ctx, edgeID)
+	if err != nil {
 		return "", err
 	}
 	return edge.GetFixedBy(), nil
