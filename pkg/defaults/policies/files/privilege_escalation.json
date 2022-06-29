@@ -2,7 +2,7 @@
   "id": "16c95922-08c4-41b6-a721-dc4b2a806632",
   "name": "Container with privilege escalation allowed",
   "description": "Alerts if a deployment has containers with allowPrivilegeEscalation set to true in its security context.",
-  "rationale": "A container process can get more privileges than its parent process if the container's security context has the boolean setting allowPrivilegeEscalation setting enabled. Highly recommended to set to false if the pod is to run as a non-root user.",
+  "rationale": "A container process can get more privileges than its parent process if the container's security context has the boolean setting allowPrivilegeEscalation setting enabled. Set to false if the pod is to run as a non-root user.",
   "remediation": "Verify that privileged escalation is required and cannot be provided with a subset of other controls. Disable privilege escalation by setting allowPrivilegeEscalation to false.",
   "categories": [
     "Security Best Practices",
