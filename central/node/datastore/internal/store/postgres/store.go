@@ -423,8 +423,8 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 	return err
 }
 
-func (s *storeImpl) isUpdated(ctx context.Context, conn *pgxpool.Conn, node *storage.Node) (bool, bool, error) {
-	oldNode, found, err := s.getNodeMetadata(ctx, conn, node.GetId())
+func (s *storeImpl) isUpdated(ctx context.Context, tx pgx.Tx, node *storage.Node) (bool, bool, error) {
+	oldNode, found, err := s.getNodeMetadata(ctx, tx, node.GetId())
 	if err != nil {
 		return false, false, err
 	}
@@ -450,10 +450,23 @@ func (s *storeImpl) isUpdated(ctx context.Context, conn *pgxpool.Conn, node *sto
 	}
 	return true, scanUpdated, nil
 }
+func (s *storeImpl) getNodeMetadata(ctx context.Context, tx pgx.Tx, id string) (*storage.Node, bool, error) {
+	row := tx.QueryRow(ctx, getNodeMetaStmt, id)
+	var data []byte
+	if err := row.Scan(&data); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var msg storage.Node
+	if err := proto.Unmarshal(data, &msg); err != nil {
+		return nil, false, err
+	}
+	return &msg, true, nil
+}
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 	iTime := protoTypes.TimestampNow()
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
+	conn, release, err := s.acquireConn(ctx, ops.Upsert, "Node")
 	if err != nil {
 		return err
 	}
@@ -468,7 +481,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 		if !s.noUpdateTimestamps {
 			obj.LastUpdated = iTime
 		}
-		metadataUpdated, scanUpdated, err := s.isUpdated(ctx, conn, obj)
+		metadataUpdated, scanUpdated, err := s.isUpdated(ctx, tx, obj)
 		if err != nil {
 			return err
 		}
@@ -674,7 +687,7 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 }
 
 func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeComponent")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponent")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentsTable+" WHERE id = ANY($1::text[])", componentIDs)
 	if err != nil {
@@ -838,16 +851,12 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Node,
 func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeMetadata")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeMetadata")
 	if err != nil {
 		return nil, false, err
 	}
 	defer release()
 
-	return s.getNodeMetadata(ctx, conn, id)
-}
-
-func (s *storeImpl) getNodeMetadata(ctx context.Context, conn *pgxpool.Conn, id string) (*storage.Node, bool, error) {
 	row := conn.QueryRow(ctx, getNodeMetaStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -952,26 +961,4 @@ func gatherKeysFromParts(components []*storage.NodeComponent, vulns []*storage.N
 		keys = append(keys, []byte(vuln.GetId()))
 	}
 	return keys
-}
-
-func scanIDs(rows pgx.Rows) ([]string, error) {
-	defer rows.Close()
-	var ids []string
-
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
-}
-
-func bytes(ids []string) [][]byte {
-	ret := make([][]byte, 0, len(ids))
-	for _, id := range ids {
-		ret = append(ret, []byte(id))
-	}
-	return ret
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
@@ -21,14 +20,13 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImplV2{
 		storage:  storage,
 		indexer:  indexer,
-		searcher: postgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(indexer)),
+		searcher: formatSearcherV2(indexer),
 	}
 }
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
-	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, schema.DeploymentsSchema.OptionsMap)
-	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
+	scopedSearcher := postgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher))
+	return sortfields.TransformSortFields(scopedSearcher, schema.DeploymentsSchema.OptionsMap)
 }
 
 // searcherImplV2 provides an intermediary search implementation layer for Deployments.
