@@ -24,6 +24,7 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import WidgetCard from './WidgetCard';
 import ImagesAtMostRiskTable, { CveStatusOption, ImageData } from './ImagesAtMostRiskTable';
 import isResourceScoped from '../utils';
+import NoDataEmptyState from './NoDataEmptyState';
 
 function getTitle(searchFilter: SearchFilter, imageStatusOption: ImageStatusOption) {
     return imageStatusOption === 'Active' || isResourceScoped(searchFilter)
@@ -176,8 +177,10 @@ function ImagesAtMostRisk() {
                 </Flex>
             }
         >
-            {imageData && (
+            {imageData && imageData.images.length > 0 ? (
                 <ImagesAtMostRiskTable imageData={imageData} cveStatusOption={cveStatusOption} />
+            ) : (
+                <NoDataEmptyState />
             )}
         </WidgetCard>
     );

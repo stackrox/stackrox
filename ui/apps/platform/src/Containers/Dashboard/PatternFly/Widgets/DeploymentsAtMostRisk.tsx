@@ -8,6 +8,7 @@ import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import DeploymentsAtMostRiskTable from './DeploymentsAtMostRiskTable';
 import WidgetCard from './WidgetCard';
 import useDeploymentsAtRisk from '../hooks/useDeploymentsAtRisk';
+import NoDataEmptyState from './NoDataEmptyState';
 
 function DeploymentsAtMostRisk() {
     const { searchFilter } = useURLSearch();
@@ -34,10 +35,11 @@ function DeploymentsAtMostRisk() {
                 </Flex>
             }
         >
-            <DeploymentsAtMostRiskTable
-                deployments={deployments ?? []}
-                searchFilter={searchFilter}
-            />
+            {deployments && deployments.length > 0 ? (
+                <DeploymentsAtMostRiskTable deployments={deployments} searchFilter={searchFilter} />
+            ) : (
+                <NoDataEmptyState />
+            )}
         </WidgetCard>
     );
 }
