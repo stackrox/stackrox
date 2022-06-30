@@ -21,6 +21,10 @@ import {
     DEPLOYMENT_LIST_FRAGMENT as VULN_DEPLOYMENT_LIST_FRAGMENT,
     NAMESPACE_LIST_FRAGMENT as VULN_NAMESPACE_LIST_FRAGMENT,
     POLICY_LIST_FRAGMENT as VULN_POLICY_LIST_FRAGMENT,
+    VULN_IMAGE_COMPONENT_LIST_FRAGMENT,
+    VULN_NODE_COMPONENT_LIST_FRAGMENT,
+    NODE_CVE_LIST_FRAGMENT,
+    VULN_IMAGE_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
@@ -90,6 +94,18 @@ function getListFieldName(entityType, listType, useCase) {
         }
     }
 
+    if (entityType === entityTypes.NODE_COMPONENT) {
+        if (listType === entityTypes.CVE) {
+            return 'nodeVulnerabilities';
+        }
+    }
+
+    if (entityType === entityTypes.IMAGE_COMPONENT) {
+        if (listType === entityTypes.CVE) {
+            return 'imageVulnerabilities';
+        }
+    }
+
     if (entityType === entityTypes.IMAGE) {
         if (listType === entityTypes.CVE) {
             return 'vulns';
@@ -153,8 +169,8 @@ function getListFieldName(entityType, listType, useCase) {
     return parts.join('');
 }
 
-function getFragmentName(entityType) {
-    switch (entityType) {
+function getFragmentName(entityType, listType) {
+    switch (listType) {
         case entityTypes.IMAGE:
             return 'imageFields';
         case entityTypes.NODE:
@@ -176,15 +192,25 @@ function getFragmentName(entityType) {
         case entityTypes.CONTROL:
             return 'controlFields';
         case entityTypes.CVE:
+            if (entityType === entityTypes.NODE_COMPONENT) {
+                return 'nodeCVEFields';
+            }
+            if (entityType === entityTypes.IMAGE_COMPONENT) {
+                return 'imageCVEFields';
+            }
             return 'cveFields';
         case entityTypes.COMPONENT:
             return 'componentFields';
+        case entityTypes.NODE_COMPONENT:
+            return 'nodeComponentFields';
+        case entityTypes.IMAGE_COMPONENT:
+            return 'imageComponentFields';
         default:
             return '';
     }
 }
 
-function getFragment(entityType, useCase) {
+function getFragment(entityType, listType, useCase) {
     const defaultFragments = {
         [entityTypes.IMAGE]: IMAGE_FRAGMENT,
         [entityTypes.NODE]: NODE_FRAGMENT,
@@ -207,7 +233,11 @@ function getFragment(entityType, useCase) {
         [useCases.VULN_MANAGEMENT]: {
             ...defaultFragments,
             [entityTypes.COMPONENT]: VULN_COMPONENT_LIST_FRAGMENT,
+            [entityTypes.NODE_COMPONENT]: VULN_NODE_COMPONENT_LIST_FRAGMENT,
+            [entityTypes.IMAGE_COMPONENT]: VULN_IMAGE_COMPONENT_LIST_FRAGMENT,
             [entityTypes.CVE]: VULN_CVE_LIST_FRAGMENT,
+            [entityTypes.NODE_CVE]: NODE_CVE_LIST_FRAGMENT,
+            [entityTypes.IMAGE_CVE]: VULN_IMAGE_CVE_LIST_FRAGMENT,
             [entityTypes.IMAGE]: VULN_IMAGE_LIST_FRAGMENT,
             [entityTypes.CLUSTER]: VULN_CLUSTER_LIST_FRAGMENT,
             [entityTypes.NAMESPACE]: VULN_NAMESPACE_LIST_FRAGMENT,
@@ -218,13 +248,20 @@ function getFragment(entityType, useCase) {
 
     const fragmentMap = fragmentsByUseCase[useCase] || defaultFragments;
 
-    return fragmentMap[entityType];
+    if (entityType === entityTypes.NODE_COMPONENT && listType === entityTypes.CVE) {
+        return NODE_CVE_LIST_FRAGMENT;
+    }
+    if (entityType === entityTypes.IMAGE_COMPONENT && listType === entityTypes.CVE) {
+        return VULN_IMAGE_CVE_LIST_FRAGMENT;
+    }
+
+    return fragmentMap[listType];
 }
 
 function getFragmentInfo(entityType, listType, useCase) {
     const listFieldName = getListFieldName(entityType, listType, useCase);
-    const fragmentName = getFragmentName(listType);
-    const fragment = getFragment(listType, useCase);
+    const fragmentName = getFragmentName(entityType, listType);
+    const fragment = getFragment(entityType, listType, useCase);
 
     return {
         listFieldName,

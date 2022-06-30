@@ -14,7 +14,13 @@ import {
     getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
 
-const VulnMgmtEntityComponent = ({
+// We want to override some values because the nodeComponent object has different field names
+export const nodeComponentCountKeyMap = {
+    ...defaultCountKeyMap,
+    [entityTypes.CVE]: 'vulnCount: nodeVulnerabilityCount',
+};
+
+const VulnMgmtNodeComponent = ({
     entityId,
     entityListType,
     search,
@@ -28,24 +34,16 @@ const VulnMgmtEntityComponent = ({
 
     const overviewQuery = gql`
         query getComponent($id: ID!, $query: String, $scopeQuery: String) {
-            result: component(id: $id) {
+            result: nodeComponent(id: $id) {
                 id
                 name
                 version
                 fixedIn
                 location(query: $scopeQuery)
                 priority
-                vulnCount(query: $query, scopeQuery: $scopeQuery)
-                deploymentCount(query: $query)
-                imageCount(query: $query)
+                vulnCount: nodeVulnerabilityCount(query: $query, scopeQuery: $scopeQuery)
                 nodeCount(query: $query)
-                activeState(query: $scopeQuery) {
-                    state
-                    activeContexts {
-                        containerName
-                    }
-                }
-                topVuln {
+                topVuln: topNodeVulnerability {
                     cvss
                     scoreVersion
                 }
@@ -55,10 +53,10 @@ const VulnMgmtEntityComponent = ({
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
-            result: component(id: $id) {
+        query getNodeComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+            result: nodeComponent(id: $id) {
                 id
-                ${defaultCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
+                ${nodeComponentCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
                 ${listFieldName}(query: $query, scopeQuery: $scopeQuery, pagination: $pagination) { ...${fragmentName} }
                 unusedVarSink(query: $policyQuery)
                 unusedVarSink(query: $scopeQuery)
@@ -82,7 +80,7 @@ const VulnMgmtEntityComponent = ({
     return (
         <WorkflowEntityPage
             entityId={entityId}
-            entityType={entityTypes.COMPONENT}
+            entityType={entityTypes.NODE_COMPONENT}
             entityListType={entityListType}
             useCase={useCases.VULN_MANAGEMENT}
             ListComponent={EntityList}
@@ -99,4 +97,4 @@ const VulnMgmtEntityComponent = ({
     );
 };
 
-export default VulnMgmtEntityComponent;
+export default VulnMgmtNodeComponent;

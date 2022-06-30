@@ -16,7 +16,7 @@ import { IMAGE_QUERY, IMAGES_QUERY, IMAGE_NAME } from 'queries/image';
 import { NODES_QUERY, NODE_QUERY, NODE_NAME } from 'queries/node';
 import { SUBJECTS_QUERY, SUBJECT_QUERY, SUBJECT_NAME } from 'queries/subject';
 
-import COMPONENT_NAME from 'queries/components';
+import { COMPONENT_NAME, NODE_COMPONENT_NAME, IMAGE_COMPONENT_NAME } from 'queries/components';
 
 export const entityQueryMap = {
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT_QUERY,
@@ -63,4 +63,6 @@ export const entityNameQueryMap = {
     [entityTypes.POLICY]: POLICY_NAME,
     [entityTypes.SUBJECT]: SUBJECT_NAME,
     [entityTypes.COMPONENT]: COMPONENT_NAME,
+    [entityTypes.NODE_COMPONENT]: NODE_COMPONENT_NAME,
+    [entityTypes.IMAGE_COMPONENT]: IMAGE_COMPONENT_NAME,
 };

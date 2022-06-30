@@ -45,6 +45,7 @@ const TileLink = ({
             icon={icon}
             subText={subText}
             short={short}
+            textWrap
         />
     );
     let classes = '';
