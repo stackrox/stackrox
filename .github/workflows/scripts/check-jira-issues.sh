@@ -47,13 +47,11 @@ Please update the status of this issue and notify the release engineer.\"}" \
 
 get_issues_summary() {
     read -r GH_MD_FORMAT_LINE <<EOF
-"* [\(.key)](https://issues.redhat.com/browse/\(.key)): **" \
-+ (.fields.assignee.displayName // "unassigned") \
-+ "** (\(.fields.status.name)) — _" \
-+ (.fields.summary | gsub (" +$";"")) \
-+ "_"
+* [\(.key)](https://issues.redhat.com/browse/\(.key)): \
+**\(.fields.assignee.displayName // "unassigned")** \
+(\(.fields.status.name)) — _\(.fields.summary | gsub (" +$";""))_
 EOF
-    get_issues | jq -r ".issues[] | $GH_MD_FORMAT_LINE" | sort
+    get_issues | jq -r ".issues[] | \"$GH_MD_FORMAT_LINE\"" | sort
 }
 
 get_open_issues() {

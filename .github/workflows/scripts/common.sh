@@ -35,11 +35,16 @@ check_not_empty GITHUB_STEP_SUMMARY
 # The output appears in the GitHub step summary box.
 # Multiple lines are supported.
 # Markdown is supported.
+# Examples:
+#     gh_summary "Markdown summary"
+#     gh_summary <<EOF
+#     Markdown summary
+#     EOF
 gh_summary() {
     if [ "$#" -eq 0 ]; then
-        cat
+        cat # for the data passed via the pipe
     else
-        echo -e "$@"
+        echo -e "$@" # for the data passed as arguments
     fi >>"$GITHUB_STEP_SUMMARY"
 }
 export -f gh_summary

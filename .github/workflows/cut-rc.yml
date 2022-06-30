@@ -263,6 +263,7 @@ jobs:
     needs: [variables, cut-rc]
     if: inputs.dry-run != 'true'
     uses: ./.github/workflows/create-cluster.yml
+    secrets: inherit
     with:
       flavor: qa-demo
       name: qa-k8s-${{needs.variables.outputs.milestone}}
@@ -274,6 +275,7 @@ jobs:
     needs: [variables, cut-rc]
     if: inputs.dry-run != 'true'
     uses: ./.github/workflows/create-cluster.yml
+    secrets: inherit
     with:
       flavor: openshift-4-demo
       name: openshift-4-demo-${{needs.variables.outputs.milestone}}
@@ -292,21 +294,22 @@ jobs:
     steps:
       - name: Download infractl
         run: |
+          mkdir -p ~/.local/bin
           curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
           | jq -r ".result.fileChunk" \
           | base64 -d \
-          > infractl
-          chmod +x infractl
+          > ~/.local/bin/infractl
+          chmod +x ~/.local/bin/infractl
       - name: Test readiness
         run: |
-          if [ "$(./infractl get "$NAME" --json | jq -r .Status)" != "2" ]; then
+          if [ "$(infractl get "${NAME//./-}" --json | jq -r .Status)" != "2" ]; then
             exit 1
           fi
       - name: Download artifacts
         id: artifacts
         run: |
           mkdir artifacts
-          ./infractl artifacts -d artifacts >> $GITHUB_STEP_SUMMARY
+          infractl artifacts "${NAME//./-}" -d artifacts >> $GITHUB_STEP_SUMMARY
       - name: Download Openshift CLI
         run: |
           URL=$(sed "s/console-/downloads-/" artifacts/url-openshift)
@@ -361,6 +364,7 @@ jobs:
       inputs.dry-run != 'true' &&
       needs.variables.outputs.rc == '1'
     uses: ./.github/workflows/create-cluster.yml
+    secrets: inherit
     with:
       flavor: gke-default
       name: gke-long-running-${{needs.variables.outputs.milestone}}
@@ -380,14 +384,15 @@ jobs:
     steps:
       - name: Download infractl
         run: |
+          mkdir -p ~/.local/bin
           curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
           | jq -r ".result.fileChunk" \
           | base64 -d \
-          > infractl
-          chmod +x infractl
+          > ~/.local/bin/infractl
+          chmod +x ~/.local/bin/infractl
       - name: Test readiness
         run: |
-          CLUSTER_STATUS=$(./infractl get "$NAME" --json)
+          CLUSTER_STATUS=$(infractl get "${NAME//./-}" --json)
           echo "$CLUSTER_STATUS"
           if [ "$(echo "$CLUSTER_STATUS" | jq -r .Status)" != "2" ]; then
             exit 1
@@ -399,6 +404,11 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{needs.variables.outputs.milestone}}
+      - name: Download artifacts
+        id: artifacts
+        run: |
+          mkdir artifacts
+          infractl artifacts "${NAME//./-}" -d artifacts >> $GITHUB_STEP_SUMMARY
       - name: Launch central
         env:
           MAIN_IMAGE_TAG: ${{needs.variables.outputs.milestone}} # Release version, e.g. 3.63.0-rc.2.
