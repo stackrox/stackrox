@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	indexMocks "github.com/stackrox/rox/central/imageintegration/index/mocks"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	boltStore "github.com/stackrox/rox/central/imageintegration/store/bolt"
 	"github.com/stackrox/rox/central/role/resources"
@@ -36,6 +38,9 @@ type ImageIntegrationDataStoreTestSuite struct {
 
 	store     store.Store
 	datastore DataStore
+
+	indexer  *indexMocks.MockIndexer
+	mockCtrl *gomock.Controller
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
@@ -64,7 +69,9 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 
 	suite.db = db
 	suite.store = boltStore.New(db)
-	suite.datastore = New(suite.store)
+
+	// test searcher
+	suite.datastore = NewForTestOnly(suite.T(), suite.store, suite.indexer, nil)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {

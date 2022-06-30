@@ -27,6 +27,7 @@ import (
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
+	imageIntegrationDatastoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	netEntityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
@@ -302,6 +303,7 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 	namespaceDataStore := namespaceMocks.NewMockDataStore(mockCtrl)
 	nodeDataStore := nodeDatastoreMocks.NewMockGlobalDataStore(mockCtrl)
 	podDataStore := podMocks.NewMockDataStore(mockCtrl)
+	imageIntegrationDataStore := imageIntegrationDatastoreMocks.NewMockDataStore(mockCtrl)
 	secretDataStore := secretMocks.NewMockDataStore(mockCtrl)
 	flowsDataStore := networkFlowDatastoreMocks.NewMockClusterDataStore(mockCtrl)
 	netEntityDataStore := netEntityMocks.NewMockEntityDataStore(mockCtrl)
@@ -345,7 +347,8 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 		notifierMock,
 		mockProvider,
 		ranking.NewRanker(),
-		networkBaselineMgr)
+		networkBaselineMgr,
+		imageIntegrationDataStore)
 	require.NoError(t, err)
 
 	// A bunch of these get called when a cluster is deleted
@@ -353,10 +356,12 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 	connMgr.EXPECT().GetConnection(gomock.Any()).AnyTimes().Return(nil)
 	namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return([]search.Result{}, nil)
 	podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	imageIntegrationDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	alertDataStore.EXPECT().MarkAlertStale(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).AnyTimes().Return()
 	podDataStore.EXPECT().RemovePod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	imageIntegrationDataStore.EXPECT().RemoveImageIntegration(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	serviceAccountMockDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)

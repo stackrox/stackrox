@@ -9,6 +9,7 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -96,6 +97,7 @@ func New(
 	graphProvider graph.Provider,
 	clusterRanker *ranking.Ranker,
 	networkBaselineMgr networkBaselineManager.Manager,
+	iiDs imageIntegrationStore.DataStore,
 ) (DataStore, error) {
 	ds := &datastoreImpl{
 		clusterStorage:          clusterStorage,
@@ -117,8 +119,9 @@ func New(
 		clusterRanker:           clusterRanker,
 		networkBaselineMgr:      networkBaselineMgr,
 
-		idToNameCache: simplecache.New(),
-		nameToIDCache: simplecache.New(),
+		idToNameCache:             simplecache.New(),
+		nameToIDCache:             simplecache.New(),
+		imageIntegrationDataStore: iiDs,
 	}
 
 	if features.PostgresDatastore.Enabled() {

@@ -3,8 +3,10 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/imageintegration/datastore/internal/search"
+	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/imageintegration/store/bolt"
 	"github.com/stackrox/rox/central/imageintegration/store/postgres"
@@ -24,6 +26,7 @@ var (
 
 func initializeDefaultIntegrations(ctx context.Context, storage store.Store) {
 	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
+	log.Infof(">>>> initializeDefaultIntegrations size: %d", len(integrations))
 	utils.CrashOnError(err)
 	if !env.OfflineModeEnv.BooleanSetting() && len(integrations) == 0 {
 		// Add default integrations
@@ -33,33 +36,23 @@ func initializeDefaultIntegrations(ctx context.Context, storage store.Store) {
 	}
 }
 
-func initializeManager(ctx context.Context) {
-	// Initialize the integration set with all present integrations.
-	integrationManager := enrichment.ManagerSingleton()
-	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
-	if err != nil {
-		log.Errorf("unable to use previous integrations: %s", err)
-	}
-	for _, ii := range integrations {
-		if err := integrationManager.Upsert(ii); err != nil {
-			log.Errorf("unable to use previous integration %s: %v", ii.GetName(), err)
-		}
-	}
-}
-
 func initialize() {
 	// Create underlying store and datastore.
 	var storage store.Store
+	var indexer index.Indexer
+
 	if features.PostgresDatastore.Enabled() {
 		storage = postgres.New(globaldb.GetPostgres())
+		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {
 		storage = bolt.New(globaldb.GetGlobalDB())
+		indexer = index.New(globalindex.GetGlobalTmpIndex())
 	}
-	ad = New(storage)
+	searcher := search.New(storage, indexer)
+	ad = New(storage, indexer, searcher)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	initializeDefaultIntegrations(ctx, storage)
-	initializeManager(ctx)
 }
 
 // Singleton provides the interface for non-service external interaction.
