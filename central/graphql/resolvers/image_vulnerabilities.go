@@ -476,81 +476,46 @@ func (resolver *imageCVEResolver) UnusedVarSink(_ context.Context, _ RawQuery) *
 // Follows are functions that return information that is nested in the CVEInfo object
 // or are convenience functions to allow time for UI to migrate to new naming schemes
 
-func (resolver *imageCVEResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
-	baseInfo, err := resolver.CveBaseInfo(ctx)
-	if baseInfo == nil || err != nil {
-		return nil, err
-	}
-
-	return baseInfo.CreatedAt(ctx)
-}
-
-func (resolver *imageCVEResolver) CVE(ctx context.Context) string {
-	baseInfo, err := resolver.CveBaseInfo(ctx)
-	if baseInfo == nil || err != nil {
-		return ""
-	}
-
-	return baseInfo.Cve(ctx)
-}
-
 func (resolver *imageCVEResolver) ID(_ context.Context) graphql.ID {
 	return graphql.ID(resolver.data.GetId())
 }
 
-func (resolver *imageCVEResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
-	baseInfo, err := resolver.CveBaseInfo(ctx)
-	if baseInfo == nil || err != nil {
-		return nil, err
-	}
-
-	return baseInfo.LastModified(ctx)
+func (resolver *imageCVEResolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
+	return timestamp(resolver.data.GetCveBaseInfo().GetCreatedAt())
 }
 
-func (resolver *imageCVEResolver) Link(ctx context.Context) string {
-	baseInfo, err := resolver.CveBaseInfo(ctx)
-	if baseInfo == nil || err != nil {
-		return ""
-	}
-
-	return baseInfo.Link(ctx)
+func (resolver *imageCVEResolver) CVE(_ context.Context) string {
+	return resolver.data.GetCveBaseInfo().GetCve()
 }
 
-func (resolver *imageCVEResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
-	baseInfo, err := resolver.CveBaseInfo(ctx)
-	if baseInfo == nil || err != nil {
-		return nil, err
-	}
-
-	return baseInfo.PublishedOn(ctx)
+func (resolver *imageCVEResolver) LastModified(_ context.Context) (*graphql.Time, error) {
+	return timestamp(resolver.data.GetCveBaseInfo().GetLastModified())
 }
 
-func (resolver *imageCVEResolver) ScoreVersion(ctx context.Context) string {
-	baseInfo, err := resolver.CveBaseInfo(ctx)
-	if baseInfo == nil || err != nil {
-		return ""
-	}
-
-	return baseInfo.ScoreVersion(ctx)
+func (resolver *imageCVEResolver) Link(_ context.Context) string {
+	return resolver.data.GetCveBaseInfo().GetLink()
 }
 
-func (resolver *imageCVEResolver) Summary(ctx context.Context) string {
-	baseInfo, err := resolver.CveBaseInfo(ctx)
-	if baseInfo == nil || err != nil {
-		return ""
-	}
-
-	return baseInfo.Summary(ctx)
+func (resolver *imageCVEResolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
+	return timestamp(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
 
-func (resolver *imageCVEResolver) SuppressActivation(ctx context.Context) (*graphql.Time, error) {
-	return resolver.SnoozeStart(ctx)
+func (resolver *imageCVEResolver) ScoreVersion(_ context.Context) string {
+	return resolver.data.GetCveBaseInfo().GetScoreVersion().String()
 }
 
-func (resolver *imageCVEResolver) SuppressExpiry(ctx context.Context) (*graphql.Time, error) {
-	return resolver.SnoozeExpiry(ctx)
+func (resolver *imageCVEResolver) Summary(_ context.Context) string {
+	return resolver.data.GetCveBaseInfo().GetSummary()
 }
 
-func (resolver *imageCVEResolver) Suppressed(ctx context.Context) bool {
-	return resolver.Snoozed(ctx)
+func (resolver *imageCVEResolver) SuppressActivation(_ context.Context) (*graphql.Time, error) {
+	return timestamp(resolver.data.GetSnoozeStart())
+}
+
+func (resolver *imageCVEResolver) SuppressExpiry(_ context.Context) (*graphql.Time, error) {
+	return timestamp(resolver.data.GetSnoozeExpiry())
+}
+
+func (resolver *imageCVEResolver) Suppressed(_ context.Context) bool {
+	return resolver.data.GetSnoozed()
 }
