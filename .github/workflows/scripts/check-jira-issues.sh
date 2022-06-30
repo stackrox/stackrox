@@ -80,7 +80,7 @@ OPEN_ISSUES=$(get_open_issues)
 echo "Open issues:"
 echo "$OPEN_ISSUES"
 
-if [ "$DRY_RUN" != "true" ]; then
+if [ "$DRY_RUN" = "false" ]; then
     while read -r KEY; do
         comment_issue "$KEY"
     done <<<"$OPEN_ISSUES"
