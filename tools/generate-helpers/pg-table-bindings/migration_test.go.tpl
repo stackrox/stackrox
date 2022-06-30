@@ -86,7 +86,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
     testutils.TearDownDB(s.legacyDB)
 	{{- end}}
 	_ = s.gormDB.Migrator().DropTable({{template "createTableStmtVar" .Schema}}.GormModel)
-	pgtest.CleanUpDB(s.T(), s.ctx, s.pool)
+	pgtest.CleanUpDB(s.ctx, s.T(), s.pool)
 	pgtest.CloseGormDB(s.T(), s.gormDB)
     s.pool.Close()
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/globaldb"
+//	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/db/mapcache"
@@ -39,7 +39,7 @@ func uniqKeyFunc(msg proto.Message) []byte {
 
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
-	globaldb.RegisterBucket(bucket, "SignatureIntegration")
+//	globaldb.RegisterBucket(bucket, "SignatureIntegration")
 	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, false)
 	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
 	if err != nil {

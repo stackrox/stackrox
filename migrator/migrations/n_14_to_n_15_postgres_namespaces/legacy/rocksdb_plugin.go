@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/globaldb"
+//	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -35,7 +35,7 @@ func keyFunc(msg proto.Message) []byte {
 
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
-	globaldb.RegisterBucket(bucket, "NamespaceMetadata")
+//	globaldb.RegisterBucket(bucket, "NamespaceMetadata")
 	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, false)
     return  &storeImpl{crud: baseCRUD}, nil
 }

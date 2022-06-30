@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/globaldb"
+//	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
 	{{- if .Cache}}
@@ -53,7 +53,7 @@ func uniqKeyFunc(msg proto.Message) []byte {
 
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
-	globaldb.RegisterBucket(bucket, "{{.Type}}")
+//	globaldb.RegisterBucket(bucket, "{{.Type}}")
 	{{- if .UniqKeyFunc}}
 	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, uniqKeyFunc, {{.TrackIndex}})
 	{{- else}}

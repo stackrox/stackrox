@@ -104,6 +104,6 @@ func CloseGormDB(t testing.TB, db *gorm.DB) {
 }
 
 // CleanUpDB removes public schema together with all tables
-func CleanUpDB(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
+func CleanUpDB(ctx context.Context, t *testing.T, pool *pgxpool.Pool) {
 	conn.CleanUpDB(ctx, t, pool)
 }

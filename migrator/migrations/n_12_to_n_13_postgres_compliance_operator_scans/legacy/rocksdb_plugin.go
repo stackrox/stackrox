@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/globaldb"
+//	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/db/mapcache"
@@ -36,7 +36,7 @@ func keyFunc(msg proto.Message) []byte {
 
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
-	globaldb.RegisterBucket(bucket, "ComplianceOperatorScan")
+//	globaldb.RegisterBucket(bucket, "ComplianceOperatorScan")
 	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, false)
 	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
 	if err != nil {
