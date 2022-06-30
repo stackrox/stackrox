@@ -754,43 +754,29 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	return s.deleteNodeTree(ctx, conn, id)
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return nil
+	}
+	return s.deleteNodeTree(ctx, tx, id)
 }
 
-func (s *storeImpl) deleteNodeTree(ctx context.Context, conn *pgxpool.Conn, nodeIDs ...string) error {
-	// Delete nodes.
-	if _, err := conn.Exec(ctx, "delete from "+nodesTable+" where Id = ANY($1::text[])", nodeIDs); err != nil {
+func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeID string) error {
+	// Delete from node table.
+	if _, err := tx.Exec(ctx, "delete from "+nodesTable+" where Id = $1", nodeID); err != nil {
 		return err
-	}
-	// Node-components edges have ON DELETE CASCADE referential constraint on nodeid, therefore, no need to explicitly trigger deletion.
-
-	// Get orphaned node components.
-	rows, err := s.db.Query(ctx, "select id from "+nodeComponentsTable+" where not exists (select "+nodeComponentsTable+".id FROM "+nodeComponentsTable+", "+nodeComponentEdgesTable+" WHERE "+nodeComponentsTable+".id = "+nodeComponentEdgesTable+".nodecomponentid)")
-	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
-	}
-	defer rows.Close()
-	var componentIDs []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return err
-		}
-		componentIDs = append(componentIDs, id)
 	}
 
 	// Delete orphaned node components.
-	if _, err := conn.Exec(ctx, "delete from "+nodeComponentsTable+" where id = ANY($1::text[])", componentIDs); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+nodeComponentsTable+" where not exists (select "+nodeComponentEdgesTable+".nodecomponentid FROM "+nodeComponentEdgesTable+")"); err != nil {
 		return err
 	}
-
-	// Component-CVE edges have ON DELETE CASCADE referential constraint on component id, therefore, no need to explicitly trigger deletion.
 
 	// Delete orphaned cves.
-	if _, err := conn.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+nodeCVEsTable+".id FROM "+nodeCVEsTable+", "+componentCVEEdgesTable+" WHERE "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)"); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+componentCVEEdgesTable+".nodecveid FROM "+componentCVEEdgesTable+")"); err != nil {
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 // GetIDs returns all the IDs for the store

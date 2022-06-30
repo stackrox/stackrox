@@ -865,9 +865,9 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	return s.deleteImageTree(ctx, tx, id)
 }
 
-func (s *storeImpl) deleteImageTree(ctx context.Context, tx pgx.Tx, imageIDs ...string) error {
+func (s *storeImpl) deleteImageTree(ctx context.Context, tx pgx.Tx, imageID string) error {
 	// Delete from image table.
-	if _, err := tx.Exec(ctx, "delete from "+imagesTable+" where Id = ANY($1::text[])", imageIDs); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+imagesTable+" where Id = $1", imageID); err != nil {
 		return err
 	}
 
@@ -880,7 +880,7 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, tx pgx.Tx, imageIDs ...
 	if _, err := tx.Exec(ctx, "delete from "+imageCVEsTable+" where not exists (select "+componentCVEEdgesTable+".imagecveid FROM "+componentCVEEdgesTable+")"); err != nil {
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 // GetIDs returns all the IDs for the store
