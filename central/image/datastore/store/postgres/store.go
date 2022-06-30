@@ -127,23 +127,18 @@ func (s *storeImpl) insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storag
 	keys := gatherKeysFromParts(components, vulns)
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		log.Infof("finished upserting image components %v", len(components))
 		if err := copyFromImageComponents(ctx, tx, components...); err != nil {
 			return err
 		}
-		log.Infof("finished upserting image-component edges %v", len(imageComponentEdges))
 		if err := copyFromImageComponentEdges(ctx, tx, imageComponentEdges...); err != nil {
 			return err
 		}
-		log.Infof("finished upserting cves edges %v", len(vulns))
 		if err := copyFromImageCves(ctx, tx, iTime, vulns...); err != nil {
 			return err
 		}
-		log.Infof("finished upserting component-cves edges %v", len(componentCVEEdges))
 		if err := copyFromImageComponentCVEEdges(ctx, tx, obj.GetScan().GetOperatingSystem(), componentCVEEdges...); err != nil {
 			return err
 		}
-		log.Infof("finished upserting image-cves edges %v", len(imageCVEEdges))
 		return copyFromImageCVEEdges(ctx, tx, iTime, imageCVEEdges...)
 	})
 }
@@ -519,9 +514,8 @@ func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string,
 	return nil
 }
 
-func (s *storeImpl) isUpdated(ctx context.Context, tx pgx.Tx, image *storage.Image) (bool, bool, error) {
-	log.Infof("fetching image metadata %s", image.GetId())
-	oldImage, found, err := s.getImageMetadata(ctx, tx, image.GetId())
+func (s *storeImpl) isUpdated(ctx context.Context, conn *pgxpool.Conn, image *storage.Image) (bool, bool, error) {
+	oldImage, found, err := s.getImageMetadata(ctx, conn, image.GetId())
 	if err != nil {
 		return false, false, err
 	}
@@ -555,23 +549,9 @@ func (s *storeImpl) isUpdated(ctx context.Context, tx pgx.Tx, image *storage.Ima
 	return metadataUpdated, scanUpdated, nil
 }
 
-func (s *storeImpl) getImageMetadata(ctx context.Context, tx pgx.Tx, id string) (*storage.Image, bool, error) {
-	row := tx.QueryRow(ctx, getImageMetaStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	var msg storage.Image
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
-}
-
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Image) error {
 	iTime := protoTypes.TimestampNow()
-	conn, release, err := s.acquireConn(ctx, ops.Upsert, "Image")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
 	if err != nil {
 		return err
 	}
@@ -586,14 +566,14 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Image) error {
 		if !s.noUpdateTimestamps {
 			obj.LastUpdated = iTime
 		}
-		metadataUpdated, scanUpdated, err := s.isUpdated(ctx, tx, obj)
+		metadataUpdated, scanUpdated, err := s.isUpdated(ctx, conn, obj)
 		if err != nil {
 			return err
 		}
 		if !metadataUpdated && !scanUpdated {
 			return nil
 		}
-		log.Infof("upserting image %s", obj.GetId())
+
 		err = s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(obj.GetId())), func() error {
 			if err := s.insertIntoImages(ctx, tx, obj, scanUpdated, iTime); err != nil {
 				if err := tx.Rollback(ctx); err != nil {
@@ -606,7 +586,6 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Image) error {
 		if err != nil {
 			return err
 		}
-		log.Infof("finished upserting image %s", obj.GetId())
 	}
 	return nil
 }
@@ -731,7 +710,6 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx pgx.Tx, imageID string)
 		}
 		imageParts.Children = append(imageParts.Children, child)
 	}
-	log.Infof("merging image parts #components %d #cves %d #imagecomponentedge %d #compcveedge %d", len(componentMap), len(cveMap), len(componentEdgeMap), len(componentCVEEdgeMap))
 	return common.Merge(imageParts), true, nil
 }
 
@@ -774,7 +752,7 @@ func getImageCVEEdgeIDs(ctx context.Context, tx pgx.Tx, imageID string) (set.Str
 	if err != nil {
 		return nil, err
 	}
-	ids, err := scanIDsAndClose(rows)
+	ids, err := scanIDs(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -805,7 +783,7 @@ func getImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string) (map[strin
 }
 
 func getImageComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string]*storage.ImageComponent, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageComponents")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponents")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsTable+" WHERE id = ANY($1::text[])", componentIDs)
 	if err != nil {
@@ -923,7 +901,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
-	ids, err := scanIDsAndClose(rows)
+	ids, err := scanIDs(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -1040,12 +1018,16 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageMetadata")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
 	if err != nil {
 		return nil, false, err
 	}
 	defer release()
 
+	return s.getImageMetadata(ctx, conn, id)
+}
+
+func (s *storeImpl) getImageMetadata(ctx context.Context, conn *pgxpool.Conn, id string) (*storage.Image, bool, error) {
 	row := conn.QueryRow(ctx, getImageMetaStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -1076,7 +1058,7 @@ func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []
 		if err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
-		return scanIDsAndClose(rows)
+		return scanIDs(rows)
 	}()
 	if err != nil {
 		return err
@@ -1118,7 +1100,7 @@ func gatherKeysFromParts(components []*storage.ImageComponent, vulns []*storage.
 	return keys
 }
 
-func scanIDsAndClose(rows pgx.Rows) ([]string, error) {
+func scanIDs(rows pgx.Rows) ([]string, error) {
 	defer rows.Close()
 	var ids []string
 
@@ -1130,4 +1112,12 @@ func scanIDsAndClose(rows pgx.Rows) ([]string, error) {
 		ids = append(ids, id)
 	}
 	return ids, nil
+}
+
+func bytes(ids []string) [][]byte {
+	ret := make([][]byte, 0, len(ids))
+	for _, id := range ids {
+		ret = append(ret, []byte(id))
+	}
+	return ret
 }
