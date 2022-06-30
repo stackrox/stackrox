@@ -11,6 +11,7 @@ import RadioButtonGroup from 'Components/RadioButtonGroup';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { DASHBOARD_LIMIT } from 'constants/workflowPages.constants';
 import DashboardMenu from 'Components/DashboardMenu';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import PoliciesCountTile from '../Components/PoliciesCountTile';
 import CvesCountTile from '../Components/CvesCountTile';
 import ImagesCountTile from '../Components/ImagesCountTile';
@@ -23,16 +24,21 @@ import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
 import ClustersWithMostOrchestratorIstioVulnerabilities from '../widgets/ClustersWithMostOrchestratorIstioVulnerabilities';
 
-const entityMenuTypes = [
-    entityTypes.CLUSTER,
-    entityTypes.NAMESPACE,
-    entityTypes.DEPLOYMENT,
-    entityTypes.COMPONENT,
-];
+const baseEntityMenuTypes = [entityTypes.CLUSTER, entityTypes.NAMESPACE, entityTypes.DEPLOYMENT];
+const componentMenuType = [entityTypes.COMPONENT];
+const splitComponentMenuTypes = [entityTypes.NODE_COMPONENT, entityTypes.IMAGE_COMPONENT];
 
 const VulnDashboardPage = ({ history }) => {
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    let entityMenuTypes = [...baseEntityMenuTypes];
+    if (isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES')) {
+        entityMenuTypes = [...baseEntityMenuTypes, ...splitComponentMenuTypes];
+    } else {
+        entityMenuTypes = [...baseEntityMenuTypes, ...componentMenuType];
+    }
 
     const cveFilterButtons = [
         {

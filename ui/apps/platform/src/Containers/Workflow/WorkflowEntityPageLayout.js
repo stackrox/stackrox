@@ -19,12 +19,23 @@ import useCaseLabels from 'messages/useCase';
 import useEntityName from 'hooks/useEntityName';
 import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
 import { shouldUseOriginalCase } from 'utils/workflowUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import entityTypes from 'constants/entityTypes';
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowEntityPageLayout = ({ location }) => {
     const { isDarkMode } = useTheme();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const useCaseEntityMap = getUseCaseEntityMap();
+    if (isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES')) {
+        const newTypes = useCaseEntityMap['vulnerability-management'].filter(
+            (entityType) => entityType !== entityTypes.COMPONENT
+        );
+        newTypes.push(entityTypes.NODE_COMPONENT);
+        newTypes.push(entityTypes.IMAGE_COMPONENT);
+        useCaseEntityMap['vulnerability-management'] = newTypes;
+    }
 
     const workflowState = parseURL(location);
     const { stateStack, useCase, search } = workflowState;
