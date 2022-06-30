@@ -174,7 +174,11 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 				table:       currElem.schema,
 				columnPairs: rel.MappedColumnNames,
 			}
-			queue = append(queue, newElem)
+			if searchNS, boundedGraphSearch := searchNamespace[src.Table]; !boundedGraphSearch {
+				queue = append(queue, newElem)
+			} else if _, foundInSearchNS := searchNS[newElem.schema.Table]; foundInSearchNS {
+				queue = append(queue, newElem)
+			}
 		}
 	}
 

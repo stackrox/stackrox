@@ -1,6 +1,3 @@
-//go:build sql_integration
-// +build sql_integration
-
 package postgres_test
 
 import (
@@ -20,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	testChild1 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild1"
+	testChild1P4 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild1p4"
 	testChild2 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild2"
 	testG2Grandchild1 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testg2grandchild1"
 	testG3Grandchild1 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testg3grandchild1"
@@ -29,6 +27,7 @@ import (
 	testParent1 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testparent1"
 	testParent2 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testparent2"
 	testParent3 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testparent3"
+	testParent4 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testparent4"
 	testShortCircuit "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testshortcircuit"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -69,6 +68,8 @@ type GraphQueriesTestSuite struct {
 	testParent1Store       testParent1.Store
 	testParent2Store       testParent2.Store
 	testParent3Store       testParent3.Store
+	testParent4Store       testParent4.Store
+	testChild1P4Store      testChild1P4.Store
 	testGrandChild1Store   testGrandchild1.Store
 	testGGrandchild1Store  testGGrandchild1.Store
 	testG2Grandchild1Store testG2Grandchild1.Store
@@ -100,6 +101,8 @@ func (s *GraphQueriesTestSuite) SetupTest() {
 	s.testParent1Store = testParent1.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.testParent2Store = testParent2.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.testParent3Store = testParent3.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testParent4Store = testParent4.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testChild1P4Store = testChild1P4.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.testGrandChild1Store = testGrandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.testGGrandchild1Store = testGGrandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.testG2Grandchild1Store = testG2Grandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
@@ -160,6 +163,11 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 			{ChildId: "5"},
 		},
 	}))
+	s.Require().NoError(s.testParent4Store.Upsert(testCtx, &storage.TestParent4{
+		Id:       "4",
+		ParentId: "1",
+		Val:      "TestParent4",
+	}))
 	s.Require().NoError(s.testChild1Store.Upsert(testCtx, &storage.TestChild1{
 		Id:  "1",
 		Val: "Child11",
@@ -179,6 +187,11 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 	s.Require().NoError(s.testChild1Store.Upsert(testCtx, &storage.TestChild1{
 		Id:  "5",
 		Val: "Child15",
+	}))
+	s.Require().NoError(s.testChild1P4Store.Upsert(testCtx, &storage.TestChild1P4{
+		Id:       "C1P4",
+		ParentId: "4",
+		Val:      "Child1P4",
 	}))
 
 	s.Require().NoError(s.testGrandChild1Store.Upsert(testCtx, &storage.TestGrandChild1{
@@ -378,6 +391,41 @@ func (s *GraphQueriesTestSuite) TestDerived() {
 			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestChild1Count.String(), Reversed: true}}}},
 			orderMatters:      true,
 			expectedResultIDs: []string{"1", "2"},
+		},
+	})
+}
+
+func (s *GraphQueriesTestSuite) TestNamespacedSearch() {
+	s.runTestCases([]graphQueryTestCase{
+		{
+			desc:              "query out-of-scope resource from parent4",
+			queriedType:       "testparent4",
+			queryStrings:      map[search.FieldLabel][]string{search.TestParent2ID: {"r/.*1"}},
+			expectedResultIDs: []string{},
+		},
+		{
+			desc:              "query out-of-scope resource from child1p4",
+			queriedType:       "testchild1p4",
+			queryStrings:      map[search.FieldLabel][]string{search.TestChild1ID: {"r/.*1"}},
+			expectedResultIDs: []string{},
+		},
+		{
+			desc:              "query in-scope resource from parent4",
+			queriedType:       "testparent4",
+			queryStrings:      map[search.FieldLabel][]string{search.TestParent4Val: {"r/.*4"}},
+			expectedResultIDs: []string{"4"},
+		},
+		{
+			desc:              "query in-scope child from parent4",
+			queriedType:       "testparent4",
+			queryStrings:      map[search.FieldLabel][]string{search.TestChild1P4ID: {"r/.*P4"}},
+			expectedResultIDs: []string{"4"},
+		},
+		{
+			desc:              "query out-of-scope parent from child1p4",
+			queriedType:       "testchild1p4",
+			queryStrings:      map[search.FieldLabel][]string{search.TestParent4ID: {"r/.*4"}},
+			expectedResultIDs: []string{},
 		},
 	})
 }
