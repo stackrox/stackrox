@@ -301,13 +301,13 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
 		    return err
         }
 		batchResults := conn.SendBatch(ctx, batch)
-		var result error
+		var result *multierror.Error
 		for i := 0; i < batch.Len(); i++ {
 			_, err := batchResults.Exec()
 			result = multierror.Append(result, err)
 		}
-		if result != nil {
-			return result
+		if err := result.ErrorOrNil(); err != nil {
+			return err
 		}
     }
     return nil
