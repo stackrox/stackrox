@@ -398,7 +398,7 @@ func (s *GraphQueriesTestSuite) TestDerived() {
 	})
 }
 
-func (s *GraphQueriesTestSuite) TestNamespacedSearch() {
+func (s *GraphQueriesTestSuite) TestScopedSearch() {
 	s.runTestCases([]graphQueryTestCase{
 		{
 			desc:              "query out-of-scope resource from parent4",

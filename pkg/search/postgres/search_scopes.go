@@ -38,19 +38,18 @@ var (
 		v1.SearchCategory_NODE_COMPONENTS:         nodeTree,
 		v1.SearchCategory_NODE_COMPONENT_EDGE:     nodeTree,
 		v1.SearchCategory_NODES:                   nodeTree,
-		v1.SearchCategory_CLUSTERS:                nodeTree,
 
 		// for testing
 
 		// TestChild1P4
-		74: {
+		72: {
 			// TestGrandparents
 			61: {},
 			// TestChild1P4
 			74: {},
 		},
 		// TestParent4
-		72: {
+		74: {
 			// TestChild1P4
 			74: {},
 		},
