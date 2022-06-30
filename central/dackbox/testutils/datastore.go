@@ -66,7 +66,6 @@ type DackboxTestDataStore interface {
 }
 
 type dackboxTestDataStoreImpl struct {
-	t *testing.T
 	// Pool for postgres mode
 	pgtestbase *pgtest.TestPostgres
 	// Elements for rocksdb+bleve mode
@@ -248,63 +247,9 @@ func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 	return nil
 }
 
-func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() error {
-	ctx := sac.WithAllAccess(context.Background())
-	var err error
-	storedDeployments := s.storedDeployments
-	for _, deploymentID := range storedDeployments {
-		deployment, found, err := s.deploymentStore.GetDeployment(ctx, deploymentID)
-		if err != nil {
-			return err
-		}
-		if !found {
-			continue
-		}
-		fmt.Println("cleaning deployment", deploymentID)
-		err = s.deploymentStore.RemoveDeployment(ctx, deployment.GetClusterId(), deploymentID)
-		if err != nil {
-			return err
-		}
-	}
-	s.storedDeployments = s.storedDeployments[:0]
-	storedImages := s.storedImages
-	for _, imageID := range storedImages {
-		err = s.imageStore.DeleteImages(ctx, imageID)
-		if err != nil {
-			return err
-		}
-	}
-	s.storedImages = s.storedImages[:0]
-	storedNamespaces := s.storedNamespaces
-	for _, namespaceID := range storedNamespaces {
-		err := s.namespaceStore.RemoveNamespace(ctx, namespaceID)
-		if err != nil {
-			return err
-		}
-	}
-	s.storedNamespaces = s.storedNamespaces[:0]
-	return nil
-}
-
-func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() error {
-	ctx := sac.WithAllAccess(context.Background())
-	var err error
-	storedNodes := s.storedNodes
-	for _, nodeID := range storedNodes {
-		err = s.nodeStore.DeleteNodes(ctx, nodeID)
-		if err != nil {
-			return err
-		}
-	}
-	s.storedNodes = s.storedNodes[:0]
-	return nil
-}
-
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	var err error
-	s := &dackboxTestDataStoreImpl{
-		t: t,
-	}
+	s := &dackboxTestDataStoreImpl{}
 	if features.PostgresDatastore.Enabled() {
 		s.pgtestbase = pgtest.ForT(t)
 		s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
