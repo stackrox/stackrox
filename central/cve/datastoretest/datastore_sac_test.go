@@ -537,7 +537,6 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetFromSharedComponent() {
 	defer s.cleanImageToVulnerabilitiesGraph()
 	targetCVE := fixtures.GetEmbeddedImageCVE_3456_0004()
 	cveName := targetCVE.GetCve()
-	cve := "CVE-3456-0004"
 	cveId := s.getImageCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range imageCVETestCases {
@@ -551,7 +550,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetFromSharedComponent() {
 			s.Equal(c.expectedCVEFound[cveName], found)
 			if c.expectedCVEFound[cveName] {
 				s.Require().NotNil(imageCVE)
-				s.Equal(cve, imageCVE.GetCveBaseInfo().GetCve())
+				s.Equal(cveName, imageCVE.GetCveBaseInfo().GetCve())
 				s.Equal(cvss, imageCVE.Cvss)
 			} else {
 				s.Nil(imageCVE)
@@ -752,7 +751,6 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetFromSharedComponent() {
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	targetCVE := fixtures.GetEmbeddedNodeCVE_3456_0004()
 	cveName := targetCVE.GetCve()
-	cve := "CVE-3456-0004"
 	cveId := s.getNodeCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range nodeCVETestCases {
@@ -766,7 +764,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetFromSharedComponent() {
 			s.Equal(c.expectedCVEFound[cveName], found)
 			if c.expectedCVEFound[cveName] {
 				s.NotNil(nodeCVE)
-				s.Equal(cve, nodeCVE.GetCveBaseInfo().GetCve())
+				s.Equal(cveName, nodeCVE.GetCveBaseInfo().GetCve())
 				s.Equal(cvss, nodeCVE.Cvss)
 			} else {
 				s.Nil(nodeCVE)
