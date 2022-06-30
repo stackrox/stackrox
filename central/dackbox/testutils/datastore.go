@@ -8,7 +8,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/jackc/pgx/v4/pgxpool"
 	activeComponentDackbox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/index"
+	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	clusterCVEEdgeDackbox "github.com/stackrox/rox/central/clustercveedge/dackbox"
 	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
 	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
@@ -62,11 +62,10 @@ type DackboxTestDataStore interface {
 	CleanImageToVulnerabilitiesGraph() error
 	CleanNodeToVulnerabilitiesGraph() error
 	// Post test cleanup (TearDown)
-	Cleanup() error
+	Cleanup(t *testing.T) error
 }
 
 type dackboxTestDataStoreImpl struct {
-	t *testing.T
 	// Pool for postgres mode
 	pgtestbase *pgtest.TestPostgres
 	// Elements for rocksdb+bleve mode
@@ -112,8 +111,14 @@ func (s *dackboxTestDataStoreImpl) GetIndexQ() queue.WaitableQueue {
 	return s.indexQ
 }
 
-func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() error {
-	var err error
+// PushImageToVulnerabilitiesGraph inserts the namespace -> deployment -> image -> CVE graph defined
+// in the dackbox fixture (see the comment at the top of the image section for more details).
+// This function creates NamespaceA in Cluster1 and NamespaceB in Cluster2, then injects the SherlockHolmes
+// and DoctorJekyll images, to finally bind them to their respective namespaces through the identically
+// names deployments.
+// Sherlock holmes is the deployment / image part from Cluster1 and NamespaceA.
+// Dr Jekyll is the deployment / image part from Cluster2 and NamespaceB.
+func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	testNamespace1 := fixtures.GetNamespace(testconsts.Cluster1, testconsts.Cluster1, testconsts.NamespaceA)
 	testNamespace2 := fixtures.GetNamespace(testconsts.Cluster2, testconsts.Cluster2, testconsts.NamespaceB)
@@ -154,8 +159,11 @@ func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() error {
 	return nil
 }
 
-func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph() error {
-	var err error
+// PushNodeToVulnerabilitiesGraph inserts the node -> CVE graph defined
+// in the dackbox fixture (see the comment at the top of the image section for more details).
+// Sherlock holmes is the node part from Cluster1.
+// Dr Jekyll is the node part from Cluster2.
+func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	testNode1 := fixtures.GetScopedNode_1(uuid.NewV4().String(), testconsts.Cluster1)
 	testNode2 := fixtures.GetScopedNode_2(uuid.NewV4().String(), testconsts.Cluster2)
@@ -173,27 +181,8 @@ func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph() error {
 
 }
 
-func (s *dackboxTestDataStoreImpl) Cleanup() error {
-	if features.PostgresDatastore.Enabled() {
-		s.pgtestbase.Teardown(s.t)
-		return nil
-	} else {
-		var err error
-		err = s.bleveIndex.Close()
-		if err != nil {
-			return err
-		}
-		err = rocksPkg.CloseAndRemove(s.rocksEngine)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-}
-
-func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() error {
+func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
-	var err error
 	storedDeployments := s.storedDeployments
 	for _, deploymentID := range storedDeployments {
 		deployment, found, err := s.deploymentStore.GetDeployment(ctx, deploymentID)
@@ -229,9 +218,8 @@ func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() error {
 	return nil
 }
 
-func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() error {
+func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
-	var err error
 	storedNodes := s.storedNodes
 	for _, nodeID := range storedNodes {
 		err = s.nodeStore.DeleteNodes(ctx, nodeID)
@@ -243,11 +231,26 @@ func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() error {
 	return nil
 }
 
+func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
+	if features.PostgresDatastore.Enabled() {
+		s.pgtestbase.Teardown(t)
+		return nil
+	} else {
+		err = s.bleveIndex.Close()
+		if err != nil {
+			return err
+		}
+		err = rocksPkg.CloseAndRemove(s.rocksEngine)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	var err error
-	s := &dackboxTestDataStoreImpl{
-		t: t,
-	}
+	s := &dackboxTestDataStoreImpl{}
 	if features.PostgresDatastore.Enabled() {
 		s.pgtestbase = pgtest.ForT(t)
 		s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())

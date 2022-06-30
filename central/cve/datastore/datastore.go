@@ -69,7 +69,7 @@ func New(graphProvider graph.Provider, indexQ queue.WaitableQueue, storage store
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence, indexQ queue.WaitableQueue) (DataStore, error) {
+func GetTestRocksBleveDataStore(_ *testing.T, _ *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence, indexQ queue.WaitableQueue) (DataStore, error) {
 	dbstore := dackboxStore.New(dacky, keyFence)
 	indexer := index.New(bleveIndex)
 	clusterCVEEdgeIndexer := clusterCVEEdgeIndex.New(bleveIndex)

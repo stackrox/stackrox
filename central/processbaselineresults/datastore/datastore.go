@@ -29,13 +29,13 @@ func New(storage store.Store) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
 	dbstore := postgres.New(pool)
 	return New(dbstore), nil
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
+func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
 	dbstore := rocksdb.New(rocksengine)
 	return New(dbstore), nil
 }
