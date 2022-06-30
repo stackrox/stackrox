@@ -318,7 +318,7 @@ const VulnMgmtCves = ({
             cveQuery = gql`
                 query getImageCves($query: String, $scopeQuery: String, $pagination: Pagination) {
                     results: imageVulnerabilities(query: $query, pagination: $pagination) {
-                        ...cveFields
+                        ...imageCVEFields
                     }
                     count: imageVulnerabilityCount(query: $query)
                 }

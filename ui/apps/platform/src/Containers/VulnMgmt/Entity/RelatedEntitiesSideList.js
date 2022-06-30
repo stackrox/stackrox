@@ -48,7 +48,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
     }
     return (
         <div
-            className={` h-full relative border-base-100 border-l w-43 ${
+            className={`h-full relative border-base-100 border-l max-w-43 ${
                 !isDarkMode ? 'bg-primary-300' : 'bg-base-100'
             }`}
         >
