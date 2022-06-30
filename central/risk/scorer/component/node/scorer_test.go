@@ -35,7 +35,7 @@ func TestScore(t *testing.T) {
 		},
 	}
 
-	actualRisk := nodeScorer.Score(ctx, scancomponent.NewFromNodeComponent(nodeComponent))
+	actualRisk := nodeScorer.Score(ctx, scancomponent.NewFromNodeComponent(nodeComponent), "")
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 

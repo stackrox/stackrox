@@ -37,11 +37,16 @@ export type AgingImagesChartProps = {
     timeRangeCounts: TimeRangeCounts;
 };
 
-function linkForAgingImages(searchFilter: SearchFilter, ageRange: number) {
+export function getTimeFilterOption(ageRange: number, nextAgeRange?: number) {
+    return typeof nextAgeRange === 'number' ? `${ageRange}d-${nextAgeRange}d` : `>${ageRange}d`;
+}
+
+function linkForAgingImages(searchFilter: SearchFilter, ageRange: number, nextAgeRange?: number) {
+    const timeFilter = getTimeFilterOption(ageRange, nextAgeRange);
     const queryString = getQueryString({
         s: {
             ...searchFilter,
-            'Image Created Time': `>${ageRange}d`,
+            'Image Created Time': timeFilter,
         },
         sort: [{ id: 'Image Created Time', desc: 'false' }],
     });
@@ -55,28 +60,13 @@ function yAxisTitle(searchFilter: SearchFilter) {
 // `datum` for these callbacks will refer to the index number of the bar in the chart. This index
 // value matches the index of the target `ChartData` item passed to the chart component.
 const labelLinkCallback = ({ datum }: ChartLabelProps, chartData: ChartData[]) => {
-    return typeof datum === 'number' ? chartData[datum - 1].labelLink : '';
+    return typeof datum === 'number' ? chartData[datum - 1]?.labelLink ?? '' : '';
 };
 
 const labelTextCallback = ({ datum }: ChartLabelProps, chartData: ChartData[]) => {
-    return typeof datum === 'number' ? chartData[datum - 1].labelText : '';
+    return typeof datum === 'number' ? chartData[datum - 1]?.labelText ?? '' : '';
 };
 
-/**
- * Chart data is constructed from a 4-tuple of time range configurations and a data
- * object that contains image counts for each of the four time ranges.
- *
- * Since the incoming data contains overlapping image counts for each time range, we need
- * to process the data to group into buckets.
- *
- * The algorithm:
- * - Iterating over each time range, starting from the shortest.
- * - If the current time bucket is disabled, skip it.
- * - Find the next enabled time bucket after the current one
- * -- If one exists, subtract the count from the current bucket
- * -- If not, this is the last bucket so leave the count as-is
- * - Return the again image count, color, text, and link for this bucket
- */
 function makeChartData(
     searchFilter: SearchFilter,
     timeRanges: TimeRangeTuple,
@@ -89,15 +79,20 @@ function makeChartData(
 
         if (enabled) {
             const nextEnabledRange = timeRanges.slice(index + 1).find((range) => range.enabled);
-            const nextEnabledIndex = timeRanges.findIndex((range) => range === nextEnabledRange);
             const x = String(value);
-            const y =
-                nextEnabledIndex !== -1
-                    ? data[`timeRange${index}`] - data[`timeRange${nextEnabledIndex}`]
-                    : data[`timeRange${index}`];
+            let y = data[`timeRange${index}`];
+            // Since time ranges are grouped into buckets, we need to look forward and add the totals in any
+            // disabled bucket to the current total.
+            for (let i = index; i < timeRanges.length - 1; i += 1) {
+                if (!timeRanges[i + 1].enabled) {
+                    y += data[`timeRange${i + 1}`];
+                } else {
+                    break;
+                }
+            }
             const barData = [{ x, y }];
             const fill = severityColorScale[index];
-            const labelLink = linkForAgingImages(searchFilter, value);
+            const labelLink = linkForAgingImages(searchFilter, value, nextEnabledRange?.value);
             let labelText: string;
             if (typeof nextEnabledRange === 'undefined') {
                 // This is the last time range bucket

@@ -21,9 +21,11 @@ on:
 env:
   docs_repository: openshift/openshift-docs
   slack_channel: C03KSV3N6N8 #test-release-automation
-  main_branch: master
+  main_branch: ${{github.event.repository.default_branch}}
   jira_project: ROX
-  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/${SCRIPT}?ref=${main_branch}
+  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{github.event.repository.default_branch}}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[inputs.dry-run != 'true'] }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
 
 jobs:
   check-jira:
@@ -37,17 +39,21 @@ jobs:
     steps:
       - name: Check that Jira release ${{inputs.version}} is not released
         id: check-jira-release
+        env:
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
-          SCRIPT="check-jira-release.sh"
-          gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
-            "${{inputs.version}}"
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            check-jira-release \
+            "${{inputs.version}}" \
+            "${{env.jira_project}}"
 
   variables:
     name: Setup variables
     uses: ./.github/workflows/variables.yml
     with:
-      version: ${{inputs.version}}
+      version: ${{github.event.inputs.version}}
 
   check-docs-branch:
     name: Check documentation branch
@@ -162,9 +168,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
-          SCRIPT="patch-changelog.sh"
-          gh api -H 'Accept: application/vnd.github.v3.raw' "${{env.script_url}}" | bash -s -- \
-            "${{inputs.version}}" "${{inputs.ref}}" "${{needs.variables.outputs.branch}}" "${{inputs.dry-run}}"
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            patch-changelog \
+            "${{inputs.version}}" \
+            "${{inputs.ref}}" \
+            "${{needs.variables.outputs.branch}}"
 
   milestone:
     name: Create milestone

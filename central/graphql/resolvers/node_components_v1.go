@@ -70,6 +70,7 @@ func (resolver *nodeScanResolver) ComponentCount(ctx context.Context, args RawQu
 
 // EmbeddedNodeScanComponentResolver resolves data about an node scan component.
 type EmbeddedNodeScanComponentResolver struct {
+	os          string
 	root        *Resolver
 	lastScanned *protoTypes.Timestamp
 	data        *storage.EmbeddedNodeScanComponent
@@ -87,7 +88,7 @@ func (encr *EmbeddedNodeScanComponentResolver) UnusedVarSink(ctx context.Context
 
 // ID returns a unique identifier for the component.
 func (encr *EmbeddedNodeScanComponentResolver) ID(ctx context.Context) graphql.ID {
-	return graphql.ID(scancomponent.ComponentID(encr.data.GetName(), encr.data.GetVersion(), ""))
+	return graphql.ID(scancomponent.ComponentID(encr.data.GetName(), encr.data.GetVersion(), encr.os))
 }
 
 // Name returns the name of the component.
@@ -198,9 +199,10 @@ func mapNodesToComponentResolvers(root *Resolver, nodes []*storage.Node, query *
 			if !componentPred.Matches(component) {
 				continue
 			}
-			thisComponentID := scancomponent.ComponentID(component.GetName(), component.GetVersion(), "")
+			thisComponentID := scancomponent.ComponentID(component.GetName(), component.GetVersion(), node.GetScan().GetOperatingSystem())
 			if _, exists := idToComponent[thisComponentID]; !exists {
 				idToComponent[thisComponentID] = &EmbeddedNodeScanComponentResolver{
+					os:   node.GetScan().GetOperatingSystem(),
 					root: root,
 					data: component,
 				}

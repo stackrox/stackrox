@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# The entrypoint for CI defined in https://github.com/openshift/release/tree/master/ci-operator/config/stackrox/stackrox
+# Imports secrets to env vars, gates the job based on context, changed files and PR labels and ultimately
+# hands off to the test/build script in *scripts/ci/jobs*.
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
 
@@ -42,6 +46,10 @@ case "$ci_job" in
         openshift_ci_e2e_mods
         ;;
 esac
+
+if [[ "$ci_job" =~ e2e|upgrade ]]; then
+    handle_nightly_roxctl_mismatch
+fi
 
 export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
 

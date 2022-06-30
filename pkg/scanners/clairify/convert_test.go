@@ -346,5 +346,6 @@ func TestConvertFeatures(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, expectedFeatures, convertFeatures(metadata, features))
+	converted := convertFeatures(metadata, features, "")
+	assert.Equal(t, expectedFeatures, converted)
 }

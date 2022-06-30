@@ -9,7 +9,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	converter "github.com/stackrox/rox/central/activecomponent/converter"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -134,7 +133,7 @@ func (mr *MockDataStoreMockRecorder) SearchRawActiveComponents(ctx, q interface{
 }
 
 // UpsertBatch mocks base method.
-func (m *MockDataStore) UpsertBatch(ctx context.Context, activeComponents []*converter.CompleteActiveComponent) error {
+func (m *MockDataStore) UpsertBatch(ctx context.Context, activeComponents []*storage.ActiveComponent) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertBatch", ctx, activeComponents)
 	ret0, _ := ret[0].(error)

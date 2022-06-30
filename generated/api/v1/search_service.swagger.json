@@ -86,7 +86,8 @@
                 "PROCESS_BASELINE_RESULTS",
                 "COMPLIANCE_METADATA",
                 "COMPLIANCE_RESULTS",
-                "COMPLIANCE_DOMAIN"
+                "COMPLIANCE_DOMAIN",
+                "CLUSTER_HEALTH"
               ]
             },
             "collectionFormat": "multi"
@@ -172,7 +173,8 @@
                 "PROCESS_BASELINE_RESULTS",
                 "COMPLIANCE_METADATA",
                 "COMPLIANCE_RESULTS",
-                "COMPLIANCE_DOMAIN"
+                "COMPLIANCE_DOMAIN",
+                "CLUSTER_HEALTH"
               ]
             },
             "collectionFormat": "multi"
@@ -252,7 +254,8 @@
                 "PROCESS_BASELINE_RESULTS",
                 "COMPLIANCE_METADATA",
                 "COMPLIANCE_RESULTS",
-                "COMPLIANCE_DOMAIN"
+                "COMPLIANCE_DOMAIN",
+                "CLUSTER_HEALTH"
               ]
             },
             "collectionFormat": "multi"
@@ -381,10 +384,11 @@
         "PROCESS_BASELINE_RESULTS",
         "COMPLIANCE_METADATA",
         "COMPLIANCE_RESULTS",
-        "COMPLIANCE_DOMAIN"
+        "COMPLIANCE_DOMAIN",
+        "CLUSTER_HEALTH"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 45"
+      "title": "Next available tag: 46"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

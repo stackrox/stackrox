@@ -3,6 +3,7 @@ package enricher
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
@@ -136,16 +137,27 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		imageNoteSet[note] = struct{}{}
 	}
 
+	// Ensure we set the correct image notes when returning, also during short-circuting.
+	defer setImageNotes(image, imageNoteSet)
+
 	// Signals whether any updates to the image were made throughout the enrichment flow.
 	var updated bool
 
 	didUpdateMetadata, err := e.enrichWithMetadata(ctx, enrichContext, image)
-	errorList.AddError(err)
 	if image.GetMetadata() == nil {
 		imageNoteSet[storage.Image_MISSING_METADATA] = struct{}{}
 	} else {
 		delete(imageNoteSet, storage.Image_MISSING_METADATA)
 	}
+
+	// Short-circuit if image metadata could not be retrieved. This indicates that connection or authentication to the
+	// registry could not be made. Instead of trying to scan the image / fetch signatures for it, we shall short-circuit
+	// here.
+	if err != nil {
+		errorList.AddError(err)
+		return EnrichmentResult{ImageUpdated: didUpdateMetadata, ScanResult: ScanNotDone}, errorList.ToError()
+	}
+
 	updated = updated || didUpdateMetadata
 
 	// Update the image with existing values depending on the FetchOption provided or whether any are available.
@@ -180,12 +192,6 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		}
 		updated = updated || didUpdateSigVerificationData
 	}
-
-	image.Notes = image.Notes[:0]
-	for note := range imageNoteSet {
-		image.Notes = append(image.Notes, note)
-	}
-
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 
@@ -193,6 +199,18 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		ImageUpdated: updated,
 		ScanResult:   scanResult,
 	}, errorList.ToError()
+}
+
+func setImageNotes(image *storage.Image, imageNoteSet map[storage.Image_Note]struct{}) {
+	image.Notes = image.Notes[:0]
+	notes := make([]storage.Image_Note, 0, len(imageNoteSet))
+	for note := range imageNoteSet {
+		notes = append(notes, note)
+	}
+	sort.SliceStable(notes, func(i, j int) bool {
+		return notes[i] < notes[j]
+	})
+	image.Notes = notes
 }
 
 // updateImageFromDatabase will update the values of the given image from an existing image within the database

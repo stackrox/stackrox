@@ -11,7 +11,4 @@ from clusters import NullCluster
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["OPENSHIFT_CI_CLUSTER_CLAIM"] = "openshift-4"
 
-# override default test environment
-os.environ["LOAD_BALANCER"] = "lb"
-
 make_qa_e2e_test_runner(cluster=NullCluster()).run()

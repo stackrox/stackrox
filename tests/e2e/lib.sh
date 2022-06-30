@@ -34,7 +34,7 @@ export_test_environment() {
     ci_export ADMISSION_CONTROLLER "${ADMISSION_CONTROLLER:-true}"
     ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-ebpf}"
     ci_export GCP_IMAGE_TYPE "${GCP_IMAGE_TYPE:-COS}"
-    ci_export LOAD_BALANCER "${LOAD_BALANCER:-none}"
+    ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
     ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
     ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
     ci_export SCANNER_SUPPORT "${SCANNER_SUPPORT:-true}"

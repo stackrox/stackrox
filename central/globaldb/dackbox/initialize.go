@@ -6,7 +6,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/pkg/errors"
 	activeComponentDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/index"
+	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	clusterCVEEdgeDackBox "github.com/stackrox/rox/central/clustercveedge/dackbox"
 	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
