@@ -142,6 +142,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                 />
                 <ChartAxis
                     label={yAxisTitle(searchFilter)}
+                    tickFormat={String}
                     padding={{ bottom: 10 }}
                     dependentAxis
                     showGrid
