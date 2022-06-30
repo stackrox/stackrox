@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clustercveedge/index"
 	sacFilters "github.com/stackrox/rox/central/clustercveedge/sac"
 	"github.com/stackrox/rox/central/clustercveedge/search"
@@ -12,9 +13,11 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -96,6 +99,9 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 }
 
 func (ds *datastoreImpl) Upsert(ctx context.Context, parts ...converter.ClusterCVEParts) error {
+	if features.PostgresDatastore.Enabled() {
+		return utils.Should(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
+	}
 	if len(parts) == 0 {
 		return nil
 	}
@@ -111,6 +117,9 @@ func (ds *datastoreImpl) Upsert(ctx context.Context, parts ...converter.ClusterC
 }
 
 func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
+	if features.PostgresDatastore.Enabled() {
+		return utils.Should(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
+	}
 	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {

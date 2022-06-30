@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
@@ -45,7 +46,7 @@ func Singleton() CVEUnsuppressLoop {
 	once.Do(func() {
 		if features.PostgresDatastore.Enabled() {
 			// TODO: Attach cluster CVE store.
-			loop = NewLoop(imageCVEDataStore.Singleton(), nodeCVEDataStore.Singleton())
+			loop = NewLoop(imageCVEDataStore.Singleton(), nodeCVEDataStore.Singleton(), clusterCVEDataStore.Singleton())
 		} else {
 			loop = NewLoop(legacyImageCVEDataStore.Singleton())
 		}
