@@ -12,9 +12,9 @@ const range1 = '90';
 const range2 = '180';
 const range3 = '365';
 
-const result0 = 40;
-const result1 = 32;
-const result2 = 31;
+const result0 = 8;
+const result1 = 1;
+const result2 = 13;
 const result3 = 18;
 
 const mocks = [
@@ -22,9 +22,9 @@ const mocks = [
         request: {
             query: imageCountQuery,
             variables: {
-                query0: `Image Created Time:>${range0}d`,
-                query1: `Image Created Time:>${range1}d`,
-                query2: `Image Created Time:>${range2}d`,
+                query0: `Image Created Time:${range0}d-${range1}d`,
+                query1: `Image Created Time:${range1}d-${range2}d`,
+                query2: `Image Created Time:${range2}d-${range3}d`,
                 query3: `Image Created Time:>${range3}d`,
             },
         },
@@ -56,18 +56,18 @@ describe('AgingImages dashboard widget', () => {
             </MockedProvider>
         );
 
-        // When all items are selected, the total should be equal to the most recent time
-        // range returned by the server
+        // When all items are selected, the total should be equal to the total of all buckets
+        // returned by the server
         const cardHeading = await screen.findByRole('heading', {
-            name: `${result0} Aging images`,
+            name: `${result0 + result1 + result2 + result3} Aging images`,
         });
         expect(cardHeading).toBeInTheDocument();
 
         // Each bar should display text that is specific to that time bucket, not
         // cumulative.
-        expect(await screen.findByText(result0 - result1)).toBeInTheDocument();
-        expect(await screen.findByText(result1 - result2)).toBeInTheDocument();
-        expect(await screen.findByText(result2 - result3)).toBeInTheDocument();
+        expect(await screen.findByText(result0)).toBeInTheDocument();
+        expect(await screen.findByText(result1)).toBeInTheDocument();
+        expect(await screen.findByText(result2)).toBeInTheDocument();
         expect(await screen.findByText(result3)).toBeInTheDocument();
     });
 
@@ -90,14 +90,14 @@ describe('AgingImages dashboard widget', () => {
         // in the chart or the card header
         expect(
             await screen.findByRole('heading', {
-                name: `${result1} Aging images`,
+                name: `${result1 + result2 + result3} Aging images`,
             })
         ).toBeInTheDocument();
 
         // Test values at top of each bar
-        expect(() => screen.getByText(result0 - result1)).toThrow();
-        expect(await screen.findByText(result1 - result2)).toBeInTheDocument();
-        expect(await screen.findByText(result2 - result3)).toBeInTheDocument();
+        expect(() => screen.getByText(result0)).toThrow();
+        expect(await screen.findByText(result1)).toBeInTheDocument();
+        expect(await screen.findByText(result2)).toBeInTheDocument();
         expect(await screen.findByText(result3)).toBeInTheDocument();
 
         // Test display of x-axis
@@ -112,14 +112,14 @@ describe('AgingImages dashboard widget', () => {
         // should revert to the original value.
         expect(
             await screen.findByRole('heading', {
-                name: `${result0} Aging images`,
+                name: `${result0 + result1 + result2 + result3} Aging images`,
             })
         ).toBeInTheDocument();
 
-        expect(await screen.findByText(result0 - result1)).toBeInTheDocument();
+        expect(await screen.findByText(result0)).toBeInTheDocument();
         // The second bar in the chart should now contain values from the second and third buckets
-        expect(await screen.findByText(result1 - result3)).toBeInTheDocument();
-        expect(() => screen.getByText(result2 - result3)).toThrow();
+        expect(await screen.findByText(result1 + result2)).toBeInTheDocument();
+        expect(() => screen.getByText(result2)).toThrow();
         expect(await screen.findByText(result3)).toBeInTheDocument();
 
         // Test display of x-axis
