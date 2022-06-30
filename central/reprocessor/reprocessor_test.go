@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
 	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
 	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
@@ -57,7 +59,11 @@ func TestGetActiveImageIDs(t *testing.T) {
 
 	imageDS := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
 
-	deploymentsDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), globaldb.GetPostgres(), nil, bleveIndex, bleveIndex, nil, nil, nil, nil,
+	var pool *pgxpool.Pool
+	if features.PostgresDatastore.Enabled() {
+		pool = globaldb.GetPostgres()
+	}
+	deploymentsDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, nil, nil, nil,
 		nil, filter.NewFilter(5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 	loop := NewLoop(nil, nil, nil, deploymentsDS, imageDS, nil, nil, nil, nil, queue.NewWaitableQueue()).(*loopImpl)

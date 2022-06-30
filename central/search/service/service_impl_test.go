@@ -7,6 +7,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v4/pgxpool"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
@@ -38,6 +39,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -122,7 +124,11 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
-	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), globaldb.GetPostgres(), nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	var pool *pgxpool.Pool
+	if features.PostgresDatastore.Enabled() {
+		pool = globaldb.GetPostgres()
+	}
+	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), pool, nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
@@ -267,7 +273,11 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
-	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), globaldb.GetPostgres(), nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	var pool *pgxpool.Pool
+	if features.PostgresDatastore.Enabled() {
+		pool = globaldb.GetPostgres()
+	}
+	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), pool, nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	alertsDS := alertDatastore.NewWithDb(s.rocksDB, idx)
 
 	deployment := fixtures.GetDeployment()
@@ -339,7 +349,11 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
-	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), globaldb.GetPostgres(), nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	var pool *pgxpool.Pool
+	if features.PostgresDatastore.Enabled() {
+		pool = globaldb.GetPostgres()
+	}
+	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), pool, nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	alertsDS := alertDatastore.NewWithDb(s.rocksDB, idx)
 
 	deployment := fixtures.GetDeployment()
