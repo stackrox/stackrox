@@ -115,7 +115,7 @@ jobs:
           echo "The following PRs are still open: $PRS"
 
           for PR in $PRS; do
-            [ "$DRY_RUN" != "true" ] && \
+            [ "$DRY_RUN" = "false" ] && \
             gh pr edit $PR \
               --milestone "${{needs.variables.outputs.next-milestone}}" \
               --repo "${{github.repository}}"
