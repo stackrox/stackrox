@@ -7,6 +7,7 @@ import {
 } from '../constants/ViolationsPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import { hasFeatureFlag } from '../helpers/features';
 import { visitMainDashboard, visitMainDashboardViaRedirectFromUrl } from '../helpers/main';
 import baseSelectors from '../selectors/index';
 
@@ -47,6 +48,12 @@ const alertsSummaryCountsByCluster2 = {
 };
 
 describe('Dashboard page', () => {
+    before(function beforeHook() {
+        if (hasFeatureFlag('ROX_SECURITY_METRICS_PHASE_ONE')) {
+            this.skip();
+        }
+    });
+
     withAuth();
 
     // Skip tests for elements which seem less likely to have a counterpart in future design.
