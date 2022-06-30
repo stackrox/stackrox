@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	nodeTree = map[v1.SearchCategory]struct{}{
+	nodeSearchScope = map[v1.SearchCategory]struct{}{
 		v1.SearchCategory_NODE_VULNERABILITIES:    {},
 		v1.SearchCategory_NODE_COMPONENT_CVE_EDGE: {},
 		v1.SearchCategory_NODE_COMPONENTS:         {},
@@ -14,11 +14,12 @@ var (
 		v1.SearchCategory_CLUSTERS:                {},
 	}
 
-	imageTree = map[v1.SearchCategory]struct{}{
+	imageSearchScope = map[v1.SearchCategory]struct{}{
 		v1.SearchCategory_IMAGE_VULNERABILITIES: {},
 		v1.SearchCategory_COMPONENT_VULN_EDGE:   {},
 		v1.SearchCategory_IMAGE_COMPONENTS:      {},
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE:  {},
+		v1.SearchCategory_IMAGE_VULN_EDGE:       {},
 		v1.SearchCategory_IMAGES:                {},
 		v1.SearchCategory_DEPLOYMENTS:           {},
 		v1.SearchCategory_NAMESPACES:            {},
@@ -26,18 +27,20 @@ var (
 	}
 
 	searchScope = map[v1.SearchCategory]map[v1.SearchCategory]struct{}{
-		v1.SearchCategory_IMAGE_VULNERABILITIES: imageTree,
-		v1.SearchCategory_IMAGE_COMPONENTS:      imageTree,
-		v1.SearchCategory_IMAGE_COMPONENT_EDGE:  imageTree,
-		v1.SearchCategory_IMAGES:                imageTree,
-		v1.SearchCategory_DEPLOYMENTS:           imageTree,
-		v1.SearchCategory_NAMESPACES:            imageTree,
+		v1.SearchCategory_IMAGE_VULNERABILITIES: imageSearchScope,
+		v1.SearchCategory_COMPONENT_VULN_EDGE:   imageSearchScope,
+		v1.SearchCategory_IMAGE_COMPONENTS:      imageSearchScope,
+		v1.SearchCategory_IMAGE_COMPONENT_EDGE:  imageSearchScope,
+		v1.SearchCategory_IMAGE_VULN_EDGE:       imageSearchScope,
+		v1.SearchCategory_IMAGES:                imageSearchScope,
+		v1.SearchCategory_DEPLOYMENTS:           imageSearchScope,
+		v1.SearchCategory_NAMESPACES:            imageSearchScope,
 
-		v1.SearchCategory_NODE_VULNERABILITIES:    nodeTree,
-		v1.SearchCategory_NODE_COMPONENT_CVE_EDGE: nodeTree,
-		v1.SearchCategory_NODE_COMPONENTS:         nodeTree,
-		v1.SearchCategory_NODE_COMPONENT_EDGE:     nodeTree,
-		v1.SearchCategory_NODES:                   nodeTree,
+		v1.SearchCategory_NODE_VULNERABILITIES:    nodeSearchScope,
+		v1.SearchCategory_NODE_COMPONENT_CVE_EDGE: nodeSearchScope,
+		v1.SearchCategory_NODE_COMPONENTS:         nodeSearchScope,
+		v1.SearchCategory_NODE_COMPONENT_EDGE:     nodeSearchScope,
+		v1.SearchCategory_NODES:                   nodeSearchScope,
 
 		// for testing
 

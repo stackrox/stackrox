@@ -312,7 +312,7 @@ func (s *GraphQueriesTestSuite) TestQueriesOnGrandParentValue() {
 			desc:              "query from parent",
 			queriedType:       "testparent1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
-			expectedResultIDs: []string{"1", "2", "4"},
+			expectedResultIDs: []string{"1", "2"},
 		},
 		{
 			desc:              "query from child",
