@@ -40,7 +40,6 @@ var (
 			reflect.TypeOf((*storage.MitreAttackVector)(nil)),
 			reflect.TypeOf((*storage.NetworkFlow)(nil)),
 			reflect.TypeOf((*storage.Node)(nil)),
-			reflect.TypeOf((*storage.NodeComponent)(nil)),
 			reflect.TypeOf((*storage.NodeCVE)(nil)),
 			reflect.TypeOf((*storage.Notifier)(nil)),
 			reflect.TypeOf((*storage.PermissionSet)(nil)),
