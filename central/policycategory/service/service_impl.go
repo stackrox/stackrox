@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -34,6 +35,9 @@ var (
 			"/v1.PolicyCategoryService/DeletePolicyCategory",
 		},
 	})
+
+	validateName         = regexp.MustCompile(`^[^\n\r\$]{5,128}$`)
+	invalidNameErrString = "policy category must have a name between 5 and 128 characters long with no new lines or dollar signs"
 )
 
 var (
@@ -63,11 +67,17 @@ func (s *serviceImpl) GetPolicyCategories(ctx context.Context, query *v1.RawQuer
 		return nil, err
 	}
 	resp.Categories = s.convertCategoriesToV1Categories(categories)
-	
+
 	return resp, nil
 }
 
 func (s *serviceImpl) PostPolicyCategory(ctx context.Context, request *v1.PostPolicyCategoryRequest) (*v1.PolicyCategory, error) {
+	if request.GetPolicyCategory() == nil {
+		return nil, errors.New("empty request, policy category not specified")
+	}
+	if !validateName.MatchString(request.GetPolicyCategory().GetName()) {
+		return nil, errors.New(invalidNameErrString)
+	}
 	category, err := s.policyCategoriesDatastore.AddPolicyCategory(ctx, ToStorageProto(request.GetPolicyCategory()))
 	if err != nil {
 		return nil, err
@@ -76,6 +86,9 @@ func (s *serviceImpl) PostPolicyCategory(ctx context.Context, request *v1.PostPo
 }
 
 func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.NewRenamePolicyCategoryRequest) (*v1.Empty, error) {
+	if !validateName.MatchString(request.GetNewCategoryName()) {
+		return nil, errors.New(invalidNameErrString)
+	}
 	return &v1.Empty{}, s.policyCategoriesDatastore.RenamePolicyCategory(ctx, request.GetId(), request.GetNewCategoryName())
 }
 

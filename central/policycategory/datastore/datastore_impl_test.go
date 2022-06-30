@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -58,23 +59,10 @@ func (s *PolicyCategoryDatastoreTestSuite) TestAddNewPolicyCategory() {
 }
 
 func (s *PolicyCategoryDatastoreTestSuite) TestAddDuplicatePolicyCategory() {
-	mockCategories := []*storage.PolicyCategory{
-		{
-			Id:        "boo-1",
-			Name:      "Boo's Special Category",
-			IsDefault: true,
-		},
-	}
+	c := fixtures.GetPolicyCategory()
+	s.store.EXPECT().Upsert(s.ctx, c).Return(errors.New("exists"))
 
-	s.store.EXPECT().Walk(s.ctx, gomock.Any()).DoAndReturn(
-		func(ctx context.Context, fn func(c *storage.PolicyCategory) error) error {
-			for _, c := range mockCategories {
-				_ = fn(c)
-			}
-			return nil
-		})
-
-	_, err := s.datastore.AddPolicyCategory(s.ctx, fixtures.GetPolicyCategory())
+	_, err := s.datastore.AddPolicyCategory(s.ctx, c)
 	s.Error(err)
 
 }
@@ -100,37 +88,18 @@ func (s *PolicyCategoryDatastoreTestSuite) TestRenamePolicyCategory() {
 	c := fixtures.GetPolicyCategory()
 
 	s.store.EXPECT().Upsert(s.ctx, gomock.Any()).Return(nil).AnyTimes()
-	s.store.EXPECT().Walk(s.ctx, gomock.Any()).AnyTimes()
 	s.store.EXPECT().Get(s.ctx, c.GetId()).Return(c, true, nil)
 
 	s.indexer.EXPECT().AddPolicyCategory(gomock.Any()).Return(nil).AnyTimes()
 
-	_, err := s.datastore.AddPolicyCategory(s.ctx, c)
-	s.NoError(err)
-
-	err = s.datastore.RenamePolicyCategory(s.ctx, c.Id, "Boo's Special Category New Name")
+	err := s.datastore.RenamePolicyCategory(s.ctx, c.Id, "Boo's Special Category New Name")
 	s.NoError(err, "expected no error trying to rename a category with permissions")
 }
 
 func (s *PolicyCategoryDatastoreTestSuite) TestRenamePolicyCategoryDuplicateName() {
-	addedCategories := []*storage.PolicyCategory{
-		fixtures.GetPolicyCategory(),
-		{
-			Id:        "new-id",
-			Name:      "New Name",
-			IsDefault: false,
-		},
-	}
-	s.store.EXPECT().Upsert(s.ctx, gomock.Any()).Return(nil).AnyTimes()
-	s.store.EXPECT().Walk(s.ctx, gomock.Any()).AnyTimes().DoAndReturn(
-		func(ctx context.Context, fn func(c *storage.PolicyCategory) error) error {
-			for _, c := range addedCategories {
-				_ = fn(c)
-			}
-			return nil
-		})
+	s.store.EXPECT().Upsert(s.ctx, gomock.Any()).Return(errors.New("exists")).AnyTimes()
 	s.store.EXPECT().Get(s.ctx, "category-id").Return(fixtures.GetPolicyCategory(), true, nil)
 
 	err := s.datastore.RenamePolicyCategory(s.ctx, "category-id", "new name")
-	s.Error(err, "expected an error trying to rename a category with permissions, but with a duplicate name")
+	s.Error(err)
 }

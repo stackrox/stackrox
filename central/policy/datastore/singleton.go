@@ -31,12 +31,12 @@ func initialize() {
 	if features.PostgresDatastore.Enabled() {
 		storage = policyPostgres.New(globaldb.GetPostgres())
 		indexer = policyPostgres.NewIndexer(globaldb.GetPostgres())
+		addDefaults(storage)
 	} else {
 		storage = boltdb.New(globaldb.GetGlobalDB())
 		indexer = index.New(globalindex.GetGlobalTmpIndex())
 	}
 
-	addDefaults(storage)
 	searcher := search.New(storage, indexer)
 
 	clusterDatastore := clusterDS.Singleton()

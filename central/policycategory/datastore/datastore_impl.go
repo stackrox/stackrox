@@ -124,21 +124,8 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
 
-	categories, err := ds.GetAllPolicyCategories(ctx)
-	if err != nil {
-		return nil, errorsPkg.Wrap(err, "getting all policies")
-	}
-	categoryNameIDMap := make(map[string]string, len(categories))
-	for _, category := range categories {
-		categoryNameIDMap[category.GetName()] = category.GetId()
-	}
-
 	category.Name = strings.Title(category.GetName())
-	if _, isUnique := ds.isCategoryNameUnique(categoryNameIDMap, category.GetName()); !isUnique {
-		return nil, errorsPkg.Wrapf(errox.AlreadyExists, "policy category with name '%s' already exists", category.GetName())
-	}
-
-	err = ds.storage.Upsert(ctx, category)
+	err := ds.storage.Upsert(ctx, category)
 
 	if err != nil {
 		return nil, err
@@ -157,8 +144,6 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
 
-	newName = strings.Title(newName)
-
 	category, exists, err := ds.storage.Get(ctx, id)
 	if err != nil {
 		return err
@@ -167,27 +152,7 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 		return fmt.Errorf(" policy category '%s' not found", id)
 	}
 
-	categories, err := ds.GetAllPolicyCategories(ctx)
-	if err != nil {
-		return errorsPkg.Wrap(err, "getting all policies")
-	}
-	categoryNameIDMap := make(map[string]string, len(categories))
-	for _, category := range categories {
-		categoryNameIDMap[category.GetName()] = category.GetId()
-	}
-
-	existingID, isUnique := ds.isCategoryNameUnique(categoryNameIDMap, newName)
-	if !isUnique && existingID == id {
-		// no error while renaming to the existing name
-		return nil
-	}
-
-	if !isUnique {
-		// another category of the same name exists
-		return errorsPkg.Errorf("policy category with name %s already exists", newName)
-	}
-
-	category.Name = newName
+	category.Name = strings.Title(newName)
 	err = ds.storage.Upsert(ctx, category)
 	if err != nil {
 		return errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%s' to '%s'", id, newName))
@@ -215,13 +180,4 @@ func (ds *datastoreImpl) deleteCategoryNoLock(ctx context.Context, id string) er
 		return err
 	}
 	return ds.indexer.DeletePolicyCategory(id)
-}
-
-func (ds *datastoreImpl) isCategoryNameUnique(categoryNameIDMap map[string]string, name string) (string, bool) {
-	for n, i := range categoryNameIDMap {
-		if strings.EqualFold(n, name) {
-			return i, false
-		}
-	}
-	return "", true
 }

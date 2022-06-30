@@ -20,6 +20,6 @@ type Service interface {
 // New returns a new Service instance using the given DataStore.
 func New(policyCategoriesDatastore datastore.DataStore) Service {
 	return &serviceImpl{
-		policyCategoriesDatastore: datastore.Singleton(),
+		policyCategoriesDatastore: policyCategoriesDatastore,
 	}
 }

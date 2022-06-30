@@ -41,21 +41,21 @@ service PolicyCategoryService {
     // GetPolicyCategory returns the requested policy category by ID.
     rpc GetPolicyCategory (ResourceByID) returns (v1.PolicyCategory) {
         option (google.api.http) = {
-            get: "/v1/policyCategories/{id}"
+            get: "/v1/policycategories/{id}"
         };
     }
 
     // GetPolicyCategories returns the list of policy categories
     rpc GetPolicyCategories (RawQuery) returns (GetPolicyCategoriesResponse) {
         option (google.api.http) = {
-            get: "/v1/policyCategories"
+            get: "/v1/policycategories"
         };
     }
 
     // PostPolicyCategory creates a new policy category
     rpc PostPolicyCategory (PostPolicyCategoryRequest) returns (v1.PolicyCategory) {
         option (google.api.http) = {
-            post: "/v1/policyCategories"
+            post: "/v1/policycategories"
             body: "policyCategory"
         };
     }
@@ -63,7 +63,7 @@ service PolicyCategoryService {
     // RenamePolicyCategory renames the given policy category.
     rpc RenamePolicyCategory (NewRenamePolicyCategoryRequest) returns (Empty) {
         option (google.api.http) = {
-            put: "/v1/policyCategories"
+            put: "/v1/policycategories"
             body: "*"
         };
     }
@@ -71,7 +71,7 @@ service PolicyCategoryService {
     // DeletePolicyCategory removes the given policy category.
     rpc DeletePolicyCategory (NewDeletePolicyCategoryRequest) returns (Empty) {
         option (google.api.http) = {
-            delete: "/v1/policyCategories/{id}"
+            delete: "/v1/policycategories/{id}"
         };
     }
 
