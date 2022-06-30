@@ -2,9 +2,7 @@ import { severityColorMap } from '../../src/constants/severityColors';
 import scopeSelectors from '../helpers/scopeSelectors';
 import navigationSelectors from '../selectors/navigation';
 
-// TODO Make `pfUrl` the default url once phase one of the PF Dashboard is enabled
 export const url = '/main/dashboard';
-export const pfUrl = '/main/dashboard-pf';
 
 export const selectors = {
     navLink: `${navigationSelectors.navLinks}:contains("Dashboard")`,
