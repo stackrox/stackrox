@@ -22,7 +22,8 @@ var (
                    DeploymentId varchar,
                    ComponentId varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id)
+                   PRIMARY KEY(Id),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (DeploymentId) REFERENCES deployments(Id) ON DELETE CASCADE
                )
                `,
 		GormModel: (*ActiveComponents)(nil),
@@ -76,10 +77,11 @@ const (
 
 // ActiveComponents holds the Gorm model for Postgres table `active_components`.
 type ActiveComponents struct {
-	Id           string `gorm:"column:id;type:varchar;primaryKey"`
-	DeploymentId string `gorm:"column:deploymentid;type:varchar"`
-	ComponentId  string `gorm:"column:componentid;type:varchar"`
-	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+	Id             string      `gorm:"column:id;type:varchar;primaryKey"`
+	DeploymentId   string      `gorm:"column:deploymentid;type:varchar"`
+	ComponentId    string      `gorm:"column:componentid;type:varchar"`
+	Serialized     []byte      `gorm:"column:serialized;type:bytea"`
+	DeploymentsRef Deployments `gorm:"foreignKey:deploymentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
 // ActiveComponentsActiveContextsSlices holds the Gorm model for Postgres table `active_components_active_contexts_slices`.

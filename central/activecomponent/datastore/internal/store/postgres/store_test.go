@@ -8,6 +8,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -29,6 +30,9 @@ func TestActiveComponentsStore(t *testing.T) {
 }
 
 func (s *ActiveComponentsStoreSuite) SetupSuite() {
+
+	pgx.Batch{}
+
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -66,49 +70,4 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundActiveComponent)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, activeComponent))
-	foundActiveComponent, exists, err = store.Get(ctx, activeComponent.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(activeComponent, foundActiveComponent)
-
-	activeComponentCount, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, activeComponentCount)
-	activeComponentCount, err = store.Count(withNoAccessCtx)
-	s.NoError(err)
-	s.Zero(activeComponentCount)
-
-	activeComponentExists, err := store.Exists(ctx, activeComponent.GetId())
-	s.NoError(err)
-	s.True(activeComponentExists)
-	s.NoError(store.Upsert(ctx, activeComponent))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, activeComponent), sac.ErrResourceAccessDenied)
-
-	foundActiveComponent, exists, err = store.Get(ctx, activeComponent.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(activeComponent, foundActiveComponent)
-
-	s.NoError(store.Delete(ctx, activeComponent.GetId()))
-	foundActiveComponent, exists, err = store.Get(ctx, activeComponent.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundActiveComponent)
-	s.NoError(store.Delete(withNoAccessCtx, activeComponent.GetId()))
-
-	var activeComponents []*storage.ActiveComponent
-	for i := 0; i < 200; i++ {
-		activeComponent := &storage.ActiveComponent{}
-		s.NoError(testutils.FullInit(activeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		activeComponents = append(activeComponents, activeComponent)
-	}
-
-	s.NoError(store.UpsertMany(ctx, activeComponents))
-
-	activeComponentCount, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, activeComponentCount)
 }
