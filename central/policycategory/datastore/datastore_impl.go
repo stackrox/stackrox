@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -39,6 +40,9 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) buildIndex() error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
 	var categories []*storage.PolicyCategory
 	err := ds.storage.Walk(policyCategoryCtx, func(category *storage.PolicyCategory) error {
 		categories = append(categories, category)
@@ -73,7 +77,10 @@ func (ds *datastoreImpl) GetPolicyCategory(ctx context.Context, id string) (*sto
 	}
 
 	category, exists, err := ds.storage.Get(ctx, id)
-	if err != nil || !exists {
+	if err != nil {
+		return nil, false, errorsPkg.Wrapf(err, "policy category with id '%s' cannot be found	", id)
+	}
+	if !exists {
 		return nil, false, errorsPkg.Wrapf(errox.NotFound, "policy category with id '%s' does not exist", id)
 	}
 	return category, true, nil
@@ -126,7 +133,6 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 
 	category.Name = strings.Title(category.GetName())
 	err := ds.storage.Upsert(ctx, category)
-
 	if err != nil {
 		return nil, err
 	}
@@ -149,13 +155,13 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 		return err
 	}
 	if !exists {
-		return fmt.Errorf(" policy category '%s' not found", id)
+		return errorsPkg.Wrapf(errox.NotFound, "policy category with id '%s' does not exist", id)
 	}
 
 	category.Name = strings.Title(newName)
 	err = ds.storage.Upsert(ctx, category)
 	if err != nil {
-		return errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%s' to '%s'", id, newName))
+		return errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
 	}
 
 	return ds.indexer.AddPolicyCategory(category)
@@ -172,10 +178,6 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
 
-	return ds.deleteCategoryNoLock(ctx, id)
-}
-
-func (ds *datastoreImpl) deleteCategoryNoLock(ctx context.Context, id string) error {
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return err
 	}

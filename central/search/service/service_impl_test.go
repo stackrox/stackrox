@@ -82,7 +82,7 @@ func TestSearchFuncs(t *testing.T) {
 		WithAggregator(nil)
 
 	if features.NewPolicyCategories.Enabled() {
-		builder = builder.WithCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl))
+		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl))
 	}
 
 	s := builder.Build()
@@ -185,7 +185,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		WithAggregator(nil)
 
 	if features.NewPolicyCategories.Enabled() {
-		builder = builder.WithCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 	}
 
 	service := builder.Build().(*serviceImpl)
@@ -268,7 +268,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		WithAggregator(nil)
 
 	if features.NewPolicyCategories.Enabled() {
-		builder = builder.WithCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 	}
 	service := builder.Build().(*serviceImpl)
 
@@ -329,7 +329,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 		WithAggregator(nil)
 
 	if features.NewPolicyCategories.Enabled() {
-		builder = builder.WithCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 	}
 	service := builder.Build().(*serviceImpl)
 
@@ -409,7 +409,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		WithAggregator(nil)
 
 	if features.NewPolicyCategories.Enabled() {
-		builder = builder.WithCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 	}
 
 	service := builder.Build().(*serviceImpl)

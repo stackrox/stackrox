@@ -50,7 +50,7 @@ type Builder interface {
 	WithRoleStore(store roleDataStore.DataStore) Builder
 	WithRoleBindingStore(store roleBindingDataStore.DataStore) Builder
 	WithClusterDataStore(store clusterDataStore.DataStore) Builder
-	WithCategoryDataStore(store categoryDataStore.DataStore) Builder
+	WithPolicyCategoryDataStore(store categoryDataStore.DataStore) Builder
 	WithAggregator(aggregation.Aggregator) Builder
 
 	Build() Service
@@ -143,7 +143,7 @@ func (b *serviceBuilder) WithClusterDataStore(store clusterDataStore.DataStore) 
 	return b
 }
 
-func (b *serviceBuilder) WithCategoryDataStore(store categoryDataStore.DataStore) Builder {
+func (b *serviceBuilder) WithPolicyCategoryDataStore(store categoryDataStore.DataStore) Builder {
 	b.categories = store
 	return b
 }
@@ -187,7 +187,7 @@ func NewService() Service {
 		WithClusterDataStore(clusterDataStore.Singleton())
 
 	if features.NewPolicyCategories.Enabled() {
-		builder = builder.WithCategoryDataStore(categoryDataStore.Singleton())
+		builder = builder.WithPolicyCategoryDataStore(categoryDataStore.Singleton())
 	}
 	return builder.Build()
 }

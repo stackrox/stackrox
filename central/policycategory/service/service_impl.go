@@ -76,7 +76,7 @@ func (s *serviceImpl) PostPolicyCategory(ctx context.Context, request *v1.PostPo
 		return nil, errors.New("empty request, policy category not specified")
 	}
 	if !validateName.MatchString(request.GetPolicyCategory().GetName()) {
-		return nil, errors.New(invalidNameErrString)
+		return nil, errors.Wrap(errox.InvalidArgs, invalidNameErrString)
 	}
 	category, err := s.policyCategoriesDatastore.AddPolicyCategory(ctx, ToStorageProto(request.GetPolicyCategory()))
 	if err != nil {
@@ -87,7 +87,7 @@ func (s *serviceImpl) PostPolicyCategory(ctx context.Context, request *v1.PostPo
 
 func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.NewRenamePolicyCategoryRequest) (*v1.Empty, error) {
 	if !validateName.MatchString(request.GetNewCategoryName()) {
-		return nil, errors.New(invalidNameErrString)
+		return nil, errors.Wrap(errox.InvalidArgs, invalidNameErrString)
 	}
 	return &v1.Empty{}, s.policyCategoriesDatastore.RenamePolicyCategory(ctx, request.GetId(), request.GetNewCategoryName())
 }
@@ -128,7 +128,7 @@ func (s *serviceImpl) getPolicyCategory(ctx context.Context, id string) (*v1.Pol
 }
 
 func (s *serviceImpl) convertCategoriesToV1Categories(categories []*storage.PolicyCategory) []*v1.PolicyCategory {
-	v1Categories := make([]*v1.PolicyCategory, len(categories))
+	v1Categories := make([]*v1.PolicyCategory, 0, len(categories))
 	for _, category := range categories {
 		v1Categories = append(v1Categories, ToV1Proto(category))
 	}
