@@ -2,6 +2,8 @@ package manager
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
@@ -29,6 +31,8 @@ var (
 
 	// errConditionMet is used to short-circuit a walk in the database
 	errConditionMet = errors.New("condition met")
+
+	cisOCPAnnotation = "control.compliance.openshift.io/CIS-OCP"
 )
 
 // Manager helps manage the dynamic profiles from the compliance operator
@@ -94,6 +98,9 @@ func productTypeToTarget(s string) pkgFramework.TargetKind {
 
 func getRuleName(rule *storage.ComplianceOperatorRule) string {
 	if ruleName, ok := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; ok {
+		if controlNumber, ok := rule.Annotations[cisOCPAnnotation]; ok {
+			return fmt.Sprintf("%s: %s", strings.Trim(controlNumber, `" `), ruleName)
+		}
 		return ruleName
 	}
 	// This field is checked within the pipeline so it should never be empty
