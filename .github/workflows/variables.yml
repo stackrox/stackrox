@@ -45,8 +45,8 @@ jobs:
       patch: ${{steps.parse.outputs.patch}}
       rc: ${{steps.parse.outputs.rc}}
       name: ${{steps.parse.outputs.name}}
-      dash-name: ${{steps.parse.outputs.dash-name}}
       next-rc: ${{steps.parse.outputs.next-rc}}
+      dash-name: ${{steps.parse.outputs.dash-name}}
     steps:
       - id: parse
         env:
