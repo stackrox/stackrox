@@ -138,7 +138,7 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 	return vul
 }
 
-func convertFeature(feature clairV1.Feature) *storage.EmbeddedImageScanComponent {
+func convertFeature(feature clairV1.Feature, os string) *storage.EmbeddedImageScanComponent {
 	component := &storage.EmbeddedImageScanComponent{
 		Name:     feature.Name,
 		Version:  feature.Version,
@@ -159,7 +159,7 @@ func convertFeature(feature clairV1.Feature) *storage.EmbeddedImageScanComponent
 	for _, executable := range feature.Executables {
 		imageComponentIds := make([]string, 0, len(executable.RequiredFeatures))
 		for _, f := range executable.RequiredFeatures {
-			imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), ""))
+			imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), os))
 		}
 		exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.Path, Dependencies: imageComponentIds}
 		executables = append(executables, exec)
@@ -200,12 +200,12 @@ func BuildSHAToIndexMap(metadata *storage.ImageMetadata) map[string]int32 {
 }
 
 // ConvertFeatures converts clair features to proto components
-func ConvertFeatures(image *storage.Image, features []clairV1.Feature) (components []*storage.EmbeddedImageScanComponent) {
+func ConvertFeatures(image *storage.Image, features []clairV1.Feature, os string) (components []*storage.EmbeddedImageScanComponent) {
 	layerSHAToIndex := BuildSHAToIndexMap(image.GetMetadata())
 
 	components = make([]*storage.EmbeddedImageScanComponent, 0, len(features))
 	for _, feature := range features {
-		convertedComponent := convertFeature(feature)
+		convertedComponent := convertFeature(feature, os)
 		if val, ok := layerSHAToIndex[feature.AddedBy]; ok {
 			convertedComponent.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
 				LayerIndex: val,

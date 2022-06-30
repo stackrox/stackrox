@@ -8,6 +8,7 @@ import (
 	"github.com/blevesearch/bleve"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v4/pgxpool"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
@@ -15,6 +16,7 @@ import (
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -44,6 +46,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -208,7 +211,11 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 
-	deployments := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	var pool *pgxpool.Pool
+	if features.PostgresDatastore.Enabled() {
+		pool = globaldb.GetPostgres()
+	}
+	deployments := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 	pods, err := podDatastore.NewRocksDB(db, bleveIndex, mockProcessDataStore, mockFilter)
 	require.NoError(t, err)
@@ -251,7 +258,11 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
-	deployments := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	var pool *pgxpool.Pool
+	if features.PostgresDatastore.Enabled() {
+		pool = globaldb.GetPostgres()
+	}
+	deployments := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }

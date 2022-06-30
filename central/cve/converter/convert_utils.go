@@ -11,6 +11,7 @@ import (
 	pkgCVSSV2 "github.com/stackrox/rox/pkg/cvss/cvssv2"
 	pkgCVSSV3 "github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/features"
+	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scans"
 )
@@ -281,6 +282,21 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 		embeddedCVE.VulnerabilityTypes = append(embeddedCVE.VulnerabilityTypes, protoToEmbeddedVulnType(vulnType))
 	}
 	return embeddedCVE
+}
+
+// ProtoCVEToImageCVE coverts a *storage.CVE object to *storage.ImageCVE object.
+// It converts all the fields except Fixed By which gets set depending on the CVE.
+func ProtoCVEToImageCVE(protoCVE *storage.CVE) *storage.ImageCVE {
+	embeddedVuln := ProtoCVEToEmbeddedCVE(protoCVE)
+	return EmbeddedVulnerabilityToImageCVE(protoCVE.GetOperatingSystem(), embeddedVuln)
+}
+
+// ProtoCVEToImageCVE coverts a *storage.CVE object to *storage.NodeCVE object.
+// It converts all the fields except Fixed By which gets set depending on the CVE.
+func ProtoCVEToNodeCVE(protoCVE *storage.CVE) *storage.NodeCVE {
+	embeddedVuln := ProtoCVEToEmbeddedCVE(protoCVE)
+	nodeVulnerability := nodeConverter.EmbeddedVulnerabilityToNodeVulnerability(embeddedVuln)
+	return NodeVulnerabilityToNodeCVE(protoCVE.GetOperatingSystem(), nodeVulnerability)
 }
 
 // ImageCVEToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln

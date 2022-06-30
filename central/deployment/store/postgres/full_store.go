@@ -16,6 +16,12 @@ func NewFullStore(ctx context.Context, db *pgxpool.Pool) store.Store {
 	}
 }
 
+func FullStoreWrap(wrapped Store) store.Store {
+	return &fullStoreImpl{
+		Store: wrapped,
+	}
+}
+
 type fullStoreImpl struct {
 	Store
 }

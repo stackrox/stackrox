@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/central/activecomponent/converter"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
@@ -24,6 +26,7 @@ func TestActiveComponentStore(t *testing.T) {
 type ActiveComponentStoreTestSuite struct {
 	suite.Suite
 
+	ctx   context.Context
 	db    *rocksdb.RocksDB
 	dacky *dackbox.DackBox
 	store store.Store
@@ -38,6 +41,7 @@ func (suite *ActiveComponentStoreTestSuite) SetupSuite() {
 		suite.FailNow("failed to create counter", err.Error())
 	}
 	suite.store = New(suite.dacky, concurrency.NewKeyFence())
+	suite.ctx = sac.WithAllAccess(context.Background())
 }
 
 func (suite *ActiveComponentStoreTestSuite) TearDownSuite() {
@@ -107,7 +111,7 @@ func (suite *ActiveComponentStoreTestSuite) TestUpsertDelete() {
 				acs = append(acs, ac)
 				expectedMapToContainerNames[upsert] = testCase.containerNames
 			}
-			suite.Assert().NoError(suite.store.UpsertBatch(acs))
+			suite.Assert().NoError(suite.store.UpsertMany(suite.ctx, acs))
 			suite.verify(deployments, imageComponents, expectedMapToContainerNames)
 			var ids []string
 			for del := range testCase.deletes {
@@ -116,7 +120,7 @@ func (suite *ActiveComponentStoreTestSuite) TestUpsertDelete() {
 				ids = append(ids, converter.ComposeID(deploymentID, componentID))
 				delete(expectedMapToContainerNames, del)
 			}
-			suite.Assert().NoError(suite.store.DeleteBatch(ids...))
+			suite.Assert().NoError(suite.store.DeleteMany(suite.ctx, ids))
 			suite.verify(deployments, imageComponents, expectedMapToContainerNames)
 		})
 	}
@@ -135,7 +139,7 @@ func (suite *ActiveComponentStoreTestSuite) verify(deployments, imageComponents 
 		deploymentID := deployments[expected/3]
 		componentID := imageComponents[expected%3]
 		id := converter.ComposeID(deploymentID, componentID)
-		ac, exist, err := suite.store.Get(id)
+		ac, exist, err := suite.store.Get(suite.ctx, id)
 		suite.Assert().NoError(err)
 		suite.Assert().True(exist)
 		suite.Assert().Len(ac.GetActiveContextsSlice(), len(containerNames))

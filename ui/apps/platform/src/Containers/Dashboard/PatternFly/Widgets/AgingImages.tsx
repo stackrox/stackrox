@@ -29,8 +29,10 @@ import AgingImagesChart, {
     TimeRangeTupleIndex,
     TimeRangeTuple,
     timeRangeTupleIndices,
+    getTimeFilterOption,
 } from './AgingImagesChart';
 import isResourceScoped from '../utils';
+import NoDataEmptyState from './NoDataEmptyState';
 
 export const imageCountQuery = gql`
     query agingImagesQuery($query0: String, $query1: String, $query2: String, $query3: String) {
@@ -41,10 +43,12 @@ export const imageCountQuery = gql`
     }
 `;
 
-function queryStringFor(timeRangeValue: number, searchFilter: SearchFilter) {
+function queryStringFor(searchFilter: SearchFilter, ageRange: number, nextAgeRange?: number) {
+    const timeFilter = getTimeFilterOption(ageRange, nextAgeRange);
+
     return getRequestQueryStringForSearchFilter({
         ...searchFilter,
-        'Image Created Time': `>${timeRangeValue}d`,
+        'Image Created Time': timeFilter,
     });
 }
 
@@ -52,10 +56,10 @@ type QueryVariables = Record<`query${TimeRangeTupleIndex}`, string>;
 
 function getQueryVariables(timeRanges: TimeRangeTuple, searchFilter: SearchFilter): QueryVariables {
     return {
-        query0: queryStringFor(timeRanges[0].value, searchFilter),
-        query1: queryStringFor(timeRanges[1].value, searchFilter),
-        query2: queryStringFor(timeRanges[2].value, searchFilter),
-        query3: queryStringFor(timeRanges[3].value, searchFilter),
+        query0: queryStringFor(searchFilter, timeRanges[0].value, timeRanges[1].value),
+        query1: queryStringFor(searchFilter, timeRanges[1].value, timeRanges[2].value),
+        query2: queryStringFor(searchFilter, timeRanges[2].value, timeRanges[3].value),
+        query3: queryStringFor(searchFilter, timeRanges[3].value),
     };
 }
 
@@ -69,10 +73,17 @@ function getWidgetTitle(
         return 'Aging images';
     }
 
-    const totalImages =
-        Object.values(timeRangeCounts).find((range, index) => {
-            return selectedTimeRanges[index].enabled;
-        }) ?? 0;
+    // The total number of images is obtained by finding the first enabled bucket
+    // and getting the sum of that bucket and all following buckets.
+    let totalImages = 0;
+    const firstEnabledIndex = selectedTimeRanges.findIndex(({ enabled }) => enabled);
+    const rangesToCount = Object.values(timeRangeCounts).slice(
+        firstEnabledIndex,
+        selectedTimeRanges.length
+    );
+    rangesToCount.forEach((range) => {
+        totalImages += range;
+    });
 
     const isActiveImages = isResourceScoped(searchFilter);
 
@@ -128,7 +139,6 @@ function isNumberInRange(timeRanges: TimeRangeTuple, index: TimeRangeTupleIndex)
 }
 
 const fieldIdPrefix = 'aging-images';
-// TODO searchFilter
 
 function getViewAllLink(searchFilter: SearchFilter) {
     const queryString = getQueryString({
@@ -148,20 +158,31 @@ function AgingImages() {
         variables,
     });
     const timeRangeCounts = data ?? previousData;
+    const isCountsDataEmpty =
+        timeRangeCounts &&
+        Object.values(timeRangeCounts).every(
+            (value, index) => !timeRanges[index].enabled || value === 0
+        );
 
-    const inputError = timeRangeTupleIndices.some((index) => !isNumberInRange(timeRanges, index))
-        ? new Error('Invalid image ages')
-        : undefined;
+    let inputError: Error | undefined;
+    let errorTitle: string | undefined;
+    let errorMessage: string | undefined;
+    if (timeRanges.every(({ enabled }) => !enabled)) {
+        inputError = new Error('All image age ranges disabled');
+        errorTitle = 'All image age ranges disabled';
+        errorMessage = 'At least one image age range must be enabled in the options.';
+    } else if (timeRangeTupleIndices.some((index) => !isNumberInRange(timeRanges, index))) {
+        inputError = new Error('Invalid image ages');
+        errorTitle = 'Incorrect image age values';
+        errorMessage = 'There was an error retrieving data. Image ages must be in ascending order.';
+    }
 
     return (
         <WidgetCard
             isLoading={loading && !timeRangeCounts}
             error={error || inputError}
-            errorTitle={inputError && 'Incorrect image age values'}
-            errorMessage={
-                inputError &&
-                'There was an error retrieving data. Image ages must be in ascending order.'
-            }
+            errorTitle={errorTitle}
+            errorMessage={errorMessage}
             header={
                 <Flex direction={{ default: 'row' }}>
                     <FlexItem grow={{ default: 'grow' }}>
@@ -239,12 +260,14 @@ function AgingImages() {
                 </Flex>
             }
         >
-            {timeRangeCounts && (
+            {timeRangeCounts && !isCountsDataEmpty ? (
                 <AgingImagesChart
                     searchFilter={searchFilter}
                     timeRanges={timeRanges}
                     timeRangeCounts={timeRangeCounts}
                 />
+            ) : (
+                <NoDataEmptyState />
             )}
         </WidgetCard>
     );
