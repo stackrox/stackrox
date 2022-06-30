@@ -129,7 +129,7 @@ function ComplianceLevelsByStandard() {
             header={
                 <Flex direction={{ default: 'row' }}>
                     <FlexItem grow={{ default: 'grow' }}>
-                        <Title headingLevel="h2">Compliance coverage by standard</Title>
+                        <Title headingLevel="h2">Compliance by standard</Title>
                     </FlexItem>
                     <FlexItem>
                         <Dropdown
