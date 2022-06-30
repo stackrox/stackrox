@@ -11,10 +11,15 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterIndex "github.com/stackrox/rox/central/cluster/index"
+	clusterRocksDB "github.com/stackrox/rox/central/cluster/store/cluster/rocksdb"
+	clusterHealthRocksDB "github.com/stackrox/rox/central/cluster/store/clusterhealth/rocksdb"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
@@ -23,27 +28,38 @@ import (
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
+	netEntityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	dackboxNodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	dackboxNodeGlobalDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/globaldatastore"
 	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
+	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
+	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	k8sRoleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	roleBindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	riskDatastore "github.com/stackrox/rox/central/risk/datastore"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
+	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
+	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/features"
@@ -59,6 +75,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
 const (
@@ -267,6 +284,105 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }
 
+func generateClusterDataStructures(t *testing.T, config *storage.Config) GarbageCollector {
+	db, bleveIndex := setupRocksDBAndBleve(t)
+
+	clusterStorage, err := clusterRocksDB.New(db)
+	require.NoError(t, err)
+
+	clusterHealthStorage, err := clusterHealthRocksDB.New(db)
+	require.NoError(t, err)
+
+	clusterIndexer := clusterIndex.New(bleveIndex)
+
+	mockCtrl := gomock.NewController(t)
+	alertDataStore := alertDatastoreMocks.NewMockDataStore(mockCtrl)
+	namespaceDataStore := namespaceMocks.NewMockDataStore(mockCtrl)
+	deploymentDataStore := deploymentMocks.NewMockDataStore(mockCtrl)
+	nodeDataStore := nodeDatastoreMocks.NewMockGlobalDataStore(mockCtrl)
+	podDataStore := podMocks.NewMockDataStore(mockCtrl)
+	secretDataStore := secretMocks.NewMockDataStore(mockCtrl)
+	flowsDataStore := networkFlowDatastoreMocks.NewMockClusterDataStore(mockCtrl)
+	netEntityDataStore := netEntityMocks.NewMockEntityDataStore(mockCtrl)
+	serviceAccountMockDataStore := serviceAccountMocks.NewMockDataStore(mockCtrl)
+	roleDataStore := roleMocks.NewMockDataStore(mockCtrl)
+	roleBindingDataStore := roleBindingMocks.NewMockDataStore(mockCtrl)
+	connMgr := connectionMocks.NewMockManager(mockCtrl)
+	notifierMock := notifierMocks.NewMockProcessor(mockCtrl)
+	networkBaselineMgr := networkBaselineMocks.NewMockManager(mockCtrl)
+	mockProvider := graphMocks.NewMockProvider(mockCtrl)
+
+	nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	netEntityDataStore.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
+
+	clusterDataStore, err := clusterDatastore.New(
+		clusterStorage,
+		clusterHealthStorage,
+		clusterIndexer,
+		alertDataStore,
+		namespaceDataStore,
+		deploymentDataStore,
+		nodeDataStore,
+		podDataStore,
+		secretDataStore,
+		flowsDataStore,
+		netEntityDataStore,
+		serviceAccountMockDataStore,
+		roleDataStore,
+		roleBindingDataStore,
+		connMgr,
+		notifierMock,
+		mockProvider,
+		ranking.NewRanker(),
+		networkBaselineMgr )
+
+	require.NoError(t, err)
+	flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl), nil)
+	connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
+	namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil)
+	deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
+	podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
+	alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(nil, nil)
+	alertDataStore.EXPECT().MarkAlertStale(gomock.Any(), gomock.Any()).Return(nil)
+	notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
+	deploymentDataStore.EXPECT().RemoveDeployment(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	podDataStore.EXPECT().RemovePod(gomock.Any(), gomock.Any()).Return(nil)
+	nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
+	secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(nil, nil)
+	serviceAccountMockDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
+	roleDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
+	roleBindingDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
+	netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), gomock.Any()).Return(nil)
+	networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
+	secretDataStore.EXPECT().RemoveSecret(gomock.Any(), gomock.Any()).Return(nil)
+	serviceAccountMockDataStore.EXPECT().RemoveServiceAccount(gomock.Any(), gomock.Any()).Return(nil)
+	roleDataStore.EXPECT().RemoveRole(gomock.Any(), gomock.Any()).Return(nil)
+	roleBindingDataStore.EXPECT().RemoveRoleBinding(gomock.Any(), gomock.Any()).Return(nil)
+
+	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
+	mockConfigDatastore.EXPECT().GetConfig(gomock.Any()).Return(config, nil)
+
+	gc := newGarbageCollector(
+		nil,
+		nil,
+		nil,
+		clusterDataStore,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		mockConfigDatastore,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil)
+
+	return gc
+}
+
 func TestImagePruning(t *testing.T) {
 	var cases = []struct {
 		name        string
@@ -392,20 +508,10 @@ func TestImagePruning(t *testing.T) {
 		},
 	}
 
-	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
-		[]permissions.ResourceWithAccess{
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Risk),
-			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Alert),
-			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Deployment),
-			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Image),
-			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Risk),
-		})
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Cluster)))
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -451,6 +557,89 @@ func TestImagePruning(t *testing.T) {
 
 			assert.ElementsMatch(t, c.expectedIDs, ids)
 		})
+	}
+}
+
+func TestClusterPruning(t *testing.T) {
+	var cases = []struct {
+		name        string
+		config 	    *storage.Config
+		clusters    []*storage.Cluster
+		expectedIDs []string
+	}{
+		{
+			name: "1 healthy cluster, 3 unhealthy clusters (1 excluded, 1 unhealthy since few days, 1 unhealthy since many days)",
+			config: getTestSystemConfig(90, 72),
+			clusters: []*storage.Cluster {
+				{
+					Id: "HEALTHY cluster",
+					HealthStatus: &storage.ClusterHealthStatus{
+						SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+					},
+				},
+				{
+					Id: "UNHEALTHY cluster matching a label to ignore the cluster",
+					Labels: map[string]string{"k2": "v2"},
+					HealthStatus: &storage.ClusterHealthStatus{
+						SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+						LastContact:        timeBeforeDays(80),
+					},
+				},
+				{
+					Id: "UNHEALTHY cluster with fewer than retentionDays since last contact",
+					Labels: map[string]string{"k1": "v2"},
+					HealthStatus: &storage.ClusterHealthStatus{
+						SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+						LastContact:        timeBeforeDays(10),
+					},
+				},
+				{
+					Id: "UNHEALTHY cluster with last contact time before config creation time",
+					Labels: map[string]string{"k1": "v2"},
+					HealthStatus: &storage.ClusterHealthStatus{
+						SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+						LastContact:        timeBeforeDays(80),
+					},
+				},
+			},
+			expectedIDs : []string {
+				"HEALTHY cluster",
+				"UNHEALTHY cluster matching a label to ignore the cluster",
+				"UNHEALTHY cluster with fewer than retentionDays since last contact"
+			},
+		},
+	}
+
+	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
+		[]permissions.ResourceWithAccess{
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Risk),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Cluster),
+		})
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
+
+
+
+}
+
+func getTestSystemConfig(createdBeforeDays int, lastUpdatedBeforeHours int) *storage.Config {
+	return &storage.Config{
+		PrivateConfig: &storage.PrivateConfig{
+			DecommissionedClusterRetention: &storage.DecommissionedClusterRetentionConfig{
+				RetentionDurationDays: 60,
+				IgnoreClusterLabels: map[string]string{
+					"k1": "v1",
+					"k2": "v2",
+					"k3": "v3",
+				},
+				LastUpdated: timeBeforeHours(lastUpdatedBeforeHours),
+				CreatedAt:   timeBeforeDays(createdBeforeDays),
+			},
+		},
 	}
 }
 
@@ -613,6 +802,14 @@ func TestAlertPruning(t *testing.T) {
 
 func timestampNowMinus(t time.Duration) *protoTypes.Timestamp {
 	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
+}
+
+func timeBeforeDays(days int) *protoTypes.Timestamp {
+	return timestampNowMinus(24 * time.Duration(days) * time.Hour)
+}
+
+func timeBeforeHours(hours int) *protoTypes.Timestamp {
+	return timestampNowMinus(time.Duration(hours) * time.Hour)
 }
 
 func newListAlertWithDeployment(id string, age time.Duration, deploymentID string, stage storage.LifecycleStage, state storage.ViolationState) *storage.ListAlert {
