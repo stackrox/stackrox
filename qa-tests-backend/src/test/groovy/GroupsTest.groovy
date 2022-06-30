@@ -44,19 +44,15 @@ class GroupsTest extends BaseSpecification {
     private static GROUP_IDS = ["": ""]
 
     def setupSpec() {
-        GROUPS.eachWithIndex { Group group, int i ->
+        for (def group : GROUPS) {
             GroupService.createGroup(group)
             def props = group.getProps()
             def groupWithId = GroupService.getGroups(GetGroupsRequest.newBuilder()
                     .setAuthProviderId(props.getAuthProviderId())
                     .setValue(props.getValue())
                     .setKey(props.getKey()).build()
-            )
-            GROUPS[i] = groupWithId.getGroups(0)
-        }
-
-        for (def group : GROUPS) {
-            GROUP_IDS[group.roleName] = group.getProps().getId()
+            ).getGroups(0)
+            GROUP_IDS[groupWithId.roleName] = groupWithId.getProps().getId()
         }
     }
 

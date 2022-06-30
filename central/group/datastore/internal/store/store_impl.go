@@ -36,30 +36,15 @@ func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err
 
 // getByProps returns a group matching the given properties if it exists from the store.
 // If more than one group is found matching the properties, an error will be returned.
-// TODO: This can be removed once retrieving the group by its properties is fully deprecated.
+// TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
 func (s *storeImpl) getByProps(props *storage.GroupProperties) (grp *storage.Group, err error) {
 	err = s.db.View(func(tx *bolt.Tx) error {
-		var groups []*storage.Group
-		groups, err = filterInTransaction(tx, func(p *storage.GroupProperties) bool {
-			if props.GetAuthProviderId() != p.GetAuthProviderId() {
-				return false
-			}
-			if props.GetKey() != p.GetKey() {
-				return false
-			}
-			if props.GetValue() != p.GetValue() {
-				return false
-			}
-			return true
-		})
-
-		if len(groups) > 1 {
-			return errox.InvalidArgs.Newf("multiple groups found for properties (auth provider id=%s, key=%s, "+
-				"value=%s), provide an ID to retrieve a group unambiguously",
-				props.GetAuthProviderId(), props.GetKey(), props.GetValue())
+		groups, err := getByPropsInTransaction(tx, props)
+		if err != nil {
+			return err
 		}
 		// If no groups are found, return nil, mimicking the behavior of Get().
-		if len(groups) == 0 {
+		if groups == nil {
 			return nil
 		}
 		grp = groups[0]
@@ -90,18 +75,7 @@ func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) 
 	// Search for groups in the list.
 	err = s.db.View(func(tx *bolt.Tx) error {
 		for _, check := range toSearch {
-			grpss, err := filterInTransaction(tx, func(props *storage.GroupProperties) bool {
-				if check.GetAuthProviderId() != props.GetAuthProviderId() {
-					return false
-				}
-				if check.GetKey() != props.GetKey() {
-					return false
-				}
-				if check.GetValue() != props.GetValue() {
-					return false
-				}
-				return true
-			})
+			grpss, err := filterByPropsInTransaction(tx, check)
 			if err != nil {
 				return err
 			}
@@ -182,34 +156,18 @@ func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
 	id := group.GetProps().GetId()
 	buc := tx.Bucket(groupsBucket)
 
-	// TODO: Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
+	// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
 	// can be removed and groups shall only be retrievable via their id.
 	if id != "" {
 		if buc.Get([]byte(id)) == nil {
 			return errox.NotFound.Newf("group config for %q does not exist", id)
 		}
 	} else {
-		grps, err := filterInTransaction(tx, func(props *storage.GroupProperties) bool {
-			if group.GetProps().GetAuthProviderId() != props.GetAuthProviderId() {
-				return false
-			}
-			if group.GetProps().GetKey() != props.GetKey() {
-				return false
-			}
-			if group.GetProps().GetValue() != props.GetValue() {
-				return false
-			}
-			return true
-		})
+		grps, err := getByPropsInTransaction(tx, group.GetProps())
 		if err != nil {
 			return err
 		}
-		if len(grps) > 1 {
-			return errox.InvalidArgs.Newf("multiple groups found for properties (auth provider id=%s, key=%s, "+
-				"value=%s), provide an ID to retrieve a group unambiguously",
-				group.GetProps().GetAuthProviderId(), group.GetProps().GetKey(), group.GetProps().GetValue())
-		}
-		if len(grps) == 0 {
+		if grps == nil {
 			return errox.NotFound.Newf("group config for (auth provider id=%s, key=%s, value=%s) does not exist",
 				group.GetProps().GetAuthProviderId(), group.GetProps().GetKey(), group.GetProps().GetValue())
 		}
@@ -228,34 +186,18 @@ func removeInTransaction(tx *bolt.Tx, props *storage.GroupProperties) error {
 	buc := tx.Bucket(groupsBucket)
 	id := props.GetId()
 
-	// TODO: Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
+	// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
 	// can be removed and groups shall only be retrievable via their id.
 	if id != "" {
 		if buc.Get([]byte(id)) == nil {
 			return errox.NotFound.Newf("group config for %q does not exist", id)
 		}
 	} else {
-		grps, err := filterInTransaction(tx, func(p *storage.GroupProperties) bool {
-			if props.GetAuthProviderId() != p.GetAuthProviderId() {
-				return false
-			}
-			if props.GetKey() != p.GetKey() {
-				return false
-			}
-			if props.GetValue() != p.GetValue() {
-				return false
-			}
-			return true
-		})
+		grps, err := getByPropsInTransaction(tx, props)
 		if err != nil {
 			return err
 		}
-		if len(grps) > 1 {
-			return errox.InvalidArgs.Newf("multiple groups found for properties (auth provider id=%s, key=%s, "+
-				"value=%s), provide an ID to retrieve a group unambiguously",
-				props.GetAuthProviderId(), props.GetKey(), props.GetValue())
-		}
-		if len(grps) == 0 {
+		if grps == nil {
 			return errox.NotFound.Newf("group config for (auth provider id=%s, key=%s, value=%s) does not exist",
 				props.GetAuthProviderId(), props.GetKey(), props.GetValue())
 		}
@@ -280,6 +222,35 @@ func filterInTransaction(tx *bolt.Tx, filter func(*storage.GroupProperties) bool
 		return nil
 	})
 	return grps, err
+}
+
+func filterByPropsInTransaction(tx *bolt.Tx, props *storage.GroupProperties) ([]*storage.Group, error) {
+	grps, err := filterInTransaction(tx, func(stored *storage.GroupProperties) bool {
+		if props.GetAuthProviderId() != stored.GetAuthProviderId() ||
+			props.GetKey() != stored.GetKey() ||
+			props.GetValue() != stored.GetValue() {
+			return false
+		}
+		return true
+	})
+	if err != nil {
+		return nil, err
+	}
+	return grps, nil
+}
+
+func getByPropsInTransaction(tx *bolt.Tx, props *storage.GroupProperties) ([]*storage.Group, error) {
+	grps, err := filterByPropsInTransaction(tx, props)
+	if err != nil {
+		return nil, err
+	}
+	if len(grps) > 1 {
+		return nil, errox.InvalidArgs.Newf("multiple groups found for properties (auth provider id=%s, key=%s, "+
+			"value=%s), provide an ID to retrieve a group unambiguously",
+			props.GetAuthProviderId(), props.GetKey(), props.GetValue())
+	}
+
+	return grps, nil
 }
 
 // When given an auth provider and attributes, we will look for all keys and

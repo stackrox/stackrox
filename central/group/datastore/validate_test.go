@@ -33,7 +33,7 @@ func TestValidate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Group.props.id must be set",
+			name: "Group.props.id must not be set",
 			group: &storage.Group{
 				Props: &storage.GroupProperties{
 					AuthProviderId: "Sentinel",
@@ -42,7 +42,7 @@ func TestValidate(t *testing.T) {
 				},
 				RoleName: "insurge",
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "Group.props.auth_provider_id must be set",

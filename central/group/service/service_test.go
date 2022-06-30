@@ -112,3 +112,49 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 	_, err := suite.ser.BatchUpdate(contextForMock, update)
 	suite.NoError(err, "request should not fail with valid user data")
 }
+
+func (suite *UserServiceTestSuite) TestBatchUpdate_Dedupe_updated_group() {
+	update := &v1.GroupBatchUpdateRequest{
+		PreviousGroups: []*storage.Group{
+			{
+				Props: &storage.GroupProperties{
+					AuthProviderId: "ap1",
+					Key:            "k2",
+					Value:          "v1",
+					Id:             "1",
+				},
+				RoleName: "r1",
+			},
+		},
+		RequiredGroups: []*storage.Group{
+			{
+				Props: &storage.GroupProperties{ // update of the first group in previous groups.
+					AuthProviderId: "ap2",
+					Key:            "k1",
+					Value:          "v1",
+					Id:             "1",
+				},
+				RoleName: "r2",
+			},
+			{
+				Props: &storage.GroupProperties{ // dupe of the first group in required groups, should not be added.
+					AuthProviderId: "ap2",
+					Key:            "k1",
+					Value:          "v1",
+				},
+				RoleName: "r2",
+			},
+		},
+	}
+
+	contextForMock := context.Background()
+	suite.groupsMock.EXPECT().
+		Mutate(contextForMock,
+			[]*storage.Group{},
+			[]*storage.Group{update.GetRequiredGroups()[0]},
+			[]*storage.Group{}).
+		Return(nil)
+
+	_, err := suite.ser.BatchUpdate(contextForMock, update)
+	suite.NoError(err, "request should not fail with valid user data")
+}

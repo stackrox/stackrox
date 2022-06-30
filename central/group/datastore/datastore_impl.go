@@ -67,7 +67,7 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 	}
 
 	if err := ValidateGroup(group); err != nil {
-		return err
+		return errox.InvalidArgs.CausedBy(err)
 	}
 
 	if group.GetProps().GetId() != "" {
@@ -92,7 +92,7 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error
 	}
 
 	if err := ValidateGroup(group); err != nil {
-		return err
+		return errox.InvalidArgs.CausedBy(err)
 	}
 
 	return ds.storage.Update(group)
@@ -107,13 +107,13 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 
 	for _, grp := range append(remove, update...) {
 		if err := ValidateGroup(grp); err != nil {
-			return err
+			return errox.InvalidArgs.CausedBy(err)
 		}
 	}
 
 	for _, grp := range add {
 		if err := ValidateGroup(grp); err != nil {
-			return err
+			return errox.InvalidArgs.CausedBy(err)
 		}
 
 		if grp.GetProps().GetId() != "" {
@@ -135,6 +135,10 @@ func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupPropert
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
+	}
+
+	if err := ValidateProps(props); err != nil {
+		return errox.InvalidArgs.CausedBy(err)
 	}
 
 	return ds.storage.Remove(props)

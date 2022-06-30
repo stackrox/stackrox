@@ -106,7 +106,12 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperti
 func (s *serviceImpl) BatchUpdate(ctx context.Context, req *v1.GroupBatchUpdateRequest) (*v1.Empty, error) {
 	for _, group := range req.GetPreviousGroups() {
 		if err := datastore.ValidateGroup(group); err != nil {
-			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+			return nil, errox.InvalidArgs.CausedBy(err)
+		}
+	}
+	for _, group := range req.GetRequiredGroups() {
+		if err := datastore.ValidateGroup(group); err != nil {
+			return nil, errox.InvalidArgs.CausedBy(err)
 		}
 	}
 
@@ -134,9 +139,6 @@ func (s *serviceImpl) UpdateGroup(ctx context.Context, group *storage.Group) (*v
 }
 
 func (s *serviceImpl) DeleteGroup(ctx context.Context, props *storage.GroupProperties) (*v1.Empty, error) {
-	if err := datastore.ValidateProps(props); err != nil {
-		return nil, err
-	}
 	err := s.groups.Remove(ctx, props)
 	if err != nil {
 		return nil, err
@@ -146,7 +148,7 @@ func (s *serviceImpl) DeleteGroup(ctx context.Context, props *storage.GroupPrope
 
 // Helper function that does a diff between two sets of groups and comes up with needed mutations.
 func diffGroups(previous []*storage.Group, required []*storage.Group) (removed []*storage.Group, updated []*storage.Group, added []*storage.Group) {
-	// This will hold all previous groups mapped by their properties and the rolename. It will later on be used
+	// This will hold all previous and required groups mapped by their properties and the rolename. It will later on be used
 	// to determine whether one of the to-be-created groups is required or already covered by one of the existing
 	// groups, iff the properties and role match.
 	groupsByPropsAndRole := make(map[string]struct{})
@@ -169,6 +171,9 @@ func diffGroups(previous []*storage.Group, required []*storage.Group) (removed [
 			continue
 		}
 		requiredByID[group.GetProps().GetId()] = group
+		// Ensure we add the required group tuple of role + props to the map. If we wouldn't, it could be possible that
+		// an updated group in the required section is a dupe of a newly added group. Instead, we should not create a
+		// group if an update to an existing one results in the same tuple of role + props.
 		groupsByPropsAndRole[string(serialize.PropsKey(group.GetProps()))+group.GetRoleName()] = struct{}{}
 	}
 
@@ -192,15 +197,15 @@ func diffGroups(previous []*storage.Group, required []*storage.Group) (removed [
 	return
 }
 
-func dedupeAddedGroups(existingGroupsByPropsAndRole map[string]struct{}, added []*storage.Group) []*storage.Group {
-	updatedGroups := make([]*storage.Group, 0, len(added))
-	for _, group := range added {
+func dedupeAddedGroups(existingGroupsByPropsAndRole map[string]struct{}, toBeAddedGroups []*storage.Group) []*storage.Group {
+	addedGroups := make([]*storage.Group, 0, len(toBeAddedGroups))
+	for _, group := range toBeAddedGroups {
 		if _, exists := existingGroupsByPropsAndRole[string(serialize.PropsKey(group.GetProps()))+group.GetRoleName()]; !exists {
 			// Group does not exist, it can be safely added.
-			updatedGroups = append(updatedGroups, group)
+			addedGroups = append(addedGroups, group)
 			// Make sure to add the newly props + role name to the map, so we don't mistakenly add the same group twice.
 			existingGroupsByPropsAndRole[string(serialize.PropsKey(group.GetProps()))+group.GetRoleName()] = struct{}{}
 		}
 	}
-	return updatedGroups
+	return addedGroups
 }

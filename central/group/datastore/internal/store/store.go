@@ -9,7 +9,7 @@ import (
 
 var groupsBucket = []byte("groups2")
 
-var getAllEmptyGroupProperties = func(props *storage.GroupProperties) bool {
+var isEmptyGroupPropertiesF = func(props *storage.GroupProperties) bool {
 	if props.GetAuthProviderId() == "" && props.GetKey() == "" && props.GetValue() == "" {
 		return true
 	}
@@ -38,7 +38,7 @@ func New(db *bolt.DB) Store {
 	store := &storeImpl{
 		db: db,
 	}
-	grps, err := store.GetFiltered(getAllEmptyGroupProperties)
+	grps, err := store.GetFiltered(isEmptyGroupPropertiesF)
 	utils.Should(err)
 	for _, grp := range grps {
 		err = store.Remove(grp.GetProps())
