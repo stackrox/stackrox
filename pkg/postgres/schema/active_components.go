@@ -27,7 +27,9 @@ var (
                )
                `,
 		GormModel: (*ActiveComponents)(nil),
-		Indexes:   []string{},
+		Indexes: []string{
+			"create index if not exists activeComponents_DeploymentId on active_components using hash(DeploymentId)",
+		},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -78,7 +80,7 @@ const (
 // ActiveComponents holds the Gorm model for Postgres table `active_components`.
 type ActiveComponents struct {
 	Id             string      `gorm:"column:id;type:varchar;primaryKey"`
-	DeploymentId   string      `gorm:"column:deploymentid;type:varchar"`
+	DeploymentId   string      `gorm:"column:deploymentid;type:varchar;index:activecomponents_deploymentid,type:hash"`
 	ComponentId    string      `gorm:"column:componentid;type:varchar"`
 	Serialized     []byte      `gorm:"column:serialized;type:bytea"`
 	DeploymentsRef Deployments `gorm:"foreignKey:deploymentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

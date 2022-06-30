@@ -11,7 +11,7 @@ package storage;
 message ActiveComponent {
     // base 64 encoded Deployment:ActiveComponent ids.
     string id            = 1 [(gogoproto.moretags) = 'search:"Image Sha,hidden" sql:"pk"'];
-    string deployment_id = 3 [(gogoproto.moretags) = 'search:"Deployment ID,hidden" sql:"fk(Deployment:id),directional"'];
+    string deployment_id = 3 [(gogoproto.moretags) = 'search:"Deployment ID,hidden" sql:"fk(Deployment:id),directional,index=hash"'];
     string component_id  = 4 [(gogoproto.moretags) = 'search:"Component ID,hidden" sql:"fk(ImageComponent:id),no-fk-constraint,directional"'];
 
     // Represent a context of the active edge.
