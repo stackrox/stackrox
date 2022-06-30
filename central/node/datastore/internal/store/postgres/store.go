@@ -60,7 +60,6 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
 	// GetNodeMetadata gets the node without scan/component data.
 	GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error)
-	DeleteMany(ctx context.Context, ids []string) error
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
@@ -423,7 +422,7 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 }
 
 func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bool, error) {
-	oldNode, found, err := s.Get(ctx, node.GetId())
+	oldNode, found, err := s.GetNodeMetadata(ctx, node.GetId())
 	if err != nil {
 		return false, false, err
 	}
@@ -452,7 +451,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bo
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 	iTime := protoTypes.TimestampNow()
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
+	conn, release, err := s.acquireConn(ctx, ops.Upsert, "Node")
 	if err != nil {
 		return err
 	}
@@ -488,7 +487,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 	return nil
 }
 
-// Upsert upserts image into the store.
+// Upsert upserts node into the store.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Node")
 
@@ -583,7 +582,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Node")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
 	if err != nil {
 		return nil, false, err
 	}
@@ -691,7 +690,7 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 }
 
 func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeComponent")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponent")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentsTable+" WHERE id = ANY($1::text[])", componentIDs)
 	if err != nil {
@@ -862,11 +861,11 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Node,
 	return elems, missingIndices, nil
 }
 
-// GetNodeMetadata gets the image without scan/component data.
+// GetNodeMetadata gets the node without scan/component data.
 func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeMetadata")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeMetadata")
 	if err != nil {
 		return nil, false, err
 	}
@@ -883,19 +882,6 @@ func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.No
 		return nil, false, err
 	}
 	return &msg, true, nil
-}
-
-// Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Node")
-
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "Node")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	return s.deleteNodeTree(ctx, conn, ids...)
 }
 
 //// Used for testing
