@@ -43,6 +43,8 @@ func init() {
 		&storage.NodeComponentEdge{}:                            resources.Node,
 		&storage.PermissionSet{}:                                resources.Role,
 		&storage.Pod{}:                                          resources.Deployment,
+		&storage.Policy{}:                                       resources.Policy,
+		&storage.PolicyCategory{}:                               resources.Policy,
 		&storage.ProcessBaselineResults{}:                       resources.ProcessWhitelist,
 		&storage.ProcessBaseline{}:                              resources.ProcessWhitelist,
 		&storage.ProcessIndicator{}:                             resources.Indicator,
@@ -92,7 +94,7 @@ func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
 			return resourceMetadata
 		}
 	}
-	panic("unknown resource: " + resource)
+	panic("unknown resource: " + resource + ". Please add the resource to tools/generate-helpers/pg-table-bindings/list.go.")
 }
 
 func identifierGetter(prefix string, schema *walker.Schema) string {

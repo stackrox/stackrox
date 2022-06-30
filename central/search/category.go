@@ -16,6 +16,7 @@ func GetGlobalSearchCategories() set.V1SearchCategorySet {
 		v1.SearchCategory_NODES,
 		v1.SearchCategory_NAMESPACES,
 		v1.SearchCategory_POLICIES,
+		v1.SearchCategory_POLICY_CATEGORIES,
 		v1.SearchCategory_SECRETS,
 		v1.SearchCategory_SERVICE_ACCOUNTS,
 		v1.SearchCategory_ROLES,
