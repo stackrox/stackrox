@@ -40,10 +40,10 @@ const PublicConfigBannerDetails = ({
     const title = `${capitalize(type)} configuration`;
 
     return (
-        <Card data-testid={`${type}-config`}>
+        <Card isFlat data-testid={`${type}-config`}>
             <CardHeader>
                 <CardHeaderMain>
-                    <CardTitle>{title}</CardTitle>
+                    <CardTitle component="h3">{title}</CardTitle>
                 </CardHeaderMain>
                 <CardActions data-testid={`${type}-state`}>
                     {enabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}

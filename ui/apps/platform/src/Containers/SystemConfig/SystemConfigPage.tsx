@@ -10,6 +10,11 @@ import {
     Title,
 } from '@patternfly/react-core';
 
+/*
+import { clustersBasePath, getIsRoutePathRendered } from 'routePaths';
+*/
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import usePermissions from 'hooks/usePermissions';
 import { fetchSystemConfig } from 'services/SystemConfigService';
 import { SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -18,6 +23,23 @@ import SystemConfigDetails from './Details/SystemConfigDetails';
 import SystemConfigForm from './Form/SystemConfigForm';
 
 const SystemConfigPage = (): ReactElement => {
+    /*
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    */
+    const { hasReadWriteAccess } = usePermissions();
+    const hasReadWriteAccessForConfig = hasReadWriteAccess('Config');
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDecommissionedClusterRetentionEnabled = isFeatureFlagEnabled(
+        'ROX_DECOMMISSIONED_CLUSTER_RETENTION'
+    );
+    /*
+    const isClustersRoutePathRendered = getIsRoutePathRendered({
+        hasReadAccess,
+        isFeatureFlagEnabled,
+    })(clustersBasePath);
+    */
+    const isClustersRoutePathRendered = true; // TODO replace with the preceding after #2105 has been merged
+
     const [isEditing, setIsEditing] = useState(false);
 
     const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
@@ -58,13 +80,22 @@ const SystemConfigPage = (): ReactElement => {
         );
     } else if (systemConfig) {
         content = isEditing ? (
-            <SystemConfigForm
-                systemConfig={systemConfig}
-                setSystemConfig={setSystemConfig}
-                setIsNotEditing={setIsNotEditing}
-            />
+            <PageSection variant="light">
+                <SystemConfigForm
+                    isDecommissionedClusterRetentionEnabled={
+                        isDecommissionedClusterRetentionEnabled
+                    }
+                    systemConfig={systemConfig}
+                    setSystemConfig={setSystemConfig}
+                    setIsNotEditing={setIsNotEditing}
+                />
+            </PageSection>
         ) : (
-            <SystemConfigDetails systemConfig={systemConfig} />
+            <SystemConfigDetails
+                isClustersRoutePathRendered={isClustersRoutePathRendered}
+                isDecommissionedClusterRetentionEnabled={isDecommissionedClusterRetentionEnabled}
+                systemConfig={systemConfig}
+            />
         );
     } else {
         content = (
@@ -81,8 +112,8 @@ const SystemConfigPage = (): ReactElement => {
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">System Configuration</Title>
                     </FlexItem>
-                    <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
-                        <FlexItem>
+                    {hasReadWriteAccessForConfig && (
+                        <FlexItem align={{ default: 'alignRight' }}>
                             <Button
                                 variant="primary"
                                 isDisabled={isEditing || isLoading}
@@ -91,10 +122,10 @@ const SystemConfigPage = (): ReactElement => {
                                 Edit
                             </Button>
                         </FlexItem>
-                    </Flex>
+                    )}
                 </Flex>
             </PageSection>
-            <PageSection>{content}</PageSection>
+            {content}
         </>
     );
 };

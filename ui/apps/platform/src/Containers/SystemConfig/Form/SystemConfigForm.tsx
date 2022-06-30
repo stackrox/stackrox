@@ -4,26 +4,28 @@ import {
     ActionGroup,
     Alert,
     Button,
-    TextArea,
-    Form,
-    FormSection,
-    FormGroup,
-    TextInput,
     Card,
-    CardHeader,
-    CardTitle,
+    CardActions,
     CardBody,
+    CardHeader,
     CardHeaderMain,
+    CardTitle,
     Divider,
-    SelectOption,
+    Form,
+    FormGroup,
+    FormSection,
     Grid,
     GridItem,
-    CardActions,
+    SelectOption,
     Switch,
+    TextArea,
+    TextInput,
+    Title,
 } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 
 import ColorPicker from 'Components/ColorPicker';
+import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
 import { types } from 'reducers/systemConfig';
 import { saveSystemConfig } from 'services/SystemConfigService';
 import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
@@ -60,12 +62,14 @@ type Values = {
 };
 
 export type SystemConfigFormProps = {
+    isDecommissionedClusterRetentionEnabled: boolean;
     systemConfig: SystemConfig;
     setSystemConfig: (systemConfig: SystemConfig) => void;
     setIsNotEditing: () => void;
 };
 
 const SystemConfigForm = ({
+    isDecommissionedClusterRetentionEnabled,
     systemConfig,
     setSystemConfig,
     setIsNotEditing,
@@ -104,175 +108,200 @@ const SystemConfigForm = ({
         });
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
     function onCustomChange(value, id) {
-        return setFieldValue(id, value, false);
+        return setFieldValue(id, value);
     }
 
-    function onSubmitForm(event) {
-        event.preventDefault();
-        return submitForm();
+    function handleChangeLabels(labels) {
+        return onCustomChange(
+            labels,
+            'privateConfig.decommissionedClusterRetention.ignoreClusterLabels'
+        );
     }
 
     return (
-        <Form onSubmit={onSubmitForm}>
-            <Grid hasGutter md={12}>
-                <GridItem md={12}>
-                    <Card>
-                        <CardHeader>
-                            <CardHeaderMain>
-                                <CardTitle>Data retention configuration</CardTitle>
-                            </CardHeaderMain>
-                        </CardHeader>
-                        <Divider component="div" />
-                        <CardBody>
-                            <FormSection>
-                                <Grid hasGutter md={6}>
-                                    <GridItem>
-                                        <FormGroup
-                                            label="All runtime violations"
-                                            isRequired
-                                            fieldId="privateConfig.alertConfig.allRuntimeRetentionDurationDays"
-                                        >
-                                            <TextInput
-                                                isRequired
-                                                type="number"
-                                                id="privateConfig.alertConfig.allRuntimeRetentionDurationDays"
-                                                name="privateConfig.alertConfig.allRuntimeRetentionDurationDays"
-                                                value={
-                                                    values?.privateConfig?.alertConfig
-                                                        ?.allRuntimeRetentionDurationDays
-                                                }
-                                                onChange={onChange}
-                                            />
-                                        </FormGroup>
-                                    </GridItem>
-                                    <GridItem>
-                                        <FormGroup
-                                            label="Runtime violations for deleted deployments"
-                                            isRequired
-                                            fieldId="privateConfig.alertConfig.deletedRuntimeRetentionDurationDays"
-                                        >
-                                            <TextInput
-                                                isRequired
-                                                type="number"
-                                                id="privateConfig.alertConfig.deletedRuntimeRetentionDurationDays"
-                                                name="privateConfig.alertConfig.deletedRuntimeRetentionDurationDays"
-                                                value={
-                                                    values?.privateConfig?.alertConfig
-                                                        ?.deletedRuntimeRetentionDurationDays
-                                                }
-                                                onChange={onChange}
-                                            />
-                                        </FormGroup>
-                                    </GridItem>
-                                    <GridItem>
-                                        <FormGroup
-                                            label="Resolved deploy-phase violations"
-                                            isRequired
-                                            fieldId="privateConfig.alertConfig.resolvedDeployRetentionDurationDays"
-                                        >
-                                            <TextInput
-                                                isRequired
-                                                type="number"
-                                                id="privateConfig.alertConfig.resolvedDeployRetentionDurationDays"
-                                                name="privateConfig.alertConfig.resolvedDeployRetentionDurationDays"
-                                                value={
-                                                    values?.privateConfig?.alertConfig
-                                                        ?.resolvedDeployRetentionDurationDays
-                                                }
-                                                onChange={onChange}
-                                            />
-                                        </FormGroup>
-                                    </GridItem>
-                                    <GridItem>
-                                        <FormGroup
-                                            label="Attempted deploy-phase violations"
-                                            isRequired
-                                            fieldId="privateConfig.alertConfig.attemptedDeployRetentionDurationDays"
-                                        >
-                                            <TextInput
-                                                isRequired
-                                                type="number"
-                                                id="privateConfig.alertConfig.attemptedDeployRetentionDurationDays"
-                                                name="privateConfig.alertConfig.attemptedDeployRetentionDurationDays"
-                                                value={
-                                                    values?.privateConfig?.alertConfig
-                                                        ?.attemptedDeployRetentionDurationDays
-                                                }
-                                                onChange={onChange}
-                                            />
-                                        </FormGroup>
-                                    </GridItem>
-                                    <GridItem>
-                                        <FormGroup
-                                            label="Attempted runtime violations"
-                                            isRequired
-                                            fieldId="privateConfig.alertConfig.attemptedRuntimeRetentionDurationDays"
-                                        >
-                                            <TextInput
-                                                isRequired
-                                                type="number"
-                                                id="privateConfig.alertConfig.attemptedRuntimeRetentionDurationDays"
-                                                name="privateConfig.alertConfig.attemptedRuntimeRetentionDurationDays"
-                                                value={
-                                                    values?.privateConfig?.alertConfig
-                                                        ?.attemptedRuntimeRetentionDurationDays
-                                                }
-                                                onChange={onChange}
-                                            />
-                                        </FormGroup>
-                                    </GridItem>
-                                    <GridItem>
-                                        <FormGroup
-                                            label="Images no longer deployed"
-                                            isRequired
-                                            fieldId="privateConfig.imageRetentionDurationDays"
-                                        >
-                                            <TextInput
-                                                isRequired
-                                                type="number"
-                                                id="privateConfig.imageRetentionDurationDays"
-                                                name="privateConfig.imageRetentionDurationDays"
-                                                value={
-                                                    values?.privateConfig
-                                                        ?.imageRetentionDurationDays
-                                                }
-                                                onChange={onChange}
-                                            />
-                                        </FormGroup>
-                                    </GridItem>
-                                    <GridItem>
-                                        <FormGroup
-                                            label="Expired vulnerability requests"
-                                            isRequired
-                                            fieldId="privateConfig.expiredVulnReqRetentionDurationDays"
-                                        >
-                                            <TextInput
-                                                isRequired
-                                                type="number"
-                                                id="privateConfig.expiredVulnReqRetentionDurationDays"
-                                                name="privateConfig.expiredVulnReqRetentionDurationDays"
-                                                value={
-                                                    values?.privateConfig
-                                                        ?.expiredVulnReqRetentionDurationDays
-                                                }
-                                                onChange={onChange}
-                                            />
-                                        </FormGroup>
-                                    </GridItem>
-                                </Grid>
-                            </FormSection>
-                        </CardBody>
-                    </Card>
+        <Form>
+            <Title headingLevel="h2">Private data retention configuration</Title>
+            <Grid hasGutter md={6}>
+                <GridItem>
+                    <FormGroup
+                        label="All runtime violations"
+                        isRequired
+                        fieldId="privateConfig.alertConfig.allRuntimeRetentionDurationDays"
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="privateConfig.alertConfig.allRuntimeRetentionDurationDays"
+                            name="privateConfig.alertConfig.allRuntimeRetentionDurationDays"
+                            value={
+                                values?.privateConfig?.alertConfig?.allRuntimeRetentionDurationDays
+                            }
+                            onChange={onChange}
+                        />
+                    </FormGroup>
                 </GridItem>
+                <GridItem>
+                    <FormGroup
+                        label="Runtime violations for deleted deployments"
+                        isRequired
+                        fieldId="privateConfig.alertConfig.deletedRuntimeRetentionDurationDays"
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="privateConfig.alertConfig.deletedRuntimeRetentionDurationDays"
+                            name="privateConfig.alertConfig.deletedRuntimeRetentionDurationDays"
+                            value={
+                                values?.privateConfig?.alertConfig
+                                    ?.deletedRuntimeRetentionDurationDays
+                            }
+                            onChange={onChange}
+                        />
+                    </FormGroup>
+                </GridItem>
+                <GridItem>
+                    <FormGroup
+                        label="Resolved deploy-phase violations"
+                        isRequired
+                        fieldId="privateConfig.alertConfig.resolvedDeployRetentionDurationDays"
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="privateConfig.alertConfig.resolvedDeployRetentionDurationDays"
+                            name="privateConfig.alertConfig.resolvedDeployRetentionDurationDays"
+                            value={
+                                values?.privateConfig?.alertConfig
+                                    ?.resolvedDeployRetentionDurationDays
+                            }
+                            onChange={onChange}
+                        />
+                    </FormGroup>
+                </GridItem>
+                <GridItem>
+                    <FormGroup
+                        label="Attempted deploy-phase violations"
+                        isRequired
+                        fieldId="privateConfig.alertConfig.attemptedDeployRetentionDurationDays"
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="privateConfig.alertConfig.attemptedDeployRetentionDurationDays"
+                            name="privateConfig.alertConfig.attemptedDeployRetentionDurationDays"
+                            value={
+                                values?.privateConfig?.alertConfig
+                                    ?.attemptedDeployRetentionDurationDays
+                            }
+                            onChange={onChange}
+                        />
+                    </FormGroup>
+                </GridItem>
+                <GridItem>
+                    <FormGroup
+                        label="Attempted runtime violations"
+                        isRequired
+                        fieldId="privateConfig.alertConfig.attemptedRuntimeRetentionDurationDays"
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="privateConfig.alertConfig.attemptedRuntimeRetentionDurationDays"
+                            name="privateConfig.alertConfig.attemptedRuntimeRetentionDurationDays"
+                            value={
+                                values?.privateConfig?.alertConfig
+                                    ?.attemptedRuntimeRetentionDurationDays
+                            }
+                            onChange={onChange}
+                        />
+                    </FormGroup>
+                </GridItem>
+                <GridItem>
+                    <FormGroup
+                        label="Images no longer deployed"
+                        isRequired
+                        fieldId="privateConfig.imageRetentionDurationDays"
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="privateConfig.imageRetentionDurationDays"
+                            name="privateConfig.imageRetentionDurationDays"
+                            value={values?.privateConfig?.imageRetentionDurationDays}
+                            onChange={onChange}
+                        />
+                    </FormGroup>
+                </GridItem>
+                <GridItem>
+                    <FormGroup
+                        label="Expired vulnerability requests"
+                        isRequired
+                        fieldId="privateConfig.expiredVulnReqRetentionDurationDays"
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="privateConfig.expiredVulnReqRetentionDurationDays"
+                            name="privateConfig.expiredVulnReqRetentionDurationDays"
+                            value={values?.privateConfig?.expiredVulnReqRetentionDurationDays}
+                            onChange={onChange}
+                        />
+                    </FormGroup>
+                </GridItem>
+            </Grid>
+            {isDecommissionedClusterRetentionEnabled && (
+                <>
+                    <Title headingLevel="h3">Cluster deletion</Title>
+                    <Grid hasGutter md={6}>
+                        <GridItem>
+                            <FormGroup
+                                label="Decommissioned cluster age"
+                                isRequired
+                                fieldId="privateConfig.decommissionedClusterRetention.retentionDurationDays"
+                            >
+                                <TextInput
+                                    isRequired
+                                    type="number"
+                                    id="privateConfig.decommissionedClusterRetention.retentionDurationDays"
+                                    name="privateConfig.decommissionedClusterRetention.retentionDurationDays"
+                                    value={
+                                        values?.privateConfig?.decommissionedClusterRetention
+                                            ?.retentionDurationDays
+                                    }
+                                    onChange={onChange}
+                                />
+                            </FormGroup>
+                        </GridItem>
+                        <GridItem>
+                            <FormGroup
+                                label="Ignore clusters which have labels"
+                                fieldId="privateConfig.decommissionedClusterRetention.ignoreClusterLabels"
+                            >
+                                <ClusterLabelsTable
+                                    labels={
+                                        values.privateConfig.decommissionedClusterRetention
+                                            .ignoreClusterLabels
+                                    }
+                                    hasAction
+                                    handleChangeLabels={handleChangeLabels}
+                                    isValueRequired
+                                />
+                            </FormGroup>
+                        </GridItem>
+                    </Grid>
+                </>
+            )}
+            <Title headingLevel="h2">Public configuration</Title>
+            <Grid hasGutter>
                 <GridItem sm={12} md={6}>
-                    <Card data-testid="header-config">
+                    <Card isFlat data-testid="header-config">
                         <CardHeader>
                             <CardHeaderMain>
-                                <CardTitle>Header configuration</CardTitle>
+                                <CardTitle component="h3">Header configuration</CardTitle>
                             </CardHeaderMain>
                             <CardActions>
                                 <Switch
@@ -356,10 +385,10 @@ const SystemConfigForm = ({
                     </Card>
                 </GridItem>
                 <GridItem sm={12} md={6}>
-                    <Card data-testid="footer-config">
+                    <Card isFlat data-testid="footer-config">
                         <CardHeader>
                             <CardHeaderMain>
-                                <CardTitle>Footer configuration</CardTitle>
+                                <CardTitle component="h3">Footer configuration</CardTitle>
                             </CardHeaderMain>
                             <CardActions>
                                 <Switch
@@ -443,10 +472,10 @@ const SystemConfigForm = ({
                     </Card>
                 </GridItem>
                 <GridItem md={6}>
-                    <Card data-testid="login-notice-config">
+                    <Card isFlat data-testid="login-notice-config">
                         <CardHeader>
                             <CardHeaderMain>
-                                <CardTitle>Login configuration</CardTitle>
+                                <CardTitle component="h3">Login configuration</CardTitle>
                             </CardHeaderMain>
                             <CardActions>
                                 <Switch
@@ -487,9 +516,10 @@ const SystemConfigForm = ({
             <ActionGroup>
                 <Button
                     variant="primary"
-                    type="submit"
+                    type="button"
                     isDisabled={!dirty || !isValid || isSubmitting}
                     isLoading={isSubmitting}
+                    onClick={submitForm}
                 >
                     Save
                 </Button>
