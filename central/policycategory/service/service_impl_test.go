@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -48,7 +50,8 @@ func (s *PolicyCategoryServiceTestSuite) TestRenameInvalidNameFails() {
 	})
 	s.Nil(resp)
 	s.Error(err)
-	s.Equal(invalidNameErrString, err.Error())
+	s.Equal(fmt.Sprintf("%s: %s", invalidNameErrString, errox.InvalidArgs.Error()), err.Error())
+
 }
 
 func (s *PolicyCategoryServiceTestSuite) TesPostInvalidNameFails() {
@@ -62,5 +65,5 @@ func (s *PolicyCategoryServiceTestSuite) TesPostInvalidNameFails() {
 	})
 	s.Nil(resp)
 	s.Error(err)
-	s.Equal(invalidNameErrString, err.Error())
+	s.Equal(fmt.Sprintf("%s: %s", invalidNameErrString, errox.InvalidArgs.Error()), err.Error())
 }

@@ -121,7 +121,7 @@ func (s *serviceImpl) getPolicyCategory(ctx context.Context, id string) (*v1.Pol
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "policy with ID '%s' does not exist", id)
+		return nil, errors.Wrapf(errox.NotFound, "policy with ID '%q' does not exist", id)
 	}
 	return ToV1Proto(category), nil
 

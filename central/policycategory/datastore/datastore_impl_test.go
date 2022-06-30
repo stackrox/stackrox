@@ -50,7 +50,6 @@ func (s *PolicyCategoryDatastoreTestSuite) TearDownTest() {
 
 func (s *PolicyCategoryDatastoreTestSuite) TestAddNewPolicyCategory() {
 	s.store.EXPECT().Upsert(s.ctx, gomock.Any()).Return(nil)
-	s.store.EXPECT().Walk(s.ctx, gomock.Any())
 
 	s.indexer.EXPECT().AddPolicyCategory(gomock.Any()).Return(nil)
 
