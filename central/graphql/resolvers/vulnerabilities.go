@@ -115,13 +115,6 @@ type VulnerabilityResolver interface {
 
 	VulnerabilityState(ctx context.Context) string
 	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
-
-	CveBaseInfo(_ context.Context) (*cVEInfoResolver, error)
-	SnoozeStart(ctx context.Context) (*graphql.Time, error)
-	SnoozeExpiry(ctx context.Context) (*graphql.Time, error)
-	Snoozed(ctx context.Context) bool
-	Id(ctx context.Context) graphql.ID
-	OperatingSystem(ctx context.Context) string
 }
 
 // Vulnerability resolves a single vulnerability based on an id (the CVE value).
