@@ -89,7 +89,6 @@ func compress(serialized []byte) ([]byte, error) {
 		return nil, err
 	}
 	compressed := compressedResult.Bytes()
-	log.Infof("data %d vs compressed %d", len(serialized), len(compressed))
 	return compressed, nil
 }
 
