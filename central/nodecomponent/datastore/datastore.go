@@ -2,7 +2,9 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/nodecomponent/datastore/index"
 	"github.com/stackrox/rox/central/nodecomponent/datastore/search"
 	"github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
@@ -38,4 +40,16 @@ func New(storage postgres.Store, indexer index.Indexer, searcher search.Searcher
 
 	ds.initializeRankers()
 	return ds, nil
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgres.New(pool)
+	indexer := postgres.NewIndexer(pool)
+	searcher := search.New(dbstore, indexer)
+	riskStore, err := riskDataStore.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	return New(dbstore, indexer, searcher, riskStore, ranking.NodeComponentRanker())
 }
