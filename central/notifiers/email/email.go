@@ -368,7 +368,7 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 }
 
 func (e *email) send(ctx context.Context, m *message) error {
-	conn, auth, err := e.connection(ctx)
+	conn, _, err := e.connection(ctx)
 	if err != nil {
 		return createError("Connection failed", err)
 	}
