@@ -2,7 +2,6 @@ package manager
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -96,22 +96,19 @@ func productTypeToTarget(s string) pkgFramework.TargetKind {
 	}
 }
 
-func getRuleName(rule *storage.ComplianceOperatorRule) string {
-	if ruleName, ok := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; ok {
-		if controlNumber, ok := rule.Annotations[cisOCPAnnotation]; ok {
-			return fmt.Sprintf("%s: %s", strings.Trim(controlNumber, `" `), ruleName)
-		}
-		return ruleName
+func getRuleIDAndName(rule *storage.ComplianceOperatorRule) (string, string) {
+	if ruleID, ok := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; ok {
+		return ruleID, stringutils.OrDefault(strings.Trim(rule.Annotations[cisOCPAnnotation], `" `), ruleID)
 	}
 	// This field is checked within the pipeline so it should never be empty
 	log.Errorf("UNEXPECTED: Unknown base rule for %s", rule)
-	return "<unknown>"
+	return "<unknown>", "<unknown>"
 }
 
 func createControlFromRule(rule *storage.ComplianceOperatorRule) metadata.Control {
-	ruleName := getRuleName(rule)
+	ruleID, ruleName := getRuleIDAndName(rule)
 	return metadata.Control{
-		ID:          ruleName,
+		ID:          ruleID,
 		Name:        ruleName,
 		Description: rule.GetTitle(),
 	}
@@ -133,16 +130,16 @@ func (m *managerImpl) createControls(rules []string) ([]metadata.Control, error)
 }
 
 func (m *managerImpl) registerCheckFromRule(standardID string, productType pkgFramework.TargetKind, rule *storage.ComplianceOperatorRule) error {
-	ruleName := getRuleName(rule)
+	ruleID, _ := getRuleIDAndName(rule)
 	checkMetadata := framework.CheckMetadata{
-		ID:                 standards.BuildQualifiedID(standardID, ruleName),
+		ID:                 standards.BuildQualifiedID(standardID, ruleID),
 		Scope:              productType,
 		InterpretationText: rule.GetDescription(),
 	}
 
-	checkFunc := platformCheckFunc(ruleName)
+	checkFunc := platformCheckFunc(ruleID)
 	if productType == pkgFramework.MachineConfigKind {
-		checkFunc = machineConfigCheckFunc(ruleName)
+		checkFunc = machineConfigCheckFunc(ruleID)
 	}
 
 	if err := m.registry.RegisterCheck(framework.NewCheckFromFunc(checkMetadata, checkFunc)); err != nil {
@@ -292,7 +289,8 @@ func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorPr
 			if rule == nil {
 				continue
 			}
-			if err := m.registry.DeleteControl(standards.BuildQualifiedID(deletedProfile.GetName(), getRuleName(rule))); err != nil {
+			ruleID, _ := getRuleIDAndName(rule)
+			if err := m.registry.DeleteControl(standards.BuildQualifiedID(deletedProfile.GetName(), ruleID)); err != nil {
 				return err
 			}
 		}
