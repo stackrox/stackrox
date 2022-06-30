@@ -197,6 +197,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ComplianceStrin
 			_, err := batchResults.Exec()
 			result = multierror.Append(result, err)
 		}
+		batchResults.Close()
 		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
