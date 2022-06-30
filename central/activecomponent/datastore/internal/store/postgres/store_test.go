@@ -8,7 +8,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -30,9 +29,6 @@ func TestActiveComponentsStore(t *testing.T) {
 }
 
 func (s *ActiveComponentsStoreSuite) SetupSuite() {
-
-	pgx.Batch{}
-
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
