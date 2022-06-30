@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -74,7 +75,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoTestGrandparents(ctx context.Context, tx pgx.Tx, obj *storage.TestGrandparent) error {
+func insertIntoTestGrandparents(ctx context.Context, batch *pgx.Batch, obj *storage.TestGrandparent) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -89,28 +90,22 @@ func insertIntoTestGrandparents(ctx context.Context, tx pgx.Tx, obj *storage.Tes
 	}
 
 	finalStr := "INSERT INTO test_grandparents (Id, Val, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetEmbedded() {
-		if err := insertIntoTestGrandparentsEmbeddeds(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoTestGrandparentsEmbeddeds(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from test_grandparents_embeddeds where test_grandparents_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetEmbedded()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, obj.GetId(), len(obj.GetEmbedded()))
 	return nil
 }
 
-func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, tx pgx.Tx, obj *storage.TestGrandparent_Embedded, test_grandparents_Id string, idx int) error {
+func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded, test_grandparents_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -120,28 +115,22 @@ func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, tx pgx.Tx, obj *st
 	}
 
 	finalStr := "INSERT INTO test_grandparents_embeddeds (test_grandparents_Id, idx, Val) VALUES($1, $2, $3) ON CONFLICT(test_grandparents_Id, idx) DO UPDATE SET test_grandparents_Id = EXCLUDED.test_grandparents_Id, idx = EXCLUDED.idx, Val = EXCLUDED.Val"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetEmbedded2() {
-		if err := insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx, tx, child, test_grandparents_Id, idx, childIdx); err != nil {
+		if err := insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx, batch, child, test_grandparents_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from test_grandparents_embeddeds_embedded2 where test_grandparents_Id = $1 AND test_grandparents_embeddeds_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, test_grandparents_Id, idx, len(obj.GetEmbedded2()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, test_grandparents_Id, idx, len(obj.GetEmbedded2()))
 	return nil
 }
 
-func insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, tx pgx.Tx, obj *storage.TestGrandparent_Embedded_Embedded2, test_grandparents_Id string, test_grandparents_embeddeds_idx int, idx int) error {
+func insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, test_grandparents_Id string, test_grandparents_embeddeds_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -152,10 +141,7 @@ func insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, tx pgx.Tx
 	}
 
 	finalStr := "INSERT INTO test_grandparents_embeddeds_embedded2 (test_grandparents_Id, test_grandparents_embeddeds_idx, idx, Val) VALUES($1, $2, $3, $4) ON CONFLICT(test_grandparents_Id, test_grandparents_embeddeds_idx, idx) DO UPDATE SET test_grandparents_Id = EXCLUDED.test_grandparents_Id, test_grandparents_embeddeds_idx = EXCLUDED.test_grandparents_embeddeds_idx, idx = EXCLUDED.idx, Val = EXCLUDED.Val"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -371,19 +357,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestGrandparent
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoTestGrandparents(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoTestGrandparents(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
+		if result != nil {
+			return result
 		}
 	}
 	return nil

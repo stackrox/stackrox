@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -74,7 +75,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoComplianceStrings(ctx context.Context, tx pgx.Tx, obj *storage.ComplianceStrings) error {
+func insertIntoComplianceStrings(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceStrings) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -88,10 +89,7 @@ func insertIntoComplianceStrings(ctx context.Context, tx pgx.Tx, obj *storage.Co
 	}
 
 	finalStr := "INSERT INTO compliance_strings (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -189,19 +187,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ComplianceStrin
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoComplianceStrings(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoComplianceStrings(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
+		if result != nil {
+			return result
 		}
 	}
 	return nil

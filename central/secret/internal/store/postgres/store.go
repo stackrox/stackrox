@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -75,7 +76,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) error {
+func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secret) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -94,28 +95,22 @@ func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) erro
 	}
 
 	finalStr := "INSERT INTO secrets (Id, Name, ClusterId, ClusterName, Namespace, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetFiles() {
-		if err := insertIntoSecretsFiles(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoSecretsFiles(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from secrets_files where secrets_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetFiles()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, obj.GetId(), len(obj.GetFiles()))
 	return nil
 }
 
-func insertIntoSecretsFiles(ctx context.Context, tx pgx.Tx, obj *storage.SecretDataFile, secrets_Id string, idx int) error {
+func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.SecretDataFile, secrets_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -126,28 +121,22 @@ func insertIntoSecretsFiles(ctx context.Context, tx pgx.Tx, obj *storage.SecretD
 	}
 
 	finalStr := "INSERT INTO secrets_files (secrets_Id, idx, Type, Cert_EndDate) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Type = EXCLUDED.Type, Cert_EndDate = EXCLUDED.Cert_EndDate"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetImagePullSecret().GetRegistries() {
-		if err := insertIntoSecretsFilesRegistries(ctx, tx, child, secrets_Id, idx, childIdx); err != nil {
+		if err := insertIntoSecretsFilesRegistries(ctx, batch, child, secrets_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from secrets_files_registries where secrets_Id = $1 AND secrets_files_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, secrets_Id, idx, len(obj.GetImagePullSecret().GetRegistries()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, secrets_Id, idx, len(obj.GetImagePullSecret().GetRegistries()))
 	return nil
 }
 
-func insertIntoSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, obj *storage.ImagePullSecret_Registry, secrets_Id string, secrets_files_idx int, idx int) error {
+func insertIntoSecretsFilesRegistries(ctx context.Context, batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secrets_Id string, secrets_files_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -158,10 +147,7 @@ func insertIntoSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, obj *stora
 	}
 
 	finalStr := "INSERT INTO secrets_files_registries (secrets_Id, secrets_files_idx, idx, Name) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, secrets_files_idx, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, secrets_files_idx = EXCLUDED.secrets_files_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -397,19 +383,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Secret) error {
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoSecrets(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoSecrets(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
+		if result != nil {
+			return result
 		}
 	}
 	return nil

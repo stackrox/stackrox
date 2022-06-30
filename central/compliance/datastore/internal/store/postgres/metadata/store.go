@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -75,7 +76,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoComplianceRunMetadata(ctx context.Context, tx pgx.Tx, obj *storage.ComplianceRunMetadata) error {
+func insertIntoComplianceRunMetadata(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceRunMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -92,10 +93,7 @@ func insertIntoComplianceRunMetadata(ctx context.Context, tx pgx.Tx, obj *storag
 	}
 
 	finalStr := "INSERT INTO compliance_run_metadata (RunId, StandardId, ClusterId, FinishTimestamp, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(RunId) DO UPDATE SET RunId = EXCLUDED.RunId, StandardId = EXCLUDED.StandardId, ClusterId = EXCLUDED.ClusterId, FinishTimestamp = EXCLUDED.FinishTimestamp, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -205,19 +203,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ComplianceRunMe
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoComplianceRunMetadata(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoComplianceRunMetadata(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
+		if result != nil {
+			return result
 		}
 	}
 	return nil

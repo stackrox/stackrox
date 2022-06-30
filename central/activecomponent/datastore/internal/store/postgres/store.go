@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -74,7 +75,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoActiveComponents(ctx context.Context, tx pgx.Tx, obj *storage.ActiveComponent) error {
+func insertIntoActiveComponents(ctx context.Context, batch *pgx.Batch, obj *storage.ActiveComponent) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -90,28 +91,22 @@ func insertIntoActiveComponents(ctx context.Context, tx pgx.Tx, obj *storage.Act
 	}
 
 	finalStr := "INSERT INTO active_components (Id, DeploymentId, ComponentId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ComponentId = EXCLUDED.ComponentId, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetActiveContextsSlice() {
-		if err := insertIntoActiveComponentsActiveContextsSlices(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoActiveComponentsActiveContextsSlices(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from active_components_active_contexts_slices where active_components_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetActiveContextsSlice()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, obj.GetId(), len(obj.GetActiveContextsSlice()))
 	return nil
 }
 
-func insertIntoActiveComponentsActiveContextsSlices(ctx context.Context, tx pgx.Tx, obj *storage.ActiveComponent_ActiveContext, active_components_Id string, idx int) error {
+func insertIntoActiveComponentsActiveContextsSlices(ctx context.Context, batch *pgx.Batch, obj *storage.ActiveComponent_ActiveContext, active_components_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -122,10 +117,7 @@ func insertIntoActiveComponentsActiveContextsSlices(ctx context.Context, tx pgx.
 	}
 
 	finalStr := "INSERT INTO active_components_active_contexts_slices (active_components_Id, idx, ContainerName, ImageId) VALUES($1, $2, $3, $4) ON CONFLICT(active_components_Id, idx) DO UPDATE SET active_components_Id = EXCLUDED.active_components_Id, idx = EXCLUDED.idx, ContainerName = EXCLUDED.ContainerName, ImageId = EXCLUDED.ImageId"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -290,19 +282,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ActiveComponent
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoActiveComponents(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoActiveComponents(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
+		if result != nil {
+			return result
 		}
 	}
 	return nil

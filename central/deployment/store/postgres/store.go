@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -75,7 +76,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoDeployments(ctx context.Context, tx pgx.Tx, obj *storage.Deployment) error {
+func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.Deployment) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -106,39 +107,30 @@ func insertIntoDeployments(ctx context.Context, tx pgx.Tx, obj *storage.Deployme
 	}
 
 	finalStr := "INSERT INTO deployments (Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProcessTags, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetContainers() {
-		if err := insertIntoDeploymentsContainers(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoDeploymentsContainers(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_containers where deployments_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetContainers()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, obj.GetId(), len(obj.GetContainers()))
 	for childIdx, child := range obj.GetPorts() {
-		if err := insertIntoDeploymentsPorts(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoDeploymentsPorts(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_ports where deployments_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPorts()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, obj.GetId(), len(obj.GetPorts()))
 	return nil
 }
 
-func insertIntoDeploymentsContainers(ctx context.Context, tx pgx.Tx, obj *storage.Container, deployments_Id string, idx int) error {
+func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj *storage.Container, deployments_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -160,50 +152,38 @@ func insertIntoDeploymentsContainers(ctx context.Context, tx pgx.Tx, obj *storag
 	}
 
 	finalStr := "INSERT INTO deployments_containers (deployments_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetConfig().GetEnv() {
-		if err := insertIntoDeploymentsContainersEnvs(ctx, tx, child, deployments_Id, idx, childIdx); err != nil {
+		if err := insertIntoDeploymentsContainersEnvs(ctx, batch, child, deployments_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_containers_envs where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetConfig().GetEnv()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, deployments_Id, idx, len(obj.GetConfig().GetEnv()))
 	for childIdx, child := range obj.GetVolumes() {
-		if err := insertIntoDeploymentsContainersVolumes(ctx, tx, child, deployments_Id, idx, childIdx); err != nil {
+		if err := insertIntoDeploymentsContainersVolumes(ctx, batch, child, deployments_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetVolumes()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, deployments_Id, idx, len(obj.GetVolumes()))
 	for childIdx, child := range obj.GetSecrets() {
-		if err := insertIntoDeploymentsContainersSecrets(ctx, tx, child, deployments_Id, idx, childIdx); err != nil {
+		if err := insertIntoDeploymentsContainersSecrets(ctx, batch, child, deployments_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_containers_secrets where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetSecrets()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, deployments_Id, idx, len(obj.GetSecrets()))
 	return nil
 }
 
-func insertIntoDeploymentsContainersEnvs(ctx context.Context, tx pgx.Tx, obj *storage.ContainerConfig_EnvironmentConfig, deployments_Id string, deployments_containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersEnvs(ctx context.Context, batch *pgx.Batch, obj *storage.ContainerConfig_EnvironmentConfig, deployments_Id string, deployments_containers_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -216,15 +196,12 @@ func insertIntoDeploymentsContainersEnvs(ctx context.Context, tx pgx.Tx, obj *st
 	}
 
 	finalStr := "INSERT INTO deployments_containers_envs (deployments_Id, deployments_containers_idx, idx, Key, Value, EnvVarSource) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, EnvVarSource = EXCLUDED.EnvVarSource"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func insertIntoDeploymentsContainersVolumes(ctx context.Context, tx pgx.Tx, obj *storage.Volume, deployments_Id string, deployments_containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersVolumes(ctx context.Context, batch *pgx.Batch, obj *storage.Volume, deployments_Id string, deployments_containers_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -239,15 +216,12 @@ func insertIntoDeploymentsContainersVolumes(ctx context.Context, tx pgx.Tx, obj 
 	}
 
 	finalStr := "INSERT INTO deployments_containers_volumes (deployments_Id, deployments_containers_idx, idx, Name, Source, Destination, ReadOnly, Type) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Source = EXCLUDED.Source, Destination = EXCLUDED.Destination, ReadOnly = EXCLUDED.ReadOnly, Type = EXCLUDED.Type"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func insertIntoDeploymentsContainersSecrets(ctx context.Context, tx pgx.Tx, obj *storage.EmbeddedSecret, deployments_Id string, deployments_containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.EmbeddedSecret, deployments_Id string, deployments_containers_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -259,15 +233,12 @@ func insertIntoDeploymentsContainersSecrets(ctx context.Context, tx pgx.Tx, obj 
 	}
 
 	finalStr := "INSERT INTO deployments_containers_secrets (deployments_Id, deployments_containers_idx, idx, Name, Path) VALUES($1, $2, $3, $4, $5) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Path = EXCLUDED.Path"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func insertIntoDeploymentsPorts(ctx context.Context, tx pgx.Tx, obj *storage.PortConfig, deployments_Id string, idx int) error {
+func insertIntoDeploymentsPorts(ctx context.Context, batch *pgx.Batch, obj *storage.PortConfig, deployments_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -279,28 +250,22 @@ func insertIntoDeploymentsPorts(ctx context.Context, tx pgx.Tx, obj *storage.Por
 	}
 
 	finalStr := "INSERT INTO deployments_ports (deployments_Id, idx, ContainerPort, Protocol, Exposure) VALUES($1, $2, $3, $4, $5) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetExposureInfos() {
-		if err := insertIntoDeploymentsPortsExposureInfos(ctx, tx, child, deployments_Id, idx, childIdx); err != nil {
+		if err := insertIntoDeploymentsPortsExposureInfos(ctx, batch, child, deployments_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_ports_exposure_infos where deployments_Id = $1 AND deployments_ports_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetExposureInfos()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, deployments_Id, idx, len(obj.GetExposureInfos()))
 	return nil
 }
 
-func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, tx pgx.Tx, obj *storage.PortConfig_ExposureInfo, deployments_Id string, deployments_ports_idx int, idx int) error {
+func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, batch *pgx.Batch, obj *storage.PortConfig_ExposureInfo, deployments_Id string, deployments_ports_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -316,10 +281,7 @@ func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, tx pgx.Tx, obj
 	}
 
 	finalStr := "INSERT INTO deployments_ports_exposure_infos (deployments_Id, deployments_ports_idx, idx, Level, ServiceName, ServicePort, NodePort, ExternalIps, ExternalHostnames) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(deployments_Id, deployments_ports_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_ports_idx = EXCLUDED.deployments_ports_idx, idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -920,19 +882,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Deployment) err
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoDeployments(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoDeployments(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
+		if result != nil {
+			return result
 		}
 	}
 	return nil

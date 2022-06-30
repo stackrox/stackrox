@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -74,7 +75,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoTestParent1(ctx context.Context, tx pgx.Tx, obj *storage.TestParent1) error {
+func insertIntoTestParent1(ctx context.Context, batch *pgx.Batch, obj *storage.TestParent1) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -90,28 +91,22 @@ func insertIntoTestParent1(ctx context.Context, tx pgx.Tx, obj *storage.TestPare
 	}
 
 	finalStr := "INSERT INTO test_parent1 (Id, ParentId, Val, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetChildren() {
-		if err := insertIntoTestParent1Childrens(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoTestParent1Childrens(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from test_parent1_childrens where test_parent1_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetChildren()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, obj.GetId(), len(obj.GetChildren()))
 	return nil
 }
 
-func insertIntoTestParent1Childrens(ctx context.Context, tx pgx.Tx, obj *storage.TestParent1_Child1Ref, test_parent1_Id string, idx int) error {
+func insertIntoTestParent1Childrens(ctx context.Context, batch *pgx.Batch, obj *storage.TestParent1_Child1Ref, test_parent1_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -121,10 +116,7 @@ func insertIntoTestParent1Childrens(ctx context.Context, tx pgx.Tx, obj *storage
 	}
 
 	finalStr := "INSERT INTO test_parent1_childrens (test_parent1_Id, idx, ChildId) VALUES($1, $2, $3) ON CONFLICT(test_parent1_Id, idx) DO UPDATE SET test_parent1_Id = EXCLUDED.test_parent1_Id, idx = EXCLUDED.idx, ChildId = EXCLUDED.ChildId"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -285,19 +277,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestParent1) er
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoTestParent1(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoTestParent1(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
+		if result != nil {
+			return result
 		}
 	}
 	return nil

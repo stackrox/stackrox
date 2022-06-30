@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -75,7 +76,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoPods(ctx context.Context, tx pgx.Tx, obj *storage.Pod) error {
+func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -93,28 +94,22 @@ func insertIntoPods(ctx context.Context, tx pgx.Tx, obj *storage.Pod) error {
 	}
 
 	finalStr := "INSERT INTO pods (Id, Name, DeploymentId, Namespace, ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetLiveInstances() {
-		if err := insertIntoPodsLiveInstances(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoPodsLiveInstances(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from pods_live_instances where pods_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetLiveInstances()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, obj.GetId(), len(obj.GetLiveInstances()))
 	return nil
 }
 
-func insertIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, obj *storage.ContainerInstance, pods_Id string, idx int) error {
+func insertIntoPodsLiveInstances(ctx context.Context, batch *pgx.Batch, obj *storage.ContainerInstance, pods_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -124,10 +119,7 @@ func insertIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, obj *storage.Co
 	}
 
 	finalStr := "INSERT INTO pods_live_instances (pods_Id, idx, ImageDigest) VALUES($1, $2, $3) ON CONFLICT(pods_Id, idx) DO UPDATE SET pods_Id = EXCLUDED.pods_Id, idx = EXCLUDED.idx, ImageDigest = EXCLUDED.ImageDigest"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -296,19 +288,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Pod) error {
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoPods(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoPods(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
+		if result != nil {
+			return result
 		}
 	}
 	return nil

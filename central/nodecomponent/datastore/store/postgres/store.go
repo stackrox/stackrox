@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -74,7 +75,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoNodeComponents(ctx context.Context, tx pgx.Tx, obj *storage.NodeComponent) error {
+func insertIntoNodeComponents(ctx context.Context, batch *pgx.Batch, obj *storage.NodeComponent) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -92,10 +93,7 @@ func insertIntoNodeComponents(ctx context.Context, tx pgx.Tx, obj *storage.NodeC
 	}
 
 	finalStr := "INSERT INTO node_components (Id, Name, Version, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -209,19 +207,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NodeComponent) 
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoNodeComponents(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoNodeComponents(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
+		if result != nil {
+			return result
 		}
 	}
 	return nil
