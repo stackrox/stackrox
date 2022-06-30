@@ -28,7 +28,7 @@ func TestFlowStore(t *testing.T) {
 		pool, _ := pgxpool.ConnectConfig(ctx, config)
 		defer pool.Close()
 
-		gormDB := pgtest.OpenGormDB(t, source, false)
+		gormDB := pgtest.OpenGormDB(t, source)
 		defer pgtest.CloseGormDB(t, gormDB)
 		pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 

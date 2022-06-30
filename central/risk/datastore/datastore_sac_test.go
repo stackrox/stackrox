@@ -62,7 +62,7 @@ func (s *riskDatastoreSACSuite) SetupSuite() {
 		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
 		s.Require().NoError(err)
 		pgStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), src, false)
+		gormDB := pgtest.OpenGormDB(s.T(), src)
 		defer pgtest.CloseGormDB(s.T(), gormDB)
 		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
 		s.indexer = pgStore.NewIndexer(s.pool)

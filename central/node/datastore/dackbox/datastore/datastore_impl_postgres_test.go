@@ -63,7 +63,7 @@ func (suite *NodePostgresDataStoreTestSuite) SetupSuite() {
 
 	pool, err := pgxpool.ConnectConfig(suite.ctx, config)
 	suite.NoError(err)
-	suite.gormDB = pgtest.OpenGormDB(suite.T(), source, false)
+	suite.gormDB = pgtest.OpenGormDB(suite.T(), source)
 	suite.db = pool
 }
 

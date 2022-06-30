@@ -60,7 +60,7 @@ func ForT(t testing.TB) *TestPostgres {
 	ctx := context.Background()
 
 	// Create all the tables for the database
-	gormDB := OpenGormDB(t, sourceWithDatabase, false)
+	gormDB := OpenGormDB(t, sourceWithDatabase)
 	pkgSchema.ApplyAllSchemasIncludingTests(context.Background(), gormDB, t)
 	CloseGormDB(t, gormDB)
 
@@ -89,8 +89,13 @@ func GetConnectionString(_ *testing.T) string {
 }
 
 // OpenGormDB opens a Gorm DB to the Postgres DB
-func OpenGormDB(t testing.TB, source string, disableConstraint bool) *gorm.DB {
-	return conn.OpenGormDB(t, source, disableConstraint)
+func OpenGormDB(t testing.TB, source string) *gorm.DB {
+	return conn.OpenGormDB(t, source, false)
+}
+
+// OpenGormDBWithDisabledConstraints
+func OpenGormDBWithDisabledConstraints(t testing.TB, source string) *gorm.DB {
+	return conn.OpenGormDB(t, source, true)
 }
 
 // CloseGormDB closes connection to a Gorm DB
@@ -99,6 +104,6 @@ func CloseGormDB(t testing.TB, db *gorm.DB) {
 }
 
 // CleanUpDB removes public schema together with all tables
-func CleanUpDB(ctx context.Context, t *testing.T, pool *pgxpool.Pool) {
+func CleanUpDB(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	conn.CleanUpDB(ctx, t, pool)
 }

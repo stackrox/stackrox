@@ -63,7 +63,7 @@ func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
 
 	pool, err := pgxpool.ConnectConfig(s.ctx, config)
 	s.NoError(err)
-	s.gormDB = pgtest.OpenGormDB(s.T(), source, false)
+	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool
 }
 

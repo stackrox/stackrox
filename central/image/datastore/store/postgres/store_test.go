@@ -51,7 +51,7 @@ func (s *ImagesStoreSuite) TestStore() {
 
 	Destroy(ctx, pool)
 
-	gormDB := pgtest.OpenGormDB(s.T(), source, false)
+	gormDB := pgtest.OpenGormDB(s.T(), source)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	store := CreateTableAndNewStore(ctx, pool, gormDB, false)
 
