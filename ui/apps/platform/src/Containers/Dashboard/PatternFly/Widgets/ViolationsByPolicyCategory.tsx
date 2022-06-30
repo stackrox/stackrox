@@ -246,6 +246,7 @@ function ViolationsByPolicyCategoryChart({
                     // TODO Auto-adjust padding based on screen size and/or max text length, if possible
                     left: 180, // left padding is dependent on the length of the text on the left axis
                     bottom: 55, // Adjusted to accommodate legend
+                    right: 35,
                 }}
                 theme={chartTheme}
             >
