@@ -8,7 +8,7 @@ set -euo pipefail
 make_test_bin() {
     info "Making test-bin"
 
-    make cli upgrader
+    make cli-build upgrader
     install_built_roxctl_in_gopath
 }
 

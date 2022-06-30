@@ -843,6 +843,12 @@ handle_nightly_runs() {
         die "Only for OpenShift CI"
     fi
 
+    if ! is_in_PR_context; then
+        info "Debug:"
+        echo "JOB_NAME: ${JOB_NAME:-}"
+        echo "JOB_NAME_SAFE: ${JOB_NAME_SAFE:-}"
+    fi
+
     local nightly_tag_prefix
     nightly_tag_prefix="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-"
     if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
@@ -872,12 +878,20 @@ handle_nightly_roxctl_mismatch() {
     # periodics, so the roxctl produced in that step will cause deploy.sh to
     # fail.
 
-    info "Correcting roxctl version for nightly e2e tests"
+    if ! is_in_PR_context; then
+        info "Debug:"
+        echo "JOB_NAME: ${JOB_NAME:-}"
+        echo "JOB_NAME_SAFE: ${JOB_NAME_SAFE:-}"
+    fi
 
-    roxctl version
-    make cli
-    install_built_roxctl_in_gopath
-    roxctl version
+    info "Correcting roxctl version for nightly e2e tests"
+    echo "Current roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
+
+    if ! [[ "$(roxctl version || true)" =~ nightly ]]; then
+        make cli-build
+        install_built_roxctl_in_gopath
+        echo "Replacement roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
+    fi
 }
 
 validate_expected_go_version() {
