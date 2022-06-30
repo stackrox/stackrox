@@ -508,10 +508,20 @@ func TestImagePruning(t *testing.T) {
 		},
 	}
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Cluster)))
+	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
+		[]permissions.ResourceWithAccess{
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Risk),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Alert),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Deployment),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Image),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Risk),
+		})
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -561,6 +571,9 @@ func TestImagePruning(t *testing.T) {
 }
 
 func TestClusterPruning(t *testing.T) {
+	if !features.DecommissionedClusterRetention.Enabled() {
+		t.Skip("Skipping cluster pruning tests because decommissioned cluster retention feature is turned off")
+	}
 	var cases = []struct {
 		name        string
 		config 	    *storage.Config
@@ -610,17 +623,22 @@ func TestClusterPruning(t *testing.T) {
 		},
 	}
 
-	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
-		[]permissions.ResourceWithAccess{
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Risk),
-			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Cluster),
-		})
+	//scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
+	//	[]permissions.ResourceWithAccess{
+	//		resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
+	//		resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
+	//		resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
+	//		resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
+	//		resourceWithAccess(storage.Access_READ_ACCESS, resources.Risk),
+	//		resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Cluster),
+	//	})
+	//
+	//ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Cluster)))
 
 
 
