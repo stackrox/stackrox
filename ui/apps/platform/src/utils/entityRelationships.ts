@@ -31,9 +31,6 @@ export const useCaseEntityMap = {
         ...baseEntities,
         entityTypes.IMAGE,
         entityTypes.COMPONENT,
-        // @TODO: Uncomment the following and delete the Component type when we move to the new types
-        // entityTypes.NODE_COMPONENT,
-        // entityTypes.IMAGE_COMPONENT,
     ],
 };
 
