@@ -389,9 +389,9 @@ func (e *email) send(ctx context.Context, m *message) error {
 		}
 	}
 
-	if err = client.Auth(auth); err != nil {
+	/*if err = client.Auth(auth); err != nil {
 		return createError("SMTP authentication failed", err)
-	}
+	}*/
 
 	if err = client.Mail(e.config.GetSender()); err != nil {
 		return createError("SMTP MAIL command failed", err)
