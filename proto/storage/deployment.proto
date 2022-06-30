@@ -98,11 +98,11 @@ message Volume {
         HOST_TO_CONTAINER = 1;
         BIDIRECTIONAL     = 2;
     }
-    string name                        = 1 [(gogoproto.moretags) = "search:\"Volume Name,store\""];
-    string source                      = 2 [(gogoproto.moretags) = "search:\"Volume Source,store\""];
-    string destination                 = 3 [(gogoproto.moretags) = "search:\"Volume Destination,store\""];
-    bool read_only                     = 4 [(gogoproto.moretags) = "search:\"Volume ReadOnly,store\""];
-    string type                        = 5 [(gogoproto.moretags) = "search:\"Volume Type,store\""];
+    string name                        = 1 [(gogoproto.moretags) = "policy:\"Volume Name\""];
+    string source                      = 2 [(gogoproto.moretags) = "policy:\"Volume Source\""];
+    string destination                 = 3 [(gogoproto.moretags) = "policy:\"Volume Destination\""];
+    bool read_only                     = 4 [(gogoproto.moretags) = "policy:\"Volume ReadOnly\""];
+    string type                        = 5 [(gogoproto.moretags) = "policy:\"Volume Type\""];
     MountPropagation mount_propagation = 6 [(gogoproto.moretags) = "policy:\"Mount Propagation\""];
 }
 

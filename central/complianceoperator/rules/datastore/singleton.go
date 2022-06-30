@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"fmt"
+
 	store "github.com/stackrox/rox/central/complianceoperator/rules/store"
 	"github.com/stackrox/rox/central/complianceoperator/rules/store/postgres"
 	"github.com/stackrox/rox/central/complianceoperator/rules/store/rocksdb"
@@ -29,6 +31,7 @@ func Singleton() DataStore {
 		var err error
 		ds, err = NewDatastore(storage)
 		utils.CrashOnError(err)
+		fmt.Println(err)
 	})
 	return ds
 }
