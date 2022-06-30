@@ -23,10 +23,26 @@ env:
   jira_projects: ROX, RS, RTOOLS
   slack_channel: C03KSV3N6N8 #test-release-automation
   script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{github.event.repository.default_branch}}
-  DRY_RUN: ${{ fromJSON('["true", "false"]')[inputs.dry-run != 'true'] }}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
+  run-parameters:
+    name: Run parameters
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
+          echo "Event: ${{github.event_name}}" >>"$GITHUB_STEP_SUMMARY"
+          if [ "${{github.event_name}}" = "workflow_dispatch" ]; then
+            cat <<EOF >>"$GITHUB_STEP_SUMMARY"
+          \`\`\`
+          ${{toJSON(inputs)}}
+          \`\`\`
+          EOF
+          fi
+
   variables:
     name: Setup variables
     uses: ./.github/workflows/variables.yml
@@ -41,7 +57,6 @@ jobs:
       - name: Query JIRA
         env:
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
@@ -55,8 +70,6 @@ jobs:
     name: Postpone open PRs
     needs: variables
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Check open PRs
         id: check
@@ -102,7 +115,7 @@ jobs:
           echo "The following PRs are still open: $PRS"
 
           for PR in $PRS; do
-            [ "${{inputs.dry-run}}" != "true" ] && \
+            [ "$DRY_RUN" != "true" ] && \
             gh pr edit $PR \
               --milestone "${{needs.variables.outputs.next-milestone}}" \
               --repo "${{github.repository}}"
@@ -126,9 +139,7 @@ jobs:
       - run: |
           # Could be optimized: done only if there are closed PRs to cherry-pick
           git fetch origin ${{env.main_branch}}:${{env.main_branch}} --unshallow
-      - env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        name: Cherry-pick commits from the main branch
+      - name: Cherry-pick commits from the main branch
         id: cherry-pick
         run: |
           set -uo pipefail
@@ -203,8 +214,6 @@ jobs:
     needs: [variables, cut-rc]
     if: failure() && inputs.dry-run != 'true'
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Reopen milestone ${{needs.variables.outputs.milestone}}
         if: inputs.dry-run != 'true'
@@ -218,8 +227,6 @@ jobs:
     name: Publish a GitHub pre-release
     needs: [variables, cut-rc]
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Create GitHub Pre-release
         id: pre-release
