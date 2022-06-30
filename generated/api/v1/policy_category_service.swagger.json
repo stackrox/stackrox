@@ -11,7 +11,7 @@
     "application/json"
   ],
   "paths": {
-    "/v1/policyCategories": {
+    "/v1/policycategories": {
       "get": {
         "summary": "GetPolicyCategories returns the list of policy categories",
         "operationId": "PolicyCategoryService_GetPolicyCategories",
@@ -130,7 +130,7 @@
         ]
       }
     },
-    "/v1/policyCategories/{id}": {
+    "/v1/policycategories/{id}": {
       "get": {
         "summary": "GetPolicyCategory returns the requested policy category by ID.",
         "operationId": "PolicyCategoryService_GetPolicyCategory",
@@ -252,7 +252,7 @@
           "type": "string"
         }
       },
-      "title": "Note: Needed to rename these messages, since we cannot deprecate the existing category messages in policy_service.proto until 72"
+      "description": "Note: Needed to rename these messages, since we cannot deprecate the existing category messages in policy_service.proto until 72\nIn 72, once older messages are deprecated, these messages will be renamed."
     },
     "v1Pagination": {
       "type": "object",

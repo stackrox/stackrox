@@ -511,15 +511,15 @@ func RegisterPolicyCategoryServiceHandlerClient(ctx context.Context, mux *runtim
 }
 
 var (
-	pattern_PolicyCategoryService_GetPolicyCategory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "policyCategories", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_PolicyCategoryService_GetPolicyCategory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "policycategories", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_PolicyCategoryService_GetPolicyCategories_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "policyCategories"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_PolicyCategoryService_GetPolicyCategories_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "policycategories"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_PolicyCategoryService_PostPolicyCategory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "policyCategories"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_PolicyCategoryService_PostPolicyCategory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "policycategories"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_PolicyCategoryService_RenamePolicyCategory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "policyCategories"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_PolicyCategoryService_RenamePolicyCategory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "policycategories"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_PolicyCategoryService_DeletePolicyCategory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "policyCategories", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_PolicyCategoryService_DeletePolicyCategory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "policycategories", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
