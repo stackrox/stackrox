@@ -2,8 +2,10 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/analystnotes"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
@@ -14,7 +16,6 @@ import (
 	"github.com/stackrox/rox/central/deployment/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
 	"github.com/stackrox/rox/central/deployment/store/postgres"
-	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
@@ -22,6 +23,7 @@ import (
 	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
+	processIndicatorFilter "github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -32,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -63,7 +66,8 @@ type DataStore interface {
 	GetDeploymentIDs(ctx context.Context) ([]string, error)
 }
 
-func newDataStore(storage store.Store, graphProvider graph.Provider, processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
+func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpool.Pool,
+	processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
@@ -71,7 +75,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 	var deploymentIndexer index.Indexer
 	var searcher search.Searcher
 	if features.PostgresDatastore.Enabled() {
-		deploymentIndexer = postgres.NewIndexer(globaldb.GetPostgres())
+		deploymentIndexer = postgres.NewIndexer(pool)
 		searcher = search.NewV2(storage, deploymentIndexer)
 	} else {
 		deploymentIndexer = index.New(bleveIndex, processIndex)
@@ -93,15 +97,73 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 }
 
 // New creates a deployment datastore based on dackbox
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Pool,
+	processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
 	var storage store.Store
 	if features.PostgresDatastore.Enabled() {
-		storage = postgres.NewFullStore(context.TODO(), globaldb.GetPostgres())
+		storage = postgres.NewFullStore(context.TODO(), pool)
 	} else {
 		storage = dackBoxStore.New(dacky, keyFence)
 	}
-	return newDataStore(storage, dacky, processTagsStore, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+	return newDataStore(storage, dacky, pool, processTagsStore, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgres.FullStoreWrap(postgres.New(pool))
+	indexer := postgres.NewIndexer(pool)
+	searcher := search.NewV2(dbstore, indexer)
+	imageStore, err := imageDS.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	processBaselineStore, err := pbDS.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	networkFlowClusterStore, err := nfDS.GetTestPostgresClusterDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	processFilter := processIndicatorFilter.Singleton()
+	clusterRanker := ranking.ClusterRanker()
+	namespaceRanker := ranking.NamespaceRanker()
+	deploymentRanker := ranking.DeploymentRanker()
+	return newDatastoreImpl(dbstore, nil, indexer, searcher, imageStore, processBaselineStore,
+		networkFlowClusterStore, riskStore, nil, processFilter, clusterRanker,
+		namespaceRanker, deploymentRanker), nil
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
+	imageStore, err := imageDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
+	if err != nil {
+		return nil, err
+	}
+	processBaselineStore, err := pbDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
+	if err != nil {
+		return nil, err
+	}
+	networkFlowClusterStore, err := nfDS.GetTestRocksBleveClusterDataStore(t, rocksengine)
+	if err != nil {
+		return nil, err
+	}
+	riskStore, err := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
+	if err != nil {
+		return nil, err
+	}
+	processFilter := processIndicatorFilter.Singleton()
+	clusterRanker := ranking.ClusterRanker()
+	namespaceRanker := ranking.NamespaceRanker()
+	deploymentRanker := ranking.DeploymentRanker()
+	return New(dacky, keyFence, nil, nil, bleveIndex, bleveIndex, imageStore,
+		processBaselineStore, networkFlowClusterStore, riskStore, nil,
+		processFilter, clusterRanker, namespaceRanker, deploymentRanker), nil
 }

@@ -2,14 +2,17 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/image/datastore/search"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	dackBoxStore "github.com/stackrox/rox/central/image/datastore/store/dackbox"
+	postgresStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
@@ -20,6 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -80,4 +84,28 @@ func NewWithPostgres(storage store.Store, index imageIndexer.Indexer, risks risk
 	ds := newDatastoreImpl(storage, index, search.NewV2(storage, index), risks, imageRanker, imageComponentRanker)
 	ds.initializeRankers()
 	return ds
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgresStore.New(pool, false)
+	indexer := postgresStore.NewIndexer(pool)
+	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	imageRanker := ranking.ImageRanker()
+	imageComponentRanker := ranking.ComponentRanker()
+	return NewWithPostgres(dbstore, indexer, riskStore, imageRanker, imageComponentRanker), nil
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
+	riskStore, err := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
+	if err != nil {
+		return nil, err
+	}
+	imageRanker := ranking.ImageRanker()
+	imageComponentRanker := ranking.ComponentRanker()
+	return New(dacky, keyFence, bleveIndex, bleveIndex, false, riskStore, imageRanker, imageComponentRanker), nil
 }
