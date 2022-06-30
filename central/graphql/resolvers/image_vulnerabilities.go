@@ -264,16 +264,6 @@ func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) 
 	return count != 0, nil
 }
 
-func (resolver *imageCVEResolver) temp(query *v1.Query) (context.Context, *v1.Query) {
-	ctx := resolver.ctx
-	scope, ok := scoped.GetScope(ctx)
-	if !ok || scope.Level != v1.SearchCategory_IMAGE_VULNERABILITIES {
-		return ctx, search.ConjunctionQuery(query, resolver.getImageCVEQuery())
-	}
-
-	return ctx, query
-}
-
 func (resolver *imageCVEResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
@@ -502,6 +492,10 @@ func (resolver *imageCVEResolver) CVE(ctx context.Context) string {
 	}
 
 	return baseInfo.Cve(ctx)
+}
+
+func (resolver *imageCVEResolver) ID(_ context.Context) graphql.ID {
+	return graphql.ID(resolver.data.GetId())
 }
 
 func (resolver *imageCVEResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
