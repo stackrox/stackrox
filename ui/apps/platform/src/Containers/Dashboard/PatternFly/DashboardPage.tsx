@@ -17,6 +17,7 @@ import ViolationsByPolicyCategory from './Widgets/ViolationsByPolicyCategory';
 import DeploymentsAtMostRisk from './Widgets/DeploymentsAtMostRisk';
 import AgingImages from './Widgets/AgingImages';
 import ViolationsByPolicySeverity from './Widgets/ViolationsByPolicySeverity';
+import ComplianceLevelsByStandard from './Widgets/ComplianceLevelsByStandard';
 
 function DashboardPage() {
     return (
@@ -59,6 +60,9 @@ function DashboardPage() {
                     </GridItem>
                     <GridItem lg={6}>
                         <AgingImages />
+                    </GridItem>
+                    <GridItem lg={6}>
+                        <ComplianceLevelsByStandard />
                     </GridItem>
                 </Grid>
             </PageSection>
