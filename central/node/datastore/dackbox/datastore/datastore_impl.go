@@ -142,12 +142,14 @@ func (ds *datastoreImpl) GetNode(ctx context.Context, id string) (*storage.Node,
 			return nil, false, err
 		}
 	}
+	log.Infof("fetching node %s", id)
 	node, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
 
 	ds.updateNodePriority(node)
+	log.Infof("found node %s", id)
 	return node, true, nil
 }
 
@@ -162,17 +164,21 @@ func (ds *datastoreImpl) GetNodesBatch(ctx context.Context, ids []string) ([]*st
 		}
 	}
 
+	log.Infof("fetching nodes %v", ids)
+
 	if ok {
 		nodes, _, err = ds.storage.GetMany(ctx, ids)
 		if err != nil {
 			return nil, err
 		}
+		log.Infof("found nodes %v", ids)
 	} else {
 		idsQuery := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.NodeID, ids...).ProtoQuery()
 		nodes, err = ds.SearchRawNodes(ctx, idsQuery)
 		if err != nil {
 			return nil, err
 		}
+		log.Infof("found nodes %v", ids)
 	}
 
 	ds.updateNodePriority(nodes...)
@@ -202,6 +208,7 @@ func (ds *datastoreImpl) UpsertNode(ctx context.Context, node *storage.Node) err
 	ds.updateComponentRisk(node)
 	enricher.FillScanStats(node)
 
+	log.Infof("upserting node %s", node.GetId())
 	if err := ds.storage.Upsert(ctx, node); err != nil {
 		return err
 	}
