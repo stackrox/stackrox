@@ -24,7 +24,7 @@ import { EntityComponentMap, ListComponentMap } from './UseCaseComponentMaps';
 const WorkflowListPageLayout = ({ location }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const useCaseEntityMap = getUseCaseEntityMap();
-    if (isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES')) {
+    if (isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES')) {
         const newTypes = useCaseEntityMap['vulnerability-management'].filter(
             (entityType) => entityType !== entityTypes.COMPONENT
         );
@@ -79,7 +79,7 @@ const WorkflowListPageLayout = ({ location }) => {
     }
 
     // TODO: remove all this feature flag check after VM updates have been live for one release
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
     const useCaseOptions = useCaseEntityMap[useCase].filter((option) => {
         if (showVmUpdates) {
             if (option === entityTypes.CVE) {

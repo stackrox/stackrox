@@ -20,7 +20,7 @@ let opnamesForDashboard = [
     'clustersWithMostOrchestratorIstioVulnerabilities',
 ];
 
-if (hasFeatureFlag('ROX_FRONTEND_VM_UDPATES')) {
+if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
     opnamesForDashboard = opnamesForDashboard.filter(
         (opname) => opname !== 'recentlyDetectedVulnerabilities'
     );
