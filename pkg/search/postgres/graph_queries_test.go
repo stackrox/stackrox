@@ -1,3 +1,6 @@
+//go:build sql_integration
+// +build sql_integration
+
 package postgres_test
 
 import (
@@ -309,7 +312,7 @@ func (s *GraphQueriesTestSuite) TestQueriesOnGrandParentValue() {
 			desc:              "query from parent",
 			queriedType:       "testparent1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
-			expectedResultIDs: []string{"1", "2"},
+			expectedResultIDs: []string{"1", "2", "4"},
 		},
 		{
 			desc:              "query from child",
