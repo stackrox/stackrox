@@ -45,12 +45,30 @@ jobs:
       patch: ${{steps.parse.outputs.patch}}
       rc: ${{steps.parse.outputs.rc}}
       name: ${{steps.parse.outputs.name}}
-      dash-name: ${{steps.parse.outputs.dash-name}}
       next-rc: ${{steps.parse.outputs.next-rc}}
+      dash-name: ${{steps.parse.outputs.dash-name}}
     steps:
       - id: parse
         env:
-          REGEX: 's/^([0-9]+\.[0-9]+)\.([0-9]+)(-([[:alnum:]]+(-[[:alnum:]]+)*))?(-rc\.([0-9]+))?$/\1 \2 \4 \7/p'
+          SCRIPT: |
+            import re
+            import sys
+
+            EXPR = r'(?P<release>\d+\.\d+)\.(?P<patch>\d+)(-(?P<name>\w+(-\w+)*))?(-rc\.(?P<rc>\d+))?$'
+
+            m = re.match(EXPR, sys.argv[1])
+            if not m:
+                exit(1)
+
+            rc = int(m.group('rc') or 1)
+
+            print(f'''
+            ::set-output name=release::{m.group('release')}
+            ::set-output name=patch::{m.group('patch')}
+            ::set-output name=name::{m.group('name') or ''}
+            ::set-output name=rc::{rc}
+            ::set-output name=next-rc::{rc+1}
+            ''')
         run: |
           set -u
           # Allowed versions examples:
@@ -59,19 +77,7 @@ jobs:
           # 1.2.3-alnum
           # 1.2.3-alnum-alnum
           # 1.2.3-alnum-rc.4
-          read -r RELEASE PATCH_NUMBER RELEASE_NAME RC_NUMBER <<<"$(sed -rn "$REGEX" <<<"${{inputs.version}}")"
-          if [ -z "$RELEASE" ] || [ -z "$PATCH_NUMBER" ]; then
+          if ! python3 - "${{inputs.version}}" <<<"$SCRIPT"; then
             echo "::error::Cannot parse ${{inputs.version}}: should be in a form of \`X.X.X[-name][-rc.X]\`, where \`X\` is a decimal number."
             exit 1
-          fi
-          if [ -z "$RC_NUMBER" ]; then RC_NUMBER=1; fi
-          NEXT_RC_NUMBER=$((RC_NUMBER+1))
-          echo "::set-output name=release::$RELEASE"
-          echo "::set-output name=patch::$PATCH_NUMBER"
-          echo "::set-output name=rc::$RC_NUMBER"
-          echo "::set-output name=name::$RELEASE_NAME"
-          echo "::set-output name=next-rc::$NEXT_RC_NUMBER"
-
-          if [ -n "$RELEASE_NAME" ]; then
-            echo "::set-output name=dash-name::-$RELEASE_NAME"
           fi

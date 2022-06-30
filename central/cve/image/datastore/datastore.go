@@ -2,12 +2,15 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/image/datastore/index"
 	"github.com/stackrox/rox/central/cve/image/datastore/search"
 	"github.com/stackrox/rox/central/cve/image/datastore/store"
+	"github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -43,4 +46,12 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 		return nil, err
 	}
 	return ds, nil
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgres.New(pool)
+	indexer := postgres.NewIndexer(pool)
+	searcher := search.New(dbstore, indexer)
+	return New(dbstore, indexer, searcher)
 }

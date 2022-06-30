@@ -12,7 +12,7 @@ import (
 	"k8s.io/utils/env"
 )
 
-// GetConnectionString returns a connection string for integration testing with Postgres
+// GetConnectionString returns a connection string for integration testing with Postgres.
 func GetConnectionString(_ *testing.T) string {
 	return GetConnectionStringWithDatabaseName(env.GetString("POSTGRES_DB", "postgres"))
 }
@@ -32,14 +32,14 @@ func GetConnectionStringWithDatabaseName(database string) string {
 	return src
 }
 
-// OpenGormDB opens a Gorm DB to the Postgres DB
+// OpenGormDB opens a Gorm DB to the Postgres DB.
 func OpenGormDB(t testing.TB, source string) *gorm.DB {
 	gormDB, err := gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
 	require.NoError(t, err, "failed to connect to connect with gorm db")
 	return gormDB
 }
 
-// CloseGormDB closes connection to a Gorm DB
+// CloseGormDB closes connection to a Gorm DB.
 func CloseGormDB(t testing.TB, db *gorm.DB) {
 	if db == nil {
 		return

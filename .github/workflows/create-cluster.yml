@@ -1,6 +1,10 @@
 name: Create Test Cluster
 on:
   workflow_call:
+    secrets:
+      INFRA_TOKEN:
+        description: Infra access token
+        required: true
     inputs:
       flavor:
         description: Flavor
@@ -31,11 +35,12 @@ jobs:
     steps:
       - name: Download infractl
         run: |
+          mkdir -p ~/.local/bin
           curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
           | jq -r ".result.fileChunk" \
           | base64 -d \
-          > infractl
-          chmod +x infractl
+          > ~/.local/bin/infractl
+          chmod +x ~/.local/bin/infractl
       - name: Create Cluster
         env:
           INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
@@ -43,13 +48,15 @@ jobs:
           set -u
           NAME="${{inputs.name}}"
 
-          if STATUS=$(./infractl get "${NAME//./-}"); then
+          if STATUS=$(infractl get "${NAME//./-}"); then
+            echo "*Cluster already exists:*" >> $GITHUB_STEP_SUMMARY
             echo "$STATUS" >> $GITHUB_STEP_SUMMARY
             if ! grep "Status:[ \t]*FAILED" <<< "$STATUS"; then
               echo "::notice::Cluster \`${NAME//./-}\` already exists."
               // TODO: wait for the cluster being created to finish.
               exit 0;
             fi
+            echo >> $GITHUB_STEP_SUMMARY
           fi
 
           OPTIONS=()
@@ -64,8 +71,9 @@ jobs:
             OPTIONS+=("$arg")
           done
 
-          ./infractl create "${{inputs.flavor}}" "${NAME//./-}" \
+          infractl create "${{inputs.flavor}}" "${NAME//./-}" \
             --lifespan "${{inputs.lifespan}}" \
             "${OPTIONS[@]}"
 
-          ./infractl get "${NAME//./-}" >> $GITHUB_STEP_SUMMARY
+          echo "*Cluster creation has been requested:*" >> $GITHUB_STEP_SUMMARY
+          infractl get "${NAME//./-}" >> $GITHUB_STEP_SUMMARY

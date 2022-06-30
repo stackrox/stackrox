@@ -480,7 +480,7 @@ is_tagged() {
 }
 
 is_nightly_run() {
-    [[ "${CIRCLE_TAG:-}" =~ ^nightly- ]]
+    [[ "${CIRCLE_TAG:-}" =~ -nightly- ]]
 }
 
 is_in_PR_context() {
@@ -857,6 +857,27 @@ handle_nightly_runs() {
         fi
         ci_export CIRCLE_TAG "${nightly_tag_prefix}${sha:0:8}"
     fi
+}
+
+handle_nightly_roxctl_mismatch() {
+    if ! is_OPENSHIFT_CI; then
+        die "Only for OpenShift CI"
+    fi
+
+    if is_in_PR_context || ! [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
+        return 0
+    fi
+
+    # JOB_NAME_SAFE is not set in test_binary_build_commands context for
+    # periodics, so the roxctl produced in that step will cause deploy.sh to
+    # fail.
+
+    info "Correcting roxctl version for nightly e2e tests"
+
+    roxctl version
+    make cli
+    install_built_roxctl_in_gopath
+    roxctl version
 }
 
 validate_expected_go_version() {

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/nodes/converter"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/sync"
@@ -109,7 +110,7 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.N
 
 	node.Scan = scan
 	if features.PostgresDatastore.Enabled() {
-		fillV2NodeVulnerabilities(node)
+		converter.FillV2NodeVulnerabilities(node)
 		for _, component := range node.GetScan().GetComponents() {
 			component.Vulns = nil
 		}
@@ -117,40 +118,6 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.N
 	FillScanStats(node)
 
 	return nil
-}
-
-func fillV2NodeVulnerabilities(node *storage.Node) {
-	for _, component := range node.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			component.Vulnerabilities = append(component.Vulnerabilities, &storage.NodeVulnerability{
-				CveBaseInfo: &storage.CVEInfo{
-					Cve:          vuln.GetCve(),
-					Summary:      vuln.GetSummary(),
-					Link:         vuln.GetLink(),
-					PublishedOn:  vuln.GetPublishedOn(),
-					CvssV3:       vuln.GetCvssV3(),
-					CvssV2:       vuln.GetCvssV2(),
-					ScoreVersion: cveInfoScoreVersion(vuln.GetScoreVersion()),
-				},
-				Cvss:         vuln.GetCvss(),
-				Severity:     vuln.GetSeverity(),
-				Snoozed:      vuln.GetSuppressed(),
-				SnoozeStart:  vuln.GetSuppressActivation(),
-				SnoozeExpiry: vuln.GetSuppressExpiry(),
-			})
-		}
-	}
-}
-
-func cveInfoScoreVersion(scoreVersion storage.EmbeddedVulnerability_ScoreVersion) storage.CVEInfo_ScoreVersion {
-	switch scoreVersion {
-	case storage.EmbeddedVulnerability_V3:
-		return storage.CVEInfo_V3
-	case storage.EmbeddedVulnerability_V2:
-		return storage.CVEInfo_V2
-	default:
-		return storage.CVEInfo_UNKNOWN
-	}
 }
 
 // FillScanStats fills in the higher level stats from the scan data.

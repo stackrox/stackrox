@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -32,7 +33,10 @@ func initialize() {
 	var dackBox *dackbox.DackBox
 	var keyFence concurrency.KeyFence
 	var bleveIndex, processIndex bleve.Index
-	if !features.PostgresDatastore.Enabled() {
+	var pool *pgxpool.Pool
+	if features.PostgresDatastore.Enabled() {
+		pool = globaldb.GetPostgres()
+	} else {
 		dackBox = globalDackBox.GetGlobalDackBox()
 		keyFence = globalDackBox.GetKeyFence()
 		bleveIndex = globalindex.GetGlobalIndex()
@@ -40,6 +44,7 @@ func initialize() {
 	}
 	ad = New(dackBox,
 		keyFence,
+		pool,
 		// Process Tag store will be removed in 72.0
 		processtagsstore.New(globaldb.GetGlobalDB()),
 		bleveIndex,
