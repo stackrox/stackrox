@@ -44,14 +44,14 @@ cherry_pick() {
     if git cherry-pick -x "$COMMIT"; then
         gh_summary "Cherry-picked $COMMIT from PR $PR"
 
-        [ "$DRY_RUN" != "true" ] &&
+        [ "$DRY_RUN" = "false" ] &&
             gh pr comment "$PR" --body "Merge commit has been cherry-picked to branch \`$BRANCH\`."
 
         PICKED=$((PICKED+1))
     else
         git cherry-pick --abort
 
-        [ "$DRY_RUN" != "true" ] &&
+        [ "$DRY_RUN" = "false" ] &&
             gh pr comment "$PR" --body "Please merge the changes to branch \`$BRANCH\`."
 
         gh_summary "* [PR $PR]($URL) by **${AUTHOR}** (_${TITLE}_) could not be cherry-picked. Merge commit: \`$COMMIT\`."
@@ -94,7 +94,7 @@ if [ -n "$PR_COMMITS" ]; then
     done <<<"$PR_COMMITS"
 
     if [ "$PICKED" -gt 0 ]; then
-        [ "$DRY_RUN" != "true" ] &&
+        [ "$DRY_RUN" = "false" ] &&
             git push
 
         gh_summary "Cherry-picked commits have been pushed to the release branch."
