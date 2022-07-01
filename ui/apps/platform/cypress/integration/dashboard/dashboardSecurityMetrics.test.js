@@ -50,7 +50,7 @@ describe('Dashboard security metrics phase one action widgets', () => {
 
         const widgetSelectors = selectors.violationsByCategory;
 
-        // Default sorting should be by severity of Violations, with critical taking priority.
+        // Default sorting should be by severity of critical and high Violations, with critical taking priority.
         cy.get(`${widgetSelectors.axisLabel(0, 4)}:contains('Privileges')`);
         cy.get(`${widgetSelectors.axisLabel(0, 3)}:contains('Vulnerability Management')`);
         cy.get(`${widgetSelectors.axisLabel(0, 2)}:contains('Security Best Practices')`);
@@ -62,11 +62,11 @@ describe('Dashboard security metrics phase one action widgets', () => {
         cy.get(widgetSelectors.volumeOption).click();
         cy.get(widgetSelectors.optionsToggle).click();
 
-        cy.get(`${widgetSelectors.axisLabel(0, 4)}:contains('Anomalous Activity')`);
-        cy.get(`${widgetSelectors.axisLabel(0, 3)}:contains('Docker CIS')`);
-        cy.get(`${widgetSelectors.axisLabel(0, 2)}:contains('Privileges')`);
-        cy.get(`${widgetSelectors.axisLabel(0, 1)}:contains('Network Tools')`);
-        cy.get(`${widgetSelectors.axisLabel(0, 0)}:contains('Vulnerability Management')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 4)}:contains('Network Tools')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 3)}:contains('Privileges')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 2)}:contains('Anomalous Activity')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 1)}:contains('Vulnerability Management')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 0)}:contains('Security Best Practices')`);
     });
 
     it('should allow toggling of severities for a policy violations by category widget', () => {
@@ -79,19 +79,19 @@ describe('Dashboard security metrics phase one action widgets', () => {
 
         const widgetSelectors = selectors.violationsByCategory;
 
-        // Sort by volume, so that disabling lower severity bars changes the order of the chart
+        // Sort by volume, so that enabling lower severity bars changes the order of the chart
         cy.get(widgetSelectors.optionsToggle).click();
         cy.get(widgetSelectors.volumeOption).click();
         cy.get(widgetSelectors.optionsToggle).click();
 
-        // Toggle off low and medium violations
+        // Toggle on low and medium violations, which are disabled by default
         cy.get(widgetSelectors.legendLabel(2)).click();
         cy.get(widgetSelectors.legendLabel(3)).click();
 
-        cy.get(`${widgetSelectors.axisLabel(0, 4)}:contains('Network Tools')`);
-        cy.get(`${widgetSelectors.axisLabel(0, 3)}:contains('Privileges')`);
-        cy.get(`${widgetSelectors.axisLabel(0, 2)}:contains('Anomalous Activity')`);
-        cy.get(`${widgetSelectors.axisLabel(0, 1)}:contains('Vulnerability Management')`);
-        cy.get(`${widgetSelectors.axisLabel(0, 0)}:contains('Security Best Practices')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 4)}:contains('Anomalous Activity')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 3)}:contains('Docker CIS')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 2)}:contains('Privileges')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 1)}:contains('Network Tools')`);
+        cy.get(`${widgetSelectors.axisLabel(0, 0)}:contains('Vulnerability Management')`);
     });
 });

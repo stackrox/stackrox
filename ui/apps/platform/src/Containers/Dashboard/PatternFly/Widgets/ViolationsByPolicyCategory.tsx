@@ -152,6 +152,8 @@ function tooltipForCategory(
 const chartTheme = cloneDeep(patternflySeverityTheme);
 chartTheme.legend.colorScale.reverse();
 
+const defaultHiddenSeverities = ['MEDIUM_SEVERITY', 'LOW_SEVERITY'] as const;
+
 function ViolationsByPolicyCategoryChart({
     alertGroups,
     sortType,
@@ -161,7 +163,9 @@ function ViolationsByPolicyCategoryChart({
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
-    const [hiddenSeverities, setHiddenSeverities] = useState<Set<PolicySeverity>>(new Set());
+    const [hiddenSeverities, setHiddenSeverities] = useState<Set<PolicySeverity>>(
+        new Set(defaultHiddenSeverities)
+    );
 
     const labelLinkCallback = useCallback(
         ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text), searchFilter),
