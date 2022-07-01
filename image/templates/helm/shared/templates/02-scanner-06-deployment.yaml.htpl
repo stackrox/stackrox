@@ -119,12 +119,12 @@ spec:
           failureThreshold: 6
           successThreshold: 1
         volumeMounts:
-        - mountPath: /etc/ssl
-          name: scanner-etc-ssl-volume
-        - mountPath: /etc/pki/ca-trust
-          name: scanner-etc-pki-volume
-        - mountPath: /usr/local/share/ca-certificates/
-          name: additional-ca-volume
+        - name: scanner-etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: scanner-etc-pki-volume
+          mountPath: /etc/pki/ca-trust
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
           readOnly: true
         - name: scanner-config-volume
           mountPath: /etc/scanner
@@ -139,7 +139,11 @@ spec:
           readOnly: true
         - name: scanner-db-password
           mountPath: /run/secrets/stackrox.io/secrets
+          readOnly: true
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
       serviceAccountName: scanner
       volumes:
       - name: additional-ca-volume
@@ -147,10 +151,10 @@ spec:
           defaultMode: 420
           optional: true
           secretName: additional-ca
-      - emptyDir: {}
-        name: scanner-etc-ssl-volume
-      - emptyDir: {}
-        name: scanner-etc-pki-volume
+      - name: scanner-etc-ssl-volume
+        emptyDir: {}
+      - name: scanner-etc-pki-volume
+        emptyDir: {}
       - name: scanner-config-volume
         configMap:
           name: scanner-config
@@ -249,21 +253,20 @@ spec:
           [< else ->]
           image: {{ ._rox.scanner.dbImage.fullRef | quote }}
           [< end ->]
-          command:
-          - /bin/sh
-          - -c
-          - |
-            mkdir -p /var/lib/postgresql/data
-            chmod 700 /var/lib/postgresql/data
-            chown -R postgres:postgres /var/lib/postgresql
+          env:
+            - name: POSTGRES_PASSWORD_FILE
+              value: "/run/secrets/stackrox.io/secrets/password"
           volumeMounts:
-            - name: db-data
+            - name: scanner-db-data
               mountPath: /var/lib/postgresql/data
-          securityContext:
-            runAsUser: 0
+            - name: scanner-db-tls-volume
+              mountPath: /run/secrets/stackrox.io/certs
+              readOnly: true
+            - name: scanner-db-password
+              mountPath: /run/secrets/stackrox.io/secrets
+              readOnly: true
       containers:
       - name: db
-        command: ["/usr/local/bin/docker-entrypoint.sh", "postgres", "-c", "config_file=/etc/postgresql.conf"]
         [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
         {{ if eq ._rox.scanner.mode "slim" -}}
         image: {{ ._rox.scanner.slimDBImage.fullRef | quote }}
@@ -273,26 +276,26 @@ spec:
         [< else ->]
         image: {{ ._rox.scanner.dbImage.fullRef | quote }}
         [< end ->]
+        env:
+          {{- include "srox.envVars" (list . "deployment" "scanner-db" "db") | nindent 10 }}
         ports:
-        - name: https-db
+        - name: tcp-postgresql
+          protocol: TCP
           containerPort: 5432
         resources:
           {{- ._rox.scanner._dbResources | nindent 10 }}
-        env:
-          {{- include "srox.envVars" (list . "deployment" "scanner-db" "db") | nindent 10 }}
-        securityContext:
-          runAsUser: 70
-          runAsGroup: 70
         volumeMounts:
-          - name: db-data
+          - name: scanner-db-data
             mountPath: /var/lib/postgresql/data
           - name: scanner-db-tls-volume
             mountPath: /run/secrets/stackrox.io/certs
-          - name: scanner-db-password
-            mountPath: /run/secrets/stackrox.io/secrets
+            readOnly: true
       serviceAccountName: scanner
       securityContext:
         fsGroup: 70
+        runAsGroup: 70
+        runAsNonRoot: true
+        runAsUser: 70
       volumes:
       - name: scanner-config-volume
         configMap:
@@ -311,7 +314,7 @@ spec:
             path: server.key
           - key: ca.pem
             path: root.crt
-      - name: db-data
+      - name: scanner-db-data
         emptyDir: {}
       - name: scanner-db-password
         secret:
