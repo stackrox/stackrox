@@ -14,9 +14,11 @@ import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { cveSortFields } from 'constants/sortFields';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
+// TODO: remove once ROX_FRONTEND_VM_UDPATES is enabled
 export const RECENTLY_DETECTED_VULNERABILITIES = gql`
-    query recentlyDetectedVulnerabilities(
+    query recentlyDetectedImageVulnerabilities(
         $query: String
         $scopeQuery: String
         $pagination: Pagination
@@ -36,16 +38,39 @@ export const RECENTLY_DETECTED_VULNERABILITIES = gql`
     }
 `;
 
-const processData = (data, workflowState) => {
+export const RECENTLY_DETECTED_IMAGE_VULNERABILITIES = gql`
+    query recentlyDetectedImageVulnerabilities(
+        $query: String
+        $scopeQuery: String
+        $pagination: Pagination
+    ) {
+        results: imageVulnerabilities(query: $query, pagination: $pagination) {
+            id
+            cve
+            cvss
+            scoreVersion
+            deploymentCount
+            imageCount
+            isFixable(query: $scopeQuery)
+            envImpact
+            createdAt
+            summary
+        }
+    }
+`;
+
+const processData = (data, workflowState, cveType) => {
     let results = data && data.results && data.results.filter((datum) => datum.createdAt);
     // @TODO: filter on the client side until multiple sorts, including derived fields, is supported by BE
     results = sortBy(results, ['createdAt', 'cvss', 'envImpact']).reverse();
 
     // @TODO: remove JSX generation from processing data and into Numbered List function
-    return getVulnerabilityChips(workflowState, results);
+    return getVulnerabilityChips(workflowState, results, cveType);
 };
 
-const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
+const RecentlyDetectedImageVulnerabilities = ({ entityContext, search, limit }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
     const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
 
     const queryObject = {
@@ -59,20 +84,23 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
         loading,
         data = {},
         error,
-    } = useQuery(RECENTLY_DETECTED_VULNERABILITIES, {
-        variables: {
-            query,
-            scopeQuery: queryService.objectToWhereClause(entityContextObject),
-            pagination: queryService.getPagination(
-                {
-                    id: cveSortFields.CVE_CREATED_TIME,
-                    desc: true,
-                },
-                0,
-                limit
-            ),
-        },
-    });
+    } = useQuery(
+        showVmUpdates ? RECENTLY_DETECTED_IMAGE_VULNERABILITIES : RECENTLY_DETECTED_VULNERABILITIES,
+        {
+            variables: {
+                query,
+                scopeQuery: queryService.objectToWhereClause(entityContextObject),
+                pagination: queryService.getPagination(
+                    {
+                        id: cveSortFields.CVE_CREATED_TIME,
+                        desc: true,
+                    },
+                    0,
+                    limit
+                ),
+            },
+        }
+    );
 
     let content = <Loader />;
 
@@ -85,7 +113,11 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
 
             content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
         } else {
-            const processedData = processData(data, workflowState);
+            const processedData = processData(
+                data,
+                workflowState,
+                showVmUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE
+            );
 
             if (!processedData || processedData.length === 0) {
                 content = (
@@ -106,14 +138,14 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
     }
 
     const viewAllURL = workflowState
-        .pushList(entityTypes.CVE)
+        .pushList(showVmUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE)
         .setSort([{ id: cveSortFields.CVE_CREATED_TIME, desc: true }])
         .toUrl();
 
     return (
         <Widget
             className="h-full pdf-page"
-            header="Recently Detected Vulnerabilities"
+            header={`Recently Detected ${showVmUpdates ? 'Image ' : ''}Vulnerabilities`}
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
@@ -121,16 +153,16 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
     );
 };
 
-RecentlyDetectedVulnerabilities.propTypes = {
+RecentlyDetectedImageVulnerabilities.propTypes = {
     entityContext: PropTypes.shape({}),
     search: PropTypes.shape({}),
     limit: PropTypes.number,
 };
 
-RecentlyDetectedVulnerabilities.defaultProps = {
+RecentlyDetectedImageVulnerabilities.defaultProps = {
     entityContext: {},
     search: {},
     limit: 5,
 };
 
-export default RecentlyDetectedVulnerabilities;
+export default RecentlyDetectedImageVulnerabilities;
