@@ -151,3 +151,9 @@ export type PolicyMitreAttackVector = {
     tactic: string; // tactic id
     techniques: string[]; // technique ids
 };
+
+export type PolicyCategory = {
+    id: string;
+    name: string;
+    isDefault: boolean;
+};

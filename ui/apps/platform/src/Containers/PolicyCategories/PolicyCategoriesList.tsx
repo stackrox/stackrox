@@ -2,24 +2,22 @@ import React from 'react';
 import { SimpleList, SimpleListItem } from '@patternfly/react-core';
 
 type PolicyCategoriesListProps = {
-    // policyCategories: {
-    //     id: string;
-    //     name: string;
-    //     isDefault: boolean;
-    // }[];
-    policyCategories: string[];
+    policyCategories: {
+        id: string;
+        name: string;
+        isDefault: boolean;
+    }[];
 };
 
 function PolicyCategoriesList({ policyCategories }: PolicyCategoriesListProps) {
     return (
         <SimpleList onSelect={() => {}}>
-            {policyCategories.map((name, idx) => (
+            {policyCategories.map(({ id, name, isDefault }) => (
                 <SimpleListItem
-                    // eslint-disable-next-line react/no-array-index-key
-                    key={idx}
+                    key={id}
                     onClick={() => {}}
                     isActive={false}
-                    componentProps={{ isDisabled: false }}
+                    componentProps={{ isDisabled: isDefault }}
                 >
                     {name}
                 </SimpleListItem>

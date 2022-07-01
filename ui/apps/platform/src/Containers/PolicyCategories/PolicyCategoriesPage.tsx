@@ -41,7 +41,7 @@ function PolicyCategoriesPage(): React.ReactElement {
         );
     }
 
-    if (!isLoading && !errorMessage && policyCategories.length > 0) {
+    if (!isLoading && !errorMessage) {
         pageContent = <PolicyCategoriesListSection policyCategories={policyCategories} />;
     }
 
