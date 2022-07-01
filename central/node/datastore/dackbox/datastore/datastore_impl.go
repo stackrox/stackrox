@@ -274,6 +274,6 @@ func (ds *datastoreImpl) updateNodePriority(nodes ...*storage.Node) {
 
 func (ds *datastoreImpl) updateComponentRisk(node *storage.Node) {
 	for _, component := range node.GetScan().GetComponents() {
-		component.RiskScore = ds.nodeComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), ""))
+		component.RiskScore = ds.nodeComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), node.GetScan().GetOperatingSystem()))
 	}
 }

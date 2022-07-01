@@ -3,7 +3,6 @@ package common
 import (
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
@@ -26,10 +25,6 @@ func Split(image *storage.Image, withComponents bool) ImageParts {
 		parts.Image.Scan.Components = nil
 	}
 	return parts
-}
-
-func splitListImage(parts ImageParts) *storage.ListImage {
-	return types.ConvertImageToListImage(parts.Image)
 }
 
 func splitComponents(parts ImageParts) []ComponentParts {

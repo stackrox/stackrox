@@ -162,17 +162,17 @@ func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 }
 
 // UpdateVulnState mocks base method.
-func (m *MockStore) UpdateVulnState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
+func (m *MockStore) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateVulnState", ctx, cve, images, state)
+	ret := m.ctrl.Call(m, "UpdateVulnState", ctx, cve, imageIDs, state)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateVulnState indicates an expected call of UpdateVulnState.
-func (mr *MockStoreMockRecorder) UpdateVulnState(ctx, cve, images, state interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpdateVulnState(ctx, cve, imageIDs, state interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnState", reflect.TypeOf((*MockStore)(nil).UpdateVulnState), ctx, cve, images, state)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnState", reflect.TypeOf((*MockStore)(nil).UpdateVulnState), ctx, cve, imageIDs, state)
 }
 
 // Upsert mocks base method.
