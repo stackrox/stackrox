@@ -283,16 +283,6 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	// We still want to ensure it is properly cleared when the deployment is deleted.
 	ds.processFilter.Delete(id)
 
-	err := ds.keyedMutex.DoStatusWithLock(id, func() error {
-		if err := ds.deploymentStore.Delete(ctx, id); err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
 	errorList := errorhelpers.NewErrorList("deleting related objects of deployments")
 	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -315,6 +305,17 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	}
 
 	if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {
+		errorList.AddError(err)
+	}
+
+	// Delete should be last to ensure that the above is always cleaned up even in the case of crash
+	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
+		if err := ds.deploymentStore.Delete(ctx, id); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		errorList.AddError(err)
 	}
 
