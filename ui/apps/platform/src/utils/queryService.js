@@ -42,10 +42,14 @@ function objectToWhereClause(query, delimiter = '+') {
             if (typeof value === 'undefined' || value === '') {
                 return acc;
             }
-            const flatValue = Array.isArray(value) ? value.join() : value;
-            const needsExactMatch =
-                key.toLowerCase().indexOf(' id') !== -1 && value.indexOf(',') === -1;
-            const queryValue = needsExactMatch ? `"${flatValue}"` : flatValue;
+            const valueArray = Array.isArray(value) ? value : [value];
+            const queryValue = valueArray
+                .map((val) => {
+                    const needsExactMatch =
+                        key.toLowerCase().indexOf(' id') !== -1 && val.indexOf(',') === -1;
+                    return needsExactMatch ? `"${val}"` : val;
+                })
+                .join();
             return `${acc}${key}:${queryValue}${delimiter}`;
         }, '')
         .slice(0, -delimiter.length);
