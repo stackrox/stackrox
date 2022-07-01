@@ -83,16 +83,16 @@ export function fetchClustersWithRetentionInfo(
         );
     }
     return axios.get<ClustersResponse>(`${clustersUrl}${queryString}`).then((response) => {
-        return response?.data;
+        return response.data;
     });
 }
 
 /*
- * Fetch secured cluster and its retention information by ID.
+ * Fetch secured cluster and its retention information.
  */
-export function fetchClusterWithRetentionInformationById(id: string): Promise<ClusterResponse> {
+export function fetchClusterWithRetentionInformation(id: string): Promise<ClusterResponse> {
     return axios.get<ClusterResponse>(`${clustersUrl}/${id}`).then((response) => {
-        return response?.data;
+        return response.data;
     });
 }
 

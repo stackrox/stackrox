@@ -14,7 +14,7 @@ import { useTheme } from 'Containers/ThemeProvider';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import {
-    fetchClusterWithRetentionInformationById,
+    fetchClusterWithRetentionInformation,
     saveCluster,
     downloadClusterYaml,
     getClusterDefaults,
@@ -125,7 +125,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                 setMessageState(null);
                 setIsBlocked(false);
                 // don't want to cache or memoize, because we always want the latest real-time data
-                fetchClusterWithRetentionInformationById(clusterIdToRetrieve)
+                fetchClusterWithRetentionInformation(clusterIdToRetrieve)
                     .then((clusterResponse) => {
                         const { cluster } = clusterResponse;
                         // eslint-disable-next-line no-param-reassign
