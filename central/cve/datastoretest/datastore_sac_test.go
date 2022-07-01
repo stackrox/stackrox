@@ -431,9 +431,6 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsSingleScopeOnly() {
 	cveId := s.getImageCVEID(cveName)
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				//s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.imageTestContexts[c.contextKey]
 			exists, err := s.imageCVEStore.Exists(testCtx, cveId)
 			s.NoError(err)
@@ -451,9 +448,6 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsSharedAcrossComponents()
 	cveId := s.getImageCVEID(cveName)
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				//s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.imageTestContexts[c.contextKey]
 			exists, err := s.imageCVEStore.Exists(testCtx, cveId)
 			s.NoError(err)
@@ -471,9 +465,6 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsFromSharedComponent() {
 	cveId := s.getImageCVEID(cveName)
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				//s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.imageTestContexts[c.contextKey]
 			exists, err := s.imageCVEStore.Exists(testCtx, cveId)
 			s.NoError(err)
@@ -492,9 +483,6 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 	cvss := targetCVE.GetCvss()
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				//s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.imageTestContexts[c.contextKey]
 			imageCVE, found, err := s.imageCVEStore.Get(testCtx, cveId)
 			s.NoError(err)
@@ -520,9 +508,6 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSharedAcrossComponents() {
 	cvss := targetCVE.GetCvss()
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				//s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.imageTestContexts[c.contextKey]
 			imageCVE, found, err := s.imageCVEStore.Get(testCtx, cveId)
 			s.NoError(err)
@@ -548,9 +533,6 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetFromSharedComponent() {
 	cvss := targetCVE.GetCvss()
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				//s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.imageTestContexts[c.contextKey]
 			imageCVE, found, err := s.imageCVEStore.Get(testCtx, cveId)
 			s.NoError(err)
@@ -587,9 +569,6 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetBatch() {
 	}
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				//s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.imageTestContexts[c.contextKey]
 			imageCVEs, err := s.imageCVEStore.GetBatch(testCtx, cveIDs)
 			s.NoError(err)
@@ -645,9 +624,6 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsSingleScopeOnly() {
 	cveId := s.getNodeCVEID(cveName)
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.nodeTestContexts[c.contextKey]
 			exists, err := s.nodeCVEStore.Exists(testCtx, cveId)
 			s.NoError(err)
@@ -665,9 +641,6 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsSharedAcrossComponents() 
 	cveId := s.getNodeCVEID(cveName)
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.nodeTestContexts[c.contextKey]
 			exists, err := s.nodeCVEStore.Exists(testCtx, cveId)
 			s.NoError(err)
@@ -685,9 +658,6 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsFromSharedComponent() {
 	cveId := s.getNodeCVEID(cveName)
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.nodeTestContexts[c.contextKey]
 			exists, err := s.nodeCVEStore.Exists(testCtx, cveId)
 			s.NoError(err)
@@ -706,9 +676,6 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSingleScopeOnly() {
 	cvss := targetCVE.GetCvss()
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.nodeTestContexts[c.contextKey]
 			nodeCVE, found, err := s.nodeCVEStore.Get(testCtx, cveId)
 			s.NoError(err)
@@ -734,9 +701,6 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSharedAcrossComponents() {
 	cvss := targetCVE.GetCvss()
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.nodeTestContexts[c.contextKey]
 			nodeCVE, found, err := s.nodeCVEStore.Get(testCtx, cveId)
 			s.NoError(err)
@@ -762,9 +726,6 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetFromSharedComponent() {
 	cvss := targetCVE.GetCvss()
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.nodeTestContexts[c.contextKey]
 			nodeCVE, found, err := s.nodeCVEStore.Get(testCtx, cveId)
 			s.NoError(err)
@@ -801,9 +762,6 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetBatch() {
 	}
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
-			if features.PostgresDatastore.Enabled() {
-				s.T().Skip("Skipping CVE tests for postgres for now.")
-			}
 			testCtx := s.nodeTestContexts[c.contextKey]
 			nodeCVEs, err := s.nodeCVEStore.GetBatch(testCtx, cveIDs)
 			s.NoError(err)
