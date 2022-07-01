@@ -254,7 +254,7 @@ function ViolationsByPolicyCategoryChart({
                 <ChartAxis
                     tickLabelComponent={<LinkableChartLabel linkWith={labelLinkCallback} />}
                 />
-                <ChartAxis dependentAxis />
+                <ChartAxis dependentAxis tickFormat={String} />
                 <ChartStack horizontal>{bars}</ChartStack>
             </Chart>
         </div>
