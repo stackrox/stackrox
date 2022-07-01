@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -30,7 +29,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestImageDataStoreWithPostgres(t *testing.T) {
+func TestImageDataStoreWithPostgresTestImageDataStoreWithPostgres(t *testing.T) {
 	suite.Run(t, new(ImagePostgresDataStoreTestSuite))
 }
 
@@ -208,7 +207,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 
 	for _, component := range cloned.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
-			err := s.datastore.UpdateVulnerabilityState(ctx, cve.ID(vuln.GetCve(), cloned.GetScan().GetOperatingSystem()), []string{cloned.GetId()}, storage.VulnerabilityState_DEFERRED)
+			err := s.datastore.UpdateVulnerabilityState(ctx, vuln.GetCve(), []string{cloned.GetId()}, storage.VulnerabilityState_DEFERRED)
 			s.NoError(err)
 		}
 	}
