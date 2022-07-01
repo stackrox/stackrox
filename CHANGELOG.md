@@ -6,6 +6,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+- ROX-8051: The default collection method is changed from KernelModule to eBPF, following improved eBPF performance in collector.
 - ROX-11349: Updated rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
 - ROX-11443: The default value for `--include-snoozed` option of `roxctl image scan` command is set to `false`. The result of `roxctl image scan` execution without `--include-snoozed` flag will not include deferred CVEs anymore.
 - ROX-9292: The default expiration time of tokens issued by auth providers has been lowered to 12 hours.
@@ -26,7 +27,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - These endpoints are deprecated as license files are not required to run the platform
 - `firstNodeOccurrence` field of `storage.Node` object, which is in the response of Node endpoints, has been removed.
 - `vulns` fields of `storage.Node` object, which is in the response payload of `v1/nodes` is deprecated and will be removed in future release.
-- `/v1/cves/suppress` and `/v1/cves/unsuppress` has been deprecated and will be removed in the future. 
+- `/v1/cves/suppress` and `/v1/cves/unsuppress` has been deprecated and will be removed in the future.
   - Use `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` to snooze and unsnooze image  vulnerabilities.
   - Use `/v1/nodecves/suppress` and `/v1/nodecves/unsuppress` to snooze and unsnooze node/host vulnerabilities.
   - Use `/v1/platformcves/suppress` and `/v1/platformcves/unsuppress` to snooze and unsnooze platform (k8s, istio, and openshift) vulnerabilities.
@@ -53,7 +54,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A new default policy added to detect Spring Cloud Function RCE vulnerability (CVE-2022-22963) and Spring Framework Spring4Shell RCE vulnerability (CVE-2022-22965).
 - Fixed permissions checks in the UI that prevented users with certain limited permissions from creating report configurations.
 - ROX-8957: A new default policy added to detect missing ingress NetworkPolicy associated with deployments. The policy is disabled by default.
-  - Two new policy criteria were added to alert on missing ingress or egress NetworkPolicy associations. 
+  - Two new policy criteria were added to alert on missing ingress or egress NetworkPolicy associations.
 - ROX-8789: Change operator catalog format from deprecated SQLite database format to new file-based format.
 - ROX-8331: Increase the front-end limit on rendered nodes in the Network Graph from 1100 to 2000
 - ROX-9792: Introduced central limit of 2000 nodes in a Network Graph to avoid out-of-memory crashes
@@ -69,7 +70,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-10097: Updated the base for the docs image from `nginx-118:1-46` to `nginx-120:latest`.
 - ROX-10666: `FROM` option will be deprecated from `Disallowed Dockerfile line` policy field and removed in a future release. Any policies containing `Disallowed dockerfile line` policy field with `FROM` option must be updated to remove those policy sections. For more information, please refer "Known Issues" section in Red-Hat ACS 3.69 release notes.
 - ROX-10270: The `RenamePolicyCategory` and `DeletePolicyCategory` methods in the
-`v1/policycategories` endpoint have been deprecated, and will be removed in future releases. 
+`v1/policycategories` endpoint have been deprecated, and will be removed in future releases.
   - For questions about this change, please contact the Red Hat support team at support@redhat.com.
 - ROX-10018: The policy `OpenShift: Kubeadmin Secret Accessed` will no longer trigger if the request was from the default OpenShift `oauth-apiserver-sa` service account, because this is an expected access pattern for the OpenShift apiserver.
 - Violation tags and process tags are deprecated, and will be removed in version 3.72.0.
