@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -74,7 +75,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoTestChild1P4(ctx context.Context, tx pgx.Tx, obj *storage.TestChild1P4) error {
+func insertIntoTestChild1P4(ctx context.Context, batch *pgx.Batch, obj *storage.TestChild1P4) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -90,10 +91,7 @@ func insertIntoTestChild1P4(ctx context.Context, tx pgx.Tx, obj *storage.TestChi
 	}
 
 	finalStr := "INSERT INTO test_child1_p4 (Id, ParentId, Val, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -199,18 +197,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestChild1P4) e
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoTestChild1P4(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoTestChild1P4(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
+		batchResults.Close()
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}
