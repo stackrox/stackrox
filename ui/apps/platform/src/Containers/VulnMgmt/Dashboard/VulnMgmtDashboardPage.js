@@ -23,6 +23,7 @@ import RecentlyDetectedVulnerabilities from '../widgets/RecentlyDetectedVulnerab
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
 import ClustersWithMostOrchestratorIstioVulnerabilities from '../widgets/ClustersWithMostOrchestratorIstioVulnerabilities';
+import CvesMenu from './CvesMenu';
 
 const baseEntityMenuTypes = [entityTypes.CLUSTER, entityTypes.NAMESPACE, entityTypes.DEPLOYMENT];
 const componentMenuType = [entityTypes.COMPONENT];
@@ -78,16 +79,18 @@ const VulnDashboardPage = ({ history }) => {
             <PageTitle title="Vulnerability Management - Dashboard" />
             <div className="flex items-center">
                 <div className="flex h-full mr-3 pr-3 border-r-2 border-base-400">
-                    <PoliciesCountTile />
-                    {showVmUpdates ? (
-                        <>
+                    {showVmUpdates && (
+                        <div className="flex mr-2">
+                            <CvesMenu />
+                            {/*
                             <CvesCountTile entityType={entityTypes.IMAGE_CVE} />
                             <CvesCountTile entityType={entityTypes.NODE_CVE} />
                             <CvesCountTile entityType={entityTypes.CLUSTER_CVE} />
-                        </>
-                    ) : (
-                        <CvesCountTile entityType={entityTypes.CVE} />
+                            */}
+                        </div>
                     )}
+                    <PoliciesCountTile />
+                    {!showVmUpdates && <CvesCountTile entityType={entityTypes.CVE} />}
                     <NodesCountTile />
                     <ImagesCountTile />
                     <div className="flex w-32">
