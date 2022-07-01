@@ -17,7 +17,13 @@ import SensorUpgrade from './Components/SensorUpgrade';
 import HelmIndicator from './Components/HelmIndicator';
 import OperatorIndicator from './Components/OperatorIndicator';
 
-export function getColumnsForClusters({ clusterIdToRetentionInfo, metadata, rowActions }) {
+export function getColumnsForClusters({
+    clusterIdToRetentionInfo,
+    hasReadWriteAccessForCluster,
+    isDecommissionedClusterRetentionEnabled,
+    metadata,
+    rowActions,
+}) {
     function renderRowActionButtons(cluster) {
         return (
             <div className="border-2 border-r-2 border-base-400 bg-base-100">
@@ -33,7 +39,7 @@ export function getColumnsForClusters({ clusterIdToRetentionInfo, metadata, rowA
 
     // Because of fixed checkbox width, total of column ratios must be less than 1
     // 5/7 + 1/4 = 0.964
-    const clusterColumnsWithHealth = [
+    const clusterColumns = [
         {
             accessor: 'name',
             Header: 'Name',
@@ -103,7 +109,10 @@ export function getColumnsForClusters({ clusterIdToRetentionInfo, metadata, rowA
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
-        {
+    ];
+
+    if (isDecommissionedClusterRetentionEnabled) {
+        clusterColumns.push({
             Header: 'Cluster Deletion',
             Cell: ({ original }) => (
                 <ClusterDeletion
@@ -112,17 +121,20 @@ export function getColumnsForClusters({ clusterIdToRetentionInfo, metadata, rowA
             ),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
+        });
+    }
+
+    if (hasReadWriteAccessForCluster) {
+        clusterColumns.push({
             Header: '',
             accessor: '',
             headerClassName: 'hidden',
             className: rtTrActionsClassName,
             Cell: ({ original }) => renderRowActionButtons(original),
-        },
-    ];
+        });
+    }
 
-    return clusterColumnsWithHealth;
+    return clusterColumns;
 }
 
 export default {

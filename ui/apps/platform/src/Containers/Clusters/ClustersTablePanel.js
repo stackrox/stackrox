@@ -11,8 +11,10 @@ import PanelButton from 'Components/PanelButton';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
+import usePermissions from 'hooks/usePermissions';
 import useURLSearch from 'hooks/useURLSearch';
 import {
     fetchClustersWithRetentionInfo,
@@ -28,6 +30,13 @@ import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.h
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 
 function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOptions }) {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasReadWriteAccessForCluster = hasReadWriteAccess('Cluster');
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDecommissionedClusterRetentionEnabled = isFeatureFlagEnabled(
+        'ROX_DECOMMISSIONED_CLUSTER_RETENTION'
+    );
+
     const metadata = useMetadata();
 
     const { searchFilter: pageSearch } = useURLSearch();
@@ -227,6 +236,8 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
 
     const columnOptions = {
         clusterIdToRetentionInfo,
+        hasReadWriteAccessForCluster,
+        isDecommissionedClusterRetentionEnabled,
         metadata,
         rowActions: {
             onDeleteHandler,
