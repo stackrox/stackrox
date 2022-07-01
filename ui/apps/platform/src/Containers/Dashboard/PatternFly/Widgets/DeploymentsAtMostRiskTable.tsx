@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Truncate } from '@patternfly/react-core';
 import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { ListDeployment } from 'types/deployment.proto';
 import { networkBasePath, riskBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
-import { Truncate } from '@patternfly/react-core';
 
 const columnNames = {
     deployment: 'Deployment',
