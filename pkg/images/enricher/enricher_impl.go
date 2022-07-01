@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/registries"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
@@ -252,14 +251,14 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		return false, errorList.ToError()
 	}
 
-	registrySet, err := e.getRegistriesForContext(enrichmentContext)
+	registries, err := e.getRegistriesForContext(enrichmentContext)
 	if err != nil {
 		errorList.AddError(err)
 		return false, errorList.ToError()
 	}
 
 	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
-	for _, registry := range registrySet.GetAll() {
+	for _, registry := range registries {
 		updated, err := e.enrichImageWithRegistry(ctx, image, registry)
 		if err != nil {
 			var currentRegistryErrors int32
@@ -649,10 +648,26 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 	return nil
 }
 
-func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) (registries.Set, error) {
+func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registryTypes.ImageRegistry, error) {
 	registrySet := e.integrations.RegistrySet()
 	if ctx.Internal {
-		return registrySet, nil
+		registries := registrySet.GetAll()
+		if ctx.Source == nil {
+			return registries, nil
+		}
+		filteredRegistries := registries[:0]
+		for _, registry := range registries {
+			registry.DataSource()
+		}
+
+	}
+
+	if ctx.Source != nil {
+
+		for registry := range registrySet.GetAll() {
+
+		}
+
 	}
 
 	if registrySet.IsEmpty() {

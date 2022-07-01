@@ -490,9 +490,12 @@
         },
         "skipTestIntegration": {
           "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/definitions/storageImageIntegrationSource"
         }
       },
-      "title": "Next Tag: 21"
+      "title": "Next Tag: 22"
     },
     "storageImageIntegrationCategory": {
       "type": "string",
@@ -503,6 +506,20 @@
       ],
       "default": "REGISTRY",
       "description": " - NODE_SCANNER: Image and Node integrations are currently done on the same form in the UI\nso the image integration is also currently used for node integrations.\nThis decision was made because we currently only support one node scanner (our scanner)."
+    },
+    "storageImageIntegrationSource": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
     },
     "storageQuayConfig": {
       "type": "object",

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/scan"
@@ -53,28 +54,31 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
-func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
+func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
 	return svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
-		Image: ci,
+		Image:       req.containerImage,
+		ClusterId:   req.clusterID,
+		Namespace:   req.namespace,
+		PullSecrets: req.pullSecrets,
 	})
 }
 
-func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
+func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	img, err := scan.EnrichLocalImage(ctx, svc, ci)
+	img, err := scan.EnrichLocalImage(ctx, svc, req.containerImage)
 	return &v1.ScanImageInternalResponse{
 		Image: img,
 	}, err
 }
 
-type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error)
+type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) (*v1.ScanImageInternalResponse, error)
 
-func scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage, scan scanFunc) (*v1.ScanImageInternalResponse, error) {
+func scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan scanFunc) (*v1.ScanImageInternalResponse, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = 5 * time.Second
 	eb.Multiplier = 2
@@ -87,7 +91,7 @@ outer:
 	for {
 		// We want to get the time spent in backoff without including the time it took to scan the image.
 		timeSpentInBackoffSoFar := eb.GetElapsedTime()
-		scannedImage, err := scan(ctx, svc, ci)
+		scannedImage, err := scan(ctx, svc, req)
 		if err != nil {
 			for _, detail := range status.Convert(err).Details() {
 				// If the client is effectively rate-limited, backoff and try again.
@@ -106,21 +110,21 @@ outer:
 	}
 }
 
-func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
+func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
 	defer c.signal.Signal()
 
 	// Ask Central to scan the image if the image is not internal.
 	// Otherwise, attempt to scan locally.
 	scanImageFn := scanImage
-	if features.LocalImageScanning.Enabled() && ci.GetIsClusterLocal() {
+	if features.LocalImageScanning.Enabled() && req.containerImage.GetIsClusterLocal() {
 		scanImageFn = scanImageLocal
 	}
 
-	scannedImage, err := scanWithRetries(ctx, svc, ci, scanImageFn)
+	scannedImage, err := scanWithRetries(ctx, svc, req, scanImageFn)
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
-		c.image = types.ToImage(ci)
+		c.image = types.ToImage(req.containerImage)
 		return
 	}
 
@@ -144,14 +148,14 @@ func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
 	return value.waitAndGet(), true
 }
 
-func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageChanResult {
-	key := imagecacheutils.GetImageCacheKey(ci)
+func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
+	key := imagecacheutils.GetImageCacheKey(req.containerImage)
 
 	// If the container image says that the image is not pullable, don't even bother trying to scan
-	if ci.GetNotPullable() {
+	if req.containerImage.GetNotPullable() {
 		return imageChanResult{
-			image:        types.ToImage(ci),
-			containerIdx: containerIdx,
+			image:        types.ToImage(req.containerImage),
+			containerIdx: req.containerIdx,
 		}
 	}
 
@@ -160,7 +164,7 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 	if ok {
 		return imageChanResult{
 			image:        img,
-			containerIdx: containerIdx,
+			containerIdx: req.containerIdx,
 		}
 	}
 
@@ -169,25 +173,38 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if newValue == value {
-		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, ci)
+		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
 	}
 	return imageChanResult{
 		image:        value.waitAndGet(),
-		containerIdx: containerIdx,
+		containerIdx: req.containerIdx,
 	}
 }
 
-func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, containerIdx int, ci *storage.ContainerImage) {
+type scanImageRequest struct {
+	containerIdx         int
+	containerImage       *storage.ContainerImage
+	clusterID, namespace string
+	pullSecrets          []string
+}
+
+func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, req *scanImageRequest) {
 	go func() {
 		// unguarded send (push to channel outside a select) is allowed because the imageChan is a buffered channel of exact size
-		imageChan <- e.runScan(containerIdx, ci)
+		imageChan <- e.runScan(req)
 	}()
 }
 
 func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	imageChan := make(chan imageChanResult, len(deployment.GetContainers()))
 	for idx, container := range deployment.GetContainers() {
-		e.runImageScanAsync(imageChan, idx, container.GetImage())
+		e.runImageScanAsync(imageChan, &scanImageRequest{
+			containerIdx:   idx,
+			containerImage: container.GetImage(),
+			clusterID:      clusterid.Get(),
+			namespace:      deployment.GetNamespace(),
+			pullSecrets:    deployment.GetImagePullSecrets(),
+		})
 	}
 	images := make([]*storage.Image, len(deployment.GetContainers()))
 	for i := 0; i < len(deployment.GetContainers()); i++ {

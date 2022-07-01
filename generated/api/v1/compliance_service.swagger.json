@@ -309,27 +309,6 @@
       },
       "title": "Next available tag: 3"
     },
-    "ComplianceAggregationSource": {
-      "type": "object",
-      "properties": {
-        "clusterId": {
-          "type": "string"
-        },
-        "standardId": {
-          "type": "string"
-        },
-        "successfulRun": {
-          "$ref": "#/definitions/storageComplianceRunMetadata"
-        },
-        "failedRuns": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageComplianceRunMetadata"
-          }
-        }
-      },
-      "title": "Next available tag: 5"
-    },
     "ComplianceResultValueEvidence": {
       "type": "object",
       "properties": {
@@ -1114,7 +1093,7 @@
         "sources": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ComplianceAggregationSource"
+            "$ref": "#/definitions/storageComplianceAggregationSource"
           }
         },
         "errorMessage": {
@@ -1164,6 +1143,27 @@
         "CHECK"
       ],
       "default": "UNKNOWN"
+    },
+    "storageComplianceAggregationSource": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "standardId": {
+          "type": "string"
+        },
+        "successfulRun": {
+          "$ref": "#/definitions/storageComplianceRunMetadata"
+        },
+        "failedRuns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageComplianceRunMetadata"
+          }
+        }
+      },
+      "title": "Next available tag: 5"
     },
     "storageComplianceDomain": {
       "type": "object",

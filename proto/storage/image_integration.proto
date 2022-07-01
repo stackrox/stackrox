@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 package storage;
 
-// Next Tag: 21
+// Next Tag: 22
 message ImageIntegration {
     string id                                    = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string name                                  = 2 [(gogoproto.moretags) = 'sql:"unique"'];
@@ -35,6 +35,13 @@ message ImageIntegration {
     bool   skip_test_integration = 18;
 
     reserved 19; // Previously, scannerv2
+
+    message Source {
+        string cluster_id = 1;
+        string namespace  = 2;
+        string name       = 3;
+    }
+    Source source = 21;
 }
 
 message IBMRegistryConfig {

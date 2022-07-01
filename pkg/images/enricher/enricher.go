@@ -42,6 +42,12 @@ func (f FetchOption) forceRefetchCachedValues() bool {
 	return f == ForceRefetch || f == ForceRefetchCachedValuesOnly
 }
 
+type RequestSource struct {
+	ClusterID        string
+	Namespace        string
+	ImagePullSecrets []string
+}
+
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments
 type EnrichmentContext struct {
 	// FetchOpt define constraints about using external data
@@ -53,6 +59,8 @@ type EnrichmentContext struct {
 	// Internal is used to indicate when the caller is internal.
 	// This is used to indicate that we do not want to fail upon failing to find integrations.
 	Internal bool
+
+	Source *RequestSource
 }
 
 // FetchOnlyIfMetadataEmpty checks the fetch opts and return whether or not we can used a cached or saved

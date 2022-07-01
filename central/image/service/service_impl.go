@@ -228,7 +228,23 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	}
 
 	img := types.ToImage(request.GetImage())
-	if _, err := s.enricher.EnrichImage(ctx, enricher.EnrichmentContext{FetchOpt: fetchOpt, Internal: true}, img); err != nil {
+
+	var source *enricher.RequestSource
+	if request.GetClusterId() != "" {
+		source = &enricher.RequestSource{
+			ClusterID:        request.GetClusterId(),
+			Namespace:        request.GetNamespace(),
+			ImagePullSecrets: request.GetPullSecrets(),
+		}
+	}
+
+	enrichmentContext := enricher.EnrichmentContext{
+		FetchOpt: fetchOpt,
+		Internal: true,
+		Source:   source,
+	}
+
+	if _, err := s.enricher.EnrichImage(ctx, enrichmentContext, img); err != nil {
 		log.Errorf("error enriching image %q: %v", request.GetImage().GetName().GetFullName(), err)
 		// purposefully, don't return here because we still need to save it into the DB so there is a reference
 		// even if we weren't able to enrich it
