@@ -25,6 +25,7 @@ import (
 	policyIndex "github.com/stackrox/rox/central/policy/index"
 	policySearcher "github.com/stackrox/rox/central/policy/search"
 	policyStoreMocks "github.com/stackrox/rox/central/policy/store/mocks"
+	categoryDataStoreMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	roleBindingsMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
@@ -44,6 +45,7 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -64,7 +66,7 @@ func TestSearchFuncs(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	s := NewBuilder().
+	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
 		WithDeploymentStore(deploymentMocks.NewMockDataStore(mockCtrl)).
 		WithImageStore(imageMocks.NewMockDataStore(mockCtrl)).
@@ -77,8 +79,13 @@ func TestSearchFuncs(t *testing.T) {
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
-		WithAggregator(nil).
-		Build()
+		WithAggregator(nil)
+
+	if features.NewPolicyCategories.Enabled() {
+		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl))
+	}
+
+	s := builder.Build()
 
 	searchFuncMap := s.(*serviceImpl).getSearchFuncs()
 	for _, searchCategory := range GetAllSearchableCategories() {
@@ -95,13 +102,19 @@ func TestSearchService(t *testing.T) {
 
 type SearchOperationsTestSuite struct {
 	suite.Suite
+	envIsolator *envisolator.EnvIsolator
 
 	mockCtrl *gomock.Controller
 	rocksDB  *rocksdb.RocksDB
 	boltDB   *bolt.DB
 }
 
+func (s *SearchOperationsTestSuite) SetupSuite() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+}
+
 func (s *SearchOperationsTestSuite) SetupTest() {
+	s.envIsolator.Setenv(features.NewPolicyCategories.EnvVar(), "true")
 	s.mockCtrl = gomock.NewController(s.T())
 	s.rocksDB = rocksdbtest.RocksDBForT(s.T())
 	var err error
@@ -110,6 +123,7 @@ func (s *SearchOperationsTestSuite) SetupTest() {
 }
 
 func (s *SearchOperationsTestSuite) TearDownTest() {
+	s.envIsolator.RestoreAll()
 	s.mockCtrl.Finish()
 	s.rocksDB.Close()
 }
@@ -155,7 +169,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	indexingQ.PushSignal(&finishedIndexing)
 	finishedIndexing.Wait()
 
-	service := NewBuilder().
+	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
 		WithDeploymentStore(deploymentDS).
 		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
@@ -168,8 +182,13 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil).
-		Build().(*serviceImpl)
+		WithAggregator(nil)
+
+	if features.NewPolicyCategories.Enabled() {
+		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+	}
+
+	service := builder.Build().(*serviceImpl)
 
 	for _, testCase := range []struct {
 		query           string
@@ -234,7 +253,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	policySearcher := policySearcher.New(policyStore, policyIndexer)
 	ds := policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil)
 
-	service := NewBuilder().
+	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
 		WithDeploymentStore(deploymentMocks.NewMockDataStore(s.mockCtrl)).
 		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
@@ -246,8 +265,12 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil).
-		Build().(*serviceImpl)
+		WithAggregator(nil)
+
+	if features.NewPolicyCategories.Enabled() {
+		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+	}
+	service := builder.Build().(*serviceImpl)
 
 	results, err := service.autocomplete(ctx, fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
 	s.NoError(err)
@@ -290,7 +313,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	indexingQ.PushSignal(&finishedIndexing)
 	finishedIndexing.Wait()
 
-	service := NewBuilder().
+	builder := NewBuilder().
 		WithAlertStore(alertsDS).
 		WithDeploymentStore(deploymentDS).
 		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
@@ -303,8 +326,12 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil).
-		Build().(*serviceImpl)
+		WithAggregator(nil)
+
+	if features.NewPolicyCategories.Enabled() {
+		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+	}
+	service := builder.Build().(*serviceImpl)
 
 	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.Name).Query()
 	alertQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, alert.GetDeployment().GetName()).Query()
@@ -366,7 +393,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	indexingQ.PushSignal(&finishedIndexing)
 	finishedIndexing.Wait()
 
-	service := NewBuilder().
+	builder := NewBuilder().
 		WithAlertStore(alertsDS).
 		WithDeploymentStore(deploymentDS).
 		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
@@ -379,8 +406,13 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil).
-		Build().(*serviceImpl)
+		WithAggregator(nil)
+
+	if features.NewPolicyCategories.Enabled() {
+		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+	}
+
+	service := builder.Build().(*serviceImpl)
 
 	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.Name).Query()
 	alertQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, alert.GetDeployment().GetName()).Query()

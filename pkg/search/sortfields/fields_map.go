@@ -19,6 +19,14 @@ var (
 				},
 			}
 		},
+		search.PolicyCategoryName: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+			return []*v1.QuerySortOption{
+				{
+					Field:    search.PolicyCategoryName.String(),
+					Reversed: option.GetReversed(),
+				},
+			}
+		},
 		search.ImageName: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
 				{

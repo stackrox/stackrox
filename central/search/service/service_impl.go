@@ -20,6 +20,7 @@ import (
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/rbac/service"
@@ -31,6 +32,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	protoSet "github.com/stackrox/rox/generated/set"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -79,6 +81,10 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(s.bindings).SearchSubjects,
 	}
 
+	if features.NewPolicyCategories.Enabled() {
+		searchfuncs[v1.SearchCategory_POLICY_CATEGORIES] = s.categories.SearchPolicyCategories
+	}
+
 	return searchfuncs
 }
 
@@ -98,6 +104,10 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_ROLES:            s.roles,
 		v1.SearchCategory_ROLEBINDINGS:     s.bindings,
 		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(s.bindings),
+	}
+
+	if features.NewPolicyCategories.Enabled() {
+		searchers[v1.SearchCategory_POLICY_CATEGORIES] = s.categories
 	}
 
 	return searchers
@@ -125,6 +135,7 @@ type serviceImpl struct {
 	roles           roleDataStore.DataStore
 	bindings        roleBindingDataStore.DataStore
 	clusters        clusterDataStore.DataStore
+	categories      categoriesDataStore.DataStore
 
 	aggregator aggregation.Aggregator
 	authorizer authz.Authorizer
