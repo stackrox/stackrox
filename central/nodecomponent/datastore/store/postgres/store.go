@@ -43,7 +43,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NodeComponentsSchema
-	targetResource = resources.NodeComponent
+	targetResource = resources.Node
 )
 
 type Store interface {

@@ -43,7 +43,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ImageCvesSchema
-	targetResource = resources.ImageCVE
+	targetResource = resources.Image
 )
 
 type Store interface {
