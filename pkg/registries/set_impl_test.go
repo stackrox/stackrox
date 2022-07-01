@@ -41,7 +41,7 @@ func (f fakeRegistry) Name() string {
 	return f.name
 }
 
-func (f fakeRegistry) DataSource() *storage.DataSource {
+func (f fakeRegistry) Source() *storage.ImageIntegration {
 	return nil
 }
 

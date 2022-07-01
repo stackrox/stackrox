@@ -68,6 +68,7 @@ func NewDispatcherRegistry(
 	traceWriter io.Writer,
 ) DispatcherRegistry {
 	serviceStore := newServiceStore()
+	serviceAccountStore := ServiceAccountStoreSingleton()
 	deploymentStore := DeploymentStoreSingleton()
 	podStore := PodStoreSingleton()
 	nodeStore := newNodeStore()
@@ -89,7 +90,7 @@ func NewDispatcherRegistry(
 		secretDispatcher:          newSecretDispatcher(registryStore),
 		networkPolicyDispatcher:   newNetworkPolicyDispatcher(netPolicyStore, deploymentStore, detector),
 		nodeDispatcher:            newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
-		serviceAccountDispatcher:  newServiceAccountDispatcher(),
+		serviceAccountDispatcher:  newServiceAccountDispatcher(serviceAccountStore),
 		clusterOperatorDispatcher: newClusterOperatorDispatcher(namespaces),
 
 		traceWriter: traceWriter,

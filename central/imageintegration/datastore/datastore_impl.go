@@ -78,7 +78,9 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 		return "", sac.ErrResourceAccessDenied
 	}
 
-	integration.Id = uuid.NewV4().String()
+	if integration.GetId() == "" {
+		integration.Id = uuid.NewV4().String()
+	}
 	err := ds.storage.Upsert(ctx, integration)
 	if err != nil {
 		return "", err

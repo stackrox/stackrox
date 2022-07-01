@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/sync/semaphore"
@@ -228,7 +229,23 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	}
 
 	img := types.ToImage(request.GetImage())
-	if _, err := s.enricher.EnrichImage(ctx, enricher.EnrichmentContext{FetchOpt: fetchOpt, Internal: true}, img); err != nil {
+
+	var source *enricher.RequestSource
+	if request.GetClusterId() != "" {
+		source = &enricher.RequestSource{
+			ClusterID:        request.GetClusterId(),
+			Namespace:        request.GetNamespace(),
+			ImagePullSecrets: set.NewStringSet(request.GetImagePullSecrets()...),
+		}
+	}
+
+	enrichmentContext := enricher.EnrichmentContext{
+		FetchOpt: fetchOpt,
+		Internal: true,
+		Source:   source,
+	}
+
+	if _, err := s.enricher.EnrichImage(ctx, enrichmentContext, img); err != nil {
 		log.Errorf("error enriching image %q: %v", request.GetImage().GetName().GetFullName(), err)
 		// purposefully, don't return here because we still need to save it into the DB so there is a reference
 		// even if we weren't able to enrich it
