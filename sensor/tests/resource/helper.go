@@ -40,8 +40,8 @@ type YamlTestFile struct {
 }
 
 var (
-	NginxDeployment = YamlTestFile{"Deployment", "nginx.yaml"}
-	NginxRole       = YamlTestFile{"Role", "nginx-role.yaml"}
+	NginxDeployment  = YamlTestFile{"Deployment", "nginx.yaml"}
+	NginxRole        = YamlTestFile{"Role", "nginx-role.yaml"}
 	NginxRoleBinding = YamlTestFile{"Binding", "nginx-binding.yaml"}
 )
 
@@ -131,7 +131,6 @@ func (c *TestContext) RunBare(name string, testCase TestCallback) {
 		testCase(t, c)
 	})
 }
-
 
 func (c *TestContext) RunWithResourcesPermutation(files []YamlTestFile, name string, testCase TestCallback) {
 	runPermutation(files, 0, func(f []YamlTestFile) {
@@ -254,7 +253,7 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 
 	// Only wait for deployment events to be fully processed
 	if file.Kind == "Deployment" {
-		if err := c.waitForResource(5 * time.Second, deploymentName(obj.GetName())); err != nil {
+		if err := c.waitForResource(5*time.Second, deploymentName(obj.GetName())); err != nil {
 			return nil, err
 		}
 	}
