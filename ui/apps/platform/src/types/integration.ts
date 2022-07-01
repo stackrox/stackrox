@@ -3,18 +3,14 @@ export type IntegrationSource =
     | 'notifiers'
     | 'imageIntegrations'
     | 'backups'
-    | 'authPlugins'
     | 'signatureIntegrations';
 
 export type IntegrationType =
-    | AuthPluginType
     | AuthProviderType
     | BackupIntegrationType
     | ImageIntegrationType
     | NotifierIntegrationType
     | SignatureIntegrationType;
-
-export type AuthPluginType = 'scopedAccess';
 
 export type AuthProviderType = 'apitoken' | 'clusterInitBundle';
 

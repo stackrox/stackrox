@@ -32,7 +32,6 @@ import signature from 'images/signature.svg';
 
 import { FeatureFlagEnvVar } from 'types/featureFlag';
 import {
-    AuthPluginType,
     AuthProviderType,
     BackupIntegrationType,
     ImageIntegrationType,
@@ -42,17 +41,11 @@ import {
 } from 'types/integration';
 
 export type IntegrationDescriptor =
-    | AuthPluginDescriptor
     | AuthProviderDescriptor
     | BackupIntegrationDescriptor
     | ImageIntegrationDescriptor
     | NotifierIntegrationDescriptor
     | SignatureIntegrationDescriptor;
-
-export type AuthPluginDescriptor = {
-    source: 'authPlugins';
-    type: AuthPluginType;
-} & BaseIntegrationDescriptor;
 
 export type AuthProviderDescriptor = {
     source: 'authProviders';
@@ -95,7 +88,6 @@ export type BaseIntegrationDescriptor = {
 };
 
 type IntegrationDescriptorMap = {
-    authPlugins: AuthPluginDescriptor[];
     authProviders: AuthProviderDescriptor[];
     backups: BackupIntegrationDescriptor[];
     imageIntegrations: ImageIntegrationDescriptor[];
@@ -292,14 +284,6 @@ const integrationsList: IntegrationDescriptorMap = {
             type: 'gcs',
             source: 'backups',
             image: google,
-        },
-    ],
-    authPlugins: [
-        {
-            label: 'Scoped Access Plugin',
-            type: 'scopedAccess',
-            source: 'authPlugins',
-            image: logo,
         },
     ],
 };
