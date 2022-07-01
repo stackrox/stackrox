@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Truncate } from '@patternfly/react-core';
 import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { ListDeployment } from 'types/deployment.proto';
@@ -46,10 +47,10 @@ function DeploymentsAtMostRiskTable({
                     <Tr key={id}>
                         <Td className="pf-u-pl-0" dataLabel={columnNames.deployment}>
                             <Link to={riskPageLinkToDeployment(id, name, searchFilter)}>
-                                {name}
+                                <Truncate position="middle" content={name} />
                             </Link>
                         </Td>
-                        <Td dataLabel={columnNames.resourceLocation}>
+                        <Td width={45} dataLabel={columnNames.resourceLocation}>
                             <span>
                                 in &ldquo;
                                 <Link
@@ -59,6 +60,7 @@ function DeploymentsAtMostRiskTable({
                             </span>
                         </Td>
                         <Td
+                            width={20}
                             className="pf-u-pr-0 pf-u-text-align-center-on-md"
                             dataLabel={columnNames.riskPriority}
                         >
