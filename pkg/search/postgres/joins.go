@@ -174,9 +174,9 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]innerJoin, map[string
 				table:       currElem.schema,
 				columnPairs: rel.MappedColumnNames,
 			}
-			if searchScope := searchScope[src.OptionsMap.PrimaryCategory()]; searchScope == nil {
+			if src.SearchScope == nil {
 				queue = append(queue, newElem)
-			} else if _, foundInSearchScope := searchScope[newElem.schema.OptionsMap.PrimaryCategory()]; foundInSearchScope {
+			} else if _, foundInSearchScope := src.SearchScope[newElem.schema.OptionsMap.PrimaryCategory()]; foundInSearchScope {
 				queue = append(queue, newElem)
 			}
 		}
