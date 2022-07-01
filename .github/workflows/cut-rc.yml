@@ -85,7 +85,7 @@ jobs:
           fi
 
       - name: Create next milestone
-        if: inputs.dry-run != 'true' && steps.check.outputs.open-issues != ''
+        if: env.DRY_RUN == 'false' && steps.check.outputs.open-issues != ''
         run: |
           set -u
           if ! http_code=$(gh api --silent -X POST \
@@ -203,7 +203,7 @@ jobs:
         run: |
           git tag --annotate "${{needs.variables.outputs.milestone}}" --message ""
       - name: Push
-        if: inputs.dry-run != 'true'
+        if: env.DRY_RUN == 'false'
         run: |
           git push --follow-tags
       - run: |
@@ -212,11 +212,11 @@ jobs:
   reopen-milestone:
     name: Reopen milestone ${{needs.variables.outputs.milestone}}
     needs: [variables, cut-rc]
-    if: failure() && inputs.dry-run != 'true'
+    if: failure()
     runs-on: ubuntu-latest
     steps:
       - name: Reopen milestone ${{needs.variables.outputs.milestone}}
-        if: inputs.dry-run != 'true'
+        if: env.DRY_RUN == 'false'
         run: |
           gh api "repos/${{github.repository}}/milestones/${{github.event.milestone.number}}" \
             -X PATCH -f state=open
@@ -230,7 +230,7 @@ jobs:
     steps:
       - name: Create GitHub Pre-release
         id: pre-release
-        if: inputs.dry-run != 'true'
+        if: env.DRY_RUN == 'false'
         run: |
           URL=$(gh release create "${{needs.variables.outputs.milestone}}" \
             --prerelease \
@@ -268,7 +268,8 @@ jobs:
   create-k8s-cluster:
     name: Create k8s cluster
     needs: [variables, cut-rc]
-    if: inputs.dry-run != 'true'
+    # Cannot use env.DRY_RUN here. `dry-run` can be 'true', 'false' or empty.
+    if: github.event.inputs.dry-run != 'true'
     uses: ./.github/workflows/create-cluster.yml
     secrets: inherit
     with:
@@ -280,7 +281,8 @@ jobs:
   create-os4-cluster:
     name: Create OS4 cluster
     needs: [variables, cut-rc]
-    if: inputs.dry-run != 'true'
+    # Cannot use env.DRY_RUN here. `dry-run` can be 'true', 'false' or empty.
+    if: github.event.inputs.dry-run != 'true'
     uses: ./.github/workflows/create-cluster.yml
     secrets: inherit
     with:
@@ -367,8 +369,9 @@ jobs:
   create-long-running-cluster:
     name: Create GKE long-running cluster
     needs: [variables, cut-rc]
+    # Cannot use env.DRY_RUN here. `dry-run` can be 'true', 'false' or empty.
     if: >-
-      inputs.dry-run != 'true' &&
+      github.event.inputs.dry-run != 'true' &&
       needs.variables.outputs.rc == '1'
     uses: ./.github/workflows/create-cluster.yml
     secrets: inherit

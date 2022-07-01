@@ -61,11 +61,14 @@ jobs:
                 exit(1)
 
             rc = int(m.group('rc') or 1)
+            name = m.group('name') or ''
+            dash_name = f'-{name}' if name else ''
 
             print(f'''
             ::set-output name=release::{m.group('release')}
             ::set-output name=patch::{m.group('patch')}
-            ::set-output name=name::{m.group('name') or ''}
+            ::set-output name=name::{name}
+            ::set-output name=dash-name::{dash_name}
             ::set-output name=rc::{rc}
             ::set-output name=next-rc::{rc+1}
             ''')
