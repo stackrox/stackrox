@@ -1,4 +1,4 @@
-package m102tom103
+package m105tom106
 
 import (
 	"testing"
@@ -6,7 +6,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
-	"github.com/stackrox/rox/pkg/binenc"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
@@ -35,8 +34,25 @@ func (suite *migrateServiceIdentitySerial) TearDownTest() {
 }
 
 func (suite *migrateServiceIdentitySerial) TestMigrate() {
-	// Buckets don't exist should succeed still
-	suite.NoError(addIDToGroups(suite.db))
+	// Expected groups after migration.
+	// Group "r1" should not be updated, as the ID is pre-existing.
+	// Group "r2" should have the ID after migration.
+	expectedGroups := map[string]*storage.Group{
+		"r1": {
+			Props: &storage.GroupProperties{
+				AuthProviderId: "something",
+				Id:             "io.stackrox.authz.group.",
+			},
+			RoleName: "r1",
+		},
+		"r2": {
+			Props: &storage.GroupProperties{
+				AuthProviderId: "something",
+				Id:             "io.stackrox.authz.group.migrated.",
+			},
+			RoleName: "r2",
+		},
+	}
 
 	cases := []struct {
 		oldGroup *storage.Group
@@ -48,34 +64,21 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 				Props: &storage.GroupProperties{
 					AuthProviderId: "something",
 				},
-				RoleName: "r1",
+				RoleName: "r2",
 			},
-			newGroup: &storage.Group{
-				Props: &storage.GroupProperties{
-					AuthProviderId: "something",
-					Id:             "io.stackrox.group.",
-				},
-				RoleName: "r1",
-			},
+			newGroup: expectedGroups["r2"],
 			oldValue: true,
 		},
 		{
-			oldGroup: &storage.Group{
-				Props: &storage.GroupProperties{
-					AuthProviderId: "something",
-					Id:             "io.stackrox.group.",
-				},
-				RoleName: "r1",
-			},
-			newGroup: &storage.Group{
-				Props: &storage.GroupProperties{
-					AuthProviderId: "something",
-					Id:             "io.stackrox.group.",
-				},
-				RoleName: "r1",
-			},
+			oldGroup: expectedGroups["r1"],
+			newGroup: expectedGroups["r1"],
 		},
 	}
+
+	// 1. Buckets don't exist should succeed still
+	suite.NoError(migrateGroupsWithoutID(suite.db))
+
+	// 2. Add the old groups to the groups bucket and create it if it does not exist yet.
 	err := suite.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(bucketName)
 		suite.NoError(err)
@@ -95,19 +98,20 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 	})
 	suite.NoError(err)
 
-	suite.NoError(addIDToGroups(suite.db))
+	// 3. Migrate the groups without ID.
+	suite.NoError(migrateGroupsWithoutID(suite.db))
 
+	// 4. Verify all groups match the expected groups.
 	err = suite.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketName)
-
-		idx := 0
 		err := bucket.ForEach(func(k, v []byte) error {
 			var group storage.Group
 			suite.NoError(proto.Unmarshal(v, &group))
-			suite.Equal(cases[idx].newGroup.GetRoleName(), group.GetRoleName())
-			suite.Equal(cases[idx].newGroup.GetProps().GetAuthProviderId(), group.GetProps().GetAuthProviderId())
-			suite.Contains(group.GetProps().GetId(), cases[idx].newGroup.GetProps().GetId())
-			idx++
+			expectedGroup, exists := expectedGroups[group.GetRoleName()]
+			suite.True(exists)
+			suite.Equal(expectedGroup.GetRoleName(), group.GetRoleName())
+			suite.Equal(expectedGroup.GetProps().GetAuthProviderId(), group.GetProps().GetAuthProviderId())
+			suite.Contains(group.GetProps().GetId(), expectedGroup.GetProps().GetId())
 			return nil
 		})
 		suite.NoError(err)
@@ -115,6 +119,7 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 	})
 	suite.NoError(err)
 
+	// 5. Verify all old keys do not exist anymore.
 	err = suite.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketName)
 		for _, c := range cases {
@@ -131,13 +136,4 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 		return nil
 	})
 	suite.NoError(err)
-}
-
-func serialize(grp *storage.Group) ([]byte, []byte) {
-	key := binenc.EncodeBytesList([]byte(grp.GetProps().GetAuthProviderId()), []byte(grp.GetProps().GetKey()),
-		[]byte(grp.GetProps().GetValue()))
-
-	value := []byte(grp.GetRoleName())
-
-	return key, value
 }
