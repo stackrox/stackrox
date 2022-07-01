@@ -278,7 +278,7 @@ const SystemConfigForm = ({
                         </GridItem>
                         <GridItem>
                             <FormGroup
-                                label="Ignore clusters which have labels"
+                                label="Ignore clusters which have the following labels"
                                 fieldId="privateConfig.decommissionedClusterRetention.ignoreClusterLabels"
                             >
                                 <ClusterLabelsTable
