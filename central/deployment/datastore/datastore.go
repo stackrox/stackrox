@@ -167,4 +167,3 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 		processBaselineStore, networkFlowClusterStore, riskStore, nil,
 		processFilter, clusterRanker, namespaceRanker, deploymentRanker), nil
 }
-
