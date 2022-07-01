@@ -19,8 +19,8 @@ import (
     "github.com/stackrox/rox/migrator/migrations/postgresmigrationhelper/metrics"
     {{- else}}
     "github.com/stackrox/rox/central/metrics"
-    {{- end}}
     "github.com/stackrox/rox/central/role/resources"
+    {{- end}}
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/auth/permissions"

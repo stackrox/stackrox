@@ -8,9 +8,9 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/postgresmigrationhelper/metrics"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -29,7 +29,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.InstallationInfosSchema
-	targetResource = resources.InstallationInfo
+	targetResource = permissions.ResourceMetadata{}
 )
 
 type Store interface {

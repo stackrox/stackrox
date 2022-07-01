@@ -3,17 +3,12 @@ package store
 import (
 	"context"
 
-	policyUtils "github.com/stackrox/rox/central/policy/utils"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -24,10 +19,7 @@ var (
 	// Locked policy criteria guarantees that the criteria remains unchanged as is as it was shipped.
 	removedDefaultPolicyBucket = []byte("removed_default_policies")
 
-	policyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Policy)))
+	policyCtx = sac.WithAllAccess(context.Background())
 
 	log = logging.LoggerForModule()
 )
@@ -90,61 +82,5 @@ func New(db *bolt.DB) Store {
 	s := &storeImpl{
 		DB: db,
 	}
-	s.addDefaults()
 	return s
-}
-
-// New returns a new Store instance using the provided bolt DB instance.
-func newWithoutDefaults(db *bolt.DB) Store {
-	bolthelper.RegisterBucketOrPanic(db, policyBucket)
-	bolthelper.RegisterBucketOrPanic(db, removedDefaultPolicyBucket)
-	return &storeImpl{
-		DB: db,
-	}
-}
-
-func (s *storeImpl) addDefaults() {
-	policyIDSet, policyNameSet := set.NewStringSet(), set.NewStringSet()
-	storedPolicies, err := s.GetAll(policyCtx)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, p := range storedPolicies {
-		policyIDSet.Add(p.GetId())
-		policyNameSet.Add(p.GetName())
-	}
-
-	// Preload the default policies.
-	defaultPolicies, err := policies.DefaultPolicies()
-	// Hard panic here is okay, since we can always guarantee that we will be able to get the default policies out.
-	utils.CrashOnError(err)
-
-	var count int
-	for _, p := range defaultPolicies {
-		wasRemoved, err := s.wasDefaultPolicyRemoved(p.GetId())
-		if err != nil {
-			// Log error and continue adding the policy. We will panic during adding the policy, if the DB error is persistent.
-			log.Errorf("Could not determine if the default policy %s was previously removed. Continuing with adding it to DB: %v", p.GetId(), err)
-		}
-		// In case of error, wasDefaultPolicyRemoved is true to not block policy addition.
-		if wasRemoved {
-			continue
-		}
-
-		// If ID is not the same as the shipped default policy, we treat it as custom policy. Hence, the tombstone
-		// state is not tracked.
-		if policyNameSet.Contains(p.GetName()) {
-			continue
-		}
-		count++
-
-		// fill multi-word sort helper field
-		policyUtils.FillSortHelperFields(p)
-
-		if err := s.Upsert(policyCtx, p); err != nil {
-			panic(err)
-		}
-	}
-	log.Infof("Loaded %d new default Policies", count)
 }
