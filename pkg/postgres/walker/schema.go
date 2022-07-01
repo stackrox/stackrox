@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -111,6 +112,11 @@ type Schema struct {
 	referencesResolved bool
 
 	OptionsMap search.OptionsMap
+
+	// SearchScope represents the search categories searchable from this schema. This can be used to limit search to only
+	// some categories in cases of overlapping search fields.
+	// This is optional.
+	SearchScope map[v1.SearchCategory]struct{}
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
@@ -124,6 +130,17 @@ func (s *Schema) SetOptionsMap(optionsMap search.OptionsMap) {
 	s.OptionsMap = optionsMap
 	for _, c := range s.Children {
 		c.SetOptionsMap(optionsMap)
+	}
+}
+
+// SetSearchScope sets search scope for the schema.
+func (s *Schema) SetSearchScope(searchCategories ...v1.SearchCategory) {
+	s.SearchScope = make(map[v1.SearchCategory]struct{})
+	for _, cat := range searchCategories {
+		s.SearchScope[cat] = struct{}{}
+	}
+	for _, c := range s.Children {
+		c.SetSearchScope(searchCategories...)
 	}
 }
 
