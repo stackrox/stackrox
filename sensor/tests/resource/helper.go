@@ -15,8 +15,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
-	k8s2 "github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -178,7 +178,7 @@ func startSensorAndFakeCentral(env *envconf.Config) (*centralDebug.FakeService, 
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
-		WithK8sClient(k8s2.MakeFakeClientFromRest(env.Client().RESTConfig())).
+		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
 		WithLocalSensor(true).
 		WithResyncPeriod(1 * time.Second).
 		WithCentralConnectionFactory(fakeConnectionFactory))
