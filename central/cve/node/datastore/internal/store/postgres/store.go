@@ -43,7 +43,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NodeCvesSchema
-	targetResource = resources.NodeCVE
+	targetResource = resources.Node
 )
 
 type Store interface {
