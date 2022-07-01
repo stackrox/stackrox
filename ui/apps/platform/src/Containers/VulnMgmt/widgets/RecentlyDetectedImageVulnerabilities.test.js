@@ -8,7 +8,7 @@ import parseURL from 'utils/URLParser';
 import renderWithRouter from 'test-utils/renderWithRouter';
 import RecentlyDetectedVulnerabilities, {
     RECENTLY_DETECTED_VULNERABILITIES,
-} from './RecentlyDetectedVulnerabilities';
+} from './RecentlyDetectedImageVulnerabilities';
 
 const mocks = [
     {
