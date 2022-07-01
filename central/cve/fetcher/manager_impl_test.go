@@ -18,6 +18,7 @@ import (
 	mockNSDataStore "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/search"
@@ -47,6 +48,10 @@ func TestReadChecksum(t *testing.T) {
 }
 
 func TestReconcileCVEsInDB(t *testing.T) {
+	if features.PostgresDatastore.Enabled() {
+		t.Skip("Skip non-postgres test")
+	}
+
 	cluster := &storage.Cluster{
 		Id:   "test_cluster_id1",
 		Name: "cluster1",
@@ -227,6 +232,10 @@ func TestReconcileCVEsInDB(t *testing.T) {
 }
 
 func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
+	if features.PostgresDatastore.Enabled() {
+		t.Skip("Skip non-postgres test")
+	}
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 

@@ -61,7 +61,7 @@ func (s *ClusterCveEdgesStoreSuite) TestStore() {
 	clusterCVEEdge := &storage.ClusterCVEEdge{}
 	s.NoError(testutils.FullInit(clusterCVEEdge, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundClusterCVEEdge, exists, err := store.Get(ctx, clusterCVEEdge.GetId(), clusterCVEEdge.GetClusterId(), clusterCVEEdge.GetCveId())
+	foundClusterCVEEdge, exists, err := store.Get(ctx, clusterCVEEdge.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundClusterCVEEdge)

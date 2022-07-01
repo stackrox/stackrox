@@ -21,6 +21,7 @@ import (
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
+	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
@@ -70,6 +71,7 @@ type Resolver struct {
 	ComplianceAggregator        aggregation.Aggregator
 	APITokenBackend             backend.Backend
 	ClusterDataStore            clusterDatastore.DataStore
+	ClusterCVEDataStore         clusterCVEDataStore.DataStore
 	ComplianceDataStore         complianceDS.DataStore
 	ComplianceStandardStore     complianceStandards.Repository
 	ComplianceService           v1.ComplianceServiceServer
@@ -161,6 +163,7 @@ func New() *Resolver {
 		AuditLogger:                 audit.New(processor.Singleton()),
 	}
 	if features.PostgresDatastore.Enabled() {
+		resolver.ClusterCVEDataStore = clusterCVEDataStore.Singleton()
 		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
 		resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()
 		resolver.NodeComponentDataStore = nodeComponentDataStore.Singleton()

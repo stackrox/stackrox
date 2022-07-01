@@ -24,6 +24,7 @@ import (
 func TestReconcileCVEsInPostgres(t *testing.T) {
 	envIsolator := envisolator.NewEnvIsolator(t)
 	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	defer envIsolator.RestoreAll()
 
 	if !features.PostgresDatastore.Enabled() {
 		t.Skip("Skip postgres store tests")

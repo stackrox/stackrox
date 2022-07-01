@@ -21,6 +21,7 @@ import (
 // NewFullStore augments the generated store with upsert and delete cluster cves functions.
 func NewFullStore(db *pgxpool.Pool) store.Store {
 	return &fullStoreImpl{
+		db:    db,
 		Store: New(db),
 	}
 }
@@ -32,7 +33,7 @@ type fullStoreImpl struct {
 }
 
 func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, clusterID string) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ClusterCVE")
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "ClusterCVE")
 	if err != nil {
 		return err
 	}
@@ -57,7 +58,7 @@ func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, cluster
 
 func (s *fullStoreImpl) UpsertClusterCVEParts(ctx context.Context, cveType storage.CVE_CVEType, cvePartsArr ...converter.ClusterCVEParts) error {
 	iTime := protoTypes.TimestampNow()
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ClusterCVE")
+	conn, release, err := s.acquireConn(ctx, ops.UpdateMany, "ClusterCVE")
 	if err != nil {
 		return err
 	}

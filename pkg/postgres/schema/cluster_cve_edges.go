@@ -24,7 +24,7 @@ var (
                    ClusterId varchar,
                    CveId varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ClusterId, CveId),
+                   PRIMARY KEY(Id),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ClusterId) REFERENCES clusters(Id) ON DELETE CASCADE
                )
                `,
@@ -63,8 +63,8 @@ type ClusterCveEdges struct {
 	Id          string   `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable   bool     `gorm:"column:isfixable;type:bool"`
 	FixedBy     string   `gorm:"column:fixedby;type:varchar"`
-	ClusterId   string   `gorm:"column:clusterid;type:varchar;primaryKey"`
-	CveId       string   `gorm:"column:cveid;type:varchar;primaryKey"`
+	ClusterId   string   `gorm:"column:clusterid;type:varchar"`
+	CveId       string   `gorm:"column:cveid;type:varchar"`
 	Serialized  []byte   `gorm:"column:serialized;type:bytea"`
 	ClustersRef Clusters `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

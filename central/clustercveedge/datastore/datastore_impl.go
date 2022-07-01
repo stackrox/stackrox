@@ -56,7 +56,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ClusterCV
 	if err != nil || len(filteredIDs) != 1 {
 		return nil, false, err
 	}
-	edge, found, err := ds.storage.Get(id)
+	edge, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -69,7 +69,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, err
 	}
 
-	found, err := ds.storage.Exists(id)
+	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
 	}
@@ -82,7 +82,7 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 
-	edges, _, err := ds.storage.GetBatch(filteredIDs)
+	edges, _, err := ds.storage.GetMany(ctx, filteredIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +90,9 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 }
 
 func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]string, error) {
+	if features.PostgresDatastore.Enabled() {
+		return ids, nil
+	}
 	var filteredIDs []string
 	var err error
 	graph.Context(ctx, ds.graphProvider, func(graphContext context.Context) {
@@ -113,7 +116,7 @@ func (ds *datastoreImpl) Upsert(ctx context.Context, parts ...converter.ClusterC
 	}
 
 	// Store the new CVE data.
-	return ds.storage.Upsert(parts...)
+	return ds.storage.Upsert(ctx, parts...)
 }
 
 func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
@@ -126,5 +129,5 @@ func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Delete(ids...)
+	return ds.storage.Delete(ctx, ids...)
 }

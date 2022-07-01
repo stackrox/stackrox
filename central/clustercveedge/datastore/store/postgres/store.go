@@ -43,8 +43,8 @@ var (
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, clusterId string, cveId string) (bool, error)
-	Get(ctx context.Context, id string, clusterId string, cveId string) (*storage.ClusterCVEEdge, bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*storage.ClusterCVEEdge, bool, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ClusterCVEEdge, []int, error)
 
@@ -76,7 +76,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string, clusterId string, cveId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ClusterCVEEdge")
 
 	var sacQueryFilter *v1.Query
@@ -84,8 +84,6 @@ func (s *storeImpl) Exists(ctx context.Context, id string, clusterId string, cve
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Cluster ID"), clusterId).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("CVE ID"), cveId).ProtoQuery(),
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
@@ -93,7 +91,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string, clusterId string, cve
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string, clusterId string, cveId string) (*storage.ClusterCVEEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ClusterCVEEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ClusterCVEEdge")
 
 	var sacQueryFilter *v1.Query
@@ -101,8 +99,6 @@ func (s *storeImpl) Get(ctx context.Context, id string, clusterId string, cveId 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Cluster ID"), clusterId).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("CVE ID"), cveId).ProtoQuery(),
 	)
 
 	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)

@@ -88,7 +88,7 @@ func (s *ReprocessorPostgresTestSuite) TearDownSuite() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
-func (s *ReprocessorPostgresTestSuite) TestSearchWithPostgres() {
+func (s *ReprocessorPostgresTestSuite) TestUnsuppressWithPostgres() {
 	ctx := sac.WithAllAccess(context.Background())
 	image := fixtures.GetImageWithUniqueComponents()
 

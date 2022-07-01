@@ -79,6 +79,6 @@ message ClusterCVEEdge {
   oneof has_fixed_by {
     string    fixed_by      = 3 [(gogoproto.moretags) = 'search:"Cluster CVE Fixed By,store,hidden"'];
   }
-  string      cluster_id    = 4 [(gogoproto.moretags) = 'sql:"pk,fk(Cluster:id)"'];
-  string      cve_id        = 5 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:id),no-fk-constraint"'];
+  string      cluster_id    = 4 [(gogoproto.moretags) = 'sql:"fk(Cluster:id)"'];
+  string      cve_id        = 5 [(gogoproto.moretags) = 'sql:"fk(CVE:id),no-fk-constraint"'];
 }

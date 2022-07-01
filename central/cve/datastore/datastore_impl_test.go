@@ -339,11 +339,6 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 	suite.Equal(expectedCVE, storedCVEs[0])
 	suite.Equal(expectedCVE2, storedCVEs[1])
 
-	// CVE datastore will not delete CVEs until they are no longer referenced by cluster/image/node.
-	cveEdges, _ := edgeStore.GetAll()
-	for _, cveEdge := range cveEdges {
-		suite.NoError(edgeStore.Delete(cveEdge.GetId()))
-	}
 	// Delete CVE.
 	suite.NoError(datastore.Delete(ctx, cve.GetId()))
 	_, exists, err = datastore.Get(ctx, cve.GetId())
