@@ -47,7 +47,6 @@ func init() {
 		&storage.NodeCVE{}:                                      resources.Node,
 		&storage.PermissionSet{}:                                resources.Role,
 		&storage.Pod{}:                                          resources.Deployment,
-		&storage.Policy{}:                                       resources.Policy,
 		&storage.PolicyCategory{}:                               resources.Policy,
 		&storage.ProcessBaselineResults{}:                       resources.ProcessWhitelist,
 		&storage.ProcessBaseline{}:                              resources.ProcessWhitelist,
