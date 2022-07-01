@@ -33,9 +33,11 @@ var (
 	ScannerStatus          = newFieldLabel("Scanner Status")
 	LastContactTime        = newFieldLabel("Last Contact")
 
-	PolicyID       = newFieldLabel("Policy ID")
-	Enforcement    = newFieldLabel("Enforcement")
-	PolicyName     = newFieldLabel("Policy")
+	PolicyID           = newFieldLabel("Policy ID")
+	Enforcement        = newFieldLabel("Enforcement")
+	PolicyName         = newFieldLabel("Policy")
+	PolicyCategoryName = newFieldLabel("Policy Category")
+
 	LifecycleStage = newFieldLabel("Lifecycle Stage")
 	Description    = newFieldLabel("Description")
 	Category       = newFieldLabel("Category")

@@ -3,6 +3,7 @@ package search
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/set"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 // GetGlobalSearchCategories returns a set of search categories
@@ -22,5 +23,9 @@ func GetGlobalSearchCategories() set.V1SearchCategorySet {
 		v1.SearchCategory_ROLEBINDINGS,
 		v1.SearchCategory_SUBJECTS,
 	)
+
+	if features.NewPolicyCategories.Enabled() {
+		globalSearchCategories.Add(v1.SearchCategory_POLICY_CATEGORIES)
+	}
 	return globalSearchCategories
 }
