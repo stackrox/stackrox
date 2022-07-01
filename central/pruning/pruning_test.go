@@ -57,6 +57,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
@@ -70,12 +71,14 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
+	versionUtils "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
 const (
@@ -284,7 +287,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }
 
-func generateClusterDataStructures(t *testing.T, config *storage.Config) GarbageCollector {
+func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, clusterDatastore.DataStore) {
 	db, bleveIndex := setupRocksDBAndBleve(t)
 
 	clusterStorage, err := clusterRocksDB.New(db)
@@ -313,7 +316,7 @@ func generateClusterDataStructures(t *testing.T, config *storage.Config) Garbage
 	mockProvider := graphMocks.NewMockProvider(mockCtrl)
 
 	nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	netEntityDataStore.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
+	//netEntityDataStore.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
 
 	clusterDataStore, err := clusterDatastore.New(
 		clusterStorage,
@@ -337,50 +340,32 @@ func generateClusterDataStructures(t *testing.T, config *storage.Config) Garbage
 		networkBaselineMgr )
 
 	require.NoError(t, err)
-	flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl), nil)
-	connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
-	namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil)
-	deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
-	podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
-	alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(nil, nil)
-	alertDataStore.EXPECT().MarkAlertStale(gomock.Any(), gomock.Any()).Return(nil)
-	notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
-	deploymentDataStore.EXPECT().RemoveDeployment(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-	podDataStore.EXPECT().RemovePod(gomock.Any(), gomock.Any()).Return(nil)
-	nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
-	secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(nil, nil)
-	serviceAccountMockDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
-	roleDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
-	roleBindingDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
-	netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), gomock.Any()).Return(nil)
-	networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
-	secretDataStore.EXPECT().RemoveSecret(gomock.Any(), gomock.Any()).Return(nil)
-	serviceAccountMockDataStore.EXPECT().RemoveServiceAccount(gomock.Any(), gomock.Any()).Return(nil)
-	roleDataStore.EXPECT().RemoveRole(gomock.Any(), gomock.Any()).Return(nil)
-	roleBindingDataStore.EXPECT().RemoveRoleBinding(gomock.Any(), gomock.Any()).Return(nil)
+	flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl), nil)
+	connMgr.EXPECT().GetConnection(gomock.Any()).AnyTimes().Return(nil)
+	namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return([]search.Result{}, nil)
+	deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	alertDataStore.EXPECT().MarkAlertStale(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).AnyTimes().Return()
+	deploymentDataStore.EXPECT().RemoveDeployment(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	podDataStore.EXPECT().RemovePod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	serviceAccountMockDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	roleDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	roleBindingDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).AnyTimes().Return(nil)
+	secretDataStore.EXPECT().RemoveSecret(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	serviceAccountMockDataStore.EXPECT().RemoveServiceAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	roleDataStore.EXPECT().RemoveRole(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	roleBindingDataStore.EXPECT().RemoveRoleBinding(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
-	mockConfigDatastore.EXPECT().GetConfig(gomock.Any()).Return(config, nil)
+	//mockConfigDatastore.EXPECT().GetConfig(gomock.Any()).AnyTimes().Return(config, nil)
 
-	gc := newGarbageCollector(
-		nil,
-		nil,
-		nil,
-		clusterDataStore,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		mockConfigDatastore,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil)
-
-	return gc
+	return mockConfigDatastore, clusterDataStore
 }
 
 func TestImagePruning(t *testing.T) {
@@ -571,84 +556,148 @@ func TestImagePruning(t *testing.T) {
 }
 
 func TestClusterPruning(t *testing.T) {
-	if !features.DecommissionedClusterRetention.Enabled() {
-		t.Skip("Skipping cluster pruning tests because decommissioned cluster retention feature is turned off")
-	}
+	isolator := envisolator.NewEnvIsolator(t)
+	defer isolator.RestoreAll()
+
+	isolator.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
+	isolator.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+
+	testbuildinfo.SetForTest(t)
+	versionUtils.SetExampleVersion(t)
+
 	var cases = []struct {
 		name        string
 		config 	    *storage.Config
 		clusters    []*storage.Cluster
-		expectedIDs []string
+		expectedNames []string
 	}{
 		{
-			name: "1 healthy cluster, 3 unhealthy clusters (1 excluded, 1 unhealthy since few days, 1 unhealthy since many days)",
-			config: getTestSystemConfig(90, 72),
-			clusters: []*storage.Cluster {
+			name: "No pruning if config is set to 0 retention days",
+			config: getTestSystemConfig(0, 90, 72),
+			clusters: []*storage.Cluster{
 				{
-					Id: "HEALTHY cluster",
-					HealthStatus: &storage.ClusterHealthStatus{
-						SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-					},
+					Name: "HEALTHY cluster",
+					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 				},
 				{
-					Id: "UNHEALTHY cluster matching a label to ignore the cluster",
-					Labels: map[string]string{"k2": "v2"},
-					HealthStatus: &storage.ClusterHealthStatus{
-						SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-						LastContact:        timeBeforeDays(80),
-					},
-				},
-				{
-					Id: "UNHEALTHY cluster with fewer than retentionDays since last contact",
+					Name: "UNHEALTHY cluster with last contact time before config creation time",
 					Labels: map[string]string{"k1": "v2"},
-					HealthStatus: &storage.ClusterHealthStatus{
-						SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-						LastContact:        timeBeforeDays(10),
-					},
-				},
-				{
-					Id: "UNHEALTHY cluster with last contact time before config creation time",
-					Labels: map[string]string{"k1": "v2"},
-					HealthStatus: &storage.ClusterHealthStatus{
-						SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-						LastContact:        timeBeforeDays(80),
-					},
+					HealthStatus: unhealthyClusterStatus(80),
 				},
 			},
-			expectedIDs : []string {
+			expectedNames: []string{
+				"HEALTHY cluster",
+				"UNHEALTHY cluster with last contact time before config creation time",
+			},
+		},
+		{
+			name: "No pruning if config recently updated",
+			config: getTestSystemConfig(60, 90, 23),
+			clusters: []*storage.Cluster{
+				{
+					Name: "HEALTHY cluster",
+					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
+				},
+				{
+					Name: "UNHEALTHY cluster with last contact time before config creation time",
+					Labels: map[string]string{"k1": "v2"},
+					HealthStatus: unhealthyClusterStatus(80),
+				},
+			},
+			expectedNames: []string{
+				"HEALTHY cluster",
+				"UNHEALTHY cluster with last contact time before config creation time",
+			},
+		},
+		{
+			name: "No pruning if config was created less than retention days ago",
+			config: getTestSystemConfig(10, 5, 72),
+			clusters: []*storage.Cluster{
+				{
+					Name: "HEALTHY cluster",
+					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
+				},
+				{
+					Name: "UNHEALTHY cluster with last contact time before config creation time",
+					Labels: map[string]string{"k1": "v2"},
+					HealthStatus: unhealthyClusterStatus(80),
+				},
+			},
+			expectedNames: []string{
+				"HEALTHY cluster",
+				"UNHEALTHY cluster with last contact time before config creation time",
+			},
+		},
+		{
+			name: "1 healthy cluster, 3 unhealthy clusters (1 excluded, 1 unhealthy recently, 1 past retention)",
+			config: getTestSystemConfig(60, 90, 72),
+			clusters: []*storage.Cluster {
+				{
+					Name: "HEALTHY cluster",
+					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
+				},
+				{
+					Name: "UNHEALTHY cluster matching a label to ignore the cluster",
+					Labels: map[string]string{"k2": "v2"},
+					HealthStatus: unhealthyClusterStatus(80),
+				},
+				{
+					Name: "UNHEALTHY cluster with fewer than retentionDays since last contact",
+					Labels: map[string]string{"k1": "v2"},
+					HealthStatus: unhealthyClusterStatus(10),
+				},
+				{
+					Name: "UNHEALTHY cluster with last contact time more than retention",
+					Labels: map[string]string{"k1": "v2"},
+					HealthStatus: unhealthyClusterStatus(80),
+				},
+			},
+			expectedNames : []string {
 				"HEALTHY cluster",
 				"UNHEALTHY cluster matching a label to ignore the cluster",
-				"UNHEALTHY cluster with fewer than retentionDays since last contact"
+				"UNHEALTHY cluster with fewer than retentionDays since last contact",
 			},
 		},
 	}
+	ctx := sac.WithAllAccess(context.Background())
 
-	//scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
-	//	[]permissions.ResourceWithAccess{
-	//		resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
-	//		resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
-	//		resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
-	//		resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
-	//		resourceWithAccess(storage.Access_READ_ACCESS, resources.Risk),
-	//		resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Cluster),
-	//	})
-	//
-	//ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			configDS, clusterDS := generateClusterDataStructures(t)
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Cluster)))
+			for _, cluster := range c.clusters {
+				_, err := clusterDS.AddCluster(ctx, cluster)
+				require.NoError(t, err)
+			}
 
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, nil, nil, nil, nil, nil, configDS, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc.collectClusters(c.config.GetPrivateConfig())
 
+			// Now get all clusters and compare the names to ensure only the expected ones exist
+			finalClusters, err := clusterDS.GetClusters(ctx)
+			require.NoError(t, err)
+			require.Len(t, finalClusters, len(c.expectedNames), "Did not find expected number of clusters after gc")
+
+			for _, cluster := range finalClusters {
+				require.NotEqual(t, -1, sliceutils.StringFind(c.expectedNames, cluster.GetName()), "cluster %s should have been deleted", cluster.GetName())
+			}
+		})
+	}
 
 }
 
-func getTestSystemConfig(createdBeforeDays int, lastUpdatedBeforeHours int) *storage.Config {
+func unhealthyClusterStatus(daysSinceLastContact int) *storage.ClusterHealthStatus {
+	return &storage.ClusterHealthStatus{
+		SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+		LastContact:        timeBeforeDays(daysSinceLastContact),
+	}
+}
+
+func getTestSystemConfig(retentionDays int, createdBeforeDays int, lastUpdatedBeforeHours int) *storage.Config {
 	return &storage.Config{
 		PrivateConfig: &storage.PrivateConfig{
 			DecommissionedClusterRetention: &storage.DecommissionedClusterRetentionConfig{
-				RetentionDurationDays: 60,
+				RetentionDurationDays: int32(retentionDays),
 				IgnoreClusterLabels: map[string]string{
 					"k1": "v1",
 					"k2": "v2",
