@@ -520,6 +520,9 @@ func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args
 
 // PlottedVulns returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *nodeResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedNodeVulnerabilities.")
+	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }
