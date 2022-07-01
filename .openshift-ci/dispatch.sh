@@ -10,8 +10,12 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 
 openshift_ci_mods
-openshift_ci_import_creds
-create_hold_trap
+handle_nightly_runs
+
+info "Status after mods:"
+"$ROOT/status.sh" || true
+
+trap ci_exit_trap EXIT
 
 if [[ "$#" -lt 1 ]]; then
     die "usage: dispatch <ci-job> [<...other parameters...>]"

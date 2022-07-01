@@ -28,6 +28,18 @@ ci_export() {
     fi
 }
 
+ci_exit_trap() {
+    info "Executing a general purpose exit trap for CI"
+    echo "Exit code is: $?"
+
+    (send_slack_notice_for_failures_on_merge "$?") || { echo "ERROR: Could not slack a test failure message"; }
+
+    while [[ -e /tmp/hold ]]; do
+        info "Holding this job for debug"
+        sleep 60
+    done
+}
+
 setup_deployment_env() {
     info "Setting up the deployment environment"
 
@@ -810,7 +822,10 @@ openshift_ci_mods() {
     export OPENSHIFT_CI=true
 
     # Provide Circle CI vars that are commonly used
-    export CIRCLE_JOB="${JOB_NAME:-${OPENSHIFT_BUILD_NAME}}"
+    CIRCLE_JOB="${JOB_NAME_SAFE:-${OPENSHIFT_BUILD_NAME:-unknown}}"
+    CIRCLE_JOB="${CIRCLE_JOB#merge-}"
+    CIRCLE_JOB="${CIRCLE_JOB#nightly-}"
+    export CIRCLE_JOB
     CIRCLE_TAG="$(git tag --contains | head -1)"
     export CIRCLE_TAG
 
@@ -963,7 +978,7 @@ store_qa_test_results() {
     store_test_results qa-tests-backend/build/test-results/test "$to"
 }
 
-store_test_results() {    
+store_test_results() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: store_test_results <from> <to>"
     fi
@@ -980,6 +995,70 @@ store_test_results() {
     local dest="${ARTIFACT_DIR}/junit-$to"
 
     cp -a "$from" "$dest" || true # (best effort)
+}
+
+send_slack_notice_for_failures_on_merge() {
+    # local exitstatus="${1:-}"
+
+    # if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
+    #     return
+    # fi
+
+    # local tag
+    # tag="$(make --quiet tag)"
+    # [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
+    #     return
+    # }
+
+    local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
+
+    local commit_details
+    org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org') || return 1
+    repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo') || return 1
+    [[ "$org" != "null" ]] && [[ "$repo" != "null" ]] || return 1
+    local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${OPENSHIFT_BUILD_COMMIT}"
+    commit_details=$(curl --retry 5 -sS "${commit_details_url}") || return 1
+
+    local job_name="${JOB_NAME_SAFE#merge-}"
+
+    local commit_msg
+    commit_msg=$(jq -r <<<"$commit_details" '.commit.message') || return 1
+    local commit_url
+    commit_url=$(jq -r <<<"$commit_details" '.html_url') || return 1
+    local author
+    author=$(jq -r <<<"$commit_details" '.commit.author.name') || return 1
+    [[ "$commit_msg" != "null" ]] && [[ "$commit_url" != "null" ]] && [[ "$author" != "null" ]] || return 1
+
+    local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
+
+    local body
+    body=$(cat <<_EOB_
+{
+    "text": "*Job Name:* $job_name",
+    "blocks": [
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Prow job failure: $job_name"
+			}
+		},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Commit:* <$commit_url|$commit_msg>\n*Author:* $author\n*Log:* $log_url"
+            }
+        },
+		{
+			"type": "divider"
+		}
+    ]
+}
+_EOB_
+    )
+
+    echo "$body" | jq | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
