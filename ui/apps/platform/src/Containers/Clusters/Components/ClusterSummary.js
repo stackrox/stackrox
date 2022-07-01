@@ -37,6 +37,7 @@ const ClusterSummary = ({
     centralVersion,
     clusterId,
     clusterRetentionInfo,
+    isDecommissionedClusterRetentionEnabled,
 }) => (
     <CollapsibleSection title="Cluster Summary" titleClassName="text-xl">
         <div className="grid grid-columns-1 md:grid-columns-2 xl:grid-columns-4 grid-gap-4 xl:grid-gap-6 mb-4 w-full">
@@ -132,11 +133,13 @@ const ClusterSummary = ({
                     )}
                 </Widget>
             </div>
-            <div className="s-1">
-                <Widget header="Cluster Deletion" bodyClassName="p-2">
-                    <ClusterDeletion clusterRetentionInfo={clusterRetentionInfo} />
-                </Widget>
-            </div>
+            {isDecommissionedClusterRetentionEnabled && (
+                <div className="s-1">
+                    <Widget header="Cluster Deletion" bodyClassName="p-2">
+                        <ClusterDeletion clusterRetentionInfo={clusterRetentionInfo} />
+                    </Widget>
+                </div>
+            )}
         </div>
     </CollapsibleSection>
 );
@@ -186,6 +189,7 @@ ClusterSummary.propTypes = {
     centralVersion: PropTypes.string.isRequired,
     clusterId: PropTypes.string.isRequired,
     clusterRetentionInfo: PropTypes.oneOf([PropTypes.shape({}), PropTypes.null]).isRequired,
+    isDecommissionedClusterRetentionEnabled: PropTypes.bool.isRequired,
 };
 
 export default ClusterSummary;

@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 
 import Loader from 'Components/Loader';
 import { labelClassName } from 'constants/form.constants';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
 import ClusterSummary from './Components/ClusterSummary';
@@ -31,6 +32,11 @@ function ClusterEditForm({
     handleChangeLabels,
     isLoading,
 }: ClusterEditFormProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDecommissionedClusterRetentionEnabled = isFeatureFlagEnabled(
+        'ROX_DECOMMISSIONED_CLUSTER_RETENTION'
+    );
+
     if (isLoading) {
         return <Loader />;
     }
@@ -47,6 +53,9 @@ function ClusterEditForm({
                     centralVersion={centralVersion}
                     clusterId={selectedCluster.id}
                     clusterRetentionInfo={clusterRetentionInfo}
+                    isDecommissionedClusterRetentionEnabled={
+                        isDecommissionedClusterRetentionEnabled
+                    }
                 />
             )}
             <form
