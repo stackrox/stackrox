@@ -47,6 +47,14 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENT_EDGE, "nodecomponentedge", (*storage.NodeComponentEdge)(nil)))
+		schema.SetSearchScope([]v1.SearchCategory{
+			v1.SearchCategory_NODE_VULNERABILITIES,
+			v1.SearchCategory_NODE_COMPONENT_CVE_EDGE,
+			v1.SearchCategory_NODE_COMPONENTS,
+			v1.SearchCategory_NODE_COMPONENT_EDGE,
+			v1.SearchCategory_NODES,
+			v1.SearchCategory_CLUSTERS,
+		}...)
 		RegisterTable(schema, CreateTableNodeComponentEdgesStmt)
 		return schema
 	}()
