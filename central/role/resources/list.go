@@ -80,6 +80,7 @@ var (
 	DebugLogs = newDeprecatedResourceMetadata("DebugLogs", permissions.GlobalScope,
 		Administration)
 	Group            = newDeprecatedResourceMetadata("Group", permissions.GlobalScope, Access)
+	ImageComponent   = newDeprecatedResourceMetadata("ImageComponent", permissions.NamespaceScope, Image)
 	ImageIntegration = newDeprecatedResourceMetadata("ImageIntegration",
 		permissions.GlobalScope, Integration)
 	Indicator = newDeprecatedResourceMetadata("Indicator", permissions.NamespaceScope,
