@@ -178,17 +178,6 @@ func insertIntoDeploymentsContainers(ctx context.Context, tx pgx.Tx, obj *storag
 	if err != nil {
 		return err
 	}
-	for childIdx, child := range obj.GetVolumes() {
-		if err := insertIntoDeploymentsContainersVolumes(ctx, tx, child, deployments_Id, idx, childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetVolumes()))
-	if err != nil {
-		return err
-	}
 	for childIdx, child := range obj.GetSecrets() {
 		if err := insertIntoDeploymentsContainersSecrets(ctx, tx, child, deployments_Id, idx, childIdx); err != nil {
 			return err
@@ -216,29 +205,6 @@ func insertIntoDeploymentsContainersEnvs(ctx context.Context, tx pgx.Tx, obj *st
 	}
 
 	finalStr := "INSERT INTO deployments_containers_envs (deployments_Id, deployments_containers_idx, idx, Key, Value, EnvVarSource) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, EnvVarSource = EXCLUDED.EnvVarSource"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoDeploymentsContainersVolumes(ctx context.Context, tx pgx.Tx, obj *storage.Volume, deployments_Id string, deployments_containers_idx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		deployments_Id,
-		deployments_containers_idx,
-		idx,
-		obj.GetName(),
-		obj.GetSource(),
-		obj.GetDestination(),
-		obj.GetReadOnly(),
-		obj.GetType(),
-	}
-
-	finalStr := "INSERT INTO deployments_containers_volumes (deployments_Id, deployments_containers_idx, idx, Name, Source, Destination, ReadOnly, Type) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Source = EXCLUDED.Source, Destination = EXCLUDED.Destination, ReadOnly = EXCLUDED.ReadOnly, Type = EXCLUDED.Type"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -562,9 +528,6 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx
 		if err = s.copyFromDeploymentsContainersEnvs(ctx, tx, deployments_Id, idx, obj.GetConfig().GetEnv()...); err != nil {
 			return err
 		}
-		if err = s.copyFromDeploymentsContainersVolumes(ctx, tx, deployments_Id, idx, obj.GetVolumes()...); err != nil {
-			return err
-		}
 		if err = s.copyFromDeploymentsContainersSecrets(ctx, tx, deployments_Id, idx, obj.GetSecrets()...); err != nil {
 			return err
 		}
@@ -619,73 +582,6 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx pg
 			// delete for the top level parent
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_envs"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.Volume) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"deployments_id",
-
-		"deployments_containers_idx",
-
-		"idx",
-
-		"name",
-
-		"source",
-
-		"destination",
-
-		"readonly",
-
-		"type",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			deployments_Id,
-
-			deployments_containers_idx,
-
-			idx,
-
-			obj.GetName(),
-
-			obj.GetSource(),
-
-			obj.GetDestination(),
-
-			obj.GetReadOnly(),
-
-			obj.GetType(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_volumes"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1259,18 +1155,12 @@ func dropTableDeployments(ctx context.Context, db *pgxpool.Pool) {
 func dropTableDeploymentsContainers(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers CASCADE")
 	dropTableDeploymentsContainersEnvs(ctx, db)
-	dropTableDeploymentsContainersVolumes(ctx, db)
 	dropTableDeploymentsContainersSecrets(ctx, db)
 
 }
 
 func dropTableDeploymentsContainersEnvs(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_envs CASCADE")
-
-}
-
-func dropTableDeploymentsContainersVolumes(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_volumes CASCADE")
 
 }
 
