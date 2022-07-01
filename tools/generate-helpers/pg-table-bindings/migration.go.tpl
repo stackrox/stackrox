@@ -25,6 +25,7 @@ import (
 	legacy "github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/postgres"
 	"github.com/stackrox/rox/migrator/types"
+	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -34,8 +35,8 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: 100,
-		VersionAfter:   storage.Version{SeqNum: 101},
+		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNum() + {{.Migration.MigrateSequence}},
+		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum()) + {{add .Migration.MigrateSequence 1}}},
 		Run: func(databases *types.Databases) error {
 		    {{- if $rocksDB}}
 		    legacyStore, err := legacy.New(databases.{{if $rocksDB}}PkgRocksDB{{else}}BoltDB{{end}})

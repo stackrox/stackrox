@@ -60,7 +60,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
-	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	s.ctx = sac.WithAllAccess(context.Background())
 	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
 	s.Require().NoError(err)
 	pgtest.CleanUpDB(s.ctx, s.T(), s.pool)

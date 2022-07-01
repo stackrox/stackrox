@@ -12,6 +12,7 @@ import (
 	legacy "github.com/stackrox/rox/migrator/migrations/n_23_to_n_24_postgres_image_integrations/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_23_to_n_24_postgres_image_integrations/postgres"
 	"github.com/stackrox/rox/migrator/types"
+	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	bolt "go.etcd.io/bbolt"
@@ -20,8 +21,8 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: 100,
-		VersionAfter:   storage.Version{SeqNum: 101},
+		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNum() + 23,
+		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum()) + 24},
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.New(databases.BoltDB)
 			if err := move(databases.BoltDB, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
@@ -37,7 +38,7 @@ var (
 )
 
 func move(legacyDB *bolt.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	imageIntegrations, err := legacyStore.GetAll(ctx)

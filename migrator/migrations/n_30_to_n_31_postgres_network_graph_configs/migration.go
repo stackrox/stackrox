@@ -12,6 +12,7 @@ import (
 	legacy "github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_graph_configs/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_graph_configs/postgres"
 	"github.com/stackrox/rox/migrator/types"
+	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -20,8 +21,8 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: 100,
-		VersionAfter:   storage.Version{SeqNum: 101},
+		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNum() + 30,
+		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum()) + 31},
 		Run: func(databases *types.Databases) error {
 			legacyStore, err := legacy.New(databases.PkgRocksDB)
 			if err != nil {
@@ -40,7 +41,7 @@ var (
 )
 
 func move(legacyDB *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var networkGraphConfigs []*storage.NetworkGraphConfig
