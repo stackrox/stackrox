@@ -1,6 +1,7 @@
 package enrichment
 
 import (
+	"context"
 	"time"
 
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
@@ -9,26 +10,29 @@ import (
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
+	imageintegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	signatureIntegrationDataStore "github.com/stackrox/rox/central/signatureintegration/datastore"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/suppressor"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/metrics"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	once sync.Once
 
-	ie      imageEnricher.ImageEnricher
-	ne      nodeEnricher.NodeEnricher
-	en      Enricher
-	cf      fetcher.OrchestratorIstioCVEManager
-	manager Manager
-
+	ie                imageEnricher.ImageEnricher
+	ne                nodeEnricher.NodeEnricher
+	en                Enricher
+	cf                fetcher.OrchestratorIstioCVEManager
+	manager           Manager
+	ad                imageintegrationDataStore.DataStore
 	metadataCacheOnce sync.Once
 	metadataCache     expiringcache.Cache
 
@@ -53,6 +57,17 @@ func initialize() {
 	en = New(datastore.Singleton(), ie)
 	cf = fetcher.SingletonManager()
 	manager = newManager(imageintegration.Set(), ne, cf)
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
+	if err != nil {
+		log.Errorf("unable to use previous integrations: %s", err)
+	}
+	for _, ii := range integrations {
+		if err := manager.Upsert(ii); err != nil {
+			log.Errorf("unable to use previous integration %s: %v", ii.GetName(), err)
+		}
+	}
 }
 
 // Singleton provides the singleton Enricher to use.
