@@ -56,12 +56,11 @@ const selectors = {
     },
     dataRetention: {
         widget: '[data-testid="data-retention-config"]',
-        allRuntimeViolationsBox: '[data-testid="number-box"]:contains("All runtime violations")',
+        allRuntimeViolationsBox: '.pf-c-card:contains("All runtime violations")',
         deletedRuntimeViolationsBox:
-            '[data-testid="number-box"]:contains("Runtime violations for deleted deployments")',
-        resolvedDeployViolationsBox:
-            '[data-testid="number-box"]:contains("Resolved deploy-phase violations")',
-        imagesBox: '[data-testid="number-box"]:contains("Images no longer deployed")',
+            '.pf-c-card:contains("Runtime violations for deleted deployments")',
+        resolvedDeployViolationsBox: '.pf-c-card:contains("Resolved deploy-phase violations")',
+        imagesBox: '.pf-c-card:contains("Images no longer deployed")',
     },
 };
 

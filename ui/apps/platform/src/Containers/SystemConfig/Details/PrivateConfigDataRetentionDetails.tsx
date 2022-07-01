@@ -1,105 +1,181 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
-import {
-    Card,
-    CardBody,
-    CardTitle,
-    Divider,
-    Gallery,
-    GalleryItem,
-    Hint,
-    HintTitle,
-    HintBody,
-} from '@patternfly/react-core';
+import { Button, Card, CardBody, CardTitle, Grid, GridItem, Title } from '@patternfly/react-core';
 
+import LinkShim from 'Components/PatternFly/LinkShim';
+import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
 import { PrivateConfig } from 'types/config.proto';
+import { clustersBasePath } from 'routePaths';
 
-const UNKNOWN_FLAG = -1;
-
-type NumberBoxProps = {
-    label: string;
-    value?: number;
-    suffix?: string;
+type DataRetentionValueProps = {
+    value: number | undefined;
+    suffix: string;
 };
 
-const NumberBox = ({ label, value = UNKNOWN_FLAG, suffix = '' }: NumberBoxProps): ReactElement => (
-    <Hint data-testid="number-box" className="pf-u-h-100">
-        <HintTitle className="pf-u-font-size-sm">{label}</HintTitle>
-        <HintBody className="pf-u-font-size-xl pf-u-font-weight-bold">
-            {value === UNKNOWN_FLAG && `Unknown`}
-            {!value && `Never deleted`}
-            {value > 0 && `${value} ${pluralize(suffix, value)}`}
-        </HintBody>
-    </Hint>
-);
+function DataRetentionValue({ value, suffix }: DataRetentionValueProps): ReactElement {
+    let content = 'Unknown';
+
+    if (typeof value === 'number') {
+        if (value === 0) {
+            content = 'Never deleted';
+        } else if (value > 0) {
+            content = `${value} ${pluralize(suffix, value)}`;
+        }
+    }
+
+    return <span className="pf-u-font-size-xl pf-u-font-weight-bold">{content}</span>;
+}
 
 export type PrivateConfigDataRetentionDetailsProps = {
+    isClustersRoutePathRendered: boolean;
+    isDecommissionedClusterRetentionEnabled: boolean;
     privateConfig: PrivateConfig;
 };
 
 const PrivateConfigDataRetentionDetails = ({
+    isClustersRoutePathRendered,
+    isDecommissionedClusterRetentionEnabled,
     privateConfig,
 }: PrivateConfigDataRetentionDetailsProps): ReactElement => {
     return (
-        <Card data-testid="data-retention-config">
-            <CardTitle>Data retention configuration</CardTitle>
-            <Divider component="div" />
-            <CardBody>
-                <Gallery hasGutter>
-                    <GalleryItem>
-                        <NumberBox
-                            label="All runtime violations"
+        <Grid hasGutter md={6}>
+            <GridItem>
+                <Card isFlat className="pf-u-h-100">
+                    <CardTitle>All runtime violations</CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
                             value={privateConfig?.alertConfig?.allRuntimeRetentionDurationDays}
                             suffix="day"
                         />
-                    </GalleryItem>
-                    <GalleryItem>
-                        <NumberBox
-                            label="Runtime violations for deleted deployments"
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem>
+                <Card isFlat className="pf-u-h-100">
+                    <CardTitle>Runtime violations for deleted deployments</CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
                             value={privateConfig?.alertConfig?.deletedRuntimeRetentionDurationDays}
                             suffix="day"
                         />
-                    </GalleryItem>
-                    <GalleryItem>
-                        <NumberBox
-                            label="Resolved deploy-phase violations"
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem>
+                <Card isFlat className="pf-u-h-100">
+                    <CardTitle>Resolved deploy-phase violations</CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
                             value={privateConfig?.alertConfig?.resolvedDeployRetentionDurationDays}
                             suffix="day"
                         />
-                    </GalleryItem>
-                    <GalleryItem>
-                        <NumberBox
-                            label="Attempted deploy-phase violations"
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem>
+                <Card isFlat className="pf-u-h-100">
+                    <CardTitle>Attempted deploy-phase violations</CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
                             value={privateConfig?.alertConfig?.attemptedDeployRetentionDurationDays}
                             suffix="day"
                         />
-                    </GalleryItem>
-                    <GalleryItem>
-                        <NumberBox
-                            label="Attempted runtime violations"
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem>
+                <Card isFlat className="pf-u-h-100">
+                    <CardTitle>Attempted runtime violations</CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
                             value={
                                 privateConfig?.alertConfig?.attemptedRuntimeRetentionDurationDays
                             }
                             suffix="day"
                         />
-                    </GalleryItem>
-                    <GalleryItem>
-                        <NumberBox
-                            label="Images no longer deployed"
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem>
+                <Card isFlat className="pf-u-h-100">
+                    <CardTitle>Images no longer deployed</CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
                             value={privateConfig?.imageRetentionDurationDays}
                             suffix="day"
                         />
-                    </GalleryItem>
-                    <GalleryItem>
-                        <NumberBox
-                            label="Expired vulnerability requests"
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem>
+                <Card isFlat>
+                    <CardTitle>Expired vulnerability requests</CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
                             value={privateConfig?.expiredVulnReqRetentionDurationDays}
                             suffix="day"
                         />
-                    </GalleryItem>
-                </Gallery>
-            </CardBody>
-        </Card>
+                    </CardBody>
+                </Card>
+            </GridItem>
+            {isDecommissionedClusterRetentionEnabled && (
+                <>
+                    <GridItem sm={12}>
+                        <Title headingLevel="h3" id="cluster-deletion">
+                            Cluster deletion
+                        </Title>
+                    </GridItem>
+                    <GridItem>
+                        <Card isFlat>
+                            <CardTitle>Decommissioned cluster age</CardTitle>
+                            <CardBody>
+                                <DataRetentionValue
+                                    value={
+                                        privateConfig?.decommissionedClusterRetention
+                                            ?.retentionDurationDays
+                                    }
+                                    suffix="day"
+                                />
+                            </CardBody>
+                        </Card>
+                    </GridItem>
+                    <GridItem>
+                        <Card isFlat>
+                            <CardTitle>Ignore clusters which have labels</CardTitle>
+                            <CardBody>
+                                {Object.keys(
+                                    privateConfig?.decommissionedClusterRetention
+                                        ?.ignoreClusterLabels ?? {}
+                                ).length === 0 ? (
+                                    'No labels'
+                                ) : (
+                                    <ClusterLabelsTable
+                                        labels={
+                                            privateConfig.decommissionedClusterRetention
+                                                .ignoreClusterLabels
+                                        }
+                                        hasAction={false}
+                                        handleChangeLabels={() => {}}
+                                    />
+                                )}
+                            </CardBody>
+                            {isClustersRoutePathRendered && (
+                                <CardBody>
+                                    <Button
+                                        variant="link"
+                                        isInline
+                                        component={LinkShim}
+                                        href={`${clustersBasePath}?s[Sensor Status]=UNHEALTHY`}
+                                    >
+                                        Clusters which have Sensor Status: Unhealthy
+                                    </Button>
+                                </CardBody>
+                            )}
+                        </Card>
+                    </GridItem>
+                </>
+            )}
+        </Grid>
     );
 };
 
