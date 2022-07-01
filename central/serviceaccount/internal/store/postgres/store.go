@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -75,7 +76,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoServiceAccounts(ctx context.Context, tx pgx.Tx, obj *storage.ServiceAccount) error {
+func insertIntoServiceAccounts(ctx context.Context, batch *pgx.Batch, obj *storage.ServiceAccount) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -95,10 +96,7 @@ func insertIntoServiceAccounts(ctx context.Context, tx pgx.Tx, obj *storage.Serv
 	}
 
 	finalStr := "INSERT INTO service_accounts (Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -220,18 +218,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ServiceAccount)
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoServiceAccounts(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoServiceAccounts(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
+		batchResults.Close()
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}

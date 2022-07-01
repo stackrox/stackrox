@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -74,7 +75,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoImageComponents(ctx context.Context, tx pgx.Tx, obj *storage.ImageComponent) error {
+func insertIntoImageComponents(ctx context.Context, batch *pgx.Batch, obj *storage.ImageComponent) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -93,10 +94,7 @@ func insertIntoImageComponents(ctx context.Context, tx pgx.Tx, obj *storage.Imag
 	}
 
 	finalStr := "INSERT INTO image_components (Id, Name, Version, Source, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -214,18 +212,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ImageComponent)
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoImageComponents(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoImageComponents(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
+		batchResults.Close()
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}

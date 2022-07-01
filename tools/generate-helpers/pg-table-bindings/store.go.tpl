@@ -25,6 +25,7 @@ import (
     "time"
 
     "github.com/gogo/protobuf/proto"
+    "github.com/hashicorp/go-multierror"
     "github.com/jackc/pgx/v4"
     "github.com/jackc/pgx/v4/pgxpool"
     "github.com/pkg/errors"
@@ -117,7 +118,7 @@ func New(db *pgxpool.Pool) Store {
 
 {{- define "insertObject"}}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
+func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     {{if not $schema.Parent }}
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
@@ -136,10 +137,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
     }
 
     finalStr := "INSERT INTO {{$schema.Table}} ({{template "commaSeparatedColumns" $schema.DBColumnFields }}) VALUES({{ valueExpansion (len $schema.DBColumnFields) }}) ON CONFLICT({{template "commaSeparatedColumns" $schema.PrimaryKeys}}) DO UPDATE SET {{template "updateExclusions" $schema.DBColumnFields}}"
-    _, err := tx.Exec(ctx, finalStr, values...)
-    if err != nil {
-        return err
-    }
+    batch.Queue(finalStr, values...)
 
     {{ if $schema.Children }}
     var query string
@@ -147,17 +145,13 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
 
     {{range $idx, $child := $schema.Children }}
     for childIdx, child := range obj.{{$child.ObjectGetter}} {
-        if err := {{ template "insertFunctionName" $child }}(ctx, tx, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIdx); err != nil {
+        if err := {{ template "insertFunctionName" $child }}(ctx, batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIdx); err != nil {
             return err
         }
     }
 
     query = "delete from {{$child.Table}} where {{ range $idx, $field := $child.FieldsReferringToParent }}{{if $idx}} AND {{end}}{{$field.ColumnName}} = ${{add $idx 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
-    _, err = tx.Exec(ctx, query{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, len(obj.{{$child.ObjectGetter}}))
-    if err != nil {
-        return err
-    }
-
+    batch.Queue(query{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, len(obj.{{$child.ObjectGetter}}))
     {{- end}}
     return nil
 }
@@ -302,20 +296,20 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
 	defer release()
 
     for _, obj := range objs {
-	    tx, err := conn.Begin(ctx)
-	    if err != nil {
-    		return err
-	    }
-
-	    if err := {{ template "insertFunctionName" .Schema }}(ctx, tx, obj); err != nil {
-		    if err := tx.Rollback(ctx); err != nil {
-			    return err
-		    }
+        batch := &pgx.Batch{}
+	    if err := {{ template "insertFunctionName" .Schema }}(ctx, batch, obj); err != nil {
 		    return err
         }
-        if err := tx.Commit(ctx); err != nil {
-            return err
-        }
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		batchResults.Close()
+		if err := result.ErrorOrNil(); err != nil {
+			return err
+		}
     }
     return nil
 }
