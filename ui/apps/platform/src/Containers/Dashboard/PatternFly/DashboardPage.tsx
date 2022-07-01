@@ -51,8 +51,8 @@ function DashboardPage() {
                     <ViolationsByPolicySeverity />
                     <ImagesAtMostRisk />
                     <DeploymentsAtMostRisk />
-                    <ViolationsByPolicyCategory />
                     <AgingImages />
+                    <ViolationsByPolicyCategory />
                     <ComplianceLevelsByStandard />
                 </Gallery>
             </PageSection>

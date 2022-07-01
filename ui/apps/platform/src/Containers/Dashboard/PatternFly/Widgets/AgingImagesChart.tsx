@@ -125,7 +125,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                 width={widgetContainerResizeEntry?.contentRect.width} // Victory defaults to 450
                 padding={{
                     top: 25,
-                    left: 55,
+                    left: 65,
                     right: 10,
                     bottom: 60,
                 }}
@@ -143,7 +143,9 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                 <ChartAxis
                     label={yAxisTitle(searchFilter)}
                     tickFormat={String}
-                    padding={{ bottom: 10 }}
+                    style={{
+                        axisLabel: { padding: 50 },
+                    }}
                     dependentAxis
                     showGrid
                 />

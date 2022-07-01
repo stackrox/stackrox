@@ -5,7 +5,6 @@ import { PageSection } from '@patternfly/react-core';
 import {
     mainPath,
     dashboardPath,
-    dashboardPathPF,
     networkPath,
     violationsPath,
     compliancePath,

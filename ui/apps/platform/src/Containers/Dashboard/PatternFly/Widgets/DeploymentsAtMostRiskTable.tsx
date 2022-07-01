@@ -6,6 +6,7 @@ import { ListDeployment } from 'types/deployment.proto';
 import { networkBasePath, riskBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
+import { Truncate } from '@patternfly/react-core';
 
 const columnNames = {
     deployment: 'Deployment',
@@ -46,10 +47,10 @@ function DeploymentsAtMostRiskTable({
                     <Tr key={id}>
                         <Td className="pf-u-pl-0" dataLabel={columnNames.deployment}>
                             <Link to={riskPageLinkToDeployment(id, name, searchFilter)}>
-                                {name}
+                                <Truncate position="middle" content={name} />
                             </Link>
                         </Td>
-                        <Td dataLabel={columnNames.resourceLocation}>
+                        <Td width={45} dataLabel={columnNames.resourceLocation}>
                             <span>
                                 in &ldquo;
                                 <Link
@@ -59,6 +60,7 @@ function DeploymentsAtMostRiskTable({
                             </span>
                         </Td>
                         <Td
+                            width={20}
                             className="pf-u-pr-0 pf-u-text-align-center-on-md"
                             dataLabel={columnNames.riskPriority}
                         >

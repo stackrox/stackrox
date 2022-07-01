@@ -10,7 +10,6 @@ export const testLoginResultsPath = '/test-login-results';
 export const authResponsePrefix = '/auth/response/';
 
 export const dashboardPath = `${mainPath}/dashboard`;
-export const dashboardPathPF = `${mainPath}/dashboard-pf`;
 export const networkBasePath = `${mainPath}/network`;
 export const networkPath = `${networkBasePath}/:deploymentId?/:externalType?`;
 export const violationsBasePath = `${mainPath}/violations`;
