@@ -248,6 +248,12 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
             setSubmissionError('');
             saveCluster(selectedCluster)
                 .then((response) => {
+                    /*
+                    setSelectedCluster(response.cluster);
+                    setClusterRetentionInfo(clusterResponse.clusterRetentionInfo);
+                    */
+                    // TODO After saveCluster returns response without normalize,
+                    // something like the preceding commented lines should replace the following:
                     const newId = response.response.result.cluster; // really is nested like this
                     const clusterWithId = { ...selectedCluster, id: newId };
                     setSelectedCluster(clusterWithId);
