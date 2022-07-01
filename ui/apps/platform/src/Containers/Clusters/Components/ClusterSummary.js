@@ -5,6 +5,7 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
 import Widget from 'Components/Widget';
 
+import ClusterDeletion from './ClusterDeletion';
 import ClusterStatus from './ClusterStatus';
 import CollectorStatus from './Collector/CollectorStatus';
 import AdmissionControlStatus from './AdmissionControl/AdmissionControlStatus';
@@ -30,7 +31,13 @@ const tdClass = 'px-0 py-1';
  *
  * Metadata renders a special purpose Widget whose body has built-in p-3 (too bad, so sad)
  */
-const ClusterSummary = ({ healthStatus, status, centralVersion, clusterId }) => (
+const ClusterSummary = ({
+    healthStatus,
+    status,
+    centralVersion,
+    clusterId,
+    clusterRetentionInfo,
+}) => (
     <CollapsibleSection title="Cluster Summary" titleClassName="text-xl">
         <div className="grid grid-columns-1 md:grid-columns-2 xl:grid-columns-4 grid-gap-4 xl:grid-gap-6 mb-4 w-full">
             <div className="s-1">
@@ -125,6 +132,11 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, clusterId }) => 
                     )}
                 </Widget>
             </div>
+            <div className="s-1">
+                <Widget header="Cluster Deletion" bodyClassName="p-2">
+                    <ClusterDeletion clusterRetentionInfo={clusterRetentionInfo} />
+                </Widget>
+            </div>
         </div>
     </CollapsibleSection>
 );
@@ -173,6 +185,7 @@ ClusterSummary.propTypes = {
     }).isRequired,
     centralVersion: PropTypes.string.isRequired,
     clusterId: PropTypes.string.isRequired,
+    clusterRetentionInfo: PropTypes.oneOf([PropTypes.shape({}), PropTypes.null]).isRequired,
 };
 
 export default ClusterSummary;

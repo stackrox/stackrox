@@ -15,7 +15,7 @@ import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import useURLSearch from 'hooks/useURLSearch';
 import {
-    fetchClustersAsArray,
+    fetchClustersWithRetentionInfo,
     deleteClusters,
     upgradeClusters,
     upgradeCluster,
@@ -42,6 +42,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const [isViewFiltered, setIsViewFiltered] = useState(false);
 
     const [currentClusters, setCurrentClusters] = useState([]);
+    const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] = useState({});
 
     function notificationsReducer(state, action) {
         switch (action.type) {
@@ -74,8 +75,9 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     ));
 
     function refreshClusterList(restSearch) {
-        return fetchClustersAsArray(restSearch).then((clusters) => {
-            setCurrentClusters(clusters);
+        return fetchClustersWithRetentionInfo(restSearch).then((clustersResponse) => {
+            setCurrentClusters(clustersResponse.clusters);
+            setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
         });
     }
 
@@ -140,8 +142,9 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
             .then(() => {
                 setCheckedClusters([]);
 
-                fetchClustersAsArray().then((clusters) => {
-                    setCurrentClusters(clusters);
+                fetchClustersWithRetentionInfo().then((clustersResponse) => {
+                    setCurrentClusters(clustersResponse.clusters);
+                    setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
                 });
             })
             .finally(() => {
@@ -223,6 +226,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     }
 
     const columnOptions = {
+        clusterIdToRetentionInfo,
         metadata,
         rowActions: {
             onDeleteHandler,

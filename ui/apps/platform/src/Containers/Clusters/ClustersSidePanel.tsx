@@ -14,11 +14,13 @@ import { useTheme } from 'Containers/ThemeProvider';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import {
-    getClusterById,
+    fetchClusterWithRetentionInformationById,
     saveCluster,
     downloadClusterYaml,
     getClusterDefaults,
 } from 'services/ClustersService';
+import { Cluster } from 'types/cluster.proto';
+import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
@@ -29,7 +31,7 @@ import {
     wizardSteps,
     centralEnvDefault,
 } from './cluster.helpers';
-import { CentralEnv, Cluster, ClusterManagerType } from './clusterTypes';
+import { CentralEnv, ClusterManagerType } from './clusterTypes';
 
 const requiredKeys = ['name', 'type', 'mainImage', 'centralApiEndpoint'];
 
@@ -53,10 +55,12 @@ type MessageState = {
 function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const metadata = useMetadata();
 
-    const defaultCluster = cloneDeep(newClusterDefault);
+    const defaultCluster = cloneDeep(newClusterDefault) as unknown as Cluster;
 
     const { isDarkMode } = useTheme();
-    const [selectedCluster, setSelectedCluster] = useState<Partial<Cluster> | null>(defaultCluster);
+    const [selectedCluster, setSelectedCluster] = useState<Cluster>(defaultCluster);
+    const [clusterRetentionInfo, setClusterRetentionInfo] =
+        useState<DecommissionedClusterRetentionInfo>(null);
     const [centralEnv, setCentralEnv] = useState<CentralEnv>(centralEnvDefault);
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
     const [loadingCounter, setLoadingCounter] = useState(0);
@@ -121,12 +125,14 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                 setMessageState(null);
                 setIsBlocked(false);
                 // don't want to cache or memoize, because we always want the latest real-time data
-                getClusterById(clusterIdToRetrieve)
-                    .then((cluster) => {
+                fetchClusterWithRetentionInformationById(clusterIdToRetrieve)
+                    .then((clusterResponse) => {
+                        const { cluster } = clusterResponse;
                         // eslint-disable-next-line no-param-reassign
                         // cluster.managedBy = 'MANAGER_TYPE_MANUAL';
                         // TODO: refactor to use useReducer effect
                         setSelectedCluster(cluster);
+                        setClusterRetentionInfo(clusterResponse.clusterRetentionInfo);
 
                         // stop polling after contact is established
                         if (selectedCluster?.healthStatus?.lastContact) {
@@ -240,7 +246,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         if (wizardStep === wizardSteps.FORM) {
             setMessageState(null);
             setSubmissionError('');
-            saveCluster(selectedCluster as Cluster)
+            saveCluster(selectedCluster)
                 .then((response) => {
                     const newId = response.response.result.cluster; // really is nested like this
                     const clusterWithId = { ...selectedCluster, id: newId };
@@ -350,7 +356,8 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                         <ClusterEditForm
                             centralEnv={centralEnv}
                             centralVersion={metadata.version}
-                            selectedCluster={selectedCluster as Cluster}
+                            clusterRetentionInfo={clusterRetentionInfo}
+                            selectedCluster={selectedCluster}
                             managerType={managerType(selectedCluster)}
                             handleChange={onChange}
                             handleChangeLabels={handleChangeLabels}

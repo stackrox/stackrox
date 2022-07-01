@@ -354,6 +354,19 @@ const resolveThresholds = (expiryStatus: CertExpiryStatus) => {
 /*
  * Adapt health status categories to certificate expiration.
  */
+export const getClusterDeletionStatus = (daysUntilDeletion: number) => {
+    if (daysUntilDeletion < 7) {
+        return 'UNHEALTHY';
+    }
+    if (daysUntilDeletion < 30) {
+        return 'DEGRADED';
+    }
+    return 'UNINITIALIZED';
+};
+
+/*
+ * Adapt health status categories to certificate expiration.
+ */
 export const getCredentialExpirationStatus = (
     sensorCertExpiryStatus: CertExpiryStatus,
     currentDatetime

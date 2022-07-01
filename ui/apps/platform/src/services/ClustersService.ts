@@ -3,7 +3,11 @@ import qs from 'qs';
 
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
 import { saveFile } from 'services/DownloadService';
-import { ClusterDefaultsResponse } from 'types/clusterService.proto';
+import {
+    ClusterDefaultsResponse,
+    ClusterResponse,
+    ClustersResponse,
+} from 'types/clusterService.proto';
 import axios from './instance';
 import { cluster as clusterSchema } from './schemas';
 
@@ -58,12 +62,37 @@ export function fetchClustersAsArray(options?: RestSearchOption[]): Promise<Clus
     });
 }
 
-/**
- * Fetches unwrapped cluster object by ID.
+/*
+ * Fetch secured clusters and retention information.
  */
-export function getClusterById(id: string): Promise<Cluster | null> {
-    return axios.get<{ cluster: Cluster }>(`${clustersUrl}/${id}`).then((response) => {
-        return response?.data?.cluster ?? null;
+export function fetchClustersWithRetentionInfo(
+    options?: RestSearchOption[]
+): Promise<ClustersResponse> {
+    let queryString = '';
+    if (options && options.length !== 0) {
+        const query = searchOptionsToQuery(options);
+        queryString = qs.stringify(
+            {
+                query,
+            },
+            {
+                addQueryPrefix: true,
+                arrayFormat: 'repeat',
+                allowDots: true,
+            }
+        );
+    }
+    return axios.get<ClustersResponse>(`${clustersUrl}${queryString}`).then((response) => {
+        return response?.data;
+    });
+}
+
+/*
+ * Fetch secured cluster and its retention information by ID.
+ */
+export function fetchClusterWithRetentionInformationById(id: string): Promise<ClusterResponse> {
+    return axios.get<ClusterResponse>(`${clustersUrl}/${id}`).then((response) => {
+        return response?.data;
     });
 }
 
