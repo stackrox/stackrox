@@ -362,7 +362,7 @@ spec:
                       for collecting process and networking activity at the host level.
                     properties:
                       collection:
-                        default: KernelModule
+                        default: EBPF
                         description: The method for system-level data collection.
                           Kernel module is recommended. If you select "NoCollection",
                           you will not be able to see any information about network
