@@ -7,7 +7,7 @@ function NoDataEmptyState() {
         <EmptyState className="pf-u-h-100" variant={EmptyStateVariant.xs}>
             <EmptyStateIcon className="pf-u-font-size-xl" icon={SearchIcon} />
             <Title headingLevel="h3" size="md">
-                No data was found in the selected scope.
+                No data was found in the selected resources.
             </Title>
         </EmptyState>
     );
