@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -75,7 +76,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoRoleBindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRoleBinding) error {
+func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.K8SRoleBinding) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -97,28 +98,22 @@ func insertIntoRoleBindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole
 	}
 
 	finalStr := "INSERT INTO role_bindings (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetSubjects() {
-		if err := insertIntoRoleBindingsSubjects(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoRoleBindingsSubjects(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from role_bindings_subjects where role_bindings_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetSubjects()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, obj.GetId(), len(obj.GetSubjects()))
 	return nil
 }
 
-func insertIntoRoleBindingsSubjects(ctx context.Context, tx pgx.Tx, obj *storage.Subject, role_bindings_Id string, idx int) error {
+func insertIntoRoleBindingsSubjects(ctx context.Context, batch *pgx.Batch, obj *storage.Subject, role_bindings_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -129,10 +124,7 @@ func insertIntoRoleBindingsSubjects(ctx context.Context, tx pgx.Tx, obj *storage
 	}
 
 	finalStr := "INSERT INTO role_bindings_subjects (role_bindings_Id, idx, Kind, Name) VALUES($1, $2, $3, $4) ON CONFLICT(role_bindings_Id, idx) DO UPDATE SET role_bindings_Id = EXCLUDED.role_bindings_Id, idx = EXCLUDED.idx, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -321,18 +313,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.K8SRoleBinding)
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoRoleBindings(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoRoleBindings(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
+		batchResults.Close()
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}

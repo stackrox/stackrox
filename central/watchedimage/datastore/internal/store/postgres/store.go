@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -73,7 +74,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoWatchedImages(ctx context.Context, tx pgx.Tx, obj *storage.WatchedImage) error {
+func insertIntoWatchedImages(ctx context.Context, batch *pgx.Batch, obj *storage.WatchedImage) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -87,10 +88,7 @@ func insertIntoWatchedImages(ctx context.Context, tx pgx.Tx, obj *storage.Watche
 	}
 
 	finalStr := "INSERT INTO watched_images (Name, serialized) VALUES($1, $2) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -188,18 +186,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.WatchedImage) e
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoWatchedImages(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoWatchedImages(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
+		batchResults.Close()
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}

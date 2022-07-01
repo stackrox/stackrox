@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -74,7 +75,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoTestMultiKeyStructs(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKeyStruct) error {
+func insertIntoTestMultiKeyStructs(ctx context.Context, batch *pgx.Batch, obj *storage.TestMultiKeyStruct) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -101,28 +102,22 @@ func insertIntoTestMultiKeyStructs(ctx context.Context, tx pgx.Tx, obj *storage.
 	}
 
 	finalStr := "INSERT INTO test_multi_key_structs (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, IntSlice, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, String_ = EXCLUDED.String_, IntSlice = EXCLUDED.IntSlice, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetNested() {
-		if err := insertIntoTestMultiKeyStructsNesteds(ctx, tx, child, obj.GetKey1(), obj.GetKey2(), childIdx); err != nil {
+		if err := insertIntoTestMultiKeyStructsNesteds(ctx, batch, child, obj.GetKey1(), obj.GetKey2(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from test_multi_key_structs_nesteds where test_multi_key_structs_Key1 = $1 AND test_multi_key_structs_Key2 = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, obj.GetKey1(), obj.GetKey2(), len(obj.GetNested()))
-	if err != nil {
-		return err
-	}
+	batch.Queue(query, obj.GetKey1(), obj.GetKey2(), len(obj.GetNested()))
 	return nil
 }
 
-func insertIntoTestMultiKeyStructsNesteds(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKeyStruct_Nested, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string, idx int) error {
+func insertIntoTestMultiKeyStructsNesteds(ctx context.Context, batch *pgx.Batch, obj *storage.TestMultiKeyStruct_Nested, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -138,10 +133,7 @@ func insertIntoTestMultiKeyStructsNesteds(ctx context.Context, tx pgx.Tx, obj *s
 	}
 
 	finalStr := "INSERT INTO test_multi_key_structs_nesteds (test_multi_key_structs_Key1, test_multi_key_structs_Key2, idx, Nested, IsNested, Int64, Nested2_Nested2, Nested2_IsNested, Nested2_Int64) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(test_multi_key_structs_Key1, test_multi_key_structs_Key2, idx) DO UPDATE SET test_multi_key_structs_Key1 = EXCLUDED.test_multi_key_structs_Key1, test_multi_key_structs_Key2 = EXCLUDED.test_multi_key_structs_Key2, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, IsNested = EXCLUDED.IsNested, Int64 = EXCLUDED.Int64, Nested2_Nested2 = EXCLUDED.Nested2_Nested2, Nested2_IsNested = EXCLUDED.Nested2_IsNested, Nested2_Int64 = EXCLUDED.Nested2_Int64"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -361,18 +353,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestMultiKeyStr
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoTestMultiKeyStructs(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoTestMultiKeyStructs(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
+		batchResults.Close()
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}

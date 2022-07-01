@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -75,7 +76,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoK8sRoles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) error {
+func insertIntoK8sRoles(ctx context.Context, batch *pgx.Batch, obj *storage.K8SRole) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -96,10 +97,7 @@ func insertIntoK8sRoles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) er
 	}
 
 	finalStr := "INSERT INTO k8s_roles (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -225,18 +223,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.K8SRole) error 
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoK8sRoles(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoK8sRoles(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
+		batchResults.Close()
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}
