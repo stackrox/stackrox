@@ -160,7 +160,7 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 		return errorsPkg.Wrapf(errox.NotFound, "policy category with id '%s' does not exist", id)
 	}
 
-	if category.IsDefault {
+	if category.GetIsDefault() {
 		return errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be renamed", id))
 	}
 
@@ -191,7 +191,7 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 	if !exists {
 		return nil
 	}
-	if category.IsDefault {
+	if category.GetIsDefault() {
 		return errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be removed", id))
 	}
 
