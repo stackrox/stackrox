@@ -49,6 +49,10 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_VULN_EDGE, "clustercveedge", (*storage.ClusterCVEEdge)(nil)))
+		schema.SetSearchScope([]v1.SearchCategory{
+			v1.SearchCategory_CLUSTER_VULNERABILITIES,
+			v1.SearchCategory_CLUSTER_VULN_EDGE,
+		}...)
 		RegisterTable(schema, CreateTableClusterCveEdgesStmt)
 		return schema
 	}()

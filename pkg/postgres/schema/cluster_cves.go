@@ -45,6 +45,10 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ClusterCVE)(nil)), "cluster_cves")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_VULNERABILITIES, "clustercve", (*storage.ClusterCVE)(nil)))
+		schema.SetSearchScope([]v1.SearchCategory{
+			v1.SearchCategory_CLUSTER_VULNERABILITIES,
+			v1.SearchCategory_CLUSTER_VULN_EDGE,
+		}...)
 		RegisterTable(schema, CreateTableClusterCvesStmt)
 		return schema
 	}()
