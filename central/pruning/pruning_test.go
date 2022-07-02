@@ -19,7 +19,6 @@ import (
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
@@ -63,7 +62,9 @@ import (
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -287,21 +288,18 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }
 
-func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, clusterDatastore.DataStore) {
+func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, deploymentDatastore.DataStore, clusterDatastore.DataStore, queue.WaitableQueue) {
 	db, bleveIndex := setupRocksDBAndBleve(t)
-
-	clusterStorage, err := clusterRocksDB.New(db)
-	require.NoError(t, err)
-
-	clusterHealthStorage, err := clusterHealthRocksDB.New(db)
-	require.NoError(t, err)
-
 	clusterIndexer := clusterIndex.New(bleveIndex)
 
+	dacky, registry, indexingQ := testDackBoxInstance(t, db, bleveIndex)
+	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
+
 	mockCtrl := gomock.NewController(t)
+	mockBaselineDataStore := processBaselineDatastoreMocks.NewMockDataStore(mockCtrl)
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
 	alertDataStore := alertDatastoreMocks.NewMockDataStore(mockCtrl)
 	namespaceDataStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	deploymentDataStore := deploymentMocks.NewMockDataStore(mockCtrl)
 	nodeDataStore := nodeDatastoreMocks.NewMockGlobalDataStore(mockCtrl)
 	podDataStore := podMocks.NewMockDataStore(mockCtrl)
 	secretDataStore := secretMocks.NewMockDataStore(mockCtrl)
@@ -314,17 +312,27 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, clu
 	notifierMock := notifierMocks.NewMockProcessor(mockCtrl)
 	networkBaselineMgr := networkBaselineMocks.NewMockManager(mockCtrl)
 	mockProvider := graphMocks.NewMockProvider(mockCtrl)
+	mockFilter := filterMocks.NewMockFilter(mockCtrl)
+	clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(mockCtrl)
+	flows := networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl)
+
+	deployments := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, clusterFlows,
+		mockRiskDatastore, expiringcache.NewExpiringCache(1*time.Minute), mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+
+	clusterStorage, err := clusterRocksDB.New(db)
+	require.NoError(t, err)
+
+	clusterHealthStorage, err := clusterHealthRocksDB.New(db)
+	require.NoError(t, err)
 
 	nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	//netEntityDataStore.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-
 	clusterDataStore, err := clusterDatastore.New(
 		clusterStorage,
 		clusterHealthStorage,
 		clusterIndexer,
 		alertDataStore,
 		namespaceDataStore,
-		deploymentDataStore,
+		deployments,
 		nodeDataStore,
 		podDataStore,
 		secretDataStore,
@@ -337,18 +345,17 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, clu
 		notifierMock,
 		mockProvider,
 		ranking.NewRanker(),
-		networkBaselineMgr )
-
+		networkBaselineMgr)
 	require.NoError(t, err)
+
+	// A bunch of these get called when a cluster is deleted
 	flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl), nil)
 	connMgr.EXPECT().GetConnection(gomock.Any()).AnyTimes().Return(nil)
 	namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return([]search.Result{}, nil)
-	deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	alertDataStore.EXPECT().MarkAlertStale(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).AnyTimes().Return()
-	deploymentDataStore.EXPECT().RemoveDeployment(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	podDataStore.EXPECT().RemovePod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
@@ -361,11 +368,15 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, clu
 	serviceAccountMockDataStore.EXPECT().RemoveServiceAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	roleDataStore.EXPECT().RemoveRole(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	roleBindingDataStore.EXPECT().RemoveRoleBinding(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	mockBaselineDataStore.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	clusterFlows.EXPECT().GetFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(flows, nil)
+	flows.EXPECT().RemoveFlowsForDeployment(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	mockFilter.EXPECT().Delete(gomock.Any()).AnyTimes()
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
-	//mockConfigDatastore.EXPECT().GetConfig(gomock.Any()).AnyTimes().Return(config, nil)
 
-	return mockConfigDatastore, clusterDataStore
+	return mockConfigDatastore, deployments, clusterDataStore, indexingQ
 }
 
 func TestImagePruning(t *testing.T) {
@@ -566,22 +577,22 @@ func TestClusterPruning(t *testing.T) {
 	versionUtils.SetExampleVersion(t)
 
 	var cases = []struct {
-		name        string
-		config 	    *storage.Config
-		clusters    []*storage.Cluster
+		name          string
+		config        *storage.PrivateConfig
+		clusters      []*storage.Cluster
 		expectedNames []string
 	}{
 		{
-			name: "No pruning if config is set to 0 retention days",
-			config: getTestSystemConfig(0, 90, 72),
+			name:   "No pruning if config is set to 0 retention days",
+			config: getCluserRetentionConfig(0, 90, 72),
 			clusters: []*storage.Cluster{
 				{
-					Name: "HEALTHY cluster",
+					Name:         "HEALTHY cluster",
 					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 				},
 				{
-					Name: "UNHEALTHY cluster with last contact time before config creation time",
-					Labels: map[string]string{"k1": "v2"},
+					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 			},
@@ -591,16 +602,16 @@ func TestClusterPruning(t *testing.T) {
 			},
 		},
 		{
-			name: "No pruning if config recently updated",
-			config: getTestSystemConfig(60, 90, 23),
+			name:   "No pruning if config recently updated",
+			config: getCluserRetentionConfig(60, 90, 23),
 			clusters: []*storage.Cluster{
 				{
-					Name: "HEALTHY cluster",
+					Name:         "HEALTHY cluster",
 					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 				},
 				{
-					Name: "UNHEALTHY cluster with last contact time before config creation time",
-					Labels: map[string]string{"k1": "v2"},
+					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 			},
@@ -610,16 +621,16 @@ func TestClusterPruning(t *testing.T) {
 			},
 		},
 		{
-			name: "No pruning if config was created less than retention days ago",
-			config: getTestSystemConfig(10, 5, 72),
+			name:   "No pruning if config was created less than retention days ago",
+			config: getCluserRetentionConfig(10, 5, 72),
 			clusters: []*storage.Cluster{
 				{
-					Name: "HEALTHY cluster",
+					Name:         "HEALTHY cluster",
 					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 				},
 				{
-					Name: "UNHEALTHY cluster with last contact time before config creation time",
-					Labels: map[string]string{"k1": "v2"},
+					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 			},
@@ -629,30 +640,61 @@ func TestClusterPruning(t *testing.T) {
 			},
 		},
 		{
-			name: "1 healthy cluster, 3 unhealthy clusters (1 excluded, 1 unhealthy recently, 1 past retention)",
-			config: getTestSystemConfig(60, 90, 72),
-			clusters: []*storage.Cluster {
+			name:   "No pruning if only one cluster",
+			config: getCluserRetentionConfig(60, 90, 72),
+			clusters: []*storage.Cluster{
 				{
-					Name: "HEALTHY cluster",
+					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Labels:       map[string]string{"k1": "v2"},
+					HealthStatus: unhealthyClusterStatus(80),
+				},
+			},
+			expectedNames: []string{
+				"UNHEALTHY cluster with last contact time before config creation time",
+			},
+		},
+		{
+			name:   "Prune unhealthy cluster",
+			config: getCluserRetentionConfig(60, 90, 72),
+			clusters: []*storage.Cluster{
+				{
+					Name:         "HEALTHY cluster",
 					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 				},
 				{
-					Name: "UNHEALTHY cluster matching a label to ignore the cluster",
-					Labels: map[string]string{"k2": "v2"},
+					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					HealthStatus: unhealthyClusterStatus(80),
+				},
+			},
+			expectedNames: []string{
+				"HEALTHY cluster",
+			},
+		},
+		{
+			name:   "1 healthy cluster, 3 unhealthy clusters (1 excluded, 1 unhealthy recently, 1 past retention)",
+			config: getCluserRetentionConfig(60, 90, 72),
+			clusters: []*storage.Cluster{
+				{
+					Name:         "HEALTHY cluster",
+					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
+				},
+				{
+					Name:         "UNHEALTHY cluster matching a label to ignore the cluster",
+					Labels:       map[string]string{"k2": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 				{
-					Name: "UNHEALTHY cluster with fewer than retentionDays since last contact",
-					Labels: map[string]string{"k1": "v2"},
+					Name:         "UNHEALTHY cluster with fewer than retentionDays since last contact",
+					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(10),
 				},
 				{
-					Name: "UNHEALTHY cluster with last contact time more than retention",
-					Labels: map[string]string{"k1": "v2"},
+					Name:         "UNHEALTHY cluster with last contact time more than retention",
+					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 			},
-			expectedNames : []string {
+			expectedNames: []string{
 				"HEALTHY cluster",
 				"UNHEALTHY cluster matching a label to ignore the cluster",
 				"UNHEALTHY cluster with fewer than retentionDays since last contact",
@@ -663,15 +705,15 @@ func TestClusterPruning(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			configDS, clusterDS := generateClusterDataStructures(t)
+			_, deploymentsDS, clusterDS, _ := generateClusterDataStructures(t)
 
 			for _, cluster := range c.clusters {
 				_, err := clusterDS.AddCluster(ctx, cluster)
 				require.NoError(t, err)
 			}
 
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, nil, nil, nil, nil, nil, configDS, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
-			gc.collectClusters(c.config.GetPrivateConfig())
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
 			finalClusters, err := clusterDS.GetClusters(ctx)
@@ -683,7 +725,139 @@ func TestClusterPruning(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestClusterPruningCentralCheck(t *testing.T) {
+	isolator := envisolator.NewEnvIsolator(t)
+	defer isolator.RestoreAll()
+
+	isolator.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
+	isolator.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+
+	testbuildinfo.SetForTest(t)
+	versionUtils.SetExampleVersion(t)
+
+	var cases = []struct {
+		name                string
+		deploys             []*storage.Deployment
+		shouldDeleteCluster bool
+	}{
+		{
+			name:                "Don't prune if cluster has central",
+			deploys:             []*storage.Deployment{customDeployment("central", "stackrox", map[string]string{"app": "central"}, map[string]string{"owner": "stackrox"})},
+			shouldDeleteCluster: false,
+		},
+		{
+			name:                "Don't prune if cluster has central in different namespace",
+			deploys:             []*storage.Deployment{customDeployment("central", "myownnamespace", map[string]string{"app": "central"}, map[string]string{"owner": "stackrox"})},
+			shouldDeleteCluster: false,
+		},
+		{
+			name:                "Don't prune if cluster has central with extra labels",
+			deploys:             []*storage.Deployment{customDeployment("central", "stackrox", map[string]string{"app": "central", "helm.sh/chart": "stackrox-central-services-70.0.0"}, map[string]string{"owner": "stackrox"})},
+			shouldDeleteCluster: false,
+		},
+		{
+			name:                "Don't prune if cluster has central with extra annotations",
+			deploys:             []*storage.Deployment{customDeployment("central", "stackrox", map[string]string{"app": "central"}, map[string]string{"owner": "stackrox", "meta.helm.sh/release-name": "stackrox-central-services"})},
+			shouldDeleteCluster: false,
+		},
+		{
+			name:                "Prune if cluster has non-central deployment based on name",
+			deploys:             []*storage.Deployment{customDeployment("centrally", "stackrox", map[string]string{"app": "central"}, map[string]string{"owner": "stackrox"})},
+			shouldDeleteCluster: true,
+		},
+		{
+			name:                "Prune if cluster has non-central deployment based on label",
+			deploys:             []*storage.Deployment{customDeployment("central", "stackrox", map[string]string{"app": "centrally"}, map[string]string{"owner": "stackrox"})},
+			shouldDeleteCluster: true,
+		},
+		{
+			name:                "Prune if cluster has non-central deployment based on annotation",
+			deploys:             []*storage.Deployment{customDeployment("central", "stackrox", map[string]string{"app": "central"}, map[string]string{"owner": "stackroxy"})},
+			shouldDeleteCluster: true,
+		},
+		{
+			name: "Don't prune if cluster has multiple centrals",
+			deploys: []*storage.Deployment{
+				customDeployment("central", "stackrox", map[string]string{"app": "central"}, map[string]string{"owner": "stackrox"}),
+				customDeployment("central", "stackrox2", map[string]string{"app": "central"}, map[string]string{"owner": "stackrox"}),
+			},
+			shouldDeleteCluster: false,
+		},
+		{
+			name: "Don't prune if cluster has multiple deploys with one being central",
+			deploys: []*storage.Deployment{
+				customDeployment("central", "stackrox", map[string]string{"app": "central"}, map[string]string{"owner": "stackrox"}),
+				customDeployment("centrally", "stackrox", map[string]string{"app": "central"}, map[string]string{"owner": "stackrox"}),
+			},
+			shouldDeleteCluster: false,
+		},
+		{
+			name: "Prune if cluster has multiple deploys with none being central",
+			deploys: []*storage.Deployment{
+				customDeployment("central", "stackrox", map[string]string{"app": "centrally"}, map[string]string{"owner": "stackrox"}),
+				customDeployment("centrally", "stackrox", map[string]string{"app": "central"}, map[string]string{"owner": "stackrox"}),
+			},
+			shouldDeleteCluster: true,
+		},
+	}
+	ctx := sac.WithAllAccess(context.Background())
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, deploymentsDS, clusterDS, indexingQ := generateClusterDataStructures(t)
+
+			// Add the unhealthy cluster that is under test
+			cluster := &storage.Cluster{
+				Name:         "Unhealthy cluster",
+				HealthStatus: unhealthyClusterStatus(80),
+			}
+			_, err := clusterDS.AddCluster(ctx, cluster)
+			require.NoError(t, err)
+
+			// Add the deployments whose params are being changed for this test
+			for _, d := range c.deploys {
+				d.ClusterId = cluster.GetId()
+				d.ClusterName = cluster.GetName()
+				require.NoError(t, deploymentsDS.UpsertDeployment(ctx, d))
+			}
+
+			// Add another random deployment in just for variety
+			randDeploy := fixtures.GetDeployment()
+			randDeploy.ClusterId = cluster.GetId()
+			require.NoError(t, deploymentsDS.UpsertDeployment(ctx, randDeploy))
+
+			// Add in a healthy cluster because GC won't run unless there are two cluster
+			_, err = clusterDS.AddCluster(ctx, &storage.Cluster{
+				Name:         "HEALTHY cluster",
+				HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
+			})
+			require.NoError(t, err)
+
+			// Wait for deployments to get indexed before continuing
+			newSig := concurrency.NewSignal()
+			indexingQ.PushSignal(&newSig)
+			newSig.Wait()
+
+			// Run GC
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
+
+			// Now get all clusters and compare the names to ensure only the expected ones exist
+			finalClusters, err := clusterDS.GetClusters(ctx)
+			require.NoError(t, err)
+
+			expectedClusters := map[string]bool{
+				cluster.GetName(): !c.shouldDeleteCluster,
+				"HEALTHY cluster": true,
+			}
+
+			for _, cluster := range finalClusters {
+				require.True(t, expectedClusters[cluster.GetName()], "cluster %s should have been deleted", cluster.GetName())
+			}
+		})
+	}
 }
 
 func unhealthyClusterStatus(daysSinceLastContact int) *storage.ClusterHealthStatus {
@@ -693,21 +867,28 @@ func unhealthyClusterStatus(daysSinceLastContact int) *storage.ClusterHealthStat
 	}
 }
 
-func getTestSystemConfig(retentionDays int, createdBeforeDays int, lastUpdatedBeforeHours int) *storage.Config {
-	return &storage.Config{
-		PrivateConfig: &storage.PrivateConfig{
-			DecommissionedClusterRetention: &storage.DecommissionedClusterRetentionConfig{
-				RetentionDurationDays: int32(retentionDays),
-				IgnoreClusterLabels: map[string]string{
-					"k1": "v1",
-					"k2": "v2",
-					"k3": "v3",
-				},
-				LastUpdated: timeBeforeHours(lastUpdatedBeforeHours),
-				CreatedAt:   timeBeforeDays(createdBeforeDays),
+func getCluserRetentionConfig(retentionDays int, createdBeforeDays int, lastUpdatedBeforeHours int) *storage.PrivateConfig {
+	return &storage.PrivateConfig{
+		DecommissionedClusterRetention: &storage.DecommissionedClusterRetentionConfig{
+			RetentionDurationDays: int32(retentionDays),
+			IgnoreClusterLabels: map[string]string{
+				"k1": "v1",
+				"k2": "v2",
+				"k3": "v3",
 			},
-		},
-	}
+			LastUpdated: timeBeforeHours(lastUpdatedBeforeHours),
+			CreatedAt:   timeBeforeDays(createdBeforeDays),
+		}}
+}
+
+func customDeployment(name string, namespace string, labels map[string]string, annotations map[string]string) *storage.Deployment {
+	deploy := fixtures.LightweightDeployment()
+	deploy.Id = uuid.NewV4().String()
+	deploy.Name = name
+	deploy.Namespace = namespace
+	deploy.Labels = labels
+	deploy.Annotations = annotations
+	return deploy
 }
 
 func TestAlertPruning(t *testing.T) {

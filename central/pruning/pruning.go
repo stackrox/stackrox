@@ -504,9 +504,11 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	clusterRetention := config.GetDecommissionedClusterRetention()
 	retentionDays := int64(clusterRetention.GetRetentionDurationDays())
 	if retentionDays == 0 {
-		log.Info("[Cluster Pruning] pruning is disabled")
+		// TODO: Nakul - rename from pruning in logs?
+		log.Info("[Cluster Pruning] pruning is disabled.")
 		return
 	}
+
 	lastUpdateTime, err := types.TimestampFromProto(clusterRetention.GetLastUpdated())
 	if err != nil {
 		log.Error(err)
@@ -514,7 +516,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	}
 	if timeutil.TimeDiffDays(time.Now(), lastUpdateTime) < 1 {
 		// Allow 24 hr grace period after a change in config
-		log.Info("[Cluster Pruning] skipping pruning to allow 24 hr grace period after a recent change in cluster retention config")
+		log.Info("[Cluster Pruning] skipping pruning to allow 24 hr grace period after a recent change in cluster retention config.")
 		return
 	}
 
@@ -526,6 +528,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	if timeutil.TimeDiffDays(time.Now(), configCreationTime) < int(retentionDays) {
 		// In this case, the deployments that became unhealthy after config creation would also be unhealthy for fewer than retention days
 		// and pruning can be skipped
+		log.Info("[Cluster Pruning] skipping pruning to as retention period only starts after upgrade to version 3.71.0.")
 		return
 	}
 
@@ -534,7 +537,8 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 		log.Errorf("[Cluster Pruning] error counting clusters: %v", err)
 	}
 	if allClusterCount <= 1 {
-		log.Info("[Cluster Pruning] skipping pruning because there aren't enough clusters")
+		log.Info("[Cluster Pruning] skipping pruning because there is only one cluster which cannot be removed.")
+		return
 	}
 
 	query := search.NewQueryBuilder().
@@ -546,13 +550,26 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 		return
 	}
 
+	log.Infof("[Cluster Pruning] found %d clusters that haven't been active in over %d days", len(clusters), retentionDays)
+
 	clustersToPrune := make([]string, 0)
 	for _, cluster := range clusters {
 		if sliceutils.MapsIntersect(clusterRetention.GetIgnoreClusterLabels(), cluster.GetLabels()) {
 			log.Infof("[Cluster Pruning] skipping excluded cluster with id %s", cluster.GetId())
 			continue
 		}
-		// TODO : Skip if the cluster is running central
+
+		// Don't delete if the cluster contains central
+		hasCentral, err := g.checkIfClusterContainsCentral(cluster)
+		if err != nil {
+			log.Errorf("[Cluster Pruning] error searching for deployements in cluster: %v", err)
+			return
+		}
+		if hasCentral {
+			// Warning because it's important to know that your central cluster is unhealthy
+			log.Warnf("[Cluster Pruning] skipping pruning cluster with id %s because this cluster contains the central deployment.", cluster.GetId())
+			continue
+		}
 		clustersToPrune = append(clustersToPrune, cluster.GetId())
 	}
 
@@ -565,6 +582,31 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 			}
 		}
 	}
+}
+
+func (g *garbageCollectorImpl) checkIfClusterContainsCentral(cluster *storage.Cluster) (bool, error) {
+	//This query could be expensive, but it's an extremely rare occurrence. It only happens if there is a cluster that has been unhealthy for a long time (configurable)
+	query := search.NewQueryBuilder().
+		AddStrings(search.ClusterID, cluster.GetId()).
+		AddExactMatches(search.DeploymentName, "central")
+	deploys, err := g.deployments.SearchRawDeployments(pruningCtx, query.ProtoQuery())
+	if err != nil {
+		return false, err
+	}
+
+	// As long as we find at least one deployment that matches the criteria
+	// This is meant to be tolerant of false positives while extremely intolerant of false negatives. Rather not delete a cluster than to delete one with central in it.
+	for _, d := range deploys {
+		// While this could be done via the searcher, this was moved out to reduce complexity of the search.
+		// The search might run more often, but this manual grep only happens if the cluster is unhealthy AND has >= 1 deployment with name central.
+		if d.GetLabels()["app"] == "central" && d.GetAnnotations()["owner"] == "stackrox" {
+			return true, nil
+		}
+	}
+
+	// TODO: We need to mark a cluster as having central going forward. Perhaps the above heuristic can be used to tag from within sensor.
+
+	return false, nil
 }
 
 func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, pruneAllRuntimeAfter, pruneDeletedRuntimeAfter, pruneAttemptedDeployAfter, pruneAttemptedRuntimeAfter int32) {
