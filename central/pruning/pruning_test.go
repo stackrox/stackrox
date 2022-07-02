@@ -578,6 +578,7 @@ func TestClusterPruning(t *testing.T) {
 
 	var cases = []struct {
 		name          string
+		recentlyRun   bool
 		config        *storage.PrivateConfig
 		clusters      []*storage.Cluster
 		expectedNames []string
@@ -585,6 +586,26 @@ func TestClusterPruning(t *testing.T) {
 		{
 			name:   "No pruning if config is set to 0 retention days",
 			config: getCluserRetentionConfig(0, 90, 72),
+			clusters: []*storage.Cluster{
+				{
+					Name:         "HEALTHY cluster",
+					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
+				},
+				{
+					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Labels:       map[string]string{"k1": "v2"},
+					HealthStatus: unhealthyClusterStatus(80),
+				},
+			},
+			expectedNames: []string{
+				"HEALTHY cluster",
+				"UNHEALTHY cluster with last contact time before config creation time",
+			},
+		},
+		{
+			name:        "No pruning if it hasn't been 24hrs since last run",
+			recentlyRun: true,
+			config:      getCluserRetentionConfig(0, 90, 72),
 			clusters: []*storage.Cluster{
 				{
 					Name:         "HEALTHY cluster",
@@ -755,6 +776,12 @@ func TestClusterPruning(t *testing.T) {
 				require.NoError(t, err)
 			}
 
+			if c.recentlyRun {
+				lastClusterPruneTime = time.Now()
+			} else {
+				lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
+			}
+
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
@@ -884,6 +911,7 @@ func TestClusterPruningCentralCheck(t *testing.T) {
 			newSig.Wait()
 
 			// Run GC
+			lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 

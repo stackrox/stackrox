@@ -36,17 +36,16 @@ import (
 )
 
 const (
-	pruneFreq          = 1
-	pruneInterval      = pruneFreq * time.Hour
+	pruneInterval      = 1 * time.Hour
 	orphanWindow       = 30 * time.Minute
 	baselineBatchLimit = 10000
-	clusterGCFreq      = 24 * pruneFreq
+	clusterGCFreq      = 24 * time.Hour
 )
 
 var (
-	log             = logging.LoggerForModule()
-	pruningCtx      = sac.WithAllAccess(context.Background())
-	clusterGCTicker = 1
+	log                  = logging.LoggerForModule()
+	pruningCtx           = sac.WithAllAccess(context.Background())
+	lastClusterPruneTime time.Time
 )
 
 // GarbageCollector implements a generic garbage collection mechanism
@@ -135,17 +134,15 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOrphanedResources()
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
-
-	if clusterGCTicker == clusterGCFreq {
-		clusterGCTicker = 1
-	} else {
-		clusterGCTicker++
+	if features.DecommissionedClusterRetention.Enabled() {
+		g.collectClusters(pvtConfig)
 	}
 
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
 
 func (g *garbageCollectorImpl) runGC() {
+	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 	g.pruneBasedOnConfig()
 
 	t := time.NewTicker(pruneInterval)
@@ -501,6 +498,15 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	if !features.DecommissionedClusterRetention.Enabled() {
 		return
 	}
+
+	if lastClusterPruneTime.Add(clusterGCFreq).After(time.Now()) {
+		// Only cluster pruning if it's been at least clusterGCFreq since last run
+		return
+	}
+	defer func() {
+		lastClusterPruneTime = time.Now()
+	}()
+
 	clusterRetention := config.GetDecommissionedClusterRetention()
 	retentionDays := int64(clusterRetention.GetRetentionDurationDays())
 	if retentionDays == 0 {
