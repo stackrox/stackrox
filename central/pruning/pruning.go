@@ -504,7 +504,6 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	clusterRetention := config.GetDecommissionedClusterRetention()
 	retentionDays := int64(clusterRetention.GetRetentionDurationDays())
 	if retentionDays == 0 {
-		// TODO: Nakul - rename from pruning in logs?
 		log.Info("[Cluster Pruning] pruning is disabled.")
 		return
 	}
@@ -536,10 +535,6 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	if err != nil {
 		log.Errorf("[Cluster Pruning] error counting clusters: %v", err)
 	}
-	if allClusterCount <= 1 {
-		log.Info("[Cluster Pruning] skipping pruning because there is only one cluster which cannot be removed.")
-		return
-	}
 
 	query := search.NewQueryBuilder().
 		AddDays(search.LastContactTime, retentionDays).
@@ -550,7 +545,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 		return
 	}
 
-	log.Infof("[Cluster Pruning] found %d clusters that haven't been active in over %d days", len(clusters), retentionDays)
+	log.Infof("[Cluster Pruning] found %d cluster(s) that haven't been active in over %d days", len(clusters), retentionDays)
 
 	clustersToPrune := make([]string, 0)
 	for _, cluster := range clusters {
@@ -571,6 +566,11 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 			continue
 		}
 		clustersToPrune = append(clustersToPrune, cluster.GetId())
+	}
+
+	if allClusterCount == len(clustersToPrune) {
+		log.Warnf("[Cluster Pruning] skipping pruning because all %d cluster(s) are unhealthy and this is an abnormal state. Please remove any manually if desired.", allClusterCount)
+		return
 	}
 
 	if len(clustersToPrune) > 0 {

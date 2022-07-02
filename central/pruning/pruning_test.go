@@ -316,7 +316,7 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 	clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(mockCtrl)
 	flows := networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl)
 
-	deployments := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, clusterFlows,
+	deployments := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, clusterFlows,
 		mockRiskDatastore, expiringcache.NewExpiringCache(1*time.Minute), mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 	clusterStorage, err := clusterRocksDB.New(db)
@@ -654,6 +654,26 @@ func TestClusterPruning(t *testing.T) {
 			},
 		},
 		{
+			name:   "No pruning if all clusters are unhealthy",
+			config: getCluserRetentionConfig(60, 90, 72),
+			clusters: []*storage.Cluster{
+				{
+					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Labels:       map[string]string{"k1": "v2"},
+					HealthStatus: unhealthyClusterStatus(80),
+				},
+				{
+					Name:         "Another UNHEALTHY cluster with last contact time before config creation time",
+					Labels:       map[string]string{"k1": "v2"},
+					HealthStatus: unhealthyClusterStatus(80),
+				},
+			},
+			expectedNames: []string{
+				"UNHEALTHY cluster with last contact time before config creation time",
+				"Another UNHEALTHY cluster with last contact time before config creation time",
+			},
+		},
+		{
 			name:   "Prune unhealthy cluster",
 			config: getCluserRetentionConfig(60, 90, 72),
 			clusters: []*storage.Cluster{
@@ -698,6 +718,29 @@ func TestClusterPruning(t *testing.T) {
 				"HEALTHY cluster",
 				"UNHEALTHY cluster matching a label to ignore the cluster",
 				"UNHEALTHY cluster with fewer than retentionDays since last contact",
+			},
+		},
+		{
+			name:   "Multiple unhealthy clusters",
+			config: getCluserRetentionConfig(60, 90, 72),
+			clusters: []*storage.Cluster{
+				{
+					Name:         "HEALTHY cluster",
+					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
+				},
+				{
+					Name:         "UNHEALTHY cluster with last contact time more than retention",
+					Labels:       map[string]string{"k1": "v2"},
+					HealthStatus: unhealthyClusterStatus(80),
+				},
+				{
+					Name:         "Another UNHEALTHY cluster with last contact time more than retention",
+					Labels:       map[string]string{"k1": "v2"},
+					HealthStatus: unhealthyClusterStatus(100),
+				},
+			},
+			expectedNames: []string{
+				"HEALTHY cluster",
 			},
 		},
 	}
