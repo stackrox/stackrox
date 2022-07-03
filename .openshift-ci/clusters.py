@@ -39,15 +39,15 @@ class GKECluster:
                 exitstatus = cmd.wait(GKECluster.PROVISION_TIMEOUT)
                 if exitstatus != 0:
                     raise RuntimeError(f"Cluster provision failed: exit {exitstatus}")
-                # OpenShift CI sends a SIGINT when tests are canceled
-                def handler():
-                    print("Tearing down the cluster due to SIGINT")
-                    self.teardown()
-
-                signal.signal(signal.SIGINT, handler)
             except subprocess.TimeoutExpired as err:
                 popen_graceful_kill(cmd)
                 raise err
+
+        # OpenShift CI sends a SIGINT when tests are canceled
+        def handler():
+            print("Tearing down the cluster due to SIGINT")
+            self.teardown()
+        signal.signal(signal.SIGINT, handler)
 
         subprocess.run(
             [GKECluster.GKE_SCRIPT, "wait_for_cluster"],
