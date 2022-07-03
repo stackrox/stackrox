@@ -76,6 +76,6 @@ forward_sigint() {
     echo "Dispatch is forwarding SIGINT to job"
     kill -SIGINT "${job_pid}"
 }
-trap forward_sigint SIGTINT
+trap forward_sigint SIGINT
 
 wait "${job_pid}"
