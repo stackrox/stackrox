@@ -16,4 +16,3 @@ alias osci-format='osci; ack -f --python | entr black .'
 alias osci-lint='osci; ack -f --python | entr pylint --rcfile .pylintrc *.py tests'
 alias osci-test='osci; ack -f --python --shell | entr python -m unittest discover'
 ```
-
