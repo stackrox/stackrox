@@ -44,10 +44,7 @@ class GKECluster:
                 raise err
 
         # OpenShift CI sends a SIGINT when tests are canceled
-        def handler():
-            print("Tearing down the cluster due to SIGINT")
-            self.teardown()
-        signal.signal(signal.SIGINT, handler)
+        signal.signal(signal.SIGINT, self.sigint_handler)
 
         subprocess.run(
             [GKECluster.GKE_SCRIPT, "wait_for_cluster"],
@@ -80,3 +77,7 @@ class GKECluster:
         )
 
         return self
+
+    def sigint_handler(self, signum, frame):
+        print("Tearing down the cluster due to SIGINT", signum, frame)
+        self.teardown()
