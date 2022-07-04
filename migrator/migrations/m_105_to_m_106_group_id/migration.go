@@ -10,8 +10,8 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-// groupWithoutID is a helper struct which contains the group as well as the composite key.
-type groupWithoutID struct {
+// groupStoredByCompositeKey is a helper struct which contains the group as well as the composite key.
+type groupStoredByCompositeKey struct {
 	grp          *storage.Group
 	compositeKey []byte
 }
@@ -49,11 +49,12 @@ func migrateGroupsWithoutID(db *bolt.DB) error {
 	return nil
 }
 
-func fetchGroupsToMigrate(db *bolt.DB) (groupsWithoutID []groupWithoutID, err error) {
+func fetchGroupsToMigrate(db *bolt.DB) (groupsWithoutID []groupStoredByCompositeKey, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketName)
+		// Pre-req: Migrating a non-existent bucket should not fail.
 		if bucket == nil {
-			return errors.Errorf("bucket %s not found", bucketName)
+			return nil
 		}
 		return bucket.ForEach(func(k, v []byte) error {
 			// 1. Try to unmarshal the stored value to the group proto. If it can be successfully unmarshalled, then
@@ -68,14 +69,8 @@ func fetchGroupsToMigrate(db *bolt.DB) (groupsWithoutID []groupWithoutID, err er
 				return err
 			}
 
-			// 3. Check if the group has an ID set. It may have due to an update. If an ID is set, we won't need to
-			// 	  migrate the group.
-			if grp.GetProps().GetId() != "" {
-				return nil
-			}
-
 			// 4. We found a  group that requires migration.
-			groupsWithoutID = append(groupsWithoutID, groupWithoutID{grp: grp, compositeKey: k})
+			groupsWithoutID = append(groupsWithoutID, groupStoredByCompositeKey{grp: grp, compositeKey: k})
 
 			return nil
 		})
@@ -83,18 +78,21 @@ func fetchGroupsToMigrate(db *bolt.DB) (groupsWithoutID []groupWithoutID, err er
 	return groupsWithoutID, err
 }
 
-func addIDsToGroups(db *bolt.DB, groupsWithoutID []groupWithoutID) error {
+func addIDsToGroups(db *bolt.DB, groupsWithoutID []groupStoredByCompositeKey) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketName)
+		// Pre-req: Migrating a non-existent bucket should not fail.
 		if bucket == nil {
-			return errors.Errorf("bucket %s not found", bucketName)
+			return nil
 		}
 
 		for i := range groupsWithoutID {
 			grp := groupsWithoutID[i].grp
 
-			// 1. Generate the group ID.
-			grp.GetProps().Id = generateGroupID()
+			// 1. Generate the group ID if the group does not already have an ID associated with it.
+			if grp.GetProps().GetId() == "" {
+				grp.GetProps().Id = generateGroupID()
+			}
 
 			// 2. Marshal the group proto.
 			groupData, err := proto.Marshal(grp)
@@ -102,7 +100,7 @@ func addIDsToGroups(db *bolt.DB, groupsWithoutID []groupWithoutID) error {
 				return err
 			}
 
-			// 3. Save the group using the generated ID as key.
+			// 3. Save the group using the generated / pre-existing ID as key.
 			if err := bucket.Put([]byte(grp.GetProps().GetId()), groupData); err != nil {
 				return err
 			}
@@ -112,11 +110,12 @@ func addIDsToGroups(db *bolt.DB, groupsWithoutID []groupWithoutID) error {
 	})
 }
 
-func removeGroupsWithoutID(db *bolt.DB, groupsWithoutID []groupWithoutID) error {
+func removeGroupsWithoutID(db *bolt.DB, groupsWithoutID []groupStoredByCompositeKey) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketName)
+		// Pre-req: Migrating a non-existent bucket should not fail.
 		if bucket == nil {
-			return errors.Errorf("bucket %s not found", bucketName)
+			return nil
 		}
 
 		for i := range groupsWithoutID {

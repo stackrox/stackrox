@@ -23,9 +23,7 @@ type migrateServiceIdentitySerial struct {
 
 func (suite *migrateServiceIdentitySerial) SetupTest() {
 	db, err := bolthelpers.NewTemp(testutils.DBFileName(suite))
-	if err != nil {
-		suite.FailNow("Failed to make BoltDB", err.Error())
-	}
+	suite.Require().NoError(err, "failed to make BoltDB")
 	suite.db = db
 }
 
@@ -37,6 +35,7 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 	// Expected groups after migration.
 	// Group "r1" should not be updated, as the ID is pre-existing.
 	// Group "r2" should have the ID after migration.
+	// Group "r3" should be migrated but not have an updated ID.
 	expectedGroups := map[string]*storage.Group{
 		"r1": {
 			Props: &storage.GroupProperties{
@@ -51,6 +50,13 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 				Id:             "io.stackrox.authz.group.migrated.",
 			},
 			RoleName: "r2",
+		},
+		"r3": {
+			Props: &storage.GroupProperties{
+				AuthProviderId: "something",
+				Id:             "io.stackrox.authz.group.",
+			},
+			RoleName: "r3",
 		},
 	}
 
@@ -72,6 +78,11 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 		{
 			oldGroup: expectedGroups["r1"],
 			newGroup: expectedGroups["r1"],
+		},
+		{
+			oldGroup: expectedGroups["r3"],
+			newGroup: expectedGroups["r3"],
+			oldValue: true,
 		},
 	}
 
