@@ -56,6 +56,7 @@ export type Group = {
         authProviderId: string;
         key?: string;
         value?: string;
+        id?: string;
     };
 };
 
