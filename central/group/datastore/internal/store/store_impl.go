@@ -5,15 +5,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	bolt "go.etcd.io/bbolt"
 )
 
 // We use custom serialization for speed since this store will need to be 'Walked'
 // to find all of the roles that apply to a given user.
 type storeImpl struct {
-	db                *bolt.DB
-	defaultGroupCache expiringcache.Cache
+	db *bolt.DB
 }
 
 // Get returns a group matching the given properties if it exists from the store.
@@ -91,7 +89,7 @@ func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) 
 // Returns an error if a group with the same properties already exists.
 func (s *storeImpl) Add(group *storage.Group) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		return addInTransaction(tx, group, s.defaultGroupCache)
+		return addInTransaction(tx, group)
 	})
 }
 
@@ -99,7 +97,7 @@ func (s *storeImpl) Add(group *storage.Group) error {
 // Returns an error if a group with the same properties does not already exist.
 func (s *storeImpl) Update(group *storage.Group) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		return updateInTransaction(tx, group, s.defaultGroupCache)
+		return updateInTransaction(tx, group)
 	})
 }
 
@@ -107,7 +105,7 @@ func (s *storeImpl) Update(group *storage.Group) error {
 // Returns an error if no such group exists.
 func (s *storeImpl) Remove(props *storage.GroupProperties) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		return removeInTransaction(tx, props, s.defaultGroupCache)
+		return removeInTransaction(tx, props)
 	})
 }
 
@@ -116,17 +114,17 @@ func (s *storeImpl) Remove(props *storage.GroupProperties) error {
 func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		for _, group := range toRemove {
-			if err := removeInTransaction(tx, group.GetProps(), s.defaultGroupCache); err != nil {
+			if err := removeInTransaction(tx, group.GetProps()); err != nil {
 				return errors.Wrap(err, "error removing during mutation")
 			}
 		}
 		for _, group := range toUpdate {
-			if err := updateInTransaction(tx, group, s.defaultGroupCache); err != nil {
+			if err := updateInTransaction(tx, group); err != nil {
 				return errors.Wrap(err, "error updating during mutation")
 			}
 		}
 		for _, group := range toAdd {
-			if err := addInTransaction(tx, group, s.defaultGroupCache); err != nil {
+			if err := addInTransaction(tx, group); err != nil {
 				return errors.Wrap(err, "error adding during mutation")
 			}
 		}
@@ -137,11 +135,11 @@ func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 // Helpers
 //////////
 
-func addInTransaction(tx *bolt.Tx, group *storage.Group, defaultGroupCache expiringcache.Cache) error {
+func addInTransaction(tx *bolt.Tx, group *storage.Group) error {
 	id := group.GetProps().GetId()
 
 	// Check whether the to-be-added group is a default group, ensure that it does not yet exist.
-	defaultGroupExists, err := checkDefaultGroupForProps(tx, group.GetProps(), defaultGroupCache)
+	defaultGroupExists, err := checkDefaultGroupForProps(tx, group.GetProps())
 	if err != nil {
 		return err
 	}
@@ -165,18 +163,15 @@ func addInTransaction(tx *bolt.Tx, group *storage.Group, defaultGroupCache expir
 		return err
 	}
 
-	if isDefaultGroup(group.GetProps()) {
-		defaultGroupCache.GetOrSet(group.GetProps().GetAuthProviderId(), true)
-	}
 	return nil
 }
 
-func updateInTransaction(tx *bolt.Tx, group *storage.Group, defaultGroupCache expiringcache.Cache) error {
+func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
 	id := group.GetProps().GetId()
 	buc := tx.Bucket(groupsBucket)
 
 	// Check whether the to-be-added group is a default group, ensure that it does not yet exist.
-	defaultGroupExists, err := checkDefaultGroupForProps(tx, group.GetProps(), defaultGroupCache)
+	defaultGroupExists, err := checkDefaultGroupForProps(tx, group.GetProps())
 	if err != nil {
 		return err
 	}
@@ -213,13 +208,10 @@ func updateInTransaction(tx *bolt.Tx, group *storage.Group, defaultGroupCache ex
 		return err
 	}
 
-	if isDefaultGroup(group.GetProps()) {
-		defaultGroupCache.GetOrSet(group.GetProps().GetAuthProviderId(), true)
-	}
 	return nil
 }
 
-func removeInTransaction(tx *bolt.Tx, props *storage.GroupProperties, defaultGroupCache expiringcache.Cache) error {
+func removeInTransaction(tx *bolt.Tx, props *storage.GroupProperties) error {
 	buc := tx.Bucket(groupsBucket)
 	id := props.GetId()
 
@@ -245,9 +237,6 @@ func removeInTransaction(tx *bolt.Tx, props *storage.GroupProperties, defaultGro
 		return err
 	}
 
-	if isDefaultGroup(props) {
-		defaultGroupCache.Remove(props.GetAuthProviderId())
-	}
 	return nil
 }
 
@@ -321,22 +310,14 @@ func getPossibleGroupProperties(authProviderID string, attributes map[string][]s
 // store for the given auth provider ID, checking whether a default group already exists.
 // If the properties do not indicate a default group or the default group does not yet exist, it will return false.
 // Otherwise, it will return true.
-func checkDefaultGroupForProps(tx *bolt.Tx, props *storage.GroupProperties,
-	defaultGroupCache expiringcache.Cache) (bool, error) {
+func checkDefaultGroupForProps(tx *bolt.Tx, props *storage.GroupProperties) (bool, error) {
 	// 1. Short-circuit if the props do not indicate a default group. A default group only has the auth provider ID
 	// field set.
 	if !isDefaultGroup(props) {
 		return false, nil
 	}
-	// 2. Short-circuit if the auth providerID is in the cache.
-	if defaultGroupCache.Get(props.GetAuthProviderId()) != nil {
-		defaultGroupExists, ok := defaultGroupCache.Get(props.GetAuthProviderId()).(bool)
-		if ok {
-			return defaultGroupExists, nil
-		}
-	}
 
-	// 3. Filter for the default group.
+	// 2. Filter for the default group.
 	grp, err := getByPropsInTransaction(tx, &storage.GroupProperties{AuthProviderId: props.GetAuthProviderId()})
 	if err != nil {
 		return false, err
