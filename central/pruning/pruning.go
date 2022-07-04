@@ -533,7 +533,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	if timeutil.TimeDiffDays(time.Now(), configCreationTime) < int(retentionDays) {
 		// In this case, the deployments that became unhealthy after config creation would also be unhealthy for fewer than retention days
 		// and pruning can be skipped
-		log.Info("[Cluster Pruning] skipping pruning to as retention period only starts after upgrade to version 3.71.0.")
+		log.Info("[Cluster Pruning] skipping pruning as retention period only starts after upgrade to version 3.71.0.")
 		return
 	}
 
@@ -591,7 +591,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 }
 
 func (g *garbageCollectorImpl) checkIfClusterContainsCentral(cluster *storage.Cluster) (bool, error) {
-	//This query could be expensive, but it's an extremely rare occurrence. It only happens if there is a cluster that has been unhealthy for a long time (configurable)
+	//This query could be expensive, but it's a rare occurrence. It only happens if there is a cluster that has been unhealthy for a long time (configurable)
 	query := search.NewQueryBuilder().
 		AddStrings(search.ClusterID, cluster.GetId()).
 		AddExactMatches(search.DeploymentName, "central")
