@@ -1,8 +1,11 @@
 package store
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
 )
@@ -36,7 +39,8 @@ func New(db *bolt.DB) Store {
 	bolthelper.RegisterBucketOrPanic(db, groupsBucket)
 
 	store := &storeImpl{
-		db: db,
+		db:                db,
+		defaultGroupCache: expiringcache.NewExpiringCache(time.Hour),
 	}
 	grps, err := store.GetFiltered(isEmptyGroupPropertiesF)
 	utils.Should(err)
