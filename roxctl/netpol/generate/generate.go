@@ -11,12 +11,12 @@ func (cmd *netpolGenerateCommand) generateNetpol() error {
 		return err
 	}
 
-	for i, netpol := range recommendedNetpols {
+	for _, netpol := range recommendedNetpols {
 		yamlPolicy, err := networkpolicy.KubernetesNetworkPolicyWrap{NetworkPolicy: netpol}.ToYaml()
 		if err != nil {
 			return err
 		}
-		cmd.env.Logger().PrintfLn("Network Policy %d:\n%s\n\n", i, yamlPolicy)
+		cmd.env.Logger().PrintfLn("---\n\n%s", yamlPolicy)
 	}
 	return nil
 }
