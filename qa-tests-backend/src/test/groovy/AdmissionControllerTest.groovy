@@ -406,7 +406,7 @@ class AdmissionControllerTest extends BaseSpecification {
         then:
         "Verify deployment can be created"
         def deployment = MISC_DEPLOYMENT.clone()
-        def created = orchestrator.createDeploymentNoWait(deployment)
+        def created = orchestrator.createDeploymentNoWait(deployment, 10)
         assert created
 
         and:

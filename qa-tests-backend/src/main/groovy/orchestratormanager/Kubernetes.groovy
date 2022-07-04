@@ -1822,7 +1822,7 @@ class Kubernetes implements OrchestratorMain {
         Private K8S Support functions
     */
 
-    def createDeploymentNoWait(Deployment deployment) {
+    def createDeploymentNoWait(Deployment deployment, int maxNumRetries=0) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
         // Create service if needed
@@ -1854,7 +1854,7 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            Helpers.withK8sClientRetry(10,1) {
+            Helpers.withK8sClientRetry(maxNumRetries,1) {
                 client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
                 int att = Helpers.getAttemptCount()
                 log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". Attempt " + att + " of 10"
