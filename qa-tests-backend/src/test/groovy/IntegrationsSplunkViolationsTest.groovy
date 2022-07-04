@@ -301,7 +301,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
     def triggerProcessViolation(SplunkUtil.SplunkDeployment splunkDeployment) {
         orchestrator.execInContainer(splunkDeployment.deployment, "curl http://127.0.0.1:10248/ --max-time 2")
-        assert waitForAlertWithPolicyId("86804b96-e87e-4eae-b56e-1718a8a55763")
+        assert waitForAlertWithPolicyId(splunkDeployment.getDeployment().getName(), "86804b96-e87e-4eae-b56e-1718a8a55763")
     }
 
     def triggerNetworkFlowViolation(SplunkUtil.SplunkDeployment splunkDeployment, String centralHost) {
@@ -312,13 +312,13 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 "for i in `seq 100`; do  wget -S http://${centralHost}:443; sleep 1; done")
 
         // TODO: this code is flaky; see https://stack-rox.atlassian.net/browse/ROX-7772
-        assert waitForAlertWithPolicyId("1b74ffdd-8e67-444c-9814-1c23863c8ccb")
+        assert waitForAlertWithPolicyId(splunkDeployment.getDeployment().getName(), "1b74ffdd-8e67-444c-9814-1c23863c8ccb")
     }
 
-    private boolean waitForAlertWithPolicyId(String policyId) {
+    private boolean waitForAlertWithPolicyId(String deploymentName, String policyId) {
         retryUntilTrue({
             AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest.newBuilder()
-                    .setQuery("Namespace:${TEST_NAMESPACE}+Violation State:*")
+                    .setQuery("Namespace:${TEST_NAMESPACE}+Violation State:*+Deployment:${deploymentName}")
                     .build())
                     .asList()
                     .any { a -> a.getPolicy().getId() == policyId }
