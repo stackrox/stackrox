@@ -39,15 +39,14 @@ func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err
 // TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
 func (s *storeImpl) getByProps(props *storage.GroupProperties) (grp *storage.Group, err error) {
 	err = s.db.View(func(tx *bolt.Tx) error {
-		groups, err := getByPropsInTransaction(tx, props)
+		grp, err := getByPropsInTransaction(tx, props)
 		if err != nil {
 			return err
 		}
 		// If no groups are found, return nil, mimicking the behavior of Get().
-		if groups == nil {
+		if grp == nil {
 			return nil
 		}
-		grp = groups[0]
 		return nil
 	})
 	return grp, err
@@ -163,15 +162,15 @@ func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
 			return errox.NotFound.Newf("group config for %q does not exist", id)
 		}
 	} else {
-		grps, err := getByPropsInTransaction(tx, group.GetProps())
+		grp, err := getByPropsInTransaction(tx, group.GetProps())
 		if err != nil {
 			return err
 		}
-		if grps == nil {
+		if grp == nil {
 			return errox.NotFound.Newf("group config for (auth provider id=%s, key=%s, value=%s) does not exist",
 				group.GetProps().GetAuthProviderId(), group.GetProps().GetKey(), group.GetProps().GetValue())
 		}
-		id = grps[0].GetProps().GetId()
+		id = grp.GetProps().GetId()
 	}
 
 	bytes, err := proto.Marshal(group)
@@ -193,15 +192,15 @@ func removeInTransaction(tx *bolt.Tx, props *storage.GroupProperties) error {
 			return errox.NotFound.Newf("group config for %q does not exist", id)
 		}
 	} else {
-		grps, err := getByPropsInTransaction(tx, props)
+		grp, err := getByPropsInTransaction(tx, props)
 		if err != nil {
 			return err
 		}
-		if grps == nil {
+		if grp == nil {
 			return errox.NotFound.Newf("group config for (auth provider id=%s, key=%s, value=%s) does not exist",
 				props.GetAuthProviderId(), props.GetKey(), props.GetValue())
 		}
-		id = grps[0].GetProps().GetId()
+		id = grp.GetProps().GetId()
 	}
 
 	return buc.Delete([]byte(id))
@@ -239,18 +238,16 @@ func filterByPropsInTransaction(tx *bolt.Tx, props *storage.GroupProperties) ([]
 	return grps, nil
 }
 
-func getByPropsInTransaction(tx *bolt.Tx, props *storage.GroupProperties) ([]*storage.Group, error) {
+func getByPropsInTransaction(tx *bolt.Tx, props *storage.GroupProperties) (*storage.Group, error) {
 	grps, err := filterByPropsInTransaction(tx, props)
 	if err != nil {
 		return nil, err
 	}
-	if len(grps) > 1 {
-		return nil, errox.InvalidArgs.Newf("multiple groups found for properties (auth provider id=%s, key=%s, "+
-			"value=%s), provide an ID to retrieve a group unambiguously",
-			props.GetAuthProviderId(), props.GetKey(), props.GetValue())
+	if len(grps) == 0 {
+		return nil, nil
 	}
 
-	return grps, nil
+	return grps[0], nil
 }
 
 // When given an auth provider and attributes, we will look for all keys and
