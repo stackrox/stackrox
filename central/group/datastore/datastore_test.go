@@ -17,6 +17,15 @@ func TestGroupDataStore(t *testing.T) {
 	suite.Run(t, new(groupDataStoreTestSuite))
 }
 
+var (
+	groupWithID = &storage.Group{Props: &storage.GroupProperties{
+		Id:             "123",
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+)
+
 type groupDataStoreTestSuite struct {
 	suite.Suite
 
@@ -127,79 +136,143 @@ func (s *groupDataStoreTestSuite) TestAllowsWalk() {
 func (s *groupDataStoreTestSuite) TestEnforcesAdd() {
 	s.storage.EXPECT().Add(gomock.Any()).Times(0)
 
-	err := s.dataStore.Add(s.hasNoneCtx, &storage.Group{})
+	grp := &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err := s.dataStore.Add(s.hasNoneCtx, grp)
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.Add(s.hasReadCtx, &storage.Group{})
+	grp = &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err = s.dataStore.Add(s.hasReadCtx, grp)
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsAdd() {
 	s.storage.EXPECT().Add(gomock.Any()).Return(nil).Times(2)
 
-	err := s.dataStore.Add(s.hasWriteCtx, &storage.Group{})
+	grp := &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err := s.dataStore.Add(s.hasWriteCtx, grp)
 	s.NoError(err, "expected no error trying to write with permissions")
 
-	err = s.dataStore.Add(s.hasWriteAccessCtx, &storage.Group{})
+	grp = &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err = s.dataStore.Add(s.hasWriteAccessCtx, grp)
 	s.NoError(err, "expected no error trying to write with Access permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesUpdate() {
 	s.storage.EXPECT().Update(gomock.Any()).Times(0)
 
-	err := s.dataStore.Update(s.hasNoneCtx, &storage.Group{})
+	grp := &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err := s.dataStore.Update(s.hasNoneCtx, grp)
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.Update(s.hasReadCtx, &storage.Group{})
+	grp = &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err = s.dataStore.Update(s.hasReadCtx, grp)
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsUpdate() {
 	s.storage.EXPECT().Update(gomock.Any()).Return(nil).Times(2)
 
-	err := s.dataStore.Update(s.hasWriteCtx, &storage.Group{})
+	grp := &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err := s.dataStore.Update(s.hasWriteCtx, grp)
 	s.NoError(err, "expected no error trying to write with permissions")
 
-	err = s.dataStore.Update(s.hasWriteAccessCtx, &storage.Group{})
+	grp = &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err = s.dataStore.Update(s.hasWriteAccessCtx, grp)
 	s.NoError(err, "expected no error trying to write with Access permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesMutate() {
 	s.storage.EXPECT().Mutate(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.Mutate(s.hasNoneCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{})
+	grp := &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err := s.dataStore.Mutate(s.hasNoneCtx, []*storage.Group{groupWithID}, []*storage.Group{groupWithID},
+		[]*storage.Group{grp})
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.Mutate(s.hasReadCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{})
+	grp = &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err = s.dataStore.Mutate(s.hasReadCtx, []*storage.Group{groupWithID}, []*storage.Group{groupWithID},
+		[]*storage.Group{grp})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsMutate() {
 	s.storage.EXPECT().Mutate(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(2)
 
-	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{})
+	grp := &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{groupWithID}, []*storage.Group{groupWithID},
+		[]*storage.Group{grp})
 	s.NoError(err, "expected no error trying to write with permissions")
 
-	err = s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{})
+	grp = &storage.Group{Props: &storage.GroupProperties{
+		AuthProviderId: "123",
+		Key:            "123",
+		Value:          "123",
+	}, RoleName: "123"}
+	err = s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{groupWithID}, []*storage.Group{groupWithID},
+		[]*storage.Group{grp})
 	s.NoError(err, "expected no error trying to write with Access permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesRemove() {
 	s.storage.EXPECT().Remove(gomock.Any()).Times(0)
 
-	err := s.dataStore.Remove(s.hasNoneCtx, &storage.GroupProperties{})
+	err := s.dataStore.Remove(s.hasNoneCtx, groupWithID.GetProps())
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.Remove(s.hasReadCtx, &storage.GroupProperties{})
+	err = s.dataStore.Remove(s.hasReadCtx, groupWithID.GetProps())
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsRemove() {
 	s.storage.EXPECT().Remove(gomock.Any()).Return(nil).Times(2)
 
-	err := s.dataStore.Remove(s.hasWriteCtx, &storage.GroupProperties{})
+	err := s.dataStore.Remove(s.hasWriteCtx, groupWithID.GetProps())
 	s.NoError(err, "expected no error trying to write with permissions")
 
-	err = s.dataStore.Remove(s.hasWriteAccessCtx, &storage.GroupProperties{})
+	err = s.dataStore.Remove(s.hasWriteAccessCtx, groupWithID.GetProps())
 	s.NoError(err, "expected no error trying to write with Access permissions")
 }

@@ -150,9 +150,9 @@ func (suite *UserServiceTestSuite) TestBatchUpdate_Dedupe_updated_group() {
 	contextForMock := context.Background()
 	suite.groupsMock.EXPECT().
 		Mutate(contextForMock,
-			[]*storage.Group{},
+			gomock.Len(0),
 			[]*storage.Group{update.GetRequiredGroups()[0]},
-			[]*storage.Group{}).
+			gomock.Len(0)).
 		Return(nil)
 
 	_, err := suite.ser.BatchUpdate(contextForMock, update)
