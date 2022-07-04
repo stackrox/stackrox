@@ -571,6 +571,11 @@ func TestClusterPruning(t *testing.T) {
 	defer isolator.RestoreAll()
 
 	isolator.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
+	if !features.DecommissionedClusterRetention.Enabled() {
+		// if it's still not enabled, we're probably in release tests so skip
+		t.Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
+	}
+
 	isolator.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 
 	testbuildinfo.SetForTest(t)
@@ -802,6 +807,11 @@ func TestClusterPruningCentralCheck(t *testing.T) {
 	defer isolator.RestoreAll()
 
 	isolator.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
+	if !features.DecommissionedClusterRetention.Enabled() {
+		// if it's still not enabled, we're probably in release tests so skip
+		t.Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
+	}
+
 	isolator.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 
 	testbuildinfo.SetForTest(t)
