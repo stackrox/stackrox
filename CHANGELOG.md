@@ -5,6 +5,8 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- ROX-11181: Any clusters that have been unhealthy (defined as central being unable to reach sensor running on those clusters) for a period of time will be automatically removed. By default, it will remove if it's been unhealthy for 90 days, however that can be configured in the System Configuration page or using the cluster API.
+  - Any cluster that is expected to be unavailable for a period of time (e.g. clusters used in disaster recovery), can be tagged with a customizable label. Clusters with those labels will never be removed automatically.
 
 ## [3.71.0]
 
