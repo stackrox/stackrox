@@ -542,13 +542,13 @@ func (s *GroupStoreTestSuite) TestDefaultGroup() {
 	s.ErrorIs(err, errox.AlreadyExists)
 
 	// 3. Updating the initially existing group to make it a default group should fail.
-	//		Fetch the group by its properties.
+	// Fetch the group by its properties.
 	initialGroup, err = s.sto.Get(initialGroup.GetProps())
 	s.NoError(err)
-	// 		Unset Key / Value fields, making it a default group.
+	// Unset Key / Value fields, making it a default group.
 	initialGroup.GetProps().Key = ""
 	initialGroup.GetProps().Value = ""
-	//		Ensure a "AlreadyExists" error is yielded when trying to update the group.
+	// Ensure a "AlreadyExists" error is yielded when trying to update the group.
 	err = s.sto.Update(initialGroup)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)

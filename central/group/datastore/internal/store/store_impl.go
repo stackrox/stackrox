@@ -159,11 +159,7 @@ func addInTransaction(tx *bolt.Tx, group *storage.Group) error {
 		return errox.InvariantViolation.CausedBy(err)
 	}
 
-	if err := buc.Put([]byte(id), bytes); err != nil {
-		return err
-	}
-
-	return nil
+	return buc.Put([]byte(id), bytes)
 }
 
 func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
@@ -204,11 +200,7 @@ func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
 		return errox.InvariantViolation.CausedBy(err)
 	}
 
-	if err := buc.Put([]byte(id), bytes); err != nil {
-		return err
-	}
-
-	return nil
+	return buc.Put([]byte(id), bytes)
 }
 
 func removeInTransaction(tx *bolt.Tx, props *storage.GroupProperties) error {
@@ -233,11 +225,7 @@ func removeInTransaction(tx *bolt.Tx, props *storage.GroupProperties) error {
 		id = grp.GetProps().GetId()
 	}
 
-	if err := buc.Delete([]byte(id)); err != nil {
-		return err
-	}
-
-	return nil
+	return buc.Delete([]byte(id))
 }
 
 func filterInTransaction(tx *bolt.Tx, filter func(*storage.GroupProperties) bool) (grps []*storage.Group, err error) {
