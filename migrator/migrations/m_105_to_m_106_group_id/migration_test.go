@@ -32,10 +32,10 @@ func (suite *migrateServiceIdentitySerial) TearDownTest() {
 }
 
 func (suite *migrateServiceIdentitySerial) TestMigrate() {
-	// Expected groups after migration.
-	// Group "r1" should not be updated, as the ID is pre-existing.
-	// Group "r2" should have the ID after migration.
-	// Group "r3" should be migrated but not have an updated ID.
+	// Expected groups after migration. Note that:
+	// * Group "r1" should not be updated, as it is by ID,
+	// * Group "r2" should get an ID after migration,
+	// * Group "r3" should be migrated despite it has an ID because it is stored by the composite key.
 	expectedGroups := map[string]*storage.Group{
 		"r1": {
 			Props: &storage.GroupProperties{
@@ -87,7 +87,7 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 	}
 
 	// 1. Buckets don't exist should succeed still
-	suite.NoError(migrateGroupsWithoutID(suite.db))
+	suite.NoError(migrateGroupsStoredByCompositeKey(suite.db))
 
 	// 2. Add the old groups to the groups bucket and create it if it does not exist yet.
 	err := suite.db.Update(func(tx *bolt.Tx) error {
@@ -110,7 +110,7 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 	suite.NoError(err)
 
 	// 3. Migrate the groups without ID.
-	suite.NoError(migrateGroupsWithoutID(suite.db))
+	suite.NoError(migrateGroupsStoredByCompositeKey(suite.db))
 
 	// 4. Verify all groups match the expected groups.
 	err = suite.db.View(func(tx *bolt.Tx) error {

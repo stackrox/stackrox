@@ -23,7 +23,7 @@ var (
 		StartingSeqNum: 105,
 		VersionAfter:   storage.Version{SeqNum: 106},
 		Run: func(databases *types.Databases) error {
-			return migrateGroupsWithoutID(databases.BoltDB)
+			return migrateGroupsStoredByCompositeKey(databases.BoltDB)
 		},
 	}
 )
@@ -32,7 +32,7 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func migrateGroupsWithoutID(db *bolt.DB) error {
+func migrateGroupsStoredByCompositeKey(db *bolt.DB) error {
 	groupsWithoutID, err := fetchGroupsToMigrate(db)
 	if err != nil {
 		return errors.Wrap(err, "error fetching groups to migrate")
@@ -42,14 +42,14 @@ func migrateGroupsWithoutID(db *bolt.DB) error {
 		return errors.Wrap(err, "error adding IDs to group and storing them")
 	}
 
-	if err := removeGroupsWithoutID(db, groupsWithoutID); err != nil {
+	if err := removeGroupsStoredByCompositeKey(db, groupsWithoutID); err != nil {
 		return errors.Wrap(err, "error removing groups without ID")
 	}
 
 	return nil
 }
 
-func fetchGroupsToMigrate(db *bolt.DB) (groupsWithoutID []groupStoredByCompositeKey, err error) {
+func fetchGroupsToMigrate(db *bolt.DB) (groupsStoredByCompositeKey []groupStoredByCompositeKey, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketName)
 		// Pre-req: Migrating a non-existent bucket should not fail.
@@ -63,22 +63,21 @@ func fetchGroupsToMigrate(db *bolt.DB) (groupsWithoutID []groupStoredByComposite
 				return nil
 			}
 
-			// 2. We found a group that is stored using the composite key as index. Deserialize it to a storage.Group
+			// 2. We found a group that is stored using the composite key as index. Deserialize it to a storage.Group.
 			grp, err := deserialize(k, v)
 			if err != nil {
 				return err
 			}
 
-			// 4. We found a  group that requires migration.
-			groupsWithoutID = append(groupsWithoutID, groupStoredByCompositeKey{grp: grp, compositeKey: k})
+			groupsStoredByCompositeKey = append(groupsStoredByCompositeKey, groupStoredByCompositeKey{grp: grp, compositeKey: k})
 
 			return nil
 		})
 	})
-	return groupsWithoutID, err
+	return groupsStoredByCompositeKey, err
 }
 
-func addIDsToGroups(db *bolt.DB, groupsWithoutID []groupStoredByCompositeKey) error {
+func addIDsToGroups(db *bolt.DB, groupsStoredByCompositeKey []groupStoredByCompositeKey) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketName)
 		// Pre-req: Migrating a non-existent bucket should not fail.
@@ -86,8 +85,8 @@ func addIDsToGroups(db *bolt.DB, groupsWithoutID []groupStoredByCompositeKey) er
 			return nil
 		}
 
-		for i := range groupsWithoutID {
-			grp := groupsWithoutID[i].grp
+		for i := range groupsStoredByCompositeKey {
+			grp := groupsStoredByCompositeKey[i].grp
 
 			// 1. Generate the group ID if the group does not already have an ID associated with it.
 			if grp.GetProps().GetId() == "" {
@@ -110,7 +109,7 @@ func addIDsToGroups(db *bolt.DB, groupsWithoutID []groupStoredByCompositeKey) er
 	})
 }
 
-func removeGroupsWithoutID(db *bolt.DB, groupsWithoutID []groupStoredByCompositeKey) error {
+func removeGroupsStoredByCompositeKey(db *bolt.DB, groupStoredByCompositeKeys []groupStoredByCompositeKey) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketName)
 		// Pre-req: Migrating a non-existent bucket should not fail.
@@ -118,8 +117,8 @@ func removeGroupsWithoutID(db *bolt.DB, groupsWithoutID []groupStoredByComposite
 			return nil
 		}
 
-		for i := range groupsWithoutID {
-			compositeKey := groupsWithoutID[i].compositeKey
+		for i := range groupStoredByCompositeKeys {
+			compositeKey := groupStoredByCompositeKeys[i].compositeKey
 
 			// 1. Remove the value stored behind the composite key, since the migrated group is now successfully stored.
 			if err := bucket.Delete(compositeKey); err != nil {
