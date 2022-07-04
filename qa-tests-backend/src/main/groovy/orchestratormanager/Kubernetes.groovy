@@ -1854,7 +1854,7 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            Helpers.withRetry(10,1) {
+            Helpers.withK8sClientRetry(10,1) {
                 client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
                 int att = Helpers.getAttemptCount()
                 log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". Attempt " + att + " of 10"
