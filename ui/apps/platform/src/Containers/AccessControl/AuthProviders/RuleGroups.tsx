@@ -13,6 +13,7 @@ export type RuleGroupErrors = {
     props?: {
         key?: string;
         value?: string;
+        id?: string;
     };
 };
 
@@ -159,6 +160,7 @@ function RuleGroups({
                                                 authProviderId: authProviderId || '',
                                                 key: '',
                                                 value: '',
+                                                id: '',
                                             },
                                         })
                                     }
