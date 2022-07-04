@@ -106,6 +106,7 @@ import objects.Secret
 import objects.SecretKeyRef
 import okhttp3.Response
 import util.Timer
+import util.Helpers
 
 @Slf4j
 class Kubernetes implements OrchestratorMain {
@@ -135,6 +136,9 @@ class Kubernetes implements OrchestratorMain {
         // "any namespace" requests to be scoped to the default project.
         this.client.configuration.namespace = null
         this.client.configuration.setRollingTimeout(60 * 60 * 1000)
+        this.client.configuration.setRequestTimeout(20*1000)
+        this.client.configuration.setConnectionTimeout(20*1000)
+        this.client.configuration.setWebsocketTimeout(20*1000)
         this.deployments = this.client.apps().deployments()
         this.daemonsets = this.client.apps().daemonSets()
         this.statefulsets = this.client.apps().statefulSets()
@@ -1818,7 +1822,7 @@ class Kubernetes implements OrchestratorMain {
         Private K8S Support functions
     */
 
-    def createDeploymentNoWait(Deployment deployment) {
+    def createDeploymentNoWait(Deployment deployment, int maxNumRetries=0) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
         // Create service if needed
@@ -1850,8 +1854,11 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-            log.debug "Told the orchestrator to createOrReplace " + deployment.name
+            Helpers.withK8sClientRetry(maxNumRetries,1) {
+                client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
+                int att = Helpers.getAttemptCount()
+                log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". Attempt " + att + " of 10"
+            }
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
             }

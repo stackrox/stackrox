@@ -101,7 +101,7 @@ group.
 
 # Running Bits of Groovy
 
-Developing groovy code in a test specification context has a lot of 
+Developing groovy code in a test specification context has a lot of
 overhead and can often be painful. For more details see [sampleScripts](src/main/groovy/sampleScripts/README.md).
 
 # Common Failure Patterns
