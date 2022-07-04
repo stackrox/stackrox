@@ -247,6 +247,12 @@ func getByPropsInTransaction(tx *bolt.Tx, props *storage.GroupProperties) (*stor
 		return nil, nil
 	}
 
+	if len(grps) > 1 {
+		return nil, errox.InvalidArgs.Newf("multiple groups found for properties (auth provider id=%s, key=%s, "+
+			"value=%s), provide an ID to retrieve a group unambiguously",
+			props.GetAuthProviderId(), props.GetKey(), props.GetValue())
+	}
+
 	return grps[0], nil
 }
 
