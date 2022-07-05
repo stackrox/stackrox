@@ -223,7 +223,7 @@ func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, dep
 	if len(activeComponents) > 0 {
 		err = u.acStore.UpsertBatch(ctx, activeComponents)
 		if err != nil {
-			return errors.Wrapf(err, "failed to upsert %d activeComponents, %v ...", len(activeComponents), activeComponents[:2])
+			return errors.Wrapf(err, "failed to upsert %d activeComponents", len(activeComponents))
 		}
 	}
 	if len(acToRemove) > 0 {
