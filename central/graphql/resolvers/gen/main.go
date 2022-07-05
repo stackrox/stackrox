@@ -24,7 +24,6 @@ var (
 			reflect.TypeOf((*storage.ComplianceAggregation_Response)(nil)),
 			reflect.TypeOf((*storage.ComplianceControlResult)(nil)),
 			reflect.TypeOf((*storage.CVE)(nil)),
-			reflect.TypeOf((*storage.CVEInfo)(nil)),
 			reflect.TypeOf((*storage.Deployment)(nil)),
 			reflect.TypeOf((*storage.FalsePositiveRequest)(nil)),
 			reflect.TypeOf((*storage.Group)(nil)),

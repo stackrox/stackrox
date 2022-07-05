@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -147,8 +148,8 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 	if err != nil {
 		return 0, err
 	}
-
 	query = tryUnsuppressedQuery(query)
+
 	return loader.CountFromQuery(ctx, query)
 }
 
@@ -178,19 +179,31 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	}
 	query = tryUnsuppressedQuery(query)
 
+	// get fixable vulns
 	fixableQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
 	fixableVulns, err := loader.FromQuery(ctx, fixableQuery)
 	if err != nil {
 		return nil, err
 	}
+	fixable := imageCveToVulnerabilityWithSeverity(fixableVulns)
 
+	// get unfixable vulns
 	unFixableVulnsQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
 	unFixableVulns, err := loader.FromQuery(ctx, unFixableVulnsQuery)
 	if err != nil {
 		return nil, err
 	}
+	unfixable := imageCveToVulnerabilityWithSeverity(unFixableVulns)
 
-	return mapImageCVEsToVulnerabilityCounter(fixableVulns, unFixableVulns), nil
+	return mapCVEsToVulnerabilityCounter(fixable, unfixable), nil
+}
+
+func imageCveToVulnerabilityWithSeverity(in []*storage.ImageCVE) []VulnerabilityWithSeverity {
+	ret := make([]VulnerabilityWithSeverity, len(in))
+	for _, vuln := range in {
+		ret = append(ret, vuln)
+	}
+	return ret
 }
 
 // withImageCveTypeFiltering adds a conjunction as a raw query to filter vulnerability type by image
@@ -236,7 +249,7 @@ func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, e
 		return "", nil
 	}
 
-	edgeID := edges.EdgeID{ParentID: scope.ID, ChildID: resolver.data.GetId()}.ToString()
+	edgeID := postgres.IDFromPks([]string{scope.ID, resolver.data.GetId()})
 	edge, found, err := resolver.root.ComponentCVEEdgeDataStore.Get(ctx, edgeID)
 	if err != nil || !found {
 		return "", err
@@ -257,7 +270,7 @@ func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) 
 	}
 
 	query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
-	count, err := resolver.root.ComponentCVEEdgeDataStore.Count(ctx, query)
+	count, err := resolver.root.ImageCVEDataStore.Count(ctx, query)
 	if err != nil {
 		return false, err
 	}
