@@ -4,6 +4,7 @@ import { Flex, Title, Truncate } from '@patternfly/react-core';
 import { TableComposable, Tbody, Tr, Td } from '@patternfly/react-table';
 import { SecurityIcon } from '@patternfly/react-icons';
 
+import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import { DeploymentAlert } from 'types/alert.proto';
 import { violationsBasePath } from 'routePaths';
 import { severityColors } from 'constants/visuals/colors';
@@ -32,14 +33,18 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                     />
                                 </Td>
                                 <Td dataLabel="Violation name">
-                                    <Flex direction={{ default: 'row' }}>
-                                        <Link to={`${violationsBasePath}/${id}`}>
-                                            <Truncate content={policy.name} />
-                                        </Link>
-                                    </Flex>
+                                    <Link to={`${violationsBasePath}/${id}`}>
+                                        <Truncate content={policy.name} />
+                                    </Link>
                                 </Td>
                                 <Td dataLabel="Deployment in violation">
-                                    <Truncate content={deployment.name} />
+                                    <Flex
+                                        direction={{ default: 'row' }}
+                                        flexWrap={{ default: 'nowrap' }}
+                                    >
+                                        <ResourceIcon className="pf-u-mr-sm" kind="Deployment" />
+                                        <Truncate content={deployment.name} />
+                                    </Flex>
                                 </Td>
                                 <Td
                                     width={35}
