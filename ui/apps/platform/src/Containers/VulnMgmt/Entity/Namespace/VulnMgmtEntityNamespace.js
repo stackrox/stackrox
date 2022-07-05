@@ -61,7 +61,7 @@ const VulnMgmtNamespace = ({
                 }
                 policyCount(query: $policyQuery)
                 vulnCount
-                deploymentCount: numDeployments # numDeployments is pre-calculated in namespace resolver
+                deploymentCount
                 imageCount
                 componentCount
             }

@@ -41,6 +41,7 @@ func init() {
 			"k8sRoleCount(query: String): Int!",
 			"k8sRoles(query: String, pagination: Pagination): [K8SRole!]!",
 			"latestViolation(query: String): Time",
+			"networkPolicyCount(query: String): Int!",
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"policies(query: String, pagination: Pagination): [Policy!]!",
 			"policyCount(query: String): Int!",
@@ -70,9 +71,11 @@ func init() {
 			"plottedVulns(query: String): PlottedVulnerabilities!" +
 				"@deprecated(reason: \"use 'plottedImageVulnerabilities'\")",
 		}),
+		// NOTE: This will not populate numDeployments, numNetworkPolicies, or numSecrets in Namespace! Use sub-resolvers for that.
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
 		schema.AddQuery("namespaceCount(query: String): Int!"),
+		// NOTE: This will not populate numDeployments, numNetworkPolicies, or numSecrets in Namespace! Use sub-resolvers for that.
 		schema.AddQuery("namespaces(query: String, pagination: Pagination): [Namespace!]!"),
 	)
 }
@@ -117,7 +120,7 @@ func (resolver *Resolver) Namespace(ctx context.Context, args struct{ graphql.ID
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapNamespace(namespace.ResolveByID(ctx, string(args.ID), resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
+	return resolver.wrapNamespace(namespace.ResolveMetadataOnlyByID(ctx, string(args.ID), resolver.NamespaceDataStore))
 }
 
 // Namespaces returns GraphQL resolvers for all namespaces based on an optional query.
@@ -131,7 +134,7 @@ func (resolver *Resolver) Namespaces(ctx context.Context, args PaginatedQuery) (
 		return nil, err
 	}
 
-	return resolver.wrapNamespaces(namespace.ResolveByQuery(ctx, query, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
+	return resolver.wrapNamespaces(namespace.ResolveMetadataOnlyByQuery(ctx, query, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
 }
 
 type clusterIDAndNameQuery struct {
@@ -649,6 +652,24 @@ func (resolver *namespaceResolver) DeploymentCount(ctx context.Context, args Raw
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 
 	return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
+}
+
+func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "NetworkPolicyCount")
+	if err := readSecrets(ctx); err != nil {
+		return 0, err
+	}
+
+	networkPolicyCount, err := resolver.root.NetworkPoliciesStore.CountMatchingNetworkPolicies(
+		ctx,
+		resolver.data.GetMetadata().GetClusterId(),
+		resolver.data.Metadata.GetName(),
+	)
+	if err != nil {
+		return 0, errors.Wrap(err, "counting network policies")
+	}
+
+	return int32(networkPolicyCount), nil
 }
 
 func (resolver *namespaceResolver) Risk(ctx context.Context) (*riskResolver, error) {
