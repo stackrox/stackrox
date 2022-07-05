@@ -69,4 +69,13 @@ else
     exit 0
 fi
 
-"${job_script}" "$@"
+"${job_script}" "$@" &
+job_pid="$!"
+
+forward_sigint() {
+    echo "Dispatch is forwarding SIGINT to job"
+    kill -SIGINT "${job_pid}"
+}
+trap forward_sigint SIGINT
+
+wait "${job_pid}"
