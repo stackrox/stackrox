@@ -793,33 +793,25 @@ commands:
 
           when: always
 
-  continue-when-in-a-pr-or-nightly-context:
+  continue-when-in-a-pr-context:
     steps:
       - run:
-          name: Continue when in a PR or nightly build context
+          name: Continue when in a PR context
           command: |
             if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
               echo "This is a PR, will continue with the remaining steps in this job"
-              exit 0
-            fi
-            if .circleci/is-nightly-tag.sh; then
-              echo "This is a nightly build, will continue with the remaining steps in this job"
               exit 0
             fi
             echo "This is not a PR, will skip the remaining steps in this job"
             circleci step halt
 
-  poll-for-builds-when-not-in-a-pr-or-nightly-context:
+  poll-for-builds-when-not-in-a-pr-context:
     steps:
       - run:
-          name: Poll for builds from OpenShift CI when not in a PR or nightly context
+          name: Poll for builds from OpenShift CI when not in a PR context
           command: |
             if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
               echo "This is a PR, will continue with the remaining steps in this job"
-              exit 0
-            fi
-            if .circleci/is-nightly-tag.sh; then
-              echo "This is a nightly build, will continue with the remaining steps in this job"
               exit 0
             fi
             source scripts/ci/lib.sh
@@ -833,7 +825,7 @@ commands:
         default: stackrox
     steps:
       - checkout
-      - continue-when-in-a-pr-or-nightly-context
+      - continue-when-in-a-pr-context
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-npm-deps-cache
@@ -886,8 +878,8 @@ commands:
   build:
     steps:
       - checkout-with-submodules
-      - poll-for-builds-when-not-in-a-pr-or-nightly-context
-      - continue-when-in-a-pr-or-nightly-context
+      - poll-for-builds-when-not-in-a-pr-context
+      - continue-when-in-a-pr-context
 
       - setup_remote_docker:
           version: << pipeline.parameters.docker_version >>
