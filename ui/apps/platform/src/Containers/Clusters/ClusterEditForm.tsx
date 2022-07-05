@@ -2,6 +2,9 @@ import React, { ReactElement } from 'react';
 
 import Loader from 'Components/Loader';
 import { labelClassName } from 'constants/form.constants';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
+
 import ClusterSummary from './Components/ClusterSummary';
 import StaticConfigurationSection from './StaticConfigurationSection';
 import DynamicConfigurationSection from './DynamicConfigurationSection';
@@ -11,6 +14,7 @@ import { CentralEnv, Cluster, ClusterManagerType } from './clusterTypes';
 type ClusterEditFormProps = {
     centralEnv: CentralEnv;
     centralVersion: string;
+    clusterRetentionInfo: DecommissionedClusterRetentionInfo;
     selectedCluster: Cluster;
     managerType: ClusterManagerType;
     handleChange: (any) => void;
@@ -21,12 +25,18 @@ type ClusterEditFormProps = {
 function ClusterEditForm({
     centralEnv,
     centralVersion,
+    clusterRetentionInfo,
     selectedCluster,
     managerType,
     handleChange,
     handleChangeLabels,
     isLoading,
 }: ClusterEditFormProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDecommissionedClusterRetentionEnabled = isFeatureFlagEnabled(
+        'ROX_DECOMMISSIONED_CLUSTER_RETENTION'
+    );
+
     if (isLoading) {
         return <Loader />;
     }
@@ -42,6 +52,10 @@ function ClusterEditForm({
                     status={selectedCluster.status}
                     centralVersion={centralVersion}
                     clusterId={selectedCluster.id}
+                    clusterRetentionInfo={clusterRetentionInfo}
+                    isDecommissionedClusterRetentionEnabled={
+                        isDecommissionedClusterRetentionEnabled
+                    }
                 />
             )}
             <form
