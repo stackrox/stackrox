@@ -72,6 +72,8 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 				clusterRetentionConf.LastUpdated = types.TimestampNow()
 			}
 		}
+	} else {
+		config.GetPrivateConfig().DecommissionedClusterRetention = nil
 	}
 
 	return d.store.Upsert(ctx, config)
