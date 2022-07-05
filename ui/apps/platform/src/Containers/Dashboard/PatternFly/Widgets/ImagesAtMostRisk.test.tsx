@@ -144,7 +144,7 @@ describe('Images at most risk dashboard widget', () => {
 
         await history.goBack();
 
-        await user.click(screen.getByRole('link', { name: 'View All' }));
+        await user.click(screen.getByRole('link', { name: 'View all' }));
         expect(history.location.pathname).toBe(`${vulnManagementImagesPath}`);
     });
 });

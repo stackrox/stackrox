@@ -171,7 +171,7 @@ function ImagesAtMostRisk() {
                             component={LinkShim}
                             href={getViewAllLink(searchFilter)}
                         >
-                            View All
+                            View all
                         </Button>
                     </FlexItem>
                 </Flex>
