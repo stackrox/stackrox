@@ -28,7 +28,7 @@ function SeverityTile({ severity, violationCount, link }: SeverityTileProps) {
             href={link}
         >
             <Stack>
-                <StackItem className="pf-u-color-100 pf-u-font-weight-bold pf-u-font-size-xl">
+                <StackItem className="pf-u-font-weight-bold pf-u-font-size-xl">
                     {violationCount}
                 </StackItem>
                 <StackItem>{severityLabels[severity]}</StackItem>
