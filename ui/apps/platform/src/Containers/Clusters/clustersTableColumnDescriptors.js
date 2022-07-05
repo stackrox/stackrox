@@ -116,7 +116,7 @@ export function getColumnsForClusters({
             Header: 'Cluster Deletion',
             Cell: ({ original }) => (
                 <ClusterDeletion
-                    clusterIdToRetentionInfo={clusterIdToRetentionInfo[original.id] ?? null}
+                    clusterRetentionInfo={clusterIdToRetentionInfo[original.id] ?? null}
                 />
             ),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
