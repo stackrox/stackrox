@@ -370,7 +370,7 @@ func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, args RawQue
 	if err != nil {
 		return nil, err
 	}
-	return mapCVEsToVulnerabilityCounter(fixableVulns, unFixableCVEs), nil
+	return mapCVEsToVulnerabilityCounter(cveToVulnerabilityWithSeverity(fixableVulns), cveToVulnerabilityWithSeverity(unFixableCVEs)), nil
 }
 
 func (eicr *imageComponentResolver) ImageVulnerabilities(_ context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
