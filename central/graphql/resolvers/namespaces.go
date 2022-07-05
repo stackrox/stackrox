@@ -656,7 +656,7 @@ func (resolver *namespaceResolver) DeploymentCount(ctx context.Context, args Raw
 
 func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "NetworkPolicyCount")
-	if err := readSecrets(ctx); err != nil {
+	if err := readNetPolicies(ctx); err != nil {
 		return 0, err
 	}
 

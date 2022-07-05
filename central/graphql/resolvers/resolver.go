@@ -187,6 +187,7 @@ var (
 	readImages                           = readAuth(resources.Image)
 	readIndicators                       = readAuth(resources.Indicator)
 	readNamespaces                       = readAuth(resources.Namespace)
+	readNetPolicies                      = readAuth(resources.NetworkPolicy)
 	readNodes                            = readAuth(resources.Node)
 	readNotifiers                        = readAuth(resources.Notifier)
 	readPolicies                         = readAuth(resources.Policy)
