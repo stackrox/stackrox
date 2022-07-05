@@ -26,7 +26,7 @@ export type ClusterIdToRetentionInfo = Record<string, DecommissionedClusterReten
 
 export type ClustersResponse = {
     clusters: Cluster[];
-    // Map secured clusters whose sensort have 'UNHEALTHY' status by clusterId to retention info
+    // Map secured clusters whose sensors have 'UNHEALTHY' status by clusterId to retention info.
     clusterIdToRetentionInfo: ClusterIdToRetentionInfo;
 };
 
