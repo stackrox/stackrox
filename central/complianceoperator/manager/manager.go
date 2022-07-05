@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -20,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -98,7 +98,10 @@ func productTypeToTarget(s string) pkgFramework.TargetKind {
 
 func getRuleIDAndName(rule *storage.ComplianceOperatorRule) (string, string) {
 	if ruleID, ok := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; ok {
-		return ruleID, stringutils.OrDefault(strings.Trim(rule.Annotations[cisOCPAnnotation], `" `), ruleID)
+		if ocpControl := strings.Trim(rule.Annotations[cisOCPAnnotation], `" `); ocpControl != "" {
+			return ruleID, fmt.Sprintf("CIS-OCP %s", ocpControl)
+		}
+		return ruleID, ruleID
 	}
 	// This field is checked within the pipeline so it should never be empty
 	log.Errorf("UNEXPECTED: Unknown base rule for %s", rule)
