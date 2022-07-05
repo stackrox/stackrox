@@ -383,13 +383,18 @@ db_backup_and_restore_test() {
     fi
 
     local output_dir="$1"
-    info "Backing up to $1"
+    info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
     roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
 
     if [[ ! -e DB_TEST_FAIL ]]; then
-        info "Restoring from $1"
-        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
+        if [ -z "${ROX_POSTGRES_DATASTORE}" ] || [ "${ROX_POSTGRES_DATASTORE}" == "false" ]; then
+            info "Restoring from ${output_dir}/stackrox_db_*"
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
+        else
+            info "Restoring from ${output_dir}/postgres_db_*"
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
+        fi
     fi
 
     [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
