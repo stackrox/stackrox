@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
@@ -508,4 +509,47 @@ func (s *GroupStoreTestSuite) TestGetFiltered() {
 	}
 	s.NoError(err)
 	s.ElementsMatch(expectedGroups, actualGroups)
+}
+
+func (s *GroupStoreTestSuite) TestDefaultGroup() {
+	defaultGroup := &storage.Group{
+		RoleName: "admin",
+		Props: &storage.GroupProperties{
+			AuthProviderId: "defaultGroup1",
+			Id:             "some-id",
+		},
+	}
+	initialGroup := &storage.Group{
+		RoleName: "Manager",
+		Props: &storage.GroupProperties{
+			AuthProviderId: "defaultGroup1",
+			Key:            "something",
+			Value:          "someone",
+			Id:             "some-id-3",
+		},
+	}
+
+	// 0. Setting up an existing group for the auth provider "defaultGroup1".
+	s.NoError(s.sto.Add(initialGroup))
+
+	// 1. Add the default group.
+	s.NoError(s.sto.Add(defaultGroup))
+
+	// 2. Adding the group a second time should not work and yield a "AlreadyExists" error.
+	defaultGroup.GetProps().Id = "some-id-2"
+	err := s.sto.Add(defaultGroup)
+	s.Error(err)
+	s.ErrorIs(err, errox.AlreadyExists)
+
+	// 3. Updating the initially existing group to make it a default group should fail.
+	// Fetch the group by its properties.
+	initialGroup, err = s.sto.Get(initialGroup.GetProps())
+	s.NoError(err)
+	// Unset Key / Value fields, making it a default group.
+	initialGroup.GetProps().Key = ""
+	initialGroup.GetProps().Value = ""
+	// Ensure a "AlreadyExists" error is yielded when trying to update the group.
+	err = s.sto.Update(initialGroup)
+	s.Error(err)
+	s.ErrorIs(err, errox.AlreadyExists)
 }
