@@ -234,7 +234,6 @@ function ViolationsByPolicyCategoryChart({
         <div ref={setWidgetContainer}>
             <Chart
                 ariaDesc="Number of violation by policy category, grouped by severity"
-                ariaTitle="Policy Violations by Category"
                 animate={{ duration: 300 }}
                 domainPadding={{ x: [20, 20] }}
                 events={getInteractiveLegendEvents({
