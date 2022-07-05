@@ -38,7 +38,7 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 	postgresEnabled := false
 	postgresEnabledVar := os.Getenv("ROX_POSTGRES_DATASTORE")
 
-	if postgresEnabledVar != "" && postgresEnabledVar == "true" {
+	if postgresEnabledVar == "true" {
 		postgresEnabled = true
 	}
 
@@ -142,7 +142,7 @@ func checkZipForPostgres(t *testing.T, zipFile *zip.ReadCloser) {
 }
 
 func checkZipForPassword(t *testing.T, zipFile *zip.ReadCloser, includeCerts bool) {
-	files := getFilesInDir(zipFile, "central-db")
+	files := getFilesInDir(zipFile, backup.DatabaseBaseFolder)
 	if !includeCerts {
 		require.Empty(t, files)
 		return
@@ -153,7 +153,7 @@ func checkZipForPassword(t *testing.T, zipFile *zip.ReadCloser, includeCerts boo
 	for _, f := range files {
 		info := f.FileInfo()
 		require.NotZero(t, info.Size())
-		require.Equal(t, f.FileInfo().Name(), "password")
+		require.Equal(t, f.FileInfo().Name(), backup.DatabasePassword)
 	}
 }
 
