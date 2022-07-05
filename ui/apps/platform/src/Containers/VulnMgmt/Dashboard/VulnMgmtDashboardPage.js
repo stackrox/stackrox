@@ -82,11 +82,6 @@ const VulnDashboardPage = ({ history }) => {
                     {showVmUpdates && (
                         <div className="flex mr-2">
                             <CvesMenu />
-                            {/*
-                            <CvesCountTile entityType={entityTypes.IMAGE_CVE} />
-                            <CvesCountTile entityType={entityTypes.NODE_CVE} />
-                            <CvesCountTile entityType={entityTypes.CLUSTER_CVE} />
-                            */}
                         </div>
                     )}
                     <PoliciesCountTile />

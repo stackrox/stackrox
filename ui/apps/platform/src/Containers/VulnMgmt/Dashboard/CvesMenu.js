@@ -11,37 +11,24 @@ function getURL(workflowState, entityType) {
     return url;
 }
 
-const cveCountQueriesMap = {
-    [entityTypes.IMAGE_CVE]: gql`
-        query imageCvesCount($query: String) {
-            vulnerabilityCount: imageVulnerabilityCount
-            fixableCveCount: imageVulnerabilityCount(query: $query)
-        }
-    `,
-    [entityTypes.NODE_CVE]: gql`
-        query nodeCvesCount($query: String) {
-            vulnerabilityCount: nodeVulnerabilityCount
-            fixableCveCount: nodeVulnerabilityCount(query: $query)
-        }
-    `,
-    [entityTypes.CLUSTER_CVE]: gql`
-        query clusterCvesCount($query: String) {
-            vulnerabilityCount: clusterVulnerabilityCount
-            fixableCveCount: clusterVulnerabilityCount(query: $query)
-        }
-    `,
-};
+// TODO: fixable counts are not currently used because of space considerations in the UI, but will come back in Consolidated Workflows
+const cveCountsQuery = gql`
+    query cvesCount($query: String) {
+        imageVulnerabilityCount
+        fixableImageVulnerabilityCount: imageVulnerabilityCount(query: $query)
+        nodeVulnerabilityCount
+        fixableNodeVulnerabilityCount: nodeVulnerabilityCount(query: $query)
+        clusterVulnerabilityCount
+        fixableClusterVulnerabilityCount: clusterVulnerabilityCount(query: $query)
+    }
+`;
 
 const errorClasses = 'bg-alert-200 hover:bg-alert-300 border-alert-400';
 
 const CvesMenu = () => {
     const workflowState = useContext(workflowStateContext);
 
-    const imageVulnCountsQuery = cveCountQueriesMap[entityTypes.IMAGE_CVE];
-    const nodeVulnCountsQuery = cveCountQueriesMap[entityTypes.NODE_CVE];
-    const clusterVulnCountsQuery = cveCountQueriesMap[entityTypes.CLUSTER_CVE];
-
-    const { loading: imageVulnLoading, data: imageVulnData = {} } = useQuery(imageVulnCountsQuery, {
+    const { loading, data = {} } = useQuery(cveCountsQuery, {
         variables: {
             query: queryService.objectToWhereClause({
                 Fixable: true,
@@ -49,55 +36,33 @@ const CvesMenu = () => {
         },
     });
 
-    const { loading: nodeVulnLoading, data: nodeVulnData = {} } = useQuery(nodeVulnCountsQuery, {
-        variables: {
-            query: queryService.objectToWhereClause({
-                Fixable: true,
-            }),
-        },
-    });
+    const options = !loading
+        ? [
+              {
+                  label: `${data.imageVulnerabilityCount} Image CVEs`,
+                  link: getURL(workflowState, entityTypes.IMAGE_CVE),
+              },
+              {
+                  label: `${data.nodeVulnerabilityCount} Node CVEs`,
+                  link: getURL(workflowState, entityTypes.NODE_CVE),
+              },
+              {
+                  label: `${data.clusterVulnerabilityCount} Platform CVEs`,
+                  link: getURL(workflowState, entityTypes.CLUSTER_CVE),
+              },
+          ]
+        : [];
 
-    const { loading: clusterVulnLoading, data: clusterVulnData = {} } = useQuery(
-        clusterVulnCountsQuery,
-        {
-            variables: {
-                query: queryService.objectToWhereClause({
-                    Fixable: true,
-                }),
-            },
-        }
-    );
-
-    const { vulnerabilityCount: imageVulnCount = 0 } = imageVulnData;
-    const { vulnerabilityCount: nodeVulnCount = 0 } = nodeVulnData;
-    const { vulnerabilityCount: clusterVulnCount = 0 } = clusterVulnData;
-
-    const options =
-        !imageVulnLoading && !nodeVulnLoading && !clusterVulnLoading
-            ? [
-                  {
-                      label: `${imageVulnCount} Image CVEs`,
-                      link: getURL(workflowState, entityTypes.IMAGE_CVE),
-                  },
-                  {
-                      label: `${nodeVulnCount} Node CVEs`,
-                      link: getURL(workflowState, entityTypes.NODE_CVE),
-                  },
-                  {
-                      label: `${clusterVulnCount} Platform CVEs`,
-                      link: getURL(workflowState, entityTypes.CLUSTER_CVE),
-                  },
-              ]
-            : [];
-
-    const menuTitle = `${imageVulnCount + nodeVulnCount + clusterVulnCount} CVEs`;
+    const totalCveCount =
+        data.imageVulnerabilityCount + data.nodeVulnerabilityCount + data.clusterVulnerabilityCount;
+    const menuTitle = `${totalCveCount} CVEs`;
 
     return (
         <Menu
-            buttonClass={`bg-base-100 hover:bg-base-200 border border-base-400 btn-class flex font-condensed h-full text-base-600 ${errorClasses}`}
+            buttonClass={`bg-base-100 hover:bg-base-200 border border-base-400 btn-class flex font-condensed h-full text-center text-sm text-base-600 ${errorClasses}`}
             buttonText={menuTitle}
             options={options}
-            className="h-full min-w-32"
+            className="h-full min-w-24"
         />
     );
 };
