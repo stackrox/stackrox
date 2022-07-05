@@ -414,7 +414,7 @@ class AdmissionControllerTest extends BaseSpecification {
         for (int i = 0; i < 45; i++) {
             Helpers.sleepWithRetryBackoff(1000)
             deployment.addAnnotation("qa.stackrox.io/iteration", "${i}")
-            assert orchestrator.updateDeploymentNoWait(deployment)
+            assert orchestrator.updateDeploymentNoWait(deployment, 10)
         }
 
         cleanup:
