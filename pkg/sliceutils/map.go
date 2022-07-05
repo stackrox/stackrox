@@ -54,7 +54,7 @@ func Map(slice, mapFunc interface{}) interface{} {
 
 // MapsIntersect returns true there is at least one key-value pair that is present in both maps
 // If both, or either maps are empty, it returns false
-// TODO : Implement this so that it can take map[interface{}]interface{}
+// TODO : Convert to generics after upgrade to go 1.18
 func MapsIntersect(m1 map[string]string, m2 map[string]string) bool {
 	for k, v := range m1 {
 		if val, exists := m2[k]; exists {
