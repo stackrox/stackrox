@@ -278,7 +278,7 @@ func ProtoCVEToImageCVE(protoCVE *storage.CVE) *storage.ImageCVE {
 	return EmbeddedVulnerabilityToImageCVE(protoCVE.GetOperatingSystem(), embeddedVuln)
 }
 
-// ProtoCVEToImageCVE coverts a *storage.CVE object to *storage.NodeCVE object.
+// ProtoCVEToNodeCVE coverts a *storage.CVE object to *storage.NodeCVE object.
 // It converts all the fields except Fixed By which gets set depending on the CVE.
 func ProtoCVEToNodeCVE(protoCVE *storage.CVE) *storage.NodeCVE {
 	embeddedVuln := ProtoCVEToEmbeddedCVE(protoCVE)
