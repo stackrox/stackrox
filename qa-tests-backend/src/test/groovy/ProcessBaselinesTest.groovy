@@ -134,8 +134,10 @@ class ProcessBaselinesTest extends BaseSpecification {
         }
         assert baseline
 
-        // sleep 5 seconds to allow for propagation to sensor
-        sleep 5000
+        log.info "Baseline Before after observation: ${baseline}"
+
+        // sleep 10 seconds to allow for propagation to sensor
+        sleep 10000
         orchestrator.execInContainer(deployment, "pwd")
 
         then:
