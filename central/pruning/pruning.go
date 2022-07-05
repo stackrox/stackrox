@@ -499,6 +499,15 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 		return
 	}
 
+	// Check to see if pruning is enabled
+	clusterRetention := config.GetDecommissionedClusterRetention()
+	retentionDays := int64(clusterRetention.GetRetentionDurationDays())
+	if retentionDays == 0 {
+		log.Info("[Cluster Pruning] pruning is disabled.")
+		return
+	}
+
+	// Check to see if enough time has elapsed to run again
 	if lastClusterPruneTime.Add(clusterGCFreq).After(time.Now()) {
 		// Only cluster pruning if it's been at least clusterGCFreq since last run
 		return
@@ -507,13 +516,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 		lastClusterPruneTime = time.Now()
 	}()
 
-	clusterRetention := config.GetDecommissionedClusterRetention()
-	retentionDays := int64(clusterRetention.GetRetentionDurationDays())
-	if retentionDays == 0 {
-		log.Info("[Cluster Pruning] pruning is disabled.")
-		return
-	}
-
+	// Allow 24hrs grace period after the config changes
 	lastUpdateTime, err := types.TimestampFromProto(clusterRetention.GetLastUpdated())
 	if err != nil {
 		log.Error(err)
@@ -525,6 +528,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 		return
 	}
 
+	// Retention should start counting _after_ the config is created (which is basically when upgraded to 71)
 	configCreationTime, err := types.TimestampFromProto(clusterRetention.GetCreatedAt())
 	if err != nil {
 		log.Error(err)
@@ -540,6 +544,11 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	allClusterCount, err := g.clusters.CountClusters(pruningCtx)
 	if err != nil {
 		log.Errorf("[Cluster Pruning] error counting clusters: %v", err)
+	}
+
+	if allClusterCount == 0 {
+		log.Info("[Cluster Pruning] skipping pruning because no clusters were found.")
+		return
 	}
 
 	query := search.NewQueryBuilder().
@@ -579,13 +588,17 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 		return
 	}
 
-	if len(clustersToPrune) > 0 {
-		for _, clusterId := range clustersToPrune {
-			log.Infof("[Cluster Pruning] Removing cluster with ID %s", clusterId)
-			if err := g.clusters.RemoveCluster(pruningCtx, clusterId, nil); err != nil {
-				log.Error(err)
-				return
-			}
+	if len(clustersToPrune) == 0 {
+		// Debug log as it's be noisy, but is helpful if debugging
+		log.Debug("[Cluster Pruning] no inactive clusters found.")
+		return
+	}
+
+	for _, clusterId := range clustersToPrune {
+		log.Infof("[Cluster Pruning] Removing cluster with ID %s", clusterId)
+		if err := g.clusters.RemoveCluster(pruningCtx, clusterId, nil); err != nil {
+			log.Error(err)
+			return
 		}
 	}
 }
