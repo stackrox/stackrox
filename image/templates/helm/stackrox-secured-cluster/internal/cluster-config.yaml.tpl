@@ -13,11 +13,7 @@ clusterConfig:
     mainImage: {{ coalesce ._rox.image.main._abbrevImageRef ._rox.image.main.fullRef }}
     collectorImage: {{ coalesce ._rox.image.collector._abbrevImageRef ._rox.image.collector.fullRef }}
     centralApiEndpoint: {{ ._rox.centralEndpoint }}
-    {{- if not ._rox.env.openshift }}
-    collectionMethod: {{ ._rox.collector.collectionMethod | upper | replace "-" "_" }}
-    {{- else }}
-    collectionMethod: {{ if eq (int ._rox.env.openshift) 4 -}} {{ ._rox.collector.collectionMethod | upper | replace "-" "_" }} {{- else -}} KERNEL_MODULE {{ end }}
-    {{- end }}
+    collectionMethod: {{ if eq (int ._rox.env.openshift) 3 -}} KERNEL_MODULE {{- else -}} {{ ._rox.collector.collectionMethod | upper | replace "-" "_" }}
     admissionController: {{ ._rox.admissionControl.listenOnCreates }}
     admissionControllerUpdates: {{ ._rox.admissionControl.listenOnUpdates }}
     admissionControllerEvents: {{ ._rox.admissionControl.listenOnEvents }}
