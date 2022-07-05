@@ -14,7 +14,7 @@ import {
     getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
 
-const VulnMgmtComponent = ({
+const VulnMgmtEntityComponent = ({
     entityId,
     entityListType,
     search,
@@ -99,4 +99,4 @@ const VulnMgmtComponent = ({
     );
 };
 
-export default VulnMgmtComponent;
+export default VulnMgmtEntityComponent;

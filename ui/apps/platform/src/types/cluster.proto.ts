@@ -4,6 +4,8 @@ export type ClusterType =
     | 'OPENSHIFT_CLUSTER'
     | 'OPENSHIFT4_CLUSTER';
 
+export type ClusterLabels = Record<string, string>;
+
 export type ClusterProviderMetadata =
     | ClusterGoogleProviderMetadata
     | ClusterAWSProviderMetadata
@@ -105,7 +107,7 @@ export type Cluster = {
     id: string;
     name: string;
     type: ClusterType;
-    labels: Record<string, string>;
+    labels: ClusterLabels;
     mainImage: string;
     collectorImage: string;
     centralApiEndpoint: string;
@@ -131,10 +133,10 @@ export type Cluster = {
     auditLogState: Record<string, AuditLogFileState>;
 
     initBundleId: string;
-    managedBy: ManagerType;
+    managedBy: ClusterManagerType;
 };
 
-export type ManagerType =
+export type ClusterManagerType =
     | 'MANAGER_TYPE_UNKNOWN'
     | 'MANAGER_TYPE_MANUAL'
     | 'MANAGER_TYPE_HELM_CHART'

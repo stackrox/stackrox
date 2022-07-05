@@ -150,20 +150,6 @@ func (mr *MockDataStoreMockRecorder) Update(ctx, group interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockDataStore)(nil).Update), ctx, group)
 }
 
-// Upsert mocks base method.
-func (m *MockDataStore) Upsert(ctx context.Context, group *storage.Group) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", ctx, group)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Upsert indicates an expected call of Upsert.
-func (mr *MockDataStoreMockRecorder) Upsert(ctx, group interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDataStore)(nil).Upsert), ctx, group)
-}
-
 // Walk mocks base method.
 func (m *MockDataStore) Walk(ctx context.Context, authProviderID string, attributes map[string][]string) ([]*storage.Group, error) {
 	m.ctrl.T.Helper()

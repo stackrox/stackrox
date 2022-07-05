@@ -164,9 +164,6 @@ func New() *Resolver {
 		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
 		resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()
 		resolver.NodeComponentDataStore = nodeComponentDataStore.Singleton()
-
-		// TODO: [ROX-11432] All usages of vuln datastore are not gated behind feature flag.
-		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
 	} else {
 		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
 	}

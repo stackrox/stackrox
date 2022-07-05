@@ -639,6 +639,9 @@ func (eicr *imageComponentResolver) LayerIndex() *int32 {
 
 // PlottedVulns returns the data required by top risky component scatter-plot on vuln mgmt dashboard
 func (eicr *imageComponentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
+	}
 	query := search.AddRawQueriesAsConjunction(args.String(), eicr.componentRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, eicr.root, RawQuery{Query: &query})
 }

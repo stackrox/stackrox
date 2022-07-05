@@ -139,10 +139,10 @@ message TestMultiKeyStruct {
 // indicate the cardinality of the relationship, either n-1, 1-n or n-n.
 // The first element is the child and second is the parent.
 //             TestGrandparent
-//        (n-1) /      (n-1) |   (n-1) \
-//       TestParent1  TestParent2   TestParent3
-//       (n-n) |           | (n-1)
-//       TestChild1    TestChild2
+//        (n-1) /      (n-1) |   (n-1) \          \ (n-1) (namespaced search)
+//       TestParent1  TestParent2   TestParent3   TestParent4
+//       (n-n) |           | (n-1)                   \ (n-1)
+//       TestChild1    TestChild2                TestChild1P4
 //         (1-n)  |
 //       TestGrandChild1
 //         (n-1)  |
@@ -239,6 +239,20 @@ message TestParent3 {
   string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
 
   string val = 3 [(gogoproto.moretags) = 'search:"Test Parent3 Val"'];
+}
+
+message TestParent4 {
+  string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent4 ID" sql:"pk"'];
+  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
+
+  string val = 3 [(gogoproto.moretags) = 'search:"Test Parent4 Val"'];
+}
+
+message TestChild1P4 {
+  string id        = 1 [(gogoproto.moretags) = 'search:"Test Child1P4 ID" sql:"pk"'];
+  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestParent4:id)"'];
+
+  string val = 3 [(gogoproto.moretags) = 'search:"Test Child1P4 Val"'];
 }
 
 message TestShortCircuit {

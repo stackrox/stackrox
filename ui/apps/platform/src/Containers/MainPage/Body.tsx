@@ -5,7 +5,6 @@ import { PageSection } from '@patternfly/react-core';
 import {
     mainPath,
     dashboardPath,
-    dashboardPathPF,
     networkPath,
     violationsPath,
     compliancePath,
@@ -106,10 +105,12 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                 <Switch>
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
-                    <Route path={dashboardPath} component={AsyncDashboardPage} />
-                    {isDashboardPatternFlyEnabled && (
-                        <Route path={dashboardPathPF} component={AsyncDashboardPagePF} />
-                    )}
+                    <Route
+                        path={dashboardPath}
+                        component={
+                            isDashboardPatternFlyEnabled ? AsyncDashboardPagePF : AsyncDashboardPage
+                        }
+                    />
                     <Route path={networkPath} component={AsyncNetworkPage} />
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />

@@ -16,7 +16,6 @@ const IntegrationTilesPage = ({
     apiTokens,
     clusterInitBundles,
     authProviders,
-    authPlugins,
     backups,
     imageIntegrations,
     notifiers,
@@ -30,9 +29,6 @@ const IntegrationTilesPage = ({
             integration.type.toLowerCase() === type.toLowerCase();
 
         switch (source) {
-            case 'authPlugins': {
-                return authPlugins;
-            }
             case 'authProviders': {
                 if (type === 'apitoken') {
                     return apiTokens;
@@ -70,14 +66,7 @@ const IntegrationTilesPage = ({
                             return false;
                         }
                     }
-                    if (source !== 'authPlugins') {
-                        return true;
-                    }
-                    const numIntegrations = findIntegrations(
-                        integration.source,
-                        integration.type
-                    ).length;
-                    return numIntegrations !== 0;
+                    return true;
                 })
                 // get a list of rendered integration tiles
                 .map((integration) => {
@@ -101,7 +90,6 @@ const IntegrationTilesPage = ({
 
     const imageIntegrationTiles = renderIntegrationTiles('imageIntegrations');
     const notifierTiles = renderIntegrationTiles('notifiers');
-    const authPluginTiles = renderIntegrationTiles('authPlugins');
     const authProviderTiles = renderIntegrationTiles('authProviders');
     const backupTiles = renderIntegrationTiles('backups');
     const signatureTiles = renderIntegrationTiles('signatureIntegrations');
@@ -135,25 +123,12 @@ const IntegrationTilesPage = ({
                 <IntegrationsSection headerName="Authentication Tokens" testId="token-integrations">
                     {authProviderTiles}
                 </IntegrationsSection>
-                {authPluginTiles.length !== 0 && (
-                    <IntegrationsSection
-                        headerName="Authorization Plugins"
-                        testId="auth-integrations"
-                    >
-                        {authPluginTiles}
-                    </IntegrationsSection>
-                )}
             </PageSection>
         </>
     );
 };
 
 IntegrationTilesPage.propTypes = {
-    authPlugins: PropTypes.arrayOf(
-        PropTypes.shape({
-            endpoint: PropTypes.string.isRequired,
-        })
-    ).isRequired,
     authProviders: PropTypes.arrayOf(
         PropTypes.shape({
             name: PropTypes.string.isRequired,
@@ -181,7 +156,6 @@ IntegrationTilesPage.propTypes = {
 };
 
 const mapStateToProps = createStructuredSelector({
-    authPlugins: selectors.getAuthPlugins,
     authProviders: selectors.getAuthProviders,
     apiTokens: selectors.getAPITokens,
     clusterInitBundles: selectors.getClusterInitBundles,

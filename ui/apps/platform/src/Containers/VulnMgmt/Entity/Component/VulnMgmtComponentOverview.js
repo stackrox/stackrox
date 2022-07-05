@@ -7,7 +7,7 @@ import TopCvssLabel from 'Components/TopCvssLabel';
 import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
-import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
@@ -27,6 +27,8 @@ const emptyComponent = {
 
 function VulnMgmtComponentOverview({ data, entityContext }) {
     const workflowState = useContext(workflowStateContext);
+
+    const currentEntityType = workflowState.getCurrentEntityType();
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyComponent, ...data };
@@ -73,8 +75,10 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         );
     }
 
-    const currentEntity = { [entityTypes.COMPONENT]: id };
+    const currentEntity = { [currentEntityType]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
+
+    const entityGridContainerClassName = `${entityGridContainerBaseClassName} grid-columns-1 md:grid-columns-2 lg:grid-columns-2`;
 
     return (
         <div className="flex h-full">
@@ -102,7 +106,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                         <TableWidgetFixableCves
                             workflowState={workflowState}
                             entityContext={entityContext}
-                            entityType={entityTypes.COMPONENT}
+                            entityType={currentEntityType}
                             name={safeData?.name}
                             id={safeData?.id}
                         />
@@ -110,7 +114,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                 </CollapsibleSection>
             </div>
             <RelatedEntitiesSideList
-                entityType={entityTypes.COMPONENT}
+                entityType={currentEntityType}
                 entityContext={newEntityContext}
                 data={safeData}
             />

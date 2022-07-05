@@ -10,7 +10,12 @@ import {
     ToggleGroupItem,
     Button,
     Form,
+    EmptyState,
+    EmptyStateIcon,
+    EmptyStateVariant,
+    EmptyStateBody,
 } from '@patternfly/react-core';
+import { SyncIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import { sortBy } from 'lodash';
 
@@ -35,6 +40,21 @@ import ComplianceLevelsByStandardChart, { ComplianceData } from './ComplianceLev
 import WidgetCard from './WidgetCard';
 
 const fieldIdPrefix = 'compliance-levels-by-standard';
+
+function ComplianceScanEmptyState() {
+    return (
+        <EmptyState className="pf-u-h-100" variant={EmptyStateVariant.xs}>
+            <EmptyStateIcon className="pf-u-font-size-xl" icon={SyncIcon} />
+            <Title headingLevel="h3" size="md">
+                No Standard results available.
+            </Title>
+            <EmptyStateBody>Run a scan on the Compliance page.</EmptyStateBody>
+            <Button component={LinkShim} href={complianceBasePath}>
+                Go to compliance
+            </Button>
+        </EmptyState>
+    );
+}
 
 // Adapted from `processData` function in the original DashboardCompliance.js code
 function processData(
@@ -172,7 +192,11 @@ function ComplianceLevelsByStandard() {
                 </Flex>
             }
         >
-            {complianceData && <ComplianceLevelsByStandardChart complianceData={complianceData} />}
+            {complianceData && complianceData.length > 0 ? (
+                <ComplianceLevelsByStandardChart complianceData={complianceData} />
+            ) : (
+                <ComplianceScanEmptyState />
+            )}
         </WidgetCard>
     );
 }

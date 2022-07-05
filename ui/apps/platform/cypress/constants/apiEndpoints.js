@@ -275,7 +275,6 @@ export const integrations = {
     signatureIntegrations: '/v1/signatureintegrations',
     notifiers: '/v1/notifiers',
     externalBackups: '/v1/externalbackups',
-    authPlugins: '/v1/scopedaccessctrl/configs',
     apiTokens: 'v1/apitokens?revoked=false',
     clusterInitBundles: '/v1/cluster-init/init-bundles',
 };

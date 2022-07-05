@@ -59,7 +59,7 @@ if ! git diff-index --quiet HEAD; then
     git commit --message "Next version in changelog after $VERSION"
 
     PR_URL=""
-    if [ "$DRY_RUN" != "true" ]; then
+    if [ "$DRY_RUN" = "false" ]; then
         git push --set-upstream origin "$CHANGELOG_BRANCH"
         PR_URL=$(create_pr)
     fi

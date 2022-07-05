@@ -679,5 +679,10 @@
             "helmConfig": null,
             "managedBy": "MANAGER_TYPE_MANUAL"
         }
-    ]
+    ],
+    "clusterIdToRetentionInfo": {
+        "f342ca31-9271-081c-c40d-4e4cd442707a": {
+            "daysUntilDeletion": 90
+        }
+    }
 }

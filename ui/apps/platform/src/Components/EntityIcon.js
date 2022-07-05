@@ -21,6 +21,8 @@ const imageMap = {
     [entityTypes.SUBJECT]: group,
     [entityTypes.IMAGE]: image,
     [entityTypes.COMPONENT]: component,
+    [entityTypes.NODE_COMPONENT]: component,
+    [entityTypes.IMAGE_COMPONENT]: component,
     [entityTypes.CVE]: cve,
     [entityTypes.IMAGE_CVE]: cve,
     [entityTypes.NODE_CVE]: cve,

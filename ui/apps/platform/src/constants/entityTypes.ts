@@ -7,6 +7,8 @@ export type ResourceType =
     | 'SECRET'
     | 'IMAGE'
     | 'COMPONENT'
+    | 'NODE_COMPONENT'
+    | 'IMAGE_COMPONENT'
     | 'CVE'
     | 'IMAGE_CVE'
     | 'NODE_CVE'
@@ -23,6 +25,8 @@ export const resourceTypes: Record<ResourceType, ResourceType> = {
     SECRET: 'SECRET',
     IMAGE: 'IMAGE',
     COMPONENT: 'COMPONENT',
+    NODE_COMPONENT: 'NODE_COMPONENT',
+    IMAGE_COMPONENT: 'IMAGE_COMPONENT',
     CVE: 'CVE',
     IMAGE_CVE: 'IMAGE_CVE',
     NODE_CVE: 'NODE_CVE',

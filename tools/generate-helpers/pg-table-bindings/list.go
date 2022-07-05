@@ -30,7 +30,9 @@ func init() {
 		&storage.ComplianceRunMetadata{}:                        resources.Compliance,
 		&storage.ComplianceRunResults{}:                         resources.Compliance,
 		&storage.ExternalBackup{}:                               resources.BackupPlugins,
+		&storage.ImageComponent{}:                               resources.Image,
 		&storage.ImageComponentEdge{}:                           resources.Image,
+		&storage.ImageCVE{}:                                     resources.Image,
 		&storage.ImageCVEEdge{}:                                 resources.Image,
 		&storage.K8SRoleBinding{}:                               resources.K8sRoleBinding,
 		&storage.K8SRole{}:                                      resources.K8sRole,
@@ -40,9 +42,12 @@ func init() {
 		&storage.NetworkFlow{}:                                  resources.NetworkGraph,
 		&storage.NetworkPolicyApplicationUndoDeploymentRecord{}: resources.NetworkPolicy,
 		&storage.NetworkPolicyApplicationUndoRecord{}:           resources.NetworkPolicy,
+		&storage.NodeComponent{}:                                resources.Node,
 		&storage.NodeComponentEdge{}:                            resources.Node,
+		&storage.NodeCVE{}:                                      resources.Node,
 		&storage.PermissionSet{}:                                resources.Role,
 		&storage.Pod{}:                                          resources.Deployment,
+		&storage.PolicyCategory{}:                               resources.Policy,
 		&storage.ProcessBaselineResults{}:                       resources.ProcessWhitelist,
 		&storage.ProcessBaseline{}:                              resources.ProcessWhitelist,
 		&storage.ProcessIndicator{}:                             resources.Indicator,
@@ -64,6 +69,8 @@ func init() {
 		&storage.TestParent2{}:         resources.Namespace,
 		&storage.TestChild2{}:          resources.Namespace,
 		&storage.TestParent3{}:         resources.Namespace,
+		&storage.TestParent4{}:         resources.Namespace,
+		&storage.TestChild1P4{}:        resources.Namespace,
 		&storage.TestShortCircuit{}:    resources.Namespace,
 	} {
 		typeRegistry[fmt.Sprintf("%T", s)] = string(r.GetResource())
@@ -92,7 +99,7 @@ func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
 			return resourceMetadata
 		}
 	}
-	panic("unknown resource: " + resource)
+	panic("unknown resource: " + resource + ". Please add the resource to tools/generate-helpers/pg-table-bindings/list.go.")
 }
 
 func identifierGetter(prefix string, schema *walker.Schema) string {

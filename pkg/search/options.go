@@ -33,9 +33,11 @@ var (
 	ScannerStatus          = newFieldLabel("Scanner Status")
 	LastContactTime        = newFieldLabel("Last Contact")
 
-	PolicyID       = newFieldLabel("Policy ID")
-	Enforcement    = newFieldLabel("Enforcement")
-	PolicyName     = newFieldLabel("Policy")
+	PolicyID           = newFieldLabel("Policy ID")
+	Enforcement        = newFieldLabel("Enforcement")
+	PolicyName         = newFieldLabel("Policy")
+	PolicyCategoryName = newFieldLabel("Policy Category")
+
 	LifecycleStage = newFieldLabel("Lifecycle Stage")
 	Description    = newFieldLabel("Description")
 	Category       = newFieldLabel("Category")
@@ -314,7 +316,12 @@ var (
 	TestChild2Val            = newFieldLabel("Test Child2 Val")
 	TestParent3ID            = newFieldLabel("Test Parent3 ID")
 	TestParent3Val           = newFieldLabel("Test Parent3 Val")
-	TestShortCircuitID       = newFieldLabel("Test ShortCircuit ID")
+	TestParent4ID            = newFieldLabel("Test Parent4 ID")
+	TestParent4Val           = newFieldLabel("Test Parent4 Val")
+	TestChild1P4ID           = newFieldLabel("Test Child1P4 ID")
+	TestChild1P4Val          = newFieldLabel("Test Child1P4 Val")
+
+	TestShortCircuitID = newFieldLabel("Test ShortCircuit ID")
 
 	// Derived test fields
 	TestGrandparentCount = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)

@@ -78,6 +78,13 @@ var (
                 {{- $ty = "*storage.ListAlert"}}
             {{- end}}
             schema.SetOptionsMap(search.Walk(v1.{{.SearchCategory}}, "{{.Schema.TypeName|lower}}", ({{$ty}})(nil)))
+            {{- if .SearchScope }}
+            schema.SetSearchScope([]v1.SearchCategory{
+            {{- range $category := .SearchScope }}
+                {{$category}},
+            {{- end}}
+            }...)
+            {{- end }}
         {{- end }}
         RegisterTable(schema, {{template "createTableStmtVar" .Schema }})
         return schema

@@ -193,6 +193,9 @@ func (resolver *cVEResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error
 }
 
 func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("vulnerabilityV2 not supported on postgres.")
+	}
 	vulnResolver, err := resolver.unwrappedVulnerabilityV2(ctx, args)
 	if err != nil {
 		return nil, err
@@ -201,6 +204,9 @@ func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args IDQuery) (Vu
 }
 
 func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("vulnerabilitiesV2 not supported on postgres.")
+	}
 	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
 	if err != nil {
 		return nil, err
@@ -376,6 +382,9 @@ func (resolver *Resolver) unwrappedVulnerabilitiesV2Query(ctx context.Context, q
 }
 
 func (resolver *Resolver) vulnerabilityCountV2(ctx context.Context, args RawQuery) (int32, error) {
+	if features.PostgresDatastore.Enabled() {
+		return 0, errors.New("vulnerabilityCountV2 not supported on postgres.")
+	}
 	if err := readCVEs(ctx); err != nil {
 		return 0, err
 	}
@@ -409,6 +418,9 @@ func (resolver *Resolver) vulnerabilityCountV2Query(ctx context.Context, query *
 }
 
 func (resolver *Resolver) vulnCounterV2(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("vulnerabilityCountV2 not supported on postgres.")
+	}
 	if err := readCVEs(ctx); err != nil {
 		return nil, err
 	}

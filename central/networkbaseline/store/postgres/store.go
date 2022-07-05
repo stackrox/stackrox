@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -75,7 +76,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoNetworkBaselines(ctx context.Context, tx pgx.Tx, obj *storage.NetworkBaseline) error {
+func insertIntoNetworkBaselines(ctx context.Context, batch *pgx.Batch, obj *storage.NetworkBaseline) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -91,10 +92,7 @@ func insertIntoNetworkBaselines(ctx context.Context, tx pgx.Tx, obj *storage.Net
 	}
 
 	finalStr := "INSERT INTO network_baselines (DeploymentId, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -200,18 +198,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkBaseline
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoNetworkBaselines(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoNetworkBaselines(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
+		batchResults.Close()
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}

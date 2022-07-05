@@ -9,10 +9,11 @@ import {
     defaultChartBarWidth,
     navigateOnClickEvent,
     solidBlueChartColor,
+    patternflySeverityTheme,
 } from 'utils/chartUtils';
 
 const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceData) => {
-    return typeof datum === 'number' ? data[datum - 1].link : '';
+    return typeof datum === 'number' ? data[datum - 1]?.link ?? '' : '';
 };
 
 export type ComplianceData = {
@@ -45,6 +46,7 @@ function ComplianceLevelsByStandardChart({ complianceData }: ComplianceLevelsByS
                     right: 50,
                     bottom: 30,
                 }}
+                theme={patternflySeverityTheme}
             >
                 <ChartAxis
                     tickLabelComponent={

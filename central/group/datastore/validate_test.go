@@ -1,4 +1,4 @@
-package service
+package datastore
 
 import (
 	"testing"
@@ -33,6 +33,18 @@ func TestValidate(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "Group.props.id must not be set",
+			group: &storage.Group{
+				Props: &storage.GroupProperties{
+					AuthProviderId: "Sentinel",
+					Key:            "le mot",
+					Value:          "tous a la Bastille!",
+				},
+				RoleName: "insurge",
+			},
+			wantErr: false,
+		},
+		{
 			name: "Group.props.auth_provider_id must be set",
 			group: &storage.Group{
 				Props: &storage.GroupProperties{
@@ -58,6 +70,7 @@ func TestValidate(t *testing.T) {
 			name: "Basic case: auth provider maps to a role",
 			group: &storage.Group{
 				Props: &storage.GroupProperties{
+					Id:             "1",
 					AuthProviderId: "Sentinel",
 				},
 				RoleName: "insurge",
@@ -68,6 +81,7 @@ func TestValidate(t *testing.T) {
 			name: "Key exists case: auth provider with a key maps to a role",
 			group: &storage.Group{
 				Props: &storage.GroupProperties{
+					Id:             "1",
 					AuthProviderId: "Sentinel",
 					Key:            "le mot",
 				},
@@ -79,6 +93,7 @@ func TestValidate(t *testing.T) {
 			name: "Key/value case: auth provider with a key and a value maps to a role",
 			group: &storage.Group{
 				Props: &storage.GroupProperties{
+					Id:             "1",
 					AuthProviderId: "Sentinel",
 					Key:            "le mot",
 					Value:          "tous a la Bastille!",
@@ -90,7 +105,7 @@ func TestValidate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := validate(tt.group); (err != nil) != tt.wantErr {
+			if err := ValidateGroup(tt.group); (err != nil) != tt.wantErr {
 				t.Errorf("validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

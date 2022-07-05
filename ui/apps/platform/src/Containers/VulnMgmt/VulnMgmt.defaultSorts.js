@@ -12,6 +12,8 @@ import { defaultNodeSort } from './List/Nodes/VulnMgmtListNodes';
 const vulnMgmtDefaultSorts = {
     [entityTypes.CLUSTER]: defaultClusterSort,
     [entityTypes.COMPONENT]: defaultComponentSort,
+    [entityTypes.NODE_COMPONENT]: defaultComponentSort,
+    [entityTypes.IMAGE_COMPONENT]: defaultComponentSort,
     [entityTypes.CVE]: defaultCveSort,
     [entityTypes.DEPLOYMENT]: defaultDeploymentSort,
     [entityTypes.IMAGE]: defaultImageSort,

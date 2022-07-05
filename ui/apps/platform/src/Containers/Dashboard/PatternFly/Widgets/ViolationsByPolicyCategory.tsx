@@ -50,6 +50,7 @@ import {
 import { SearchFilter } from 'types/search';
 import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
+import NoDataEmptyState from './NoDataEmptyState';
 
 // The ordering of the legend and the hidden severities runs from Critical->Low
 // so we reverse the order of the default Low->Critical in most cases.
@@ -151,6 +152,8 @@ function tooltipForCategory(
 const chartTheme = cloneDeep(patternflySeverityTheme);
 chartTheme.legend.colorScale.reverse();
 
+const defaultHiddenSeverities = ['MEDIUM_SEVERITY', 'LOW_SEVERITY'] as const;
+
 function ViolationsByPolicyCategoryChart({
     alertGroups,
     sortType,
@@ -160,7 +163,9 @@ function ViolationsByPolicyCategoryChart({
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
-    const [hiddenSeverities, setHiddenSeverities] = useState<Set<PolicySeverity>>(new Set());
+    const [hiddenSeverities, setHiddenSeverities] = useState<Set<PolicySeverity>>(
+        new Set(defaultHiddenSeverities)
+    );
 
     const labelLinkCallback = useCallback(
         ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text), searchFilter),
@@ -253,7 +258,7 @@ function ViolationsByPolicyCategoryChart({
                 <ChartAxis
                     tickLabelComponent={<LinkableChartLabel linkWith={labelLinkCallback} />}
                 />
-                <ChartAxis dependentAxis />
+                <ChartAxis dependentAxis tickFormat={String} />
                 <ChartStack horizontal>{bars}</ChartStack>
             </Chart>
         </div>
@@ -351,11 +356,15 @@ function ViolationsByPolicyCategory() {
                 </Flex>
             }
         >
-            <ViolationsByPolicyCategoryChart
-                alertGroups={alertGroups ?? []}
-                sortType={sortType}
-                searchFilter={searchFilter}
-            />
+            {alertGroups && alertGroups.length > 0 ? (
+                <ViolationsByPolicyCategoryChart
+                    alertGroups={alertGroups}
+                    sortType={sortType}
+                    searchFilter={searchFilter}
+                />
+            ) : (
+                <NoDataEmptyState />
+            )}
         </WidgetCard>
     );
 }
