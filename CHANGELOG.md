@@ -7,6 +7,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 - ROX-8051: The default collection method is changed from KernelModule to eBPF, following improved eBPF performance in collector.
+- ROX-11070: There have been changes made to the `v1/groups` API, including a deprecation:
+  - Each group will now have a new field, `props.id` which uniquely identifies it.
+  - Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field being set is deprecated and will be removed in release 3.73.
+  - Get of groups via the `props` field and without the `props.id` field being set will fail if more than one group was found for the given `props` field.
 - ROX-11349: Updated rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
 - ROX-11443: The default value for `--include-snoozed` option of `roxctl image scan` command is set to `false`. The result of `roxctl image scan` execution without `--include-snoozed` flag will not include deferred CVEs anymore.
 - ROX-9292: The default expiration time of tokens issued by auth providers has been lowered to 12 hours.
