@@ -33,6 +33,12 @@ export function visitClusters(staticResponseMap) {
     cy.get(selectors.clustersListHeading).contains('Clusters');
 }
 
+export function visitClustersWithFixture(fixturePath) {
+    visitClusters({
+        clusters: { fixture: fixturePath },
+    });
+}
+
 export function visitClusterById(clusterId, staticResponseMap) {
     const routeMatcherMapClusterById = {
         'cluster-defaults': {
@@ -62,9 +68,7 @@ export function visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, 
     const currentDatetime = new Date(datetimeISOString);
     cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
-    visitClusters({
-        clusters: { fixture: fixturePath },
-    });
+    visitClustersWithFixture(fixturePath);
 
     cy.wait('@metadata');
 }

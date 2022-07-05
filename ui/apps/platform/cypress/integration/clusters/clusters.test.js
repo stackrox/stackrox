@@ -1,15 +1,15 @@
 import cloneDeep from 'lodash/cloneDeep';
 
-import { selectors } from '../constants/ClustersPage';
-import { clusters as clustersApi } from '../constants/apiEndpoints';
-import withAuth from '../helpers/basicAuth';
+import { selectors } from '../../constants/ClustersPage';
+import { clusters as clustersApi } from '../../constants/apiEndpoints';
+import withAuth from '../../helpers/basicAuth';
 import {
     visitClusters,
     visitClustersFromLeftNav,
     visitClustersWithFixtureMetadataDatetime,
     visitClusterByNameWithFixture,
     visitClusterByNameWithFixtureMetadataDatetime,
-} from '../helpers/clusters';
+} from '../../helpers/clusters';
 
 describe('Clusters page', () => {
     withAuth();
@@ -34,6 +34,7 @@ describe('Clusters page', () => {
                 'Cluster Status',
                 'Sensor Upgrade',
                 'Credential Expiration',
+                // Cluster Deletion: see clusterDeletion.test.js
             ].forEach((heading, index) => {
                 /*
                  * Important: nth is pseudo selector for zero-based index of matching cells.
@@ -502,6 +503,7 @@ describe.skip('Cluster Health', () => {
          * Some cells have no internal markup (for example, Name or Cloud Provider).
          * Other cells have div and spans for status color versus default color.
          */
+        // TODO add assertion for Cluster Deletion column after ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag is deleted.
         cy.get(selectors.clusters.tableDataCell).should(($tds) => {
             let n = 0;
             expectedClusters.forEach(({ expectedInListAndSide }) => {
