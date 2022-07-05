@@ -53,7 +53,7 @@ export const pfSelectors = {
     violationsByCategory: scopeSelectors('article:contains("Policy violations by category")', {
         chart: '.pf-c-chart',
         optionsToggle: 'button:contains("Options")',
-        volumeOption: 'button:contains("Volume")',
+        volumeOption: 'button:contains("Total")',
         axisLabel,
         legendLabel,
     }),

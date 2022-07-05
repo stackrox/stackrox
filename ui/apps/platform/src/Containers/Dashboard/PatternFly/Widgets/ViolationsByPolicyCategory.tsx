@@ -128,7 +128,7 @@ function linkForViolationsCategory(category: string, searchFilter: SearchFilter)
     return `${violationsBasePath}${queryString}`;
 }
 
-type SortTypeOption = 'Severity' | 'Volume';
+type SortTypeOption = 'Severity' | 'Total';
 
 type ViolationsByPolicyCategoryChartProps = {
     alertGroups: AlertGroup[];
@@ -317,10 +317,10 @@ function ViolationsByPolicyCategory() {
                                             onChange={() => sortTypeOption('Severity')}
                                         />
                                         <ToggleGroupItem
-                                            text="Volume"
-                                            buttonId={`${fieldIdPrefix}-sort-by-volume`}
-                                            isSelected={sortType === 'Volume'}
-                                            onChange={() => sortTypeOption('Volume')}
+                                            text="Total"
+                                            buttonId={`${fieldIdPrefix}-sort-by-total`}
+                                            isSelected={sortType === 'Total'}
+                                            onChange={() => sortTypeOption('Total')}
                                         />
                                     </ToggleGroup>
                                 </FormGroup>
