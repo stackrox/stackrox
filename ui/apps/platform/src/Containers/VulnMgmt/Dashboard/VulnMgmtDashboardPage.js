@@ -19,7 +19,7 @@ import NodesCountTile from '../Components/NodesCountTile';
 import TopRiskyEntitiesByVulnerabilities from '../widgets/TopRiskyEntitiesByVulnerabilities';
 import TopRiskiestEntities from '../widgets/TopRiskiestEntities';
 import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
-import RecentlyDetectedVulnerabilities from '../widgets/RecentlyDetectedVulnerabilities';
+import RecentlyDetectedImageVulnerabilities from '../widgets/RecentlyDetectedImageVulnerabilities';
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
 import ClustersWithMostOrchestratorIstioVulnerabilities from '../widgets/ClustersWithMostOrchestratorIstioVulnerabilities';
@@ -117,7 +117,10 @@ const VulnDashboardPage = ({ history }) => {
                 <FrequentlyViolatedPolicies />
             </div>
             <div className="s-2 xxxl:sx-2">
-                <RecentlyDetectedVulnerabilities search={searchState} limit={DASHBOARD_LIMIT} />
+                <RecentlyDetectedImageVulnerabilities
+                    search={searchState}
+                    limit={DASHBOARD_LIMIT}
+                />
             </div>
             <div className="s-2 md:sy-2 md:sx-2 lg:sy-4 xxxl:sx-2">
                 <MostCommonVulnerabilities search={searchState} />
