@@ -15,6 +15,7 @@ import entityTypes from 'constants/entityTypes';
 import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { getTooltip } from 'utils/vulnerabilityUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const MOST_COMMON_VULNERABILITIES = gql`
     query mostCommonVulnerabilities($query: String, $vulnPagination: Pagination) {
@@ -32,17 +33,35 @@ const MOST_COMMON_VULNERABILITIES = gql`
     }
 `;
 
-const processData = (data, workflowState) => {
+const MOST_COMMON_IMAGE_VULNERABILITIES = gql`
+    query mostCommonImageVulnerabilities($query: String, $vulnPagination: Pagination) {
+        results: imageVulnerabilities(query: $query, pagination: $vulnPagination) {
+            id
+            cve
+            cvss
+            scoreVersion
+            isFixable
+            deploymentCount
+            imageCount
+            summary
+            imageCount
+            lastScanned
+        }
+    }
+`;
+
+const processData = (data, workflowState, showVMUpdates) => {
     // @TODO: filter on the client side until multiple sorts, including derived fields, is supported by BE
     const results = sortBy(data.results, ['cvss']);
 
     return results.map((vuln) => {
-        const { id, cve, cvss, scoreVersion, isFixable, deploymentCount } = vuln;
+        const { id, cve, cvss, scoreVersion, isFixable, deploymentCount, imageCount } = vuln;
         const url = workflowState.pushRelatedEntity(entityTypes.CVE, id).toUrl();
         const tooltip = getTooltip(vuln);
+        const count = showVMUpdates ? imageCount : deploymentCount;
 
         return {
-            x: deploymentCount,
+            x: count,
             y: `${cve} / CVSS: ${cvss.toFixed(1)} (${scoreVersion}) ${
                 isFixable ? ' / Fixable' : ''
             }`,
@@ -53,21 +72,29 @@ const processData = (data, workflowState) => {
 };
 
 const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+
     const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
 
     const queryObject = { ...entityContextObject, ...search }; // Combine entity context and search
     const query = queryService.objectToWhereClause(queryObject); // get final gql query string
+    const GQL_QUERY = showVMUpdates
+        ? MOST_COMMON_IMAGE_VULNERABILITIES
+        : MOST_COMMON_VULNERABILITIES;
+    const sortFieldID = showVMUpdates ? cveSortFields.IMAGE_COUNT : cveSortFields.DEPLOYMENT_COUNT;
+    const labeledBarGraphTitle = showVMUpdates ? 'Images' : 'Deployments';
 
     const {
         loading,
         data = {},
         error,
-    } = useQuery(MOST_COMMON_VULNERABILITIES, {
+    } = useQuery(GQL_QUERY, {
         variables: {
             query,
             vulnPagination: queryService.getPagination(
                 {
-                    id: cveSortFields.DEPLOYMENT_COUNT,
+                    id: sortFieldID,
                     desc: true,
                 },
                 WIDGET_PAGINATION_START_OFFSET,
@@ -87,7 +114,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
 
             content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
         } else {
-            const processedData = processData(data, workflowState);
+            const processedData = processData(data, workflowState, showVMUpdates);
             if (!processedData || processedData.length === 0) {
                 content = (
                     <NoResultsMessage
@@ -97,15 +124,18 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
                     />
                 );
             } else {
-                content = <LabeledBarGraph data={processedData} title="Deployments" />;
+                content = <LabeledBarGraph data={processedData} title={labeledBarGraphTitle} />;
             }
         }
     }
 
+    const header = showVMUpdates
+        ? 'Most Common Image Vulnerabilities'
+        : 'Most Common Vulnerabilities';
     const viewAllURL = workflowState
         .pushList(entityTypes.CVE)
         .setSort([
-            { id: cveSortFields.DEPLOYMENT_COUNT, desc: true },
+            { id: sortFieldID, desc: true },
             { id: cveSortFields.CVSS_SCORE, desc: true },
         ])
         .toUrl();
@@ -113,7 +143,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     return (
         <Widget
             className="h-full pdf-page"
-            header="Most Common Vulnerabilities"
+            header={header}
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
