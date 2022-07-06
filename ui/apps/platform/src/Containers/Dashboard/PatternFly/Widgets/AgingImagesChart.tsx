@@ -149,7 +149,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                     dependentAxis
                     showGrid
                 />
-                {chartData.map(({ barData, fill }) => {
+                {chartData.map(({ barData, fill, labelLink }) => {
                     return (
                         <ChartBar
                             key={fill}
@@ -157,12 +157,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                             data={barData}
                             labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}`}
                             style={{ data: { fill } }}
-                            events={[
-                                navigateOnClickEvent(history, (targetProps) => {
-                                    const range = targetProps?.datum?.xName;
-                                    return linkForAgingImages(searchFilter, range);
-                                }),
-                            ]}
+                            events={[navigateOnClickEvent(history, () => labelLink)]}
                         />
                     );
                 })}
