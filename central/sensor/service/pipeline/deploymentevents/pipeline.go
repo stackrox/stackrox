@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	pipelineMetrics "github.com/stackrox/rox/central/sensor/service/pipeline/metrics"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -190,6 +191,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 				// There is a separate handler for ContainerInstances,
 				// so there is no longer a need to continue from this point.
 				// This will only be reached upon a re-sync event from k8s.
+				pipelineMetrics.DedupedDeploymentsCount.Inc()
 				return nil
 			}
 			incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
