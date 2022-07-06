@@ -53,6 +53,10 @@ spec:
                     operator: DoesNotExist
       {{- end}}
       serviceAccount: monitoring
+      # The uid and gid are set to make `/var/prometheus` writable. See https://github.com/prometheus/prometheus/issues/5976.
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 2000
       containers:
       - name: grafana
         image: {{ required "A Grafana image is required" .Values.grafanaImage }}
