@@ -1,10 +1,11 @@
 import * as api from '../../constants/apiEndpoints';
 import { headingPlural, url } from '../../constants/VulnManagementPage';
+import { hasFeatureFlag } from '../features';
 
 import { visitFromLeftNavExpandable } from '../nav';
 import { visit } from '../visit';
 
-const opnamesForDashboard = [
+let opnamesForDashboard = [
     'policiesCount',
     'cvesCount',
     'getNodes',
@@ -13,10 +14,21 @@ const opnamesForDashboard = [
     'topRiskiestImages',
     'frequentlyViolatedPolicies',
     'recentlyDetectedVulnerabilities',
+    'recentlyDetectedImageVulnerabilities',
     'mostCommonVulnerabilities',
     'deploymentsWithMostSeverePolicyViolations',
     'clustersWithMostOrchestratorIstioVulnerabilities',
 ];
+
+if (hasFeatureFlag('ROX_FRONTEND_VM_UDPATES')) {
+    opnamesForDashboard = opnamesForDashboard.filter(
+        (opname) => opname !== 'recentlyDetectedVulnerabilities'
+    );
+} else {
+    opnamesForDashboard = opnamesForDashboard.filter(
+        (opname) => opname !== 'recentlyDetectedImageVulnerabilities'
+    );
+}
 
 export function visitVulnerabilityManagementDashboardFromLeftNav() {
     opnamesForDashboard.forEach((opname) => {
