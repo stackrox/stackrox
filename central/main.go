@@ -35,6 +35,7 @@ import (
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
+	clusterCVEService "github.com/stackrox/rox/central/cve/cluster/service"
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
@@ -362,6 +363,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		vulnRequestService.Singleton(),
 	}
 	if features.PostgresDatastore.Enabled() {
+		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
 	} else {
