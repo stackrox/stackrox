@@ -58,16 +58,6 @@ func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, cluster
 
 func (s *fullStoreImpl) UpsertClusterCVEParts(ctx context.Context, cveType storage.CVE_CVEType, cvePartsArr ...converter.ClusterCVEParts) error {
 	iTime := protoTypes.TimestampNow()
-	conn, release, err := s.acquireConn(ctx, ops.UpdateMany, "ClusterCVE")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
 
 	cves := make([]*storage.ClusterCVE, 0, len(cvePartsArr))
 	var edges []*storage.ClusterCVEEdge
@@ -78,6 +68,17 @@ func (s *fullStoreImpl) UpsertClusterCVEParts(ctx context.Context, cveType stora
 			edges = append(edges, child.Edge)
 			impactedClusterIDs = append(impactedClusterIDs, child.ClusterID)
 		}
+	}
+
+	conn, release, err := s.acquireConn(ctx, ops.UpdateMany, "ClusterCVE")
+	if err != nil {
+		return err
+	}
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
 	}
 
 	if err := removeEdgesAndCVEsForClusters(ctx, tx, cveType, impactedClusterIDs); err != nil {
@@ -252,6 +253,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 		return nil, err
 	}
 	defer rows.Close()
+
 	idToCVEMap := make(map[string]*storage.CVE)
 	for rows.Next() {
 		var data []byte

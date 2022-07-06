@@ -80,7 +80,7 @@ func convertMany(cves []*storage.ClusterCVEEdge, results []search.Result) []*v1.
 
 func convertOne(obj *storage.ClusterCVEEdge, result *search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_VULN_EDGE,
+		Category:       v1.SearchCategory_CLUSTER_VULN_EDGE,
 		Id:             obj.GetId(),
 		Name:           obj.GetId(),
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
