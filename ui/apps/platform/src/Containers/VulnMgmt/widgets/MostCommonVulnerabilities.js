@@ -78,7 +78,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
 
     const queryObject = { ...entityContextObject, ...search }; // Combine entity context and search
     const query = queryService.objectToWhereClause(queryObject); // get final gql query string
-    const GQL_QUERY = showVMUpdates
+    const queryToUse = showVMUpdates
         ? MOST_COMMON_IMAGE_VULNERABILITIES
         : MOST_COMMON_VULNERABILITIES;
 
@@ -86,7 +86,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
         loading,
         data = {},
         error,
-    } = useQuery(GQL_QUERY, {
+    } = useQuery(queryToUse, {
         variables: {
             query,
             vulnPagination: queryService.getPagination(
