@@ -28,24 +28,6 @@ export const NAMESPACE_FRAGMENT = gql`
     }
 `;
 
-export const CONFIG_NAMESPACE_FRAGMENT = gql`
-    fragment namespaceFields on Namespace {
-        metadata {
-            name
-            id
-            clusterId
-            clusterName
-        }
-        numSecrets
-        k8sRoleCount
-        serviceAccountCount
-        subjectCount
-        policyStatus {
-            status
-        }
-    }
-`;
-
 export const NAMESPACES_QUERY = gql`
     query namespaces($query: String) {
         results: namespaces(query: $query) {

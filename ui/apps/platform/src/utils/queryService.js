@@ -5,7 +5,7 @@ import useCases from 'constants/useCaseTypes';
 import decodeBase64 from 'utils/decodeBase64/decodeBase64';
 import { NODE_FRAGMENT } from 'queries/node';
 import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
-import { NAMESPACE_FRAGMENT, CONFIG_NAMESPACE_FRAGMENT } from 'queries/namespace';
+import { NAMESPACE_FRAGMENT } from 'queries/namespace';
 import { SUBJECT_WITH_CLUSTER_FRAGMENT, SUBJECT_FRAGMENT } from 'queries/subject';
 import { K8S_ROLE_FRAGMENT } from 'queries/role';
 import { SECRET_FRAGMENT } from 'queries/secret';
@@ -231,7 +231,7 @@ function getFragment(entityType, listType, useCase) {
     const fragmentsByUseCase = {
         [useCases.CONFIG_MANAGEMENT]: {
             ...defaultFragments,
-            [entityTypes.NAMESPACE]: CONFIG_NAMESPACE_FRAGMENT,
+            [entityTypes.NAMESPACE]: NAMESPACE_FRAGMENT,
             [entityTypes.SUBJECT]: SUBJECT_FRAGMENT,
         },
         [useCases.VULN_MANAGEMENT]: {

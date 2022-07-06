@@ -18,7 +18,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 
 // TODO: remove once ROX_FRONTEND_VM_UDPATES is enabled
 export const RECENTLY_DETECTED_VULNERABILITIES = gql`
-    query recentlyDetectedImageVulnerabilities(
+    query recentlyDetectedVulnerabilities(
         $query: String
         $scopeQuery: String
         $pagination: Pagination
