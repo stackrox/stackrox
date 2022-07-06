@@ -235,6 +235,70 @@ class ProcessVisualizationTest extends BaseSpecification {
         */
     }
 
+    @Category([BAT, RUNTIME])
+    @Unroll
+    def "Verify process arguments on #depName"() {
+        when:
+        "Get Process args running on deployment: #depName"
+        String depId = DEPLOYMENTS.find { it.name == depName }.deploymentUid
+        assert depId != null
+
+        List<Tuple2<String, String>> processToArgs
+        int retries = MAX_SLEEP_TIME / SLEEP_INCREMENT
+        int delaySeconds = SLEEP_INCREMENT / 1000
+
+        Timer t = new Timer(retries, delaySeconds)
+        while (t.IsValid()) {
+            processToArgs = ProcessService.getProcessesWithArgs(depId)
+            if (processToArgs.containsAll(expectedProcessArgs)) {
+                break
+            }
+            log.info "Didn't find all the expected processes, retrying..."
+        }
+        log.info "ProcessVisualizationTest: Dep: " + depName + " Processes: " + processToArgs
+
+        then:
+        "Verify process args for #depName"
+        assert processToArgs.containsAll(expectedProcessArgs)
+
+        where:
+        "Data inputs are:"
+
+        expectedProcessArgs | depName
+
+        [["/usr/sbin/nginx", "-g daemon off;"]] | NGINXDEPLOYMENT
+
+        [
+            ["/bin/sh", "-c /bin/sleep 600"],
+            ["/bin/sleep", "600"]
+        ] | CENTOSDEPLOYMENT
+
+        [
+            ["/bin/sleep", "--coreutils-prog-shebang=sleep /bin/sleep 600"],
+            ["/bin/sh", "-c /bin/sleep 600"]
+        ] | FEDORADEPLOYMENT
+
+        // this is not a full selection of processes expected in the ELASTICDEPLOYMENT
+        // but constitutes a decent range, with a variety of args, including no args,
+        // or unusual characters.
+        [
+            ["/usr/bin/dirname", "/usr/share/elasticsearch/bin/elasticsearch"],
+            ["/usr/bin/tr", "\\n  "],
+            ["/bin/grep", "project.name"],
+            ["/usr/bin/cut", "-d. -f1"],
+            ["/usr/local/bin/gosu", "elasticsearch elasticsearch"],
+            ["/bin/egrep", "/bin/egrep -- (^-d |-d\$| -d |--daemonize\$|--daemonize )"],
+            ["/bin/hostname", ""],
+            ["/docker-entrypoint.sh", "/docker-entrypoint.sh elasticsearch"],
+            ["/bin/grep", "-E -- (^-d |-d\$| -d |--daemonize\$|--daemonize )"],
+            ["/bin/grep", "^- /etc/elasticsearch/jvm.options"],
+            ["/bin/chown", "-R elasticsearch:elasticsearch /usr/share/elasticsearch/data"],
+            ["/bin/chown", "-R elasticsearch:elasticsearch /usr/share/elasticsearch/logs"],
+            ["/sbin/ldconfig", "-p"],
+            ["/usr/bin/id", "-u"]
+        ] | ELASTICDEPLOYMENT
+    }
+
     // Returns true if received contains all the (path,UIDGIDSet) pairs found in expected
     private static Boolean containsAllProcessInfo(Map<String,Set<Tuple2<Integer,Integer>>> received,
                                                   Map<String,Set<Tuple2<Integer,Integer>>> expected) {
