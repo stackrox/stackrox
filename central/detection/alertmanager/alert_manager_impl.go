@@ -8,6 +8,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/detection/lifecycle/metrics"
 	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/generated/storage"
@@ -317,6 +318,8 @@ func (d *alertManagerImpl) mergeManyAlerts(
 			mergedAlert := mergeAlerts(matchingOld, alert)
 			if mergedAlert != matchingOld && !proto.Equal(mergedAlert, matchingOld) {
 				updatedAlerts = append(updatedAlerts, mergedAlert)
+			} else {
+				metrics.IncDedupedAlerts(alert.GetLifecycleStage(), alert.GetPolicy().GetName())
 			}
 			continue
 		}

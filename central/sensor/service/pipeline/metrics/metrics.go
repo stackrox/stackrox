@@ -12,25 +12,26 @@ var (
 	DedupedDeploymentsCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "deduped_deployment_count",
+		Name:      "pipeline_deduped_deployment_count",
 		Help:      "Count of the number of deployments that were deduped in their entirety",
 	})
 
 	alertsReceivedCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "alerts_received_count",
-		Help:      "Count of the number of individual alerts by action and lifecycle stage",
-	}, []string{"Action", "Lifecycle"})
+		Name:      "pipeline_alerts_received_count",
+		Help:      "Count of the number of individual alerts by action, lifecycle stage and policy",
+	}, []string{"Action", "Lifecycle", "Policy"})
 )
 
-// AddTotalAlertsReceived breaks down AlertResults into a count of individual alerts by action and lifecycle
-func AddTotalAlertsReceived(action central.ResourceAction, stage storage.LifecycleStage, alertCount int) {
+// IncTotalAlertsReceived breaks down AlertResults into a count of individual alerts by action, lifecycle, and policy
+func IncTotalAlertsReceived(action central.ResourceAction, stage storage.LifecycleStage, policy string) {
 	alertsReceivedCount.With(
 		prometheus.Labels{
 			"Action":    action.String(),
 			"Lifecycle": stage.String(),
-		}).Add(float64(alertCount))
+			"Policy":    policy,
+		}).Inc()
 }
 
 func init() {

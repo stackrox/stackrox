@@ -72,7 +72,10 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 		return nil
 	}
-	pipelineMetrics.AddTotalAlertsReceived(msg.GetEvent().GetAction(), msg.GetEvent().GetAlertResults().GetStage(), len(alertResults.GetAlerts()))
+
+	for _, alert := range alertResults.GetAlerts() {
+		pipelineMetrics.IncTotalAlertsReceived(msg.GetEvent().GetAction(), alertResults.GetStage(), alert.GetPolicy().GetName())
+	}
 
 	for _, a := range alertResults.GetAlerts() {
 		a.ClusterId = clusterID
