@@ -206,7 +206,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
 4. For continuous integration:
 
-    * Delete `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` to `export_test_environment` function in tests/e2e/lib.sh
+    * Delete `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` from `export_test_environment` function in tests/e2e/lib.sh
 
 ### API
 
