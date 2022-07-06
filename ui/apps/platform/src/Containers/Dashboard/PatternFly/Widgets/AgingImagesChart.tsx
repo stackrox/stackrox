@@ -54,7 +54,7 @@ function linkForAgingImages(searchFilter: SearchFilter, ageRange: number, nextAg
 }
 
 function yAxisTitle(searchFilter: SearchFilter) {
-    return isResourceScoped(searchFilter) ? 'Active images' : 'All images';
+    return isResourceScoped(searchFilter) ? 'Active image count' : 'Image count';
 }
 
 // `datum` for these callbacks will refer to the index number of the bar in the chart. This index

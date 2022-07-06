@@ -9,6 +9,8 @@
     --color-resource-default: var(--pf-global--palette--blue-300);
     --color-resource-cluster: var(--pf-global--palette--purple-600);
     --color-resource-namespace: var(--pf-global--palette--green-600);
+    --color-resource-deployment: var(--pf-global--palette--blue-500);
+
     --color-severity-low: var(--pf-global--palette--black-500);
     --color-severity-medium: var(--pf-global--palette--gold-300);
     --color-severity-important: var(--pf-global--palette--orange-300);

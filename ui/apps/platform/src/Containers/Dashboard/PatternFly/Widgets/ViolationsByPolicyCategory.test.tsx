@@ -67,7 +67,7 @@ function getLinkCategories(links: HTMLElement[]) {
  */
 function waitForAxisLinksToBe(linkText: string[]) {
     return waitFor(() => {
-        const chart = screen.getByLabelText(/policy violations by category/i);
+        const chart = screen.getByRole('img');
         const links = within(chart).getAllByRole('link');
         const categories = getLinkCategories(links);
         expect(categories).toEqual(linkText);
@@ -93,7 +93,7 @@ describe('Violations by policy category widget', () => {
 
         // Switch to sort-by-volume, which orders the chart by total violations per category
         await user.click(await screen.findByRole('button', { name: 'Options' }));
-        await user.click(await screen.findByRole('button', { name: 'Volume' }));
+        await user.click(await screen.findByRole('button', { name: 'Total' }));
         await user.click(await screen.findByRole('button', { name: 'Options' }));
 
         await waitForAxisLinksToBe([
@@ -114,7 +114,7 @@ describe('Violations by policy category widget', () => {
 
         // Sort by volume, so that enabling lower severity bars changes the order of the chart
         await user.click(await screen.findByRole('button', { name: 'Options' }));
-        await user.click(await screen.findByRole('button', { name: 'Volume' }));
+        await user.click(await screen.findByRole('button', { name: 'Total' }));
         await user.click(await screen.findByRole('button', { name: 'Options' }));
 
         // Toggle on low and medium violations, which are disabled by default

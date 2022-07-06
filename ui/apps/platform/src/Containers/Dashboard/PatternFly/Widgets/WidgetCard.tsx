@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import { Skeleton, Card, CardBody, CardHeader } from '@patternfly/react-core';
 
 import { defaultChartHeight } from 'utils/chartUtils';
+import { CancelledPromiseError } from 'services/cancellationUtils';
 import WidgetErrorEmptyState from './WidgetErrorEmptyState';
 
 type WidgetCardProps = {
@@ -27,7 +28,7 @@ function WidgetCard({
 
     if (isLoading && !error) {
         cardContent = <Skeleton height={height} screenreaderText="Loading widget data" />;
-    } else if (error) {
+    } else if (error && !(error instanceof CancelledPromiseError)) {
         cardContent = (
             <WidgetErrorEmptyState height={height} title={errorTitle || 'Unable to load data'}>
                 {errorMessage || 'There was an error loading data for this widget'}

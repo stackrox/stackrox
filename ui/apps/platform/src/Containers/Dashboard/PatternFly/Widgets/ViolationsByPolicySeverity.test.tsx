@@ -103,7 +103,7 @@ describe('Violations by policy severity widget', () => {
             await screen.findByRole('heading', { name: /policy violations by severity/g })
         ).toBeInTheDocument();
 
-        // Test the 'View All' violations link button
+        // Test the 'View all' violations link button
         await user.click(await screen.findByRole('link', { name: 'View all' }));
         expect(history.location.pathname).toBe(`${violationsBasePath}`);
         expect(history.location.search).toContain('sortOption[field]=Severity');
