@@ -348,7 +348,7 @@ test_upgrade_paths() {
 
     cd "$TEST_ROOT"
 
-    set_images_to_current
+    helm_upgrade_to_current
     wait_for_api
 
     info "Waiting for scanner to be ready"
@@ -460,21 +460,13 @@ force_rollback() {
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
 }
 
-set_images_to_current() {
-    info "Setting images to the current tag"
+helm_upgrade_to_current() {
+    info "Helm upgrade to current"
 
-    roxctl helm output central-services --image-defaults development_build --output-dir /tmp/stackrox-central-services-chart || true
-    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart || true
+    roxctl helm output central-services --image-defaults development_build --output-dir /tmp/stackrox-central-services-chart
+    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart
 
-    echo kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
-    echo kubectl -n stackrox set image deploy/scanner "scanner=$REGISTRY/scanner:$(cat SCANNER_VERSION)"
-    echo kubectl -n stackrox set image deploy/scanner-db "*=$REGISTRY/scanner-db:$(cat SCANNER_VERSION)"
-
-    touch /tmp/hold
-    while [[ -e /tmp/hold ]]; do
-        info "Holding this job for debug"
-        sleep 60
-    done
+    kubectl -n stackrox get deploy -o wide
 }
 
 validate_db_backup_and_restore() {
