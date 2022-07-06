@@ -694,7 +694,7 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
                 total
             }
         }
-        deploymentCount: numDeployments # numDeployments is pre-calculated in namespace resolver
+        deploymentCount
         imageCount(query: $query)
         # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
         policyStatusOnly(query: $policyQuery)

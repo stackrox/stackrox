@@ -6,7 +6,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,17 +19,6 @@ func TestGetNamespaces(t *testing.T) {
 			ClusterName: fakeClusterName,
 		},
 	}, nil)
-	mocks.deployment.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{
-		{
-			ID: fakeDeploymentID,
-		},
-	}, nil)
-	mocks.secret.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{
-		{
-			ID: fakeSecretID,
-		},
-	}, nil)
-	mocks.nps.EXPECT().CountMatchingNetworkPolicies(gomock.Any(), fakeClusterID, fakeNamespaceName).Return(1, nil)
 	response := executeTestQuery(t, mocks, "{namespaces { metadata { id name clusterId clusterName } } }")
 	assert.Equal(t, 200, response.Code)
 	assertJSONMatches(t, response.Body, ".data.namespaces[0].metadata.id", fakeNamespaceID)
@@ -47,17 +35,6 @@ func TestGetNamespace(t *testing.T) {
 		ClusterId:   fakeClusterID,
 		ClusterName: fakeClusterName,
 	}, true, nil)
-	mocks.deployment.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{
-		{
-			ID: fakeDeploymentID,
-		},
-	}, nil)
-	mocks.secret.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{
-		{
-			ID: fakeSecretID,
-		},
-	}, nil)
-	mocks.nps.EXPECT().CountMatchingNetworkPolicies(gomock.Any(), fakeClusterID, fakeNamespaceName).Return(1, nil)
 	response := executeTestQuery(t, mocks, fmt.Sprintf(`{namespace(id:"%s") {metadata{id name clusterId clusterName} }}`, fakeNamespaceID))
 	assert.Equal(t, 200, response.Code)
 	assertJSONMatches(t, response.Body, ".data.namespace.metadata.id", fakeNamespaceID)
