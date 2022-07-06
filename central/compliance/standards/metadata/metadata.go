@@ -7,8 +7,9 @@ var (
 
 // Control is the metadata of a control in a compliance standard.
 type Control struct {
-	ID          string
-	Name        string
+	ID   string
+	Name string
+
 	Description string
 }
 
