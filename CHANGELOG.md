@@ -35,7 +35,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - `/v1/cves/suppress` and `/v1/cves/unsuppress` has been deprecated and will be removed in the future.
   - Use `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` to snooze and unsnooze image  vulnerabilities.
   - Use `/v1/nodecves/suppress` and `/v1/nodecves/unsuppress` to snooze and unsnooze node/host vulnerabilities.
-  - Use `/v1/platformcves/suppress` and `/v1/platformcves/unsuppress` to snooze and unsnooze platform (k8s, istio, and openshift) vulnerabilities.
+  - Use `/v1/clustercves/suppress` and `/v1/clustercves/unsuppress` to snooze and unsnooze platform (k8s, istio, and openshift) vulnerabilities.
 - /v1/compliance/results was never implemented and will be removed in this release
 - In release 73.0, the /v1/compliance/runresults endpoint will contain a slimmed down version of the ComplianceDomain object. This allows for greater scalability and reduced memory usage.
 - When the underlying database changes to Postgres the api `/db/restore` will no longer be a supported means for database restores.  At that time using `roxctl` will be the supported mechanism for database restores.

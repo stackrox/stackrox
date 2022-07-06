@@ -5,7 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/cve/node/datastore"
+	"github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -23,8 +23,8 @@ var (
 			and.And(
 				user.With(permissions.Modify(resources.VulnerabilityManagementRequests)),
 				user.With(permissions.Modify(resources.VulnerabilityManagementApprovals))): {
-				"/v1.NodeCVEService/SuppressCVEs",
-				"/v1.NodeCVEService/UnsuppressCVEs",
+				"/v1.ClusterCVEService/SuppressCVEs",
+				"/v1.ClusterCVEService/UnsuppressCVEs",
 			},
 		})
 	}()
@@ -37,12 +37,12 @@ type serviceImpl struct {
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	v1.RegisterNodeCVEServiceServer(grpcServer, s)
+	v1.RegisterClusterCVEServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v1.RegisterNodeCVEServiceHandler(ctx, mux, conn)
+	return v1.RegisterClusterCVEServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
@@ -59,11 +59,11 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 	if err := s.cves.Suppress(ctx, createdAt, request.GetDuration(), request.GetIds()...); err != nil {
 		return nil, err
 	}
-	// Nodes are not part of policy workflow, and we do not reprocess risk on cve snooze. Hence, nothing to do.
+	// Clusters are not part of policy workflow, and we do not reprocess risk on cve snooze. Hence, nothing to do.
 	return &v1.Empty{}, nil
 }
 
-// UnsuppressCVEs un-suppresses given node CVEs.
+// UnsuppressCVEs un-suppresses given cluster CVEs.
 func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.UnsuppressCVERequest) (*v1.Empty, error) {
 	if len(request.GetIds()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to un-snooze")
@@ -71,6 +71,6 @@ func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.Unsuppress
 	if err := s.cves.Unsuppress(ctx, request.GetIds()...); err != nil {
 		return nil, err
 	}
-	// Nodes are not part of policy workflow, and we do not reprocess risk on cve un-snooze. Hence, nothing to do.
+	// Clusters are not part of policy workflow, and we do not reprocess risk on cve un-snooze. Hence, nothing to do.
 	return &v1.Empty{}, nil
 }

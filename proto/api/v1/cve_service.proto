@@ -80,3 +80,21 @@ service NodeCVEService {
         };
     }
 }
+
+// ClusterCVEService APIs can be used to manage cluster cves.
+service ClusterCVEService {
+    // SuppressCVE suppresses cluster cves.
+    rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/clustercves/suppress"
+            body: "*"
+        };
+    }
+    // UnsuppressCVE unsuppresses cluster cves.
+    rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/clustercves/unsuppress"
+            body: "*"
+        };
+    }
+}
