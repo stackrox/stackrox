@@ -133,9 +133,11 @@ function ViolationsTablePage(): ReactElement {
 
     useEffect(() => {
         const { request, cancel } = getSearchOptionsForCategory(searchCategory);
-        request.then(setSearchOptions).catch(() => {
-            // A request error will disable the search filter.
-        });
+        request
+            .then((options) => setSearchOptions([...options, 'Namespace ID'].sort()))
+            .catch(() => {
+                // A request error will disable the search filter.
+            });
 
         return cancel;
     }, [setSearchOptions]);
