@@ -56,6 +56,7 @@ func matchFieldQuery(qualifiedColName string, dataType walker.DataType, field *p
 		highlight:           highlight,
 		value:               value,
 		now:                 now,
+		dataType:            dataType,
 	}
 
 	// Special case: wildcard
