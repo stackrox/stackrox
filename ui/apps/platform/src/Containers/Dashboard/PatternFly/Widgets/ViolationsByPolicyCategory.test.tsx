@@ -58,7 +58,7 @@ function getLinkCategories(links: HTMLElement[]) {
  */
 function waitForAxisLinksToBe(linkText: string[]) {
     return waitFor(() => {
-        const chart = screen.getByLabelText(/policy violations by category/i);
+        const chart = screen.getByRole('img');
         const links = within(chart).getAllByRole('link');
         const categories = getLinkCategories(links);
         expect(categories).toEqual(linkText);
