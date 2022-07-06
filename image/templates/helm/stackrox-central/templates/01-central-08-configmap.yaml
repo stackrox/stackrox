@@ -14,10 +14,10 @@ data:
     {{- ._rox.central._config | nindent 4 }}
     {{- if ._rox.central.enableCentralDB }}
     centralDB:
+      rootDatabaseName: central
       source: >
         host=central-db.{{ .Release.Namespace }}.svc
         port=5432
-        database=postgres
         user=postgres
         sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }}
         sslrootcert=/run/secrets/stackrox.io/certs/ca.pem

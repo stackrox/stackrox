@@ -2,25 +2,18 @@ package globaldb
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
-	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/postgres/pgadmin"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
-	// DBPasswordFile - location of secret
-	DBPasswordFile = "/run/secrets/stackrox.io/db-password/password"
-
 	tableQuery = `WITH RECURSIVE pg_inherit(inhrelid, inhparent) AS
     (select inhrelid, inhparent
     FROM pg_inherits
@@ -75,13 +68,27 @@ var (
 // GetPostgres returns a global database instance
 func GetPostgres() *pgxpool.Pool {
 	pgSync.Do(func() {
-		_, config, err := GetPostgresConfig()
+		sourceMap, dbConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
 			log.Fatalf("Could not parse postgres config: %v", err)
 		}
 
+		// Get the active database name for the connection
+		activeDB := pgconfig.GetActiveDB()
+
+		// Create the active database if necessary
+		if !pgadmin.CheckIfDBExists(dbConfig, activeDB) {
+			err = pgadmin.CreateDB(sourceMap, dbConfig, pgadmin.AdminDB, activeDB)
+			if err != nil {
+				log.Fatalf("Could not create the active database: %v", err)
+			}
+		}
+
+		// Set the connection to be the active database.
+		dbConfig.ConnConfig.Database = activeDB
+
 		if err := retry.WithRetry(func() error {
-			postgresDB, err = pgxpool.ConnectConfig(context.Background(), config)
+			postgresDB, err = pgxpool.ConnectConfig(context.Background(), dbConfig)
 			return err
 		}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
 			time.Sleep(postgresTimeBetweenRetries)
@@ -99,47 +106,6 @@ func GetPostgres() *pgxpool.Pool {
 
 	})
 	return postgresDB
-}
-
-// GetPostgresConfig - gets the configuration used to connect to Postgres
-func GetPostgresConfig() (map[string]string, *pgxpool.Config, error) {
-	centralConfig := config.GetConfig()
-	password, err := os.ReadFile(DBPasswordFile)
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "pgsql: could not load password file %q", DBPasswordFile)
-	}
-	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
-
-	config, err := pgxpool.ParseConfig(source)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "Could not parse postgres config")
-	}
-
-	sourceMap, err := ParseSource(source)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "Could not parse postgres source")
-	}
-
-	return sourceMap, config, nil
-}
-
-// ParseSource - parses source string into a map for easier use
-func ParseSource(source string) (map[string]string, error) {
-	if source == "" {
-		return nil, errors.New("source string is empty")
-	}
-
-	sourceSlice := strings.Fields(source)
-	sourceMap := make(map[string]string)
-	for _, pair := range sourceSlice {
-		// Due to the possibility that the password could potentially have an = we
-		// need to ensure that we get the entire password
-		key, value := stringutils.Split2(pair, "=")
-
-		sourceMap[key] = strings.TrimSpace(value)
-	}
-
-	return sourceMap, nil
 }
 
 func collectPostgresStats(db *pgxpool.Pool) {
