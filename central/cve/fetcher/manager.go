@@ -7,7 +7,8 @@ import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
-	"github.com/stackrox/rox/central/cve/converter"
+	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ type OrchestratorIstioCVEManager interface {
 	Start()
 	Update(zipPath string, forceUpdate bool)
 	HandleClusterConnection()
-	GetAffectedClusters(ctx context.Context, cveID string, ct converter.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error)
+	GetAffectedClusters(ctx context.Context, cveID string, ct utils.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error)
 	UpsertOrchestratorIntegration(integration *storage.OrchestratorIntegration) error
 	RemoveIntegration(integrationID string)
 }
@@ -38,22 +39,30 @@ type orchestratorIstioCVEManagerImpl struct {
 }
 
 // NewOrchestratorIstioCVEManagerImpl returns new instance of orchestratorIstioCVEManagerImpl
-func NewOrchestratorIstioCVEManagerImpl(clusterDataStore clusterDataStore.DataStore, cveDataStore cveDataStore.DataStore, clusterCVEDataStore clusterCVEEdgeDataStore.DataStore, cveMatcher *cveMatcher.CVEMatcher) (OrchestratorIstioCVEManager, error) {
+func NewOrchestratorIstioCVEManagerImpl(
+	clusterDataStore clusterDataStore.DataStore,
+	clusterCVEDataStore clusterCVEDataStore.DataStore,
+	legacyCVEDataStore cveDataStore.DataStore,
+	clusterCVEEdgeDataStore clusterCVEEdgeDataStore.DataStore,
+	cveMatcher *cveMatcher.CVEMatcher,
+) (OrchestratorIstioCVEManager, error) {
 	m := &orchestratorIstioCVEManagerImpl{
 		orchestratorCVEMgr: &orchestratorCVEManager{
-			clusterDataStore:    clusterDataStore,
-			cveDataStore:        cveDataStore,
-			clusterCVEDataStore: clusterCVEDataStore,
-			cveMatcher:          cveMatcher,
-			creators:            make(map[string]pkgScanners.OrchestratorScannerCreator),
-			scanners:            make(map[string]types.OrchestratorScanner),
+			clusterDataStore:        clusterDataStore,
+			legacyCVEDataStore:      legacyCVEDataStore,
+			clusterCVEDataStore:     clusterCVEDataStore,
+			clusterCVEEdgeDataStore: clusterCVEEdgeDataStore,
+			cveMatcher:              cveMatcher,
+			creators:                make(map[string]pkgScanners.OrchestratorScannerCreator),
+			scanners:                make(map[string]types.OrchestratorScanner),
 		},
 		istioCVEMgr: &istioCVEManager{
-			nvdCVEs:             make(map[string]*schema.NVDCVEFeedJSON10DefCVEItem),
-			clusterDataStore:    clusterDataStore,
-			cveDataStore:        cveDataStore,
-			clusterCVEDataStore: clusterCVEDataStore,
-			cveMatcher:          cveMatcher,
+			nvdCVEs:                 make(map[string]*schema.NVDCVEFeedJSON10DefCVEItem),
+			clusterDataStore:        clusterDataStore,
+			legacyCVEDataStore:      legacyCVEDataStore,
+			clusterCVEDataStore:     clusterCVEDataStore,
+			clusterCVEEdgeDataStore: clusterCVEEdgeDataStore,
+			cveMatcher:              cveMatcher,
 		},
 		updateSignal: concurrency.NewSignal(),
 	}
