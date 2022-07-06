@@ -3,8 +3,6 @@ package manager
 import (
 	"context"
 	"fmt"
-	"sort"
-	"strings"
 
 	"github.com/pkg/errors"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
@@ -22,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -34,7 +31,8 @@ var (
 	// errConditionMet is used to short-circuit a walk in the database
 	errConditionMet = errors.New("condition met")
 
-	controlAnnotationPrefix = "control.compliance.openshift.io"
+	ocpAnnotationSuffix     = "CIS-OCP"
+	ocpControlAnnotationKey = "control.compliance.openshift.io/" + ocpAnnotationSuffix
 )
 
 // Manager helps manage the dynamic profiles from the compliance operator
@@ -110,17 +108,9 @@ func getRuleName(rule *storage.ComplianceOperatorRule) string {
 func createControlFromRule(rule *storage.ComplianceOperatorRule) metadata.Control {
 	ruleName := getRuleName(rule)
 
-	var controlNames []string
-	for key, value := range rule.GetAnnotations() {
-		if strings.HasPrefix(key, controlAnnotationPrefix) {
-			controlNames = append(controlNames, fmt.Sprintf("%s %s", stringutils.GetAfter(key, "/"), value))
-		}
-	}
-	sort.Strings(controlNames)
-
 	title := rule.GetTitle()
-	if len(controlNames) > 0 {
-		title += fmt.Sprintf(" (%s)", strings.Join(controlNames, ","))
+	if value, ok := rule.GetAnnotations()[ocpControlAnnotationKey]; ok {
+		title += fmt.Sprintf(" (%s %s)", ocpAnnotationSuffix, value)
 	}
 	return metadata.Control{
 		ID:          ruleName,
