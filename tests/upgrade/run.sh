@@ -35,6 +35,7 @@ test_upgrade() {
         REGISTRY="stackrox"
     fi
 
+    export OUTPUT_FORMAT="helm"
     export STORAGE="pvc"
     export CLUSTER_TYPE_FOR_TEST=K8S
     require_environment "LONGTERM_LICENSE"
