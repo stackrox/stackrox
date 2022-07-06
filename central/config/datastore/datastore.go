@@ -73,7 +73,9 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 			}
 		}
 	} else {
-		config.GetPrivateConfig().DecommissionedClusterRetention = nil
+		if config.GetPrivateConfig() != nil {
+			config.GetPrivateConfig().DecommissionedClusterRetention = nil
+		}
 	}
 
 	return d.store.Upsert(ctx, config)
