@@ -51,9 +51,6 @@ var (
 			},
 		},
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
-		DecommissionedClusterRetention: &storage.DecommissionedClusterRetentionConfig{
-			RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
-		},
 	}
 )
 
@@ -81,8 +78,12 @@ func initialize() {
 	if privateConfig == nil {
 		privateConfig = &defaultPrivateConfig
 		needsUpsert = true
-	} else if config.GetPrivateConfig().GetDecommissionedClusterRetention() == nil {
-		privateConfig.DecommissionedClusterRetention = defaultPrivateConfig.GetDecommissionedClusterRetention()
+	}
+
+	if features.DecommissionedClusterRetention.Enabled() && privateConfig.GetDecommissionedClusterRetention() == nil {
+		privateConfig.DecommissionedClusterRetention = &storage.DecommissionedClusterRetentionConfig{
+			RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
+		}
 		needsUpsert = true
 	}
 

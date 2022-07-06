@@ -250,18 +250,6 @@ message UpgradeProgress {
     google.protobuf.Timestamp since    = 3;
 }
 
-message ClusterCVEEdge {
-    // base 64 encoded Cluster:CVE ids.
-    string      id          = 1;
-
-    bool        is_fixable  = 2 [(gogoproto.moretags) = "search:\"Cluster CVE Fixable,store,hidden\""];
-
-    // Whether there is a version the CVE is fixed in the Cluster.
-    oneof has_fixed_by {
-        string  fixed_by    = 3 [(gogoproto.moretags) = "search:\"Cluster CVE Fixed By,store,hidden\""];
-    }
-}
-
 // AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance
 // For internal use only
 message AuditLogFileState {

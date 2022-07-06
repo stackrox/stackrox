@@ -140,6 +140,20 @@ message NodeCVE {
     google.protobuf.Timestamp snooze_expiry         = 9 [(gogoproto.moretags) = 'search:"CVE Snooze Expiry,hidden"'];
 }
 
+message ClusterCVE {
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE ID,hidden" sql:"pk,id"'];  // This field is composite of cve and type.
+    CVEInfo                   cve_base_info         = 2;
+
+    float                     cvss                  = 3 [(gogoproto.moretags) = 'search:"CVSS,store"'];
+    VulnerabilitySeverity     severity              = 4 [(gogoproto.moretags) = 'search:"Severity"'];
+    float                     impact_score          = 5 [(gogoproto.moretags) = 'search:"Impact Score"'];
+
+    bool                      snoozed               = 6 [(gogoproto.moretags) = 'search:"CVE Snoozed"'];
+    google.protobuf.Timestamp snooze_start          = 7;
+    google.protobuf.Timestamp snooze_expiry         = 8 [(gogoproto.moretags) = 'search:"CVE Snooze Expiry,hidden"'];
+    CVE.CVEType               type                  = 9 [(gogoproto.moretags) = 'search:"CVE Type"'];
+}
+
 message CVSSV2 {
     enum Impact {
         IMPACT_NONE     = 0;

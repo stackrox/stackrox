@@ -19,7 +19,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTER_VULNERABILITIES, schema)
 }
 
-// NewIndexer returns new indexer for `storage.CVE`.
+// NewIndexer returns new indexer for `storage.ClusterCVE`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,
@@ -31,32 +31,32 @@ type indexerImpl struct {
 }
 
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "CVE")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ClusterCVE")
 
 	return postgres.RunCountRequest(v1.SearchCategory_CLUSTER_VULNERABILITIES, q, b.db)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "CVE")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ClusterCVE")
 
 	return postgres.RunSearchRequest(v1.SearchCategory_CLUSTER_VULNERABILITIES, q, b.db)
 }
 
 //// Stubs for satisfying interfaces
 
-func (b *indexerImpl) AddCVE(deployment *storage.CVE) error {
+func (b *indexerImpl) AddClusterCVE(deployment *storage.ClusterCVE) error {
 	return nil
 }
 
-func (b *indexerImpl) AddCVEs(_ []*storage.CVE) error {
+func (b *indexerImpl) AddClusterCVEs(_ []*storage.ClusterCVE) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteCVE(id string) error {
+func (b *indexerImpl) DeleteClusterCVE(id string) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteCVEs(_ []string) error {
+func (b *indexerImpl) DeleteClusterCVEs(_ []string) error {
 	return nil
 }
 

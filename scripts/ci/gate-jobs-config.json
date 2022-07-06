@@ -55,6 +55,14 @@
         "run_on_master": "true",
         "run_on_tags": "true"
     },
+    "gke-postgres-qa-e2e-tests": {
+        "run_with_labels": ["ci-postgres-tests"],
+        "skip_with_label": "",
+        "run_with_changed_path": "^.*$",
+        "changed_path_to_ignore": "^ui/",
+        "run_on_master": "true",
+        "run_on_tags": "false"
+    },
     "gke-upgrade-tests": {
         "run_with_labels": ["ci-upgrade-tests"],
         "skip_with_label": "ci-no-upgrade-tests",

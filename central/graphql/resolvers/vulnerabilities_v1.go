@@ -8,7 +8,7 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -275,7 +275,7 @@ func (evr *EmbeddedVulnerabilityResolver) NodeCount(ctx context.Context, args Ra
 	return nodeLoader.CountFromQuery(ctx, query)
 }
 
-func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, cve *schema.NVDCVEFeedJSON10DefCVEItem, ct converter.CVEType) (int, int, error) {
+func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, cve *schema.NVDCVEFeedJSON10DefCVEItem, ct utils.CVEType) (int, int, error) {
 	clusters, err := resolver.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return 0, 0, err
@@ -291,7 +291,7 @@ func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, c
 	return len(affectedClusters), len(clusters), nil
 }
 
-func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
+func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct utils.CVEType) (int, int, error) {
 	clusters, err := evr.root.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return 0, 0, err
@@ -357,11 +357,11 @@ func (evr *EmbeddedVulnerabilityResolver) EnvImpact(ctx context.Context) (float6
 
 		switch vulnType {
 		case storage.EmbeddedVulnerability_K8S_VULNERABILITY:
-			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.K8s)
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, utils.K8s)
 		case storage.EmbeddedVulnerability_ISTIO_VULNERABILITY:
-			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.Istio)
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, utils.Istio)
 		case storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY:
-			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.OpenShift)
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, utils.OpenShift)
 		case storage.EmbeddedVulnerability_IMAGE_VULNERABILITY:
 			n, d, err = evr.getEnvImpactComponentsForImages(ctx)
 		case storage.EmbeddedVulnerability_NODE_VULNERABILITY:

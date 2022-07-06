@@ -1,4 +1,4 @@
-package converter
+package utils
 
 import (
 	"testing"

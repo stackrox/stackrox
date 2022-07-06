@@ -80,7 +80,7 @@ func NewDispatcherRegistry(
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
-			rbacUpdater, podLister, processFilter, configHandler, detector, namespaces, credentialsManager),
+			rbacUpdater, podLister, processFilter, configHandler, detector, namespaces, registryStore, credentialsManager),
 
 		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater),
 		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
