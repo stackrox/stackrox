@@ -50,18 +50,17 @@ const MOST_COMMON_IMAGE_VULNERABILITIES = gql`
     }
 `;
 
-const processData = (data, workflowState, showVMUpdates) => {
+const processData = (data, workflowState) => {
     // @TODO: filter on the client side until multiple sorts, including derived fields, is supported by BE
     const results = sortBy(data.results, ['cvss']);
 
     return results.map((vuln) => {
-        const { id, cve, cvss, scoreVersion, isFixable, deploymentCount, imageCount } = vuln;
+        const { id, cve, cvss, scoreVersion, isFixable, deploymentCount } = vuln;
         const url = workflowState.pushRelatedEntity(entityTypes.CVE, id).toUrl();
         const tooltip = getTooltip(vuln);
-        const count = showVMUpdates ? imageCount : deploymentCount;
 
         return {
-            x: count,
+            x: deploymentCount,
             y: `${cve} / CVSS: ${cvss.toFixed(1)} (${scoreVersion}) ${
                 isFixable ? ' / Fixable' : ''
             }`,
@@ -82,8 +81,6 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     const GQL_QUERY = showVMUpdates
         ? MOST_COMMON_IMAGE_VULNERABILITIES
         : MOST_COMMON_VULNERABILITIES;
-    const sortFieldID = showVMUpdates ? cveSortFields.IMAGE_COUNT : cveSortFields.DEPLOYMENT_COUNT;
-    const labeledBarGraphTitle = showVMUpdates ? 'Images' : 'Deployments';
 
     const {
         loading,
@@ -94,7 +91,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
             query,
             vulnPagination: queryService.getPagination(
                 {
-                    id: sortFieldID,
+                    id: cveSortFields.DEPLOYMENT_COUNT,
                     desc: true,
                 },
                 WIDGET_PAGINATION_START_OFFSET,
@@ -114,7 +111,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
 
             content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
         } else {
-            const processedData = processData(data, workflowState, showVMUpdates);
+            const processedData = processData(data, workflowState);
             if (!processedData || processedData.length === 0) {
                 content = (
                     <NoResultsMessage
@@ -124,7 +121,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
                     />
                 );
             } else {
-                content = <LabeledBarGraph data={processedData} title={labeledBarGraphTitle} />;
+                content = <LabeledBarGraph data={processedData} title="Deployments" />;
             }
         }
     }
@@ -135,7 +132,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     const viewAllURL = workflowState
         .pushList(entityTypes.CVE)
         .setSort([
-            { id: sortFieldID, desc: true },
+            { id: cveSortFields.DEPLOYMENT_COUNT, desc: true },
             { id: cveSortFields.CVSS_SCORE, desc: true },
         ])
         .toUrl();
