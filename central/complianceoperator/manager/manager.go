@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -32,7 +34,7 @@ var (
 	// errConditionMet is used to short-circuit a walk in the database
 	errConditionMet = errors.New("condition met")
 
-	cisOCPAnnotation = "control.compliance.openshift.io/CIS-OCP"
+	controlAnnotationPrefix = "control.compliance.openshift.io"
 )
 
 // Manager helps manage the dynamic profiles from the compliance operator
@@ -96,24 +98,34 @@ func productTypeToTarget(s string) pkgFramework.TargetKind {
 	}
 }
 
-func getRuleIDAndName(rule *storage.ComplianceOperatorRule) (string, string) {
-	if ruleID, ok := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; ok {
-		if ocpControl := strings.Trim(rule.Annotations[cisOCPAnnotation], `" `); ocpControl != "" {
-			return ruleID, fmt.Sprintf("CIS-OCP %s", ocpControl)
-		}
-		return ruleID, ruleID
+func getRuleName(rule *storage.ComplianceOperatorRule) string {
+	if ruleName, ok := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; ok {
+		return ruleName
 	}
 	// This field is checked within the pipeline so it should never be empty
 	log.Errorf("UNEXPECTED: Unknown base rule for %s", rule)
-	return "<unknown>", "<unknown>"
+	return "<unknown>"
 }
 
 func createControlFromRule(rule *storage.ComplianceOperatorRule) metadata.Control {
-	ruleID, ruleName := getRuleIDAndName(rule)
+	ruleName := getRuleName(rule)
+
+	var controlNames []string
+	for key, value := range rule.GetAnnotations() {
+		if strings.HasPrefix(key, controlAnnotationPrefix) {
+			controlNames = append(controlNames, fmt.Sprintf("%s %s", stringutils.GetAfter(key, "/"), value))
+		}
+	}
+	sort.Strings(controlNames)
+
+	title := rule.GetTitle()
+	if len(controlNames) > 0 {
+		title += fmt.Sprintf(" (%s)", strings.Join(controlNames, ","))
+	}
 	return metadata.Control{
-		ID:          ruleID,
+		ID:          ruleName,
 		Name:        ruleName,
-		Description: rule.GetTitle(),
+		Description: title,
 	}
 }
 
@@ -133,16 +145,16 @@ func (m *managerImpl) createControls(rules []string) ([]metadata.Control, error)
 }
 
 func (m *managerImpl) registerCheckFromRule(standardID string, productType pkgFramework.TargetKind, rule *storage.ComplianceOperatorRule) error {
-	ruleID, _ := getRuleIDAndName(rule)
+	ruleName := getRuleName(rule)
 	checkMetadata := framework.CheckMetadata{
-		ID:                 standards.BuildQualifiedID(standardID, ruleID),
+		ID:                 standards.BuildQualifiedID(standardID, ruleName),
 		Scope:              productType,
 		InterpretationText: rule.GetDescription(),
 	}
 
-	checkFunc := platformCheckFunc(ruleID)
+	checkFunc := platformCheckFunc(ruleName)
 	if productType == pkgFramework.MachineConfigKind {
-		checkFunc = machineConfigCheckFunc(ruleID)
+		checkFunc = machineConfigCheckFunc(ruleName)
 	}
 
 	if err := m.registry.RegisterCheck(framework.NewCheckFromFunc(checkMetadata, checkFunc)); err != nil {
@@ -292,8 +304,7 @@ func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorPr
 			if rule == nil {
 				continue
 			}
-			ruleID, _ := getRuleIDAndName(rule)
-			if err := m.registry.DeleteControl(standards.BuildQualifiedID(deletedProfile.GetName(), ruleID)); err != nil {
+			if err := m.registry.DeleteControl(standards.BuildQualifiedID(deletedProfile.GetName(), getRuleName(rule))); err != nil {
 				return err
 			}
 		}
