@@ -404,8 +404,8 @@ deploy_earlier_central() {
     PATH="bin/$TEST_HOST_OS:$PATH" roxctl version
     PATH="bin/$TEST_HOST_OS:$PATH" \
     MAIN_IMAGE_TAG="$EARLIER_TAG" \
-    SCANNER_IMAGE="quay.io/$REGISTRY/scanner:$(cat SCANNER_VERSION)" \
-    SCANNER_DB_IMAGE="quay.io/$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
+    SCANNER_IMAGE="$REGISTRY/scanner:$(cat SCANNER_VERSION)" \
+    SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
     ./deploy/k8s/central.sh
 
     get_central_basic_auth_creds
