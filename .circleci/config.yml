@@ -3242,6 +3242,7 @@ jobs:
           label: ci-openshift-tests
           run-on-master: false
       - run-openshift-tests:
+          sensor-deploy-flavor: helm
           gate-label: ci-openshift-tests
           version: 0.2.11-1-geb3414898d
 
@@ -3262,6 +3263,7 @@ jobs:
           run-on-master: false
       - run-openshift-tests:
           suffix: "-crio"
+          sensor-deploy-flavor: helm
           gate-label: ci-openshift-crio-tests
           version: 0.2.11-1-geb3414898d
 
