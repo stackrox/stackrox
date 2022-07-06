@@ -92,9 +92,9 @@ describe('Violations by policy category widget', () => {
         ]);
 
         // Switch to sort-by-volume, which orders the chart by total violations per category
-        await user.click(screen.getByRole('button', { name: 'Options' }));
-        await user.click(screen.getByRole('button', { name: 'Volume' }));
-        await user.click(screen.getByRole('button', { name: 'Options' }));
+        await user.click(await screen.findByRole('button', { name: 'Options' }));
+        await user.click(await screen.findByRole('button', { name: 'Volume' }));
+        await user.click(await screen.findByRole('button', { name: 'Options' }));
 
         await waitForAxisLinksToBe([
             'Security Best Practices',
@@ -113,13 +113,13 @@ describe('Violations by policy category widget', () => {
         ).toBeInTheDocument();
 
         // Sort by volume, so that enabling lower severity bars changes the order of the chart
-        await user.click(screen.getByRole('button', { name: 'Options' }));
-        await user.click(screen.getByRole('button', { name: 'Volume' }));
-        await user.click(screen.getByRole('button', { name: 'Options' }));
+        await user.click(await screen.findByRole('button', { name: 'Options' }));
+        await user.click(await screen.findByRole('button', { name: 'Volume' }));
+        await user.click(await screen.findByRole('button', { name: 'Options' }));
 
         // Toggle on low and medium violations, which are disabled by default
-        await user.click(screen.getByText('Low'));
-        await user.click(screen.getByText('Medium'));
+        await user.click(await screen.findByText('Low'));
+        await user.click(await screen.findByText('Medium'));
 
         await waitForAxisLinksToBe([
             'Vulnerability Management',
