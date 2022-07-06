@@ -124,3 +124,10 @@ func (rs *Store) GetRegistryForImage(image *storage.ImageName) (registryTypes.Re
 
 	return nil, errors.Errorf("Unknown image registry: %q", reg)
 }
+
+// HasRegistryForImage returns true when the registry store has the registry
+// for the given image.
+func (rs *Store) HasRegistryForImage(image *storage.ImageName) bool {
+	reg, err := rs.GetRegistryForImage(image)
+	return reg != nil && err == nil
+}
