@@ -25,8 +25,7 @@ func ResolveAll(ctx context.Context, dataStore datastore.DataStore, deploymentDa
 }
 
 // ResolveMetadataOnlyByQuery resolves all namespaces based on a query. This will _not_ populate volatile runtime data and that must be requested separately.
-func ResolveMetadataOnlyByQuery(ctx context.Context, q *v1.Query, dataStore datastore.DataStore, _ deploymentDataStore.DataStore,
-	_ secretDataStore.DataStore, _ npDS.DataStore) ([]*v1.Namespace, error) {
+func ResolveMetadataOnlyByQuery(ctx context.Context, q *v1.Query, dataStore datastore.DataStore) ([]*v1.Namespace, error) {
 	metadataSlice, err := dataStore.SearchNamespaces(ctx, q)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving namespaces")
@@ -89,7 +88,7 @@ func ResolveByClusterIDAndName(ctx context.Context, clusterID string, name strin
 func ResolveMetadataOnlyByID(ctx context.Context, id string, dataStore datastore.DataStore) (*v1.Namespace, bool, error) {
 	ns, exists, err := dataStore.GetNamespace(ctx, id)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "retrieving from store")
+		return nil, false, errors.Wrap(err, "retrieving namespace from store")
 	}
 	if !exists {
 		return nil, false, nil

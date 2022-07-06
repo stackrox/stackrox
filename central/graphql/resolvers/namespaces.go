@@ -134,7 +134,7 @@ func (resolver *Resolver) Namespaces(ctx context.Context, args PaginatedQuery) (
 		return nil, err
 	}
 
-	return resolver.wrapNamespaces(namespace.ResolveMetadataOnlyByQuery(ctx, query, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
+	return resolver.wrapNamespaces(namespace.ResolveMetadataOnlyByQuery(ctx, query, resolver.NamespaceDataStore))
 }
 
 type clusterIDAndNameQuery struct {
