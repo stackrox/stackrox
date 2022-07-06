@@ -34,27 +34,3 @@ export const selectors = {
     topRiskyDeployments: '[data-testid="top-risky-deployments"] ul li a',
     policyCategoryViolations: '[data-testid="policy-category-violation"]',
 };
-
-/**
- * Retrieves a selector for the axis label of a PatternFly/Victory chart. Note
- * that Victory orders bar chart indices from the bottom up, so the last entry
- * in the UI will be index 0.
- *
- * @param axisIndex The chart axis to select
- * @param labelIndex The index of the label on the selected axis
- */
-const axisLabel = (axisIndex, labelIndex) => `#chart-axis-${axisIndex}-tickLabels-${labelIndex}`;
-
-const legendLabel = (labelIndex) => `#legend-labels-${labelIndex}`;
-
-// TODO Make `pfSelectors` the default once phase one of the PF Dashboard is enabled
-export const pfSelectors = {
-    pageHeader: 'h1:contains("Dashboard")',
-    violationsByCategory: scopeSelectors('article:contains("Policy violations by category")', {
-        chart: '.pf-c-chart',
-        optionsToggle: 'button:contains("Options")',
-        volumeOption: 'button:contains("Total")',
-        axisLabel,
-        legendLabel,
-    }),
-};

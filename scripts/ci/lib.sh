@@ -792,6 +792,17 @@ _EOH_
 }
 
 openshift_ci_mods() {
+    info "BEGIN OpenShift CI mods"
+
+    info "Env A-Z dump:"
+    env | sort | grep -E '^[A-Z]' || true
+
+    info "Git log:"
+    git log --oneline --decorate -n 20 || true
+
+    info "Current Status:"
+    "$ROOT/status.sh" || true
+
     # For ci_export(), override BASH_ENV from stackrox-test with something that is writable.
     BASH_ENV=$(mktemp)
     export BASH_ENV
@@ -807,6 +818,30 @@ openshift_ci_mods() {
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
+
+    handle_nightly_runs
+
+    info "Status after mods:"
+    "$ROOT/status.sh" || true
+
+    info "END OpenShift CI mods"
+}
+
+openshift_ci_import_creds() {
+    shopt -s nullglob
+    for cred in /tmp/secret/**/[A-Z]*; do
+        export "$(basename "$cred")"="$(cat "$cred")"
+    done
+}
+
+create_hold_trap() {
+    function hold() {
+        while [[ -e /tmp/hold ]]; do
+            info "Holding this job for debug"
+            sleep 60
+        done
+    }
+    trap hold EXIT
 }
 
 openshift_ci_e2e_mods() {

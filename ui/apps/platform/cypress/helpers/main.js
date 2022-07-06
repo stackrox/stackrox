@@ -24,11 +24,6 @@ export function visitMainDashboard(requestConfig, staticResponseMap) {
     cy.get('h1:contains("Dashboard")');
 }
 
-// TODO Make this the default once phase one of the PF Dashboard is enabled
-export function visitMainDashboardPF() {
-    visit(url);
-}
-
 export function visitMainDashboardViaRedirectFromUrl(redirectFromUrl) {
     cy.intercept('GET', api.risks.riskyDeployments).as('deploymentswithprocessinfo');
 

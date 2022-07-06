@@ -2,13 +2,31 @@ import React from 'react';
 import { MockedProvider } from '@apollo/client/testing';
 import { screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
+import { Provider } from 'react-redux';
+import { createBrowserHistory as createHistory } from 'history';
+import configureStore from 'store/configureStore';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 import parseURL from 'utils/URLParser';
 import renderWithRouter from 'test-utils/renderWithRouter';
 import RecentlyDetectedVulnerabilities, {
     RECENTLY_DETECTED_VULNERABILITIES,
-} from './RecentlyDetectedVulnerabilities';
+} from './RecentlyDetectedImageVulnerabilities';
+
+const history = createHistory();
+const initialStore = {
+    app: {
+        featureFlags: {
+            featureFlags: [
+                {
+                    name: 'Enable Frontend VM Updates',
+                    envVar: 'ROX_FRONTEND_VM_UPDATES',
+                    enabled: false,
+                },
+            ],
+        },
+    },
+};
 
 const mocks = [
     {
@@ -48,12 +66,16 @@ describe('RecentlyDetectedVulnerabilities', () => {
 
         const workflowState = parseURL(location);
 
+        const store = configureStore(initialStore, history);
+
         renderWithRouter(
-            <MockedProvider mocks={mocks} addTypename={false}>
-                <workflowStateContext.Provider value={workflowState}>
-                    <RecentlyDetectedVulnerabilities />
-                </workflowStateContext.Provider>
-            </MockedProvider>
+            <Provider store={store}>
+                <MockedProvider mocks={mocks} addTypename={false}>
+                    <workflowStateContext.Provider value={workflowState}>
+                        <RecentlyDetectedVulnerabilities />
+                    </workflowStateContext.Provider>
+                </MockedProvider>
+            </Provider>
         );
 
         const messageElement = await screen.findByTestId(messageTestId);

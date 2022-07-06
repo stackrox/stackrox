@@ -33,9 +33,18 @@ export function visitClusters(staticResponseMap) {
     cy.get(selectors.clustersListHeading).contains('Clusters');
 }
 
+export function visitClustersWithFixture(fixturePath) {
+    visitClusters({
+        clusters: { fixture: fixturePath },
+    });
+}
+
 export function visitClusterById(clusterId, staticResponseMap) {
     const routeMatcherMapClusterById = {
-        ...routeMatcherMap,
+        'cluster-defaults': {
+            method: 'GET',
+            url: api.clusters.clusterDefaults,
+        },
         cluster: {
             method: 'GET',
             url: `${api.clusters.list}/${clusterId}`,
@@ -59,20 +68,18 @@ export function visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, 
     const currentDatetime = new Date(datetimeISOString);
     cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
-    visitClusters({
-        clusters: { fixture: fixturePath },
-    });
+    visitClustersWithFixture(fixturePath);
 
     cy.wait('@metadata');
 }
 
 export function visitClusterByNameWithFixture(clusterName, fixturePath) {
-    cy.fixture(fixturePath).then(({ clusters }) => {
+    cy.fixture(fixturePath).then(({ clusters, clusterIdToRetentionInfo }) => {
         const cluster = clusters.find(({ name }) => name === clusterName);
+        const clusterRetentionInfo = clusterIdToRetentionInfo[cluster.id] ?? null;
 
         visitClusterById(cluster.id, {
-            clusters: { body: { clusters } },
-            cluster: { body: { cluster } },
+            cluster: { body: { cluster, clusterRetentionInfo } },
         });
 
         cy.get(selectors.clusterSidePanelHeading).contains(clusterName);
@@ -85,20 +92,20 @@ export function visitClusterByNameWithFixtureMetadataDatetime(
     metadata,
     datetimeISOString
 ) {
-    cy.fixture(fixturePath).then(({ clusters }) => {
+    cy.fixture(fixturePath).then(({ clusters, clusterIdToRetentionInfo }) => {
         cy.intercept('GET', api.metadata, {
             body: metadata,
         }).as('metadata');
 
         const cluster = clusters.find(({ name }) => name === clusterName);
+        const clusterRetentionInfo = clusterIdToRetentionInfo[cluster.id] ?? null;
 
         // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
         const currentDatetime = new Date(datetimeISOString);
         cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
         visitClusterById(cluster.id, {
-            clusters: { body: { clusters } },
-            cluster: { body: { cluster } },
+            cluster: { body: { cluster, clusterRetentionInfo } },
         });
 
         cy.wait(['@metadata']);
