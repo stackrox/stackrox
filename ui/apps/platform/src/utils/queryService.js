@@ -100,7 +100,7 @@ function getListFieldName(entityType, listType, useCase) {
     }
 
     if (entityType === entityTypes.NODE_COMPONENT) {
-        if (listType === entityTypes.CVE) {
+        if (listType === entityTypes.CVE || listType === entityTypes.NODE_CVE) {
             return 'nodeVulnerabilities';
         }
     }
@@ -206,6 +206,8 @@ function getFragmentName(entityType, listType) {
             return 'cveFields';
         case entityTypes.CLUSTER_CVE:
             return 'clusterCVEFields';
+        case entityTypes.NODE_CVE:
+            return 'nodeCVEFields';
         case entityTypes.COMPONENT:
             return 'componentFields';
         case entityTypes.NODE_COMPONENT:

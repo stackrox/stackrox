@@ -11,8 +11,12 @@ import {
 } from 'utils/entityRelationships';
 import relationshipTypes from 'constants/relationshipTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const EntityTabs = ({ entityType, activeTab }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+
     const workflowState = useContext(workflowStateContext);
     function getTab(tabType) {
         return {
@@ -23,7 +27,7 @@ const EntityTabs = ({ entityType, activeTab }) => {
         };
     }
 
-    const relationships = [
+    let relationships = [
         ...getEntityTypesByRelationship(
             entityType,
             relationshipTypes.MATCHES,
@@ -39,6 +43,24 @@ const EntityTabs = ({ entityType, activeTab }) => {
     if (!relationships) {
         return null;
     }
+
+    if (showVMUpdates && entityType === 'NODE_COMPONENT') {
+        relationships = relationships.map((relatedEntityType) => {
+            if (relatedEntityType === 'CVE') {
+                return 'NODE_CVE';
+            }
+            return relatedEntityType;
+        });
+    }
+    if (showVMUpdates && entityType === 'IMAGE_COMPONENT') {
+        relationships = relationships.map((relatedEntityType) => {
+            if (relatedEntityType === 'CVE') {
+                return 'IMAGE_CVE';
+            }
+            return relatedEntityType;
+        });
+    }
+
     const entityTabs = relationships.map((relationship) => getTab(relationship, entityType));
     const groups = Object.values(entityGroups);
 

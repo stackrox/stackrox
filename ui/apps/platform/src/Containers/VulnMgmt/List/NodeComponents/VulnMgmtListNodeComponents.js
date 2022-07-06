@@ -60,7 +60,7 @@ export function getComponentTableColumns(workflowState) {
                     return 'No CVEs';
                 }
 
-                const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+                const newState = workflowState.pushListItem(id).pushList(entityTypes.NODE_CVE);
                 const url = newState.toUrl();
                 const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
