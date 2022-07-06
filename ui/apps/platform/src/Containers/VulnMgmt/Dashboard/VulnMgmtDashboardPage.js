@@ -23,6 +23,7 @@ import RecentlyDetectedImageVulnerabilities from '../widgets/RecentlyDetectedIma
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
 import ClustersWithMostOrchestratorIstioVulnerabilities from '../widgets/ClustersWithMostOrchestratorIstioVulnerabilities';
+import CvesMenu from './CvesMenu';
 
 const baseEntityMenuTypes = [entityTypes.CLUSTER, entityTypes.NAMESPACE, entityTypes.DEPLOYMENT];
 const componentMenuType = [entityTypes.COMPONENT];
@@ -32,9 +33,10 @@ const VulnDashboardPage = ({ history }) => {
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
 
     let entityMenuTypes = [...baseEntityMenuTypes];
-    if (isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES')) {
+    if (showVmUpdates) {
         entityMenuTypes = [...baseEntityMenuTypes, ...splitComponentMenuTypes];
     } else {
         entityMenuTypes = [...baseEntityMenuTypes, ...componentMenuType];
@@ -77,8 +79,13 @@ const VulnDashboardPage = ({ history }) => {
             <PageTitle title="Vulnerability Management - Dashboard" />
             <div className="flex items-center">
                 <div className="flex h-full mr-3 pr-3 border-r-2 border-base-400">
+                    {showVmUpdates && (
+                        <div className="flex mr-2">
+                            <CvesMenu />
+                        </div>
+                    )}
                     <PoliciesCountTile />
-                    <CvesCountTile />
+                    {!showVmUpdates && <CvesCountTile entityType={entityTypes.CVE} />}
                     <NodesCountTile />
                     <ImagesCountTile />
                     <div className="flex w-32">
