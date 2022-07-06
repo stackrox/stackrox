@@ -29,7 +29,7 @@ function DeploymentsAtMostRisk() {
                             component={LinkShim}
                             href={`${riskBasePath}?${urlQueryString}`}
                         >
-                            View All
+                            View all
                         </Button>
                     </FlexItem>
                 </Flex>
