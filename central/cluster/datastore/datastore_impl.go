@@ -155,7 +155,7 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
-func (ds *datastoreImpl) removeImageIntegrationByClusterId(ctx context.Context, cluster *storage.Cluster) {
+func (ds *datastoreImpl) removeImageIntegrationByClusterID(ctx context.Context, cluster *storage.Cluster) {
 
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
 	imageintegrations, err := ds.imageintegrationDataStore.Search(ctx, q)
@@ -168,6 +168,7 @@ func (ds *datastoreImpl) removeImageIntegrationByClusterId(ctx context.Context, 
 			log.Errorf("failed to remove image integration %s in deleted cluster: %v", imageintegration.ID, err)
 		}
 	}
+	return
 }
 
 func (ds *datastoreImpl) buildIndex(ctx context.Context) error {

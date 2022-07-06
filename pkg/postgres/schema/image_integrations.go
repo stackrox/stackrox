@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"fmt"
 	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -37,13 +36,6 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageIntegration)(nil)), "image_integrations")
-		referencedSchemas := map[string]*walker.Schema{
-			"storage.ImageIntegration": ImageIntegrationsSchema,
-		}
-
-		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
-			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
-		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_INTEGRATIONS, "imageintegration", (*storage.ImageIntegration)(nil)))
 		RegisterTable(schema, CreateTableImageIntegrationsStmt)
 		return schema

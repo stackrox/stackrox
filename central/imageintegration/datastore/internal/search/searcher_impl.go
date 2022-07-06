@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	podsSACSearchHelper         = sac.ForResource(resources.Deployment).MustCreateSearchHelper(mappings.OptionsMap)
-	podsSACPostgresSearchHelper = sac.ForResource(resources.Deployment).MustCreatePgSearchHelper()
+	imageintegrationsSACSearchHelper         = sac.ForResource(resources.ImageIntegration).MustCreateSearchHelper(mappings.OptionsMap)
+	imageintegrationsSACPostgresSearchHelper = sac.ForResource(resources.ImageIntegration).MustCreatePgSearchHelper()
 
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.DeploymentID.String(),
@@ -53,9 +53,9 @@ func (ds searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func formatSearcher(indexer blevesearch.UnsafeSearcher) search.Searcher {
 	var filteredSearcher search.Searcher
 	if features.PostgresDatastore.Enabled() {
-		filteredSearcher = podsSACPostgresSearchHelper.FilteredSearcher(indexer) // Make the UnsafeSearcher safe.
+		filteredSearcher = imageintegrationsSACPostgresSearchHelper.FilteredSearcher(indexer) // Make the UnsafeSearcher safe.
 	} else {
-		filteredSearcher = podsSACSearchHelper.FilteredSearcher(indexer) // Make the UnsafeSearcher safe.
+		filteredSearcher = imageintegrationsSACSearchHelper.FilteredSearcher(indexer) // Make the UnsafeSearcher safe.
 	}
 	paginatedSearcher := paginated.Paginated(filteredSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
