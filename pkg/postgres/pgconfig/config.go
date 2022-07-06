@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	dbPasswordFile = "/run/secrets/stackrox.io/db-password/password"
+	DBPasswordFile = "/run/secrets/stackrox.io/db-password/password"
 
 	activeSuffix = "_active"
 )
@@ -20,9 +20,9 @@ const (
 // GetPostgresConfig - gets the configuration used to connect to Postgres
 func GetPostgresConfig() (map[string]string, *pgxpool.Config, error) {
 	centralConfig := config.GetConfig()
-	password, err := os.ReadFile(dbPasswordFile)
+	password, err := os.ReadFile(DBPasswordFile)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "pgsql: could not load password file %q", dbPasswordFile)
+		return nil, nil, errors.Wrapf(err, "pgsql: could not load password file %q", DBPasswordFile)
 	}
 	// Add the password to the source to pass to get the pool config
 	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)

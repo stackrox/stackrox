@@ -8,12 +8,12 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/cas"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/dbs"
 	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
@@ -59,7 +59,7 @@ func BackupPostgres(ctx context.Context, postgresDB *pgxpool.Pool, includeCerts 
 			return errors.Wrap(err, "backing up certificates")
 		}
 
-		if err := generators.PutStreamInZip(generators.PutFileInStream(globaldb.DBPasswordFile), filepath.Join(backup.DatabaseBaseFolder, backup.DatabasePassword)).WriteTo(ctx, zipWriter); err != nil {
+		if err := generators.PutStreamInZip(generators.PutFileInStream(pgconfig.DBPasswordFile), filepath.Join(backup.DatabaseBaseFolder, backup.DatabasePassword)).WriteTo(ctx, zipWriter); err != nil {
 			return errors.Wrap(err, "backing up postgres password")
 		}
 	}
