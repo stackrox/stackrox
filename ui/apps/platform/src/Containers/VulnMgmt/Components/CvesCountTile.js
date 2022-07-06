@@ -7,20 +7,42 @@ import queryService from 'utils/queryService';
 
 import EntityTileLink from 'Components/EntityTileLink';
 
-const CVES_COUNT_QUERY = gql`
-    query cvesCount($query: String) {
-        vulnerabilityCount
-        fixableCveCount: vulnerabilityCount(query: $query)
-    }
-`;
+const cveCountQueriesMap = {
+    [entityTypes.CVE]: gql`
+        query cvesCount($query: String) {
+            vulnerabilityCount
+            fixableCveCount: vulnerabilityCount(query: $query)
+        }
+    `,
+    [entityTypes.IMAGE_CVE]: gql`
+        query imageCvesCount($query: String) {
+            vulnerabilityCount: imageVulnerabilityCount
+            fixableCveCount: imageVulnerabilityCount(query: $query)
+        }
+    `,
+    [entityTypes.NODE_CVE]: gql`
+        query nodeCvesCount($query: String) {
+            vulnerabilityCount: nodeVulnerabilityCount
+            fixableCveCount: nodeVulnerabilityCount(query: $query)
+        }
+    `,
+    [entityTypes.CLUSTER_CVE]: gql`
+        query clusterCvesCount($query: String) {
+            vulnerabilityCount: clusterVulnerabilityCount
+            fixableCveCount: clusterVulnerabilityCount(query: $query)
+        }
+    `,
+};
 
-const getURL = (workflowState) => {
-    const url = workflowState.clear().pushList(entityTypes.CVE).toUrl();
+const getURL = (workflowState, entityType) => {
+    const url = workflowState.clear().pushList(entityType).toUrl();
     return url;
 };
 
-const CvesCountTile = () => {
-    const { loading, data = {} } = useQuery(CVES_COUNT_QUERY, {
+const CvesCountTile = ({ entityType }) => {
+    const countsQuery = cveCountQueriesMap[entityType];
+
+    const { loading, data = {} } = useQuery(countsQuery, {
         variables: {
             query: queryService.objectToWhereClause({
                 Fixable: true,
@@ -33,12 +55,12 @@ const CvesCountTile = () => {
     const fixableCveCountText = `(${fixableCveCount} fixable)`;
 
     const workflowState = useContext(workflowStateContext);
-    const url = getURL(workflowState);
+    const url = getURL(workflowState, entityType);
 
     return (
         <EntityTileLink
             count={vulnerabilityCount}
-            entityType={entityTypes.CVE}
+            entityType={entityType}
             position="middle"
             subText={fixableCveCountText}
             loading={loading}

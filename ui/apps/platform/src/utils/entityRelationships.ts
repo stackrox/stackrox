@@ -28,6 +28,9 @@ export const useCaseEntityMap = {
     [useCaseTypes.VULN_MANAGEMENT]: [
         entityTypes.POLICY,
         entityTypes.CVE,
+        entityTypes.IMAGE_CVE,
+        entityTypes.NODE_CVE,
+        entityTypes.CLUSTER_CVE,
         ...baseEntities,
         entityTypes.IMAGE,
         entityTypes.COMPONENT,

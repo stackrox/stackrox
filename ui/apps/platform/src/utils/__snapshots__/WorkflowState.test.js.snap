@@ -109,6 +109,18 @@ Array [
 ]
 `;
 
+exports[`WorkflowState nav list-item-list for vulnerability-management CLUSTER_CVE has trimmed stacks 1`] = `
+Array [
+  "CLUSTER_CVE CLUSTER_CVE-0 CLUSTER",
+  "CLUSTER-2 COMPONENT",
+  "CLUSTER-2 CVE",
+  "CLUSTER-2 DEPLOYMENT",
+  "CLUSTER-2 IMAGE",
+  "CLUSTER-2 NAMESPACE",
+  "CLUSTER-2 POLICY",
+]
+`;
+
 exports[`WorkflowState nav list-item-list for vulnerability-management COMPONENT has trimmed stacks 1`] = `
 Array [
   "COMPONENT COMPONENT-0 CVE",
@@ -194,6 +206,30 @@ Array [
 ]
 `;
 
+exports[`WorkflowState nav list-item-list for vulnerability-management IMAGE_CVE has trimmed stacks 1`] = `
+Array [
+  "IMAGE_CVE IMAGE_CVE-0 COMPONENT",
+  "IMAGE_CVE IMAGE_CVE-0 COMPONENT COMPONENT-2 CVE",
+  "CVE-4 DEPLOYMENT",
+  "CVE-4 IMAGE",
+  "COMPONENT-2 DEPLOYMENT",
+  "IMAGE_CVE IMAGE_CVE-0 COMPONENT COMPONENT-2 IMAGE",
+  "IMAGE-4 CVE",
+  "IMAGE-4 DEPLOYMENT",
+  "IMAGE_CVE IMAGE_CVE-0 DEPLOYMENT",
+  "DEPLOYMENT-2 CLUSTER",
+  "DEPLOYMENT-2 COMPONENT",
+  "DEPLOYMENT-2 CVE",
+  "DEPLOYMENT-2 IMAGE",
+  "DEPLOYMENT-2 NAMESPACE",
+  "DEPLOYMENT-2 POLICY",
+  "IMAGE_CVE IMAGE_CVE-0 IMAGE",
+  "IMAGE-2 COMPONENT",
+  "IMAGE-2 CVE",
+  "IMAGE-2 DEPLOYMENT",
+]
+`;
+
 exports[`WorkflowState nav list-item-list for vulnerability-management NAMESPACE has trimmed stacks 1`] = `
 Array [
   "NAMESPACE NAMESPACE-0 CLUSTER",
@@ -257,6 +293,19 @@ Array [
   "DEPLOYMENT-4 COMPONENT",
   "DEPLOYMENT-4 CVE",
   "DEPLOYMENT-4 IMAGE",
+]
+`;
+
+exports[`WorkflowState nav list-item-list for vulnerability-management NODE_CVE has trimmed stacks 1`] = `
+Array [
+  "NODE_CVE NODE_CVE-0 COMPONENT",
+  "NODE_CVE NODE_CVE-0 COMPONENT COMPONENT-2 CVE",
+  "CVE-4 DEPLOYMENT",
+  "CVE-4 IMAGE",
+  "COMPONENT-2 DEPLOYMENT",
+  "NODE_CVE NODE_CVE-0 COMPONENT COMPONENT-2 IMAGE",
+  "IMAGE-4 CVE",
+  "IMAGE-4 DEPLOYMENT",
 ]
 `;
 
