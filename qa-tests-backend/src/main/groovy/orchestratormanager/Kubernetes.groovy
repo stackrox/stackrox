@@ -181,7 +181,7 @@ class Kubernetes implements OrchestratorMain {
         waitForDeploymentAndPopulateInfo(deployment)
     }
 
-    boolean updateDeploymentNoWait(Deployment deployment) {
+    boolean updateDeploymentNoWait(Deployment deployment, int maxRetries=0) {
         K8sDeployment k8sdeployment = deployments.inNamespace(deployment.namespace).withName(deployment.name).get()
         if (k8sdeployment) {
             log.debug "Deployment ${deployment.name} with version ${k8sdeployment.metadata.resourceVersion} " +
@@ -189,7 +189,7 @@ class Kubernetes implements OrchestratorMain {
         } else {
             log.debug "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
         }
-        return createDeploymentNoWait(deployment)
+        return createDeploymentNoWait(deployment, maxRetries)
     }
 
     def updateDeployment(Deployment deployment) {
@@ -1857,7 +1857,7 @@ class Kubernetes implements OrchestratorMain {
             Helpers.withK8sClientRetry(maxNumRetries,1) {
                 client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
                 int att = Helpers.getAttemptCount()
-                log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". Attempt " + att + " of 10"
+                log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". Attempt " + att + " of " + maxNumRetries
             }
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
