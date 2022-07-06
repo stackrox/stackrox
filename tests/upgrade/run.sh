@@ -465,6 +465,12 @@ set_images_to_current() {
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
     kubectl -n stackrox set image deploy/scanner "scanner=$REGISTRY/scanner:$(cat SCANNER_VERSION)"
     kubectl -n stackrox set image deploy/scanner-db "*=$REGISTRY/scanner-db:$(cat SCANNER_VERSION)"
+
+    touch /tmp/hold
+    while [[ -e /tmp/hold ]]; do
+        info "Holding this job for debug"
+        sleep 60
+    done
 }
 
 validate_db_backup_and_restore() {
