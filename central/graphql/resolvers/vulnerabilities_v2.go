@@ -8,7 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
@@ -592,11 +592,11 @@ func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 
 		switch vulnType {
 		case storage.CVE_K8S_CVE:
-			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, converter.K8s)
+			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, utils.K8s)
 		case storage.CVE_ISTIO_CVE:
-			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, converter.Istio)
+			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, utils.Istio)
 		case storage.CVE_OPENSHIFT_CVE:
-			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, converter.OpenShift)
+			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, utils.OpenShift)
 		case storage.CVE_IMAGE_CVE:
 			n, d, err = resolver.getEnvImpactComponentsForImages(ctx)
 		case storage.CVE_NODE_CVE:
@@ -620,7 +620,7 @@ func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 	return float64(numerator) / float64(denominator), nil
 }
 
-func (resolver *cVEResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
+func (resolver *cVEResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct utils.CVEType) (int, int, error) {
 	clusters, err := resolver.root.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return 0, 0, err

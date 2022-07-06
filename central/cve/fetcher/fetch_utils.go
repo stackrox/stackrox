@@ -10,7 +10,7 @@ import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -83,7 +83,7 @@ func overwriteCVEs(cveFile, cveChecksumFile, checksum, CVEs string) error {
 	return nil
 }
 
-func copyCVEsFromPreloadedToPersistentDirIfAbsent(ct converter.CVEType) error {
+func copyCVEsFromPreloadedToPersistentDirIfAbsent(ct utils.CVEType) error {
 	paths, err := getPaths(ct)
 	if err != nil {
 		return err
@@ -115,8 +115,8 @@ type cvePaths struct {
 	persistentCveChecksumFile string
 }
 
-func getPaths(ct converter.CVEType) (*cvePaths, error) {
-	if ct == converter.K8s {
+func getPaths(ct utils.CVEType) (*cvePaths, error) {
+	if ct == utils.K8s {
 		return &cvePaths{
 			preloadedCveDirPath:       filepath.Join(preloadedCVEsBasePath, commonCveDir, k8sCVEsDir),
 			persistentCveDirPath:      filepath.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir),
@@ -125,7 +125,7 @@ func getPaths(ct converter.CVEType) (*cvePaths, error) {
 			persistentCveFile:         persistentK8sCVEsFilePath,
 			persistentCveChecksumFile: persistentK8sCVEsChecksumFilePath,
 		}, nil
-	} else if ct == converter.Istio {
+	} else if ct == utils.Istio {
 		return &cvePaths{
 			preloadedCveDirPath:       filepath.Join(preloadedCVEsBasePath, commonCveDir, istioCVEsDir),
 			persistentCveDirPath:      filepath.Join(persistentCVEsPath, commonCveDir, istioCVEsDir),
@@ -144,13 +144,13 @@ type cveURLs struct {
 	cveChecksumURL string
 }
 
-func getUrls(ct converter.CVEType) (*cveURLs, error) {
-	if ct == converter.K8s {
+func getUrls(ct utils.CVEType) (*cveURLs, error) {
+	if ct == utils.K8s {
 		return &cveURLs{
 			cveURL:         k8sCVEsURL,
 			cveChecksumURL: k8sCVEsChecksumURL,
 		}, nil
-	} else if ct == converter.Istio {
+	} else if ct == utils.Istio {
 		return &cveURLs{
 			cveURL:         istioCVEsURL,
 			cveChecksumURL: istioCVEsChecksumURL,

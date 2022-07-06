@@ -32,7 +32,7 @@ func (ds *searcherImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.Sea
 	if err != nil {
 		return nil, err
 	}
-	return ds.resultsToSearchResults(results)
+	return ds.resultsToSearchResults(ctx, results)
 }
 
 // Search returns the raw search results from the query
@@ -58,36 +58,18 @@ func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]se
 }
 
 // ToClusterCVEEdges returns the cves from the db for the given search results.
-func (ds *searcherImpl) resultsToListClusterCVEEdges(results []search.Result) ([]*storage.ClusterCVEEdge, []int, error) {
-	return ds.storage.GetBatch(search.ResultsToIDs(results))
+func (ds *searcherImpl) resultsToListClusterCVEEdges(ctx context.Context, results []search.Result) ([]*storage.ClusterCVEEdge, []int, error) {
+	return ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 }
 
 // ToSearchResults returns the searchResults from the db for the given search results.
-func (ds *searcherImpl) resultsToSearchResults(results []search.Result) ([]*v1.SearchResult, error) {
-	cves, missingIndices, err := ds.resultsToListClusterCVEEdges(results)
+func (ds *searcherImpl) resultsToSearchResults(ctx context.Context, results []search.Result) ([]*v1.SearchResult, error) {
+	cves, missingIndices, err := ds.resultsToListClusterCVEEdges(ctx, results)
 	if err != nil {
 		return nil, err
 	}
 	results = search.RemoveMissingResults(results, missingIndices)
 	return convertMany(cves, results), nil
-}
-
-func convertMany(cves []*storage.ClusterCVEEdge, results []search.Result) []*v1.SearchResult {
-	outputResults := make([]*v1.SearchResult, len(cves))
-	for index, sar := range cves {
-		outputResults[index] = convertOne(sar, &results[index])
-	}
-	return outputResults
-}
-
-func convertOne(cve *storage.ClusterCVEEdge, result *search.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_CLUSTER_VULN_EDGE,
-		Id:             cve.GetId(),
-		Name:           cve.GetId(),
-		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
@@ -127,7 +109,7 @@ func (ds *searcherImpl) searchClusterCVEEdges(ctx context.Context, q *v1.Query) 
 	}
 
 	ids := search.ResultsToIDs(results)
-	cves, _, err := ds.storage.GetBatch(ids)
+	cves, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

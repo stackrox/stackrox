@@ -58,57 +58,57 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 
 	store := s.store
 
-	cVE := &storage.CVE{}
-	s.NoError(testutils.FullInit(cVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	clusterCVE := &storage.ClusterCVE{}
+	s.NoError(testutils.FullInit(clusterCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundCVE, exists, err := store.Get(ctx, cVE.GetId())
+	foundClusterCVE, exists, err := store.Get(ctx, clusterCVE.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundCVE)
+	s.Nil(foundClusterCVE)
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 
-	s.NoError(store.Upsert(ctx, cVE))
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId())
+	s.NoError(store.Upsert(ctx, clusterCVE))
+	foundClusterCVE, exists, err = store.Get(ctx, clusterCVE.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(cVE, foundCVE)
+	s.Equal(clusterCVE, foundClusterCVE)
 
-	cVECount, err := store.Count(ctx)
+	clusterCVECount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(1, cVECount)
-	cVECount, err = store.Count(withNoAccessCtx)
+	s.Equal(1, clusterCVECount)
+	clusterCVECount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
-	s.Zero(cVECount)
+	s.Zero(clusterCVECount)
 
-	cVEExists, err := store.Exists(ctx, cVE.GetId())
+	clusterCVEExists, err := store.Exists(ctx, clusterCVE.GetId())
 	s.NoError(err)
-	s.True(cVEExists)
-	s.NoError(store.Upsert(ctx, cVE))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, cVE), sac.ErrResourceAccessDenied)
+	s.True(clusterCVEExists)
+	s.NoError(store.Upsert(ctx, clusterCVE))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, clusterCVE), sac.ErrResourceAccessDenied)
 
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId())
+	foundClusterCVE, exists, err = store.Get(ctx, clusterCVE.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(cVE, foundCVE)
+	s.Equal(clusterCVE, foundClusterCVE)
 
-	s.NoError(store.Delete(ctx, cVE.GetId()))
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId())
+	s.NoError(store.Delete(ctx, clusterCVE.GetId()))
+	foundClusterCVE, exists, err = store.Get(ctx, clusterCVE.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundCVE)
-	s.NoError(store.Delete(withNoAccessCtx, cVE.GetId()))
+	s.Nil(foundClusterCVE)
+	s.NoError(store.Delete(withNoAccessCtx, clusterCVE.GetId()))
 
-	var cVEs []*storage.CVE
+	var clusterCVEs []*storage.ClusterCVE
 	for i := 0; i < 200; i++ {
-		cVE := &storage.CVE{}
-		s.NoError(testutils.FullInit(cVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		cVEs = append(cVEs, cVE)
+		clusterCVE := &storage.ClusterCVE{}
+		s.NoError(testutils.FullInit(clusterCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		clusterCVEs = append(clusterCVEs, clusterCVE)
 	}
 
-	s.NoError(store.UpsertMany(ctx, cVEs))
+	s.NoError(store.UpsertMany(ctx, clusterCVEs))
 
-	cVECount, err = store.Count(ctx)
+	clusterCVECount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, cVECount)
+	s.Equal(200, clusterCVECount)
 }

@@ -23,6 +23,7 @@ import (
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	queueMocks "github.com/stackrox/rox/pkg/dackbox/utils/queue/mocks"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -51,6 +52,10 @@ type CVEDataStoreSuite struct {
 }
 
 func (suite *CVEDataStoreSuite) SetupSuite() {
+	if features.PostgresDatastore.Enabled() {
+		suite.T().Skip("Skip non-postgres store tests")
+		suite.T().SkipNow()
+	}
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
@@ -286,7 +291,8 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Type: storage.CVE_NODE_CVE,
 	}
 	cveClusters := []*storage.Cluster{{Id: "id"}}
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")))
+	cve1Parts := converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")
+	suite.NoError(edgeDataStore.Upsert(ctx, cve1Parts))
 
 	expectedCVE := &storage.CVE{
 		Id:    "CVE-2021-1234",
@@ -302,7 +308,8 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Id:   "CVE-2021-1234",
 		Type: storage.CVE_IMAGE_CVE,
 	}
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")))
+	cve1Parts = converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")
+	suite.NoError(edgeDataStore.Upsert(ctx, cve1Parts))
 
 	expectedCVE = &storage.CVE{
 		Id:    "CVE-2021-1234",
@@ -322,8 +329,10 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Id:   "CVE-2021-1235",
 		Type: storage.CVE_IMAGE_CVE,
 	}
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")))
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve2, cveClusters, "fixVersions")))
+	cve1Parts = converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")
+	cve2Parts := converter.NewClusterCVEParts(cve2, cveClusters, "fixVersions")
+	suite.NoError(edgeDataStore.Upsert(ctx, cve1Parts))
+	suite.NoError(edgeDataStore.Upsert(ctx, cve2Parts))
 
 	expectedCVE = &storage.CVE{
 		Id:    "CVE-2021-1234",
@@ -340,9 +349,10 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 	suite.Equal(expectedCVE2, storedCVEs[1])
 
 	// CVE datastore will not delete CVEs until they are no longer referenced by cluster/image/node.
-	cveEdges, _ := edgeStore.GetAll()
-	for _, cveEdge := range cveEdges {
-		suite.NoError(edgeStore.Delete(cveEdge.GetId()))
+	for _, partsArr := range []converter.ClusterCVEParts{cve1Parts, cve2Parts} {
+		for _, child := range partsArr.Children {
+			suite.NoError(edgeStore.Delete(ctx, child.Edge.GetId()))
+		}
 	}
 	// Delete CVE.
 	suite.NoError(datastore.Delete(ctx, cve.GetId()))

@@ -1,4 +1,4 @@
-package converter
+package utils
 
 import (
 	"strings"
@@ -212,19 +212,6 @@ func nvdCvssv3ToProtoCvssv3(baseMetricV3 *schema.NVDCVEFeedJSON10DefImpactBaseMe
 	return cvssV3, nil
 }
 
-// NvdCVEsToProtoCVEs converts NVD CVEs to *storage.CVE objects
-func NvdCVEsToProtoCVEs(cves []*schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) ([]*storage.CVE, error) {
-	ret := make([]*storage.CVE, 0, len(cves))
-	for _, cve := range cves {
-		ev, err := NvdCVEToProtoCVE(cve, ct)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, ev)
-	}
-	return ret, nil
-}
-
 // NvdCVEsToEmbeddedCVEs converts  NVD CVEs to *storage.CVE objects
 func NvdCVEsToEmbeddedCVEs(cves []*schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) ([]*storage.EmbeddedVulnerability, error) {
 	ret := make([]*storage.EmbeddedVulnerability, 0, len(cves))
@@ -291,7 +278,7 @@ func ProtoCVEToImageCVE(protoCVE *storage.CVE) *storage.ImageCVE {
 	return EmbeddedVulnerabilityToImageCVE(protoCVE.GetOperatingSystem(), embeddedVuln)
 }
 
-// ProtoCVEToImageCVE coverts a *storage.CVE object to *storage.NodeCVE object.
+// ProtoCVEToNodeCVE coverts a *storage.CVE object to *storage.NodeCVE object.
 // It converts all the fields except Fixed By which gets set depending on the CVE.
 func ProtoCVEToNodeCVE(protoCVE *storage.CVE) *storage.NodeCVE {
 	embeddedVuln := ProtoCVEToEmbeddedCVE(protoCVE)
@@ -426,6 +413,37 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 		Snoozed:      from.GetSuppressed(),
 		SnoozeStart:  from.GetSuppressActivation(),
 		SnoozeExpiry: from.GetSuppressExpiry(),
+	}
+	if ret.GetCveBaseInfo().GetCvssV3() != nil {
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
+		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
+	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
+		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
+	}
+	return ret
+}
+
+// EmbeddedVulnerabilityToClusterCVE converts *storage.EmbeddedVulnerability object to *storage.ClusterCVE object
+func EmbeddedVulnerabilityToClusterCVE(cveType storage.CVE_CVEType, from *storage.EmbeddedVulnerability) *storage.ClusterCVE {
+	ret := &storage.ClusterCVE{
+		Id: cve.ID(from.GetCve(), cveType.String()),
+		CveBaseInfo: &storage.CVEInfo{
+			Cve:          from.GetCve(),
+			Summary:      from.GetSummary(),
+			Link:         from.GetLink(),
+			PublishedOn:  from.GetPublishedOn(),
+			CreatedAt:    from.GetFirstSystemOccurrence(),
+			LastModified: from.GetLastModified(),
+			CvssV2:       from.GetCvssV2(),
+			CvssV3:       from.GetCvssV3(),
+		},
+		Cvss:         from.GetCvss(),
+		Severity:     from.GetSeverity(),
+		Snoozed:      from.GetSuppressed(),
+		SnoozeStart:  from.GetSuppressActivation(),
+		SnoozeExpiry: from.GetSuppressExpiry(),
+		Type:         cveType,
 	}
 	if ret.GetCveBaseInfo().GetCvssV3() != nil {
 		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3

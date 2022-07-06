@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 )
@@ -64,7 +64,7 @@ func generateEmbeddedCVE(cp *CVEParts) *storage.EmbeddedVulnerability {
 		return nil
 	}
 
-	ret := converter.ProtoCVEToEmbeddedCVE(cp.CVE)
+	ret := utils.ProtoCVEToEmbeddedCVE(cp.CVE)
 	if cp.Edge.IsFixable {
 		ret.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: cp.Edge.GetFixedBy(),

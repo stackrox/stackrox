@@ -7,7 +7,7 @@ import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/cve/matcher"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
@@ -182,13 +182,13 @@ func TestK8sCVEEnvImpact(t *testing.T) {
 	}
 
 	for i, cve := range cves {
-		numerator, denominator, err := resolver.getComponentsForAffectedCluster(context.Background(), cve, converter.K8s)
+		numerator, denominator, err := resolver.getComponentsForAffectedCluster(context.Background(), cve, utils.K8s)
 		assert.Nil(t, err)
 
 		assert.Equal(t, float64(numerator)/float64(denominator), expected[i])
 	}
 	for i, cve := range cves {
-		numerator, denominator, err := resolver.getComponentsForAffectedCluster(context.Background(), cve, converter.OpenShift)
+		numerator, denominator, err := resolver.getComponentsForAffectedCluster(context.Background(), cve, utils.OpenShift)
 		assert.Nil(t, err)
 
 		assert.Equal(t, float64(numerator)/float64(denominator), expected[i])
