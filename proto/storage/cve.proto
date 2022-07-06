@@ -23,6 +23,9 @@ enum VulnerabilitySeverity {
     CRITICAL_VULNERABILITY_SEVERITY  = 4;
 }
 
+// ******************************
+// This proto is deprecated.
+// ******************************
 // Next Tag: 23
 message CVE {
     enum CVEType {
