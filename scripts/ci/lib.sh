@@ -826,10 +826,7 @@ openshift_ci_mods() {
     export OPENSHIFT_CI=true
 
     # Provide Circle CI vars that are commonly used
-    CIRCLE_JOB="${JOB_NAME_SAFE:-${OPENSHIFT_BUILD_NAME:-unknown}}"
-    CIRCLE_JOB="${CIRCLE_JOB#merge-}"
-    CIRCLE_JOB="${CIRCLE_JOB#nightly-}"
-    export CIRCLE_JOB
+    export CIRCLE_JOB="${JOB_NAME:-${OPENSHIFT_BUILD_NAME}}"
     CIRCLE_TAG="$(git tag --contains | head -1)"
     export CIRCLE_TAG
 
