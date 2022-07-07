@@ -31,6 +31,7 @@ import (
 	pkgDackBox "github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
@@ -38,6 +39,10 @@ import (
 )
 
 func TestUnsuppressCVEs(t *testing.T) {
+	if features.PostgresDatastore.Enabled() {
+		t.Skip("Skip non-postgres test")
+	}
+
 	expiredCVEs := []*storage.CVE{
 		{
 			Id:             "cve1",

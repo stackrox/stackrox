@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -57,12 +57,12 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
 	addedCVEs := set.NewStringSet()
 	for _, cve := range embedded.GetVulns() {
-		convertedCVE := converter.EmbeddedCVEToProtoCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
+		convertedCVE := utils.EmbeddedCVEToProtoCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
 		if !addedCVEs.Add(convertedCVE.GetId()) {
 			continue
 		}
 		cp := CVEParts{}
-		cp.Cve = converter.EmbeddedCVEToProtoCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
+		cp.Cve = utils.EmbeddedCVEToProtoCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
 		cp.Edge = generateComponentCVEEdge(component.Component, cp.Cve, cve)
 		if _, ok := parts.ImageCVEEdges[cp.Cve.GetId()]; !ok {
 			parts.ImageCVEEdges[cp.Cve.GetId()] = generateImageCVEEdge(parts.Image.GetId(), cp.Cve, cve)

@@ -31,6 +31,22 @@ class Helpers {
         evaluateWithRetry(ignored, retries, pauseSecs, closure)
     }
 
+    static <V> V evaluateWithK8sClientRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
+        for (int i = 0; i < retries; i++) {
+            try {
+                return closure()
+            } catch (io.fabric8.kubernetes.client.KubernetesClientException t) {
+                log.debug("Caught k8 client exception. Retrying in ${pauseSecs}s", t)
+            }
+            sleep pauseSecs * 1000
+        }
+        return closure()
+    }
+
+    static <V> void withK8sClientRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
+        evaluateWithK8sClientRetry(ignored, retries, pauseSecs, closure)
+    }
+
     static boolean determineRetry(Throwable failure) {
         if (failure instanceof AssumptionViolatedException) {
             log.debug "Skipping retry for: " + failure

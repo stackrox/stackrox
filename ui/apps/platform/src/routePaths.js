@@ -10,7 +10,6 @@ export const testLoginResultsPath = '/test-login-results';
 export const authResponsePrefix = '/auth/response/';
 
 export const dashboardPath = `${mainPath}/dashboard`;
-export const dashboardPathPF = `${mainPath}/dashboard-pf`;
 export const networkBasePath = `${mainPath}/network`;
 export const networkPath = `${networkBasePath}/:deploymentId?/:externalType?`;
 export const violationsBasePath = `${mainPath}/violations`;
@@ -58,7 +57,10 @@ export const vulnManagementClustersPath = `${vulnManagementPath}/clusters`;
 export const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
 export const vulnManagementDeploymentsPath = `${vulnManagementPath}/deployments`;
 export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
+// TODO: Remove the /components path once we completely split the components into node and image components
 export const vulnManagementComponentsPath = `${vulnManagementPath}/components`;
+export const vulnManagementNodeComponentsPath = `${vulnManagementPath}/node-components`;
+export const vulnManagementImageComponentsPath = `${vulnManagementPath}/image-components`;
 export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 
 // The following paths are not part of the infinite nesting Workflow in Vuln Management
@@ -87,6 +89,8 @@ export const urlEntityListTypes = {
     [resourceTypes.NODE_CVE]: 'node-cves',
     [resourceTypes.CLUSTER_CVE]: 'cluster-cves',
     [resourceTypes.COMPONENT]: 'components',
+    [resourceTypes.NODE_COMPONENT]: 'node-components',
+    [resourceTypes.IMAGE_COMPONENT]: 'image-components',
     [standardEntityTypes.CONTROL]: 'controls',
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccounts',
     [rbacConfigTypes.SUBJECT]: 'subjects',
@@ -106,6 +110,8 @@ export const urlEntityTypes = {
     [resourceTypes.NODE_CVE]: 'node-cve',
     [resourceTypes.CLUSTER_CVE]: 'cluster-cve',
     [resourceTypes.COMPONENT]: 'component',
+    [resourceTypes.NODE_COMPONENT]: 'node-component',
+    [resourceTypes.IMAGE_COMPONENT]: 'image-component',
     [standardEntityTypes.CONTROL]: 'control',
     [standardEntityTypes.STANDARD]: 'standard',
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccount',

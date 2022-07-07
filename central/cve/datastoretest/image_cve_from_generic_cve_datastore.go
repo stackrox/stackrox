@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	genericCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -44,7 +44,7 @@ func (s *imageCVEDataStoreFromGenericStore) SearchRawImageCVEs(ctx context.Conte
 	for ix := range cves {
 		cve := cves[ix]
 		if isImageCVE(cve) {
-			imageCVES = append(imageCVES, converter.ProtoCVEToImageCVE(cve))
+			imageCVES = append(imageCVES, utils.ProtoCVEToImageCVE(cve))
 		}
 	}
 	return imageCVES, nil
@@ -62,7 +62,7 @@ func (s *imageCVEDataStoreFromGenericStore) Get(ctx context.Context, id string) 
 	if !isImageCVE(cve) {
 		return nil, false, nil
 	}
-	return converter.ProtoCVEToImageCVE(cve), true, nil
+	return utils.ProtoCVEToImageCVE(cve), true, nil
 }
 
 func (s *imageCVEDataStoreFromGenericStore) Count(ctx context.Context, q *v1.Query) (int, error) {
@@ -77,7 +77,7 @@ func (s *imageCVEDataStoreFromGenericStore) GetBatch(ctx context.Context, id []s
 	imageCVEs := make([]*storage.ImageCVE, 0, len(cves))
 	for _, cve := range cves {
 		if isImageCVE(cve) {
-			imageCVEs = append(imageCVEs, converter.ProtoCVEToImageCVE(cve))
+			imageCVEs = append(imageCVEs, utils.ProtoCVEToImageCVE(cve))
 		}
 	}
 	return imageCVEs, nil

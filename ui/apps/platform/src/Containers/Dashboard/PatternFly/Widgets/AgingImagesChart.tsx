@@ -54,7 +54,7 @@ function linkForAgingImages(searchFilter: SearchFilter, ageRange: number, nextAg
 }
 
 function yAxisTitle(searchFilter: SearchFilter) {
-    return isResourceScoped(searchFilter) ? 'Active images' : 'All images';
+    return isResourceScoped(searchFilter) ? 'Active image count' : 'Image count';
 }
 
 // `datum` for these callbacks will refer to the index number of the bar in the chart. This index
@@ -125,7 +125,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                 width={widgetContainerResizeEntry?.contentRect.width} // Victory defaults to 450
                 padding={{
                     top: 25,
-                    left: 55,
+                    left: 65,
                     right: 10,
                     bottom: 60,
                 }}
@@ -142,11 +142,14 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                 />
                 <ChartAxis
                     label={yAxisTitle(searchFilter)}
-                    padding={{ bottom: 10 }}
+                    tickFormat={String}
+                    style={{
+                        axisLabel: { padding: 50 },
+                    }}
                     dependentAxis
                     showGrid
                 />
-                {chartData.map(({ barData, fill }) => {
+                {chartData.map(({ barData, fill, labelLink }) => {
                     return (
                         <ChartBar
                             key={fill}
@@ -154,12 +157,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                             data={barData}
                             labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}`}
                             style={{ data: { fill } }}
-                            events={[
-                                navigateOnClickEvent(history, (targetProps) => {
-                                    const range = targetProps?.datum?.xName;
-                                    return linkForAgingImages(searchFilter, range);
-                                }),
-                            ]}
+                            events={[navigateOnClickEvent(history, () => labelLink)]}
                         />
                     );
                 })}

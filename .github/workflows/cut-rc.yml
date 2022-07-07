@@ -23,10 +23,26 @@ env:
   jira_projects: ROX, RS, RTOOLS
   slack_channel: C03KSV3N6N8 #test-release-automation
   script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{github.event.repository.default_branch}}
-  DRY_RUN: ${{ fromJSON('["true", "false"]')[inputs.dry-run != 'true'] }}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
+  run-parameters:
+    name: Run parameters
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
+          echo "Event: ${{github.event_name}}" >>"$GITHUB_STEP_SUMMARY"
+          if [ "${{github.event_name}}" = "workflow_dispatch" ]; then
+            cat <<EOF >>"$GITHUB_STEP_SUMMARY"
+          \`\`\`
+          ${{toJSON(inputs)}}
+          \`\`\`
+          EOF
+          fi
+
   variables:
     name: Setup variables
     uses: ./.github/workflows/variables.yml
@@ -41,7 +57,6 @@ jobs:
       - name: Query JIRA
         env:
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
@@ -55,8 +70,6 @@ jobs:
     name: Postpone open PRs
     needs: variables
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Check open PRs
         id: check
@@ -72,7 +85,7 @@ jobs:
           fi
 
       - name: Create next milestone
-        if: inputs.dry-run != 'true' && steps.check.outputs.open-issues != ''
+        if: env.DRY_RUN == 'false' && steps.check.outputs.open-issues != ''
         run: |
           set -u
           if ! http_code=$(gh api --silent -X POST \
@@ -102,7 +115,7 @@ jobs:
           echo "The following PRs are still open: $PRS"
 
           for PR in $PRS; do
-            [ "${{inputs.dry-run}}" != "true" ] && \
+            [ "$DRY_RUN" = "false" ] && \
             gh pr edit $PR \
               --milestone "${{needs.variables.outputs.next-milestone}}" \
               --repo "${{github.repository}}"
@@ -126,9 +139,7 @@ jobs:
       - run: |
           # Could be optimized: done only if there are closed PRs to cherry-pick
           git fetch origin ${{env.main_branch}}:${{env.main_branch}} --unshallow
-      - env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        name: Cherry-pick commits from the main branch
+      - name: Cherry-pick commits from the main branch
         id: cherry-pick
         run: |
           set -uo pipefail
@@ -176,6 +187,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           ref: "${{needs.variables.outputs.branch}}"
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
       - name: Initialize mandatory git config
         run: |
           git config user.name "${{github.event.sender.login}}"
@@ -192,7 +204,7 @@ jobs:
         run: |
           git tag --annotate "${{needs.variables.outputs.milestone}}" --message ""
       - name: Push
-        if: inputs.dry-run != 'true'
+        if: env.DRY_RUN == 'false'
         run: |
           git push --follow-tags
       - run: |
@@ -201,13 +213,11 @@ jobs:
   reopen-milestone:
     name: Reopen milestone ${{needs.variables.outputs.milestone}}
     needs: [variables, cut-rc]
-    if: failure() && inputs.dry-run != 'true'
+    if: failure()
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Reopen milestone ${{needs.variables.outputs.milestone}}
-        if: inputs.dry-run != 'true'
+        if: env.DRY_RUN == 'false'
         run: |
           gh api "repos/${{github.repository}}/milestones/${{github.event.milestone.number}}" \
             -X PATCH -f state=open
@@ -218,12 +228,10 @@ jobs:
     name: Publish a GitHub pre-release
     needs: [variables, cut-rc]
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Create GitHub Pre-release
         id: pre-release
-        if: inputs.dry-run != 'true'
+        if: env.DRY_RUN == 'false'
         run: |
           URL=$(gh release create "${{needs.variables.outputs.milestone}}" \
             --prerelease \
@@ -261,7 +269,8 @@ jobs:
   create-k8s-cluster:
     name: Create k8s cluster
     needs: [variables, cut-rc]
-    if: inputs.dry-run != 'true'
+    # Cannot use env.DRY_RUN here. `dry-run` can be 'true', 'false' or empty.
+    if: github.event.inputs.dry-run != 'true'
     uses: ./.github/workflows/create-cluster.yml
     secrets: inherit
     with:
@@ -273,7 +282,8 @@ jobs:
   create-os4-cluster:
     name: Create OS4 cluster
     needs: [variables, cut-rc]
-    if: inputs.dry-run != 'true'
+    # Cannot use env.DRY_RUN here. `dry-run` can be 'true', 'false' or empty.
+    if: github.event.inputs.dry-run != 'true'
     uses: ./.github/workflows/create-cluster.yml
     secrets: inherit
     with:
@@ -360,8 +370,9 @@ jobs:
   create-long-running-cluster:
     name: Create GKE long-running cluster
     needs: [variables, cut-rc]
+    # Cannot use env.DRY_RUN here. `dry-run` can be 'true', 'false' or empty.
     if: >-
-      inputs.dry-run != 'true' &&
+      github.event.inputs.dry-run != 'true' &&
       needs.variables.outputs.rc == '1'
     uses: ./.github/workflows/create-cluster.yml
     secrets: inherit

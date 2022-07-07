@@ -11,6 +11,7 @@ import RadioButtonGroup from 'Components/RadioButtonGroup';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { DASHBOARD_LIMIT } from 'constants/workflowPages.constants';
 import DashboardMenu from 'Components/DashboardMenu';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import PoliciesCountTile from '../Components/PoliciesCountTile';
 import CvesCountTile from '../Components/CvesCountTile';
 import ImagesCountTile from '../Components/ImagesCountTile';
@@ -18,21 +19,28 @@ import NodesCountTile from '../Components/NodesCountTile';
 import TopRiskyEntitiesByVulnerabilities from '../widgets/TopRiskyEntitiesByVulnerabilities';
 import TopRiskiestEntities from '../widgets/TopRiskiestEntities';
 import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
-import RecentlyDetectedVulnerabilities from '../widgets/RecentlyDetectedVulnerabilities';
+import RecentlyDetectedImageVulnerabilities from '../widgets/RecentlyDetectedImageVulnerabilities';
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
 import ClustersWithMostOrchestratorIstioVulnerabilities from '../widgets/ClustersWithMostOrchestratorIstioVulnerabilities';
+import CvesMenu from './CvesMenu';
 
-const entityMenuTypes = [
-    entityTypes.CLUSTER,
-    entityTypes.NAMESPACE,
-    entityTypes.DEPLOYMENT,
-    entityTypes.COMPONENT,
-];
+const baseEntityMenuTypes = [entityTypes.CLUSTER, entityTypes.NAMESPACE, entityTypes.DEPLOYMENT];
+const componentMenuType = [entityTypes.COMPONENT];
+const splitComponentMenuTypes = [entityTypes.NODE_COMPONENT, entityTypes.IMAGE_COMPONENT];
 
 const VulnDashboardPage = ({ history }) => {
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+
+    let entityMenuTypes = [...baseEntityMenuTypes];
+    if (showVmUpdates) {
+        entityMenuTypes = [...baseEntityMenuTypes, ...splitComponentMenuTypes];
+    } else {
+        entityMenuTypes = [...baseEntityMenuTypes, ...componentMenuType];
+    }
 
     const cveFilterButtons = [
         {
@@ -71,8 +79,13 @@ const VulnDashboardPage = ({ history }) => {
             <PageTitle title="Vulnerability Management - Dashboard" />
             <div className="flex items-center">
                 <div className="flex h-full mr-3 pr-3 border-r-2 border-base-400">
+                    {showVmUpdates && (
+                        <div className="flex mr-2">
+                            <CvesMenu />
+                        </div>
+                    )}
                     <PoliciesCountTile />
-                    <CvesCountTile />
+                    {!showVmUpdates && <CvesCountTile entityType={entityTypes.CVE} />}
                     <NodesCountTile />
                     <ImagesCountTile />
                     <div className="flex w-32">
@@ -111,7 +124,10 @@ const VulnDashboardPage = ({ history }) => {
                 <FrequentlyViolatedPolicies />
             </div>
             <div className="s-2 xxxl:sx-2">
-                <RecentlyDetectedVulnerabilities search={searchState} limit={DASHBOARD_LIMIT} />
+                <RecentlyDetectedImageVulnerabilities
+                    search={searchState}
+                    limit={DASHBOARD_LIMIT}
+                />
             </div>
             <div className="s-2 md:sy-2 md:sx-2 lg:sy-4 xxxl:sx-2">
                 <MostCommonVulnerabilities search={searchState} />

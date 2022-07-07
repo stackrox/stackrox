@@ -24,8 +24,8 @@ on:
         description: Release.patch numbers (A.B.C[-N])
         value: ${{format('{0}.{1}{2}', jobs.parse.outputs.release, jobs.parse.outputs.patch, jobs.parse.outputs.dash-name)}}
       branch:
-        description: Release branch name (release/A.B.x[-N])
-        value: ${{format('release/{0}.x{1}', jobs.parse.outputs.release, jobs.parse.outputs.dash-name)}}
+        description: Release branch name (release-A.B[-N])
+        value: ${{format('release-{0}{1}', jobs.parse.outputs.release, jobs.parse.outputs.dash-name)}}
       docs-branch:
         description: Documentation branch name
         value: ${{format('rhacs-docs-{0}.{1}', jobs.parse.outputs.release, jobs.parse.outputs.patch)}}
@@ -61,11 +61,14 @@ jobs:
                 exit(1)
 
             rc = int(m.group('rc') or 1)
+            name = m.group('name') or ''
+            dash_name = f'-{name}' if name else ''
 
             print(f'''
             ::set-output name=release::{m.group('release')}
             ::set-output name=patch::{m.group('patch')}
-            ::set-output name=name::{m.group('name') or ''}
+            ::set-output name=name::{name}
+            ::set-output name=dash-name::{dash_name}
             ::set-output name=rc::{rc}
             ::set-output name=next-rc::{rc+1}
             ''')

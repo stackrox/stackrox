@@ -11,6 +11,72 @@
     "application/json"
   ],
   "paths": {
+    "/v1/clustercves/suppress": {
+      "patch": {
+        "summary": "SuppressCVE suppresses cluster cves.",
+        "operationId": "ClusterCVEService_SuppressCVEs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1SuppressCVERequest"
+            }
+          }
+        ],
+        "tags": [
+          "ClusterCVEService"
+        ]
+      }
+    },
+    "/v1/clustercves/unsuppress": {
+      "patch": {
+        "summary": "UnsuppressCVE unsuppresses cluster cves.",
+        "operationId": "ClusterCVEService_UnsuppressCVEs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UnsuppressCVERequest"
+            }
+          }
+        ],
+        "tags": [
+          "ClusterCVEService"
+        ]
+      }
+    },
     "/v1/cves/suppress": {
       "patch": {
         "summary": "SuppressCVE suppresses cves.",

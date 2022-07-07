@@ -60,7 +60,6 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
 	// GetNodeMetadata gets the node without scan/component data.
 	GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error)
-	DeleteMany(ctx context.Context, ids []string) error
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
@@ -423,7 +422,7 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 }
 
 func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bool, error) {
-	oldNode, found, err := s.Get(ctx, node.GetId())
+	oldNode, found, err := s.GetNodeMetadata(ctx, node.GetId())
 	if err != nil {
 		return false, false, err
 	}
@@ -452,7 +451,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bo
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 	iTime := protoTypes.TimestampNow()
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
+	conn, release, err := s.acquireConn(ctx, ops.Upsert, "Node")
 	if err != nil {
 		return err
 	}
@@ -488,7 +487,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 	return nil
 }
 
-// Upsert upserts image into the store.
+// Upsert upserts node into the store.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Node")
 
@@ -583,7 +582,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Node")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
 	if err != nil {
 		return nil, false, err
 	}
@@ -691,7 +690,7 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 }
 
 func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeComponent")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponent")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentsTable+" WHERE id = ANY($1::text[])", componentIDs)
 	if err != nil {
@@ -755,43 +754,29 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	return s.deleteNodeTree(ctx, conn, id)
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return nil
+	}
+	return s.deleteNodeTree(ctx, tx, id)
 }
 
-func (s *storeImpl) deleteNodeTree(ctx context.Context, conn *pgxpool.Conn, nodeIDs ...string) error {
-	// Delete nodes.
-	if _, err := conn.Exec(ctx, "delete from "+nodesTable+" where Id = ANY($1::text[])", nodeIDs); err != nil {
+func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeID string) error {
+	// Delete from node table.
+	if _, err := tx.Exec(ctx, "delete from "+nodesTable+" where Id = $1", nodeID); err != nil {
 		return err
-	}
-	// Node-components edges have ON DELETE CASCADE referential constraint on nodeid, therefore, no need to explicitly trigger deletion.
-
-	// Get orphaned node components.
-	rows, err := s.db.Query(ctx, "select id from "+nodeComponentsTable+" where not exists (select "+nodeComponentsTable+".id FROM "+nodeComponentsTable+", "+nodeComponentEdgesTable+" WHERE "+nodeComponentsTable+".id = "+nodeComponentEdgesTable+".nodecomponentid)")
-	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
-	}
-	defer rows.Close()
-	var componentIDs []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return err
-		}
-		componentIDs = append(componentIDs, id)
 	}
 
 	// Delete orphaned node components.
-	if _, err := conn.Exec(ctx, "delete from "+nodeComponentsTable+" where id = ANY($1::text[])", componentIDs); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+nodeComponentsTable+" where not exists (select "+nodeComponentEdgesTable+".nodecomponentid FROM "+nodeComponentEdgesTable+")"); err != nil {
 		return err
 	}
-
-	// Component-CVE edges have ON DELETE CASCADE referential constraint on component id, therefore, no need to explicitly trigger deletion.
 
 	// Delete orphaned cves.
-	if _, err := conn.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+nodeCVEsTable+".id FROM "+nodeCVEsTable+", "+componentCVEEdgesTable+" WHERE "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)"); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+componentCVEEdgesTable+".nodecveid FROM "+componentCVEEdgesTable+")"); err != nil {
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 // GetIDs returns all the IDs for the store
@@ -862,11 +847,11 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Node,
 	return elems, missingIndices, nil
 }
 
-// GetNodeMetadata gets the image without scan/component data.
+// GetNodeMetadata gets the node without scan/component data.
 func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeMetadata")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeMetadata")
 	if err != nil {
 		return nil, false, err
 	}
@@ -883,19 +868,6 @@ func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.No
 		return nil, false, err
 	}
 	return &msg, true, nil
-}
-
-// Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Node")
-
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "Node")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	return s.deleteNodeTree(ctx, conn, ids...)
 }
 
 //// Used for testing

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/config/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -53,23 +54,30 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 		return sac.ErrResourceAccessDenied
 	}
 
-	if clusterRetentionConf := config.GetPrivateConfig().GetDecommissionedClusterRetention(); clusterRetentionConf != nil {
-		oldConf, err := d.getClusterRetentionConfig(ctx)
-		if err != nil {
-			return err
-		}
-		if oldConf != nil {
-			clusterRetentionConf.CreatedAt = oldConf.GetCreatedAt()
-		} else {
-			clusterRetentionConf.CreatedAt = types.TimestampNow()
-		}
+	if features.DecommissionedClusterRetention.Enabled() {
+		if clusterRetentionConf := config.GetPrivateConfig().GetDecommissionedClusterRetention(); clusterRetentionConf != nil {
+			oldConf, err := d.getClusterRetentionConfig(ctx)
+			if err != nil {
+				return err
+			}
+			if oldConf != nil {
+				clusterRetentionConf.CreatedAt = oldConf.GetCreatedAt()
+			} else {
+				clusterRetentionConf.CreatedAt = types.TimestampNow()
+			}
 
-		hasUpdate := !clusterRetentionConfigsEqual(oldConf, clusterRetentionConf)
+			hasUpdate := !clusterRetentionConfigsEqual(oldConf, clusterRetentionConf)
 
-		if hasUpdate {
-			clusterRetentionConf.LastUpdated = types.TimestampNow()
+			if hasUpdate {
+				clusterRetentionConf.LastUpdated = types.TimestampNow()
+			}
+		}
+	} else {
+		if config.GetPrivateConfig() != nil {
+			config.GetPrivateConfig().DecommissionedClusterRetention = nil
 		}
 	}
+
 	return d.store.Upsert(ctx, config)
 }
 

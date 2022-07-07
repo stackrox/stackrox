@@ -2,7 +2,6 @@ import { BaseBackupIntegration } from 'types/externalBackup.proto';
 import { FeatureFlagEnvVar } from 'types/featureFlag';
 import { BaseImageIntegration } from 'types/imageIntegration.proto';
 import {
-    AuthPluginType,
     AuthProviderType,
     BackupIntegrationType,
     BaseIntegration,
@@ -31,7 +30,6 @@ export type IntegrationTableColumnDescriptor = {
  */
 
 type IntegrationTableColumnDescriptorMap = {
-    authPlugins: Record<AuthPluginType, IntegrationTableColumnDescriptor[]>;
     authProviders: Record<AuthProviderType, IntegrationTableColumnDescriptor[]>;
     backups: Record<BackupIntegrationType, IntegrationTableColumnDescriptor[]>;
     imageIntegrations: Record<ImageIntegrationType, IntegrationTableColumnDescriptor[]>;
@@ -233,12 +231,6 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                 },
                 Header: 'Schedule',
             },
-        ],
-    },
-    authPlugins: {
-        scopedAccess: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'endpointConfig.endpoint', Header: 'Endpoint' },
         ],
     },
 };

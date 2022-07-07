@@ -85,6 +85,8 @@ export const resourceLabels = Object.freeze({
     NODE_CVE: 'Node CVE',
     CLUSTER_CVE: 'Platform CVE',
     COMPONENT: 'component',
+    NODE_COMPONENT: 'node component',
+    IMAGE_COMPONENT: 'image component',
     IMAGE: 'image',
     POLICY: 'policy',
     CHECK: 'check',

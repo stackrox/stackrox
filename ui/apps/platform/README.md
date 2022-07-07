@@ -31,6 +31,11 @@ one test suite specifically in headless mode, use
 
 Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.go:
 
+```go
+	// Whatever enables something wherever.
+	Whatever = registerFeature("Enable Whatever wherever", "ROX_WHATEVER", false)
+```
+
 1. Add `'ROX_WHATEVER'` to string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
 
 2. To include frontend code when the feature flag is enabled, do any of the following:
@@ -109,9 +114,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
 4. To turn on a feature flag for continuous integration in **branch** and **master** builds:
 
-    * Add `- ROX_WHATEVER: true` under `environment` for `gke-ui-e2e-tests` in .circleci/config.yml
-
-    Where else to turn on the feature flag for **backend** tests is outside the scope of this procedure
+    * Add `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` to `export_test_environment` function in tests/e2e/lib.sh
 
     The value of feature flags for **demo** and **release** builds is in pkg/features/list.go 
 
@@ -123,6 +126,11 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 #### Delete a feature flag from frontend code
 
 Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.go:
+
+```go
+	// Whatever enables something wherever.
+	Whatever = registerFeature("Enable Whatever wherever", "ROX_WHATEVER", false)
+```
 
 1. Delete `'ROX_WHATEVER'` from string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
 
@@ -198,9 +206,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
 4. For continuous integration:
 
-    * Delete `- ROX_WHATEVER: true` under `environment` for `gke-ui-e2e-tests` in .circleci/config.yml
-
-    Where else to delete the feature flag for **backend** tests is outside the scope of this procedure
+    * Delete `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` from `export_test_environment` function in tests/e2e/lib.sh
 
 ### API
 

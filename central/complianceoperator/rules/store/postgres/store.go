@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -73,7 +74,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoComplianceOperatorRules(ctx context.Context, tx pgx.Tx, obj *storage.ComplianceOperatorRule) error {
+func insertIntoComplianceOperatorRules(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorRule) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -87,10 +88,7 @@ func insertIntoComplianceOperatorRules(ctx context.Context, tx pgx.Tx, obj *stor
 	}
 
 	finalStr := "INSERT INTO compliance_operator_rules (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -188,18 +186,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ComplianceOpera
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoComplianceOperatorRules(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoComplianceOperatorRules(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
+		batchResults.Close()
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}

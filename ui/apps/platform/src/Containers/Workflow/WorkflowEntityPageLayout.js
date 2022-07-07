@@ -17,14 +17,27 @@ import { getUseCaseEntityMap } from 'utils/entityRelationships';
 import entityLabels from 'messages/entity';
 import useCaseLabels from 'messages/useCase';
 import useEntityName from 'hooks/useEntityName';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
 import { shouldUseOriginalCase } from 'utils/workflowUtils';
+import entityTypes from 'constants/entityTypes';
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowEntityPageLayout = ({ location }) => {
     const { isDarkMode } = useTheme();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+
     const useCaseEntityMap = getUseCaseEntityMap();
+    if (showVmUpdates) {
+        const newTypes = useCaseEntityMap['vulnerability-management'].filter(
+            (entityType) => entityType !== entityTypes.COMPONENT
+        );
+        newTypes.push(entityTypes.NODE_COMPONENT);
+        newTypes.push(entityTypes.IMAGE_COMPONENT);
+        useCaseEntityMap['vulnerability-management'] = newTypes;
+    }
 
     const workflowState = parseURL(location);
     const { stateStack, useCase, search } = workflowState;
@@ -88,6 +101,22 @@ const WorkflowEntityPageLayout = ({ location }) => {
 
     const pdfId = pageListType ? 'capture-list' : 'capture-widgets';
 
+    // TODO: remove all this feature flag check after VM updates have been live for one release
+    const useCaseOptions = useCaseEntityMap[useCase].filter((option) => {
+        if (showVmUpdates) {
+            if (option === entityTypes.CVE) {
+                return false;
+            }
+        } else if (
+            option === entityTypes.IMAGE_CVE ||
+            option === entityTypes.NODE_CVE ||
+            option === entityTypes.CLUSTER_CVE
+        ) {
+            return false;
+        }
+        return true;
+    });
+
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-1 flex-col" style={style}>
@@ -109,7 +138,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
                             />
                         </div>
                         <div className="flex items-center">
-                            <EntitiesMenu text="All Entities" options={useCaseEntityMap[useCase]} />
+                            <EntitiesMenu text="All Entities" options={useCaseOptions} />
                         </div>
                     </div>
                 </PageHeader>

@@ -259,8 +259,8 @@ type CollectorContainerSpec struct {
 	// The method for system-level data collection. Kernel module is recommended.
 	// If you select "NoCollection", you will not be able to see any information about network activity
 	// and process executions. The remaining settings in these section will not have any effect.
-	//+kubebuilder:validation:Default=KernelModule
-	//+kubebuilder:default=KernelModule
+	//+kubebuilder:validation:Default=EBPF
+	//+kubebuilder:default=EBPF
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Collection *CollectionMethod `json:"collection,omitempty"`
 

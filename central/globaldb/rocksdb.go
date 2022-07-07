@@ -42,7 +42,7 @@ func startMonitoringRocksDB(db *rocksdb.RocksDB) {
 	for range ticker.C {
 		rocksdbInstance.WalkBucket(
 			func(prefix []byte, prefixString string, objType string) {
-				rocksMetrics.UpdateRocksDBPrefixSizeMetric(GetRocksDB(), prefix, prefixString, objType)
+				rocksMetrics.UpdateRocksDBPrefixSizeMetric(db, prefix, prefixString, objType)
 			},
 		)
 		size, err := fileutils.DirectorySize(rocksMetrics.GetRocksDBPath(option.CentralOptions.DBPathBase))

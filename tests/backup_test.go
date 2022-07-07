@@ -35,6 +35,13 @@ func TestBackup(t *testing.T) {
 }
 
 func doTestBackup(t *testing.T, includeCerts bool) {
+	postgresEnabled := false
+	postgresEnabledVar := os.Getenv("ROX_POSTGRES_DATASTORE")
+
+	if postgresEnabledVar == "true" {
+		postgresEnabled = true
+	}
+
 	tmpZipDir := t.TempDir()
 	zipFilePath := filepath.Join(tmpZipDir, "backup.zip")
 	out, err := os.Create(zipFilePath)
@@ -57,7 +64,12 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 	require.NoError(t, err)
 	defer utils.IgnoreError(zipFile.Close)
 
-	checkZipForRocks(t, zipFile)
+	if !postgresEnabled {
+		checkZipForRocks(t, zipFile)
+	} else {
+		checkZipForPostgres(t, zipFile)
+		checkZipForPassword(t, zipFile, includeCerts)
+	}
 	checkZipForCerts(t, zipFile, includeCerts)
 	checkZipForVersion(t, zipFile)
 }
@@ -119,6 +131,30 @@ func checkZipForRocks(t *testing.T, zipFile *zip.ReadCloser) {
 	// Check for errors on cleanup.
 	require.NoError(t, os.RemoveAll(tmpBackupDir))
 	require.NoError(t, os.RemoveAll(tmpDBDir))
+}
+
+func checkZipForPostgres(t *testing.T, zipFile *zip.ReadCloser) {
+	// Open the dump file holding the Postgres backup.
+	postgresFileEntry := getFileWithName(zipFile, "postgres.dump")
+	require.NotNil(t, postgresFileEntry)
+	_, err := postgresFileEntry.Open()
+	require.NoError(t, err)
+}
+
+func checkZipForPassword(t *testing.T, zipFile *zip.ReadCloser, includeCerts bool) {
+	files := getFilesInDir(zipFile, backup.DatabaseBaseFolder)
+	if !includeCerts {
+		require.Empty(t, files)
+		return
+	}
+	require.NotEmpty(t, files)
+
+	require.Equal(t, len(files), 1)
+	for _, f := range files {
+		info := f.FileInfo()
+		require.NotZero(t, info.Size())
+		require.Equal(t, f.FileInfo().Name(), backup.DatabasePassword)
+	}
 }
 
 func getFileWithName(zipFile *zip.ReadCloser, name string) *zip.File {

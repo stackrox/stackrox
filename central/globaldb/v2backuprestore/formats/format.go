@@ -1,6 +1,8 @@
 package formats
 
 import (
+	"io"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -68,4 +70,12 @@ func (l ExportFormatList) ToProtos() []*v1.DBExportFormat {
 		protos = append(protos, exportFmt.ToProto())
 	}
 	return protos
+}
+
+// Discard - discards the contents of the reader.
+func Discard(_ common.RestoreFileContext, fileReader io.Reader, _ int64) error {
+	if _, err := io.Copy(io.Discard, fileReader); err != nil {
+		return errors.Wrap(err, "could not discard data file")
+	}
+	return nil
 }

@@ -28,6 +28,22 @@ ci_export() {
     fi
 }
 
+ci_exit_trap() {
+    info "Executing a general purpose exit trap for CI"
+    echo "Exit code is: $?"
+
+    (send_slack_notice_for_failures_on_merge "$?") || { echo "ERROR: Could not slack a test failure message"; }
+
+    while [[ -e /tmp/hold ]]; do
+        info "Holding this job for debug"
+        sleep 60
+    done
+}
+
+create_exit_trap() {
+    trap ci_exit_trap EXIT
+}
+
 setup_deployment_env() {
     info "Setting up the deployment environment"
 
@@ -56,8 +72,6 @@ setup_deployment_env() {
     ci_export MAIN_IMAGE_REPO "quay.io/$REPO/main"
     ci_export CENTRAL_DB_IMAGE_REPO "quay.io/$REPO/central-db"
     ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
-    ci_export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-    ci_export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 }
 
 install_built_roxctl_in_gopath() {
@@ -792,6 +806,17 @@ _EOH_
 }
 
 openshift_ci_mods() {
+    info "BEGIN OpenShift CI mods"
+
+    info "Env A-Z dump:"
+    env | sort | grep -E '^[A-Z]' || true
+
+    info "Git log:"
+    git log --oneline --decorate -n 20 || true
+
+    info "Current Status:"
+    "$ROOT/status.sh" || true
+
     # For ci_export(), override BASH_ENV from stackrox-test with something that is writable.
     BASH_ENV=$(mktemp)
     export BASH_ENV
@@ -807,6 +832,20 @@ openshift_ci_mods() {
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
+
+    handle_nightly_runs
+
+    info "Status after mods:"
+    "$ROOT/status.sh" || true
+
+    info "END OpenShift CI mods"
+}
+
+openshift_ci_import_creds() {
+    shopt -s nullglob
+    for cred in /tmp/secret/**/[A-Z]*; do
+        export "$(basename "$cred")"="$(cat "$cred")"
+    done
 }
 
 openshift_ci_e2e_mods() {
@@ -843,6 +882,12 @@ handle_nightly_runs() {
         die "Only for OpenShift CI"
     fi
 
+    if ! is_in_PR_context; then
+        info "Debug:"
+        echo "JOB_NAME: ${JOB_NAME:-}"
+        echo "JOB_NAME_SAFE: ${JOB_NAME_SAFE:-}"
+    fi
+
     local nightly_tag_prefix
     nightly_tag_prefix="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-"
     if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
@@ -872,12 +917,20 @@ handle_nightly_roxctl_mismatch() {
     # periodics, so the roxctl produced in that step will cause deploy.sh to
     # fail.
 
-    info "Correcting roxctl version for nightly e2e tests"
+    if ! is_in_PR_context; then
+        info "Debug:"
+        echo "JOB_NAME: ${JOB_NAME:-}"
+        echo "JOB_NAME_SAFE: ${JOB_NAME_SAFE:-}"
+    fi
 
-    roxctl version
-    make cli
-    install_built_roxctl_in_gopath
-    roxctl version
+    info "Correcting roxctl version for nightly e2e tests"
+    echo "Current roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
+
+    if ! [[ "$(roxctl version || true)" =~ nightly ]]; then
+        make cli-build
+        install_built_roxctl_in_gopath
+        echo "Replacement roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
+    fi
 }
 
 validate_expected_go_version() {
@@ -916,7 +969,7 @@ store_qa_test_results() {
     store_test_results qa-tests-backend/build/test-results/test "$to"
 }
 
-store_test_results() {    
+store_test_results() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: store_test_results <from> <to>"
     fi
@@ -933,6 +986,70 @@ store_test_results() {
     local dest="${ARTIFACT_DIR}/junit-$to"
 
     cp -a "$from" "$dest" || true # (best effort)
+}
+
+send_slack_notice_for_failures_on_merge() {
+    local exitstatus="${1:-}"
+
+    if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
+        return
+    fi
+
+    local tag
+    tag="$(make --quiet tag)"
+    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
+        return
+    }
+
+    local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
+
+    local commit_details
+    org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org') || return 1
+    repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo') || return 1
+    [[ "$org" != "null" ]] && [[ "$repo" != "null" ]] || return 1
+    local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${OPENSHIFT_BUILD_COMMIT}"
+    commit_details=$(curl --retry 5 -sS "${commit_details_url}") || return 1
+
+    local job_name="${JOB_NAME_SAFE#merge-}"
+
+    local commit_msg
+    commit_msg=$(jq -r <<<"$commit_details" '.commit.message') || return 1
+    local commit_url
+    commit_url=$(jq -r <<<"$commit_details" '.html_url') || return 1
+    local author
+    author=$(jq -r <<<"$commit_details" '.commit.author.name') || return 1
+    [[ "$commit_msg" != "null" ]] && [[ "$commit_url" != "null" ]] && [[ "$author" != "null" ]] || return 1
+
+    local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
+
+    local body
+    body=$(cat <<_EOB_
+{
+    "text": "*Job Name:* $job_name",
+    "blocks": [
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Prow job failure: $job_name"
+			}
+		},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Commit:* <$commit_url|$commit_msg>\n*Author:* $author\n*Log:* $log_url"
+            }
+        },
+		{
+			"type": "divider"
+		}
+    ]
+}
+_EOB_
+    )
+
+    echo "$body" | jq | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

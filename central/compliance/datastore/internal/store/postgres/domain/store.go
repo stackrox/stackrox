@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -75,7 +76,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoComplianceDomains(ctx context.Context, tx pgx.Tx, obj *storage.ComplianceDomain) error {
+func insertIntoComplianceDomains(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceDomain) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -92,10 +93,7 @@ func insertIntoComplianceDomains(ctx context.Context, tx pgx.Tx, obj *storage.Co
 	}
 
 	finalStr := "INSERT INTO compliance_domains (Id, Cluster_Id, Cluster_Name, Cluster_Labels, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Cluster_Id = EXCLUDED.Cluster_Id, Cluster_Name = EXCLUDED.Cluster_Name, Cluster_Labels = EXCLUDED.Cluster_Labels, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -205,18 +203,18 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ComplianceDomai
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoComplianceDomains(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoComplianceDomains(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
+		batchResults.Close()
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}

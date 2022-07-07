@@ -105,27 +105,41 @@ slack_build_notice() {
 
     local tag="$1"
 
-    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
-        info "Skipping step as this is not a release or RC build"
+    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || is_nightly_run || {
+        info "Skipping step as this is not a release, RC or nightly build"
         return 0
     }
 
-    local release
-    release="$(get_release_stream "$tag")"
-
+    local build_url
     local webhook_url
-    if is_release_test_stream "$tag"; then
-        # send to #slack-test when testing the release process
-        webhook_url="${SLACK_MAIN_WEBHOOK}"
+    if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
+        local release
+        release="$(get_release_stream "$tag")"
+        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*release-$release.x*"
+        if is_release_test_stream "$tag"; then
+            # send to #slack-test when testing the release process
+            webhook_url="${SLACK_MAIN_WEBHOOK}"
+        else
+            # send to #eng-release
+            webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
+        fi
+    elif is_nightly_run; then
+        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=periodic*nightly*"
+        if is_in_PR_context && pr_has_label "simulate-nightly-run"; then
+            # send to #slack-test when testing nightlies
+            webhook_url="${SLACK_MAIN_WEBHOOK}"
+        else
+            # send to #nightly-ci-runs
+            webhook_url="${NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK}"
+        fi
     else
-        # send to #eng-release
-        webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
+        die "unexpected"
     fi
 
     jq -n \
-    --arg release "$release" \
+    --arg build_url "$build_url" \
     --arg tag "$tag" \
-    '{"text": "Prow build for tag `\($tag)` started! Check the status of the build under the following URL: https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*release-\($release).x*"}' \
+    '{"text": ":prow: Prow build for tag `\($tag)` started! Check the status of the build under the following URL: \($build_url)"}' \
 | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 

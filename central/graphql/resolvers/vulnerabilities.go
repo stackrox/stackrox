@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -118,24 +120,36 @@ type VulnerabilityResolver interface {
 // Vulnerability resolves a single vulnerability based on an id (the CVE value).
 func (resolver *Resolver) Vulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerability")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("Vulnerability graphQL resolver is not support on postgres. Use Image/Node/ClusterVulnerability resolver.")
+	}
 	return resolver.vulnerabilityV2(ctx, args)
 }
 
 // Vulnerabilities resolves a set of vulnerabilities based on a query.
 func (resolver *Resolver) Vulnerabilities(ctx context.Context, q PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerabilities")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("Vulnerabilities graphQL resolver is not support on postgres. Use Image/Node/ClusterVulnerabilities resolver.")
+	}
 	return resolver.vulnerabilitiesV2(ctx, q)
 }
 
 // VulnerabilityCount returns count of all clusters across infrastructure
 func (resolver *Resolver) VulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnerabilityCount")
+	if features.PostgresDatastore.Enabled() {
+		return 0, errors.New("VulnerabilityCount graphQL resolver is not support on postgres. Use Image/Node/ClusterVulnerabilityCount resolver.")
+	}
 	return resolver.vulnerabilityCountV2(ctx, args)
 }
 
 // VulnCounter returns a VulnerabilityCounterResolver for the input query.s
 func (resolver *Resolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnCounter")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("VulnCounter graphQL resolver is not support on postgres. Use Image/Node/ClusterVulnerabilityCounter resolver.")
+	}
 	return resolver.vulnCounterV2(ctx, args)
 }
 

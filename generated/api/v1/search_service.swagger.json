@@ -88,6 +88,7 @@
                 "COMPLIANCE_RESULTS",
                 "COMPLIANCE_DOMAIN",
                 "CLUSTER_HEALTH",
+                "POLICY_CATEGORIES",
                 "IMAGE_INTEGRATIONS"
               ]
             },
@@ -176,6 +177,7 @@
                 "COMPLIANCE_RESULTS",
                 "COMPLIANCE_DOMAIN",
                 "CLUSTER_HEALTH",
+                "POLICY_CATEGORIES",
                 "IMAGE_INTEGRATIONS"
               ]
             },
@@ -258,6 +260,7 @@
                 "COMPLIANCE_RESULTS",
                 "COMPLIANCE_DOMAIN",
                 "CLUSTER_HEALTH",
+                "POLICY_CATEGORIES",
                 "IMAGE_INTEGRATIONS"
               ]
             },
@@ -389,10 +392,11 @@
         "COMPLIANCE_RESULTS",
         "COMPLIANCE_DOMAIN",
         "CLUSTER_HEALTH",
+        "POLICY_CATEGORIES",
         "IMAGE_INTEGRATIONS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 46"
+      "title": "Next available tag: 47"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

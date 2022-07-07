@@ -564,6 +564,8 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	ds.removeK8SRoles(ctx, cluster)
 	ds.removeRoleBindings(ctx, cluster)
 
+	// TODO: Apparently, cluster cves are only cleaned up at next cve fetch cycle.
+
 	if done != nil {
 		done.Signal()
 	}

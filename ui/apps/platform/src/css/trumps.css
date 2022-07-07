@@ -91,7 +91,8 @@ body {
 }
 
 /* Override filter which simulates dark background color */
-.theme-dark .pf-c-table input[type='checkbox'] {
+.theme-dark .pf-c-table input[type='checkbox'],
+.theme-dark .pf-c-check input[type='checkbox'] {
     filter: inherit; /* replace invert(0.3) */
 }
 

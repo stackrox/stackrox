@@ -57,7 +57,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
 	createdAt := types.TimestampNow()
 	if len(request.GetIds()) == 0 {
-		return nil, errox.InvalidArgs.CausedBy("no cves provided to un-snooze")
+		return nil, errox.InvalidArgs.CausedBy("no cves provided to snooze")
 	}
 	if err := s.cves.Suppress(ctx, createdAt, request.GetDuration(), request.GetIds()...); err != nil {
 		return nil, err

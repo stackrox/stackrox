@@ -36,6 +36,7 @@ func initialize() {
 		storage = boltdb.New(globaldb.GetGlobalDB())
 		indexer = index.New(globalindex.GetGlobalTmpIndex())
 	}
+
 	searcher := search.New(storage, indexer)
 
 	clusterDatastore := clusterDS.Singleton()

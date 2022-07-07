@@ -35,6 +35,7 @@ import (
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
+	clusterCVEService "github.com/stackrox/rox/central/cve/cluster/service"
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
@@ -91,6 +92,7 @@ import (
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyService "github.com/stackrox/rox/central/policy/service"
+	policyCategoryService "github.com/stackrox/rox/central/policycategory/service"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
@@ -361,6 +363,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		vulnRequestService.Singleton(),
 	}
 	if features.PostgresDatastore.Enabled() {
+		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
 	} else {
@@ -371,6 +374,9 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, signatureIntegrationService.Singleton())
 	}
 
+	if features.NewPolicyCategories.Enabled() {
+		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
+	}
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),

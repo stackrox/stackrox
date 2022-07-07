@@ -16,7 +16,6 @@ import DateTimeField from 'Components/DateTimeField';
 import LabelChip from 'Components/LabelChip';
 import Menu from 'Components/Menu';
 import TableCountLinks from 'Components/workflow/TableCountLinks';
-import CveType from 'Components/CveType';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -39,6 +38,7 @@ import {
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 import CVSSSeverityLabel from 'Components/CVSSSeverityLabel';
+import CveType from 'Components/CveType';
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 import { getFilteredCVEColumns } from './ListCVEs.utils';
@@ -294,7 +294,7 @@ const VulnMgmtCves = ({
             cveQuery = gql`
                 query getNodeCves($query: String, $scopeQuery: String, $pagination: Pagination) {
                     results: nodeVulnerabilities(query: $query, pagination: $pagination) {
-                        ...cveFields
+                        ...nodeCVEFields
                     }
                     count: nodeVulnerabilityCount(query: $query)
                 }
@@ -306,7 +306,7 @@ const VulnMgmtCves = ({
             cveQuery = gql`
                 query getClusterCves($query: String, $scopeQuery: String, $pagination: Pagination) {
                     results: clusterVulnerabilities(query: $query, pagination: $pagination) {
-                        ...cveFields
+                        ...clusterCVEFields
                     }
                     count: clusterVulnerabilityCount(query: $query)
                 }
@@ -318,7 +318,7 @@ const VulnMgmtCves = ({
             cveQuery = gql`
                 query getImageCves($query: String, $scopeQuery: String, $pagination: Pagination) {
                     results: imageVulnerabilities(query: $query, pagination: $pagination) {
-                        ...cveFields
+                        ...imageCVEFields
                     }
                     count: imageVulnerabilityCount(query: $query)
                 }

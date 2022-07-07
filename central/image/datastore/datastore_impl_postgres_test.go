@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -30,7 +29,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestImageDataStoreWithPostgres(t *testing.T) {
+func TestImageDataStoreWithPostgresTestImageDataStoreWithPostgres(t *testing.T) {
 	suite.Run(t, new(ImagePostgresDataStoreTestSuite))
 }
 
@@ -149,10 +148,10 @@ func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.Equal(image.GetId(), results[0].ID)
 
 	// Scope search by vulns.
-	mapping.RegisterCategoryToTable(v1.SearchCategory_VULNERABILITIES, schema.ImageCvesSchema)
+	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULNERABILITIES, schema.ImageCvesSchema)
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		ID:    "cve3#blah",
-		Level: v1.SearchCategory_VULNERABILITIES,
+		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 	})
 	results, err = s.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
 	s.NoError(err)
@@ -181,9 +180,10 @@ func (s *ImagePostgresDataStoreTestSuite) TestFixableWithPostgres() {
 		}
 	}
 	s.NoError(s.datastore.UpsertImage(ctx, image))
-	_, found, err = s.datastore.GetImage(ctx, image.GetId())
+	image, found, err = s.datastore.GetImage(ctx, image.GetId())
 	s.NoError(err)
 	s.True(found)
+	s.Equal(image.GetId(), results[0].ID)
 
 	results, err = s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddBools(pkgSearch.Fixable, true).ProtoQuery())
 	s.NoError(err)
@@ -206,15 +206,42 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 	s.NoError(err)
 	s.True(found)
 
+	results, err := s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 0)
+
+	var unsnoozedCVEs []string
 	for _, component := range cloned.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			err := s.datastore.UpdateVulnerabilityState(ctx, cve.ID(vuln.GetCve(), cloned.GetScan().GetOperatingSystem()), []string{cloned.GetId()}, storage.VulnerabilityState_DEFERRED)
-			s.NoError(err)
-		}
+		s.Require().GreaterOrEqual(len(component.GetVulns()), 2)
+		err := s.datastore.UpdateVulnerabilityState(ctx, component.GetVulns()[0].GetCve(), []string{cloned.GetId()}, storage.VulnerabilityState_DEFERRED)
+		s.NoError(err)
+		unsnoozedCVEs = append(unsnoozedCVEs, component.GetVulns()[1].GetCve())
+
 	}
 
-	results, err := s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery())
+	results, err = s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery())
 	s.NoError(err)
 	s.Len(results, 1)
 	s.Equal(cloned.GetId(), results[0].ID)
+
+	// There are still some unsnoozed vulnerabilities in both images.
+	results, err = s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 2)
+	s.ElementsMatch([]string{image.GetId(), cloned.GetId()}, pkgSearch.ResultsToIDs(results))
+
+	results, err = s.datastore.Search(ctx, pkgSearch.ConjunctionQuery(
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, unsnoozedCVEs...).ProtoQuery(),
+	))
+	s.NoError(err)
+	s.Len(results, 0)
+
+	results, err = s.datastore.Search(ctx, pkgSearch.ConjunctionQuery(
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).ProtoQuery(),
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, unsnoozedCVEs...).ProtoQuery(),
+	))
+	s.NoError(err)
+	s.Len(results, 2)
+	s.ElementsMatch([]string{image.GetId(), cloned.GetId()}, pkgSearch.ResultsToIDs(results))
 }

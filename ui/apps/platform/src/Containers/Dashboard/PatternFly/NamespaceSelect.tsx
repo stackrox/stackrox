@@ -9,7 +9,6 @@ import {
 } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import { flattenFilterValue } from 'utils/searchUtils';
 import { Cluster } from './types';
 
@@ -49,7 +48,6 @@ function createOptions(clusters: Cluster[], filterValue?: string) {
             <SelectGroup key={clusterName} label={clusterName}>
                 {namespaces.map(({ metadata: { id, name } }) => (
                     <SelectOption key={id} value={id}>
-                        <ResourceIcon kind="Namespace" />
                         <span>{name}</span>
                     </SelectOption>
                 ))}

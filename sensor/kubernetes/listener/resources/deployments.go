@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -76,6 +77,7 @@ type deploymentHandler struct {
 	hierarchy              references.ParentHierarchy
 	rbac                   rbac.Store
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
+	registryStore          *registry.Store
 
 	detector detector.Detector
 
@@ -96,6 +98,7 @@ func newDeploymentHandler(
 	config config.Handler,
 	detector detector.Detector,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces,
+	registryStore *registry.Store,
 	credentialsManager awscredentials.RegistryCredentialsManager,
 ) *deploymentHandler {
 	return &deploymentHandler{
@@ -111,6 +114,7 @@ func newDeploymentHandler(
 		rbac:                   rbac,
 		detector:               detector,
 		orchestratorNamespaces: namespaces,
+		registryStore:          registryStore,
 		clusterID:              clusterID,
 		credentialsManager:     credentialsManager,
 	}
@@ -118,7 +122,7 @@ func newDeploymentHandler(
 
 func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
 	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore,
-		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces)
+		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces, d.registryStore)
 	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
 	// either it's an object we don't track, or we track its parent.
 	// (For example, we don't track replicasets if they are owned by a deployment.)

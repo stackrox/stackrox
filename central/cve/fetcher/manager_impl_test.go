@@ -11,12 +11,14 @@ import (
 	mockClusterDataStore "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	mockClusterEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore/mocks"
 	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	mockCVEDataStore "github.com/stackrox/rox/central/cve/datastore/mocks"
 	"github.com/stackrox/rox/central/cve/matcher"
 	mockImageDataStore "github.com/stackrox/rox/central/image/datastore/mocks"
 	mockNSDataStore "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/search"
@@ -46,6 +48,10 @@ func TestReadChecksum(t *testing.T) {
 }
 
 func TestReconcileCVEsInDB(t *testing.T) {
+	if features.PostgresDatastore.Enabled() {
+		t.Skip("Skip non-postgres test")
+	}
+
 	cluster := &storage.Cluster{
 		Id:   "test_cluster_id1",
 		Name: "cluster1",
@@ -123,7 +129,7 @@ func TestReconcileCVEsInDB(t *testing.T) {
 		},
 	}
 
-	embeddedCVEs, err := converter.NvdCVEsToEmbeddedCVEs(nvdCVEs, converter.K8s)
+	embeddedCVEs, err := utils.NvdCVEsToEmbeddedCVEs(nvdCVEs, utils.K8s)
 	require.NoError(t, err)
 
 	embeddedCVEToClusters := map[string][]*storage.Cluster{
@@ -142,7 +148,6 @@ func TestReconcileCVEsInDB(t *testing.T) {
 		{
 			CVE: &storage.CVE{
 				Id:   "CVE-1",
-				Cve:  "CVE-1",
 				Link: "https://nvd.nist.gov/vuln/detail/CVE-1",
 				Type: storage.CVE_K8S_CVE,
 			},
@@ -162,7 +167,6 @@ func TestReconcileCVEsInDB(t *testing.T) {
 		{
 			CVE: &storage.CVE{
 				Id:   "CVE-2",
-				Cve:  "CVE-2",
 				Link: "https://nvd.nist.gov/vuln/detail/CVE-2",
 				Type: storage.CVE_K8S_CVE,
 			},
@@ -179,7 +183,6 @@ func TestReconcileCVEsInDB(t *testing.T) {
 		{
 			CVE: &storage.CVE{
 				Id:   "CVE-3",
-				Cve:  "CVE-3",
 				Link: "https://nvd.nist.gov/vuln/detail/CVE-3",
 				Type: storage.CVE_K8S_CVE,
 			},
@@ -207,10 +210,10 @@ func TestReconcileCVEsInDB(t *testing.T) {
 
 	cveManager := &orchestratorIstioCVEManagerImpl{
 		orchestratorCVEMgr: &orchestratorCVEManager{
-			clusterCVEDataStore: mockClusterCveEdge,
-			clusterDataStore:    mockClusters,
-			cveDataStore:        mockCVEs,
-			cveMatcher:          cveMatcher,
+			clusterCVEEdgeDataStore: mockClusterCveEdge,
+			clusterDataStore:        mockClusters,
+			legacyCVEDataStore:      mockCVEs,
+			cveMatcher:              cveMatcher,
 		},
 	}
 
@@ -221,11 +224,15 @@ func TestReconcileCVEsInDB(t *testing.T) {
 	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), cvesToUpsert).Return(nil)
 
 	mockClusterCveEdge.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
-	err = cveManager.orchestratorCVEMgr.updateCVEs(embeddedCVEs, embeddedCVEToClusters, converter.K8s)
+	err = cveManager.orchestratorCVEMgr.updateCVEs(embeddedCVEs, embeddedCVEToClusters, utils.K8s)
 	assert.NoError(t, err)
 }
 
 func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
+	if features.PostgresDatastore.Enabled() {
+		t.Skip("Skip non-postgres test")
+	}
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -437,15 +444,15 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 	}
 
 	orchestratorCVEMgr := &orchestratorCVEManager{
-		clusterCVEDataStore: mockClusterCveEdge,
-		clusterDataStore:    mockClusters,
-		cveDataStore:        mockCVEs,
-		cveMatcher:          cveMatcher,
-		scanners:            make(map[string]types.OrchestratorScanner),
+		clusterCVEEdgeDataStore: mockClusterCveEdge,
+		clusterDataStore:        mockClusters,
+		legacyCVEDataStore:      mockCVEs,
+		cveMatcher:              cveMatcher,
+		scanners:                make(map[string]types.OrchestratorScanner),
 	}
 	orchestratorCVEMgr.scanners["someName"] = &scanner
 
-	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.K8s)
+	err = orchestratorCVEMgr.reconcileCVEs(clusters, utils.K8s)
 	assert.NoError(t, err)
 
 	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
@@ -454,7 +461,7 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 		assert.Equal(t, 1, len(cves[0].Children))
 		assert.Contains(t, clusters[2].GetId(), cves[0].Children[0].ClusterID)
 	})
-	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.OpenShift)
+	err = orchestratorCVEMgr.reconcileCVEs(clusters, utils.OpenShift)
 	assert.NoError(t, err)
 
 	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
@@ -462,14 +469,14 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 	})
 
 	clusters = clusters[1:2]
-	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.K8s)
+	err = orchestratorCVEMgr.reconcileCVEs(clusters, utils.K8s)
 	assert.NoError(t, err)
 
 	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
 		assert.Empty(t, cves)
 	})
 
-	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.OpenShift)
+	err = orchestratorCVEMgr.reconcileCVEs(clusters, utils.OpenShift)
 	assert.NoError(t, err)
 
 	cves := []string{"to_be_removed_0", "to_be_removed_1", "CVE-1", "CVE-3"}
@@ -503,6 +510,6 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 		assert.Contains(t, ids, cves[0])
 		assert.Contains(t, ids, cves[1])
 	})
-	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.K8s)
+	err = orchestratorCVEMgr.reconcileCVEs(clusters, utils.K8s)
 	assert.NoError(t, err)
 }

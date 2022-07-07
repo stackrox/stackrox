@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
@@ -12,6 +13,7 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -39,6 +41,7 @@ func init() {
 			"k8sRoleCount(query: String): Int!",
 			"k8sRoles(query: String, pagination: Pagination): [K8SRole!]!",
 			"latestViolation(query: String): Time",
+			"networkPolicyCount(query: String): Int!",
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"policies(query: String, pagination: Pagination): [Policy!]!",
 			"policyCount(query: String): Int!",
@@ -68,9 +71,11 @@ func init() {
 			"plottedVulns(query: String): PlottedVulnerabilities!" +
 				"@deprecated(reason: \"use 'plottedImageVulnerabilities'\")",
 		}),
+		// NOTE: This will not populate numDeployments, numNetworkPolicies, or numSecrets in Namespace! Use sub-resolvers for that.
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
 		schema.AddQuery("namespaceCount(query: String): Int!"),
+		// NOTE: This will not populate numDeployments, numNetworkPolicies, or numSecrets in Namespace! Use sub-resolvers for that.
 		schema.AddQuery("namespaces(query: String, pagination: Pagination): [Namespace!]!"),
 	)
 }
@@ -115,7 +120,7 @@ func (resolver *Resolver) Namespace(ctx context.Context, args struct{ graphql.ID
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapNamespace(namespace.ResolveByID(ctx, string(args.ID), resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
+	return resolver.wrapNamespace(namespace.ResolveMetadataOnlyByID(ctx, string(args.ID), resolver.NamespaceDataStore))
 }
 
 // Namespaces returns GraphQL resolvers for all namespaces based on an optional query.
@@ -129,7 +134,7 @@ func (resolver *Resolver) Namespaces(ctx context.Context, args PaginatedQuery) (
 		return nil, err
 	}
 
-	return resolver.wrapNamespaces(namespace.ResolveByQuery(ctx, query, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
+	return resolver.wrapNamespaces(namespace.ResolveMetadataOnlyByQuery(ctx, query, resolver.NamespaceDataStore))
 }
 
 type clusterIDAndNameQuery struct {
@@ -649,6 +654,24 @@ func (resolver *namespaceResolver) DeploymentCount(ctx context.Context, args Raw
 	return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
 }
 
+func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "NetworkPolicyCount")
+	if err := readNetPolicies(ctx); err != nil {
+		return 0, err
+	}
+
+	networkPolicyCount, err := resolver.root.NetworkPoliciesStore.CountMatchingNetworkPolicies(
+		ctx,
+		resolver.data.GetMetadata().GetClusterId(),
+		resolver.data.Metadata.GetName(),
+	)
+	if err != nil {
+		return 0, errors.Wrap(err, "counting network policies")
+	}
+
+	return int32(networkPolicyCount), nil
+}
+
 func (resolver *namespaceResolver) Risk(ctx context.Context) (*riskResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Risk")
 	if err := readRisks(ctx); err != nil {
@@ -709,6 +732,9 @@ func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args Raw
 }
 
 func (resolver *namespaceResolver) PlottedVulns(ctx context.Context, args PaginatedQuery) (*PlottedVulnerabilitiesResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
+	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }

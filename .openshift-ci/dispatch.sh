@@ -9,27 +9,9 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
-shopt -s nullglob
-for cred in /tmp/secret/**/[A-Z]*; do
-    export "$(basename "$cred")"="$(cat "$cred")"
-done
-
-info "Current Status:"
-"$ROOT/status.sh" || true
-
 openshift_ci_mods
-handle_nightly_runs
-
-info "Status after mods:"
-"$ROOT/status.sh" || true
-
-function hold() {
-    while [[ -e /tmp/hold ]]; do
-        info "Holding this job for debug"
-        sleep 60
-    done
-}
-trap hold EXIT
+openshift_ci_import_creds
+create_exit_trap
 
 if [[ "$#" -lt 1 ]]; then
     die "usage: dispatch <ci-job> [<...other parameters...>]"
@@ -69,4 +51,13 @@ else
     exit 0
 fi
 
-"${job_script}" "$@"
+"${job_script}" "$@" &
+job_pid="$!"
+
+forward_sigint() {
+    echo "Dispatch is forwarding SIGINT to job"
+    kill -SIGINT "${job_pid}"
+}
+trap forward_sigint SIGINT
+
+wait "${job_pid}"

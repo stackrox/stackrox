@@ -1,9 +1,8 @@
 package common
 
 import (
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
@@ -26,10 +25,6 @@ func Split(image *storage.Image, withComponents bool) ImageParts {
 		parts.Image.Scan.Components = nil
 	}
 	return parts
-}
-
-func splitListImage(parts ImageParts) *storage.ListImage {
-	return types.ConvertImageToListImage(parts.Image)
 }
 
 func splitComponents(parts ImageParts) []ComponentParts {
@@ -56,12 +51,12 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
 	addedCVEs := set.NewStringSet()
 	for _, cve := range embedded.GetVulns() {
-		convertedCVE := converter.EmbeddedCVEToProtoCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
+		convertedCVE := utils.EmbeddedCVEToProtoCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
 		if !addedCVEs.Add(convertedCVE.GetId()) {
 			continue
 		}
 		cp := CVEParts{}
-		cp.CVE = converter.EmbeddedVulnerabilityToImageCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
+		cp.CVE = utils.EmbeddedVulnerabilityToImageCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
 		cp.Edge = generateComponentCVEEdge(component.Component, cp.CVE, cve)
 		if _, ok := parts.ImageCVEEdges[cp.CVE.GetId()]; !ok {
 			parts.ImageCVEEdges[cp.CVE.GetId()] = generateImageCVEEdge(parts.Image.GetId(), cp.CVE, cve)

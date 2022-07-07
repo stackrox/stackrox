@@ -24,22 +24,88 @@ const stateSelector = createStructuredSelector<{
     isLoadingPermissions: selectors.getIsLoadingUserRolePermissions,
 });
 
+// TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
+const replacedResourceMapping = new Map([
+    ['AllComments', 'Administration'],
+    ['APIToken', 'Integration'],
+    ['AuthPlugin', 'Access'],
+    ['AuthProvider', 'Access'],
+    ['BackupPlugins', 'Integration'],
+    ['ComplianceRuns', 'Compliance'],
+    ['ComplianceRunSchedule', 'Administration'],
+    ['Config', 'Administration'],
+    ['DebugLogs', 'Administration'],
+    ['Group', 'Access'],
+    ['ImageIntegration', 'Integration'],
+    ['Indicator', 'DeploymentExtension'],
+    ['Licenses', 'Access'],
+    ['NetworkBaseline', 'DeploymentExtension'],
+    ['NetworkGraphConfig', 'Administration'],
+    ['Notifier', 'Integration'],
+    ['ProbeUpload', 'Administration'],
+    ['ProcessWhitelist', 'DeploymentExtension'],
+    ['Risk', 'DeploymentExtension'],
+    ['Role', 'Access'],
+    ['ScannerBundle', 'Administration'],
+    ['ScannerDefinitions', 'Administration'],
+    ['SensorUpgradeConfig', 'Administration'],
+    ['ServiceIdentity', 'Administration'],
+    ['SignatureIntegration', 'Integration'],
+    ['User', 'Access'],
+]);
+
 const usePermissions = (): UsePermissionsResponse => {
     const { userRolePermissions, isLoadingPermissions } = useSelector(stateSelector);
 
     function hasNoAccess(resourceName: ResourceName) {
         const access = userRolePermissions?.resourceToAccess[resourceName];
-        return access === 'NO_ACCESS';
+        if (access === 'NO_ACCESS') {
+            return true;
+        }
+
+        if (replacedResourceMapping.has(resourceName)) {
+            const replacedResourceAccess =
+                userRolePermissions?.resourceToAccess[
+                    replacedResourceMapping.get(resourceName) as ResourceName
+                ];
+            return replacedResourceAccess === 'NO_ACCESS';
+        }
+        return false;
     }
 
     function hasReadAccess(resourceName: ResourceName) {
         const access = userRolePermissions?.resourceToAccess[resourceName];
-        return access === 'READ_ACCESS' || access === 'READ_WRITE_ACCESS';
+        if (access === 'READ_ACCESS' || access === 'READ_WRITE_ACCESS') {
+            return true;
+        }
+
+        if (replacedResourceMapping.has(resourceName)) {
+            const replacedResourceAccess =
+                userRolePermissions?.resourceToAccess[
+                    replacedResourceMapping.get(resourceName) as ResourceName
+                ];
+            return (
+                replacedResourceAccess === 'READ_ACCESS' ||
+                replacedResourceAccess === 'READ_WRITE_ACCESS'
+            );
+        }
+        return false;
     }
 
     function hasReadWriteAccess(resourceName: ResourceName) {
         const access = userRolePermissions?.resourceToAccess[resourceName];
-        return access === 'READ_WRITE_ACCESS';
+        if (access === 'READ_WRITE_ACCESS') {
+            return true;
+        }
+
+        if (replacedResourceMapping.has(resourceName)) {
+            const replacedResourceAccess =
+                userRolePermissions?.resourceToAccess[
+                    replacedResourceMapping.get(resourceName) as ResourceName
+                ];
+            return replacedResourceAccess === 'READ_WRITE_ACCESS';
+        }
+        return false;
     }
 
     return { hasNoAccess, hasReadAccess, hasReadWriteAccess, isLoadingPermissions };

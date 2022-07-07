@@ -90,6 +90,30 @@ func restoreCA(backupBundle string) (mtls.CA, error) {
 	return mtls.LoadCAForSigning(caCert, caKey)
 }
 
+func restoreCentralDBPassword(fileMap map[string][]byte, backupBundle string) error {
+	z, err := zip.NewReader(backupBundle)
+	if err != nil {
+		return err
+	}
+	defer utils.IgnoreError(z.Close)
+
+	passPath := path.Join(backup.DatabaseBaseFolder, backup.DatabasePassword)
+
+	// If an older backup, file may not be included
+	if !z.ContainsFile(passPath) {
+		return nil
+	}
+
+	centralDBPass, err := z.ReadFrom(passPath)
+	if err != nil {
+		return err
+	}
+
+	fileMap["central-db-password"] = centralDBPass
+
+	return nil
+}
+
 func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 	var ca mtls.CA
 	var err error
@@ -100,6 +124,10 @@ func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 		}
 	default:
 		if ca, err = restoreCA(backupBundle); err != nil {
+			return err
+		}
+
+		if err = restoreCentralDBPassword(fileMap, backupBundle); err != nil {
 			return err
 		}
 	}

@@ -29,7 +29,7 @@ import NoDataEmptyState from './NoDataEmptyState';
 function getTitle(searchFilter: SearchFilter, imageStatusOption: ImageStatusOption) {
     return imageStatusOption === 'Active' || isResourceScoped(searchFilter)
         ? 'Active images at most risk'
-        : 'All images at most risk';
+        : 'Images at most risk';
 }
 
 function getViewAllLink(searchFilter: SearchFilter) {
@@ -171,7 +171,7 @@ function ImagesAtMostRisk() {
                             component={LinkShim}
                             href={getViewAllLink(searchFilter)}
                         >
-                            View All
+                            View all
                         </Button>
                     </FlexItem>
                 </Flex>

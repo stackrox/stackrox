@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -65,6 +66,21 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 		return sac.ErrResourceAccessDenied
 	}
 
+	if err := ValidateGroup(group); err != nil {
+		return errox.InvalidArgs.CausedBy(err)
+	}
+
+	if group.GetProps().GetId() != "" {
+		return errox.InvalidArgs.Newf("id should be empty but %q was provided", group.GetProps().GetId())
+	}
+
+	if group.GetProps() != nil {
+		group.GetProps().Id = GenerateGroupID()
+	} else {
+		// Theoretically should never happen, as the auth provider ID is required to be set.
+		group.Props = &storage.GroupProperties{Id: GenerateGroupID()}
+	}
+
 	return ds.storage.Add(group)
 }
 
@@ -75,17 +91,11 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Update(group)
-}
-
-func (ds *dataStoreImpl) Upsert(ctx context.Context, group *storage.Group) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
+	if err := ValidateGroup(group); err != nil {
+		return errox.InvalidArgs.CausedBy(err)
 	}
 
-	return ds.storage.Upsert(group)
+	return ds.storage.Update(group)
 }
 
 func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group) error {
@@ -93,6 +103,28 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
+	}
+
+	for _, grp := range append(remove, update...) {
+		if err := ValidateGroup(grp); err != nil {
+			return errox.InvalidArgs.CausedBy(err)
+		}
+	}
+
+	for _, grp := range add {
+		if err := ValidateGroup(grp); err != nil {
+			return errox.InvalidArgs.CausedBy(err)
+		}
+
+		if grp.GetProps().GetId() != "" {
+			return errox.InvalidArgs.Newf("id should be empty but %q was provided", grp.GetProps().GetId())
+		}
+		if grp.GetProps() != nil {
+			grp.GetProps().Id = GenerateGroupID()
+		} else {
+			// Theoretically should never happen, as the auth provider ID is required to be set.
+			grp.Props = &storage.GroupProperties{Id: GenerateGroupID()}
+		}
 	}
 
 	return ds.storage.Mutate(remove, update, add)
@@ -103,6 +135,10 @@ func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupPropert
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
+	}
+
+	if err := ValidateProps(props); err != nil {
+		return errox.InvalidArgs.CausedBy(err)
 	}
 
 	return ds.storage.Remove(props)

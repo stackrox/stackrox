@@ -67,7 +67,7 @@ function populateDefaultValues(authProvider: AuthProvider): AuthProvider {
     newInitialValues.groups = Array.isArray(authProvider.groups) ? [...authProvider.groups] : [];
     newInitialValues.groups.push({
         roleName: '',
-        props: { authProviderId: '', key: '', value: '' },
+        props: { authProviderId: '', key: '', value: '', id: '' },
     });
 
     return newInitialValues;

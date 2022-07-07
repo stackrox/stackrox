@@ -16,7 +16,7 @@ image:
     collector: [< required "" .CollectorRegistry >]
 
 config:
-  collectionMethod: [< default "KERNEL_MODULE" .CollectionMethod >]
+  collectionMethod: [< default "EBPF" .CollectionMethod >]
   admissionControl:
     createService: [< default false .AdmissionController >]
     listenOnUpdates: [< default false .AdmissionControlListenOnUpdates >]

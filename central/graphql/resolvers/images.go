@@ -380,6 +380,9 @@ func (resolver *imageResolver) getImageQuery() *v1.Query {
 }
 
 func (resolver *imageResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
+	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }

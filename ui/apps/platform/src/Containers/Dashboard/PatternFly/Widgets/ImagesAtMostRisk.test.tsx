@@ -88,7 +88,7 @@ describe('Images at most risk dashboard widget', () => {
         // Default is display all images
         expect(
             await screen.findByRole('heading', {
-                name: 'All images at most risk',
+                name: 'Images at most risk',
             })
         ).toBeInTheDocument();
 
@@ -133,7 +133,7 @@ describe('Images at most risk dashboard widget', () => {
             utils: { history },
         } = setup();
 
-        await screen.findByRole('heading', { name: 'All images at most risk' });
+        await screen.findByRole('heading', { name: 'Images at most risk' });
         // Click on the link matching the second image
         const secondImageInList = mockImages[1];
         await user.click(screen.getByRole('link', { name: secondImageInList.name?.remote }));
@@ -144,7 +144,7 @@ describe('Images at most risk dashboard widget', () => {
 
         await history.goBack();
 
-        await user.click(screen.getByRole('link', { name: 'View All' }));
+        await user.click(screen.getByRole('link', { name: 'View all' }));
         expect(history.location.pathname).toBe(`${vulnManagementImagesPath}`);
     });
 });
