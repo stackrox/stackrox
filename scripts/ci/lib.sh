@@ -40,6 +40,10 @@ ci_exit_trap() {
     done
 }
 
+create_exit_trap() {
+    trap ci_exit_trap EXIT
+}
+
 setup_deployment_env() {
     info "Setting up the deployment environment"
 
@@ -847,16 +851,6 @@ openshift_ci_import_creds() {
     done
 }
 
-create_hold_trap() {
-    function hold() {
-        while [[ -e /tmp/hold ]]; do
-            info "Holding this job for debug"
-            sleep 60
-        done
-    }
-    trap hold EXIT
-}
-
 openshift_ci_e2e_mods() {
     # NAMESPACE is injected by OpenShift CI for the cluster that is running the
     # tests but this can have side effects for stackrox tests due to its use as
@@ -998,17 +992,17 @@ store_test_results() {
 }
 
 send_slack_notice_for_failures_on_merge() {
-    # local exitstatus="${1:-}"
+    local exitstatus="${1:-}"
 
-    # if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
-    #     return
-    # fi
+    if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
+        return
+    fi
 
-    # local tag
-    # tag="$(make --quiet tag)"
-    # [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
-    #     return
-    # }
+    local tag
+    tag="$(make --quiet tag)"
+    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
+        return
+    }
 
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
