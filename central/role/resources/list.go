@@ -112,9 +112,9 @@ var (
 	User = newDeprecatedResourceMetadata("User", permissions.GlobalScope, Access)
 
 	// Internal Resources.
-	ComplianceOperator = newResourceMetadata("ComplianceOperator", permissions.GlobalScope)
-	InstallationInfo   = newResourceMetadata("InstallationInfo", permissions.GlobalScope)
-	Version            = newResourceMetadata("Version", permissions.GlobalScope)
+	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
+	InstallationInfo   = newInternalResourceMetadata("InstallationInfo", permissions.GlobalScope)
+	Version            = newInternalResourceMetadata("Version", permissions.GlobalScope)
 
 	resourceToMetadata         = make(map[permissions.Resource]permissions.ResourceMetadata)
 	disabledResourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
@@ -170,6 +170,15 @@ func newDeprecatedResourceMetadataWithFeatureFlag(name permissions.Resource, sco
 	} else {
 		disabledResourceToMetadata[name] = md
 	}
+	return md
+}
+
+func newInternalResourceMetadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
+	md := permissions.ResourceMetadata{
+		Resource: name,
+		Scope:    scope,
+	}
+	internalResourceToMetadata[name] = md
 	return md
 }
 
