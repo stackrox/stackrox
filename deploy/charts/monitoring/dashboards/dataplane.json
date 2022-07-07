@@ -16,7 +16,7 @@
   "editable": true,
   "gnetId": 14765,
   "graphTooltip": 0,
-  "iteration": 1656964862753,
+  "iteration": 1657209308530,
   "links": [],
   "panels": [
     {
@@ -779,7 +779,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -882,7 +882,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -963,7 +963,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1046,7 +1046,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1127,7 +1127,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1211,7 +1211,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1337,7 +1337,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1448,7 +1448,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1531,7 +1531,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1614,7 +1614,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1697,7 +1697,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1781,7 +1781,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -2449,7 +2449,7 @@
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 35
+            "y": 12
           },
           "id": 6,
           "options": {
@@ -2532,7 +2532,7 @@
             "h": 9,
             "w": 12,
             "x": 12,
-            "y": 35
+            "y": 12
           },
           "id": 8,
           "options": {
@@ -2615,7 +2615,7 @@
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 44
+            "y": 21
           },
           "id": 86,
           "options": {
@@ -2698,7 +2698,7 @@
             "h": 9,
             "w": 12,
             "x": 12,
-            "y": 44
+            "y": 21
           },
           "id": 87,
           "options": {
@@ -2780,7 +2780,7 @@
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 53
+            "y": 30
           },
           "id": 10,
           "options": {
@@ -2866,7 +2866,7 @@
             "h": 9,
             "w": 12,
             "x": 12,
-            "y": 53
+            "y": 30
           },
           "id": 85,
           "options": {
@@ -2952,7 +2952,7 @@
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 62
+            "y": 39
           },
           "id": 18,
           "options": {
@@ -3038,7 +3038,7 @@
             "h": 9,
             "w": 12,
             "x": 12,
-            "y": 62
+            "y": 39
           },
           "id": 20,
           "options": {
