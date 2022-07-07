@@ -594,22 +594,15 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		return err
 	}
 
-	err = s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		err := s.insertIntoImages(ctx, tx, imageParts, scanUpdated, iTime)
-		if err != nil {
+	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+		if err := s.insertIntoImages(ctx, tx, imageParts, scanUpdated, iTime); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
+			return err
 		}
-		return err
+		return tx.Commit(ctx)
 	})
-	if err != nil {
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
 }
 
 // Upsert upserts image into the store.
@@ -1053,6 +1046,10 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 }
 
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
+	if len(imageIDs) == 0 {
+		return nil
+	}
+
 	conn, release, err := s.acquireConn(ctx, ops.Get, "UpdateVulnState")
 	if err != nil {
 		return err
@@ -1065,7 +1062,7 @@ func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []
 	}
 
 	cveIDs, err := func() ([]string, error) {
-		rows, err := s.db.Query(ctx, "select id from "+imageCVEsTable+" where cvebaseinfo_cve = $1", cve)
+		rows, err := tx.Query(ctx, "select id from "+imageCVEsTable+" where cvebaseinfo_cve = $1", cve)
 		if err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
@@ -1075,8 +1072,7 @@ func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []
 	if err != nil {
 		return err
 	}
-
-	if len(imageIDs) == 0 || len(cveIDs) == 0 {
+	if len(cveIDs) == 0 {
 		return nil
 	}
 

@@ -499,19 +499,15 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 		return err
 	}
 
-	err = s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		err := s.insertIntoNodes(ctx, tx, nodeParts, scanUpdated, iTime)
-		if err != nil {
+	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+		if err := s.insertIntoNodes(ctx, tx, nodeParts, scanUpdated, iTime); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
+			return err
 		}
-		return err
+		return tx.Commit(ctx)
 	})
-	if err != nil {
-		return err
-	}
-	return tx.Commit(ctx)
 }
 
 // Upsert upserts node into the store.
