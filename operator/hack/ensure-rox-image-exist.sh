@@ -5,7 +5,7 @@ set -euo pipefail
 git fetch origin
 
 docker_repo="stackrox/main"
-base_image="docker.io/stackrox/main"
+base_image="quay.io/rhacs-eng/main"
 root_dir="$(git rev-parse --show-toplevel)"
 main_image_tag=${MAIN_IMAGE_TAG:-"$(make -C "$root_dir" tag)"}
 main_image="$base_image:$main_image_tag"

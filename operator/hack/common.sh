@@ -1,6 +1,6 @@
 # A library of bash functions useful for installing operator using OLM.
 
-declare -r IMAGE_TAG_BASE="${IMAGE_TAG_BASE:-docker.io/stackrox/stackrox-operator}"
+declare -r IMAGE_TAG_BASE="${IMAGE_TAG_BASE:-quay.io/rhacs-eng/stackrox-operator}"
 declare -r KUTTL="${KUTTL:-kubectl-kuttl}"
 declare -r pull_secret="operator-pull-secret"
 # `declare` ignores `errexit`: http://mywiki.wooledge.org/BashFAQ/105
