@@ -254,11 +254,6 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 		// In dackbox, when reading out the image vulnerabilities, severity is overwritten during merge.
 		Severity: protoCVE.GetSeverity(),
 	}
-	if features.PostgresDatastore.Enabled() {
-		embeddedCVE.Cve = protoCVE.GetCve()
-	} else {
-		embeddedCVE.Cve = protoCVE.GetId()
-	}
 	if protoCVE.CvssV3 != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
 	} else {
@@ -275,7 +270,7 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 // It converts all the fields except Fixed By which gets set depending on the CVE.
 func ProtoCVEToImageCVE(protoCVE *storage.CVE) *storage.ImageCVE {
 	embeddedVuln := ProtoCVEToEmbeddedCVE(protoCVE)
-	return EmbeddedVulnerabilityToImageCVE(protoCVE.GetOperatingSystem(), embeddedVuln)
+	return EmbeddedVulnerabilityToImageCVE("", embeddedVuln)
 }
 
 // ProtoCVEToNodeCVE coverts a *storage.CVE object to *storage.NodeCVE object.
@@ -283,7 +278,7 @@ func ProtoCVEToImageCVE(protoCVE *storage.CVE) *storage.ImageCVE {
 func ProtoCVEToNodeCVE(protoCVE *storage.CVE) *storage.NodeCVE {
 	embeddedVuln := ProtoCVEToEmbeddedCVE(protoCVE)
 	nodeVulnerability := nodeConverter.EmbeddedVulnerabilityToNodeVulnerability(embeddedVuln)
-	return NodeVulnerabilityToNodeCVE(protoCVE.GetOperatingSystem(), nodeVulnerability)
+	return NodeVulnerabilityToNodeCVE("", nodeVulnerability)
 }
 
 // ImageCVEToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
@@ -350,7 +345,6 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 	ret := &storage.CVE{
 		Type:               embeddedVulnTypeToProtoType(from.GetVulnerabilityType()),
 		Id:                 cve.ID(from.GetCve(), os),
-		Cve:                from.GetCve(),
 		Cvss:               from.GetCvss(),
 		Summary:            from.GetSummary(),
 		Link:               from.GetLink(),
@@ -361,7 +355,6 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 		Suppressed:         from.GetSuppressed(),
 		SuppressActivation: from.GetSuppressActivation(),
 		SuppressExpiry:     from.GetSuppressExpiry(),
-		OperatingSystem:    os,
 	}
 	if ret.CvssV3 != nil {
 		ret.ScoreVersion = storage.CVE_V3
