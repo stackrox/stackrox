@@ -15,6 +15,7 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -31,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
+	promhttp "github.com/travelaudience/go-promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
@@ -271,7 +273,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 			a.config.HTTPInterceptors...)...,
 	)
 
-	mux := http.NewServeMux()
+	mux := &promhttp.ServeMux{ServeMux: &http.ServeMux{}}
 	allRoutes := a.config.CustomRoutes
 	for _, apiService := range a.apiServices {
 		srvWithRoutes, _ := apiService.(APIServiceWithCustomRoutes)
@@ -312,6 +314,9 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		}
 	}
 	mux.Handle("/v1/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
+	if err := prometheus.Register(mux); err != nil {
+		log.Warnf("failed to register Prometheus collector: %v", err)
+	}
 	return mux
 }
 
