@@ -151,8 +151,6 @@ func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValu
 func handleRhacsWarnings(rhacs, imageFlavorProvided bool, logger logger.Logger) {
 	if rhacs {
 		logger.WarnfLn("'--rhacs' is deprecated, please use '--%s=%s' instead", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameRHACSRelease)
-	} else if !imageFlavorProvided {
-		logger.WarnfLn("Default image registries have changed. Images will be taken from 'registry.redhat.io'. Specify '--%s=%s' command line argument to use images from 'stackrox.io' registries.", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameStackRoxIORelease)
 	}
 }
 
