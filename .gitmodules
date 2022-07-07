@@ -1,7 +1,7 @@
 [submodule "docs/content"]
 	path = docs/content
 	url = https://github.com/openshift/openshift-docs.git
-	branch = rhacs-docs-3.70.0
+	branch = rhacs-docs-3.71.0
 [submodule "docs/tools"]
 	path = docs/tools
 	url = https://github.com/stackrox/docs-tools.git
