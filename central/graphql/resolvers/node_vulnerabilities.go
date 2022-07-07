@@ -10,10 +10,10 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -208,7 +208,7 @@ func (resolver *nodeCVEResolver) FixedByVersion(_ context.Context) (string, erro
 	if scope.Level != v1.SearchCategory_NODE_COMPONENTS {
 		return "", nil
 	}
-	edgeID := edges.EdgeID{ParentID: scope.ID, ChildID: resolver.data.GetId()}.ToString()
+	edgeID := postgres.IDFromPks([]string{scope.ID, resolver.data.GetId()})
 	edge, _, err := resolver.root.NodeComponentCVEEdgeDataStore.Get(resolver.ctx, edgeID)
 	if err != nil {
 		return "", err
@@ -235,7 +235,7 @@ func (resolver *nodeCVEResolver) IsFixable(ctx context.Context, args RawQuery) (
 	}
 
 	query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
-	count, err := resolver.root.NodeComponentCVEEdgeDataStore.Count(ctx, query)
+	count, err := resolver.root.NodeCVEDataStore.Count(ctx, query)
 	if err != nil {
 		return false, err
 	}
