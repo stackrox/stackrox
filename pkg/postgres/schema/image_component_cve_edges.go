@@ -44,7 +44,7 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.ComponentCVEEdge)(nil)), "image_component_cve_edges")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ImageComponent": ImageComponentsSchema,
-			"storage.CVE":            ImageCvesSchema,
+			"storage.ImageCVE":       ImageCvesSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
