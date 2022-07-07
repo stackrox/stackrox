@@ -44,6 +44,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-11533: Fixed preferred node affinity for Central, Sensor and Scanner pods so that OpenShift Infra nodes are favored more than Compute nodes. Match expressions will also prefer not scheduling on Control Plane nodes on both Kubernetes and OpenShift clusters, including kube versions 1.25 and newer.
 - ROX-10948: A new default policy added to detect if a deployment is running with a container that has allowPrivilegeEscalation set to true. The policy is enabled by default.
 - ROX-10699: A new default policy added to detect if a deployment has any service that is externally exposed through any methods. The policy is disabled by default.
+- Scanner's "db" container no longer mounts the "scanner-db-password" secret. Instead, the init container, "init-db", mounts it.
+  - This means the configuration for the init container has been updated to include "POSTGRES_PASSWORD_FILE" and some volume mounts which are now required.
+- Debian 9 has reached EOL, so Scanner now marks Debian 9 images as stale.
+  - The Debian Security Tracker has also stopped tracking Debian 9 vulnerabilities, so there will be no more new Debian 9 vulnerabilities.
 
 ## [70.0]
 
