@@ -11,7 +11,7 @@ set -euo pipefail
 
 openshift_ci_mods
 openshift_ci_import_creds
-create_hold_trap
+create_exit_trap
 
 if [[ "$#" -lt 1 ]]; then
     die "usage: dispatch <ci-job> [<...other parameters...>]"
