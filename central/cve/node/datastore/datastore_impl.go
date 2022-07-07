@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
@@ -33,6 +34,8 @@ type datastoreImpl struct {
 
 	cveSuppressionLock  sync.RWMutex
 	cveSuppressionCache common.CVESuppressionCache
+
+	keyFence concurrency.KeyFence
 }
 
 func (ds *datastoreImpl) buildSuppressedCache() error {
@@ -117,12 +120,15 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 		return err
 	}
 
-	for _, vuln := range vulns {
-		vuln.Snoozed = true
-		vuln.SnoozeStart = start
-		vuln.SnoozeExpiry = expiry
-	}
-	if err := ds.storage.UpsertMany(ctx, vulns); err != nil {
+	err = ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
+		for _, vuln := range vulns {
+			vuln.Snoozed = true
+			vuln.SnoozeStart = start
+			vuln.SnoozeExpiry = expiry
+		}
+		return ds.storage.UpsertMany(ctx, vulns)
+	})
+	if err != nil {
 		return err
 	}
 
@@ -142,12 +148,15 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 		return err
 	}
 
-	for _, vuln := range vulns {
-		vuln.Snoozed = false
-		vuln.SnoozeStart = nil
-		vuln.SnoozeExpiry = nil
-	}
-	if err := ds.storage.UpsertMany(ctx, vulns); err != nil {
+	err = ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
+		for _, vuln := range vulns {
+			vuln.Snoozed = false
+			vuln.SnoozeStart = nil
+			vuln.SnoozeExpiry = nil
+		}
+		return ds.storage.UpsertMany(ctx, vulns)
+	})
+	if err != nil {
 		return err
 	}
 
@@ -198,4 +207,12 @@ func (ds *datastoreImpl) deleteFromCache(cves ...*storage.NodeCVE) {
 	for _, cve := range cves {
 		delete(ds.cveSuppressionCache, cve.GetCveBaseInfo().GetCve())
 	}
+}
+
+func gatherKeys(vulns []*storage.NodeCVE) [][]byte {
+	keys := make([][]byte, 0, len(vulns))
+	for _, vuln := range vulns {
+		keys = append(keys, []byte(vuln.GetId()))
+	}
+	return keys
 }

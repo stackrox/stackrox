@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/cve/image/datastore/search"
 	"github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -19,7 +20,7 @@ func initialize() {
 	indexer := postgres.NewIndexer(globaldb.GetPostgres())
 
 	var err error
-	ds, err = New(storage, indexer, search.New(storage, indexer))
+	ds, err = New(storage, indexer, search.New(storage, indexer), datastore.ImageKeyFenceSingleton())
 	utils.CrashOnError(err)
 }
 

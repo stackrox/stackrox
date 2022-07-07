@@ -16,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -49,6 +50,14 @@ var (
 	targetResource = resources.Node
 )
 
+type nodePartsAsSlice struct {
+	node               *storage.Node
+	components         []*storage.NodeComponent
+	vulns              []*storage.NodeCVE
+	nodeComponentEdges []*storage.NodeComponentEdge
+	componentCVEEdges  []*storage.NodeComponentCVEEdge
+}
+
 // Store provides storage functionality for full nodes.
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -68,20 +77,28 @@ type Store interface {
 type storeImpl struct {
 	db                 *pgxpool.Pool
 	noUpdateTimestamps bool
+	keyFence           concurrency.KeyFence
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, noUpdateTimestamps bool) Store {
+func New(db *pgxpool.Pool, noUpdateTimestamps bool, keyFence concurrency.KeyFence) Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
+		keyFence:           keyFence,
 	}
 }
 
-func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpdated bool, iTime *protoTypes.Timestamp) error {
-	cloned := obj
+func (s *storeImpl) insertIntoNodes(
+	ctx context.Context,
+	tx pgx.Tx,
+	parts *nodePartsAsSlice,
+	scanUpdated bool,
+	iTime *protoTypes.Timestamp,
+) error {
+	cloned := parts.node
 	if cloned.GetScan().GetComponents() != nil {
-		cloned = obj.Clone()
+		cloned = parts.node.Clone()
 		cloned.Scan.Components = nil
 	}
 	serialized, marshalErr := cloned.Marshal()
@@ -91,22 +108,22 @@ func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpda
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
-		obj.GetName(),
-		obj.GetClusterId(),
-		obj.GetClusterName(),
-		obj.GetLabels(),
-		obj.GetAnnotations(),
-		pgutils.NilOrTime(obj.GetJoinedAt()),
-		obj.GetContainerRuntime().GetVersion(),
-		obj.GetOsImage(),
-		pgutils.NilOrTime(obj.GetLastUpdated()),
-		pgutils.NilOrTime(obj.GetScan().GetScanTime()),
-		obj.GetComponents(),
-		obj.GetCves(),
-		obj.GetFixableCves(),
-		obj.GetRiskScore(),
-		obj.GetTopCvss(),
+		cloned.GetId(),
+		cloned.GetName(),
+		cloned.GetClusterId(),
+		cloned.GetClusterName(),
+		cloned.GetLabels(),
+		cloned.GetAnnotations(),
+		pgutils.NilOrTime(cloned.GetJoinedAt()),
+		cloned.GetContainerRuntime().GetVersion(),
+		cloned.GetOsImage(),
+		pgutils.NilOrTime(cloned.GetLastUpdated()),
+		pgutils.NilOrTime(cloned.GetScan().GetScanTime()),
+		cloned.GetComponents(),
+		cloned.GetCves(),
+		cloned.GetFixableCves(),
+		cloned.GetRiskScore(),
+		cloned.GetTopCvss(),
 		serialized,
 	}
 
@@ -118,14 +135,14 @@ func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpda
 
 	var query string
 
-	for childIdx, child := range obj.GetTaints() {
-		if err := insertIntoNodesTaints(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+	for childIdx, child := range cloned.GetTaints() {
+		if err := insertIntoNodesTaints(ctx, tx, child, cloned.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from nodes_taints where nodes_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetTaints()))
+	_, err = tx.Exec(ctx, query, cloned.GetId(), len(cloned.GetTaints()))
 	if err != nil {
 		return err
 	}
@@ -133,20 +150,19 @@ func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpda
 		return nil
 	}
 
-	components, vulns, nodeComponentEdges, componentCVEEdges := getPartsAsSlice(common.Split(obj, scanUpdated))
-	if err := copyFromNodeComponents(ctx, tx, components...); err != nil {
+	if err := copyFromNodeComponents(ctx, tx, parts.components...); err != nil {
 		return err
 	}
-	if err := copyFromNodeComponentEdges(ctx, tx, nodeComponentEdges...); err != nil {
+	if err := copyFromNodeComponentEdges(ctx, tx, parts.nodeComponentEdges...); err != nil {
 		return err
 	}
-	if err := copyFromNodeCves(ctx, tx, iTime, vulns...); err != nil {
+	if err := copyFromNodeCves(ctx, tx, iTime, parts.vulns...); err != nil {
 		return err
 	}
-	return copyFromNodeComponentCVEEdges(ctx, tx, componentCVEEdges...)
+	return copyFromNodeComponentCVEEdges(ctx, tx, parts.componentCVEEdges...)
 }
 
-func getPartsAsSlice(parts *common.NodeParts) ([]*storage.NodeComponent, []*storage.NodeCVE, []*storage.NodeComponentEdge, []*storage.NodeComponentCVEEdge) {
+func getPartsAsSlice(parts *common.NodeParts) *nodePartsAsSlice {
 	components := make([]*storage.NodeComponent, 0, len(parts.Children))
 	nodeComponentEdges := make([]*storage.NodeComponentEdge, 0, len(parts.Children))
 	vulnMap := make(map[string]*storage.NodeCVE)
@@ -163,7 +179,13 @@ func getPartsAsSlice(parts *common.NodeParts) ([]*storage.NodeComponent, []*stor
 	for _, vuln := range vulnMap {
 		vulns = append(vulns, vuln)
 	}
-	return components, vulns, nodeComponentEdges, componentCVEEdges
+	return &nodePartsAsSlice{
+		node:               parts.Node,
+		components:         components,
+		vulns:              vulns,
+		nodeComponentEdges: nodeComponentEdges,
+		componentCVEEdges:  componentCVEEdges,
+	}
 }
 
 func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, nodeID string, idx int) error {
@@ -449,42 +471,47 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bo
 	return true, scanUpdated, nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
+func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 	iTime := protoTypes.TimestampNow()
+
+	if !s.noUpdateTimestamps {
+		obj.LastUpdated = iTime
+	}
+	metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
+	if err != nil {
+		return err
+	}
+	if !metadataUpdated && !scanUpdated {
+		return nil
+	}
+
+	nodeParts := getPartsAsSlice(common.Split(obj, scanUpdated))
+	keys := gatherKeys(nodeParts)
+
 	conn, release, err := s.acquireConn(ctx, ops.Upsert, "Node")
 	if err != nil {
 		return err
 	}
 	defer release()
 
-	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
-			return err
-		}
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
 
-		if !s.noUpdateTimestamps {
-			obj.LastUpdated = iTime
-		}
-		metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
+	err = s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+		err := s.insertIntoNodes(ctx, tx, nodeParts, scanUpdated, iTime)
 		if err != nil {
-			return err
-		}
-		if !metadataUpdated && !scanUpdated {
-			return nil
-		}
-
-		if err := insertIntoNodes(ctx, tx, obj, scanUpdated, iTime); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
-			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
+		return err
+	})
+	if err != nil {
+		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 // Upsert upserts node into the store.
@@ -880,7 +907,7 @@ func CreateTableAndNewStore(ctx context.Context, t *testing.T, db *pgxpool.Pool,
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeCvesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentEdgesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsCvesEdgesStmt)
-	return New(db, noUpdateTimestamps)
+	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
 }
 
 func dropTableNodes(ctx context.Context, db *pgxpool.Pool) {
@@ -950,4 +977,32 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 		idToCVEMap[msg.GetId()] = msg
 	}
 	return idToCVEMap, nil
+}
+
+func gatherKeys(parts *nodePartsAsSlice) [][]byte {
+	// We only need to collect node, component, and vuln keys because edges are derived from those resources and edge
+	// datastores are do not support upserts and deletes.
+	keys := make([][]byte, 0, len(parts.components)+len(parts.vulns)+1)
+	keys = append(keys, []byte(parts.node.GetId()))
+	for _, component := range parts.components {
+		keys = append(keys, []byte(component.GetId()))
+	}
+	for _, vuln := range parts.vulns {
+		keys = append(keys, []byte(vuln.GetId()))
+	}
+	return keys
+}
+
+func scanIDs(rows pgx.Rows) ([]string, error) {
+	defer rows.Close()
+	var ids []string
+
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
 }

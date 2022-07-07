@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/node/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -16,11 +17,14 @@ var (
 	once sync.Once
 
 	ad DataStore
+
+	kf concurrency.KeyFence
 )
 
 func initialize() {
 	if features.PostgresDatastore.Enabled() {
-		storage := postgres.New(globaldb.GetPostgres(), false)
+		kf = concurrency.NewKeyFence()
+		storage := postgres.New(globaldb.GetPostgres(), false, kf)
 		indexer := postgres.NewIndexer(globaldb.GetPostgres())
 		searcher := search.NewV2(storage, indexer)
 		ad = NewWithPostgres(storage, indexer, searcher, riskDS.Singleton(), ranking.NodeRanker(), ranking.NodeComponentRanker())
@@ -39,4 +43,10 @@ func initialize() {
 func Singleton() DataStore {
 	once.Do(initialize)
 	return ad
+}
+
+// NodeKeyFenceSingleton provides a key fence for node and its sub-components.
+func NodeKeyFenceSingleton() concurrency.KeyFence {
+	once.Do(initialize)
+	return kf
 }
