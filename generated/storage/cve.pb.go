@@ -523,6 +523,9 @@ func (CVSSV3_Severity) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{6, 6}
 }
 
+// ******************************
+// This proto is deprecated.
+// ******************************
 // Next Tag: 23
 type CVE struct {
 	Id          string        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE,store"`

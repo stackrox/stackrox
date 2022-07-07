@@ -41,8 +41,8 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ClusterCVEEdge)(nil)), "cluster_cve_edges")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster": ClustersSchema,
-			"storage.CVE":     ClusterCvesSchema,
+			"storage.Cluster":    ClustersSchema,
+			"storage.ClusterCVE": ClusterCvesSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
