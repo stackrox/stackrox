@@ -24,8 +24,8 @@ on:
         description: Release.patch numbers (A.B.C[-N])
         value: ${{format('{0}.{1}{2}', jobs.parse.outputs.release, jobs.parse.outputs.patch, jobs.parse.outputs.dash-name)}}
       branch:
-        description: Release branch name (release/A.B.x[-N])
-        value: ${{format('release-{0}.x{1}', jobs.parse.outputs.release, jobs.parse.outputs.dash-name)}}
+        description: Release branch name (release-A.B[-N])
+        value: ${{format('release-{0}{1}', jobs.parse.outputs.release, jobs.parse.outputs.dash-name)}}
       docs-branch:
         description: Documentation branch name
         value: ${{format('rhacs-docs-{0}.{1}', jobs.parse.outputs.release, jobs.parse.outputs.patch)}}
