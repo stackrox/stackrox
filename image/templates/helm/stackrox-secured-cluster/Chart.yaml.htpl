@@ -4,7 +4,7 @@ name: sensor
 [<- else >]
 name: stackrox-secured-cluster-services
 [<- end >]
-icon: https://www.stackrox.com/img/logo.svg
+icon: https://github.com/stackrox/stackrox/blob/master/image/templates/helm/stackrox-central/assets/icon.png
 description: Helm Chart for StackRox Secured Clusters
 type: application
 version: [< required "" .Versions.ChartVersion >]

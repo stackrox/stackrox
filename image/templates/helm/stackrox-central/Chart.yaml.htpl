@@ -1,6 +1,6 @@
 apiVersion: v2 # Can probably be generalized to v1 later. TODO(ROX-5502).
 name: stackrox-central-services
-icon: https://www.stackrox.com/img/logo.svg
+icon: https://github.com/stackrox/stackrox/blob/master/image/templates/helm/stackrox-central/assets/icon.png
 description: Helm Chart for StackRox Central Clusters
 type: application
 version: [< required "" .Versions.ChartVersion >]
