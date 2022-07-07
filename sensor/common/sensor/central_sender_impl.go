@@ -15,9 +15,11 @@ type centralSenderImpl struct {
 
 	stopC    concurrency.ErrorSignal
 	stoppedC concurrency.ErrorSignal
+	waitC    concurrency.Signal
 }
 
 func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, onStops ...func(error)) {
+	s.waitC = concurrency.NewSignal()
 	go s.send(stream, onStops...)
 }
 
@@ -79,12 +81,15 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 		case msg, ok = <-componentMsgsC:
 			if !ok {
 				s.stopC.SignalWithError(errors.New("channel closed"))
+				s.waitC.Signal()
 				return
 			}
 		case <-s.stopC.Done():
+			s.waitC.Signal()
 			return
 		case <-stream.Context().Done():
 			s.stopC.SignalWithError(stream.Context().Err())
+			s.waitC.Signal()
 			return
 		}
 		if msg != nil {
@@ -94,6 +99,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 
 			if err := wrappedStream.Send(msg); err != nil {
 				s.stopC.SignalWithError(err)
+				s.waitC.Signal()
 				return
 			}
 		}

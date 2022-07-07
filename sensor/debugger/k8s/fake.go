@@ -221,7 +221,7 @@ func (f *FakeEventsManager) Init() {
 // CreateEvents creates the k8s events from a given jsonl file
 // It returns a concurrency.Signal that will be triggered if we reach the minimum number of resources needed to start sensor
 // and an error channel
-func (f *FakeEventsManager) CreateEvents(ctx context.Context) (concurrency.Signal, <-chan error) {
+func (f *FakeEventsManager) CreateEvents(ctx context.Context) (*concurrency.Signal, <-chan error) {
 	min, errCh := f.handleEventsCreation(ctx)
 	errorCh := make(chan error)
 	go func() {
@@ -235,7 +235,7 @@ func (f *FakeEventsManager) CreateEvents(ctx context.Context) (concurrency.Signa
 
 // handleEventsCreation handles the creation of the events
 // It returns a concurrency.Signal indicating that we reached the minimum number of resources needed and an error channel
-func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (concurrency.Signal, <-chan error) {
+func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (*concurrency.Signal, <-chan error) {
 	minimumResources := concurrency.NewSignal()
 	errorCh := make(chan error)
 	events, errCh := f.eventsCreation()
@@ -270,7 +270,7 @@ func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (concurren
 
 		}
 	}()
-	return minimumResources, errorCh
+	return &minimumResources, errorCh
 }
 
 // eventsCreation creates the k8s events.
