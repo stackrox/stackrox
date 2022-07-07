@@ -31,7 +31,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Version)(nil)), "versions")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableVersionsStmt)
 		return schema
 	}()
 )
