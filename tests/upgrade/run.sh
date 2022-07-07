@@ -35,6 +35,7 @@ test_upgrade() {
         REGISTRY="stackrox"
     fi
 
+    export OUTPUT_FORMAT="helm"
     export STORAGE="pvc"
     export CLUSTER_TYPE_FOR_TEST=K8S
     require_environment "LONGTERM_LICENSE"
@@ -347,7 +348,7 @@ test_upgrade_paths() {
 
     cd "$TEST_ROOT"
 
-    set_images_to_current
+    helm_upgrade_to_current
     wait_for_api
 
     info "Waiting for scanner to be ready"
@@ -402,7 +403,11 @@ deploy_earlier_central() {
     chmod +x "bin/$TEST_HOST_OS/roxctl"
     PATH="bin/$TEST_HOST_OS:$PATH" command -v roxctl
     PATH="bin/$TEST_HOST_OS:$PATH" roxctl version
-    PATH="bin/$TEST_HOST_OS:$PATH" MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
+    PATH="bin/$TEST_HOST_OS:$PATH" \
+    MAIN_IMAGE_TAG="$EARLIER_TAG" \
+    SCANNER_IMAGE="$REGISTRY/scanner:$(cat SCANNER_VERSION)" \
+    SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
+    ./deploy/k8s/central.sh
 
     get_central_basic_auth_creds
 }
@@ -455,12 +460,13 @@ force_rollback() {
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
 }
 
-set_images_to_current() {
-    info "Setting images to the current tag"
+helm_upgrade_to_current() {
+    info "Helm upgrade to current"
 
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
-    kubectl -n stackrox set image deploy/scanner "scanner=$REGISTRY/scanner:$(cat SCANNER_VERSION)"
-    kubectl -n stackrox set image deploy/scanner-db "*=$REGISTRY/scanner-db:$(cat SCANNER_VERSION)"
+    roxctl helm output central-services --image-defaults development_build --output-dir /tmp/stackrox-central-services-chart
+    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart
+
+    kubectl -n stackrox get deploy -o wide
 }
 
 validate_db_backup_and_restore() {
