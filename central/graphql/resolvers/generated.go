@@ -145,12 +145,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("CVE", []string{
 		"createdAt: Time",
-		"cve: String!",
 		"id: ID!",
 		"impactScore: Float!",
 		"lastModified: Time",
 		"link: String!",
-		"operatingSystem: String!",
 		"publishedOn: Time",
 		"references: [CVE_Reference]!",
 		"scoreVersion: CVE_ScoreVersion!",
@@ -2425,11 +2423,6 @@ func (resolver *cVEResolver) CreatedAt(ctx context.Context) (*graphql.Time, erro
 	return timestamp(value)
 }
 
-func (resolver *cVEResolver) Cve(ctx context.Context) string {
-	value := resolver.data.GetCve()
-	return value
-}
-
 func (resolver *cVEResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -2447,11 +2440,6 @@ func (resolver *cVEResolver) LastModified(ctx context.Context) (*graphql.Time, e
 
 func (resolver *cVEResolver) Link(ctx context.Context) string {
 	value := resolver.data.GetLink()
-	return value
-}
-
-func (resolver *cVEResolver) OperatingSystem(ctx context.Context) string {
-	value := resolver.data.GetOperatingSystem()
 	return value
 }
 
