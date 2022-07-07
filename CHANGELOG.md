@@ -6,7 +6,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
-## [3.71.0-rc.1]
+## [3.71.0]
 
 - ROX-8051: The default collection method is changed from KernelModule to eBPF, following improved eBPF performance in collector.
 - ROX-11070: There have been changes made to the `v1/groups` API, including a deprecation:
