@@ -473,8 +473,8 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         log.info "Process Baseline before pwd: ${baselineAfterDelete}"
 
-        // sleep 5 seconds to allow for propagation to sensor
-        sleep 5000
+        // sleep 10 seconds to allow for propagation to sensor
+        sleep 10000
         orchestrator.execInContainer(deployment, "pwd")
 
         then:
