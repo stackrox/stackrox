@@ -399,15 +399,15 @@ func (ds *datastoreImpl) CreateUnlockedProcessBaseline(ctx context.Context, key 
 		return nil, err
 	}
 
-	// Build the elements for the baseline
-	elements := make([]*storage.BaselineItem, 0, len(baselineList))
+	// Build the de-duped elements for the baseline
+	elements := make(map[string]*storage.BaselineItem, len(baselineList))
 
 	for _, indicator := range baselineList {
 		baselineItem := processBaselinePkg.BaselineItemFromProcess(indicator)
 
 		insertableElement := &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: baselineItem}}
 
-		elements = append(elements, insertableElement)
+		elements[baselineItem] = insertableElement
 	}
 
 	baseElements := make([]*storage.BaselineElement, 0, len(elements))

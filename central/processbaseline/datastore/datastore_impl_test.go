@@ -364,6 +364,60 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 
 }
 
+func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaselineDupesRemoved() {
+	key := fixtures.GetBaselineKey()
+	indicators :=
+		[]*storage.ProcessIndicator{
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/not-apt-get",
+					Args:         "install nmap",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/apt-get",
+					Args:         "install nmap",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/curl",
+					Args:         "badssl.com",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/apt-get",
+					Args:         "install nmap",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/curl",
+					Args:         "badssl.com",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+		}
+
+	suite.indicatorMockStore.EXPECT().SearchRawProcessIndicators(suite.requestContext, gomock.Any()).Return(indicators, nil)
+
+	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
+	suite.NoError(err)
+
+	suite.Equal(key, baseline.GetKey())
+	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(baseline.UserLockedTimestamp == nil)
+	suite.True(baseline.Elements != nil)
+	suite.True(len(baseline.Elements) == len(indicators)-2)
+
+}
+
 func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaselineNoProcesses() {
 	key := fixtures.GetBaselineKey()
 
