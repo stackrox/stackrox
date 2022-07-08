@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -166,7 +165,7 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	}
 
 	// cast query
-	query, err := args.AsV1QueryOrEmpty()
+	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.Fixable))
 	if err != nil {
 		return nil, err
 	}
@@ -256,8 +255,12 @@ func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, e
 		return "", nil
 	}
 
-	edgeID := postgres.IDFromPks([]string{scope.ID, resolver.data.GetId()})
-	edge, found, err := resolver.root.ComponentCVEEdgeDataStore.Get(ctx, edgeID)
+	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	results, err := resolver.root.ComponentCVEEdgeDataStore.Search(ctx, query)
+	if err != nil || len(results) == 0 {
+		return "", err
+	}
+	edge, found, err := resolver.root.ComponentCVEEdgeDataStore.Get(ctx, results[0].ID)
 	if err != nil || !found {
 		return "", err
 	}
@@ -265,7 +268,7 @@ func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, e
 }
 
 func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
-	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID))
+	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID), search.ExcludeFieldLabel(search.Fixable))
 	if err != nil {
 		return false, err
 	}
@@ -465,9 +468,12 @@ func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args Ra
 		return nil, nil
 	}
 
-	edgeID := postgres.IDFromPks([]string{scope.ID, resolver.data.GetId()})
-
-	edge, found, err := resolver.root.ImageCVEEdgeDataStore.Get(ctx, edgeID)
+	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	results, err := resolver.root.ComponentCVEEdgeDataStore.Search(ctx, query)
+	if err != nil || len(results) == 0 {
+		return nil, err
+	}
+	edge, found, err := resolver.root.ImageCVEEdgeDataStore.Get(ctx, results[0].ID)
 	if err != nil || !found {
 		return nil, err
 	}
