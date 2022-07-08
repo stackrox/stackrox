@@ -277,7 +277,7 @@ jobs:
     with:
       flavor: qa-demo
       name: qa-k8s-${{needs.variables.outputs.milestone}}
-      args: main-image=docker.io/stackrox/main:${{needs.variables.outputs.milestone}}
+      args: main-image=quay.io/rhacs-eng/main:${{needs.variables.outputs.milestone}}
       lifespan: 48h
 
   create-os4-cluster:
@@ -328,13 +328,13 @@ jobs:
           tar xf oc.tar
       - name: Patch central
         run: |
-          ./oc -n stackrox set image deploy/central central=docker.io/stackrox/main:$TAG
+          ./oc -n stackrox set image deploy/central central=quay.io/rhacs-eng/main:$TAG
       - name: Patch scanner
         run: |
           ./oc -n stackrox patch hpa/scanner -p '{"spec":{"minReplicas":2}}'
-          ./oc -n stackrox set image deploy/scanner scanner=docker.io/stackrox/scanner:$TAG
-          ./oc -n stackrox set image deploy/scanner-db db=docker.io/stackrox/scanner-db:$TAG
-          ./oc -n stackrox set image deploy/scanner-db init-db=docker.io/stackrox/scanner-db:$TAG
+          ./oc -n stackrox set image deploy/scanner scanner=quay.io/rhacs-eng/scanner:$TAG
+          ./oc -n stackrox set image deploy/scanner-db db=quay.io/rhacs-eng/scanner-db:$TAG
+          ./oc -n stackrox set image deploy/scanner-db init-db=quay.io/rhacs-eng/scanner-db:$TAG
       - name: Patch sensor
         env:
           PATCH: >-
@@ -361,12 +361,12 @@ jobs:
             }
         run: |
           ./oc -n stackrox patch deploy/sensor -p '${{env.PATCH}}'
-          ./oc -n stackrox set image deploy/sensor sensor=docker.io/stackrox/main:$TAG
+          ./oc -n stackrox set image deploy/sensor sensor=quay.io/rhacs-eng/main:$TAG
       - name: Patch collector
         run: |
-          ./oc -n stackrox set image ds/collector compliance=docker.io/stackrox/main:$TAG
-          ./oc -n stackrox set image ds/collector collector=docker.io/stackrox/collector:$TAG
-          ./oc -n stackrox set image deploy/admission-control admission-control=docker.io/stackrox/main:$TAG
+          ./oc -n stackrox set image ds/collector compliance=quay.io/rhacs-eng/main:$TAG
+          ./oc -n stackrox set image ds/collector collector=quay.io/rhacs-eng/collector:$TAG
+          ./oc -n stackrox set image deploy/admission-control admission-control=quay.io/rhacs-eng/main:$TAG
 
   create-long-running-cluster:
     name: Create GKE long-running cluster
