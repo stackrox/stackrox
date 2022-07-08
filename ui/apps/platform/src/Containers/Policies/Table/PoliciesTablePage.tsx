@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     PageSection,
-    Title,
     Bullseye,
     Alert,
     Spinner,
@@ -18,7 +17,6 @@ import {
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
-import PageTitle from 'Components/PageTitle';
 import { policiesBasePath } from 'routePaths';
 import {
     getPolicies,
@@ -36,7 +34,8 @@ import { SearchFilter } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
-import TabNav from 'Components/TabNav';
+import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
+import PolicyManagementSubHeader from 'Containers/PolicyManagement/PolicyManagementSubHeader';
 import ImportPolicyJSONModal from '../Modal/ImportPolicyJSONModal';
 import PoliciesTable from './PoliciesTable';
 
@@ -175,74 +174,63 @@ function PoliciesTablePage({
         fetchPolicies(query);
     }, [query]);
 
-    if (isLoading) {
-        return (
-            <PageSection variant="light" isFilled id="policies-table-loading">
+    let pageContent = (
+        <PageSection variant="light" isFilled id="policies-table-loading">
+            <Bullseye>
+                <Spinner isSVG />
+            </Bullseye>
+        </PageSection>
+    );
+
+    if (errorMessage) {
+        pageContent = (
+            <PageSection variant="light" isFilled id="policies-table-error">
                 <Bullseye>
-                    <Spinner isSVG />
+                    <Alert variant="danger" title={errorMessage} />
                 </Bullseye>
             </PageSection>
         );
     }
 
+    if (!isLoading && !errorMessage) {
+        pageContent = (
+            <PoliciesTable
+                notifiers={notifiers}
+                policies={policies}
+                fetchPoliciesHandler={() => fetchPolicies(query)}
+                addToast={addToast}
+                hasWriteAccessForPolicy={hasWriteAccessForPolicy}
+                deletePoliciesHandler={deletePoliciesHandler}
+                exportPoliciesHandler={exportPoliciesHandler}
+                enablePoliciesHandler={enablePoliciesHandler}
+                disablePoliciesHandler={disablePoliciesHandler}
+                handleChangeSearchFilter={handleChangeSearchFilter}
+                onClickReassessPolicies={onClickReassessPolicies}
+                searchFilter={searchFilter}
+                searchOptions={searchOptions}
+            />
+        );
+    }
+
     return (
         <>
-            <PageTitle title="Policy Management - Policies" />
-            <PageSection variant="light">
-                <Title headingLevel="h1">Policy Management</Title>
-            </PageSection>
-            <PageSection variant="light" className="pf-u-px-sm pf-u-py-0">
-                <TabNav
-                    currentTabTitle="Policies"
-                    tabLinks={[{ title: 'Policies', href: policiesBasePath }]}
-                />
-            </PageSection>
+            <PolicyManagementHeader currentTabTitle="Policies" />
             <Divider component="div" />
-            <PageSection variant="light" className="pf-u-py-0">
-                <Toolbar inset={{ default: 'insetNone' }}>
-                    <ToolbarContent>
-                        <ToolbarItem>
-                            <div className="pf-u-font-size-sm">
-                                Configure security policies for your resources.
-                            </div>
-                        </ToolbarItem>
-                        <ToolbarItem alignment={{ default: 'alignRight' }}>
-                            <Flex>
-                                <Button variant="primary" onClick={onClickCreatePolicy}>
-                                    Create policy
-                                </Button>
-                                <Button variant="secondary" onClick={onClickImportPolicy}>
-                                    Import policy
-                                </Button>
-                            </Flex>
-                        </ToolbarItem>
-                    </ToolbarContent>
-                </Toolbar>
-            </PageSection>
+            <PolicyManagementSubHeader
+                description="Configure security policies for your resources."
+                actions={
+                    <>
+                        <Button variant="primary" onClick={onClickCreatePolicy}>
+                            Create policy
+                        </Button>
+                        <Button variant="secondary" onClick={onClickImportPolicy}>
+                            Import policy
+                        </Button>
+                    </>
+                }
+            />
             <Divider component="div" />
-            {errorMessage ? (
-                <PageSection variant="light" isFilled id="policies-table-error">
-                    <Bullseye>
-                        <Alert variant="danger" title={errorMessage} />
-                    </Bullseye>
-                </PageSection>
-            ) : (
-                <PoliciesTable
-                    notifiers={notifiers}
-                    policies={policies}
-                    fetchPoliciesHandler={() => fetchPolicies(query)}
-                    addToast={addToast}
-                    hasWriteAccessForPolicy={hasWriteAccessForPolicy}
-                    deletePoliciesHandler={deletePoliciesHandler}
-                    exportPoliciesHandler={exportPoliciesHandler}
-                    enablePoliciesHandler={enablePoliciesHandler}
-                    disablePoliciesHandler={disablePoliciesHandler}
-                    handleChangeSearchFilter={handleChangeSearchFilter}
-                    onClickReassessPolicies={onClickReassessPolicies}
-                    searchFilter={searchFilter}
-                    searchOptions={searchOptions}
-                />
-            )}
+            {pageContent}
             <ImportPolicyJSONModal
                 isOpen={isImportModalOpen}
                 cancelModal={() => {
