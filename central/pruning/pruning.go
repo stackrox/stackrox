@@ -495,10 +495,6 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 }
 
 func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
-	if !features.DecommissionedClusterRetention.Enabled() {
-		return
-	}
-
 	// Check to see if pruning is enabled
 	clusterRetention := config.GetDecommissionedClusterRetention()
 	retentionDays := int64(clusterRetention.GetRetentionDurationDays())
@@ -535,7 +531,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 		return
 	}
 	if timeutil.TimeDiffDays(time.Now(), configCreationTime) < int(retentionDays) {
-		// In this case, the deployments that became unhealthy after config creation would also be unhealthy for fewer than retention days
+		// In this case, the clusters that became unhealthy after config creation would also be unhealthy for fewer than retention days
 		// and pruning can be skipped
 		log.Info("[Cluster Pruning] skipping pruning as retention period only starts after upgrade to version 3.71.0.")
 		return
@@ -590,7 +586,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 
 	if len(clustersToPrune) == 0 {
 		// Debug log as it's be noisy, but is helpful if debugging
-		log.Debug("[Cluster Pruning] no inactive clusters found.")
+		log.Debug("[Cluster Pruning] no inactive, non excluded clusters found.")
 		return
 	}
 

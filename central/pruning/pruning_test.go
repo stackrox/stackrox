@@ -597,34 +597,34 @@ func TestClusterPruning(t *testing.T) {
 					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 				},
 				{
-					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Name:         "UNHEALTHY cluster last contacted more than retention days ago",
 					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 			},
 			expectedNames: []string{
 				"HEALTHY cluster",
-				"UNHEALTHY cluster with last contact time before config creation time",
+				"UNHEALTHY cluster last contacted more than retention days ago",
 			},
 		},
 		{
 			name:        "No pruning if it hasn't been 24hrs since last run",
 			recentlyRun: true,
-			config:      getCluserRetentionConfig(0, 90, 72),
+			config:      getCluserRetentionConfig(60, 90, 72),
 			clusters: []*storage.Cluster{
 				{
 					Name:         "HEALTHY cluster",
 					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 				},
 				{
-					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Name:         "UNHEALTHY cluster last contacted more than retention days ago",
 					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 			},
 			expectedNames: []string{
 				"HEALTHY cluster",
-				"UNHEALTHY cluster with last contact time before config creation time",
+				"UNHEALTHY cluster last contacted more than retention days ago",
 			},
 		},
 		{
@@ -636,14 +636,14 @@ func TestClusterPruning(t *testing.T) {
 					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 				},
 				{
-					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Name:         "UNHEALTHY cluster last contacted more than retention days ago",
 					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 			},
 			expectedNames: []string{
 				"HEALTHY cluster",
-				"UNHEALTHY cluster with last contact time before config creation time",
+				"UNHEALTHY cluster last contacted more than retention days ago",
 			},
 		},
 		{
@@ -670,13 +670,13 @@ func TestClusterPruning(t *testing.T) {
 			config: getCluserRetentionConfig(60, 90, 72),
 			clusters: []*storage.Cluster{
 				{
-					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Name:         "UNHEALTHY cluster last contacted more than retention days ago",
 					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 			},
 			expectedNames: []string{
-				"UNHEALTHY cluster with last contact time before config creation time",
+				"UNHEALTHY cluster last contacted more than retention days ago",
 			},
 		},
 		{
@@ -684,19 +684,19 @@ func TestClusterPruning(t *testing.T) {
 			config: getCluserRetentionConfig(60, 90, 72),
 			clusters: []*storage.Cluster{
 				{
-					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Name:         "UNHEALTHY cluster last contacted more than retention days ago",
 					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 				{
-					Name:         "Another UNHEALTHY cluster with last contact time before config creation time",
+					Name:         "Another UNHEALTHY cluster last contacted more than retention days ago",
 					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 			},
 			expectedNames: []string{
-				"UNHEALTHY cluster with last contact time before config creation time",
-				"Another UNHEALTHY cluster with last contact time before config creation time",
+				"UNHEALTHY cluster last contacted more than retention days ago",
+				"Another UNHEALTHY cluster last contacted more than retention days ago",
 			},
 		},
 		{
@@ -708,7 +708,7 @@ func TestClusterPruning(t *testing.T) {
 					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 				},
 				{
-					Name:         "UNHEALTHY cluster with last contact time before config creation time",
+					Name:         "UNHEALTHY cluster last contacted more than retention days ago",
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 			},
@@ -735,7 +735,7 @@ func TestClusterPruning(t *testing.T) {
 					HealthStatus: unhealthyClusterStatus(10),
 				},
 				{
-					Name:         "UNHEALTHY cluster with last contact time more than retention",
+					Name:         "UNHEALTHY cluster last contacted more than retention days ago",
 					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
@@ -755,12 +755,12 @@ func TestClusterPruning(t *testing.T) {
 					HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 				},
 				{
-					Name:         "UNHEALTHY cluster with last contact time more than retention",
+					Name:         "UNHEALTHY cluster last contacted more than retention days ago",
 					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(80),
 				},
 				{
-					Name:         "Another UNHEALTHY cluster with last contact time more than retention",
+					Name:         "Another UNHEALTHY cluster last contacted more than retention days ago",
 					Labels:       map[string]string{"k1": "v2"},
 					HealthStatus: unhealthyClusterStatus(100),
 				},
