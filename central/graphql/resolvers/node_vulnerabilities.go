@@ -56,12 +56,14 @@ func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	vuln, exists, err := resolver.NodeCVEDataStore.Get(ctx, string(*args.ID))
+
+	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if !exists {
-		return nil, errors.Errorf("node cve not found: %s", string(*args.ID))
+	vuln, err := vulnLoader.FromID(ctx, string(*args.ID))
+	if err != nil {
+		return nil, err
 	}
 	vulnResolver, err := resolver.wrapNodeCVE(vuln, true, nil)
 	if err != nil {
@@ -145,7 +147,7 @@ func (resolver *Resolver) NodeVulnCounter(ctx context.Context, args RawQuery) (*
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	query, err := args.AsV1QueryOrEmpty()
+	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.Fixable))
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +226,7 @@ func (resolver *nodeCVEResolver) ID(ctx context.Context) graphql.ID {
 
 // IsFixable returns whether node CVE is fixable by any component
 func (resolver *nodeCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
-	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVE))
+	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID), search.ExcludeFieldLabel(search.Fixable))
 	if err != nil {
 		return false, err
 	}
@@ -235,7 +237,11 @@ func (resolver *nodeCVEResolver) IsFixable(ctx context.Context, args RawQuery) (
 	}
 
 	query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
-	count, err := resolver.root.NodeCVEDataStore.Count(ctx, query)
+	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
+	if err != nil {
+		return false, err
+	}
+	count, err := vulnLoader.CountFromQuery(ctx, query)
 	if err != nil {
 		return false, err
 	}

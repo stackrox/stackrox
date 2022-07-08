@@ -3,6 +3,8 @@ package resolvers
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -44,14 +46,22 @@ func newPlottedNodeVulnerabilitiesResolver(ctx context.Context, root *Resolver, 
 	if err != nil {
 		return nil, err
 	}
-	all, err := root.NodeCVEDataStore.Search(ctx, query)
+	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
 	if err != nil {
 		return nil, err
 	}
-	allCveIds := search.ResultsToIDs(all)
+	allCves, err := vulnLoader.FromQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	allCveIds := make([]string, 0, len(allCves))
+	for _, cve := range allCves {
+		allCveIds = append(allCveIds, cve.GetId())
+	}
 
-	fixableCount, err := root.NodeCVEDataStore.Count(ctx,
-		search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
+	fixableQuery, err := getPlottedVulnsV1Query(args, search.ExcludeFieldLabel(search.Fixable))
+	fixableCount, err := vulnLoader.CountFromQuery(ctx,
+		search.ConjunctionQuery(fixableQuery, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +69,7 @@ func newPlottedNodeVulnerabilitiesResolver(ctx context.Context, root *Resolver, 
 	return &PlottedNodeVulnerabilitiesResolver{
 		root:    root,
 		all:     allCveIds,
-		fixable: fixableCount,
+		fixable: int(fixableCount),
 	}, nil
 }
 
@@ -74,7 +84,7 @@ func (pvr *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounter(_ c
 }
 
 // NodeVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
-func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args *inputtypes.Pagination) ([]NodeVulnerabilityResolver, error) {
 	if !features.PostgresDatastore.Enabled() {
 		vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, args)
 		if err != nil {
