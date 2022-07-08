@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/cve/node/datastore/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -36,13 +37,14 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, kf concurrency.KeyFence) (DataStore, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
 		searcher: searcher,
 
 		cveSuppressionCache: make(common.CVESuppressionCache),
+		keyFence:            kf,
 	}
 	if err := ds.buildSuppressedCache(); err != nil {
 		return nil, err
@@ -55,5 +57,5 @@ func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, erro
 	dbstore := postgres.New(pool)
 	indexer := postgres.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher)
+	return New(dbstore, indexer, searcher, concurrency.NewKeyFence())
 }

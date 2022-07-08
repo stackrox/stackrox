@@ -88,7 +88,7 @@ func NewWithPostgres(storage store.Store, index imageIndexer.Indexer, risks risk
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgresStore.New(pool, false)
+	dbstore := postgresStore.New(pool, false, concurrency.NewKeyFence())
 	indexer := postgresStore.NewIndexer(pool)
 	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {

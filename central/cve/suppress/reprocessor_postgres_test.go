@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -75,7 +76,7 @@ func (s *ReprocessorPostgresTestSuite) SetupTest() {
 
 	cveStore := cvePG.New(s.db)
 	cveIndexer := cvePG.NewIndexer(s.db)
-	cveDataStore, err := cveDS.New(cveStore, cveIndexer, cveSearcher.New(cveStore, cveIndexer))
+	cveDataStore, err := cveDS.New(cveStore, cveIndexer, cveSearcher.New(cveStore, cveIndexer), concurrency.NewKeyFence())
 	s.NoError(err)
 	s.cveDataStore = cveDataStore
 

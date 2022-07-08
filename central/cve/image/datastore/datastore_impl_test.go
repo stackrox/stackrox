@@ -12,6 +12,7 @@ import (
 	searchMocks "github.com/stackrox/rox/central/cve/image/datastore/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/image/datastore/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -47,7 +48,7 @@ func (suite *ImageCVEDataStoreSuite) SetupSuite() {
 
 	suite.searcher.EXPECT().SearchRawImageCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.ImageCVE{}, nil)
 
-	ds, err := New(suite.storage, suite.indexer, suite.searcher)
+	ds, err := New(suite.storage, suite.indexer, suite.searcher, concurrency.NewKeyFence())
 	suite.Require().NoError(err)
 	suite.datastore = ds.(*datastoreImpl)
 }
