@@ -35,7 +35,6 @@ runOnAllTagsWithQuayIOPullCtx: &runOnAllTagsWithQuayIOPullCtx
 runOnAllTagsWithPushCtx: &runOnAllTagsWithPushCtx
   <<: *runOnAllTags
   context:
-  - docker-io-push
   - quay-stackrox-io-readwrite
   - quay-rhacs-eng-readwrite
   - quay-rhacs-eng-readonly
@@ -2556,9 +2555,6 @@ jobs:
           command: |
             TAG="$(make --quiet tag)"
 
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-            ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main:${TAG}" | cat
-
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             docker tag "stackrox/main:${TAG}" "quay.io/rhacs-eng/main:${TAG}"
             ./scripts/ci/push-as-manifest-list.sh "quay.io/rhacs-eng/main:${TAG}" | cat
@@ -2672,7 +2668,6 @@ jobs:
       - run:
           name: Build images
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             make scale-image mock-grpc-server-image
 
       - *saveGoBuildCache
@@ -2680,14 +2675,12 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
             TAG=$(make --quiet tag)
 
             QUAY_REPO="rhacs-eng"
             for img in scale grpc-server; do
-              ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/${img}:${TAG}" | cat
               ./scripts/ci/push-as-manifest-list.sh "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
             done
 
@@ -3959,7 +3952,11 @@ workflows:
             - pre-build-cli
             - pre-build-go-binaries
       - build-operator:
-          <<: *runOnAllTagsWithPushCtx
+          <<: *runOnAllTags
+          context:
+            - quay-stackrox-io-readwrite
+            - quay-rhacs-eng-readwrite
+            - quay-rhacs-eng-readonly
       - build-race-condition-debug-image:
           <<: *runOnAllTagsWithPushCtx
       - build-scale-monitoring-and-mock-server:
@@ -4200,11 +4197,9 @@ workflows:
           requires:
             - pre-create-parameters
       - pre-build-go-binaries:
-          context: docker-io-push
           requires:
             - pre-create-parameters
       - build-rhacs:
-          context: docker-io-push
           requires:
             - pre-build-ui-rhacs
             - pre-build-cli
