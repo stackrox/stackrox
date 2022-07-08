@@ -170,17 +170,17 @@ Note that unlike the `make deploy` route, deployment with OLM does not require c
 $ make operator-sdk
 
 # 1. Install OLM.
-$ bin/operator-sdk-1.9.0 olm install
+$ bin/operator-sdk-1.14.0 olm install
 
 # 2. Create a namespace for testing bundle.
 $ kubectl create ns bundle-test
 
-# 2. Create image pull secrets.
+# 2. Create image pull secrets. Only needed if using images from docker.io.
 # If the inner magic does not work, just provide --docker-username and --docker-password with your DockerHub creds.
 $ kubectl -n bundle-test create secret docker-registry my-opm-image-pull-secrets \
-  --docker-server=https://index.docker.io/v1/ \
+  --docker-server=https://quay.io/v1/ \
   --docker-email=ignored@email.com \
-  $($(command -v docker-credential-osxkeychain || command -v docker-credential-secretservice) get <<<"docker.io" | jq -r '"--docker-username=\(.Username) --docker-password=\(.Secret)"')
+  $($(command -v docker-credential-osxkeychain || command -v docker-credential-secretservice) get <<<"quay.io" | jq -r '"--docker-username=\(.Username) --docker-password=\(.Secret)"')
 
 # 3. Configure default service account to use these pull secrets.
 $ kubectl -n bundle-test patch serviceaccount default -p '{"imagePullSecrets": [{"name": "my-opm-image-pull-secrets"}]}'
@@ -189,8 +189,8 @@ $ kubectl -n bundle-test patch serviceaccount default -p '{"imagePullSecrets": [
 # Use one-liner above.
 
 # 4. Run bundle.
-$ bin/operator-sdk-1.9.0 run bundle \
-  docker.io/stackrox/stackrox-operator-bundle:v$(make --quiet tag) \
+$ bin/operator-sdk-1.14.0 run bundle \
+  quay.io/rhacs-eng/stackrox-operator-bundle:v$(make --quiet tag) \
   --pull-secret-name my-opm-image-pull-secrets \
   --service-account default \
   --namespace bundle-test
@@ -223,7 +223,7 @@ kubectl -n bundle-test delete catalogsources.operators.coreos.com rhacs-operator
 Also, you can blow everything away with
 
 ```bash
-$ bin/operator-sdk-1.9.0 olm uninstall
+$ bin/operator-sdk-1.14.0 olm uninstall
 $ kubectl delete ns bundle-test
 ```
 
