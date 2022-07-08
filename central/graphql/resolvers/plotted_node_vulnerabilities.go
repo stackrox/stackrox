@@ -86,7 +86,7 @@ func (pvr *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounter(_ c
 // NodeVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
 func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args *inputtypes.Pagination) ([]NodeVulnerabilityResolver, error) {
 	if !features.PostgresDatastore.Enabled() {
-		vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, args)
+		vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, PaginatedQuery{Pagination: args})
 		if err != nil {
 			return nil, err
 		}
@@ -98,35 +98,9 @@ func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.C
 		return ret, nil
 	}
 
-	q, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-
 	if len(pvr.all) == 0 {
 		return nil, nil
 	}
-
-	cvesInterface, err := paginationWrapper{
-		pv: q.GetPagination(),
-	}.paginate(pvr.all, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	vulns, err := pvr.root.NodeCVEDataStore.GetBatch(ctx, cvesInterface.([]string))
-	if err != nil {
-		return nil, err
-	}
-
-	vulnResolvers, err := pvr.root.wrapNodeCVEs(vulns, err)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]NodeVulnerabilityResolver, 0, len(vulnResolvers))
-	for _, resolver := range vulnResolvers {
-		ret = append(ret, resolver)
-	}
-	return ret, nil
+	q := search.NewQueryBuilder().AddExactMatches(search.CVEID, pvr.all...).Query()
+	return pvr.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &q, Pagination: args})
 }
