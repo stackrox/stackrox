@@ -34,8 +34,8 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # IMAGE_REPO is the repository (server and namespace) into which the operator images will get pushed.
-IMAGE_REPO ?= docker.io/stackrox
-# IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
+IMAGE_REPO ?= $(shell $(MAKE) --quiet --no-print-directory -C .. default-image-registry)
+# IMAGE_TAG_BASE defines the quay.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
 IMAGE_TAG_BASE ?= $(IMAGE_REPO)/stackrox-operator
 
@@ -126,6 +126,9 @@ tag: ## Print the correct operator version (== image tag).
 
 image-flavor: ## Print the current image flavor.
 	@echo $(ROX_IMAGE_FLAVOR)
+
+image-tag-base: ## Print current image tag base.
+	@echo $(IMAGE_TAG_BASE)
 
 # `everything` and `all` are separate targets.
 # `everything` pushes images. `all` is the default target that's executed when you simply run `make` without arguments.
@@ -242,11 +245,11 @@ test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
 	KUTTL=$(KUTTL) $(KUTTL) test --config kuttl-test.yaml tests/upgrade
 
-stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on DockerHub. Used by Helm chart.
+stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
 # Create stackrox namespace if not exists.
 	echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "stackrox" } }' | kubectl apply -f -
 # Create stackrox image pull secret in stackrox namespace.
-	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox docker.io | kubectl -n stackrox apply -f -
+	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox quay.io | kubectl -n stackrox apply -f -
 
 .PHONY: check-ci-setup
 check-ci-setup: ## Make sure this target is not started in CI environment.
@@ -351,10 +354,10 @@ ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
 # Version is hardcoded to 0.0.1 here because otherwise git-versioned files are changed which we want to avoid.
 # The correct version is updated later.
-# Likewise, we hardcode the image reference to docker.io/stackrox/stackrox-operator. If this is overridden via
+# Likewise, we hardcode the image reference to quay.io/stackrox-io/stackrox-operator. If this is overridden via
 # the IMG_REPO environment variable, the final reference will be injected in the bundle-post-process step.
 	$(OPERATOR_SDK) generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=docker.io/stackrox/stackrox-operator:0.0.1
+	cd config/manager && $(KUSTOMIZE) edit set image controller=quay.io/stackrox-io/stackrox-operator:0.0.1
 	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image scorecard-test=quay.io/operator-framework/scorecard-test:v$(OPERATOR_SDK_VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version 0.0.1 $(BUNDLE_METADATA_OPTS)
 # Delete lines that copy the original bundle files in bundle.Dockerfile (we can't just use `rm` in scratch image).

@@ -677,6 +677,10 @@ endif
 image-flavor:
 	@echo $(ROX_IMAGE_FLAVOR)
 
+.PHONY: default-image-registry
+default-image-registry:
+	@echo $(DEFAULT_IMAGE_REGISTRY)
+
 .PHONY: ossls-audit
 ossls-audit: deps
 	ossls version
