@@ -80,15 +80,6 @@ const mocks = [
     },
 ];
 
-jest.mock('@patternfly/react-charts', () => {
-    const { Chart, ...rest } = jest.requireActual('@patternfly/react-charts');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return {
-        ...rest,
-        Chart: (props) => <Chart {...props} animate={undefined} />,
-    };
-});
-
 jest.mock('hooks/useResizeObserver');
 
 beforeEach(() => {
