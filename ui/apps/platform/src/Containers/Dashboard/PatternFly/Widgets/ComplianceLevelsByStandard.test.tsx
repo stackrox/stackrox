@@ -1,6 +1,6 @@
 import React from 'react';
 import { MockedProvider } from '@apollo/client/testing';
-import { screen, within, waitFor, act } from '@testing-library/react';
+import { screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
@@ -125,10 +125,8 @@ describe('Compliance levels by standard dashboard widget', () => {
         });
 
         // Sort by descending
-        await act(async () => {
-            await user.click(screen.getByText('Options'));
-            await user.click(screen.getByText('Descending'));
-        });
+        await user.click(screen.getByText('Options'));
+        await user.click(screen.getByText('Descending'));
 
         await waitFor(async () => {
             const descendingPercentages = await getBarPercentages();
@@ -151,9 +149,7 @@ describe('Compliance levels by standard dashboard widget', () => {
         expect(history.location.pathname).toBe(complianceBasePath);
 
         const standard = 'CIS Docker v1.2.0';
-        await act(async () => {
-            await user.click(await screen.findByText(standard));
-        });
+        await user.click(await screen.findByText(standard));
         expect(history.location.pathname).toBe(
             `${complianceBasePath}/${urlEntityListTypes[standardEntityTypes.CONTROL]}`
         );
