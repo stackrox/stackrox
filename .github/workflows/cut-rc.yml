@@ -233,9 +233,10 @@ jobs:
         id: pre-release
         if: env.DRY_RUN == 'false'
         run: |
+          _MD_SECTION="${{needs.variables.outputs.release-patch}}"
           URL=$(gh release create "${{needs.variables.outputs.milestone}}" \
             --prerelease \
-            --generate-notes \
+            --notes "**Changelog**: ${{github.repository}}/blob/master/CHANGELOG.md#${_MD_SECTION//./}" \
             --repo "${{github.repository}}" \
             --target "${{needs.variables.outputs.branch}}")
           echo "::set-output name=url::$URL"
