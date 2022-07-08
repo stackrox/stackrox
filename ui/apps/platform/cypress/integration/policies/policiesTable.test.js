@@ -234,7 +234,9 @@ describe('Policies table', () => {
 
             // Get tr element again after table renders.
             cy.get(trSelector).then(([tr]) => {
-                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Disabled")`);
+                cy.wrap(tr)
+                    .find(`${selectors.table.statusCell}:contains("Disabled")`)
+                    .scrollIntoView();
                 cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
                 cy.wrap(tr)
                     .find(`${selectors.table.actionsItemButton}:contains("Enable policy")`)
