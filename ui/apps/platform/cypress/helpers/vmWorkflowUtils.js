@@ -31,7 +31,9 @@ function validateDataInEntityListPage(entityCountAndName, entityURL) {
 }
 
 function validateLinksInListPage(col, parentUrl) {
-    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`, {
+        timeout: 8000,
+    })
         .invoke('text')
         .then((value) => {
             cy.get(
@@ -44,7 +46,9 @@ function validateLinksInListPage(col, parentUrl) {
 }
 
 function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
-    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`, {
+        timeout: 8000,
+    })
         .invoke('text')
         .then((value) => {
             cy.get(colSelector).eq(0).click({ force: true });
@@ -79,7 +83,9 @@ function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
 }
 
 function validateTabsInEntityPage(parentUrl, colSelector, col) {
-    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`, {
+        timeout: 8000,
+    })
         .invoke('text')
         .then((value) => {
             cy.get(colSelector).eq(0).click({ force: true });
