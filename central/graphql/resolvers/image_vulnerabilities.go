@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/vulnerabilityrequest/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -118,7 +117,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	// cast as return type
 	ret := make([]ImageVulnerabilityResolver, 0, len(cveResolvers))
 	for _, res := range cveResolvers {
-		res.ctx = ctx // TODO not sure if we need to do this
+		res.ctx = ctx
 		ret = append(ret, res)
 	}
 	return ret, nil
@@ -198,19 +197,16 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	return mapCVEsToVulnerabilityCounter(fixable, unfixable), nil
 }
 
+/*
+Utility Functions
+*/
+
 func imageCveToVulnerabilityWithSeverity(in []*storage.ImageCVE) []VulnerabilityWithSeverity {
 	ret := make([]VulnerabilityWithSeverity, len(in))
 	for _, vuln := range in {
 		ret = append(ret, vuln)
 	}
 	return ret
-}
-
-// withImageCveTypeFiltering adds a conjunction as a raw query to filter vulnerability type by image
-// this is needed to support pre postgres requests
-func withImageCveTypeFiltering(q string) string {
-	return search.AddRawQueriesAsConjunction(q,
-		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_IMAGE_CVE.String()).Query())
 }
 
 func (resolver *imageCVEResolver) withImageVulnerabilityScope(ctx context.Context) context.Context {
@@ -227,6 +223,17 @@ func (resolver *imageCVEResolver) getImageCVEQuery() *v1.Query {
 func (resolver *imageCVEResolver) getImageCVERawQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).Query()
 }
+
+// withImageCveTypeFiltering adds a conjunction as a raw query to filter vulnerability type by image
+// this is needed to support pre postgres requests
+func withImageCveTypeFiltering(q string) string {
+	return search.AddRawQueriesAsConjunction(q,
+		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_IMAGE_CVE.String()).Query())
+}
+
+/*
+Sub Resolver Functions
+*/
 
 func (resolver *imageCVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 	allCount, err := resolver.root.DeploymentCount(ctx, RawQuery{})
@@ -457,7 +464,7 @@ func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args Ra
 		return nil, nil
 	}
 
-	edgeID := edges.EdgeID{ParentID: imageID, ChildID: resolver.data.GetId()}.ToString()
+	edgeID := postgres.IDFromPks([]string{scope.ID, resolver.data.GetId()})
 
 	edge, found, err := resolver.root.ImageCVEEdgeDataStore.Get(ctx, edgeID)
 	if err != nil || !found {
