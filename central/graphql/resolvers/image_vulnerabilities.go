@@ -270,13 +270,14 @@ func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) 
 		return false, err
 	}
 
+	conjuncts := []*v1.Query{query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
+
 	// check scoping, add as conjunction if needed
-	scope, ok := scoped.GetScope(ctx)
-	if !ok || scope.Level != v1.SearchCategory_IMAGE_VULNERABILITIES {
-		query = search.ConjunctionQuery(query, resolver.getImageCVEQuery())
+	if scope, ok := scoped.GetScope(ctx); !ok || scope.Level != v1.SearchCategory_IMAGE_VULNERABILITIES {
+		conjuncts = append(conjuncts, resolver.getImageCVEQuery())
 	}
 
-	query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
+	query = search.ConjunctionQuery(conjuncts...)
 	count, err := resolver.root.ImageCVEDataStore.Count(ctx, query)
 	if err != nil {
 		return false, err
