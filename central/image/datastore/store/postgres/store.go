@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -47,23 +48,39 @@ var (
 	schema = pkgSchema.ImagesSchema
 )
 
+type imagePartsAsSlice struct {
+	image               *storage.Image
+	components          []*storage.ImageComponent
+	vulns               []*storage.ImageCVE
+	imageComponentEdges []*storage.ImageComponentEdge
+	componentCVEEdges   []*storage.ComponentCVEEdge
+	imageCVEEdges       []*storage.ImageCVEEdge
+}
+
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, noUpdateTimestamps bool) store.Store {
+func New(db *pgxpool.Pool, noUpdateTimestamps bool, keyFence concurrency.KeyFence) store.Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
+		keyFence:           keyFence,
 	}
 }
 
 type storeImpl struct {
 	db                 *pgxpool.Pool
 	noUpdateTimestamps bool
+	keyFence           concurrency.KeyFence
 }
 
-func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUpdated bool, iTime *protoTypes.Timestamp) error {
-	cloned := obj
+func (s *storeImpl) insertIntoImages(
+	ctx context.Context,
+	tx pgx.Tx, parts *imagePartsAsSlice,
+	scanUpdated bool,
+	iTime *protoTypes.Timestamp,
+) error {
+	cloned := parts.image
 	if cloned.GetScan().GetComponents() != nil {
-		cloned = obj.Clone()
+		cloned = parts.image.Clone()
 		cloned.Scan.Components = nil
 	}
 	serialized, marshalErr := cloned.Marshal()
@@ -73,26 +90,26 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUp
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
-		obj.GetName().GetRegistry(),
-		obj.GetName().GetRemote(),
-		obj.GetName().GetTag(),
-		obj.GetName().GetFullName(),
-		pgutils.NilOrTime(obj.GetMetadata().GetV1().GetCreated()),
-		obj.GetMetadata().GetV1().GetUser(),
-		obj.GetMetadata().GetV1().GetCommand(),
-		obj.GetMetadata().GetV1().GetEntrypoint(),
-		obj.GetMetadata().GetV1().GetVolumes(),
-		obj.GetMetadata().GetV1().GetLabels(),
-		pgutils.NilOrTime(obj.GetScan().GetScanTime()),
-		obj.GetScan().GetOperatingSystem(),
-		pgutils.NilOrTime(obj.GetSignature().GetFetched()),
-		obj.GetComponents(),
-		obj.GetCves(),
-		obj.GetFixableCves(),
-		pgutils.NilOrTime(obj.GetLastUpdated()),
-		obj.GetRiskScore(),
-		obj.GetTopCvss(),
+		cloned.GetId(),
+		cloned.GetName().GetRegistry(),
+		cloned.GetName().GetRemote(),
+		cloned.GetName().GetTag(),
+		cloned.GetName().GetFullName(),
+		pgutils.NilOrTime(cloned.GetMetadata().GetV1().GetCreated()),
+		cloned.GetMetadata().GetV1().GetUser(),
+		cloned.GetMetadata().GetV1().GetCommand(),
+		cloned.GetMetadata().GetV1().GetEntrypoint(),
+		cloned.GetMetadata().GetV1().GetVolumes(),
+		cloned.GetMetadata().GetV1().GetLabels(),
+		pgutils.NilOrTime(cloned.GetScan().GetScanTime()),
+		cloned.GetScan().GetOperatingSystem(),
+		pgutils.NilOrTime(cloned.GetSignature().GetFetched()),
+		cloned.GetComponents(),
+		cloned.GetCves(),
+		cloned.GetFixableCves(),
+		pgutils.NilOrTime(cloned.GetLastUpdated()),
+		cloned.GetRiskScore(),
+		cloned.GetTopCvss(),
 		serialized,
 	}
 
@@ -104,14 +121,14 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUp
 
 	var query string
 
-	for childIdx, child := range obj.GetMetadata().GetV1().GetLayers() {
-		if err := insertIntoImagesLayers(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+	for childIdx, child := range cloned.GetMetadata().GetV1().GetLayers() {
+		if err := insertIntoImagesLayers(ctx, tx, child, cloned.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from images_Layers where images_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetMetadata().GetV1().GetLayers()))
+	_, err = tx.Exec(ctx, query, cloned.GetId(), len(cloned.GetMetadata().GetV1().GetLayers()))
 	if err != nil {
 		return err
 	}
@@ -120,23 +137,22 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUp
 		return nil
 	}
 
-	components, vulns, imageComponentEdges, componentCVEEdges, imageCVEEdges := getPartsAsSlice(common.Split(obj, scanUpdated))
-	if err := copyFromImageComponents(ctx, tx, components...); err != nil {
+	if err := copyFromImageComponents(ctx, tx, parts.components...); err != nil {
 		return err
 	}
-	if err := copyFromImageComponentEdges(ctx, tx, imageComponentEdges...); err != nil {
+	if err := copyFromImageComponentEdges(ctx, tx, parts.imageComponentEdges...); err != nil {
 		return err
 	}
-	if err := copyFromImageCves(ctx, tx, iTime, vulns...); err != nil {
+	if err := copyFromImageCves(ctx, tx, iTime, parts.vulns...); err != nil {
 		return err
 	}
-	if err := copyFromImageComponentCVEEdges(ctx, tx, obj.GetScan().GetOperatingSystem(), componentCVEEdges...); err != nil {
+	if err := copyFromImageComponentCVEEdges(ctx, tx, cloned.GetScan().GetOperatingSystem(), parts.componentCVEEdges...); err != nil {
 		return err
 	}
-	return copyFromImageCVEEdges(ctx, tx, iTime, imageCVEEdges...)
+	return copyFromImageCVEEdges(ctx, tx, iTime, parts.imageCVEEdges...)
 }
 
-func getPartsAsSlice(parts common.ImageParts) ([]*storage.ImageComponent, []*storage.ImageCVE, []*storage.ImageComponentEdge, []*storage.ComponentCVEEdge, []*storage.ImageCVEEdge) {
+func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
 	components := make([]*storage.ImageComponent, 0, len(parts.Children))
 	imageComponentEdges := make([]*storage.ImageComponentEdge, 0, len(parts.Children))
 	vulnMap := make(map[string]*storage.ImageCVE)
@@ -157,7 +173,14 @@ func getPartsAsSlice(parts common.ImageParts) ([]*storage.ImageComponent, []*sto
 	for _, imageCVEEdge := range parts.ImageCVEEdges {
 		imageCVEEdges = append(imageCVEEdges, imageCVEEdge)
 	}
-	return components, vulns, imageComponentEdges, componentCVEEdges, imageCVEEdges
+	return &imagePartsAsSlice{
+		image:               parts.Image,
+		components:          components,
+		vulns:               vulns,
+		imageComponentEdges: imageComponentEdges,
+		componentCVEEdges:   componentCVEEdges,
+		imageCVEEdges:       imageCVEEdges,
+	}
 }
 
 func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLayer, imageID string, idx int) error {
@@ -543,42 +566,43 @@ func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, 
 	return metadataUpdated, scanUpdated, nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Image) error {
+func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	iTime := protoTypes.TimestampNow()
+
+	if !s.noUpdateTimestamps {
+		obj.LastUpdated = iTime
+	}
+	metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
+	if err != nil {
+		return err
+	}
+	if !metadataUpdated && !scanUpdated {
+		return nil
+	}
+
+	imageParts := getPartsAsSlice(common.Split(obj, scanUpdated))
+	keys := gatherKeys(imageParts)
+
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
 	if err != nil {
 		return err
 	}
 	defer release()
 
-	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
-			return err
-		}
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
 
-		if !s.noUpdateTimestamps {
-			obj.LastUpdated = iTime
-		}
-		metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
-		if err != nil {
-			return err
-		}
-		if !metadataUpdated && !scanUpdated {
-			return nil
-		}
-
-		if err := insertIntoImages(ctx, tx, obj, scanUpdated, iTime); err != nil {
+	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+		if err := s.insertIntoImages(ctx, tx, imageParts, scanUpdated, iTime); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
-	}
-	return nil
+		return tx.Commit(ctx)
+	})
 }
 
 // Upsert upserts image into the store.
@@ -743,16 +767,11 @@ func getImageCVEEdgeIDs(ctx context.Context, tx pgx.Tx, imageID string) (set.Str
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	ids := set.NewStringSet()
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids.Add(id)
+	ids, err := scanIDs(rows)
+	if err != nil {
+		return nil, err
 	}
-	return ids, nil
+	return set.NewStringSet(ids...), nil
 }
 
 func getImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string) (map[string]*storage.ImageCVEEdge, error) {
@@ -891,14 +910,9 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+	ids, err := scanIDs(rows)
+	if err != nil {
+		return nil, err
 	}
 	return ids, nil
 }
@@ -993,7 +1007,7 @@ func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentEdgesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentCveEdgesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCveEdgesStmt)
-	return New(db, noUpdateTimestamps)
+	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
 }
 
 //// Stubs for satisfying legacy interfaces
@@ -1032,6 +1046,10 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 }
 
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
+	if len(imageIDs) == 0 {
+		return nil
+	}
+
 	conn, release, err := s.acquireConn(ctx, ops.Get, "UpdateVulnState")
 	if err != nil {
 		return err
@@ -1044,38 +1062,65 @@ func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []
 	}
 
 	cveIDs, err := func() ([]string, error) {
-		rows, err := s.db.Query(ctx, "select id from "+imageCVEsTable+" where cvebaseinfo_cve = $1", cve)
+		rows, err := tx.Query(ctx, "select id from "+imageCVEsTable+" where cvebaseinfo_cve = $1", cve)
 		if err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
-		defer rows.Close()
-		var ids []string
-
-		for rows.Next() {
-			var id string
-			if err := rows.Scan(&id); err != nil {
-				return nil, err
-			}
-			ids = append(ids, id)
-		}
-		return ids, nil
+		return scanIDs(rows)
 	}()
 	if err != nil {
 		return err
 	}
-
-	if len(imageIDs) == 0 || len(cveIDs) == 0 {
+	if len(cveIDs) == 0 {
 		return nil
 	}
 
-	query := "update " + imageCVEEdgesTable + " set state = $1 where imagecveid = ANY($2::text[]) AND imageid = ANY($3::text[])"
-	_, err = tx.Exec(ctx, query, state, cveIDs, imageIDs)
-	if err != nil {
-		if err := tx.Rollback(ctx); err != nil {
+	keys := make([][]byte, 0, len(cveIDs)+len(imageIDs))
+	for _, id := range imageIDs {
+		keys = append(keys, []byte(id))
+	}
+	for _, id := range cveIDs {
+		keys = append(keys, []byte(id))
+	}
+
+	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+		query := "update " + imageCVEEdgesTable + " set state = $1 where imagecveid = ANY($2::text[]) AND imageid = ANY($3::text[])"
+		_, err = tx.Exec(ctx, query, state, cveIDs, imageIDs)
+		if err != nil {
+			if err := tx.Rollback(ctx); err != nil {
+				return err
+			}
 			return err
 		}
-		return err
+		return tx.Commit(ctx)
+	})
+}
+
+func gatherKeys(parts *imagePartsAsSlice) [][]byte {
+	// We only need to collect image, component, and vuln keys because edges are derived from those resources and edge
+	// datastores are do not support upserts and deletes.
+	keys := make([][]byte, 0, len(parts.components)+len(parts.vulns)+1)
+	keys = append(keys, []byte(parts.image.GetId()))
+	for _, component := range parts.components {
+		keys = append(keys, []byte(component.GetId()))
 	}
-	return tx.Commit(ctx)
+	for _, vuln := range parts.vulns {
+		keys = append(keys, []byte(vuln.GetId()))
+	}
+	return keys
+}
+
+func scanIDs(rows pgx.Rows) ([]string, error) {
+	defer rows.Close()
+	var ids []string
+
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
 }
