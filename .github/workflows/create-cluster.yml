@@ -41,23 +41,82 @@ jobs:
           | base64 -d \
           > ~/.local/bin/infractl
           chmod +x ~/.local/bin/infractl
+          # Ensure that the binary works
+          ~/.local/bin/infractl --version
+
       - name: Create Cluster
         env:
           INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
         run: |
-          set -u
+          set -uo pipefail
           NAME="${{inputs.name}}"
+          CNAME="${NAME//./-}"
 
-          if STATUS=$(infractl get "${NAME//./-}"); then
-            echo "*Cluster already exists:*" >> $GITHUB_STEP_SUMMARY
-            echo "$STATUS" >> $GITHUB_STEP_SUMMARY
-            if ! grep "Status:[ \t]*FAILED" <<< "$STATUS"; then
-              echo "::notice::Cluster \`${NAME//./-}\` already exists."
-              // TODO: wait for the cluster being created to finish.
-              exit 0;
-            fi
-            echo >> $GITHUB_STEP_SUMMARY
+          function cluster_info() {
+            2>/dev/null infractl get "$1" --json
+          }
+
+          function cluster_status() {
+            cluster_info "$1" | jq -r '.Status'
+          }
+
+          function cluster_creating() {
+            [ "$(cluster_status "$1")" == 1 ]
+          }
+
+          function print_infra_status() {
+            echo "Infra status for '$CNAME': $(cluster_info "$CNAME")";
+          }
+
+          case $(cluster_status "$CNAME") in
+            1)
+              # Cluster creation may be still in progress
+              echo "::notice::Cluster \`$CNAME\` is being created. Waiting..."
+              while cluster_creating "$CNAME"; do
+                  echo "Waiting 30s for the cluster '$CNAME' to be created" >> "$GITHUB_STEP_SUMMARY"
+                  sleep 30
+              done
+              {
+                echo "*Cluster '$CNAME' has been created*";
+                print_infra_status "$CNAME";
+                echo
+              } >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            2)
+              # Cluster exists already
+              echo "::notice::Cluster \`$CNAME\` already exists."
+              ;;
+            4)
+              # Cluster was destroyed
+              echo "::notice::Cluster \`$CNAME\` has been destroyed already."
+              {
+                echo "*Cluster has been destroyed already*";
+                print_infra_status "$CNAME";
+                echo
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+              ;;
+            *)
+              {
+                echo "Unknown status";
+                print_infra_status "$CNAME";
+                echo
+              } >> "$GITHUB_STEP_SUMMARY"
+              ;;
+          esac
+
+          # Exit early if cluster exists
+          if [ "$(cluster_status "$CNAME")" == 2 ]; then
+            {
+              echo "*Cluster already exists:*";
+              print_infra_status "$CNAME";
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
+
+          # Creating a cluster
+          echo "Will attempt to create the cluster";
 
           OPTIONS=()
           if [ "${{inputs.wait}}" = "true" ]; then
@@ -71,9 +130,9 @@ jobs:
             OPTIONS+=("$arg")
           done
 
-          infractl create "${{inputs.flavor}}" "${NAME//./-}" \
+          infractl create "${{inputs.flavor}}" "$CNAME" \
             --lifespan "${{inputs.lifespan}}" \
             "${OPTIONS[@]}"
 
           echo "*Cluster creation has been requested:*" >> $GITHUB_STEP_SUMMARY
-          infractl get "${NAME//./-}" >> $GITHUB_STEP_SUMMARY
+          infractl get "$CNAME" >> $GITHUB_STEP_SUMMARY
