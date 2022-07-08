@@ -2597,7 +2597,6 @@ jobs:
           name: Login to Docker Hub and Quay.io
           command: |
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-            docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin \<<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -2614,16 +2613,6 @@ jobs:
           name: Check that Operator image is runnable - quay.io/rhacs-eng
           command: |
             docker run --rm quay.io/rhacs-eng/stackrox-operator:$(make --quiet -C operator tag) --help
-
-      - run:
-          name: Build and push images for quay.io/stackrox-io
-          command: |
-            ROX_PRODUCT_BRANDING=STACKROX_BRANDING make -C operator/ everything
-
-      - run:
-          name: Check that Operator image is runnable - quay.io/stackrox-io
-          command: |
-            docker run --rm quay.io/stackrox-io/stackrox-operator:$(make --quiet -C operator tag) --help
 
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
