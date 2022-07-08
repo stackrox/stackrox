@@ -29,10 +29,11 @@ ci_export() {
 }
 
 ci_exit_trap() {
+    local exit_code="$?"
     info "Executing a general purpose exit trap for CI"
-    echo "Exit code is: $?"
+    echo "Exit code is: ${exit_code}"
 
-    (send_slack_notice_for_failures_on_merge "$?") || { echo "ERROR: Could not slack a test failure message"; }
+    (send_slack_notice_for_failures_on_merge "${exit_code}") || { echo "ERROR: Could not slack a test failure message"; }
 
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
