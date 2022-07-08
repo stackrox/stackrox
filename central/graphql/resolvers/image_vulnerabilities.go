@@ -165,10 +165,18 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	}
 
 	// cast query
-	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.Fixable))
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
+
+	// check for Fixable fields in args
+	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok && mfQ.MatchFieldQuery.GetField() == search.Fixable.String() {
+			log.Errorf("Unexpected `Fixable` field in ImageVulnerabilityCounter resolver")
+		}
+	})
 
 	// get loader
 	loader, err := loaders.GetImageCVELoader(ctx)
@@ -256,15 +264,11 @@ func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, e
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
-	results, err := resolver.root.ComponentCVEEdgeDataStore.Search(ctx, query)
-	if err != nil || len(results) == 0 {
+	edges, err := resolver.root.ComponentCVEEdgeDataStore.SearchRawEdges(ctx, query)
+	if err != nil || len(edges) == 0 {
 		return "", err
 	}
-	edge, found, err := resolver.root.ComponentCVEEdgeDataStore.Get(ctx, results[0].ID)
-	if err != nil || !found {
-		return "", err
-	}
-	return edge.GetFixedBy(), nil
+	return edges[0].GetFixedBy(), nil
 }
 
 func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
@@ -272,6 +276,14 @@ func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) 
 	if err != nil {
 		return false, err
 	}
+
+	// check for Fixable fields in args
+	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok && mfQ.MatchFieldQuery.GetField() == search.Fixable.String() {
+			log.Errorf("Unexpected `Fixable` field in IsFixable sub resolver")
+		}
+	})
 
 	conjuncts := []*v1.Query{query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
 
@@ -469,15 +481,11 @@ func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args Ra
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
-	results, err := resolver.root.ComponentCVEEdgeDataStore.Search(ctx, query)
-	if err != nil || len(results) == 0 {
+	edges, err := resolver.root.ImageCVEEdgeDataStore.SearchRawEdges(ctx, query)
+	if err != nil || len(edges) == 0 {
 		return nil, err
 	}
-	edge, found, err := resolver.root.ImageCVEEdgeDataStore.Get(ctx, results[0].ID)
-	if err != nil || !found {
-		return nil, err
-	}
-	return timestamp(edge.GetFirstImageOccurrence())
+	return timestamp(edges[0].GetFirstImageOccurrence())
 }
 
 func (resolver *imageCVEResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
