@@ -463,7 +463,10 @@ force_rollback() {
 helm_upgrade_to_current() {
     info "Helm upgrade to current"
 
-    roxctl helm output central-services --image-defaults development_build --output-dir /tmp/stackrox-central-services-chart
+    # Get opensource charts and convert to development_build to support release builds
+    roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
+    sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+
     helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart
 
     kubectl -n stackrox get deploy -o wide
