@@ -225,6 +225,7 @@ func runSafeMode() {
 func main() {
 	premain.StartMain()
 
+
 	conf := config.GetConfig()
 	if conf == nil || conf.Maintenance.SafeMode {
 		if conf == nil {
