@@ -314,6 +314,9 @@ func main() {
 		if err := os.WriteFile("store.go", buf.Bytes(), 0644); err != nil {
 			return err
 		}
+		if props.MigrateSeq == 0 {
+			return nil
+		}
 		buf.Truncate(0)
 		templateMap["Migration"] = migrationOptions{
 			MigrateToBucket: props.MigrateTo,
