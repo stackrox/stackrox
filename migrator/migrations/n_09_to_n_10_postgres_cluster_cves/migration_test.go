@@ -76,6 +76,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
+
 func (s *postgresMigrationSuite) TestMigration() {
 	// Prepare data and write to legacy DB
 	var cVEs []*storage.CVE
@@ -96,11 +97,11 @@ func (s *postgresMigrationSuite) TestMigration() {
 	s.gormDB.Model(pkgSchema.CreateTableClusterCvesStmt.GormModel).Count(&count)
 	s.Equal(int64(len(cVEs)), count)
 	for _, cVE := range cVEs {
-		s.Equal(cVE, s.get(cVE.GetId()))
+		s.Equal(convert(cVE), s.get(cVE.GetId()))
 	}
 }
 
-func (s *postgresMigrationSuite) get(id string) *storage.CVE {
+func (s *postgresMigrationSuite) get(id string) *storage.ClusterCVE {
 
 	q := search.ConjunctionQuery(
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
@@ -108,7 +109,7 @@ func (s *postgresMigrationSuite) get(id string) *storage.CVE {
 
 	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
 	s.NoError(err)
-	var msg storage.CVE
+	var msg storage.ClusterCVE
 	s.NoError(proto.Unmarshal(data, &msg))
 	return &msg
 }

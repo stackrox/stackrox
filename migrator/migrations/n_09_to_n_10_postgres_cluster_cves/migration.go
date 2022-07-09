@@ -41,9 +41,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
-	var clusterCves []*storage.CVE
+	var clusterCves []*storage.ClusterCVE
 	var err error
-	walk(ctx, legacyStore, func(obj *storage.CVE) error {
+	walk(ctx, legacyStore, func(obj *storage.ClusterCVE) error {
 		clusterCves = append(clusterCves, obj)
 		if len(clusterCves) == batchSize {
 			if err := store.UpsertMany(ctx, clusterCves); err != nil {
@@ -63,11 +63,36 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	return nil
 }
 
-func walk(ctx context.Context, s legacy.Store, fn func(obj *storage.CVE) error) error {
+func walk(ctx context.Context, s legacy.Store, fn func(obj *storage.ClusterCVE) error) error {
 	return store_walk(ctx, s, fn)
 }
 
-func store_walk(ctx context.Context, s legacy.Store, fn func(obj *storage.CVE) error) error {
+func convert(cve *storage.CVE) *storage.ClusterCVE {
+	return &storage.ClusterCVE{
+		Id: cve.GetId(),
+		CveBaseInfo: &storage.CVEInfo{
+			Cve:                  cve.GetId(),
+			Summary:              cve.GetSummary(),
+			Link:                 cve.GetLink(),
+			PublishedOn:          cve.GetPublishedOn(),
+			CreatedAt:            cve.GetCreatedAt(),
+			LastModified:         cve.GetLastModified(),
+			// ScoreVersion:         cve.GetScoreVersion(),
+			CvssV2:               cve.GetCvssV2(),
+			CvssV3:               cve.GetCvssV3(),
+			// References:           cve.GetReferences(),
+		},
+		Cvss:                 cve.GetCvss(),
+		Severity:             cve.GetSeverity(),
+		ImpactScore:          cve.GetImpactScore(),
+		Snoozed:              cve.GetSuppressed(),
+		SnoozeStart:          cve.GetSuppressActivation(),
+		SnoozeExpiry:         cve.GetSuppressExpiry(),
+		Type:                 cve.GetType(),
+	}
+}
+
+func store_walk(ctx context.Context, s legacy.Store, fn func(obj *storage.ClusterCVE) error) error {
 	ids, err := s.GetIDs(ctx)
 	if err != nil {
 		return err
@@ -84,7 +109,7 @@ func store_walk(ctx context.Context, s legacy.Store, fn func(obj *storage.CVE) e
 			return err
 		}
 		for _, obj := range objs {
-			if err = fn(obj); err != nil {
+			if err = fn(convert(obj)); err != nil {
 				return err
 			}
 		}
