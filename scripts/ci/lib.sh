@@ -991,13 +991,13 @@ send_slack_notice_for_failures_on_merge() {
     local exitstatus="${1:-}"
 
     if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
-        return
+        return 0
     fi
 
     local tag
     tag="$(make --quiet tag)"
     [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
-        return
+        return 0
     }
 
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
