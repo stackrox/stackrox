@@ -16,7 +16,7 @@
   "editable": true,
   "gnetId": 14765,
   "graphTooltip": 0,
-  "iteration": 1656371895669,
+  "iteration": 1657209308530,
   "links": [],
   "panels": [
     {
@@ -30,12 +30,13 @@
       },
       "id": 82,
       "panels": [],
-      "title": "gRPC Summary",
+      "title": "Summary",
       "type": "row"
     },
     {
       "cacheTimeout": null,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "${datasource}",
+      "description": "Number of connected Sensors. This equals the number of secured clusters.",
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -102,7 +103,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(up{namespace=\"$namespace\",job=\"$job\"})",
+          "expr": "count(count by (ClusterID) (rox_central_cluster_metrics_node_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"} > 0))",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -113,12 +114,13 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Available ",
+      "title": "Sensors",
       "type": "stat"
     },
     {
       "cacheTimeout": null,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "${datasource}",
+      "description": "gRPC success rate",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -179,7 +181,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "1 - ((sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"Internal\"}[$interval])) + sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"Unknown\"}[$interval])) + sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"Unavailable\"}[$interval])) + sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"Unimplemented\"}[$interval]))) / sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\"}[$interval]))) OR on() vector(1)",
+          "expr": "1 - ((sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Internal\"}[$__rate_interval])) + sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unknown\"}[$__rate_interval])) + sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unavailable\"}[$__rate_interval])) + sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unimplemented\"}[$__rate_interval]))) / sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval]))) OR on() vector(1)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -192,8 +194,8 @@
     },
     {
       "cacheTimeout": null,
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "",
+      "datasource": "${datasource}",
+      "description": "gRPC throughput",
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -239,7 +241,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=\"$job\"}[$interval]))",
+          "expr": "sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -254,7 +256,8 @@
     },
     {
       "cacheTimeout": null,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "${datasource}",
+      "description": "gRPC 95% latency percentile",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -314,7 +317,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\"}[$interval])) by (le)\n)",
+          "expr": "histogram_quantile(0.95, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (le)\n)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -339,7 +342,7 @@
       "id": 72,
       "panels": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -408,7 +411,7 @@
           "options": {
             "legend": {
               "calcs": [],
-              "displayMode": "list",
+              "displayMode": "hidden",
               "placement": "bottom"
             },
             "tooltip": {
@@ -422,10 +425,10 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "increase(process_cpu_seconds_total{namespace=\"$namespace\",job=~\"$job\"}[1m])",
+              "expr": "avg(increase(process_cpu_seconds_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[1m]))",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{job}}",
+              "legendFormat": "Value",
               "refId": "A"
             }
           ],
@@ -435,7 +438,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "description": "",
           "fieldConfig": {
             "defaults": {
@@ -503,7 +506,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "avg(go_memstats_alloc_bytes{namespace=\"$namespace\",job=\"$job\"})",
+              "expr": "avg(go_memstats_alloc_bytes{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "bytes allocated",
@@ -513,7 +516,7 @@
             },
             {
               "exemplar": true,
-              "expr": "avg(go_memstats_stack_inuse_bytes{namespace=\"$namespace\",job=\"$job\"})",
+              "expr": "avg(go_memstats_stack_inuse_bytes{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "stack inuse",
@@ -523,7 +526,7 @@
             },
             {
               "exemplar": true,
-              "expr": "avg(go_memstats_heap_inuse_bytes{namespace=\"$namespace\",job=\"$job\"})",
+              "expr": "avg(go_memstats_heap_inuse_bytes{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
               "hide": false,
               "interval": "",
               "intervalFactor": 2,
@@ -539,7 +542,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -606,11 +609,11 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "avg(go_goroutines{namespace=\"$namespace\",job=\"$job\"})",
+              "expr": "avg(go_goroutines{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{instance}}",
+              "legendFormat": "Value",
               "metric": "go_goroutines",
               "refId": "A",
               "step": 4
@@ -622,7 +625,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -689,7 +692,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "avg(go_gc_duration_seconds{namespace=\"$namespace\",job=\"$job\"}) by (quantile)",
+              "expr": "avg(go_gc_duration_seconds{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}) by (quantile)",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -720,7 +723,7 @@
       "id": 74,
       "panels": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -776,7 +779,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -789,7 +792,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"OK\"}[$interval]))\n/ sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\"}[$interval]))",
+              "expr": "sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"OK\"}[$__rate_interval]))\n/ sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -798,7 +801,7 @@
             },
             {
               "exemplar": true,
-              "expr": "(sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"InvalidArgument\"}[$interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"NotFound\"}[$interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"AlreadyExists\"}[$interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"Unauthenticated\"}[$interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"PermissionDenied\"}[$interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"FailedPrecondition\"}[$interval]))\n)/ sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\"}[$interval]))",
+              "expr": "(sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"InvalidArgument\"}[$__rate_interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"NotFound\"}[$__rate_interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"AlreadyExists\"}[$__rate_interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unauthenticated\"}[$__rate_interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"PermissionDenied\"}[$__rate_interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"FailedPrecondition\"}[$__rate_interval]))\n)/ sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval]))",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -808,7 +811,7 @@
             },
             {
               "exemplar": true,
-              "expr": "(sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"Internal\"}[$interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"Unknown\"}[$interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"Unavailable\"}[$interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\",grpc_code=\"Unimplemented\"}[$interval]))\n)/ sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\"}[$interval]))",
+              "expr": "(sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Internal\"}[$__rate_interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unknown\"}[$__rate_interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unavailable\"}[$__rate_interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unimplemented\"}[$__rate_interval]))\n)/ sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval]))",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -823,7 +826,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -879,7 +882,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -892,7 +895,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\"}[$interval])) by (grpc_code)\n/ ignoring(grpc_code) group_left sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\"}[$interval]))",
+              "expr": "sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (grpc_code)\n/ ignoring(grpc_code) group_left sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -906,7 +909,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -960,7 +963,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -973,7 +976,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=\"$job\"}[$interval])) by (grpc_service)",
+              "expr": "sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (grpc_service)",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -987,7 +990,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1043,7 +1046,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1056,7 +1059,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=\"$job\"}[$interval])) by (grpc_service) \n/ ignoring(grpc_service) group_left sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=\"$job\"}[$interval]))",
+              "expr": "sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (grpc_service) \n/ ignoring(grpc_service) group_left sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -1070,7 +1073,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1080,7 +1083,7 @@
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
-                "drawStyle": "line",
+                "drawStyle": "bars",
                 "fillOpacity": 10,
                 "gradientMode": "none",
                 "hideFrom": {
@@ -1096,7 +1099,7 @@
                   "type": "linear"
                 },
                 "showPoints": "never",
-                "spanNulls": false
+                "spanNulls": true
               },
               "mappings": [],
               "thresholds": {
@@ -1124,7 +1127,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1137,7 +1140,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "histogram_quantile(0.95, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\"}[$interval])) by (grpc_service,le)\n)",
+              "expr": "histogram_quantile(0.95, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (grpc_service,le)\n)",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -1151,7 +1154,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1180,7 +1183,7 @@
                   "type": "linear"
                 },
                 "showPoints": "never",
-                "spanNulls": false
+                "spanNulls": true
               },
               "mappings": [],
               "thresholds": {
@@ -1208,7 +1211,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1221,26 +1224,34 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "histogram_quantile(0.99, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\"}[$interval])) by (le)\n)",
-              "format": "time_series",
+              "expr": "histogram_quantile(1, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (le)\n)",
+              "hide": false,
               "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "99%",
+              "legendFormat": "max",
               "refId": "A"
             },
             {
               "exemplar": true,
-              "expr": "histogram_quantile(0.95, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\"}[$interval])) by (le)\n)",
+              "expr": "histogram_quantile(0.99, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "99%",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.95, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (le)\n)",
               "format": "time_series",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "95%",
-              "refId": "B"
+              "refId": "C"
             },
             {
               "exemplar": true,
-              "expr": "histogram_quantile(0.50, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=\"$job\",grpc_type=\"unary\"}[$interval])) by (le)\n)",
+              "expr": "histogram_quantile(0.50, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (le)\n)",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -1251,11 +1262,26 @@
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Latency Distribution",
+          "title": "Latency Percentiles",
           "type": "timeseries"
-        },
+        }
+      ],
+      "title": "gRPC Metrics",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 99,
+      "panels": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1284,6 +1310,8 @@
                 "spanNulls": false
               },
               "mappings": [],
+              "max": 1,
+              "min": 0,
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -1293,7 +1321,7 @@
                   }
                 ]
               },
-              "unit": "ops"
+              "unit": "percentunit"
             },
             "overrides": []
           },
@@ -1301,15 +1329,15 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 32
+            "y": 9
           },
-          "id": 80,
+          "id": 100,
           "links": [],
           "options": {
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1322,31 +1350,49 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(grpc_server_msg_sent_total{namespace=\"$namespace\",job=\"$job\",grpc_type!=\"unary\"}[$interval]))",
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",code=~\"2\\\\d\\\\d\"}[$__rate_interval])) / sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "sent",
+              "legendFormat": "2xx",
               "refId": "A"
             },
             {
               "exemplar": true,
-              "expr": "sum(rate(grpc_server_msg_received_total{namespace=\"$namespace\",job=\"$job\",grpc_type!=\"unary\"}[$interval]))",
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",code=~\"3\\\\d\\\\d\"}[$__rate_interval])) / sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
               "format": "time_series",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "received",
+              "legendFormat": "3xx",
               "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",code=~\"4\\\\d\\\\d\"}[$__rate_interval])) / sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "4xx",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",code=~\"5\\\\d\\\\d\"}[$__rate_interval])) / sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "5xx",
+              "refId": "D"
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "RPC Stream Operations",
+          "title": "Status",
           "type": "timeseries"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1394,15 +1440,15 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 32
+            "y": 9
           },
-          "id": 79,
+          "id": 106,
           "links": [],
           "options": {
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "right"
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi"
@@ -1415,21 +1461,382 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\"}[$interval])) by (grpc_type)\n/ ignoring(grpc_type) group_left sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=\"$job\"}[$interval]))",
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (code)\n/ ignoring(code) group_left sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{grpc_type}}",
+              "legendFormat": "{{code}}",
               "refId": "A"
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "RPC Type Distribution",
+          "title": "Status Distribution",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 17
+          },
+          "id": 105,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (method,path)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{method}} {{path}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Throughput",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 17
+          },
+          "id": 101,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (method,path) \n/ ignoring(method,path) group_left sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{method}} {{path}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Request Distribution",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 25
+          },
+          "id": 102,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.95, \n  sum(rate(http_incoming_request_duration_histogram_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (method,path,le)\n)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{method}} {{path}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Latency P95",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 25
+          },
+          "id": 103,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(1, \n  sum(rate(http_incoming_request_duration_histogram_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "max",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.99, \n  sum(rate(http_incoming_request_duration_histogram_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "99%",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.95, \n  sum(rate(http_incoming_request_duration_histogram_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "95%",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.5, \n  sum(rate(http_incoming_request_duration_histogram_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "50%",
+              "refId": "D"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Latency Percentiles",
           "type": "timeseries"
         }
       ],
-      "title": "gRPC Metrics",
+      "title": "REST Metrics",
       "type": "row"
     },
     {
@@ -1439,12 +1846,558 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 9
+      },
+      "id": 94,
+      "panels": [
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 10
+          },
+          "id": 95,
+          "links": [],
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(1,  sum(rate(rox_central_graphql_query_duration_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "max",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.99,  sum(rate(rox_central_graphql_query_duration_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "99%",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.95,  sum(rate(rox_central_graphql_query_duration_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "95%",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.50,  sum(rate(rox_central_graphql_query_duration_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "50%",
+              "refId": "D"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Query Duration Percentiles",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 10
+          },
+          "id": 96,
+          "links": [],
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (Operation) (rate(rox_central_graphql_op_duration_sum{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "Operation: {{Operation}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Operation Duration",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 18
+          },
+          "id": 97,
+          "links": [],
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(rox_central_graphql_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (Operation) \n/ ignoring(Operation) group_left sum(rate(rox_central_graphql_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "Operation: {{Operation}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Operation Distribution",
+          "type": "timeseries"
+        }
+      ],
+      "title": "GraphQL Metrics",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 89,
+      "panels": [
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "stepBefore",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 11
+          },
+          "id": 91,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "hidden",
+              "placement": "bottom"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "count(count by (ClusterID) (rox_central_cluster_metrics_node_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"} > 0))",
+              "interval": "",
+              "legendFormat": "Value",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Secured Cluster - Sensors",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "stepBefore",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 11
+          },
+          "id": 104,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (ClusterID) (rox_central_cluster_metrics_node_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
+              "interval": "",
+              "legendFormat": "ClusterID: {{ClusterID}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Secured Cluster - Nodes",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "stepBefore",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 19
+          },
+          "id": 92,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (ClusterID) (rox_central_cluster_metrics_cpu_capacity{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
+              "interval": "",
+              "legendFormat": "ClusterID: {{ClusterID}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Secured Cluster - CPU Capacity",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Billing Metrics",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 11
       },
       "id": 84,
       "panels": [
         {
-          "datasource": null,
+          "datasource": "${datasource}",
           "description": "Number of key/value pairs in each bucket.",
           "fieldConfig": {
             "defaults": {
@@ -1496,7 +2449,7 @@
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 9
+            "y": 12
           },
           "id": 6,
           "options": {
@@ -1517,7 +2470,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "rox_central_bolt_bucket_key_n{namespace=\"$namespace\",job=\"$job\"}",
+              "expr": "rox_central_bolt_bucket_key_n{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}",
               "interval": "",
               "legendFormat": "{{Bucket}}",
               "refId": "A"
@@ -1527,7 +2480,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": null,
+          "datasource": "${datasource}",
           "description": "RocksDB prefix size (equivalent to bolt bucket).",
           "fieldConfig": {
             "defaults": {
@@ -1579,7 +2532,7 @@
             "h": 9,
             "w": 12,
             "x": 12,
-            "y": 9
+            "y": 12
           },
           "id": 8,
           "options": {
@@ -1600,7 +2553,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "rox_central_rocksdb_prefix_size{namespace=\"$namespace\",job=\"$job\"}",
+              "expr": "rox_central_rocksdb_prefix_size{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}",
               "interval": "",
               "legendFormat": "{{Prefix}}",
               "refId": "A"
@@ -1610,7 +2563,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": null,
+          "datasource": "${datasource}",
           "description": "Number of key/value pairs in each bucket.",
           "fieldConfig": {
             "defaults": {
@@ -1662,7 +2615,7 @@
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 18
+            "y": 21
           },
           "id": 86,
           "options": {
@@ -1683,7 +2636,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "rox_central_bolt_op_duration_count{namespace=\"$namespace\",job=\"$job\",Operation=~\"$Operation\",Type=~\"$Type\"}",
+              "expr": "rox_central_bolt_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"}",
               "interval": "",
               "legendFormat": "Operation: {{Operation}}, Type: {{Type}}",
               "refId": "A"
@@ -1693,7 +2646,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": null,
+          "datasource": "${datasource}",
           "description": "Number of key/value pairs in each bucket.",
           "fieldConfig": {
             "defaults": {
@@ -1745,7 +2698,7 @@
             "h": 9,
             "w": 12,
             "x": 12,
-            "y": 18
+            "y": 21
           },
           "id": 87,
           "options": {
@@ -1766,7 +2719,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "rox_central_rocksdb_op_duration_count{namespace=\"$namespace\",job=\"$job\",Operation=~\"$Operation\",Type=~\"$Type\"}",
+              "expr": "rox_central_rocksdb_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"}",
               "interval": "",
               "legendFormat": "Operation: {{Operation}}, Type: {{Type}}",
               "refId": "A"
@@ -1776,7 +2729,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": null,
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1827,7 +2780,7 @@
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 27
+            "y": 30
           },
           "id": 10,
           "options": {
@@ -1852,7 +2805,7 @@
                 "uid": "PBFA97CFB590B2093"
               },
               "exemplar": true,
-              "expr": "rox_central_bolt_op_duration_sum{namespace=\"$namespace\",job=\"$job\",Operation=~\"$Operation\",Type=~\"$Type\"} / rox_central_bolt_op_duration_count{namespace=\"$namespace\",job=\"$job\",Operation=~\"$Operation\",Type=~\"$Type\"}",
+              "expr": "rox_central_bolt_op_duration_sum{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"} / rox_central_bolt_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"}",
               "interval": "",
               "legendFormat": "Operation: {{Operation}}, Type: {{Type}}",
               "refId": "A"
@@ -1862,7 +2815,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": null,
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1913,7 +2866,7 @@
             "h": 9,
             "w": 12,
             "x": 12,
-            "y": 27
+            "y": 30
           },
           "id": 85,
           "options": {
@@ -1938,7 +2891,7 @@
                 "uid": "PBFA97CFB590B2093"
               },
               "exemplar": true,
-              "expr": "rox_central_rocksdb_op_duration_sum{namespace=\"$namespace\",job=\"$job\",Operation=~\"$Operation\",Type=~\"$Type\"} / rox_central_rocksdb_op_duration_count{namespace=\"$namespace\",job=\"$job\",Operation=~\"$Operation\",Type=~\"$Type\"}",
+              "expr": "rox_central_rocksdb_op_duration_sum{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"} / rox_central_rocksdb_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"}",
               "interval": "",
               "legendFormat": "Operation: {{Operation}}, Type: {{Type}}",
               "refId": "A"
@@ -1948,7 +2901,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": null,
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1999,7 +2952,7 @@
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 36
+            "y": 39
           },
           "id": 18,
           "options": {
@@ -2024,7 +2977,7 @@
                 "uid": "PBFA97CFB590B2093"
               },
               "exemplar": true,
-              "expr": "rox_central_index_op_duration_sum{namespace=\"$namespace\",job=\"$job\",Operation=~\"$Operation\",Type=~\"$Type\"} / rox_central_index_op_duration_count{namespace=\"$namespace\",job=\"$job\",Operation=~\"$Operation\",Type=~\"$Type\"}",
+              "expr": "rox_central_index_op_duration_sum{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"} / rox_central_index_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"}",
               "interval": "",
               "legendFormat": "Operation: {{Operation}}, Type: {{Type}}",
               "refId": "A"
@@ -2034,7 +2987,7 @@
           "type": "timeseries"
         },
         {
-          "datasource": null,
+          "datasource": "${datasource}",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2085,7 +3038,7 @@
             "h": 9,
             "w": 12,
             "x": 12,
-            "y": 36
+            "y": 39
           },
           "id": 20,
           "options": {
@@ -2106,21 +3059,21 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "rox_central_bolt_db_size{namespace=\"$namespace\",job=\"$job\"}",
+              "expr": "rox_central_bolt_db_size{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}",
               "interval": "",
               "legendFormat": "Bolt",
               "refId": "A"
             },
             {
               "exemplar": true,
-              "expr": "rox_central_rocksdb_db_size{namespace=\"$namespace\",job=\"$job\"}",
+              "expr": "rox_central_rocksdb_db_size{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}",
               "interval": "",
               "legendFormat": "RocksDB",
               "refId": "B"
             },
             {
               "exemplar": true,
-              "expr": "rox_central_bleve_index_CurOnDiskBytes{namespace=\"$namespace\",job=\"$job\"}",
+              "expr": "rox_central_bleve_index_CurOnDiskBytes{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}",
               "interval": "",
               "legendFormat": "Bleve, Index: {{Index}}",
               "refId": "C"
@@ -2134,7 +3087,7 @@
       "type": "row"
     }
   ],
-  "refresh": "30s",
+  "refresh": "1m",
   "schemaVersion": 27,
   "style": "dark",
   "tags": [
@@ -2154,9 +3107,9 @@
         "error": null,
         "hide": 0,
         "includeAll": false,
-        "label": "Datasource",
+        "label": "Data Source",
         "multi": false,
-        "name": "DS_PROMETHEUS",
+        "name": "datasource",
         "options": [],
         "query": "prometheus",
         "queryValue": "",
@@ -2172,7 +3125,7 @@
           "text": "stackrox",
           "value": "stackrox"
         },
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "${datasource}",
         "definition": "label_values(namespace)",
         "description": null,
         "error": null,
@@ -2197,20 +3150,24 @@
         "useTags": false
       },
       {
-        "allValue": null,
+        "allValue": ".+",
         "current": {
-          "selected": false,
-          "text": "central",
-          "value": "central"
+          "selected": true,
+          "text": [
+            "central"
+          ],
+          "value": [
+            "central"
+          ]
         },
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "${datasource}",
         "definition": "label_values(go_memstats_alloc_bytes,job)",
         "description": null,
         "error": null,
         "hide": 0,
-        "includeAll": false,
-        "label": "Job",
-        "multi": false,
+        "includeAll": true,
+        "label": "job",
+        "multi": true,
         "name": "job",
         "options": [],
         "query": {
@@ -2228,82 +3185,59 @@
         "useTags": false
       },
       {
-        "auto": false,
-        "auto_count": 30,
-        "auto_min": "10s",
+        "allValue": ".+",
         "current": {
-          "selected": false,
-          "text": "1m",
-          "value": "1m"
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
+        "datasource": "${datasource}",
+        "definition": "label_values(process_cpu_seconds_total{job=\"central\"}, instance)",
         "description": null,
         "error": null,
         "hide": 0,
-        "label": "Summary Interval",
-        "name": "interval",
-        "options": [
-          {
-            "selected": true,
-            "text": "1m",
-            "value": "1m"
-          },
-          {
-            "selected": false,
-            "text": "5m",
-            "value": "5m"
-          },
-          {
-            "selected": false,
-            "text": "10m",
-            "value": "10m"
-          },
-          {
-            "selected": false,
-            "text": "15m",
-            "value": "15m"
-          },
-          {
-            "selected": false,
-            "text": "30m",
-            "value": "30m"
-          },
-          {
-            "selected": false,
-            "text": "1h",
-            "value": "1h"
-          },
-          {
-            "selected": false,
-            "text": "8h",
-            "value": "8h"
-          },
-          {
-            "selected": false,
-            "text": "24h",
-            "value": "24h"
-          }
-        ],
-        "query": "1m,5m,10m,15m,30m,1h,8h,24h",
-        "queryValue": "",
-        "refresh": 2,
+        "includeAll": true,
+        "label": "instance",
+        "multi": true,
+        "name": "instance",
+        "options": [],
+        "query": {
+          "query": "label_values(process_cpu_seconds_total{job=\"central\"}, instance)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
         "skipUrlSync": false,
-        "type": "interval"
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
       },
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "${datasource}",
         "definition": "label_values(Operation)",
         "description": null,
         "error": null,
         "hide": 0,
         "includeAll": true,
         "label": null,
-        "multi": false,
+        "multi": true,
         "name": "Operation",
         "options": [],
         "query": {
@@ -2323,18 +3257,22 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "${datasource}",
         "definition": "label_values(Type)",
         "description": null,
         "error": null,
         "hide": 0,
         "includeAll": true,
         "label": null,
-        "multi": false,
+        "multi": true,
         "name": "Type",
         "options": [],
         "query": {
@@ -2380,8 +3318,7 @@
     ]
   },
   "timezone": "",
-  "title": "RHACS Dataplane - Central Debug Metrics",
+  "title": "RHACS Dataplane - Central Metrics",
   "uid": "gn38yKZnk",
   "version": 1
 }
-

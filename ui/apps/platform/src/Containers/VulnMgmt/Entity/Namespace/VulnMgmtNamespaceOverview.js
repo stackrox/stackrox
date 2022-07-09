@@ -11,7 +11,7 @@ import Tab from 'Components/Tab';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import TopRiskyEntitiesByVulnerabilities from 'Containers/VulnMgmt/widgets/TopRiskyEntitiesByVulnerabilities';
-import RecentlyDetectedVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedVulnerabilities';
+import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedImageVulnerabilities';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import DeploymentsWithMostSeverePolicyViolations from 'Containers/VulnMgmt/widgets/DeploymentsWithMostSeverePolicyViolations';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
@@ -101,7 +101,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                             />
                         </div>
                         <div className="s-1">
-                            <RecentlyDetectedVulnerabilities entityContext={currentEntity} />
+                            <RecentlyDetectedImageVulnerabilities entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
                             <TopRiskiestEntities entityContext={currentEntity} />

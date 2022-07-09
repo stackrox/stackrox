@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -26,6 +27,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 		action             central.ResourceAction
 		podLister          *mockPodLister
 		systemNamespaces   *orchestratornamespaces.OrchestratorNamespaces
+		registryStore      *registry.Store
 		expectedDeployment *storage.Deployment
 	}{
 		{
@@ -104,6 +106,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				},
 			},
 			systemNamespaces: orchestratornamespaces.Singleton(),
+			registryStore:    registry.Singleton(),
 			expectedDeployment: &storage.Deployment{
 				Id:                    "FooID",
 				ClusterId:             testClusterID,
@@ -241,6 +244,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				},
 			},
 			systemNamespaces: orchestratornamespaces.Singleton(),
+			registryStore:    registry.Singleton(),
 			expectedDeployment: &storage.Deployment{
 				Id:                    "FooID",
 				ClusterId:             testClusterID,
@@ -306,7 +310,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID, c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "", c.systemNamespaces).GetDeployment()
+			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID, c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "", c.systemNamespaces, c.registryStore).GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}

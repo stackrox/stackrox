@@ -16,7 +16,6 @@ import WidgetCard from './WidgetCard';
 import MostRecentViolations from './MostRecentViolations';
 import PolicyViolationTiles from './PolicyViolationTiles';
 import useAlertGroups from '../hooks/useAlertGroups';
-import NoDataEmptyState from './NoDataEmptyState';
 
 function getViewAllLink(searchFilter: SearchFilter) {
     const queryString = getQueryString({
@@ -118,11 +117,7 @@ function ViolationsByPolicySeverity() {
                     <PolicyViolationTiles searchFilter={searchFilter} counts={counts} />
                     <Divider component="div" className="pf-u-my-lg" />
                     <StackItem isFilled>
-                        {recentAlertsData.alerts.length > 0 ? (
-                            <MostRecentViolations alerts={recentAlertsData.alerts} />
-                        ) : (
-                            <NoDataEmptyState />
-                        )}
+                        <MostRecentViolations alerts={recentAlertsData.alerts} />
                     </StackItem>
                 </Stack>
             )}

@@ -5,7 +5,7 @@ import useCases from 'constants/useCaseTypes';
 import decodeBase64 from 'utils/decodeBase64/decodeBase64';
 import { NODE_FRAGMENT } from 'queries/node';
 import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
-import { NAMESPACE_FRAGMENT, CONFIG_NAMESPACE_FRAGMENT } from 'queries/namespace';
+import { NAMESPACE_FRAGMENT } from 'queries/namespace';
 import { SUBJECT_WITH_CLUSTER_FRAGMENT, SUBJECT_FRAGMENT } from 'queries/subject';
 import { K8S_ROLE_FRAGMENT } from 'queries/role';
 import { SECRET_FRAGMENT } from 'queries/secret';
@@ -42,10 +42,14 @@ function objectToWhereClause(query, delimiter = '+') {
             if (typeof value === 'undefined' || value === '') {
                 return acc;
             }
-            const flatValue = Array.isArray(value) ? value.join() : value;
-            const needsExactMatch =
-                key.toLowerCase().indexOf(' id') !== -1 && value.indexOf(',') === -1;
-            const queryValue = needsExactMatch ? `"${flatValue}"` : flatValue;
+            const valueArray = Array.isArray(value) ? value : [value];
+            const queryValue = valueArray
+                .map((val) => {
+                    const needsExactMatch =
+                        key.toLowerCase().indexOf(' id') !== -1 && val.indexOf(',') === -1;
+                    return needsExactMatch ? `"${val}"` : val;
+                })
+                .join();
             return `${acc}${key}:${queryValue}${delimiter}`;
         }, '')
         .slice(0, -delimiter.length);
@@ -227,7 +231,7 @@ function getFragment(entityType, listType, useCase) {
     const fragmentsByUseCase = {
         [useCases.CONFIG_MANAGEMENT]: {
             ...defaultFragments,
-            [entityTypes.NAMESPACE]: CONFIG_NAMESPACE_FRAGMENT,
+            [entityTypes.NAMESPACE]: NAMESPACE_FRAGMENT,
             [entityTypes.SUBJECT]: SUBJECT_FRAGMENT,
         },
         [useCases.VULN_MANAGEMENT]: {

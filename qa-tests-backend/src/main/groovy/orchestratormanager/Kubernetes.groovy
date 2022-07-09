@@ -1,7 +1,14 @@
 package orchestratormanager
 
-import static io.fabric8.kubernetes.client.utils.InputStreamPumper.pump
-import common.YamlGenerator
+import java.nio.file.Paths
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.stream.Collectors
+
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonSyntaxException
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.ConfigMap as K8sConfigMap
@@ -42,6 +49,7 @@ import io.fabric8.kubernetes.api.model.ServiceAccount
 import io.fabric8.kubernetes.api.model.ServiceBuilder
 import io.fabric8.kubernetes.api.model.ServicePort
 import io.fabric8.kubernetes.api.model.ServiceSpec
+import io.fabric8.kubernetes.api.model.Status
 import io.fabric8.kubernetes.api.model.Volume
 import io.fabric8.kubernetes.api.model.VolumeMount
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
@@ -81,14 +89,9 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation
 import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
-import io.fabric8.kubernetes.client.utils.InputStreamPumper
-import java.nio.file.Paths
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
-import java.util.stream.Collectors
+import org.apache.commons.exec.CommandLine
+
+import common.YamlGenerator
 import objects.ConfigMap
 import objects.ConfigMapKeyRef
 import objects.DaemonSet
@@ -104,11 +107,12 @@ import objects.NetworkPolicyTypes
 import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
-import okhttp3.Response
 import util.Timer
+import util.Helpers
 
 @Slf4j
 class Kubernetes implements OrchestratorMain {
+    private static final Gson GSON = new GsonBuilder().create()
 
     final int sleepDurationSeconds = 5
     final int maxWaitTimeSeconds = 90
@@ -135,6 +139,9 @@ class Kubernetes implements OrchestratorMain {
         // "any namespace" requests to be scoped to the default project.
         this.client.configuration.namespace = null
         this.client.configuration.setRollingTimeout(60 * 60 * 1000)
+        this.client.configuration.setRequestTimeout(20*1000)
+        this.client.configuration.setConnectionTimeout(20*1000)
+        this.client.configuration.setWebsocketTimeout(20*1000)
         this.deployments = this.client.apps().deployments()
         this.daemonsets = this.client.apps().daemonSets()
         this.statefulsets = this.client.apps().statefulSets()
@@ -177,7 +184,7 @@ class Kubernetes implements OrchestratorMain {
         waitForDeploymentAndPopulateInfo(deployment)
     }
 
-    boolean updateDeploymentNoWait(Deployment deployment) {
+    boolean updateDeploymentNoWait(Deployment deployment, int maxRetries=0) {
         K8sDeployment k8sdeployment = deployments.inNamespace(deployment.namespace).withName(deployment.name).get()
         if (k8sdeployment) {
             log.debug "Deployment ${deployment.name} with version ${k8sdeployment.metadata.resourceVersion} " +
@@ -185,7 +192,7 @@ class Kubernetes implements OrchestratorMain {
         } else {
             log.debug "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
         }
-        return createDeploymentNoWait(deployment)
+        return createDeploymentNoWait(deployment, maxRetries)
     }
 
     def updateDeployment(Deployment deployment) {
@@ -338,7 +345,7 @@ class Kubernetes implements OrchestratorMain {
     Boolean restartPodByLabelWithExecKill(String ns, Map<String, String> labels) {
         Pod pod = getPodsByLabel(ns, labels).get(0)
         int prevRestartCount = pod.status.containerStatuses.get(0).restartCount
-        execInContainerByPodName(pod.metadata.name, pod.metadata.namespace, "kill 1 &")
+        execInContainerByPodName(pod.metadata.name, pod.metadata.namespace, "kill 1")
         log.debug "Killed pod ${pod.metadata.name}"
         return waitForPodRestart(pod.metadata.namespace, pod.metadata.name, prevRestartCount, 25, 5)
     }
@@ -1734,33 +1741,101 @@ class Kubernetes implements OrchestratorMain {
             log.debug "First container in pod ${name} not yet running ..."
         }
 
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(20)
-        try {
-            CountDownLatch latch = new CountDownLatch(1)
-            ExecWatch watch = client.pods().inNamespace(namespace).withName(name)
-                    .redirectingOutput().usingListener(new ExecListener() {
-                @Override
-                void onFailure(Throwable t, Response response) {
-                    latch.countDown()
-                }
+        final CompletableFuture<Void> completion = new CompletableFuture<>()
+        final def listener = new ExecListener() {
+            @Override
+            void onFailure(Throwable t, ExecListener.Response failureResponse) {
+                log.warn("Command failed with response {}", failureResponse, t)
+                completion.completeExceptionally(t)
+            }
 
-                @Override
-                void onClose(int code, String reason) {
-                    latch.countDown()
-                }
-            }).exec(cmd.split(" "))
-            Future<?> outPumpFuture = pump(watch.getOutput(), new SystemOutCallback(), executorService)
-            executorService.scheduleAtFixedRate(
-                    new FutureChecker("Exec", cmd, outPumpFuture), 0, 2, TimeUnit.SECONDS)
-
-            latch.await(30, TimeUnit.SECONDS)
-            watch.close()
-        } catch (Exception e) {
-            log.warn("Error exec'ing in pod", e)
-            return false
+            @Override
+            void onClose(int code, String reason) {
+                // We ignore both code and reason because the code is websocket code, not the program exit code.
+                completion.complete(null)
+            }
         }
-        executorService.shutdown()
-        return true
+        final def outputStream = new ByteArrayOutputStream()
+        final def errorStream = new ByteArrayOutputStream()
+        final def execStatusChannel = new ByteArrayOutputStream()
+        ExecStatus execStatus = ExecStatus.UNKNOWN
+        String execMessage = null
+        final String[] splitCmd = CommandLine.parse(cmd).with {
+            final List<String> result = new ArrayList()
+            result.add(it.getExecutable())
+            result.addAll(it.getArguments())
+            return result.toArray()
+        }
+        log.debug("Exec-ing the following command in pod {}: {}", name, cmd)
+        try {
+            final ExecWatch execCmd = client.pods()
+                    .inNamespace(namespace)
+                    .withName(name)
+                    .writingOutput(outputStream)
+                    .writingError(errorStream)
+                    .writingErrorChannel(execStatusChannel)
+                    .usingListener(listener)
+                    .exec(splitCmd)
+            try {
+                completion.get(30, TimeUnit.SECONDS)
+                (execStatus, execMessage) = parseExecStatus(execStatusChannel.toString())
+            } catch (TimeoutException ex) {
+                // Note that timeout here does not abort the command once it started on the pod.
+                execStatus = ExecStatus.TIMEOUT
+                execMessage = ex.getMessage()
+            } finally {
+                execCmd.close()
+                log.debug("""\
+                    Command status: {}, message: {}
+                    Stdout:
+                    {}
+                    Stderr:
+                    {}""".stripIndent(),
+                        execStatus,
+                        execMessage,
+                        outputStream,
+                        errorStream)
+            }
+        } catch (Exception e) {
+            log.warn("Error exec-ing command in pod", e)
+        }
+        return execStatus == ExecStatus.SUCCESS
+    }
+
+    private enum ExecStatus {
+        UNKNOWN,
+        SUCCESS,
+        /** E.g. no-zero exit code */
+        FAILURE,
+        TIMEOUT;
+    }
+
+    /**
+     * Parses status of kubectl exec command triggered via fabric8 to see if the command exited successfully.
+     *
+     * The approach is based on the suggestion in https://stackoverflow.com/a/70188047/484050
+     * Here are examples of channel contents for successful and unsuccessful command runs:
+     * {"metadata":{},"status":"Success"}
+     * {"metadata":{},"status":"Failure","message":"command terminated with non-zero exit code: Error executing in Docker Container: 7","reason":"NonZeroExitCode","details":{"causes":[{"reason":"ExitCode","message":"7"}]}}
+     */
+    private static Tuple2<ExecStatus, String> parseExecStatus(String execStatusChannelContents) {
+        ExecStatus status = ExecStatus.UNKNOWN
+        String message = null
+        try {
+            final Status parsedStatus = GSON.fromJson(execStatusChannelContents, Status.class)
+            switch (parsedStatus?.getStatus()) {
+                case "Success":
+                    status = ExecStatus.SUCCESS
+                    break
+                case "Failure":
+                    status = ExecStatus.FAILURE
+                    break
+            }
+            message = parsedStatus?.getMessage()
+        } catch (JsonSyntaxException ex) {
+            log.warn("Could not parse exec status channel contents: {}", execStatusChannelContents, ex)
+        }
+        return new Tuple2(status, message)
     }
 
     def execInContainer(Deployment deployment, String cmd) {
@@ -1818,7 +1893,7 @@ class Kubernetes implements OrchestratorMain {
         Private K8S Support functions
     */
 
-    def createDeploymentNoWait(Deployment deployment) {
+    def createDeploymentNoWait(Deployment deployment, int maxNumRetries=0) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
         // Create service if needed
@@ -1850,8 +1925,11 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-            log.debug "Told the orchestrator to createOrReplace " + deployment.name
+            Helpers.withK8sClientRetry(maxNumRetries,1) {
+                client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
+                int att = Helpers.getAttemptCount()
+                log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". Attempt " + att + " of " + maxNumRetries
+            }
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
             }
@@ -2288,32 +2366,5 @@ class Kubernetes implements OrchestratorMain {
         }
         log.info "K8s did not detect that namespace ${ns} was deleted"
         return false
-    }
-
-    @Slf4j
-    private static class SystemOutCallback implements InputStreamPumper.Writable {
-        @Override
-        void write(byte[] b, int off, int len) throws IOException {
-            log.debug(new String(b))
-        }
-    }
-
-    private static class FutureChecker implements Runnable {
-        private final String name
-        private final String cmd
-        private final Future<?> future
-
-        private FutureChecker(String name, String cmd, Future<?> future) {
-            this.name = name
-            this.cmd = cmd
-            this.future = future
-        }
-
-        @Override
-        void run() {
-            if (!future.isDone()) {
-                log.debug(name + ":[" + cmd + "] is not done yet")
-            }
-        }
     }
 }

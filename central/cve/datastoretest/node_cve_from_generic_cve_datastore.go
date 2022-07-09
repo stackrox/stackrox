@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	genericCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -43,7 +43,7 @@ func (s *nodeCVEDataStoreFromGenericStore) SearchRawCVEs(ctx context.Context, q 
 	nodeCVEs := make([]*storage.NodeCVE, 0, len(cves))
 	for _, cve := range cves {
 		if isNodeCVE(cve) {
-			nodeCVEs = append(nodeCVEs, converter.ProtoCVEToNodeCVE(cve))
+			nodeCVEs = append(nodeCVEs, utils.ProtoCVEToNodeCVE(cve))
 		}
 	}
 	return nodeCVEs, nil
@@ -61,7 +61,7 @@ func (s *nodeCVEDataStoreFromGenericStore) Get(ctx context.Context, id string) (
 	if !isNodeCVE(cve) {
 		return nil, false, nil
 	}
-	return converter.ProtoCVEToNodeCVE(cve), true, nil
+	return utils.ProtoCVEToNodeCVE(cve), true, nil
 }
 
 func (s *nodeCVEDataStoreFromGenericStore) Count(ctx context.Context, q *v1.Query) (int, error) {
@@ -76,7 +76,7 @@ func (s *nodeCVEDataStoreFromGenericStore) GetBatch(ctx context.Context, id []st
 	nodeCVEs := make([]*storage.NodeCVE, 0, len(cves))
 	for _, cve := range cves {
 		if isNodeCVE(cve) {
-			nodeCVEs = append(nodeCVEs, converter.ProtoCVEToNodeCVE(cve))
+			nodeCVEs = append(nodeCVEs, utils.ProtoCVEToNodeCVE(cve))
 		}
 	}
 	return nodeCVEs, nil

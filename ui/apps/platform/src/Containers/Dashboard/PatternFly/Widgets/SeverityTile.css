@@ -4,3 +4,8 @@
   border-color: var(--pf-global--BorderColor--100);
   border-top-color: var(--pf-severity-tile-color);
 }
+
+.pf-severity-tile:hover {
+  border-color: var(--pf-global--BorderColor--200);
+  border-top-color: var(--pf-severity-tile-color);
+}

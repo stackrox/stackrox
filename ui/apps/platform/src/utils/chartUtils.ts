@@ -1,6 +1,7 @@
 import { History } from 'react-router-dom';
 import { getTheme, ChartThemeColor } from '@patternfly/react-charts';
 import { EventCallbackInterface, EventPropTypeInterface } from 'victory-core';
+import merge from 'lodash/merge';
 
 import { severityColors } from 'constants/visuals/colors';
 
@@ -15,9 +16,17 @@ export const defaultChartHeight = 260;
 
 export const defaultChartBarWidth = 18;
 
+const pointerStyles = {
+    data: { cursor: 'pointer' },
+    labels: { cursor: 'pointer' },
+};
+
 /** A Victory chart theme based on grey/yellow/orange/red colors to indicate severity */
 export const patternflySeverityTheme = {
     ...defaultTheme,
+    bar: {
+        style: merge(defaultTheme?.bar?.style ?? {}, pointerStyles),
+    },
     stack: {
         ...defaultTheme.stack,
         colorScale: [...severityColorScale],
@@ -25,6 +34,7 @@ export const patternflySeverityTheme = {
     legend: {
         ...defaultTheme.legend,
         colorScale: [...severityColorScale],
+        style: merge(defaultTheme?.legend?.style ?? {}, pointerStyles),
     },
     tooltip: {
         style: {

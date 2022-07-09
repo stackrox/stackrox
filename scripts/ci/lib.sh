@@ -28,6 +28,23 @@ ci_export() {
     fi
 }
 
+ci_exit_trap() {
+    local exit_code="$?"
+    info "Executing a general purpose exit trap for CI"
+    echo "Exit code is: ${exit_code}"
+
+    (send_slack_notice_for_failures_on_merge "${exit_code}") || { echo "ERROR: Could not slack a test failure message"; }
+
+    while [[ -e /tmp/hold ]]; do
+        info "Holding this job for debug"
+        sleep 60
+    done
+}
+
+create_exit_trap() {
+    trap ci_exit_trap EXIT
+}
+
 setup_deployment_env() {
     info "Setting up the deployment environment"
 
@@ -56,8 +73,6 @@ setup_deployment_env() {
     ci_export MAIN_IMAGE_REPO "quay.io/$REPO/main"
     ci_export CENTRAL_DB_IMAGE_REPO "quay.io/$REPO/central-db"
     ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
-    ci_export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-    ci_export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 }
 
 install_built_roxctl_in_gopath() {
@@ -160,7 +175,7 @@ push_main_image_set() {
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
         local destination_registries=("quay.io/stackrox-io")
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        local destination_registries=("docker.io/stackrox" "quay.io/rhacs-eng")
+        local destination_registries=("quay.io/rhacs-eng")
     else
         die "$brand is not a supported brand"
     fi
@@ -198,11 +213,12 @@ push_docs_image() {
     local docs_tag
     docs_tag="$(make --quiet docs-tag)"
 
-    local registries=("docker.io/stackrox" "quay.io/rhacs-eng" "quay.io/stackrox-io")
+    local registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
 
     for registry in "${registries[@]}"; do
         registry_rw_login "$registry"
         oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
+        oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$(make --quiet tag)"
     done
 }
 
@@ -214,9 +230,6 @@ registry_rw_login() {
     local registry="$1"
 
     case "$registry" in
-        docker.io/stackrox)        
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-            ;;
         quay.io/rhacs-eng)
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             ;;
@@ -245,7 +258,7 @@ registry_ro_login() {
 }
 
 push_matching_collector_scanner_images() {
-    info "Pushing collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng"
+    info "Pushing collector & scanner images tagged with main-version to quay.io/rhacs-eng"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: push_matching_collector_scanner_images <brand>"
@@ -262,7 +275,7 @@ push_matching_collector_scanner_images() {
         local target_registries=( "quay.io/stackrox-io" )
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
         local source_registry="quay.io/rhacs-eng"
-        local target_registries=( "quay.io/rhacs-eng" "docker.io/stackrox" )
+        local target_registries=( "quay.io/rhacs-eng" )
     else
         die "$brand is not a supported brand"
     fi
@@ -792,6 +805,17 @@ _EOH_
 }
 
 openshift_ci_mods() {
+    info "BEGIN OpenShift CI mods"
+
+    info "Env A-Z dump:"
+    env | sort | grep -E '^[A-Z]' || true
+
+    info "Git log:"
+    git log --oneline --decorate -n 20 || true
+
+    info "Current Status:"
+    "$ROOT/status.sh" || true
+
     # For ci_export(), override BASH_ENV from stackrox-test with something that is writable.
     BASH_ENV=$(mktemp)
     export BASH_ENV
@@ -807,6 +831,20 @@ openshift_ci_mods() {
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
+
+    handle_nightly_runs
+
+    info "Status after mods:"
+    "$ROOT/status.sh" || true
+
+    info "END OpenShift CI mods"
+}
+
+openshift_ci_import_creds() {
+    shopt -s nullglob
+    for cred in /tmp/secret/**/[A-Z]*; do
+        export "$(basename "$cred")"="$(cat "$cred")"
+    done
 }
 
 openshift_ci_e2e_mods() {
@@ -930,7 +968,7 @@ store_qa_test_results() {
     store_test_results qa-tests-backend/build/test-results/test "$to"
 }
 
-store_test_results() {    
+store_test_results() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: store_test_results <from> <to>"
     fi
@@ -947,6 +985,70 @@ store_test_results() {
     local dest="${ARTIFACT_DIR}/junit-$to"
 
     cp -a "$from" "$dest" || true # (best effort)
+}
+
+send_slack_notice_for_failures_on_merge() {
+    local exitstatus="${1:-}"
+
+    if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
+        return 0
+    fi
+
+    local tag
+    tag="$(make --quiet tag)"
+    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
+        return 0
+    }
+
+    local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
+
+    local commit_details
+    org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org') || return 1
+    repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo') || return 1
+    [[ "$org" != "null" ]] && [[ "$repo" != "null" ]] || return 1
+    local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${OPENSHIFT_BUILD_COMMIT}"
+    commit_details=$(curl --retry 5 -sS "${commit_details_url}") || return 1
+
+    local job_name="${JOB_NAME_SAFE#merge-}"
+
+    local commit_msg
+    commit_msg=$(jq -r <<<"$commit_details" '.commit.message') || return 1
+    local commit_url
+    commit_url=$(jq -r <<<"$commit_details" '.html_url') || return 1
+    local author
+    author=$(jq -r <<<"$commit_details" '.commit.author.name') || return 1
+    [[ "$commit_msg" != "null" ]] && [[ "$commit_url" != "null" ]] && [[ "$author" != "null" ]] || return 1
+
+    local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
+
+    local body
+    body=$(cat <<_EOB_
+{
+    "text": "*Job Name:* $job_name",
+    "blocks": [
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Prow job failure: $job_name"
+			}
+		},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Commit:* <$commit_url|$commit_msg>\n*Author:* $author\n*Log:* $log_url"
+            }
+        },
+		{
+			"type": "divider"
+		}
+    ]
+}
+_EOB_
+    )
+
+    echo "$body" | jq | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

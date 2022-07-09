@@ -40,6 +40,7 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 					AuthProviderId: "ap1",
 					Key:            "k1",
 					Value:          "v1",
+					Id:             "1",
 				},
 				RoleName: "r1",
 			},
@@ -48,6 +49,7 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 					AuthProviderId: "ap2",
 					Key:            "k1",
 					Value:          "v1",
+					Id:             "2",
 				},
 				RoleName: "r2",
 			},
@@ -56,6 +58,7 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 					AuthProviderId: "ap2",
 					Key:            "k1",
 					Value:          "v2",
+					Id:             "3",
 				},
 				RoleName: "r2",
 			},
@@ -66,6 +69,7 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 					AuthProviderId: "ap2",
 					Key:            "k1",
 					Value:          "v1",
+					Id:             "2",
 				},
 				RoleName: "r2",
 			},
@@ -74,6 +78,7 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 					AuthProviderId: "ap2",
 					Key:            "k1",
 					Value:          "v2",
+					Id:             "3",
 				},
 				RoleName: "r3",
 			},
@@ -83,7 +88,15 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 					Key:            "k2",
 					Value:          "v1",
 				},
-				RoleName: "r3",
+				RoleName: "r4",
+			},
+			{
+				Props: &storage.GroupProperties{ // repeat of the second group above
+					AuthProviderId: "ap2",
+					Key:            "k1",
+					Value:          "v1",
+				},
+				RoleName: "r2",
 			},
 		},
 	}
@@ -94,6 +107,52 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 			[]*storage.Group{update.GetPreviousGroups()[0]},
 			[]*storage.Group{update.GetRequiredGroups()[1]},
 			[]*storage.Group{update.GetRequiredGroups()[2]}).
+		Return(nil)
+
+	_, err := suite.ser.BatchUpdate(contextForMock, update)
+	suite.NoError(err, "request should not fail with valid user data")
+}
+
+func (suite *UserServiceTestSuite) TestBatchUpdate_Dedupe_updated_group() {
+	update := &v1.GroupBatchUpdateRequest{
+		PreviousGroups: []*storage.Group{
+			{
+				Props: &storage.GroupProperties{
+					AuthProviderId: "ap1",
+					Key:            "k2",
+					Value:          "v1",
+					Id:             "1",
+				},
+				RoleName: "r1",
+			},
+		},
+		RequiredGroups: []*storage.Group{
+			{
+				Props: &storage.GroupProperties{ // update of the first group in previous groups.
+					AuthProviderId: "ap2",
+					Key:            "k1",
+					Value:          "v1",
+					Id:             "1",
+				},
+				RoleName: "r2",
+			},
+			{
+				Props: &storage.GroupProperties{ // dupe of the first group in required groups, should not be added.
+					AuthProviderId: "ap2",
+					Key:            "k1",
+					Value:          "v1",
+				},
+				RoleName: "r2",
+			},
+		},
+	}
+
+	contextForMock := context.Background()
+	suite.groupsMock.EXPECT().
+		Mutate(contextForMock,
+			gomock.Len(0),
+			[]*storage.Group{update.GetRequiredGroups()[0]},
+			gomock.Len(0)).
 		Return(nil)
 
 	_, err := suite.ser.BatchUpdate(contextForMock, update)

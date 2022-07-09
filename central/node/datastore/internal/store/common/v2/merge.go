@@ -3,7 +3,7 @@ package common
 import (
 	"sort"
 
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
@@ -79,7 +79,7 @@ func generateEmbeddedCVE(cp *CVEParts) *storage.NodeVulnerability {
 	if cp.CVE == nil {
 		return nil
 	}
-	ret := converter.NodeCVEToNodeVulnerability(cp.CVE)
+	ret := utils.NodeCVEToNodeVulnerability(cp.CVE)
 	if cp.Edge.GetFixedBy() != "" {
 		ret.SetFixedBy = &storage.NodeVulnerability_FixedBy{
 			FixedBy: cp.Edge.GetFixedBy(),

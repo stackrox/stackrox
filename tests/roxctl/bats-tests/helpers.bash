@@ -329,16 +329,6 @@ has_deprecation_warning() {
   assert_line --regexp "WARN:[[:space:]]+'--rhacs' is deprecated, please use '--image-defaults=rhacs' instead"
 }
 
-flavor_warning_regexp="WARN:[[:space:]]+Default image registries have changed. Images will be taken from 'registry.redhat.io'. Specify '--image-defaults=stackrox.io' command line argument to use images from 'stackrox.io' registries."
-
-has_default_flavor_warning() {
-  assert_line --regexp "$flavor_warning_regexp"
-}
-
-has_no_default_flavor_warning() {
-  refute_line --regexp "$flavor_warning_regexp"
-}
-
 has_flag_collision_warning() {
   assert_line --partial "flag '--rhacs' is deprecated and must not be used together with '--image-defaults'. Remove '--rhacs' flag and specify only '--image-defaults'"
 }

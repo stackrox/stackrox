@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
@@ -29,6 +30,9 @@ var (
 
 	// errConditionMet is used to short-circuit a walk in the database
 	errConditionMet = errors.New("condition met")
+
+	ocpAnnotationSuffix     = "CIS-OCP"
+	ocpControlAnnotationKey = "control.compliance.openshift.io/" + ocpAnnotationSuffix
 )
 
 // Manager helps manage the dynamic profiles from the compliance operator
@@ -103,10 +107,15 @@ func getRuleName(rule *storage.ComplianceOperatorRule) string {
 
 func createControlFromRule(rule *storage.ComplianceOperatorRule) metadata.Control {
 	ruleName := getRuleName(rule)
+
+	title := rule.GetTitle()
+	if value, ok := rule.GetAnnotations()[ocpControlAnnotationKey]; ok {
+		title += fmt.Sprintf(" (%s %s)", ocpAnnotationSuffix, value)
+	}
 	return metadata.Control{
 		ID:          ruleName,
 		Name:        ruleName,
-		Description: rule.GetTitle(),
+		Description: title,
 	}
 }
 

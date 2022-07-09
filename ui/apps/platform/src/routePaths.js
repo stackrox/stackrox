@@ -25,6 +25,7 @@ export const integrationEditPath = `${integrationsPath}/:source/:type/edit/:id`;
 export const policyManagementBasePath = `${mainPath}/policy-management`;
 export const policiesBasePath = `${policyManagementBasePath}/policies`;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
+export const policyCategoriesPath = `${policyManagementBasePath}/policy-categories`;
 export const deprecatedPoliciesBasePath = `${mainPath}/policies`;
 export const deprecatedPoliciesPath = `${deprecatedPoliciesBasePath}/:policyId?/:command?`;
 export const riskBasePath = `${mainPath}/risk`;
@@ -137,7 +138,9 @@ export const basePathToLabelMap = {
     [apidocsPath]: 'API Reference',
     [productDocsPath]: 'Help Center',
     [clustersBasePath]: 'Clusters',
+    [policyManagementBasePath]: 'Policy Management',
     [policiesBasePath]: 'Policy Management',
+    [policyCategoriesPath]: 'Policy Categories',
     [integrationsPath]: 'Integrations',
     [accessControlPath]: 'Access Control',
     [accessControlBasePathV2]: 'Access Control',

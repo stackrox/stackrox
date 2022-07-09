@@ -11,9 +11,9 @@ import (
 
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	"github.com/stackrox/rox/central/cve/converter"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
+	"github.com/stackrox/rox/central/cve/converter/utils"
+	legacyCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
@@ -22,11 +22,7 @@ import (
 )
 
 var (
-	cveElevatedCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Cluster, resources.Image),
-		))
+	allAccessCtx = sac.WithAllAccess(context.Background())
 
 	connectionDropThrottle = throttle.NewDropThrottle(10 * time.Minute)
 )
@@ -52,7 +48,7 @@ func (m *orchestratorIstioCVEManagerImpl) initialize() {
 		m.mgrMode = online
 	}
 
-	if err := copyCVEsFromPreloadedToPersistentDirIfAbsent(converter.Istio); err != nil {
+	if err := copyCVEsFromPreloadedToPersistentDirIfAbsent(utils.Istio); err != nil {
 		log.Errorf("could not copy preloaded istio CVE files to persistent volume %q: %v", path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir), err)
 		return
 	}
@@ -99,8 +95,8 @@ func (m *orchestratorIstioCVEManagerImpl) Update(zipPath string, forceUpdate boo
 }
 
 // GetAffectedClusters returns the affected clusters for a CVE
-func (m *orchestratorIstioCVEManagerImpl) GetAffectedClusters(ctx context.Context, cveID string, ct converter.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error) {
-	if ct == converter.K8s || ct == converter.OpenShift {
+func (m *orchestratorIstioCVEManagerImpl) GetAffectedClusters(ctx context.Context, cveID string, ct utils.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error) {
+	if ct == utils.K8s || ct == utils.OpenShift {
 		clusters, err := m.orchestratorCVEMgr.getAffectedClusters(ctx, cveID, ct)
 		if err != nil {
 			return nil, err
@@ -216,14 +212,15 @@ func unzip(src, dest string) error {
 	return nil
 }
 
-func reconcileCVEsInDB(cveDataStore cveDataStore.DataStore, edgeDataStore clusterCVEEdgeDataStore.DataStore, cveType storage.CVE_CVEType, newCVEs []converter.ClusterCVEParts) error {
+func reconcileCVEsInDB(cveDataStore legacyCVEDataStore.DataStore, edgeDataStore clusterCVEEdgeDataStore.DataStore,
+	cveType storage.CVE_CVEType, newCVEs []converter.ClusterCVEParts) error {
 	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVEType, cveType.String()).ProtoQuery()
-	cveResults, err := cveDataStore.Search(cveElevatedCtx, query)
+	cveResults, err := cveDataStore.Search(allAccessCtx, query)
 	if err != nil {
 		return err
 	}
 
-	edgeResults, err := edgeDataStore.Search(cveElevatedCtx, query)
+	edgeResults, err := edgeDataStore.Search(allAccessCtx, query)
 	if err != nil {
 		return err
 	}
@@ -243,13 +240,13 @@ func reconcileCVEsInDB(cveDataStore cveDataStore.DataStore, edgeDataStore cluste
 		return nil
 	}
 
-	err = edgeDataStore.Delete(cveElevatedCtx, discardEdgeIds.AsSlice()...)
+	err = edgeDataStore.Delete(allAccessCtx, discardEdgeIds.AsSlice()...)
 	if err != nil {
 		return err
 	}
 
 	// delete all the cluster cves that do not affect the infra
-	return cveDataStore.Delete(cveElevatedCtx, discardCVEs.AsSlice()...)
+	return cveDataStore.Delete(allAccessCtx, discardCVEs.AsSlice()...)
 }
 
 // UpsertOrchestratorIntegration creates or updates an orchestrator integration.

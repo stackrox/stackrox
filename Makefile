@@ -22,7 +22,7 @@ endif
 
 # Set expiration on Quay.io for non-release tags.
 ifeq ($(findstring x,$(TAG)),x)
-QUAY_TAG_EXPIRATION=1w
+QUAY_TAG_EXPIRATION=13w
 else
 QUAY_TAG_EXPIRATION=never
 endif
@@ -676,6 +676,10 @@ endif
 .PHONY: image-flavor
 image-flavor:
 	@echo $(ROX_IMAGE_FLAVOR)
+
+.PHONY: default-image-registry
+default-image-registry:
+	@echo $(DEFAULT_IMAGE_REGISTRY)
 
 .PHONY: ossls-audit
 ossls-audit: deps

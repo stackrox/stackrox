@@ -27,10 +27,10 @@ const PublicConfigLoginDetails = ({
     const loginNoticeText = publicConfig?.loginNotice?.text || 'None';
 
     return (
-        <Card data-testid="login-notice-config">
+        <Card isFlat data-testid="login-notice-config">
             <CardHeader>
                 <CardHeaderMain>
-                    <CardTitle>Login configuration</CardTitle>
+                    <CardTitle component="h3">Login configuration</CardTitle>
                 </CardHeaderMain>
                 <CardActions data-testid="login-notice-state">
                     {isEnabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}

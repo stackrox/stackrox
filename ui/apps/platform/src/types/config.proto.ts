@@ -30,10 +30,18 @@ export type AlertRetentionConfig = {
     attemptedRuntimeRetentionDurationDays: number; // int32
 };
 
+export type DecommissionedClusterRetentionConfig = {
+    retentionDurationDays: number; // int32
+    ignoreClusterLabels: Record<string, string>;
+    lastUpdated: string; // ISO 8601 date string
+    createdAt: string; // ISO 8601 date string
+};
+
 export type PrivateConfig = {
     alertConfig: AlertRetentionConfig;
     imageRetentionDurationDays: number; // int32
     expiredVulnReqRetentionDurationDays: number; // int32
+    decommissionedClusterRetention: DecommissionedClusterRetentionConfig;
 };
 
 export type SystemConfig = {

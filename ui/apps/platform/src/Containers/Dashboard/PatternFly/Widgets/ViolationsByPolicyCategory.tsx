@@ -128,7 +128,7 @@ function linkForViolationsCategory(category: string, searchFilter: SearchFilter)
     return `${violationsBasePath}${queryString}`;
 }
 
-type SortTypeOption = 'Severity' | 'Volume';
+type SortTypeOption = 'Severity' | 'Total';
 
 type ViolationsByPolicyCategoryChartProps = {
     alertGroups: AlertGroup[];
@@ -152,6 +152,8 @@ function tooltipForCategory(
 const chartTheme = cloneDeep(patternflySeverityTheme);
 chartTheme.legend.colorScale.reverse();
 
+const defaultHiddenSeverities = ['MEDIUM_SEVERITY', 'LOW_SEVERITY'] as const;
+
 function ViolationsByPolicyCategoryChart({
     alertGroups,
     sortType,
@@ -161,7 +163,9 @@ function ViolationsByPolicyCategoryChart({
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
-    const [hiddenSeverities, setHiddenSeverities] = useState<Set<PolicySeverity>>(new Set());
+    const [hiddenSeverities, setHiddenSeverities] = useState<Set<PolicySeverity>>(
+        new Set(defaultHiddenSeverities)
+    );
 
     const labelLinkCallback = useCallback(
         ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text), searchFilter),
@@ -230,7 +234,6 @@ function ViolationsByPolicyCategoryChart({
         <div ref={setWidgetContainer}>
             <Chart
                 ariaDesc="Number of violation by policy category, grouped by severity"
-                ariaTitle="Policy Violations by Category"
                 animate={{ duration: 300 }}
                 domainPadding={{ x: [20, 20] }}
                 events={getInteractiveLegendEvents({
@@ -314,10 +317,10 @@ function ViolationsByPolicyCategory() {
                                             onChange={() => sortTypeOption('Severity')}
                                         />
                                         <ToggleGroupItem
-                                            text="Volume"
-                                            buttonId={`${fieldIdPrefix}-sort-by-volume`}
-                                            isSelected={sortType === 'Volume'}
-                                            onChange={() => sortTypeOption('Volume')}
+                                            text="Total"
+                                            buttonId={`${fieldIdPrefix}-sort-by-total`}
+                                            isSelected={sortType === 'Total'}
+                                            onChange={() => sortTypeOption('Total')}
                                         />
                                     </ToggleGroup>
                                 </FormGroup>

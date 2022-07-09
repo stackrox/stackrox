@@ -24,13 +24,11 @@ teardown() {
   run roxctl-development helm output central-services --rhacs --output-dir "$out_dir"
   assert_success
   has_deprecation_warning
-  has_no_default_flavor_warning
 }
 
 @test "roxctl-development helm output should support --image-defaults flag" {
   run roxctl-development helm output central-services --image-defaults="stackrox.io" --output-dir "$out_dir"
   assert_success
-  has_no_default_flavor_warning
 }
 
 @test "roxctl-development helm output help-text should state default value for --image-defaults flag" {
@@ -42,7 +40,6 @@ teardown() {
 @test "roxctl-development helm output central-services should use docker.io registry" {
   run roxctl-development helm output central-services --output-dir "$out_dir"
   assert_success
-  has_default_flavor_warning
   assert_output --partial "Written Helm chart central-services to directory"
   assert_helm_template_central_registry "$out_dir" 'quay.io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
@@ -94,7 +91,6 @@ teardown() {
   assert_failure
   has_deprecation_warning
   has_flag_collision_warning
-  has_no_default_flavor_warning
 }
 
 @test "roxctl-development helm output central-services --rhacs --image-defaults=rhacs should return error about --rhacs colliding with --image-defaults" {
@@ -102,7 +98,6 @@ teardown() {
   assert_failure
   has_deprecation_warning
   has_flag_collision_warning
-  has_no_default_flavor_warning
 }
 
 @test "roxctl-development helm output central-services --debug should use the local directory" {

@@ -19,6 +19,7 @@ const mypermissionApi = '/v1/mypermissions';
 
 const groupsApi = {
     list: '/v1/groups',
+    batch: '/v1/groupsbatch',
 };
 
 const h1 = 'Access Control';
@@ -168,6 +169,9 @@ describe('Access Control Auth providers', () => {
         cy.intercept('PUT', '/v1/authProviders/auth-provider-1', {
             body: {},
         }).as('PutAuthProvider');
+        cy.intercept('POST', groupsApi.batch, {
+            body: {},
+        }).as('PostGroupsBatch');
 
         const id = 'auth-provider-1';
         cy.visit(`${authProvidersUrl}/${id}`);
@@ -193,7 +197,7 @@ describe('Access Control Auth providers', () => {
         cy.get(inputIssuer).clear().type('irrelevant-updated');
 
         cy.get(selectors.form.saveButton).click();
-        cy.wait('@PutAuthProvider');
+        cy.wait(['@PutAuthProvider', '@PostGroupsBatch']);
 
         cy.get(inputClientSecret)
             .should('be.disabled')

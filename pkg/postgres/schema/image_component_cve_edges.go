@@ -44,13 +44,24 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.ComponentCVEEdge)(nil)), "image_component_cve_edges")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ImageComponent": ImageComponentsSchema,
-			"storage.CVE":            ImageCvesSchema,
+			"storage.ImageCVE":       ImageCvesSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPONENT_VULN_EDGE, "componentcveedge", (*storage.ComponentCVEEdge)(nil)))
+		schema.SetSearchScope([]v1.SearchCategory{
+			v1.SearchCategory_IMAGE_VULNERABILITIES,
+			v1.SearchCategory_COMPONENT_VULN_EDGE,
+			v1.SearchCategory_IMAGE_COMPONENTS,
+			v1.SearchCategory_IMAGE_COMPONENT_EDGE,
+			v1.SearchCategory_IMAGE_VULN_EDGE,
+			v1.SearchCategory_IMAGES,
+			v1.SearchCategory_DEPLOYMENTS,
+			v1.SearchCategory_NAMESPACES,
+			v1.SearchCategory_CLUSTERS,
+		}...)
 		RegisterTable(schema, CreateTableImageComponentCveEdgesStmt)
 		return schema
 	}()

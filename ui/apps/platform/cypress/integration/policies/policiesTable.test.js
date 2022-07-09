@@ -42,7 +42,7 @@ describe('Policies table', () => {
         visitPoliciesFromLeftNav();
 
         cy.location('pathname').should('eq', url);
-        cy.get('h1:contains("Policy Management")');
+        cy.get('h1:contains("Policy management")');
     });
 
     it('should have selected item in nav bar', () => {
@@ -178,7 +178,7 @@ describe('Policies table', () => {
                     cy.wait('@getPolicies');
 
                     // Policy table
-                    cy.get(`.pf-c-title:contains('Policy Management')`);
+                    cy.get(`.pf-c-title:contains('Policy management')`);
                     cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
                 });
         });
@@ -208,7 +208,7 @@ describe('Policies table', () => {
                     cy.wait('@getPolicies');
 
                     // Policy table
-                    cy.get(`.pf-c-title:contains('Policy Management')`);
+                    cy.get(`.pf-c-title:contains('Policy management')`);
                     cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
                 });
         });
@@ -234,7 +234,9 @@ describe('Policies table', () => {
 
             // Get tr element again after table renders.
             cy.get(trSelector).then(([tr]) => {
-                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Disabled")`);
+                cy.wrap(tr)
+                    .find(`${selectors.table.statusCell}:contains("Disabled")`)
+                    .scrollIntoView();
                 cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
                 cy.wrap(tr)
                     .find(`${selectors.table.actionsItemButton}:contains("Enable policy")`)
@@ -291,7 +293,7 @@ describe('Policies table', () => {
         cy.get('[role="dialog"][aria-label="Confirm delete"] button:contains("Delete")').click();
         cy.wait(['@deletePolicy', '@getPolicies']);
 
-        cy.get(`.pf-c-title:contains('Policy Management')`);
+        cy.get(`.pf-c-title:contains('Policy management')`);
         cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
         cy.get(`${selectors.table.policyLink}:contains("${name}")`).should('not.exist');
     });

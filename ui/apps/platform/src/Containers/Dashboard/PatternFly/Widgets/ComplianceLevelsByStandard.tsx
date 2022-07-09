@@ -45,7 +45,7 @@ function ComplianceScanEmptyState() {
     return (
         <EmptyState className="pf-u-h-100" variant={EmptyStateVariant.xs}>
             <EmptyStateIcon className="pf-u-font-size-xl" icon={SyncIcon} />
-            <Title headingLevel="h4" size="md">
+            <Title headingLevel="h3" size="md">
                 No Standard results available.
             </Title>
             <EmptyStateBody>Run a scan on the Compliance page.</EmptyStateBody>

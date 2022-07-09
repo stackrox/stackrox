@@ -6,7 +6,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+## [3.71.0]
+
 - ROX-8051: The default collection method is changed from KernelModule to eBPF, following improved eBPF performance in collector.
+- ROX-11070: There have been changes made to the `v1/groups` API, including a deprecation:
+  - Each group will now have a new field, `props.id` which uniquely identifies it.
+  - Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field being set is deprecated and will be removed in release 3.73.
+  - Get of groups via the `props` field and without the `props.id` field being set will fail if more than one group was found for the given `props` field.
 - ROX-11349: Updated rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
 - ROX-11443: The default value for `--include-snoozed` option of `roxctl image scan` command is set to `false`. The result of `roxctl image scan` execution without `--include-snoozed` flag will not include deferred CVEs anymore.
 - ROX-9292: The default expiration time of tokens issued by auth providers has been lowered to 12 hours.
@@ -31,7 +37,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - `/v1/cves/suppress` and `/v1/cves/unsuppress` has been deprecated and will be removed in the future.
   - Use `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` to snooze and unsnooze image  vulnerabilities.
   - Use `/v1/nodecves/suppress` and `/v1/nodecves/unsuppress` to snooze and unsnooze node/host vulnerabilities.
-  - Use `/v1/platformcves/suppress` and `/v1/platformcves/unsuppress` to snooze and unsnooze platform (k8s, istio, and openshift) vulnerabilities.
+  - Use `/v1/clustercves/suppress` and `/v1/clustercves/unsuppress` to snooze and unsnooze platform (k8s, istio, and openshift) vulnerabilities.
 - /v1/compliance/results was never implemented and will be removed in this release
 - In release 73.0, the /v1/compliance/runresults endpoint will contain a slimmed down version of the ComplianceDomain object. This allows for greater scalability and reduced memory usage.
 - When the underlying database changes to Postgres the api `/db/restore` will no longer be a supported means for database restores.  At that time using `roxctl` will be the supported mechanism for database restores.
@@ -40,6 +46,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-11533: Fixed preferred node affinity for Central, Sensor and Scanner pods so that OpenShift Infra nodes are favored more than Compute nodes. Match expressions will also prefer not scheduling on Control Plane nodes on both Kubernetes and OpenShift clusters, including kube versions 1.25 and newer.
 - ROX-10948: A new default policy added to detect if a deployment is running with a container that has allowPrivilegeEscalation set to true. The policy is enabled by default.
 - ROX-10699: A new default policy added to detect if a deployment has any service that is externally exposed through any methods. The policy is disabled by default.
+- Scanner's "db" container no longer mounts the "scanner-db-password" secret. Instead, the init container, "init-db", mounts it.
+  - This means the configuration for the init container has been updated to include "POSTGRES_PASSWORD_FILE" and some volume mounts which are now required.
+- Debian 9 has reached EOL, so Scanner now marks Debian 9 images as stale.
+  - The Debian Security Tracker has also stopped tracking Debian 9 vulnerabilities, so there will be no more new Debian 9 vulnerabilities.
 
 ## [70.0]
 

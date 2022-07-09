@@ -8,7 +8,6 @@ import {
 } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import { flattenFilterValue } from 'utils/searchUtils';
 import { Cluster } from './types';
 
@@ -26,7 +25,6 @@ function createOptions(clusters: Cluster[], filterValue?: string) {
         <Divider key="cluster-select-option-divider" className="pf-u-mb-0" component="div" />,
         ...visibleClusters.map(({ name }) => (
             <SelectOption key={name} value={name}>
-                <ResourceIcon kind="Cluster" />
                 <span>{name}</span>
             </SelectOption>
         )),
