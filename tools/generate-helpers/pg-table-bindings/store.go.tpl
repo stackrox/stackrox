@@ -1,21 +1,8 @@
 {{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
-{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
 {{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
-
-{{- $ := . }}
-{{- $pks := .Schema.PrimaryKeys }}
-
-{{- $singlePK := false }}
-{{- if eq (len $pks) 1 }}
-{{ $singlePK = index $pks 0 }}
-{{/*If there are multiple pks, then use the explicitly specified id column.*/}}
-{{- else if .Schema.ID.ColumnName}}
-{{ $singlePK = .Schema.ID }}
-{{- end }}
 
 package postgres
 
@@ -29,15 +16,19 @@ import (
     "github.com/jackc/pgx/v4"
     "github.com/jackc/pgx/v4/pgxpool"
     "github.com/pkg/errors"
+    {{- if $inMigration}}
+    "github.com/stackrox/rox/migrator/migrations/postgresmigrationhelper/metrics"
+    {{- else}}
     "github.com/stackrox/rox/central/metrics"
-    pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     "github.com/stackrox/rox/central/role/resources"
+    {{- end}}
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/auth/permissions"
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
+    pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
@@ -61,8 +52,12 @@ const (
 var (
     log = logging.LoggerForModule()
     schema = {{ template "schemaVar" .Schema}}
-    {{ if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) -}}
-    targetResource = resources.{{.Type | storageToResource}}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+        {{- if $inMigration}}
+        targetResource = permissions.ResourceMetadata{}
+        {{- else}}
+        targetResource = resources.{{.Type | storageToResource}}
+        {{- end}}
     {{- end }}
 )
 

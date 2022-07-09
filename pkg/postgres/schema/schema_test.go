@@ -70,7 +70,7 @@ func (s *SchemaTestSuite) SetupSuite() {
 	s.ctx = ctx
 	s.pool = pool
 	s.Require().NoError(err)
-	s.gormDB = conn.OpenGormDB(s.T(), source)
+	s.gormDB = conn.OpenGormDB(s.T(), source, false)
 
 	_, err = s.pool.Exec(s.ctx, "DROP SCHEMA public CASCADE")
 	s.Require().NoError(err)
