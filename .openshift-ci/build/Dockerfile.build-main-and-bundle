@@ -2,6 +2,8 @@ FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.35
 
 ARG ROX_PRODUCT_BRANDING
 ENV ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
+ARG RACE_CONDITION_DEBUG=false
+ENV RACE_CONDITION_DEBUG=${RACE_CONDITION_DEBUG}
 
 COPY . /go/src/github.com/stackrox/stackrox
 WORKDIR /go/src/github.com/stackrox/stackrox
