@@ -16,6 +16,7 @@ func NewFullStore(ctx context.Context, db *pgxpool.Pool) store.Store {
 	}
 }
 
+// FullStoreWrap augments the wrapped store with ListDeployment functions
 func FullStoreWrap(wrapped Store) store.Store {
 	return &fullStoreImpl{
 		Store: wrapped,
