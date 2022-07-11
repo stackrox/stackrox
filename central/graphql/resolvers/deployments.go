@@ -73,7 +73,7 @@ func init() {
 			"plottedVulns(query: String): PlottedVulnerabilities!" +
 				"@deprecated(reason: \"use 'plottedImageVulnerabilities'\")",
 		}),
-		schema.AddQuery("deployment(id: ID): Deployment"),
+		schema.AddQuery("deployment(id: ID!): Deployment"),
 		schema.AddQuery("deployments(query: String, pagination: Pagination): [Deployment!]!"),
 		schema.AddQuery("deploymentCount(query: String): Int!"),
 	)
