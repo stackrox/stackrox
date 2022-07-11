@@ -94,6 +94,7 @@ function NamespaceSelect({
 
     return (
         <Select
+            toggleAriaLabel="Select namespaces"
             className="namespace-select"
             variant={SelectVariant.checkbox}
             isOpen={isOpen}
