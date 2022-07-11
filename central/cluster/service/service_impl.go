@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"google.golang.org/grpc"
 )
@@ -140,7 +141,7 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 		return nil, nil
 	}
 
-	if mapsIntersect(clusterRetentionConfig.GetIgnoreClusterLabels(), cluster.GetLabels()) {
+	if sliceutils.MapsIntersect(clusterRetentionConfig.GetIgnoreClusterLabels(), cluster.GetLabels()) {
 		return &v1.DecommissionedClusterRetentionInfo{
 			RetentionInfo: &v1.DecommissionedClusterRetentionInfo_IsExcluded{
 				IsExcluded: true,
@@ -258,15 +259,4 @@ func (s *serviceImpl) GetClusterDefaultValues(ctx context.Context, _ *v1.Empty) 
 		KernelSupportAvailable:   kernelSupport,
 	}
 	return defaults, nil
-}
-
-func mapsIntersect(m1 map[string]string, m2 map[string]string) bool {
-	for k, v := range m1 {
-		if val, exists := m2[k]; exists {
-			if val == v {
-				return true
-			}
-		}
-	}
-	return false
 }
