@@ -17,7 +17,7 @@ import (
 
 func getLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n string) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
-	for i := len(messages) - 1; i > 0; i-- {
+	for i := len(messages) - 1; i >= 0; i-- {
 		if messages[i].GetEvent().GetDeployment().GetName() == n {
 			lastMessage = messages[i]
 			break
