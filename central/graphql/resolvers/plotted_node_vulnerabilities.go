@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
@@ -84,9 +83,9 @@ func (pvr *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounter(_ c
 }
 
 // NodeVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
-func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args *inputtypes.Pagination) ([]NodeVulnerabilityResolver, error) {
+func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	if !features.PostgresDatastore.Enabled() {
-		vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, PaginatedQuery{Pagination: args})
+		vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, PaginatedQuery{Pagination: args.Pagination})
 		if err != nil {
 			return nil, err
 		}
@@ -102,5 +101,5 @@ func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.C
 		return nil, nil
 	}
 	q := search.NewQueryBuilder().AddExactMatches(search.CVEID, pvr.all...).Query()
-	return pvr.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &q, Pagination: args})
+	return pvr.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &q, Pagination: args.Pagination})
 }

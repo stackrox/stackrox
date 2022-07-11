@@ -11,7 +11,7 @@ import (
 
 func getPlottedVulnsIdsAndFixableCount(ctx context.Context, root *Resolver, args RawQuery) ([]string, int, error) {
 	if features.PostgresDatastore.Enabled() {
-		return nil, 0, errors.New("Unexpected access to legacy CVE datastore")
+		return nil, 0, errors.New("unexpected access to legacy CVE datastore")
 	}
 	query, err := getPlottedVulnsV1Query(args)
 	if err != nil {
