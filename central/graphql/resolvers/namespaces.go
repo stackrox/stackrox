@@ -465,6 +465,7 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQ
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.
 func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context, args RawQuery) (*PolicyCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "FailingPolicyCounter")
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
@@ -554,7 +555,7 @@ func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args Pag
 }
 
 func (resolver *namespaceResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageComponents")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageComponentCount")
 	return resolver.root.ImageComponentCount(resolver.withNamespaceScoping(ctx), args)
 }
 
@@ -639,7 +640,7 @@ func (resolver *namespaceResolver) Risk(ctx context.Context) (*riskResolver, err
 }
 
 func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args RawQuery) (*graphql.Time, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Latest Violation")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "LatestViolation")
 
 	q, err := resolver.getNamespaceConjunctionQuery(args)
 	if err != nil {
