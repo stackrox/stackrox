@@ -95,15 +95,16 @@ func (s *PolicyCategoryDatastoreTestSuite) TestRenamePolicyCategory() {
 
 	s.indexer.EXPECT().AddPolicyCategory(gomock.Any()).Return(nil).AnyTimes()
 
-	err := s.datastore.RenamePolicyCategory(s.ctx, c.Id, "Boo's Special Category New Name")
+	c, err := s.datastore.RenamePolicyCategory(s.ctx, c.Id, "Boo's Special Category New Name")
 	s.NoError(err, "expected no error trying to rename a category with permissions")
+	s.Equal("Boo's Special Category New Name", c.GetName(), "expected categpry to be renamed, but it is not")
 }
 
 func (s *PolicyCategoryDatastoreTestSuite) TestRenamePolicyCategoryDuplicateName() {
 	s.store.EXPECT().Upsert(s.ctx, gomock.Any()).Return(errors.New("exists")).AnyTimes()
 	s.store.EXPECT().Get(s.ctx, "category-id").Return(fixtures.GetPolicyCategory(), true, nil)
 
-	err := s.datastore.RenamePolicyCategory(s.ctx, "category-id", "new name")
+	_, err := s.datastore.RenamePolicyCategory(s.ctx, "category-id", "new name")
 	s.Error(err)
 }
 
@@ -113,6 +114,6 @@ func (s *PolicyCategoryDatastoreTestSuite) TestRenameDefaultPolicyCategory() {
 
 	s.store.EXPECT().Get(s.ctx, "category-id").Return(c, true, nil)
 
-	err := s.datastore.RenamePolicyCategory(s.ctx, c.Id, "new name")
+	_, err := s.datastore.RenamePolicyCategory(s.ctx, c.Id, "new name")
 	s.Error(err)
 }
