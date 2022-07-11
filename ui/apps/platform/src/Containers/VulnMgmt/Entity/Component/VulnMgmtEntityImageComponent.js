@@ -18,6 +18,7 @@ import {
 export const imageComponentCountKeyMap = {
     ...defaultCountKeyMap,
     [entityTypes.CVE]: 'vulnCount: imageVulnerabilityCount',
+    [entityTypes.IMAGE_CVE]: 'vulnCount: imageVulnerabilityCount',
 };
 
 const VulnMgmtImageComponent = ({
@@ -53,17 +54,17 @@ const VulnMgmtImageComponent = ({
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
-            result: imageComponent(id: $id) {
-                id
-                ${imageComponentCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
-                ${listFieldName}(query: $query, scopeQuery: $scopeQuery, pagination: $pagination) { ...${fragmentName} }
-                unusedVarSink(query: $policyQuery)
-                unusedVarSink(query: $scopeQuery)
+            query getComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+                result: imageComponent(id: $id) {
+                    id
+                    ${imageComponentCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
+                    ${listFieldName}(query: $query, scopeQuery: $scopeQuery, pagination: $pagination) { ...${fragmentName} }
+                    unusedVarSink(query: $policyQuery)
+                    unusedVarSink(query: $scopeQuery)
+                }
             }
-        }
-        ${fragment}
-    `;
+            ${fragment}
+        `;
     }
 
     const fullEntityContext = workflowState.getEntityContext();
