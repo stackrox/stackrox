@@ -26,7 +26,7 @@ function cluster_status() {
 }
 
 function cluster_destroying() {
-    [ "$(cluster_status "$1")" -eq 2 ]
+    [ "$(cluster_status "$1")" -eq 3 ]
 }
 
 function infra_status_summary() {
