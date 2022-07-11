@@ -153,6 +153,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         cleanup:
         "Remove deployment"
+        log.info "Cleaning up deployment: ${deployment}"
         orchestrator.deleteDeployment(deployment)
 
         where:
@@ -487,6 +488,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         cleanup:
         "Remove deployment"
+        log.info "Cleaning up deployment: ${deployment}"
         orchestrator.deleteDeployment(deployment)
 
         where:
