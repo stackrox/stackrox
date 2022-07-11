@@ -22,7 +22,12 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
 
     const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
         .map((matchEntity) => {
-            const count = data[countKeyMap[matchEntity]];
+            const countKeyToUse =
+                countKeyMap[matchEntity].includes('imageComponentCount') ||
+                countKeyMap[matchEntity].includes('nodeComponentCount')
+                    ? 'componentCount'
+                    : countKeyMap[matchEntity];
+            const count = data[countKeyToUse];
             return {
                 count,
                 label: pluralize(matchEntity, count),

@@ -252,10 +252,20 @@ function getFragment(entityType, listType, useCase) {
 
     const fragmentMap = fragmentsByUseCase[useCase] || defaultFragments;
 
-    if (entityType === entityTypes.NODE_COMPONENT && listType === entityTypes.CVE) {
+    if (
+        entityType === entityTypes.NODE_COMPONENT &&
+        (listType === entityTypes.CVE ||
+            listType === entityTypes.NODE_CVE ||
+            listType === entityTypes.CLUSTER_CVE)
+    ) {
         return NODE_CVE_LIST_FRAGMENT;
     }
-    if (entityType === entityTypes.IMAGE_COMPONENT && listType === entityTypes.CVE) {
+    if (
+        entityType === entityTypes.IMAGE_COMPONENT &&
+        (listType === entityTypes.CVE ||
+            listType === entityTypes.NODE_CVE ||
+            listType === entityTypes.CLUSTER_CVE)
+    ) {
         return VULN_IMAGE_CVE_LIST_FRAGMENT;
     }
 

@@ -34,6 +34,8 @@ export const useCaseEntityMap = {
         ...baseEntities,
         entityTypes.IMAGE,
         entityTypes.COMPONENT,
+        entityTypes.IMAGE_COMPONENT,
+        entityTypes.NODE_COMPONENT,
     ],
 };
 
@@ -146,13 +148,13 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.IMAGE_CVE]: {
         children: [],
         parents: [],
-        matches: [entityTypes.COMPONENT],
+        matches: [entityTypes.IMAGE_COMPONENT],
         extendedMatches: [entityTypes.IMAGE, entityTypes.DEPLOYMENT],
     },
     [entityTypes.NODE_CVE]: {
         children: [],
         parents: [],
-        matches: [entityTypes.COMPONENT],
+        matches: [entityTypes.NODE_COMPONENT],
         extendedMatches: [entityTypes.NODE],
     },
     [entityTypes.CLUSTER_CVE]: {

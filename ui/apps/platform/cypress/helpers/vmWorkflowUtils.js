@@ -34,11 +34,11 @@ function validateLinksInListPage(col, parentUrl) {
     cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
         .invoke('text')
         .then((value) => {
-            cy.get(
-                `${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`
-            ).click({
-                force: true,
-            });
+            cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+                .first()
+                .click({
+                    force: true,
+                });
             validateDataInEntityListPage(value, parentUrl);
         });
 }

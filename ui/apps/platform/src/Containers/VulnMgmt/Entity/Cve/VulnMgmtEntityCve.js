@@ -37,12 +37,12 @@ const vulnFieldMap = {
 
 const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const workflowState = useContext(workflowStateContext);
-    const cveType = workflowState.getCurrentEntityType() || entityTypes.IMAGE_CVE;
+    const cveType = workflowState.getBaseEntityType() || entityTypes.IMAGE_CVE;
     const vulnQuery = vulnQueryMap[cveType];
     const vulnFields = vulnFieldMap[cveType];
 
     // When switching between workflow states, the entity state changes before this component dismounts
-    if (!vulnQuery || !vulnFields) {
+    if (!entityListType && (!vulnQuery || !vulnFields)) {
         return (
             <NoResultsMessage
                 message={`No vulnerability found of type ${cveType}`}
