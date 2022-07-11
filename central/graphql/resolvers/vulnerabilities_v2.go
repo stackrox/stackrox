@@ -276,6 +276,9 @@ func (resolver *Resolver) clusterVulnerabilitiesV2(ctx context.Context, args Pag
 }
 
 func (resolver *Resolver) unwrappedVulnerabilityV2(ctx context.Context, args IDQuery) (*cVEResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
+	}
 	if err := readCVEs(ctx); err != nil {
 		return nil, err
 	}
@@ -329,6 +332,9 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 }
 
 func (resolver *Resolver) unwrappedVulnerabilitiesV2Query(ctx context.Context, query *v1.Query) ([]*cVEResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
+	}
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err
@@ -382,9 +388,6 @@ func (resolver *Resolver) unwrappedVulnerabilitiesV2Query(ctx context.Context, q
 }
 
 func (resolver *Resolver) vulnerabilityCountV2(ctx context.Context, args RawQuery) (int32, error) {
-	if features.PostgresDatastore.Enabled() {
-		return 0, errors.New("vulnerabilityCountV2 not supported on postgres.")
-	}
 	if err := readCVEs(ctx); err != nil {
 		return 0, err
 	}
@@ -397,6 +400,9 @@ func (resolver *Resolver) vulnerabilityCountV2(ctx context.Context, args RawQuer
 }
 
 func (resolver *Resolver) vulnerabilityCountV2Query(ctx context.Context, query *v1.Query) (int32, error) {
+	if features.PostgresDatastore.Enabled() {
+		return 0, errors.New("attempted to invoke legacy datastores with postgres enabled")
+	}
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return 0, err
@@ -418,9 +424,6 @@ func (resolver *Resolver) vulnerabilityCountV2Query(ctx context.Context, query *
 }
 
 func (resolver *Resolver) vulnCounterV2(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	if features.PostgresDatastore.Enabled() {
-		return nil, errors.New("vulnerabilityCountV2 not supported on postgres.")
-	}
 	if err := readCVEs(ctx); err != nil {
 		return nil, err
 	}
@@ -432,6 +435,9 @@ func (resolver *Resolver) vulnCounterV2(ctx context.Context, args RawQuery) (*Vu
 }
 
 func (resolver *Resolver) vulnCounterV2Query(ctx context.Context, query *v1.Query) (*VulnerabilityCounterResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
+	}
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err

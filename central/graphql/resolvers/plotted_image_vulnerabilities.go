@@ -47,7 +47,7 @@ func (pvr *PlottedImageVulnerabilitiesResolver) BasicImageVulnerabilityCounter(_
 	}, nil
 }
 
-// ImageVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
+// ImageVulnerabilities returns the image vulnerabilities for top risky nodes scatter-plot
 func (pvr *PlottedImageVulnerabilitiesResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, args)
 	if err != nil {

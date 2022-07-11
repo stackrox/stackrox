@@ -163,6 +163,9 @@ func (resolver *Resolver) K8sVulnerability(ctx context.Context, args IDQuery) (V
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("K8sVulnerability graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
+	}
 
 	return resolver.k8sVulnerabilityV2(ctx, args)
 }
@@ -172,6 +175,9 @@ func (resolver *Resolver) K8sVulnerabilities(ctx context.Context, args Paginated
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sVulnerabilities")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
+	}
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("K8sVulnerabilities graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
 	}
 
 	return resolver.k8sVulnerabilitiesV2(ctx, args)
@@ -183,6 +189,9 @@ func (resolver *Resolver) IstioVulnerability(ctx context.Context, args IDQuery) 
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("IstioVulnerability graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
+	}
 
 	return resolver.istioVulnerabilityV2(ctx, args)
 }
@@ -192,6 +201,9 @@ func (resolver *Resolver) IstioVulnerabilities(ctx context.Context, args Paginat
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioVulnerabilities")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
+	}
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("IstioVulnerabilities graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
 	}
 
 	return resolver.istioVulnerabilitiesV2(ctx, args)
@@ -203,6 +215,9 @@ func (resolver *Resolver) OpenShiftVulnerability(ctx context.Context, args IDQue
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("OpenShiftVulnerability graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
+	}
 
 	return resolver.openShiftVulnerabilityV2(ctx, args)
 }
@@ -212,6 +227,9 @@ func (resolver *Resolver) OpenShiftVulnerabilities(ctx context.Context, args Pag
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftVulnerabilities")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
+	}
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("OpenShiftVulnerabilities graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
 	}
 
 	return resolver.openShiftVulnerabilitiesV2(ctx, args)

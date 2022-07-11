@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestSchemaGeneration will compile the graphql schema and attempt to print the line that caused the error if one occurs
 func TestSchemaGeneration(t *testing.T) {
 	s := resolvers.Schema()
 	_, err := graphql.ParseSchema(s, resolvers.NewMock())
