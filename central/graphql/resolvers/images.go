@@ -218,6 +218,7 @@ func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, 
 }
 
 func (resolver *imageResolver) WatchStatus(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "WatchStatus")
 	if err := readAuth(resources.WatchedImage)(ctx); err != nil {
 		return "", err
 	}
