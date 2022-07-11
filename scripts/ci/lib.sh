@@ -993,6 +993,9 @@ store_test_results() {
 send_slack_notice_for_failures_on_merge() {
     local exitstatus="${1:-}"
 
+    # TODO(RS-509) - remove this once it is clear why messages are not reaching #test-failures
+    set -x
+
     if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
         return 0
     fi
