@@ -25,8 +25,8 @@ function cluster_status() {
     cluster_info "$1" | jq -r '.Status'
 }
 
-function cluster_creating() {
-    [ "$(cluster_status "$1")" -eq 1 ]
+function cluster_destroying() {
+    [ "$(cluster_status "$1")" -eq 2 ]
 }
 
 function infra_status_summary() {
@@ -50,6 +50,14 @@ case $(cluster_status "$CNAME") in
     # Cluster exists already.
     infra_status_summary "$CNAME" "Cluster already exists"
     exit 0
+    ;;
+3)
+    # Cluster is being destroyed.
+    infra_status_summary "$CNAME" "Cluster is being destroyed"
+    while cluster_destroying "$CNAME"; do
+        gh_log notice "Waiting 30s for the cluster '$CNAME' to be destroyed"
+        sleep 30
+    done
     ;;
 4)
     # Cluster has already been destroyed. Create it again.

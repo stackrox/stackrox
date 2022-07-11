@@ -82,8 +82,8 @@ jobs:
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             create-cluster \
-            "${{inputs.name}}" \
-            "${{inputs.wait}}" \
             "${{inputs.flavor}}" \
+            "${{inputs.name}}" \
             "${{inputs.lifespan}}" \
+            "${{inputs.wait}}" \
             "${{inputs.args}}"
