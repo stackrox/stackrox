@@ -8,9 +8,25 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+func copyScopingInfo(alert *storage.Alert) *storage.Alert {
+	switch entity := alert.Entity.(type) {
+	case *storage.Alert_Deployment_:
+		alert.ClusterName = entity.Deployment.ClusterName
+		alert.ClusterId = entity.Deployment.ClusterId
+		alert.Namespace = entity.Deployment.Namespace
+		alert.NamespaceId = entity.Deployment.NamespaceId
+	case *storage.Alert_Resource_:
+		alert.ClusterName = entity.Resource.ClusterName
+		alert.ClusterId = entity.Resource.ClusterId
+		alert.Namespace = entity.Resource.Namespace
+		alert.NamespaceId = entity.Resource.NamespaceId
+	}
+	return alert
+}
+
 // GetScopedDeploymentAlert returns a Mock alert attached to a deployment belonging to the input scope
 func GetScopedDeploymentAlert(ID string, clusterID string, namespace string) *storage.Alert {
-	return &storage.Alert{
+	return copyScopingInfo(&storage.Alert{
 		Id: ID,
 		Violations: []*storage.Alert_Violation{
 			{
@@ -57,7 +73,7 @@ func GetScopedDeploymentAlert(ID string, clusterID string, namespace string) *st
 				},
 			},
 		},
-	}
+	})
 }
 
 // GetAlert returns a Mock Alert
@@ -79,7 +95,7 @@ func GetResourceAlert() *storage.Alert {
 
 // GetScopedResourceAlert returns a Mock alert with a resource entity belonging to the input scope
 func GetScopedResourceAlert(ID string, clusterID string, namespace string) *storage.Alert {
-	return &storage.Alert{
+	return copyScopingInfo(&storage.Alert{
 		Id: ID, // "some-resource-alert-on-secret",
 		Violations: []*storage.Alert_Violation{
 			{
@@ -114,7 +130,7 @@ func GetScopedResourceAlert(ID string, clusterID string, namespace string) *stor
 			},
 		},
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
-	}
+	})
 }
 
 // GetImageAlert returns a Mock alert with an image for entity
