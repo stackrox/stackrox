@@ -449,7 +449,15 @@ func (resolver *Resolver) vulnCounterV2Query(ctx context.Context, query *v1.Quer
 		return nil, err
 	}
 
-	return mapCVEsToVulnerabilityCounter(fixableVulns, unFixableCVEs), nil
+	return mapCVEsToVulnerabilityCounter(cveToVulnerabilityWithSeverity(fixableVulns), cveToVulnerabilityWithSeverity(unFixableCVEs)), nil
+}
+
+func cveToVulnerabilityWithSeverity(in []*storage.CVE) []VulnerabilityWithSeverity {
+	ret := make([]VulnerabilityWithSeverity, len(in))
+	for _, vuln := range in {
+		ret = append(ret, vuln)
+	}
+	return ret
 }
 
 func (resolver *Resolver) k8sVulnerabilityV2(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
