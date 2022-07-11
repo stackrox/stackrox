@@ -83,9 +83,6 @@ func communicateWithAutoSensedEncoding(ctx context.Context, client central.Senso
 
 func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
 	defer func() {
-		if s.stoppedC.IsDone() {
-			return
-		}
 		s.stoppedC.SignalWithError(s.stopC.Err())
 		runAll(s.stopC.Err(), onStops...)
 	}()
@@ -145,9 +142,6 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	}
 
 	defer func() {
-		s.stoppedC.SignalWithError(s.stopC.Err())
-		runAll(s.stopC.Err(), onStops...)
-		s.sender.(*centralSenderImpl).waitC.Wait()
 		if err := stream.CloseSend(); err != nil {
 			log.Errorf("Failed to close stream cleanly: %v", err)
 		}

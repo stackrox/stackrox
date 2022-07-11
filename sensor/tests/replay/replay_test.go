@@ -141,7 +141,8 @@ func (tw *TraceWriterWithChannel) Write(b []byte) (nb int, retErr error) {
 }
 
 func (suite *ReplayEventsSuite) Test_ReplayEvents() {
-	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(suite.fakeCentral)
+	//conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(suite.fakeCentral)
+	conn, spyCentral, _ := createConnectionAndStartServer(suite.fakeCentral)
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
 	ackChannel := make(chan *central.SensorEvent)
@@ -166,9 +167,9 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 
 	go s.Start()
 	defer func() {
-		s.Stop()
-		time.Sleep(2 * time.Second)
-		shutdownFakeServer()
+		//s.Stop()
+		//time.Sleep(2 * time.Second)
+		//shutdownFakeServer()
 		writer.close()
 	}()
 
