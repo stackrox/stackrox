@@ -7,7 +7,7 @@ on:
         required: true
     inputs:
       flavor:
-        description: Flavor
+        description: Flavor (`qa-demo`, `gke-default`, `openshift-4-demo`...)
         type: string
         required: true
       name:
@@ -29,6 +29,37 @@ on:
         type: boolean
         required: false
         default: false
+
+  workflow_dispatch:
+    inputs:
+      flavor:
+        description: Flavor (`qa-demo`, `gke-default`, `openshift-4-demo`...)
+        type: string
+        required: true
+      name:
+        description: Cluster name
+        type: string
+        required: true
+      lifespan:
+        description: Cluster lifespan
+        type: string
+        default: 48h
+        required: false
+      args:
+        description: Comma separated flavor arguments. Ex. nodes=5,main-image=main:tag
+        type: string
+        required: false
+        default: ""
+      wait:
+        description: Whether to wait for the cluster readiness
+        type: boolean
+        required: false
+        default: false
+
+env:
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{github.event.repository.default_branch}}
+
 jobs:
   infra:
     runs-on: ubuntu-latest
@@ -42,97 +73,17 @@ jobs:
           > ~/.local/bin/infractl
           chmod +x ~/.local/bin/infractl
           # Ensure that the binary works
-          ~/.local/bin/infractl --version
+          infractl --version
 
       - name: Create Cluster
         env:
           INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
         run: |
           set -uo pipefail
-          NAME="${{inputs.name}}"
-          CNAME="${NAME//./-}"
-
-          function cluster_info() {
-            2>/dev/null infractl get "$1" --json
-          }
-
-          function cluster_status() {
-            cluster_info "$1" | jq -r '.Status'
-          }
-
-          function cluster_creating() {
-            [ "$(cluster_status "$1")" == 1 ]
-          }
-
-          function print_infra_status() {
-            echo "Infra status for '$CNAME': $(cluster_info "$CNAME")";
-          }
-
-          case $(cluster_status "$CNAME") in
-            1)
-              # Cluster creation may be still in progress
-              echo "::notice::Cluster \`$CNAME\` is being created. Waiting..."
-              while cluster_creating "$CNAME"; do
-                  echo "Waiting 30s for the cluster '$CNAME' to be created" >> "$GITHUB_STEP_SUMMARY"
-                  sleep 30
-              done
-              {
-                echo "*Cluster '$CNAME' has been created*";
-                print_infra_status "$CNAME";
-                echo
-              } >> "$GITHUB_STEP_SUMMARY"
-              ;;
-            2)
-              # Cluster exists already
-              echo "::notice::Cluster \`$CNAME\` already exists."
-              ;;
-            4)
-              # Cluster was destroyed
-              echo "::notice::Cluster \`$CNAME\` has been destroyed already."
-              {
-                echo "*Cluster has been destroyed already*";
-                print_infra_status "$CNAME";
-                echo
-              } >> "$GITHUB_STEP_SUMMARY"
-              exit 1
-              ;;
-            *)
-              {
-                echo "Unknown status";
-                print_infra_status "$CNAME";
-                echo
-              } >> "$GITHUB_STEP_SUMMARY"
-              ;;
-          esac
-
-          # Exit early if cluster exists
-          if [ "$(cluster_status "$CNAME")" == 2 ]; then
-            {
-              echo "*Cluster already exists:*";
-              print_infra_status "$CNAME";
-              echo
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-
-          # Creating a cluster
-          echo "Will attempt to create the cluster";
-
-          OPTIONS=()
-          if [ "${{inputs.wait}}" = "true" ]; then
-            OPTIONS+=("--wait")
-            echo "::warning::The job will wait for the cluster creation to finish."
-          fi
-
-          IFS=',' read -ra args <<< "${{inputs.args}}"
-          for arg in "${args[@]}"; do
-            OPTIONS+=("--arg")
-            OPTIONS+=("$arg")
-          done
-
-          infractl create "${{inputs.flavor}}" "$CNAME" \
-            --lifespan "${{inputs.lifespan}}" \
-            "${OPTIONS[@]}"
-
-          echo "*Cluster creation has been requested:*" >> $GITHUB_STEP_SUMMARY
-          infractl get "$CNAME" >> $GITHUB_STEP_SUMMARY
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            create-cluster \
+            "${{inputs.name}}" \
+            "${{inputs.wait}}" \
+            "${{inputs.flavor}}" \
+            "${{inputs.lifespan}}" \
+            "${{inputs.args}}"
