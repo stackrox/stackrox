@@ -127,6 +127,8 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 	if category.Id == "" {
 		category.Id = uuid.NewV4().String()
 	}
+	// Any category added after startup must be marked custom category.
+	category.IsDefault = false
 
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
@@ -158,6 +160,10 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 		return errorsPkg.Wrapf(errox.NotFound, "policy category with id '%s' does not exist", id)
 	}
 
+	if category.GetIsDefault() {
+		return errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be renamed", id))
+	}
+
 	category.Name = strings.Title(newName)
 	err = ds.storage.Upsert(ctx, category)
 	if err != nil {
@@ -177,6 +183,17 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
+
+	category, exists, err := ds.storage.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+	if category.GetIsDefault() {
+		return errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be removed", id))
+	}
 
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return err

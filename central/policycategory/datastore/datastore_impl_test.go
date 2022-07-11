@@ -63,24 +63,28 @@ func (s *PolicyCategoryDatastoreTestSuite) TestAddDuplicatePolicyCategory() {
 
 	_, err := s.datastore.AddPolicyCategory(s.ctx, c)
 	s.Error(err)
-
 }
 
 func (s *PolicyCategoryDatastoreTestSuite) TestDeletePolicyCategory() {
 	c := fixtures.GetPolicyCategory()
 
-	s.store.EXPECT().Upsert(s.ctx, gomock.Any()).Return(nil)
+	s.store.EXPECT().Get(s.ctx, "category-id").Return(c, true, nil)
 	s.store.EXPECT().Delete(s.ctx, gomock.Any()).Return(nil).AnyTimes()
-	s.store.EXPECT().Walk(s.ctx, gomock.Any()).AnyTimes()
 
-	s.indexer.EXPECT().AddPolicyCategory(gomock.Any()).Return(nil).AnyTimes()
 	s.indexer.EXPECT().DeletePolicyCategory(gomock.Any()).Return(nil).AnyTimes()
 
-	_, err := s.datastore.AddPolicyCategory(s.ctx, c)
-	s.NoError(err)
-
-	err = s.datastore.DeletePolicyCategory(s.ctx, c.Id)
+	err := s.datastore.DeletePolicyCategory(s.ctx, c.Id)
 	s.NoError(err, "expected no error trying to delete a category with permissions")
+}
+
+func (s *PolicyCategoryDatastoreTestSuite) TestDeleteDefaultPolicyCategory() {
+	c := fixtures.GetPolicyCategory()
+	c.IsDefault = true
+
+	s.store.EXPECT().Get(s.ctx, "category-id").Return(c, true, nil)
+
+	err := s.datastore.DeletePolicyCategory(s.ctx, c.Id)
+	s.Error(err)
 }
 
 func (s *PolicyCategoryDatastoreTestSuite) TestRenamePolicyCategory() {
@@ -100,5 +104,15 @@ func (s *PolicyCategoryDatastoreTestSuite) TestRenamePolicyCategoryDuplicateName
 	s.store.EXPECT().Get(s.ctx, "category-id").Return(fixtures.GetPolicyCategory(), true, nil)
 
 	err := s.datastore.RenamePolicyCategory(s.ctx, "category-id", "new name")
+	s.Error(err)
+}
+
+func (s *PolicyCategoryDatastoreTestSuite) TestRenameDefaultPolicyCategory() {
+	c := fixtures.GetPolicyCategory()
+	c.IsDefault = true
+
+	s.store.EXPECT().Get(s.ctx, "category-id").Return(c, true, nil)
+
+	err := s.datastore.RenamePolicyCategory(s.ctx, c.Id, "new name")
 	s.Error(err)
 }
