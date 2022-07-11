@@ -813,6 +813,9 @@ openshift_ci_mods() {
     info "Git log:"
     git log --oneline --decorate -n 20 || true
 
+    info "Recent git refs:"
+    git for-each-ref --format='%(creatordate) %(refname)' --sort=creatordate | tail -20
+
     info "Current Status:"
     "$ROOT/status.sh" || true
 
@@ -826,7 +829,7 @@ openshift_ci_mods() {
 
     # Provide Circle CI vars that are commonly used
     export CIRCLE_JOB="${JOB_NAME:-${OPENSHIFT_BUILD_NAME}}"
-    CIRCLE_TAG="$(git tag --contains | head -1)"
+    CIRCLE_TAG="$(git tag --contains --sort=creatordate | tail -1)" || echo "Warning: Cannot get tag"
     export CIRCLE_TAG
 
     # For gradle
@@ -925,7 +928,7 @@ handle_nightly_roxctl_mismatch() {
     info "Correcting roxctl version for nightly e2e tests"
     echo "Current roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
 
-    if ! [[ "$(roxctl version || true)" =~ nightly ]]; then
+    if ! [[ "$(roxctl version || true)" =~ nightly-$(date '+%Y%m%d') ]]; then
         make cli-build
         install_built_roxctl_in_gopath
         echo "Replacement roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
