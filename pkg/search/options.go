@@ -46,7 +46,6 @@ var (
 
 	CVEID              = newFieldLabel("CVE ID")
 	CVE                = newFieldLabel("CVE")
-	CVECount           = newFieldLabel("CVE Count")
 	CVEType            = newFieldLabel("CVE Type")
 	CVEPublishedOn     = newFieldLabel("CVE Published On")
 	CVECreatedTime     = newFieldLabel("CVE Created Time")
@@ -58,7 +57,6 @@ var (
 
 	Component                     = newFieldLabel("Component")
 	ComponentID                   = newFieldLabel("Component ID")
-	ComponentCount                = newFieldLabel("Component Count")
 	ComponentVersion              = newFieldLabel("Component Version")
 	ComponentSource               = newFieldLabel("Component Source")
 	ComponentLocation             = newFieldLabel("Component Location")
@@ -247,6 +245,8 @@ var (
 	DeploymentCount = newDerivedFieldLabel("Deployment Count", DeploymentID, CountDerivationType)
 	ImageCount      = newDerivedFieldLabel("Image Count", ImageSHA, CountDerivationType)
 	NodeCount       = newDerivedFieldLabel("Node Count", NodeID, CountDerivationType)
+	ComponentCount  = newDerivedFieldLabel("Component Count", ComponentID, CountDerivationType)
+	CVECount        = newDerivedFieldLabel("CVE Count", CVEID, CountDerivationType)
 
 	// External network sources fields
 	DefaultExternalSource = newFieldLabel("Default External Source")
