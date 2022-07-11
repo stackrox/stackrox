@@ -792,27 +792,11 @@ commands:
 
           when: always
 
-  continue-when-in-a-pr-context:
+  poll-for-builds-from-other-ci:
     steps:
       - run:
-          name: Continue when in a PR context
+          name: Poll for builds from OpenShift CI
           command: |
-            if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
-              echo "This is a PR, will continue with the remaining steps in this job"
-              exit 0
-            fi
-            echo "This is not a PR, will skip the remaining steps in this job"
-            circleci step halt
-
-  poll-for-builds-when-not-in-a-pr-context:
-    steps:
-      - run:
-          name: Poll for builds from OpenShift CI when not in a PR context
-          command: |
-            if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
-              echo "This is a PR, will continue with the remaining steps in this job"
-              exit 0
-            fi
             source scripts/ci/lib.sh
             poll_for_system_test_images 3600
             echo "The required images were built"
@@ -824,7 +808,6 @@ commands:
         default: stackrox
     steps:
       - checkout
-      - continue-when-in-a-pr-context
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-npm-deps-cache
@@ -876,98 +859,8 @@ commands:
 
   build:
     steps:
-      - checkout-with-submodules
-      - poll-for-builds-when-not-in-a-pr-context
-      - continue-when-in-a-pr-context
-
-      - setup_remote_docker:
-          version: << pipeline.parameters.docker_version >>
-      - setup-dep-env:
-          docker-login: true
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - run:
-          name: Ensure product branding is set
-          command: |
-            if [[ -z "${ROX_PRODUCT_BRANDING}" ]]; then
-              echo >&2 "Will not proceed until ROX_PRODUCT_BRANDING env variable is defined"
-              exit 2
-            fi
-
-      - run:
-          name: Restore the branded UI
-          command: |
-            cp -au ui-${ROX_PRODUCT_BRANDING}/* ui
-
-      - *refreshAlpineBaseImage
-
-      - restore-go-mod-cache
-      - setup-go-build-env
-
-      - run:
-          name: Generate OSS notice
-          command: |
-            make ossls-notice
-
-      - run:
-          name: Build main image
-          command: |
-            make docker-build-main-image
-
-      - run:
-          name: Check debugger presence in the main image
-          command: make check-debugger
-
-      - run:
-          name: Build roxctl image
-          command: make docker-build-roxctl-image
-
-      - run:
-          name: Push new Docker image
-          command: |
-            source ./scripts/ci/lib.sh
-            push_main_image_set "${CIRCLE_BRANCH}" "${ROX_PRODUCT_BRANDING}"
-
-      - run:
-          name: Push collector & scanner images tagged with main-version to registries
-          command: |
-            source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images "${ROX_PRODUCT_BRANDING}"
-
-      - run:
-          name: Publish new versions of NPM packages if any
-          command: |
-            if [[ "${CIRCLE_BRANCH}" == "master" && "${ROX_PRODUCT_BRANDING}" == "STACKROX_BRANDING" ]]; then
-              echo "//npm.pkg.github.com/:_authToken=\"$GITHUB_PACKAGES_PUBLISH_TOKEN\"" > ~/.npmrc
-              make ui-publish-packages
-            else
-              echo "Not on master and not the StackRox brand, skipping publishing NPM packages."
-            fi
-
-      - *saveGoModCache
-
-      - ci-artifacts/store:
-          path: bin/linux/roxctl
-          destination: roxctl/roxctl-linux
-
-      - ci-artifacts/store:
-          path: bin/darwin/roxctl
-          destination: roxctl/roxctl-darwin
-
-      - run:
-          name: Comment on PR
-          command: |
-            if [[ "${ROX_PRODUCT_BRANDING}" == "STACKROX_BRANDING" ]]; then
-              wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
-              echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
-              sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
-
-              export TAG=$(make --quiet tag)
-              hub-comment -template-file .circleci/comment-template.tpl
-            fi
-
+      - checkout
+      - poll-for-builds-from-other-ci
       - cleanup-clusters-on-fail
 
   cleanup-clusters-on-fail:
