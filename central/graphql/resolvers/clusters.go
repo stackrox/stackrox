@@ -623,7 +623,7 @@ func (resolver *clusterResolver) ImageComponents(ctx context.Context, args Pagin
 }
 
 func (resolver *clusterResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponents")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponentCount")
 	return resolver.root.ImageComponentCount(resolver.withClusterScope(ctx), args)
 }
 
@@ -640,7 +640,7 @@ func (resolver *clusterResolver) NodeComponents(ctx context.Context, args Pagina
 
 // NodeComponentCount returns the number of node components in the cluster
 func (resolver *clusterResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponents")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponentCount")
 
 	if !features.PostgresDatastore.Enabled() {
 		return resolver.root.NodeComponentCount(resolver.withClusterScope(ctx), args)
@@ -783,6 +783,7 @@ func (resolver *clusterResolver) Policies(ctx context.Context, args PaginatedQue
 }
 
 func (resolver *clusterResolver) PolicyCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PolicyCount")
 	if err := readPolicies(ctx); err != nil {
 		return 0, err
 	}
@@ -954,17 +955,20 @@ func (resolver *clusterResolver) Risk(ctx context.Context) (*riskResolver, error
 }
 
 func (resolver *clusterResolver) IsGKECluster() (bool, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IsGKECluster")
 	version := resolver.data.GetStatus().GetOrchestratorMetadata().GetVersion()
 	ok := resolver.root.cveMatcher.IsGKEVersion(version)
 	return ok, nil
 }
 
 func (resolver *clusterResolver) IsOpenShiftCluster() (bool, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IsOpenShiftCluster")
 	metadata := resolver.data.GetStatus().GetOrchestratorMetadata()
 	return metadata.GetIsOpenshift() != nil, nil
 }
 
 func (resolver *clusterResolver) IstioEnabled(ctx context.Context) (bool, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IstioEnabled")
 	res, err := resolver.root.NamespaceDataStore.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.Namespace, "istio-system").ProtoQuery())
 	if err != nil {
 		return false, err
@@ -973,7 +977,7 @@ func (resolver *clusterResolver) IstioEnabled(ctx context.Context) (bool, error)
 }
 
 func (resolver *clusterResolver) LatestViolation(ctx context.Context, args RawQuery) (*graphql.Time, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Latest Violation")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "LatestViolation")
 
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
