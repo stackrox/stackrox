@@ -23,16 +23,24 @@ function PolicyCategoriesFilterSelect({
     function onSelect(e, selection) {
         if (selectedFilters.includes(selection)) {
             setSelectedFilters(selectedFilters.filter((item) => item !== selection));
-            if (selection === 'Default categories') {
-                setCurrentPolicyCategories(customPolicyCategories);
-            } else {
-                setCurrentPolicyCategories(defaultPolicyCategories);
-            }
         } else {
             setSelectedFilters([...selectedFilters, selection]);
-            setCurrentPolicyCategories([...defaultPolicyCategories, ...customPolicyCategories]);
         }
     }
+
+    useEffect(() => {
+        if (selectedFilters.length === 1) {
+            if (selectedFilters[0] === 'Default categories') {
+                setCurrentPolicyCategories(defaultPolicyCategories);
+            }
+            if (selectedFilters[0] === 'Custom categories') {
+                setCurrentPolicyCategories(customPolicyCategories);
+            }
+        } else {
+            setCurrentPolicyCategories([...defaultPolicyCategories, ...customPolicyCategories]);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedFilters]);
 
     return (
         <Select
