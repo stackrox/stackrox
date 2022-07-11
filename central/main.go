@@ -133,7 +133,7 @@ import (
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
-	"github.com/stackrox/rox/central/version/store"
+	vStore "github.com/stackrox/rox/central/version/store"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	"github.com/stackrox/rox/generated/storage"
@@ -276,11 +276,11 @@ func main() {
 }
 
 func ensureDB() {
-	var versionStore store.Store
+	var versionStore vStore.Store
 	if features.PostgresDatastore.Enabled() {
-		versionStore = store.NewPostgres(globaldb.GetPostgres())
+		versionStore = vStore.NewPostgres(globaldb.GetPostgres())
 	} else {
-		versionStore = store.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
+		versionStore = vStore.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
 	}
 
 	err := version.Ensure(versionStore)
