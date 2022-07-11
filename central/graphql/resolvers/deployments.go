@@ -330,7 +330,7 @@ func (resolver *deploymentResolver) DeployAlerts(ctx context.Context, args Pagin
 }
 
 func (resolver *deploymentResolver) DeployAlertCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "DeployAlertsCount")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "DeployAlertCount")
 
 	if err := readAlerts(ctx); err != nil {
 		return 0, err // could return nil, nil to prevent errors from propagating.
@@ -406,6 +406,7 @@ func (resolver *deploymentResolver) PolicyCount(ctx context.Context, args RawQue
 
 // FailingPolicies returns policy resolvers for policies failing on this deployment
 func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args PaginatedQuery) ([]*policyResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "FailingPolicies")
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
@@ -456,9 +457,11 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 
 // FailingPolicyCount returns count of policies failing on this deployment
 func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "FailingPolicyCount")
 	if err := readAlerts(ctx); err != nil {
 		return 0, err
 	}
+
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
@@ -480,9 +483,11 @@ func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args
 
 // FailingRuntimePolicyCount returns count of all runtime policies failing on this deployment (not just unique)
 func (resolver *deploymentResolver) FailingRuntimePolicyCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "FailingRuntimePolicyCount")
 	if err := readAlerts(ctx); err != nil {
 		return 0, err
 	}
+
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
@@ -502,6 +507,7 @@ func (resolver *deploymentResolver) FailingRuntimePolicyCount(ctx context.Contex
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.
 func (resolver *deploymentResolver) FailingPolicyCounter(ctx context.Context, args RawQuery) (*PolicyCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "FailingPolicyCounter")
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
@@ -564,6 +570,7 @@ func (resolver *deploymentResolver) SecretCount(ctx context.Context, args RawQue
 }
 
 func (resolver *deploymentResolver) ComplianceResults(ctx context.Context, args RawQuery) ([]*controlResultResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ComplianceResults")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -626,7 +633,7 @@ func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args Pa
 }
 
 func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponentCount")
 	return resolver.root.ImageComponentCount(resolver.withDeploymentScope(ctx), args)
 }
 
@@ -728,7 +735,7 @@ func (resolver *deploymentResolver) ContainerTerminationCount(ctx context.Contex
 }
 
 func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args RawQuery) (*graphql.Time, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Latest Violation")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "LatestViolation")
 
 	// If we are coming from policy context, use policy context to build the query.
 	var err error
