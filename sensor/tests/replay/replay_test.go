@@ -122,13 +122,7 @@ func (tw *TraceWriterWithChannel) disable() {
 
 func (tw *TraceWriterWithChannel) Write(b []byte) (nb int, retErr error) {
 	tw.mu.Lock()
-	defer func() {
-		tw.mu.Unlock()
-		if recover() != nil {
-			nb = 0
-			retErr = nil
-		}
-	}()
+	defer tw.mu.Unlock()
 	if !tw.enabled {
 		return 0, nil
 	}
