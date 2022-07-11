@@ -16,6 +16,9 @@
 # for more information
 
 repositoryID: 2644ab37-85e0-4cd2-b8cb-d770c37f3949
+
+# Make sure you provide the same mail address that you use to log in to ArtifactHub.
+# For more information: https://artifacthub.io/docs/topics/repositories/#ownership-claim
 owners:
 - name: Maddosaurus
   email: gh@maddosaurus.de
