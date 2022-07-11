@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
-	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
@@ -68,21 +67,13 @@ var (
 // GetPostgres returns a global database instance
 func GetPostgres() *pgxpool.Pool {
 	pgSync.Do(func() {
-		sourceMap, dbConfig, err := pgconfig.GetPostgresConfig()
+		_, dbConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
 			log.Fatalf("Could not parse postgres config: %v", err)
 		}
 
 		// Get the active database name for the connection
 		activeDB := pgconfig.GetActiveDB()
-
-		// Create the active database if necessary
-		if !pgadmin.CheckIfDBExists(dbConfig, activeDB) {
-			err = pgadmin.CreateDB(sourceMap, dbConfig, pgadmin.AdminDB, activeDB)
-			if err != nil {
-				log.Fatalf("Could not create the active database: %v", err)
-			}
-		}
 
 		// Set the connection to be the active database.
 		dbConfig.ConnConfig.Database = activeDB

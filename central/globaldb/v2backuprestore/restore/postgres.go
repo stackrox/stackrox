@@ -89,7 +89,7 @@ func SwitchToRestoredDB(sourceMap map[string]string, dbConfig *pgxpool.Config) e
 	log.Info("Switching to restored database")
 
 	// Connect to different database for admin functions
-	connectPool := pgadmin.AdminPool(dbConfig)
+	connectPool := pgadmin.GetAdminPool(dbConfig)
 	// Close the admin connection pool
 	defer connectPool.Close()
 

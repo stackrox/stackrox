@@ -89,7 +89,7 @@ func CheckIfDBExists(config *pgxpool.Config, dbName string) bool {
 	defer cancel()
 
 	// Connect to different database for admin functions
-	connectPool := AdminPool(config)
+	connectPool := GetAdminPool(config)
 	// Close the admin connection pool
 	defer connectPool.Close()
 
@@ -105,9 +105,9 @@ func CheckIfDBExists(config *pgxpool.Config, dbName string) bool {
 	return exists
 }
 
-// AdminPool - returns a pool to connect to the admin database.
+// GetAdminPool - returns a pool to connect to the admin database.
 // This is useful for renaming databases such as a restore to active.
-func AdminPool(config *pgxpool.Config) *pgxpool.Pool {
+func GetAdminPool(config *pgxpool.Config) *pgxpool.Pool {
 	var err error
 	var postgresDB *pgxpool.Pool
 

@@ -14,7 +14,7 @@ data:
     {{- ._rox.central._config | nindent 4 }}
     {{- if ._rox.central.enableCentralDB }}
     centralDB:
-      rootDatabaseName: central
+      centralDatabaseName: central
       source: >
         host=central-db.{{ .Release.Namespace }}.svc
         port=5432
