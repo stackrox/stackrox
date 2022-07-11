@@ -5,6 +5,9 @@ on:
       INFRA_TOKEN:
         description: Infra access token
         required: true
+      GITHUB_TOKEN:
+        description: GitHub access token
+        required: true
     inputs:
       flavor:
         description: Flavor (`qa-demo`, `gke-default`, `openshift-4-demo`...)
@@ -78,6 +81,7 @@ jobs:
       - name: Create Cluster
         env:
           INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
