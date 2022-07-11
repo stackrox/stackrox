@@ -824,6 +824,17 @@ openshift_ci_mods() {
     export CI=true
     export OPENSHIFT_CI=true
 
+    if is_in_PR_context; then
+        local sha
+        sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || echo "WARNING: Cannot find pull sha"
+        if [[ -n "${sha:-}" ]] && [[ "$sha" != "null" ]]; then
+            info "Will checkout SHA to match PR: $sha"
+            git checkout "$sha"
+        else
+            echo "WARNING: Could not determin a SHA for this PR, ${sha:-}"
+        fi
+    fi
+
     # Provide Circle CI vars that are commonly used
     export CIRCLE_JOB="${JOB_NAME:-${OPENSHIFT_BUILD_NAME}}"
     CIRCLE_TAG="$(git tag --contains | head -1)"
