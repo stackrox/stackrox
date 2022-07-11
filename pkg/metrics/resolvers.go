@@ -29,4 +29,8 @@ const (
 	Violations
 	Pods
 	ContainerInstances
+	ImageCVEs
+	NodeCVEs
+	ClusterCVEs
+	NodeComponents
 )
