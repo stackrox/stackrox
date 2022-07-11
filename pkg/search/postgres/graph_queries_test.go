@@ -125,6 +125,7 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 			}},
 			{Val: "Grandparent1Embedded2"},
 		},
+		RiskScore: 10,
 	}))
 	s.Require().NoError(s.testGrandparentStore.Upsert(testCtx, &storage.TestGrandparent{
 		Id:  "2",
@@ -137,6 +138,7 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 				{Val: "Grandparent2Embedded21"},
 			}},
 		},
+		RiskScore: 20,
 	}))
 	s.Require().NoError(s.testParent1Store.Upsert(testCtx, &storage.TestParent1{
 		Id:       "1",
@@ -392,6 +394,20 @@ func (s *GraphQueriesTestSuite) TestDerived() {
 			desc:              "two-hop count (reversed)",
 			queriedType:       "testgrandparent",
 			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestChild1Count.String(), Reversed: true}}}},
+			orderMatters:      true,
+			expectedResultIDs: []string{"1", "2"},
+		},
+		{
+			desc:              "priority sorting",
+			queriedType:       "testgrandparent",
+			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestGrandParentPriority.String()}}}},
+			orderMatters:      true,
+			expectedResultIDs: []string{"2", "1"},
+		},
+		{
+			desc:              "priority sorting reversed",
+			queriedType:       "testgrandparent",
+			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestGrandParentPriority.String(), Reversed: true}}}},
 			orderMatters:      true,
 			expectedResultIDs: []string{"1", "2"},
 		},
