@@ -49,8 +49,12 @@ describe('Resource scope bar', () => {
     it('should default to all clusters and namespaces selected', async () => {
         const { user } = setup();
 
-        const clusterDropdownToggle = screen.getByRole('button', { name: 'Select clusters' });
-        const namespaceDropdownToggle = screen.getByRole('button', { name: 'Select namespaces' });
+        const clusterDropdownToggle = await screen.findByRole('button', {
+            name: 'Select clusters',
+        });
+        const namespaceDropdownToggle = await screen.findByRole('button', {
+            name: 'Select namespaces',
+        });
         await waitFor(() => expect(clusterDropdownToggle).not.toBeDisabled());
 
         // The default state is all clusters selected, with the ns dropdown disabled
@@ -63,8 +67,12 @@ describe('Resource scope bar', () => {
     it('allows selection of multiple clusters and namespaces', async () => {
         const { user } = setup();
 
-        const clusterDropdownToggle = screen.getByRole('button', { name: 'Select clusters' });
-        const namespaceDropdownToggle = screen.getByRole('button', { name: 'Select namespaces' });
+        const clusterDropdownToggle = await screen.findByRole('button', {
+            name: 'Select clusters',
+        });
+        const namespaceDropdownToggle = await screen.findByRole('button', {
+            name: 'Select namespaces',
+        });
         await waitFor(() => expect(clusterDropdownToggle).not.toBeDisabled());
 
         // Selecting one or more clusters enables the ns dropdown
@@ -113,8 +121,12 @@ describe('Resource scope bar', () => {
         } = setup();
 
         // Check that the default state of "select all" results in empty URL search parameters
-        const clusterDropdownToggle = screen.getByRole('button', { name: 'Select clusters' });
-        const namespaceDropdownToggle = screen.getByRole('button', { name: 'Select namespaces' });
+        const clusterDropdownToggle = await screen.findByRole('button', {
+            name: 'Select clusters',
+        });
+        const namespaceDropdownToggle = await screen.findByRole('button', {
+            name: 'Select namespaces',
+        });
         await waitFor(() => expect(clusterDropdownToggle).not.toBeDisabled());
         expect(history.location.search).toBe('');
 
