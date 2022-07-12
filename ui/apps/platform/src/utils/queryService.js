@@ -25,6 +25,7 @@ import {
     VULN_NODE_COMPONENT_LIST_FRAGMENT,
     NODE_CVE_LIST_FRAGMENT,
     VULN_IMAGE_CVE_LIST_FRAGMENT,
+    CLUSTER_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
@@ -203,6 +204,8 @@ function getFragmentName(entityType, listType) {
                 return 'imageCVEFields';
             }
             return 'cveFields';
+        case entityTypes.CLUSTER_CVE:
+            return 'clusterCVEFields';
         case entityTypes.COMPONENT:
             return 'componentFields';
         case entityTypes.NODE_COMPONENT:
@@ -240,6 +243,7 @@ function getFragment(entityType, listType, useCase) {
             [entityTypes.NODE_COMPONENT]: VULN_NODE_COMPONENT_LIST_FRAGMENT,
             [entityTypes.IMAGE_COMPONENT]: VULN_IMAGE_COMPONENT_LIST_FRAGMENT,
             [entityTypes.CVE]: VULN_CVE_LIST_FRAGMENT,
+            [entityTypes.CLUSTER_CVE]: CLUSTER_CVE_LIST_FRAGMENT,
             [entityTypes.NODE_CVE]: NODE_CVE_LIST_FRAGMENT,
             [entityTypes.IMAGE_CVE]: VULN_IMAGE_CVE_LIST_FRAGMENT,
             [entityTypes.IMAGE]: VULN_IMAGE_LIST_FRAGMENT,
