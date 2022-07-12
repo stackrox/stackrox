@@ -863,6 +863,9 @@ openshift_ci_mods() {
     info "Status after mods:"
     "$ROOT/status.sh" || true
 
+    STACKROX_BUILD_TAG=$(make --quiet tag)
+    export STACKROX_BUILD_TAG
+
     info "END OpenShift CI mods"
 }
 
