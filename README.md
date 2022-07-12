@@ -429,8 +429,8 @@ $ smart-diff                    # check diff relative to parent branch
 
 If you're using GoLand for development, the following can help improve the experience.
 
-Make sure `Protocol Buffer Editor` plugin is installed. If it isn't, use `Help | Find Action...`, type `Plugins` and hit
-enter, then switch to `Marketplace`, type its name and install the plugin.  
+Make sure the `Protocol Buffers` plugin is installed. The plugin comes installed by default in GoLand.  
+If it isn't, use `Help | Find Action...`, type `Plugins` and hit enter, then switch to `Marketplace`, type its name and install the plugin. 
 This plugin does not know where to look for `.proto` imports by default in GoLand therefore you need to explicitly
 configure paths for this plugin. See <https://github.com/jvolkman/intellij-protobuf-editor#path-settings>.
 
