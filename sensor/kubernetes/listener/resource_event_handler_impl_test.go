@@ -71,10 +71,10 @@ func (suite *ResourceEventHandlerImplTestSuite) newHandlerImpl() *resourceEventH
 	treatCreatesAsUpdates.Set(true)
 	var eventLock sync.Mutex
 	return &resourceEventHandlerImpl{
-		eventLock:             &eventLock,
-		dispatcher:            suite.dispatcher,
-		output:                make(chan *central.MsgFromSensor),
-		treatCreatesAsUpdates: &treatCreatesAsUpdates,
+		eventLock:        &eventLock,
+		dispatcher:       suite.dispatcher,
+		output:           make(chan *central.MsgFromSensor),
+		syncingResources: &treatCreatesAsUpdates,
 
 		hasSeenAllInitialIDsSignal: concurrency.NewSignal(),
 		seenIDs:                    make(map[types.UID]struct{}),
