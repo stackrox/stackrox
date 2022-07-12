@@ -681,6 +681,10 @@ image-flavor:
 default-image-registry:
 	@echo $(DEFAULT_IMAGE_REGISTRY)
 
+.PHONY: product-branding
+product-branding:
+	@echo $(ROX_PRODUCT_BRANDING)
+
 .PHONY: ossls-audit
 ossls-audit: deps
 	ossls version
