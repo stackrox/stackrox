@@ -57,7 +57,7 @@ function NetworkPoliciesDetail({ policyIds }: NetworkPoliciesDetailProps): React
                 return (
                     <CollapsibleCard title={name} cardClassName="border border-base-400" key={id}>
                         <div className="p-4 bg-primary-100">
-                            <pre className="font-600 h-full leading-normal p-3 text-base whitespace-pre-wrap word-break">
+                            <pre className="font-600 break-all h-full leading-normal p-3 text-base whitespace-pre-wrap">
                                 {yaml}
                             </pre>
                         </div>
