@@ -210,8 +210,8 @@ Utility Functions
 
 func imageCveToVulnerabilityWithSeverity(in []*storage.ImageCVE) []VulnerabilityWithSeverity {
 	ret := make([]VulnerabilityWithSeverity, len(in))
-	for _, vuln := range in {
-		ret = append(ret, vuln)
+	for i, vuln := range in {
+		ret[i] = vuln
 	}
 	return ret
 }
