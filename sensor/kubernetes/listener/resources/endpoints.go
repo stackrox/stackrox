@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/net"
 	podUtils "github.com/stackrox/rox/pkg/pods/utils"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/selector"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -14,7 +15,7 @@ type endpointManager interface {
 	OnDeploymentRemove(deployment *deploymentWrap)
 
 	OnServiceCreate(svc *serviceWrap)
-	OnServiceUpdateOrRemove(namespace string, sel selector)
+	OnServiceUpdateOrRemove(namespace string, sel selector.Selector)
 
 	OnNodeCreate(node *nodeWrap)
 	OnNodeUpdateOrRemove()
@@ -200,7 +201,7 @@ func (m *endpointManagerImpl) OnServiceCreate(svc *serviceWrap) {
 	m.entityStore.Apply(updates, true)
 }
 
-func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel selector) {
+func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel selector.Selector) {
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sel) {
 		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)

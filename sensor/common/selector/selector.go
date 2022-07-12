@@ -1,4 +1,4 @@
-package resources
+package selector
 
 import (
 	"k8s.io/apimachinery/pkg/labels"
@@ -11,8 +11,8 @@ type labelsWithLen interface {
 	Len() uint
 }
 
-// selector is a restricted version of selectorWrap
-type selector interface {
+// Selector is a restricted version of selectorWrap
+type Selector interface {
 	Matches(labelsWithLen) bool
 }
 
@@ -33,11 +33,11 @@ func (l labelWithLenImpl) Len() uint {
 	return uint(len(l.labels))
 }
 
-func createLabelsWithLen(labels map[string]string) labelWithLenImpl {
+func CreateLabelsWithLen(labels map[string]string) labelWithLenImpl {
 	return labelWithLenImpl{labels}
 }
 
-// selectorWrap holds a selector and information allowing for additional checks before matching
+// selectorWrap holds a Selector and information allowing for additional checks before matching
 type selectorWrap struct {
 	selector  labels.Selector
 	numLabels uint
@@ -54,8 +54,8 @@ func (s selectorWrap) Matches(labels labelsWithLen) bool {
 	return s.selector.Matches(labels)
 }
 
-// selectorDisjunction is the disjunction (logical or) of a list of selectors.
-type selectorDisjunction []selector
+// selectorDisjunction is the disjunction (logical Or) of a list of selectors.
+type selectorDisjunction []Selector
 
 func (d selectorDisjunction) Matches(labels labelsWithLen) bool {
 	for _, sel := range d {
@@ -66,30 +66,30 @@ func (d selectorDisjunction) Matches(labels labelsWithLen) bool {
 	return false
 }
 
-// or returns the logical or of the given SelectorWrappers.
-func or(sels ...selector) selector {
+// Or returns the logical Or of the given SelectorWrappers.
+func Or(sels ...Selector) Selector {
 	return selectorDisjunction(sels)
 }
 
 type selectorWrapOption func(*selectorWrap)
 
-// emptyMatchesNothing means that a set with no labels should not match with anything
-func emptyMatchesNothing() selectorWrapOption {
+// EmptyMatchesNothing means that a set with no labels should not match with anything
+func EmptyMatchesNothing() selectorWrapOption {
 	return func(sw *selectorWrap) {
 		sw.matchNil = false
 	}
 }
 
-// emptyMatchesEverything means that a set with no labels should match with everything
-func emptyMatchesEverything() selectorWrapOption {
+// EmptyMatchesEverything means that a set with no labels should match with everything
+func EmptyMatchesEverything() selectorWrapOption {
 	return func(sw *selectorWrap) {
 		sw.matchNil = true
 	}
 }
 
-// createSelector returns a SelectorWrapper for the given map of labels; matchNil determines whether
-// an empty set of labels matches everything or nothing.
-func createSelector(labelsMap map[string]string, opts ...selectorWrapOption) selectorWrap {
+// CreateSelector returns a SelectorWrapper for the given map of labels; matchNil determines whether
+// an empty set of labels matches everything Or nothing.
+func CreateSelector(labelsMap map[string]string, opts ...selectorWrapOption) selectorWrap {
 	selWrapper := selectorWrap{matchNil: false}
 
 	for _, opt := range opts {

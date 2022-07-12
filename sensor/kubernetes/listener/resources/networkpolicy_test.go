@@ -172,7 +172,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 				},
 			},
 		},
-		"New NetworkPolicy, no selector": {
+		"New NetworkPolicy, no Selector": {
 			netpol:         createNetworkPolicy("1", "default", nil),
 			oldNetpol:      nil,
 			action:         central.ResourceAction_CREATE_RESOURCE,
@@ -198,7 +198,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 				},
 			},
 		},
-		"New NetworkPolicy, selector no match": {
+		"New NetworkPolicy, Selector no match": {
 			netpol: createNetworkPolicy("1", "default", map[string]string{
 				"app": "no-match",
 			}),
@@ -236,7 +236,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 				},
 			},
 		},
-		"Update NetworkPolicy, no selector": {
+		"Update NetworkPolicy, no Selector": {
 			netpol:         createNetworkPolicy("1", "default", nil),
 			oldNetpol:      createNetworkPolicy("1", "default", nil),
 			action:         central.ResourceAction_UPDATE_RESOURCE,
@@ -262,7 +262,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 				},
 			},
 		},
-		"Update NetworkPolicy, new selector": {
+		"Update NetworkPolicy, new Selector": {
 			netpol: createNetworkPolicy("1", "default", map[string]string{
 				"app":  "sensor",
 				"role": "backend",
@@ -291,7 +291,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 				},
 			},
 		},
-		"Update NetworkPolicy, delete selector": {
+		"Update NetworkPolicy, delete Selector": {
 			netpol: createNetworkPolicy("1", "default", nil),
 			oldNetpol: createNetworkPolicy("1", "default", map[string]string{
 				"app":  "sensor",
@@ -320,7 +320,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 				},
 			},
 		},
-		"Update NetworkPolicy, change selector": {
+		"Update NetworkPolicy, change Selector": {
 			netpol: createNetworkPolicy("1", "default", map[string]string{
 				"app": "sensor-2",
 			}),
@@ -362,7 +362,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 				},
 			},
 		},
-		"Delete NetworkPolicy, no selector": {
+		"Delete NetworkPolicy, no Selector": {
 			netpol:         createNetworkPolicy("1", "default", nil),
 			oldNetpol:      nil,
 			action:         central.ResourceAction_REMOVE_RESOURCE,

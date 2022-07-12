@@ -59,6 +59,8 @@ func (s *DependencyGraphSuite) Test_SingleDeployment() {
 func (s *DependencyGraphSuite) Test_DeploymentWithOneNetPolicy() {
 	d1 := givenDeployment("example", "d1", appLabel("test"))
 	s.deploymentStore.EXPECT().Get(gomock.Eq("d1")).Return(d1)
+	s.deploymentStore.EXPECT().GetMatchingDeployments(gomock.Eq("example"), gomock.Any()).
+		Return([]*storage.Deployment{d1})
 
 	n1 := givenNetworkPolicy("example", "n1", appLabel("test"))
 	s.netpolStore.EXPECT().Get(gomock.Eq("n1")).Return(n1)

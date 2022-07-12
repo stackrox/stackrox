@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/selector"
 )
 
 // DeploymentStore stores deployments.
@@ -64,7 +65,15 @@ func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.Strin
 	return deployments
 }
 
-func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector) (matching []*deploymentWrap) {
+func (ds *DeploymentStore) GetMatchingDeployments(namespace string, sel selector.Selector) []*storage.Deployment {
+	var result []*storage.Deployment
+	for _, wrap := range ds.getMatchingDeployments(namespace, sel) {
+		result = append(result, wrap.GetDeployment())
+	}
+	return result
+}
+
+func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector.Selector) (matching []*deploymentWrap) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -79,7 +88,7 @@ func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector
 			continue
 		}
 
-		if sel.Matches(createLabelsWithLen(wrap.PodLabels)) {
+		if sel.Matches(selector.CreateLabelsWithLen(wrap.PodLabels)) {
 			matching = append(matching, wrap)
 		}
 	}

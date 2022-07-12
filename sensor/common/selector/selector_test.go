@@ -1,4 +1,4 @@
-package resources
+package selector
 
 import (
 	"testing"
@@ -76,58 +76,58 @@ func (s *SelectorWrapperTestSuite) TestLabelMatching() {
 		expectedMatch                      bool
 		expectedMatchesInsideMatchesCalled bool
 	}{
-		"Empty selector with matchEmpty set to false should match nothing; attempting to match some labels": {
+		"Empty Selector with matchEmpty set to false should match nothing; attempting to match some labels": {
 			givenSelectorLabels:                labelsEmpty,
-			matchEmptySelector:                 emptyMatchesNothing(),
+			matchEmptySelector:                 EmptyMatchesNothing(),
 			givenMatchingLabels:                labelsThreeElements,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: false,
 		},
-		"Empty selector with matchEmpty set to false should match nothing; attempting to match empty labels": {
+		"Empty Selector with matchEmpty set to false should match nothing; attempting to match empty labels": {
 			givenSelectorLabels:                labelsEmpty,
-			matchEmptySelector:                 emptyMatchesNothing(),
+			matchEmptySelector:                 EmptyMatchesNothing(),
 			givenMatchingLabels:                labelsEmpty,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: false,
 		},
-		"Empty selector with matchEmpty set to true should match everything; attempting to match some labels": {
+		"Empty Selector with matchEmpty set to true should match everything; attempting to match some labels": {
 			givenSelectorLabels:                labelsEmpty,
-			matchEmptySelector:                 emptyMatchesEverything(),
+			matchEmptySelector:                 EmptyMatchesEverything(),
 			givenMatchingLabels:                labelsFiveElements,
 			expectedMatch:                      true,
 			expectedMatchesInsideMatchesCalled: false,
 		},
-		"Empty selector with matchEmpty set to true should match everything; attempting to match empty labels": {
+		"Empty Selector with matchEmpty set to true should match everything; attempting to match empty labels": {
 			givenSelectorLabels:                labelsEmpty,
-			matchEmptySelector:                 emptyMatchesEverything(),
+			matchEmptySelector:                 EmptyMatchesEverything(),
 			givenMatchingLabels:                labelsEmpty,
 			expectedMatch:                      true,
 			expectedMatchesInsideMatchesCalled: false,
 		},
-		"More selector labels than received labels -> no match and selector Matches function not called": {
+		"More Selector labels than received labels -> no match and Selector Matches function not called": {
 			givenSelectorLabels:                labelsThreeElements,
-			matchEmptySelector:                 emptyMatchesEverything(),
+			matchEmptySelector:                 EmptyMatchesEverything(),
 			givenMatchingLabels:                labelsOneElement,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: false,
 		},
-		"Equal number but different labels, selector Matches function should be called and return false": {
+		"Equal number but different labels, Selector Matches function should be called and return false": {
 			givenSelectorLabels:                labelsThreeElements,
-			matchEmptySelector:                 emptyMatchesEverything(),
+			matchEmptySelector:                 EmptyMatchesEverything(),
 			givenMatchingLabels:                labelsThreeElements2,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: true,
 		},
-		"Equal labels, selector Matches function should be called and return true": {
+		"Equal labels, Selector Matches function should be called and return true": {
 			givenSelectorLabels:                labelsThreeElements,
-			matchEmptySelector:                 emptyMatchesEverything(),
+			matchEmptySelector:                 EmptyMatchesEverything(),
 			givenMatchingLabels:                labelsThreeElements,
 			expectedMatch:                      true,
 			expectedMatchesInsideMatchesCalled: true,
 		},
-		"selector with one label, match with three labels including the one. Expected to return true and call Matches": {
+		"Selector with one label, match with three labels including the one. Expected to return true and call Matches": {
 			givenSelectorLabels:                labelsOneElement,
-			matchEmptySelector:                 emptyMatchesEverything(),
+			matchEmptySelector:                 EmptyMatchesEverything(),
 			givenMatchingLabels:                labelsThreeElements,
 			expectedMatch:                      true,
 			expectedMatchesInsideMatchesCalled: true,
@@ -136,10 +136,10 @@ func (s *SelectorWrapperTestSuite) TestLabelMatching() {
 	for name, tt := range tests {
 		s.Run(name, func() {
 			s.hasMatchesBeenCalled = false
-			selectorWrap := createSelector(tt.givenSelectorLabels, tt.matchEmptySelector)
+			selectorWrap := CreateSelector(tt.givenSelectorLabels, tt.matchEmptySelector)
 			s.injectMockSelector(&selectorWrap)
 
-			s.Equal(tt.expectedMatch, selectorWrap.Matches(createLabelsWithLen(tt.givenMatchingLabels)))
+			s.Equal(tt.expectedMatch, selectorWrap.Matches(CreateLabelsWithLen(tt.givenMatchingLabels)))
 			s.Equal(tt.expectedMatchesInsideMatchesCalled, s.hasMatchesBeenCalled)
 		})
 	}
@@ -155,42 +155,42 @@ func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 	}{
 		"Disjunction of empty list that should match nothing and labels with three elements": {
 			givenSelectorLabels:                []map[string]string{labelsEmpty, labelsThreeElements},
-			matchEmptySelector:                 []selectorWrapOption{emptyMatchesNothing(), emptyMatchesEverything()},
+			matchEmptySelector:                 []selectorWrapOption{EmptyMatchesNothing(), EmptyMatchesEverything()},
 			givenMatchingLabels:                labelsOneElement,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: false,
 		},
 		"Disjunction of empty list that should match everything and labels with three elements": {
 			givenSelectorLabels:                []map[string]string{labelsEmpty, labelsThreeElements},
-			matchEmptySelector:                 []selectorWrapOption{emptyMatchesEverything(), emptyMatchesEverything()},
+			matchEmptySelector:                 []selectorWrapOption{EmptyMatchesEverything(), EmptyMatchesEverything()},
 			givenMatchingLabels:                labelsOneElement,
 			expectedMatch:                      true,
 			expectedMatchesInsideMatchesCalled: false,
 		},
 		"Disjunction of two selectors with more labels than the input": {
 			givenSelectorLabels:                []map[string]string{labelsFiveElements, labelsThreeElements},
-			matchEmptySelector:                 []selectorWrapOption{emptyMatchesNothing(), emptyMatchesNothing()},
+			matchEmptySelector:                 []selectorWrapOption{EmptyMatchesNothing(), EmptyMatchesNothing()},
 			givenMatchingLabels:                labelsOneElement,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: false,
 		},
 		"Disjunction of two selectors, one more labels than the input, one equal, without match": {
 			givenSelectorLabels:                []map[string]string{labelsFiveElements, labelsThreeElements},
-			matchEmptySelector:                 []selectorWrapOption{emptyMatchesNothing(), emptyMatchesNothing()},
+			matchEmptySelector:                 []selectorWrapOption{EmptyMatchesNothing(), EmptyMatchesNothing()},
 			givenMatchingLabels:                labelsThreeElements2,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: true,
 		},
 		"Disjunction of two selectors, one more labels than the input, one equal, with match": {
 			givenSelectorLabels:                []map[string]string{labelsFiveElements, labelsThreeElements},
-			matchEmptySelector:                 []selectorWrapOption{emptyMatchesNothing(), emptyMatchesNothing()},
+			matchEmptySelector:                 []selectorWrapOption{EmptyMatchesNothing(), EmptyMatchesNothing()},
 			givenMatchingLabels:                labelsThreeElements,
 			expectedMatch:                      true,
 			expectedMatchesInsideMatchesCalled: true,
 		},
 		"Disjunction of two selectors, with less labels than the input": {
 			givenSelectorLabels:                []map[string]string{labelsThreeElements2, labelsThreeElements},
-			matchEmptySelector:                 []selectorWrapOption{emptyMatchesNothing(), emptyMatchesNothing()},
+			matchEmptySelector:                 []selectorWrapOption{EmptyMatchesNothing(), EmptyMatchesNothing()},
 			givenMatchingLabels:                labelsFiveElements,
 			expectedMatch:                      false,
 			expectedMatchesInsideMatchesCalled: true,
@@ -199,16 +199,16 @@ func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 	for name, tt := range tests {
 		s.Run(name, func() {
 			s.hasMatchesBeenCalled = false
-			var selectorWrappers []selector
+			var selectorWrappers []Selector
 			for i, label := range tt.givenSelectorLabels {
-				newSelector := createSelector(label, tt.matchEmptySelector[i])
+				newSelector := CreateSelector(label, tt.matchEmptySelector[i])
 				s.injectMockSelector(&newSelector)
 				selectorWrappers = append(selectorWrappers, newSelector)
 			}
 
-			sel := or(selectorWrappers...)
+			sel := Or(selectorWrappers...)
 
-			s.Equal(tt.expectedMatch, sel.Matches(createLabelsWithLen(tt.givenMatchingLabels)))
+			s.Equal(tt.expectedMatch, sel.Matches(CreateLabelsWithLen(tt.givenMatchingLabels)))
 			s.Equal(tt.expectedMatchesInsideMatchesCalled, s.hasMatchesBeenCalled)
 		})
 	}

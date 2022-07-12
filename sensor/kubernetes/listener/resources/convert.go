@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"k8s.io/api/batch/v1beta1"
@@ -162,14 +163,14 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 	switch o := obj.(type) {
 	case *openshift_appsv1.DeploymentConfig:
 		if o.Spec.Template == nil {
-			return false, fmt.Errorf("spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
+			return false, fmt.Errorf("spec obj %+v does not have a Template field Or is not a pointer pod spec", spec)
 		}
 		podLabels = o.Spec.Template.Labels
 		podSpec = o.Spec.Template.Spec
 
 		labelSelector, err = w.getLabelSelector(spec)
 		if err != nil {
-			return false, errors.Wrap(err, "error getting label selector")
+			return false, errors.Wrap(err, "error getting label Selector")
 		}
 
 	// Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
@@ -198,13 +199,13 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 
 		labelSelector, err = w.getLabelSelector(spec)
 		if err != nil {
-			return false, errors.Wrap(err, "error getting label selector")
+			return false, errors.Wrap(err, "error getting label Selector")
 		}
 	}
 
 	labelSel, err := k8s.ToRoxLabelSelector(labelSelector)
 	if err != nil {
-		log.Warnf("Could not convert label selector: %v", err)
+		log.Warnf("Could not convert label Selector: %v", err)
 	}
 
 	w.PodLabels = podLabels
@@ -265,7 +266,7 @@ func filterOnOwners(hierarchy references.ParentHierarchy, topLevelUID string, po
 func (w *deploymentWrap) getPods(hierarchy references.ParentHierarchy, labelSelector *metav1.LabelSelector, lister v1listers.PodLister) ([]*v1.Pod, error) {
 	compiledLabelSelector, err := metav1.LabelSelectorAsSelector(labelSelector)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not compile label selector")
+		return nil, errors.Wrap(err, "could not compile label Selector")
 	}
 	pods, err := lister.Pods(w.Namespace).List(compiledLabelSelector)
 	if err != nil {
@@ -303,7 +304,7 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 		return pods[j].CreationTimestamp.Before(&pods[i].CreationTimestamp)
 	})
 
-	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
+	// Determine each image's ID, if not already populated, as well as if the image is pullable and/Or cluster-local.
 	for _, p := range pods {
 		sort.SliceStable(p.Status.ContainerStatuses, func(i, j int) bool {
 			return p.Status.ContainerStatuses[i].Name < p.Status.ContainerStatuses[j].Name
@@ -372,7 +373,7 @@ func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (*metav1.LabelSele
 		return ls, nil
 	}
 
-	return nil, fmt.Errorf("unable to get label selector for %+v", spec.Type())
+	return nil, fmt.Errorf("unable to get label Selector for %+v", spec.Type())
 }
 
 func (w *deploymentWrap) populateNamespaceID(namespaceStore *namespaceStore,
@@ -473,7 +474,7 @@ func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoute
 }
 
 func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
-	if svc.selector.Matches(createLabelsWithLen(w.PodLabels)) {
+	if svc.selector.Matches(selector.CreateLabelsWithLen(w.PodLabels)) {
 		return
 	}
 

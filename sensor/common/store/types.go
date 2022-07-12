@@ -1,12 +1,16 @@
 package store
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/selector"
+)
 
 // DeploymentStore provides functionality to fetch all deployments from underlying store.
 //go:generate mockgen-wrapper
 type DeploymentStore interface {
 	GetAll() []*storage.Deployment
 	Get(id string) *storage.Deployment
+	GetMatchingDeployments(namespace string, sel selector.Selector) []*storage.Deployment
 }
 
 // PodStore provides functionality to fetch all pods from underlying store.

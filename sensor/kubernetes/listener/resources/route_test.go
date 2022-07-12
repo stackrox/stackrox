@@ -6,14 +6,15 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getSelector(svc *v1.Service) selector {
-	return createSelector(svc.Spec.Selector, emptyMatchesNothing())
+func getSelector(svc *v1.Service) selector.Selector {
+	return selector.CreateSelector(svc.Spec.Selector, selector.EmptyMatchesNothing())
 }
 
 func getTestService(name, namespace string) *v1.Service {
@@ -54,7 +55,7 @@ type mockPortExposureReconciler struct {
 	orderedCalls []call
 }
 
-func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sel selector) []*central.SensorEvent {
+func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sel selector.Selector) []*central.SensorEvent {
 	m.orderedCalls = append(m.orderedCalls,
 		call{
 			"UpdateExposuresForMatchingDeployments",
@@ -85,7 +86,7 @@ func (m *mockEndpointManager) OnDeploymentRemove(*deploymentWrap) {
 func (m *mockEndpointManager) OnServiceCreate(*serviceWrap) {
 }
 
-func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selector) {
+func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selector.Selector) {
 }
 
 func (m *mockEndpointManager) OnNodeCreate(*nodeWrap) {

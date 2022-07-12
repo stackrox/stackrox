@@ -86,7 +86,7 @@ func init() {
 // Notation used in naming of benchmark scenarios
 //- N = number of elements (network policies) in the store
 //- K = number of labels in a deployment (passed to the Find function)
-//- L = number of label selector terms in a network policy
+//- L = number of label Selector terms in a network policy
 
 func BenchmarkFind(b *testing.B) {
 	for labelIdx, numLabels := range casesLabels {

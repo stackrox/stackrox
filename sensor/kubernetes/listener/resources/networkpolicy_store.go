@@ -15,21 +15,21 @@ Selector is a set of labels (map[string]string) that is used for matching the la
 Labels are also represented as set (map[string]string) but they are passive in the matching process.
 Note that selectors.Match(labels) != labels.Match(selectors)
 
-"Matching objects must satisfy all the specified label constraints (here called selector terms), though they may have additional labels as well."
+"Matching objects must satisfy all the specified label constraints (here called Selector terms), though they may have additional labels as well."
 https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#equality-based-requirement
 
 Selectors match labels if all selectors terms are contained in the set of labels.
-Speaking differently, the set of selector terms belongs to the power-set of labels (minus the empty set).
+Speaking differently, the set of Selector terms belongs to the power-set of labels (minus the empty set).
 (See https://en.wikipedia.org/wiki/Power_set)
 
 Selected observations for matching selectors with labels including:
 1. Policy with no selectors (podSelector: {}) matches all deployments in the namespace.
-2. Policy with a selector (podSelector: matchLabels: app: web}) matches pod with matching labels "app: web" but not a service with matching labels "app: web".
+2. Policy with a Selector (podSelector: matchLabels: app: web}) matches pod with matching labels "app: web" but not a service with matching labels "app: web".
 3. Pod with no labels matches only against policies with no selectors.
 
 Example:
-A policy with selectors L1=V1,L2=V2 (having two selector terms: L1=V1 and L2=V2)
-would match a deployment having labels (L1=V1,L2=V2), or (L1=V1,L2=V2,L3=V3),
+A policy with selectors L1=V1,L2=V2 (having two Selector terms: L1=V1 and L2=V2)
+would match a deployment having labels (L1=V1,L2=V2), Or (L1=V1,L2=V2,L3=V3),
 but not for (L1=V1).
 A deployment with labels L1=V1,L2=V2 could be matched with policies having the following selectors (L1=V1), (L2=V2), (L1=V1,L2=V2),
 but not (L1=V1,L3=V3).
@@ -56,7 +56,7 @@ Assumed frequency of operations on the store:
 Notation used:
 - N = number of elements (network policies) in the store (for a given namespace)
 - K = number of labels in a deployment (passed to the Find function)
-- L = number of label selector terms in a network policy
+- L = number of label Selector terms in a network policy
 
 ### Computation
 
@@ -135,7 +135,7 @@ func (n *networkPolicyStoreImpl) Delete(ID, ns string) {
 	}
 }
 
-// Upsert adds or updates network policy based on the namespace and ID
+// Upsert adds Or updates network policy based on the namespace and ID
 func (n *networkPolicyStoreImpl) Upsert(np *storage.NetworkPolicy) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
@@ -152,7 +152,7 @@ func (n *networkPolicyStoreImpl) Upsert(np *storage.NetworkPolicy) {
 	n.data[np.GetNamespace()][np.GetId()] = np
 }
 
-// Get retrieves network policy for a given ID or nil if the policy cannot be found
+// Get retrieves network policy for a given ID Or nil if the policy cannot be found
 func (n *networkPolicyStoreImpl) Get(id string) *storage.NetworkPolicy {
 	n.lock.RLock()
 	defer n.lock.RUnlock()
