@@ -55,6 +55,10 @@ func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action 
 		return nil
 	}
 
+	// If GetDeletionTimestamp is set, then
+	if metaObj.GetDeletionTimestamp() != nil {
+		action = central.ResourceAction_REMOVE_RESOURCE
+	}
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		d.handler.hierarchy.Remove(string(metaObj.GetUID()))
 		return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
