@@ -16,7 +16,7 @@ var (
 // DeploymentStoreSingleton returns a singleton of the DeploymentStore
 func DeploymentStoreSingleton() *DeploymentStore {
 	dsInit.Do(func() {
-		depStore = newDeploymentStore()
+		depStore = NewDeploymentStore()
 	})
 	return depStore
 }
@@ -24,7 +24,7 @@ func DeploymentStoreSingleton() *DeploymentStore {
 // PodStoreSingleton returns a singleton of the PodStore
 func PodStoreSingleton() *PodStore {
 	psInit.Do(func() {
-		podStore = newPodStore()
+		podStore = NewPodStore()
 	})
 	return podStore
 }
@@ -32,7 +32,7 @@ func PodStoreSingleton() *PodStore {
 // NetworkPolicySingleton returns a singleton of NetworkPolicyStore
 func NetworkPolicySingleton() *networkPolicyStoreImpl {
 	netpolInit.Do(func() {
-		netpolStore = newNetworkPoliciesStore()
+		netpolStore = NewNetworkPolicyStore()
 	})
 	return netpolStore
 }

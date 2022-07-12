@@ -8,7 +8,7 @@ import (
 )
 
 func TestNetworkPoliciesStoreFind(t *testing.T) {
-	store := newNetworkPoliciesStore()
+	store := NewNetworkPolicyStore()
 	store.Upsert(newNPDummy("one", defaultNS, map[string]string{"app": "sensor"}))
 	store.Upsert(newNPDummy("two", defaultNS, map[string]string{"app": "sensor", "role": "backend"}))
 	store.Upsert(newNPDummy("three", defaultNS, map[string]string{"app": "central"}))
@@ -98,7 +98,7 @@ func TestNetworkPoliciesStoreDelete(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			store := newNetworkPoliciesStore()
+			store := NewNetworkPolicyStore()
 			for _, p := range policies {
 				store.Upsert(p)
 			}
@@ -155,7 +155,7 @@ func TestNetworkPoliciesStoreAll(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			store := newNetworkPoliciesStore()
+			store := NewNetworkPolicyStore()
 			for _, p := range tt.policiesToAdd {
 				store.Upsert(p)
 			}
@@ -216,7 +216,7 @@ func TestNetworkPoliciesStoreOnNamespaceDeleted(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			store := newNetworkPoliciesStore()
+			store := NewNetworkPolicyStore()
 			for _, p := range tt.policiesToAdd {
 				store.Upsert(p)
 			}

@@ -82,7 +82,7 @@ type networkPolicyStoreImpl struct {
 	data map[string]map[string]*storage.NetworkPolicy
 }
 
-func newNetworkPoliciesStore() *networkPolicyStoreImpl {
+func NewNetworkPolicyStore() *networkPolicyStoreImpl {
 	return &networkPolicyStoreImpl{
 		data: make(map[string]map[string]*storage.NetworkPolicy),
 	}

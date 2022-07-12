@@ -16,8 +16,8 @@ type DeploymentStore struct {
 	deployments map[string]*deploymentWrap
 }
 
-// newDeploymentStore creates and returns a new deployment store.
-func newDeploymentStore() *DeploymentStore {
+// NewDeploymentStore creates and returns a new deployment store.
+func NewDeploymentStore() *DeploymentStore {
 	return &DeploymentStore{
 		deploymentIDs: make(map[string]map[string]struct{}),
 		deployments:   make(map[string]*deploymentWrap),

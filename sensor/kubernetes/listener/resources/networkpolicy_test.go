@@ -43,7 +43,7 @@ var _ suite.TearDownTestSuite = (*NetworkPolicyDispatcherSuite)(nil)
 func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.netpolStore = mocksStore.NewMockNetworkPolicyStore(suite.mockCtrl)
-	suite.deploymentStore = newDeploymentStore()
+	suite.deploymentStore = NewDeploymentStore()
 	suite.detector = mocks.NewMockDetector(suite.mockCtrl)
 
 	suite.dispatcher = newNetworkPolicyDispatcher(suite.netpolStore, suite.deploymentStore, suite.detector)

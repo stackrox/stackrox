@@ -123,7 +123,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) SetupTest() {
 
 	suite.mockEndpointManager = &mockEndpointManager{}
 
-	suite.depStore = newDeploymentStore()
+	suite.depStore = NewDeploymentStore()
 	suite.serviceStore = newServiceStore()
 	suite.serviceDispatcher = newServiceDispatcher(suite.serviceStore, suite.depStore, suite.mockEndpointManager, suite.mockReconciler)
 	suite.routeDispatcher = newRouteDispatcher(suite.serviceStore, suite.mockReconciler)

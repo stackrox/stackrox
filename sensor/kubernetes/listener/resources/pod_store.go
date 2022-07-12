@@ -12,8 +12,8 @@ type PodStore struct {
 	pods map[string]map[string]map[string]*storage.Pod
 }
 
-// newPodStore creates and returns a new pod store.
-func newPodStore() *PodStore {
+// NewPodStore creates and returns a new pod store.
+func NewPodStore() *PodStore {
 	return &PodStore{
 		pods: make(map[string]map[string]map[string]*storage.Pod),
 	}
