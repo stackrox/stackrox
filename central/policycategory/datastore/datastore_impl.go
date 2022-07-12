@@ -142,11 +142,11 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 }
 
 // RenamePolicyCategory renames a policy category
-func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName string) error {
+func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName string) (*storage.PolicyCategory, error) {
 	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
-		return err
+		return nil, err
 	} else if !ok {
-		return sac.ErrResourceAccessDenied
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	ds.categoryMutex.Lock()
@@ -154,23 +154,32 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 
 	category, exists, err := ds.storage.Get(ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !exists {
-		return errorsPkg.Wrapf(errox.NotFound, "policy category with id '%s' does not exist", id)
+		return nil, errorsPkg.Wrapf(errox.NotFound, "policy category with id '%s' does not exist", id)
 	}
 
 	if category.GetIsDefault() {
-		return errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be renamed", id))
+		return nil, errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be renamed", id))
 	}
 
 	category.Name = strings.Title(newName)
 	err = ds.storage.Upsert(ctx, category)
 	if err != nil {
-		return errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
+		return nil, errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
 	}
 
-	return ds.indexer.AddPolicyCategory(category)
+	err = ds.indexer.AddPolicyCategory(category)
+	if err != nil {
+		return nil, errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
+	}
+
+	return &storage.PolicyCategory{
+		Id:        category.GetId(),
+		Name:      category.GetName(),
+		IsDefault: category.GetIsDefault(),
+	}, nil
 }
 
 // DeletePolicyCategory removes a policy from the storage and the indexer
