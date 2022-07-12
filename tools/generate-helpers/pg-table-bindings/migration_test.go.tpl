@@ -1,3 +1,4 @@
+//go:build sql_integration
 {{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 {{- $name := .TrimmedType|lowerCamelCase }}
 package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}

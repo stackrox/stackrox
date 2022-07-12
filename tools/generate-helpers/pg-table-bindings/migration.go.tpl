@@ -86,6 +86,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
             return err
         }
     {{- else}}
+        {{- /* Assume rocksdb and postgres agrees on if it should have GetAll function. Not acurate but works well. */}}
 	    {{- if or $rocksDB (not .GetAll) }}
 	    var {{.Table|lowerCamelCase}} []*{{.Type}}
 	    var err error

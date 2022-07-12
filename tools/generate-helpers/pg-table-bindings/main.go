@@ -59,9 +59,6 @@ var migrationFile string
 //go:embed migration_test.go.tpl
 var migrationTestFile string
 
-//go:embed postgres_plugin.go.tpl
-var postgresPluginFile string
-
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
