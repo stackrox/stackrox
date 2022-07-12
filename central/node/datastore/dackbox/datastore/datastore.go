@@ -100,28 +100,3 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	nodeComponentRanker := ranking.NodeComponentRanker()
 	return New(dacky, keyFence, bleveIndex, riskStore, nodeRanker, nodeComponentRanker), nil
 }
-
-// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgresStore.New(pool, false)
-	indexer := postgresStore.NewIndexer(pool)
-	searcher := search.NewV2(dbstore, indexer)
-	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
-	nodeRanker := ranking.NodeRanker()
-	nodeComponentRanker := ranking.NodeComponentRanker()
-	return NewWithPostgres(dbstore, indexer, searcher, riskStore, nodeRanker, nodeComponentRanker), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
-	riskStore, err := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
-	if err != nil {
-		return nil, err
-	}
-	nodeRanker := ranking.NodeRanker()
-	nodeComponentRanker := ranking.NodeComponentRanker()
-	return New(dacky, keyFence, bleveIndex, riskStore, nodeRanker, nodeComponentRanker), nil
-}
