@@ -189,7 +189,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                 </CollapsibleSection>
             </div>
             <RelatedEntitiesSideList
-                entityType={entityTypes.CVE}
+                entityType={cveType}
                 entityContext={newEntityContext}
                 data={safeData}
             />

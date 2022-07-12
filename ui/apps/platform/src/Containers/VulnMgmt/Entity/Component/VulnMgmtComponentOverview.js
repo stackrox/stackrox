@@ -8,6 +8,7 @@ import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
@@ -27,8 +28,14 @@ const emptyComponent = {
 
 function VulnMgmtComponentOverview({ data, entityContext }) {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
 
     const currentEntityType = workflowState.getCurrentEntityType();
+
+    const defaultVulnType = showVmUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE;
+    const vulnType =
+        currentEntityType === entityTypes.NODE_COMPONENT ? entityTypes.NODE_CVE : defaultVulnType;
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyComponent, ...data };
@@ -107,6 +114,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                             workflowState={workflowState}
                             entityContext={entityContext}
                             entityType={currentEntityType}
+                            vulnType={vulnType}
                             name={safeData?.name}
                             id={safeData?.id}
                         />

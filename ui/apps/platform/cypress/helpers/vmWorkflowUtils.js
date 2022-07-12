@@ -34,11 +34,11 @@ function validateLinksInListPage(col, parentUrl) {
     cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
         .invoke('text')
         .then((value) => {
-            cy.get(
-                `${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`
-            ).click({
-                force: true,
-            });
+            cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+                .first()
+                .click({
+                    force: true,
+                });
             validateDataInEntityListPage(value, parentUrl);
         });
 }
@@ -169,8 +169,10 @@ function validateFixableTabLinksInEntityPage(parentUrl) {
         if (fixableCount > 0) {
             cy.get(vulnManagementSelectors.tableBodyColumn).eq(0).click({ force: true });
             if (!parentUrl.includes('components')) {
-                cy.get(vulnManagementSelectors.tabButton, { timeout: 6000 })
-                    .contains('Fixable CVEs')
+                cy.get(`${vulnManagementSelectors.tabButton}:contains("Fixable")`, {
+                    timeout: 6000,
+                })
+                    .first()
                     .click();
             }
             cy.get(vulnManagementSelectors.getSidePanelTabHeader('fixable')).contains(fixableCount);
