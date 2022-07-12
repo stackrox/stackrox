@@ -450,12 +450,15 @@ type Field struct {
 	Type string
 
 	// DataType is the internal type
-	DataType            DataType
-	SQLType             string
-	ModelType           string
-	Options             PostgresOptions
-	Search              SearchField
+	DataType  DataType
+	SQLType   string
+	ModelType string
+	Options   PostgresOptions
+	Search    SearchField
+	// DerivedSearchFields represents the search fields derived from this search field.
 	DerivedSearchFields []DerivedSearchField
+	// Derived indicates whether the search field (if valid search field) is derived from other search field.
+	Derived bool
 }
 
 // DerivedSearchField represents a search field that's derived.

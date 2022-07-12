@@ -237,6 +237,7 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 		if dbField == nil {
 			return errors.Errorf("field %s does not exist in table %s or connected tables", so.GetField(), schema.Table)
 		}
+
 		if fieldMetadata.derivedMetadata == nil {
 			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
 				Field: pgsearch.SelectQueryField{
@@ -258,6 +259,14 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 				})
 				// If we're ordering by a count, we will need to group by the primary key.
 				querySoFar.GroupByPrimaryKey = true
+			case searchPkg.SimpleReverseSortDerivationType:
+				querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
+					Field: pgsearch.SelectQueryField{
+						SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName),
+						FieldType:  dbField.DataType,
+					},
+					Descending: !so.GetReversed(),
+				})
 			}
 		}
 	}

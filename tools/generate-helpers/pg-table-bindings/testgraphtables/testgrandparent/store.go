@@ -86,10 +86,12 @@ func insertIntoTestGrandparents(ctx context.Context, batch *pgx.Batch, obj *stor
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetVal(),
+		obj.GetPriority(),
+		obj.GetRiskScore(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO test_grandparents (Id, Val, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_grandparents (Id, Val, Priority, RiskScore, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -162,6 +164,10 @@ func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx pgx.Tx, obj
 
 		"val",
 
+		"priority",
+
+		"riskscore",
+
 		"serialized",
 	}
 
@@ -179,6 +185,10 @@ func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx pgx.Tx, obj
 			obj.GetId(),
 
 			obj.GetVal(),
+
+			obj.GetPriority(),
+
+			obj.GetRiskScore(),
 
 			serialized,
 		})
