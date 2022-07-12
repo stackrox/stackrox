@@ -22,44 +22,57 @@ describe('Risk page', () => {
 
             const priorityColumnHeadingSelector = `${RiskPageSelectors.table.columnHeaders}:contains("Priority")`;
 
-            // Default is not sorted by priority.
-            cy.get(priorityColumnHeadingSelector)
-                .should('not.have.class', '-sort-asc')
-                .should('not.have.class', '-sort-desc');
-
-            // Sort ascending by priority.
-            cy.get(priorityColumnHeadingSelector).click();
-            cy.location('search').should(
-                'eq',
-                '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=false'
-            );
-            // Why no request here?
-            cy.get(priorityColumnHeadingSelector).should('have.class', '-sort-asc');
+            /*
+             * Because risk table displays all deployments on only one page in integration testing environment,
+             * sort descending just reverses the rows so first becomes last, and last becomes first.
+             */
             cy.get(`${RiskPageSelectors.table.dataRows} .rt-td:nth-child(5)`).then(
                 ($priorityCells) => {
-                    const firstCellPriority = Number($priorityCells.eq(0).text());
-                    const lastCellPriority = Number(
-                        $priorityCells.eq($priorityCells.length - 1).text()
-                    );
-                    expect(lastCellPriority).to.be.at.least(firstCellPriority);
-                }
-            );
+                    const priorityFirst = $priorityCells.eq(0).text();
+                    const priorityLast = $priorityCells.eq($priorityCells.length - 1).text();
 
-            // Sort descending by priority.
-            cy.get(priorityColumnHeadingSelector).click();
-            cy.location('search').should(
-                'eq',
-                '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=true'
-            );
-            cy.wait('@deploymentswithprocessinfo'); // assume intercept in visitRiskDeployments
-            cy.get(priorityColumnHeadingSelector).should('have.class', '-sort-desc');
-            cy.get(`${RiskPageSelectors.table.dataRows} .rt-td:nth-child(5)`).then(
-                ($priorityCells) => {
-                    const firstCellPriority = Number($priorityCells.eq(0).text());
-                    const lastCellPriority = Number(
-                        $priorityCells.eq($priorityCells.length - 1).text()
+                    // Initial table state is not sorted by priority.
+                    cy.get(priorityColumnHeadingSelector)
+                        .should('not.have.class', '-sort-asc')
+                        .should('not.have.class', '-sort-desc');
+
+                    // Sort ascending by priority.
+                    cy.get(priorityColumnHeadingSelector).click();
+                    cy.location('search').should(
+                        'eq',
+                        '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=false'
                     );
-                    expect(firstCellPriority).to.be.at.least(lastCellPriority);
+                    // No request because response is sorted ascending.
+
+                    // Sort descending by priority.
+                    cy.get(priorityColumnHeadingSelector).click();
+                    cy.location('search').should(
+                        'eq',
+                        '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=true'
+                    );
+                    cy.wait('@deploymentswithprocessinfo'); // assume intercept in visitRiskDeployments
+                    cy.get(priorityColumnHeadingSelector).should('have.class', '-sort-desc');
+                    cy.get(
+                        `.rt-tr-group:first-child .rt-tr .rt-td:nth-child(5):contains("${priorityLast}")`
+                    );
+                    cy.get(
+                        `.rt-tr-group:last-child .rt-tr .rt-td:nth-child(5):contains("${priorityFirst}")`
+                    );
+
+                    // Sort ascending by priority.
+                    cy.get(priorityColumnHeadingSelector).click();
+                    cy.location('search').should(
+                        'eq',
+                        '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=false'
+                    );
+                    cy.wait('@deploymentswithprocessinfo'); // assume intercept in visitRiskDeployments
+                    cy.get(priorityColumnHeadingSelector).should('have.class', '-sort-asc');
+                    cy.get(
+                        `.rt-tr-group:first-child .rt-tr .rt-td:nth-child(5):contains("${priorityFirst}")`
+                    );
+                    cy.get(
+                        `.rt-tr-group:last-child .rt-tr .rt-td:nth-child(5):contains("${priorityLast}")`
+                    );
                 }
             );
         });
