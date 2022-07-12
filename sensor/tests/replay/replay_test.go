@@ -141,7 +141,6 @@ func (tw *TraceWriterWithChannel) Write(b []byte) (nb int, retErr error) {
 }
 
 func (suite *ReplayEventsSuite) Test_ReplayEvents() {
-	//conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(suite.fakeCentral)
 	conn, spyCentral, _ := createConnectionAndStartServer(suite.fakeCentral)
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
