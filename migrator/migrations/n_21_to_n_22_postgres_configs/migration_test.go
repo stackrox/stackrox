@@ -74,15 +74,18 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
+
 func (s *postgresMigrationSuite) TestMigration() {
+	newStore := pgStore.New(s.ctx, s.pool)
 	// Prepare data and write to legacy DB
 	legacyStore := legacy.New(s.legacyDB)
-	store := pgStore.New(s.ctx, s.pool)
 	config := &storage.Config{}
 	s.NoError(testutils.FullInit(config, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	s.NoError(legacyStore.Upsert(s.ctx, config))
+	// Move
 	s.NoError(move(s.gormDB, s.pool, legacyStore))
-	fetched, found, err := store.Get(s.ctx)
+	// Verify
+	fetched, found, err := newStore.Get(s.ctx)
 	s.NoError(err)
 	s.True(found)
 	s.Equal(config, fetched)

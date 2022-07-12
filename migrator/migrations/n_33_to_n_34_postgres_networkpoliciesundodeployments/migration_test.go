@@ -8,18 +8,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_33_to_n_34_postgres_networkpoliciesundodeployments/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/n_33_to_n_34_postgres_networkpoliciesundodeployments/postgres"
 
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -77,7 +75,9 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
+
 func (s *postgresMigrationSuite) TestMigration() {
+	newStore := pgStore.New(s.pool)
 	// Prepare data and write to legacy DB
 	var networkPolicyApplicationUndoDeploymentRecords []*storage.NetworkPolicyApplicationUndoDeploymentRecord
 	legacyStore, err := legacy.New(s.legacyDB)
@@ -91,24 +91,18 @@ func (s *postgresMigrationSuite) TestMigration() {
 		networkPolicyApplicationUndoDeploymentRecords = append(networkPolicyApplicationUndoDeploymentRecords, networkPolicyApplicationUndoDeploymentRecord)
 	}
 	s.NoError(legacyStore.UpsertMany(s.ctx, networkPolicyApplicationUndoDeploymentRecords))
+
+	// Move
 	s.NoError(move(s.gormDB, s.pool, legacyStore))
-	var count int64
-	s.gormDB.Model(pkgSchema.CreateTableNetworkpoliciesundodeploymentsStmt.GormModel).Count(&count)
-	s.Equal(int64(len(networkPolicyApplicationUndoDeploymentRecords)), count)
-	for _, networkPolicyApplicationUndoDeploymentRecord := range networkPolicyApplicationUndoDeploymentRecords {
-		s.Equal(networkPolicyApplicationUndoDeploymentRecord, s.get(networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId()))
-	}
-}
 
-func (s *postgresMigrationSuite) get(deploymentId string) *storage.NetworkPolicyApplicationUndoDeploymentRecord {
-
-	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
-	)
-
-	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
+	// Verify
+	count, err := newStore.Count(s.ctx)
 	s.NoError(err)
-	var msg storage.NetworkPolicyApplicationUndoDeploymentRecord
-	s.NoError(proto.Unmarshal(data, &msg))
-	return &msg
+	s.Equal(len(networkPolicyApplicationUndoDeploymentRecords), count)
+	for _, networkPolicyApplicationUndoDeploymentRecord := range networkPolicyApplicationUndoDeploymentRecords {
+		fetched, exists, err := newStore.Get(s.ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
+		s.NoError(err)
+		s.True(exists)
+		s.Equal(networkPolicyApplicationUndoDeploymentRecord, fetched)
+	}
 }

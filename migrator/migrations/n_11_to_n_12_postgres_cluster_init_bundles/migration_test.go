@@ -8,18 +8,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_11_to_n_12_postgres_cluster_init_bundles/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/n_11_to_n_12_postgres_cluster_init_bundles/postgres"
 
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -77,7 +75,9 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
+
 func (s *postgresMigrationSuite) TestMigration() {
+	newStore := pgStore.New(s.pool)
 	// Prepare data and write to legacy DB
 	var initBundleMetas []*storage.InitBundleMeta
 	legacyStore, err := legacy.New(s.legacyDB)
@@ -91,24 +91,18 @@ func (s *postgresMigrationSuite) TestMigration() {
 		initBundleMetas = append(initBundleMetas, initBundleMeta)
 	}
 	s.NoError(legacyStore.UpsertMany(s.ctx, initBundleMetas))
+
+	// Move
 	s.NoError(move(s.gormDB, s.pool, legacyStore))
-	var count int64
-	s.gormDB.Model(pkgSchema.CreateTableClusterInitBundlesStmt.GormModel).Count(&count)
-	s.Equal(int64(len(initBundleMetas)), count)
-	for _, initBundleMeta := range initBundleMetas {
-		s.Equal(initBundleMeta, s.get(initBundleMeta.GetId()))
-	}
-}
 
-func (s *postgresMigrationSuite) get(id string) *storage.InitBundleMeta {
-
-	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
+	// Verify
+	count, err := newStore.Count(s.ctx)
 	s.NoError(err)
-	var msg storage.InitBundleMeta
-	s.NoError(proto.Unmarshal(data, &msg))
-	return &msg
+	s.Equal(len(initBundleMetas), count)
+	for _, initBundleMeta := range initBundleMetas {
+		fetched, exists, err := newStore.Get(s.ctx, initBundleMeta.GetId())
+		s.NoError(err)
+		s.True(exists)
+		s.Equal(initBundleMeta, fetched)
+	}
 }

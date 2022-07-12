@@ -8,18 +8,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_15_to_n_16_postgres_compliance_operator_rules/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/n_15_to_n_16_postgres_compliance_operator_rules/postgres"
 
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -77,7 +75,9 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
+
 func (s *postgresMigrationSuite) TestMigration() {
+	newStore := pgStore.New(s.pool)
 	// Prepare data and write to legacy DB
 	var complianceOperatorRules []*storage.ComplianceOperatorRule
 	legacyStore, err := legacy.New(s.legacyDB)
@@ -91,24 +91,18 @@ func (s *postgresMigrationSuite) TestMigration() {
 		complianceOperatorRules = append(complianceOperatorRules, complianceOperatorRule)
 	}
 	s.NoError(legacyStore.UpsertMany(s.ctx, complianceOperatorRules))
+
+	// Move
 	s.NoError(move(s.gormDB, s.pool, legacyStore))
-	var count int64
-	s.gormDB.Model(pkgSchema.CreateTableComplianceOperatorRulesStmt.GormModel).Count(&count)
-	s.Equal(int64(len(complianceOperatorRules)), count)
-	for _, complianceOperatorRule := range complianceOperatorRules {
-		s.Equal(complianceOperatorRule, s.get(complianceOperatorRule.GetId()))
-	}
-}
 
-func (s *postgresMigrationSuite) get(id string) *storage.ComplianceOperatorRule {
-
-	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
+	// Verify
+	count, err := newStore.Count(s.ctx)
 	s.NoError(err)
-	var msg storage.ComplianceOperatorRule
-	s.NoError(proto.Unmarshal(data, &msg))
-	return &msg
+	s.Equal(len(complianceOperatorRules), count)
+	for _, complianceOperatorRule := range complianceOperatorRules {
+		fetched, exists, err := newStore.Get(s.ctx, complianceOperatorRule.GetId())
+		s.NoError(err)
+		s.True(exists)
+		s.Equal(complianceOperatorRule, fetched)
+	}
 }

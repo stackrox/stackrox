@@ -8,18 +8,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_36_to_n_37_postgres_notifiers/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/n_36_to_n_37_postgres_notifiers/postgres"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/sac"
 
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -76,7 +74,9 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
+
 func (s *postgresMigrationSuite) TestMigration() {
+	newStore := pgStore.New(s.pool)
 	// Prepare data and write to legacy DB
 	var notifiers []*storage.Notifier
 	legacyStore := legacy.New(s.legacyDB)
@@ -86,24 +86,18 @@ func (s *postgresMigrationSuite) TestMigration() {
 		notifiers = append(notifiers, notifier)
 		s.NoError(legacyStore.Upsert(s.ctx, notifier))
 	}
+
+	// Move
 	s.NoError(move(s.gormDB, s.pool, legacyStore))
-	var count int64
-	s.gormDB.Model(pkgSchema.CreateTableNotifiersStmt.GormModel).Count(&count)
-	s.Equal(int64(len(notifiers)), count)
-	for _, notifier := range notifiers {
-		s.Equal(notifier, s.get(notifier.GetId()))
-	}
-}
 
-func (s *postgresMigrationSuite) get(id string) *storage.Notifier {
-
-	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
+	// Verify
+	count, err := newStore.Count(s.ctx)
 	s.NoError(err)
-	var msg storage.Notifier
-	s.NoError(proto.Unmarshal(data, &msg))
-	return &msg
+	s.Equal(len(notifiers), count)
+	for _, notifier := range notifiers {
+		fetched, exists, err := newStore.Get(s.ctx, notifier.GetId())
+		s.NoError(err)
+		s.True(exists)
+		s.Equal(notifier, fetched)
+	}
 }

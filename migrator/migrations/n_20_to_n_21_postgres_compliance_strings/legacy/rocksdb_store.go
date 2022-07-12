@@ -3,7 +3,6 @@ package legacy
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
@@ -12,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
-	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -79,7 +78,7 @@ func (r *rocksdbStore) Walk(ctx context.Context, fn func(obj *storage.Compliance
 }
 
 func (r *rocksdbStore) createKay() []byte {
-	tsBytes := []byte(fmt.Sprintf("%016X", timestamp.FromGoTime(time.Now())))
+	tsBytes := uuid.NewV4().Bytes()
 	// Invert the bits of each byte of the timestamp in order to have the most recent timestamp first
 	for i, tsByte := range tsBytes {
 		tsBytes[i] = -tsByte
@@ -96,8 +95,8 @@ func (r *rocksdbStore) UpsertMany(ctx context.Context, objs []*storage.Complianc
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 
-	key := r.createKay()
 	for _, obj := range objs {
+		key := r.createKay()
 		serialized, err := obj.Marshal()
 		if err != nil {
 			return errors.Wrap(err, "serializing results")

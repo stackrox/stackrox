@@ -8,18 +8,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_50_to_n_51_postgres_service_identities/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/n_50_to_n_51_postgres_service_identities/postgres"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/sac"
 
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -76,7 +74,9 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
+
 func (s *postgresMigrationSuite) TestMigration() {
+	newStore := pgStore.New(s.pool)
 	// Prepare data and write to legacy DB
 	var serviceIdentitys []*storage.ServiceIdentity
 	legacyStore := legacy.New(s.legacyDB)
@@ -86,24 +86,18 @@ func (s *postgresMigrationSuite) TestMigration() {
 		serviceIdentitys = append(serviceIdentitys, serviceIdentity)
 		s.NoError(legacyStore.Upsert(s.ctx, serviceIdentity))
 	}
+
+	// Move
 	s.NoError(move(s.gormDB, s.pool, legacyStore))
-	var count int64
-	s.gormDB.Model(pkgSchema.CreateTableServiceIdentitiesStmt.GormModel).Count(&count)
-	s.Equal(int64(len(serviceIdentitys)), count)
-	for _, serviceIdentity := range serviceIdentitys {
-		s.Equal(serviceIdentity, s.get(serviceIdentity.GetSerialStr()))
-	}
-}
 
-func (s *postgresMigrationSuite) get(serialStr string) *storage.ServiceIdentity {
-
-	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddDocIDs(serialStr).ProtoQuery(),
-	)
-
-	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
+	// Verify
+	count, err := newStore.Count(s.ctx)
 	s.NoError(err)
-	var msg storage.ServiceIdentity
-	s.NoError(proto.Unmarshal(data, &msg))
-	return &msg
+	s.Equal(len(serviceIdentitys), count)
+	for _, serviceIdentity := range serviceIdentitys {
+		fetched, exists, err := newStore.Get(s.ctx, serviceIdentity.GetSerialStr())
+		s.NoError(err)
+		s.True(exists)
+		s.Equal(serviceIdentity, fetched)
+	}
 }

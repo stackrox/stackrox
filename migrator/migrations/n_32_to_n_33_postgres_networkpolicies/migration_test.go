@@ -8,18 +8,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_32_to_n_33_postgres_networkpolicies/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/n_32_to_n_33_postgres_networkpolicies/postgres"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/sac"
 
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -76,7 +74,9 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
+
 func (s *postgresMigrationSuite) TestMigration() {
+	newStore := pgStore.New(s.pool)
 	// Prepare data and write to legacy DB
 	var networkPolicys []*storage.NetworkPolicy
 	legacyStore := legacy.New(s.legacyDB)
@@ -86,24 +86,18 @@ func (s *postgresMigrationSuite) TestMigration() {
 		networkPolicys = append(networkPolicys, networkPolicy)
 		s.NoError(legacyStore.Upsert(s.ctx, networkPolicy))
 	}
+
+	// Move
 	s.NoError(move(s.gormDB, s.pool, legacyStore))
-	var count int64
-	s.gormDB.Model(pkgSchema.CreateTableNetworkpoliciesStmt.GormModel).Count(&count)
-	s.Equal(int64(len(networkPolicys)), count)
-	for _, networkPolicy := range networkPolicys {
-		s.Equal(networkPolicy, s.get(networkPolicy.GetId()))
-	}
-}
 
-func (s *postgresMigrationSuite) get(id string) *storage.NetworkPolicy {
-
-	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
+	// Verify
+	count, err := newStore.Count(s.ctx)
 	s.NoError(err)
-	var msg storage.NetworkPolicy
-	s.NoError(proto.Unmarshal(data, &msg))
-	return &msg
+	s.Equal(len(networkPolicys), count)
+	for _, networkPolicy := range networkPolicys {
+		fetched, exists, err := newStore.Get(s.ctx, networkPolicy.GetId())
+		s.NoError(err)
+		s.True(exists)
+		s.Equal(networkPolicy, fetched)
+	}
 }

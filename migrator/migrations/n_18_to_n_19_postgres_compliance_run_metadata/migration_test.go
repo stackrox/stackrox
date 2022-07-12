@@ -8,18 +8,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_18_to_n_19_postgres_compliance_run_metadata/legacy"
+	pgStore "github.com/stackrox/rox/migrator/migrations/n_18_to_n_19_postgres_compliance_run_metadata/postgres"
 
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -77,7 +75,9 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.pool.Close()
 }
+
 func (s *postgresMigrationSuite) TestMigration() {
+	newStore := pgStore.New(s.pool)
 	// Prepare data and write to legacy DB
 	var complianceRunMetadatas []*storage.ComplianceRunMetadata
 	legacyStore, err := legacy.New(s.legacyDB)
@@ -91,24 +91,18 @@ func (s *postgresMigrationSuite) TestMigration() {
 		complianceRunMetadatas = append(complianceRunMetadatas, complianceRunMetadata)
 	}
 	s.NoError(legacyStore.UpsertMany(s.ctx, complianceRunMetadatas))
+
+	// Move
 	s.NoError(move(s.gormDB, s.pool, legacyStore))
-	var count int64
-	s.gormDB.Model(pkgSchema.CreateTableComplianceRunMetadataStmt.GormModel).Count(&count)
-	s.Equal(int64(len(complianceRunMetadatas)), count)
-	for _, complianceRunMetadata := range complianceRunMetadatas {
-		s.Equal(complianceRunMetadata, s.get(complianceRunMetadata.GetRunId()))
-	}
-}
 
-func (s *postgresMigrationSuite) get(runId string) *storage.ComplianceRunMetadata {
-
-	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddDocIDs(runId).ProtoQuery(),
-	)
-
-	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
+	// Verify
+	count, err := newStore.Count(s.ctx)
 	s.NoError(err)
-	var msg storage.ComplianceRunMetadata
-	s.NoError(proto.Unmarshal(data, &msg))
-	return &msg
+	s.Equal(len(complianceRunMetadatas), count)
+	for _, complianceRunMetadata := range complianceRunMetadatas {
+		fetched, exists, err := newStore.Get(s.ctx, complianceRunMetadata.GetRunId())
+		s.NoError(err)
+		s.True(exists)
+		s.Equal(complianceRunMetadata, fetched)
+	}
 }

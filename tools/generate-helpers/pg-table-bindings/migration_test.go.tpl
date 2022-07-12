@@ -12,7 +12,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/legacy"
@@ -27,8 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -98,9 +95,22 @@ func (s *postgresMigrationSuite) TearDownTest() {
     s.pool.Close()
 }
 
-{{- if not .Migration.SingletonStore}}
 func (s *postgresMigrationSuite) TestMigration() {
+	newStore := pgStore.New({{if .Migration.SingletonStore}}s.ctx, {{end}}s.pool)
 	// Prepare data and write to legacy DB
+    {{- if .Migration.SingletonStore}}
+    legacyStore := legacy.New(s.legacyDB)
+    {{$name}} := &{{.Type}}{}
+    s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+    s.NoError(legacyStore.Upsert(s.ctx, {{$name}}))
+    // Move
+    s.NoError(move(s.gormDB, s.pool, legacyStore))
+    // Verify
+    fetched, found, err := newStore.Get(s.ctx)
+    s.NoError(err)
+    s.True(found)
+    s.Equal({{$name}}, fetched)
+    {{- else}}
 	var {{$name}}s []*{{.Type}}
 	{{- if $rocksDB}}
         {{- if $dackbox}}
@@ -132,67 +142,19 @@ func (s *postgresMigrationSuite) TestMigration() {
     {{- if $rocksDB}}
     s.NoError(legacyStore.UpsertMany(s.ctx, {{$name}}s))
 	{{- end}}
+
+	// Move
 	s.NoError(move(s.gormDB, s.pool, legacyStore))
-	var count int64
-	s.gormDB.Model({{template  "createTableStmtVar" .Schema}}.GormModel).Count(&count)
-	s.Equal(int64(len({{$name}}s)), count)
+
+	// Verify
+	count, err := newStore.Count(s.ctx)
+    s.NoError(err)
+	s.Equal(len({{$name}}s), count)
 	for _, {{$name}} := range {{$name}}s {
-		s.Equal({{$name}}, s.get({{ template "getterParamList" $ }}))
+		fetched, exists, err := newStore.Get(s.ctx, {{ template "getterParamList" $ }})
+		s.NoError(err)
+		s.True(exists)
+		s.Equal({{$name}}, fetched)
 	}
-	{{- /*
-		sort.Slice({{$name}}s, func(i, j int) bool {
-            return {{$name}}s[i].Id < {{$name}}s[j].Id
-    })
-	all, err := store.GetAll(s.ctx)
-    s.Require().NoError(err)
-    sort.Slice(all, func(i, j int) bool {
-        return all[i].Id < all[j].Id
-    })
-
-    s.Equal({{$name}}s, all) */}}
-}
-
-func (s *postgresMigrationSuite) get({{template "paramList" $pks}}) *{{.Type}} {
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
-    q := search.ConjunctionQuery(
-    {{- range $idx, $pk := $pks}}
-        {{- if eq $pk.Name $singlePK.Name }}
-            search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- else }}
-            search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- end}}
     {{- end}}
-    )
-
-	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
-	s.NoError(err)
-{{- else }}
-	conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
-	s.NoError(err)
-	defer release()
-
-	row := conn.QueryRow(ctx, getStmt, {{template "argList" $pks}})
-	var data []byte
-	err = row.Scan(&data)
-	s.NoError(pgutils.ErrNilIfNoRows(err))
-{{- end }}
-	var msg {{.Type}}
-	s.NoError(proto.Unmarshal(data, &msg))
-	return &msg
 }
-{{- else}}
-func (s *postgresMigrationSuite) TestMigration() {
-	// Prepare data and write to legacy DB
-	legacyStore := legacy.New(s.legacyDB)
-	store := pgStore.New(s.ctx, s.pool)
-	{{$name}} := &{{.Type}}{}
-	s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	s.NoError(legacyStore.Upsert(s.ctx, {{$name}}))
-	s.NoError(move(s.gormDB, s.pool, legacyStore))
-	fetched, found, err := store.Get(s.ctx)
-	s.NoError(err)
-	s.True(found)
-	s.Equal({{$name}}, fetched)
-}
-{{- end}}
