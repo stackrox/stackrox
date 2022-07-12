@@ -113,11 +113,12 @@ func (mr *MockDataStoreMockRecorder) GetPolicyCategory(ctx, id interface{}) *gom
 }
 
 // RenamePolicyCategory mocks base method.
-func (m *MockDataStore) RenamePolicyCategory(ctx context.Context, id, newName string) error {
+func (m *MockDataStore) RenamePolicyCategory(ctx context.Context, id, newName string) (*storage.PolicyCategory, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RenamePolicyCategory", ctx, id, newName)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*storage.PolicyCategory)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // RenamePolicyCategory indicates an expected call of RenamePolicyCategory.
