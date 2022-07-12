@@ -1,23 +1,5 @@
 [![CircleCI][circleci-badge]][circleci-link]
 
-# StackRox Kubernetes Security Platform
-
-The StackRox Kubernetes Security Platform performs a risk analysis of the
-container environment, delivers visibility and runtime alerts, and provides
-recommendations to proactively improve security by hardening the environment.
-StackRox integrates with every stage of container lifecycle: build, deploy and
-runtime.
-
-Note: the StackRox Kubernetes Security platform is built on the foundation of 
-the product formerly known as Prevent, which itself was called Mitigate and
-Apollo. You may find references to these previous names in code or
-documentation.
-
-## Community
-You can chat directly with us on the [#stackrox channel in the CNCF Slack](https://www.stackrox.io/slack/).
-
-For event updates, blogs and other resources follow the StackRox community site at [stackrox.io](https://www.stackrox.io/).
-
 ## Table of contents
 
 - [StackRox Kubernetes Security Platform](#stackrox-kubernetes-security-platform)
@@ -25,10 +7,10 @@ For event updates, blogs and other resources follow the StackRox community site 
   - [Table of contents](#table-of-contents)
   - [Deploying StackRox](#deploying-stackrox)
     - [Installation via Helm](#installation-via-helm)
-      - [Default Installation](#default-installation)
-      - [Limited Resource Installation](#limited-resource-installation)
-      - [Default Installation](#default-installation-1)
-      - [Limited Resource Installation](#limited-resource-installation-1)
+      - [Default Central Installation](#default-central-installation)
+      - [Limited Central Resource Installation](#limited-central-resource-installation)
+      - [Default Secured Cluster Installation](#default-secured-cluster-installation)
+      - [Limited Secured Cluster Resource Installation](#limited-secured-cluster-resource-installation)
     - [Installation via Scripts](#installation-via-scripts)
       - [Kubernetes Distributions (EKS, AKS, GKE)](#kubernetes-distributions-eks-aks-gke)
       - [OpenShift](#openshift)
@@ -47,6 +29,32 @@ For event updates, blogs and other resources follow the StackRox community site 
   - [Dependencies and Recommendations for Running StackRox](#dependencies-and-recommendations-for-running-stackrox)
 
 ---
+
+# StackRox Kubernetes Security Platform
+
+The StackRox Kubernetes Security Platform performs a risk analysis of the
+container environment, delivers visibility and runtime alerts, and provides
+recommendations to proactively improve security by hardening the environment.
+StackRox integrates with every stage of container lifecycle: build, deploy and
+runtime.
+
+The StackRox Kubernetes Security platform is built on the foundation of 
+the product formerly known as Prevent, which itself was called Mitigate and
+Apollo. You may find references to these previous names in code or
+documentation.
+---
+
+## Community
+You can chat directly with us on the [#stackrox channel in the CNCF Slack](https://www.stackrox.io/slack/).
+
+For event updates, blogs and other resources follow the StackRox community site at [stackrox.io](https://www.stackrox.io/).
+
+For the the StackRox [Code of Conduct](https://www.stackrox.io/code-conduct/)
+
+To [report a vulnerability or bug](https://github.com/stackrox/stackrox/security/policy)
+
+---
+
 ## Deploying StackRox
 ### Installation via Helm
 
@@ -61,7 +69,7 @@ Deploying using Helm consists of 4 steps
 
 **<details><summary>Install StackRox Central Services </summary>**
 
-#### Default Installation
+#### Default Central Installation
 First, the StackRox Central Services will be added to your Kubernetes cluster. This includes the UI and scanner. To start, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
 ```sh
 helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
@@ -79,7 +87,7 @@ From here you can install stackrox-central-services to get Central and Scanner c
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="$(cat stackrox-admin-password.txt)"
 ```
 
-#### Limited Resource Installation
+#### Limited Central Resource Installation
 
 If you're deploying StackRox on nodes with limited resources such as a local development cluster, run the following command to reduce StackRox resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
@@ -101,7 +109,7 @@ helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-ser
 
 **<details><summary>Install StackRox Secured Cluster Services</summary>**
 
-#### Default Installation
+#### Default Secured Cluster Installation
 Next, the secured cluster component will need to be deployed to collect information on from the Kubernetes nodes.
 
 Generate an init bundle containing initialization secrets. The init bundle will be saved in `stackrox-init-bundle.yaml`, and you will use it to provision secured clusters as shown below.
@@ -122,7 +130,7 @@ helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-sec
 ```
 When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services are deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
-#### Limited Resource Installation
+#### Limited Secured Cluster Resource Installation
 When deploying StackRox Secured Cluster Services on a small node, you can install with additional options. This should reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not recommended for a production setup.
 
 ```sh
@@ -161,7 +169,7 @@ Further steps are orchestrator specific.
 
 <details><summary>Click to expand</summary>
 
-Follow the guide below to quickly deploy a specific version of StackRox to your Kubernetes cluster in the `stackrox` namespace. Make sure to add the most recent tag to the `MAIN_IMAGE_TAG` variable.
+Follow the guide below to quickly deploy a specific version of StackRox to your Kubernetes cluster in the `stackrox` namespace. If you want to install a specific version, make sure to define/set it in `MAIN_IMAGE_TAG`, otherwise it will install the latest nightly.
 
 Run the following in your working directory of choice:
 
@@ -175,7 +183,7 @@ After a few minutes, all resources should be deployed.
 
  **Credentials for the 'admin' user can be found in the `./deploy/k8s/central-deploy/password` file.**
 
-**Note:** This password is encrypted and you will not be able to alter the Kubernetes secret manually.
+**Note:** While the password file is stored in plaintext, in Kubernetes StackRox the password is encrypted (or Central) and you will not be able to alter the secret and log into StackRox. If you lose the password, and access to the platform. you will have to redeploy.
 
 </details>
 
@@ -541,7 +549,7 @@ The Kubernetes Platforms that StackRox has been deployed onto with minimal issue
 - Google Kubernetes Engine (GKE)
 - Microsoft Azure Kubernetes Service (AKS)
 
-If you deploy into a Kubernetes distribution other than the ones listed below you may encounter issues. 
+If you deploy into a Kubernetes distribution other than the ones listed above you may encounter issues. 
 
 **Tested Operating Systems**
 
