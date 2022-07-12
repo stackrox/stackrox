@@ -181,18 +181,6 @@ setupRoxctl: &setupRoxctl
       source scripts/ci/lib.sh
       install_built_roxctl_in_gopath
 
-setupLicense: &setupLicense
-  run:
-    name: Creating License Key
-    command: |
-      if [[ -n "$CIRCLE_TAG" ]] || .circleci/pr_has_label.sh "ci-release-build"; then
-        echo "Issuing a CI license for testing the release build"
-        ROX_LICENSE_KEY="$(licenses/ci.sh)"
-        cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
-      else
-        echo "Using no license for CI"
-      fi
-
 setupDefaultTLSCerts: &setupDefaultTLSCerts
   run:
     name: Setup default TLS certificates
@@ -1314,7 +1302,6 @@ commands:
           steps: << parameters.connect-to-cluster >>
       - remove-existing-stackrox-resources
       - *setupGoogleAppCreds
-      - *setupLicense
 
       - *setupDefaultTLSCerts
 
@@ -1657,7 +1644,6 @@ commands:
 
       - remove-existing-stackrox-resources
       - *setupGoogleAppCreds
-      - *setupLicense
 
       - *setupDefaultTLSCerts
 
@@ -2926,7 +2912,6 @@ jobs:
       - remove-existing-stackrox-resources
 
       - *setupGoogleAppCreds
-      - *setupLicense
 
       - run:
           name: Launch Sensor and Central with scale workload
@@ -3005,7 +2990,6 @@ jobs:
     - remove-existing-stackrox-resources
 
     - *setupGoogleAppCreds
-    - *setupLicense
 
     - run:
         name: Launch Sensor and Central with scale workload
@@ -3131,7 +3115,6 @@ jobs:
             cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
 
       - *setupGoogleAppCreds
-      - *setupLicense
 
       - *setupDefaultTLSCerts
 
