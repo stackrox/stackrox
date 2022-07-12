@@ -166,12 +166,7 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 	}
 
 	go s.Start()
-	defer func() {
-		//s.Stop()
-		//time.Sleep(2 * time.Second)
-		//shutdownFakeServer()
-		writer.close()
-	}()
+	defer writer.close()
 
 	spyCentral.ConnectionStarted.Wait()
 
