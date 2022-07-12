@@ -20,10 +20,49 @@ import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constant
 import { entitySortFieldsMap } from 'constants/sortFields';
 import { resourceLabels } from 'messages/common';
 import { entityPriorityField } from 'Containers/VulnMgmt/VulnMgmt.constants';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
+// TODO: remove once ROX_FRONTEND_VM_UDPATES is enabled
 const TOP_RISKIEST_IMAGES = gql`
     query topRiskiestImages($query: String, $pagination: Pagination) {
         results: images(query: $query, pagination: $pagination) {
+            id
+            name {
+                fullName
+            }
+            vulnCounter {
+                all {
+                    total
+                    fixable
+                }
+                low {
+                    total
+                    fixable
+                }
+                moderate {
+                    total
+                    fixable
+                }
+                important {
+                    total
+                    fixable
+                }
+                critical {
+                    total
+                    fixable
+                }
+            }
+            priority
+            scan {
+                scanTime
+            }
+        }
+    }
+`;
+
+const TOP_RISKIEST_IMAGE_VULNERABILITIES = gql`
+    query topRiskiestImageVulnerabilities($query: String, $pagination: Pagination) {
+        results: imageVulnerabilities(query: $query, pagination: $pagination) {
             id
             name {
                 fullName
@@ -224,6 +263,18 @@ const processData = (data, entityType, workflowState) => {
     return results;
 };
 
+function getQueryBySelectedEntityVMUpdates(entityType) {
+    switch (entityType) {
+        case entityTypes.COMPONENT:
+            return TOP_RISKIEST_COMPONENTS;
+        case entityTypes.NODE:
+            return TOP_RISKIEST_NODES;
+        case entityTypes.IMAGE:
+        default:
+            return TOP_RISKIEST_IMAGE_VULNERABILITIES;
+    }
+}
+
 const getQueryBySelectedEntity = (entityType) => {
     switch (entityType) {
         case entityTypes.COMPONENT:
@@ -243,7 +294,7 @@ const getEntitiesByContext = (entityContext) => {
     }
     if (entityContext === {} || !entityContext[entityTypes.IMAGE] || entities.length === 0) {
         // unshift so it sits at the front of the list (in case both entity types are added, image should come first)
-        entities.unshift({ label: 'Top Riskiest Images', value: entityTypes.IMAGE });
+        entities.unshift({ label: 'Top Riskiest Image Vulnerabilities', value: entityTypes.IMAGE });
     }
     if (entityContext === {} || !entityContext[entityTypes.NODE]) {
         entities.push({ label: 'Top Riskiest Nodes', value: entityTypes.NODE });
@@ -252,6 +303,8 @@ const getEntitiesByContext = (entityContext) => {
 };
 
 const TopRiskiestEntities = ({ entityContext, limit }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
     const entities = getEntitiesByContext(entityContext);
     const [selectedEntity, setSelectedEntity] = useState(entities[0].value);
 
@@ -259,28 +312,44 @@ const TopRiskiestEntities = ({ entityContext, limit }) => {
         setSelectedEntity(value);
     }
 
+    function getSelectedEntity() {
+        if (!showVmUpdates) {
+            return selectedEntity;
+        }
+        switch (selectedEntity) {
+            case entityTypes.IMAGE:
+            default:
+                return entityTypes.IMAGE_CVE;
+        }
+    }
+
     const {
         loading,
         data = {},
         error,
-    } = useQuery(getQueryBySelectedEntity(selectedEntity), {
-        variables: {
-            query: queryService.entityContextToQueryString(entityContext),
-            pagination: queryService.getPagination(
-                {
-                    id: entityPriorityField[selectedEntity],
-                    desc: false,
-                },
-                WIDGET_PAGINATION_START_OFFSET,
-                limit
-            ),
-        },
-    });
+    } = useQuery(
+        showVmUpdates
+            ? getQueryBySelectedEntityVMUpdates(selectedEntity)
+            : getQueryBySelectedEntity(selectedEntity),
+        {
+            variables: {
+                query: queryService.entityContextToQueryString(entityContext),
+                pagination: queryService.getPagination(
+                    {
+                        id: entityPriorityField[selectedEntity],
+                        desc: false,
+                    },
+                    WIDGET_PAGINATION_START_OFFSET,
+                    limit
+                ),
+            },
+        }
+    );
 
     const workflowState = useContext(workflowStateContext);
 
     const viewAllURL = workflowState
-        .pushList(selectedEntity)
+        .pushList(showVmUpdates ? getSelectedEntity() : selectedEntity)
         .setSort([{ id: entitySortFieldsMap[selectedEntity].PRIORITY, desc: false }])
         .toUrl();
 
