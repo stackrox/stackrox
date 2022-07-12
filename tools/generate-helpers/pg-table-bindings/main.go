@@ -192,17 +192,17 @@ func main() {
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 	c.Flags().StringVar(&props.MigrateRoot, "migration-root", "", "Root for migrations")
 	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from in the format of \"<database>:<bucket>\", eg, \"rocksdb:alerts\" or \"boltdb:version\"")
-	c.Flags().IntVar(&props.MigrateSeq, "postgres-migration-seq", 0, "the unique sequence number to migrate to Postgres")
+	c.Flags().IntVar(&props.MigrateSeq, "migration-seq", 0, "the unique sequence number to migrate to Postgres")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if (props.MigrateSeq == 0) != (props.MigrateFrom == "") {
-			log.Fatal("please use both \"--migrate-from\" and \"--postgres-migration-seq\" to create data migration")
+			log.Fatal("please use both \"--migrate-from\" and \"--migration-seq\" to create data migration")
 		}
 		if props.MigrateSeq != 0 && props.MigrateRoot == "" {
 			log.Fatalf("please specify --migration-root")
 		}
 		if props.MigrateSeq != 0 && !migrateFromRegex.MatchString(props.MigrateFrom) {
-			log.Fatalf("unknown format for --migrate-from: %s", props.MigrateFrom)
+			log.Fatalf("unknown format for --migrate-from: %s, expect in the format of %s", props.MigrateFrom, migrateFromRegex.String())
 		}
 
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
@@ -315,15 +315,13 @@ func main() {
 			if props.SingletonStore {
 				postgresPluginTemplate = singletonTemplate
 			}
-			froms := strings.SplitN(props.MigrateFrom, ":", 2)
 			migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.MigrateSeq, props.MigrateSeq+1, props.Table)
 			root := filepath.Join(props.MigrateRoot, migrationDir)
 			templateMap["Migration"] = MigrationOptions{
-				MigrateFromDB:     froms[0],
-				MigrateFromBucket: froms[1],
-				MigrateSequence:   props.MigrateSeq,
-				Dir:               migrationDir,
-				SingletonStore:    props.SingletonStore,
+				MigrateFromDB:   props.MigrateFrom,
+				MigrateSequence: props.MigrateSeq,
+				Dir:             migrationDir,
+				SingletonStore:  props.SingletonStore,
 			}
 
 			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {

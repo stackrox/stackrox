@@ -3,14 +3,13 @@ package main
 import "regexp"
 
 var (
-	migrateFromRegex = regexp.MustCompile(`^(rocksdb|boltdb|dackbox):\S+$`)
+	migrateFromRegex = regexp.MustCompile(`^(rocksdb|boltdb|dackbox)$`)
 )
 
 // MigrationOptions hold options to generate migrations
 type MigrationOptions struct {
-	MigrateFromDB     string
-	MigrateFromBucket string
-	MigrateSequence   int
-	Dir               string
-	SingletonStore    bool
+	MigrateFromDB   string
+	MigrateSequence int
+	Dir             string
+	SingletonStore  bool
 }

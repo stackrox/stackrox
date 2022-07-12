@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
-//	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
 	{{- if .Cache}}
