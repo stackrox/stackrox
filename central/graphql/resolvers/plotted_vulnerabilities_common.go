@@ -31,8 +31,8 @@ func getPlottedVulnsIdsAndFixableCount(ctx context.Context, root *Resolver, args
 	return search.ResultsToIDs(all), fixable, nil
 }
 
-func getPlottedVulnsV1Query(args RawQuery, opts ...search.ParseQueryOption) (*v1.Query, error) {
-	q, err := args.AsV1QueryOrEmpty(opts...)
+func getPlottedVulnsV1Query(args RawQuery) (*v1.Query, error) {
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}

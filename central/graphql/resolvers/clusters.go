@@ -649,8 +649,9 @@ func (resolver *clusterResolver) NodeVulnerabilityCount(ctx context.Context, arg
 func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCounter")
 
+	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-	return resolver.root.NodeVulnCounter(ctx, RawQuery{Query: &query})
+	return resolver.root.NodeVulnerabilityCounter(ctx, RawQuery{Query: &query})
 }
 
 func (resolver *clusterResolver) withClusterScope(ctx context.Context) context.Context {
@@ -1117,6 +1118,7 @@ func (resolver *clusterResolver) LatestViolation(ctx context.Context, args RawQu
 func (resolver *clusterResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlottedNodeVulnerabilities")
 
+	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
 	return newPlottedNodeVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }

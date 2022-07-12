@@ -357,3 +357,13 @@ func V1RawQueryAsResolverQuery(rQ *v1.RawQuery) (RawQuery, PaginatedQuery) {
 		},
 	}
 }
+
+// ErrorOnQueryContainingField logs error if the query contains the given field label
+func ErrorOnQueryContainingField(query *v1.Query, label search.FieldLabel, errMsg string) {
+	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok && mfQ.MatchFieldQuery.GetField() == label.String() {
+			log.Errorf(errMsg)
+		}
+	})
+}

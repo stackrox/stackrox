@@ -524,7 +524,7 @@ func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.root.NodeVulnCounter(resolver.withNodeScopeContext(ctx), args)
+	return resolver.root.NodeVulnerabilityCounter(resolver.withNodeScopeContext(ctx), args)
 }
 
 // PlottedVulns returns the data required by top risky entity scatter-plot on vuln mgmt dashboard

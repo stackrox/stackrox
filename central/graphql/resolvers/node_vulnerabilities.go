@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -136,8 +135,8 @@ func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQu
 	return vulnLoader.CountFromQuery(ctx, query)
 }
 
-// NodeVulnCounter returns a VulnerabilityCounterResolver for the input query.s
-func (resolver *Resolver) NodeVulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+// NodeVulnerabilityCounter returns a VulnerabilityCounterResolver for the input query.s
+func (resolver *Resolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCounter")
 	if !features.PostgresDatastore.Enabled() {
 		query := withNodeCveTypeFiltering(args.String())
@@ -147,40 +146,72 @@ func (resolver *Resolver) NodeVulnCounter(ctx context.Context, args RawQuery) (*
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.Fixable))
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
+
+	// check for Fixable fields in args
+	ErrorOnQueryContainingField(query, search.Fixable, "Unexpected `Fixable` field in NodeVulnerabilityCounter resolver")
+
 	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
 	if err != nil {
 		return nil, err
 	}
 	query = tryUnsuppressedQuery(query)
-	fixableVulnsQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
-	fixableVulns, err := vulnLoader.FromQuery(ctx, fixableVulnsQuery)
+	fixableQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
+	fixableVulns, err := vulnLoader.FromQuery(ctx, fixableQuery)
 	if err != nil {
 		return nil, err
 	}
+	fixable := nodeCveToVulnerabilityWithSeverity(fixableVulns)
 
-	unFixableVulnsQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
-	unFixableCVEs, err := vulnLoader.FromQuery(ctx, unFixableVulnsQuery)
+	unFixableQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
+	unFixableVulns, err := vulnLoader.FromQuery(ctx, unFixableQuery)
 	if err != nil {
 		return nil, err
 	}
+	unfixable := nodeCveToVulnerabilityWithSeverity(unFixableVulns)
 
-	return mapNodeCVEsToVulnerabilityCounter(fixableVulns, unFixableCVEs), nil
+	return mapCVEsToVulnerabilityCounter(fixable, unfixable), nil
 }
 
-// CreatedAt is the time a node CVE first seen in the system
-func (resolver *nodeCVEResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetCveBaseInfo().GetCreatedAt()
-	return timestamp(value)
+/*
+Utility Functions
+*/
+
+func (resolver *nodeCVEResolver) getNodeCVEQuery() *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 }
 
-// CVE name of the node CVE
-func (resolver *nodeCVEResolver) CVE(ctx context.Context) string {
-	return resolver.data.GetCveBaseInfo().GetCve()
+func (resolver *nodeCVEResolver) getNodeCVERawQuery() string {
+	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).Query()
 }
+
+func nodeCveToVulnerabilityWithSeverity(in []*storage.NodeCVE) []VulnerabilityWithSeverity {
+	ret := make([]VulnerabilityWithSeverity, 0, len(in))
+	for _, vuln := range in {
+		ret = append(ret, vuln)
+	}
+	return ret
+}
+
+// withNodeCveTypeFiltering adds a conjunction as a raw query to filter vulns by CVEType Node
+func withNodeCveTypeFiltering(q string) string {
+	return search.AddRawQueriesAsConjunction(q,
+		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_NODE_CVE.String()).Query())
+}
+
+func (resolver *nodeCVEResolver) withNodeVulnerabilityScope(ctx context.Context) context.Context {
+	return scoped.Context(ctx, scoped.Scope{
+		ID:    resolver.data.GetId(),
+		Level: v1.SearchCategory_NODE_VULNERABILITIES,
+	})
+}
+
+/*
+Sub Resolver Functions
+*/
 
 // EnvImpact is the fraction of nodes that contain the nodeCVE
 func (resolver *nodeCVEResolver) EnvImpact(ctx context.Context) (float64, error) {
@@ -210,33 +241,32 @@ func (resolver *nodeCVEResolver) FixedByVersion(_ context.Context) (string, erro
 	if scope.Level != v1.SearchCategory_NODE_COMPONENTS {
 		return "", nil
 	}
-	edgeID := postgres.IDFromPks([]string{scope.ID, resolver.data.GetId()})
-	edge, _, err := resolver.root.NodeComponentCVEEdgeDataStore.Get(resolver.ctx, edgeID)
-	if err != nil {
+	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	edges, err := resolver.root.NodeComponentCVEEdgeDataStore.SearchRawEdges(resolver.ctx, query)
+	if err != nil || len(edges) == 0 {
 		return "", err
 	}
-	return edge.GetFixedBy(), nil
-}
-
-// ID of the node CVE
-func (resolver *nodeCVEResolver) ID(ctx context.Context) graphql.ID {
-	value := resolver.data.GetId()
-	return graphql.ID(value)
+	return edges[0].GetFixedBy(), nil
 }
 
 // IsFixable returns whether node CVE is fixable by any component
 func (resolver *nodeCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
-	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID), search.ExcludeFieldLabel(search.Fixable))
+	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID))
 	if err != nil {
 		return false, err
 	}
 
-	scope, ok := scoped.GetScope(resolver.ctx)
-	if !ok || scope.Level != v1.SearchCategory_NODE_VULNERABILITIES {
-		query = search.ConjunctionQuery(query, resolver.getNodeCVEQuery())
+	// check for Fixable fields in args
+	ErrorOnQueryContainingField(query, search.Fixable, "Unexpected `Fixable` field in IsFixable sub resolver")
+
+	conjuncts := []*v1.Query{query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
+
+	// check scoping, add as conjunction if needed
+	if scope, ok := scoped.GetScope(resolver.ctx); !ok || scope.Level != v1.SearchCategory_NODE_VULNERABILITIES {
+		conjuncts = append(conjuncts, resolver.getNodeCVEQuery())
 	}
 
-	query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
+	query = search.ConjunctionQuery(conjuncts...)
 	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
 	if err != nil {
 		return false, err
@@ -246,20 +276,6 @@ func (resolver *nodeCVEResolver) IsFixable(ctx context.Context, args RawQuery) (
 		return false, err
 	}
 	return count != 0, nil
-}
-
-func (resolver *nodeCVEResolver) getNodeCVEQuery() *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
-}
-
-func (resolver *nodeCVEResolver) getNodeCVERawQuery() string {
-	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).Query()
-}
-
-// LastModified is the time this node CVE was last modified in the system
-func (resolver *nodeCVEResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetCveBaseInfo().GetLastModified()
-	return timestamp(value)
 }
 
 // LastScanned is the last time this node CVE was last scanned in a node
@@ -291,45 +307,6 @@ func (resolver *nodeCVEResolver) LastScanned(ctx context.Context) (*graphql.Time
 	return timestamp(nodes[0].GetScan().GetScanTime())
 }
 
-// Link to the node CVE
-func (resolver *nodeCVEResolver) Link(ctx context.Context) string {
-	return resolver.data.GetCveBaseInfo().GetLink()
-}
-
-// PublishedOn is date and time when this node CVE was first published in the cve feeds
-func (resolver *nodeCVEResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetCveBaseInfo().GetPublishedOn()
-	return timestamp(value)
-}
-
-// ScoreVersion of the node CVE
-func (resolver *nodeCVEResolver) ScoreVersion(ctx context.Context) string {
-	value := resolver.data.GetCveBaseInfo().GetScoreVersion()
-	return value.String()
-}
-
-// Summary of the node CVE
-func (resolver *nodeCVEResolver) Summary(ctx context.Context) string {
-	return resolver.data.GetCveBaseInfo().GetSummary()
-}
-
-// SuppressActivation returns the snooze start timestamp of the node CVE
-func (resolver *nodeCVEResolver) SuppressActivation(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetSnoozeStart()
-	return timestamp(value)
-}
-
-// SuppressExpiry returns the snooze expiration timestamp of the node CVE
-func (resolver *nodeCVEResolver) SuppressExpiry(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetSnoozeExpiry()
-	return timestamp(value)
-}
-
-// Suppressed returns true if the node CVE is snoozed
-func (resolver *nodeCVEResolver) Suppressed(ctx context.Context) bool {
-	return resolver.data.GetSnoozed()
-}
-
 // UnusedVarSink represents a query sink
 func (resolver *nodeCVEResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
 	return nil
@@ -352,38 +329,78 @@ func (resolver *nodeCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver
 
 // NodeComponentCount is the number of node components that contain the node CVE.
 func (resolver *nodeCVEResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	// TODO implement me (ROX-11299)
-	panic("implement me")
+	return resolver.root.NodeComponentCount(resolver.withNodeVulnerabilityScope(ctx), args)
 }
 
 // NodeComponents are the node components that contain the node CVE.
 func (resolver *nodeCVEResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
-	// TODO implement me (ROX-11299)
-	panic("implement me")
+	return resolver.root.NodeComponents(resolver.withNodeVulnerabilityScope(ctx), args)
 }
 
 // NodeCount is the number of nodes that contain the node CVE
 func (resolver *nodeCVEResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
-	scope, ok := scoped.GetScope(resolver.ctx)
-	query := args.String()
-	if !ok || scope.Level != v1.SearchCategory_NODE_VULNERABILITIES {
-		query = search.AddRawQueriesAsConjunction(query, resolver.getNodeCVERawQuery())
-	}
-	return resolver.root.NodeCount(ctx, RawQuery{Query: &query})
+	return resolver.root.NodeCount(resolver.withNodeVulnerabilityScope(ctx), args)
 }
 
 // Nodes are the nodes that contain the node CVE
 func (resolver *nodeCVEResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
-	scope, ok := scoped.GetScope(resolver.ctx)
-	query := args.String()
-	if !ok || scope.Level != v1.SearchCategory_NODE_VULNERABILITIES {
-		query = search.AddRawQueriesAsConjunction(query, resolver.getNodeCVERawQuery())
-	}
-	return resolver.root.Nodes(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Nodes(resolver.withNodeVulnerabilityScope(ctx), args)
 }
 
-// withNodeCveTypeFiltering adds a conjunction as a raw query to filter vulns by CVEType Node
-func withNodeCveTypeFiltering(q string) string {
-	return search.AddRawQueriesAsConjunction(q,
-		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_NODE_CVE.String()).Query())
+// Follows are functions that return information that is nested in the CVEInfo object
+// or are convenience functions to allow time for UI to migrate to new naming schemes
+
+// ID of the node CVE
+func (resolver *nodeCVEResolver) ID(ctx context.Context) graphql.ID {
+	return graphql.ID(resolver.data.GetId())
+}
+
+// CreatedAt is the time a node CVE first seen in the system
+func (resolver *nodeCVEResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(resolver.data.GetCveBaseInfo().GetCreatedAt())
+}
+
+// CVE name of the node CVE
+func (resolver *nodeCVEResolver) CVE(ctx context.Context) string {
+	return resolver.data.GetCveBaseInfo().GetCve()
+}
+
+// LastModified is the time this node CVE was last modified in the system
+func (resolver *nodeCVEResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(resolver.data.GetCveBaseInfo().GetLastModified())
+}
+
+// Link to the node CVE
+func (resolver *nodeCVEResolver) Link(ctx context.Context) string {
+	return resolver.data.GetCveBaseInfo().GetLink()
+}
+
+// PublishedOn is date and time when this node CVE was first published in the cve feeds
+func (resolver *nodeCVEResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(resolver.data.GetCveBaseInfo().GetPublishedOn())
+}
+
+// ScoreVersion of the node CVE
+func (resolver *nodeCVEResolver) ScoreVersion(ctx context.Context) string {
+	return resolver.data.GetCveBaseInfo().GetScoreVersion().String()
+}
+
+// Summary of the node CVE
+func (resolver *nodeCVEResolver) Summary(ctx context.Context) string {
+	return resolver.data.GetCveBaseInfo().GetSummary()
+}
+
+// SuppressActivation returns the snooze start timestamp of the node CVE
+func (resolver *nodeCVEResolver) SuppressActivation(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(resolver.data.GetSnoozeStart())
+}
+
+// SuppressExpiry returns the snooze expiration timestamp of the node CVE
+func (resolver *nodeCVEResolver) SuppressExpiry(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(resolver.data.GetSnoozeExpiry())
+}
+
+// Suppressed returns true if the node CVE is snoozed
+func (resolver *nodeCVEResolver) Suppressed(ctx context.Context) bool {
+	return resolver.data.GetSnoozed()
 }

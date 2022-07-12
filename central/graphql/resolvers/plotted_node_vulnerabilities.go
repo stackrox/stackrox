@@ -58,7 +58,9 @@ func newPlottedNodeVulnerabilitiesResolver(ctx context.Context, root *Resolver, 
 		allCveIds = append(allCveIds, cve.GetId())
 	}
 
-	fixableQuery, err := getPlottedVulnsV1Query(args, search.ExcludeFieldLabel(search.Fixable))
+	ErrorOnQueryContainingField(query, search.Fixable, "Unexpected `Fixable` field in PlottedNodeVulnerabilities resolver")
+
+	fixableQuery, err := getPlottedVulnsV1Query(args)
 	fixableCount, err := vulnLoader.CountFromQuery(ctx,
 		search.ConjunctionQuery(fixableQuery, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
 	if err != nil {
@@ -83,7 +85,7 @@ func (pvr *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounter(_ c
 }
 
 // NodeVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
-func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args PaginationWrapper) ([]NodeVulnerabilityResolver, error) {
 	if !features.PostgresDatastore.Enabled() {
 		vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, PaginatedQuery{Pagination: args.Pagination})
 		if err != nil {

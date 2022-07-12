@@ -173,12 +173,7 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	}
 
 	// check for Fixable fields in args
-	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
-		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if ok && mfQ.MatchFieldQuery.GetField() == search.Fixable.String() {
-			log.Errorf("Unexpected `Fixable` field in ImageVulnerabilityCounter resolver")
-		}
-	})
+	ErrorOnQueryContainingField(query, search.Fixable, "Unexpected `Fixable` field in ImageVulnerabilityCounter resolver")
 
 	// get loader
 	loader, err := loaders.GetImageCVELoader(ctx)
@@ -277,18 +272,13 @@ func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, e
 
 func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
-	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID), search.ExcludeFieldLabel(search.Fixable))
+	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID))
 	if err != nil {
 		return false, err
 	}
 
 	// check for Fixable fields in args
-	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
-		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if ok && mfQ.MatchFieldQuery.GetField() == search.Fixable.String() {
-			log.Errorf("Unexpected `Fixable` field in IsFixable sub resolver")
-		}
-	})
+	ErrorOnQueryContainingField(query, search.Fixable, "Unexpected `Fixable` field in IsFixable sub resolver")
 
 	conjuncts := []*v1.Query{query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
 
