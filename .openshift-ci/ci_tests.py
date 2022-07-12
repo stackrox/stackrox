@@ -49,6 +49,24 @@ class UpgradeTest(BaseTest):
         )
 
 
+class OperatorE2eTest(BaseTest):
+    E2E_TEST_TIMEOUT_SEC = 90 * 60
+    SCORECARD_TEST_TIMEOUT_SEC = 20 * 60
+
+    def run(self):
+        # TODO(porridge): run operator upgrade tests
+
+        print("Executing operator e2e tests")
+        self.run_with_graceful_kill(
+            ["make", "-C", "operator", "deploy-via-olm", "test-e2e-deployed"], OperatorE2eTest.TEST_TIMEOUT_SEC
+        )
+
+        print("Executing Operator Bundle Scorecard tests")
+        self.run_with_graceful_kill(
+            ["./operator/scripts/retry.sh", "4", "2", "make", "-C", "operator", "bundle-test-image"]
+        )
+
+
 class QaE2eTestPart1(BaseTest):
     TEST_TIMEOUT = 240 * 60
 
