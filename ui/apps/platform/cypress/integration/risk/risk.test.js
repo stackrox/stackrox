@@ -42,7 +42,7 @@ describe('Risk page', () => {
                         'eq',
                         '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=false'
                     );
-                    // No request because response is sorted ascending.
+                    // There is no request because response is sorted ascending.
 
                     // Sort descending by priority.
                     cy.get(priorityColumnHeadingSelector).click();
@@ -50,7 +50,7 @@ describe('Risk page', () => {
                         'eq',
                         '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=true'
                     );
-                    cy.wait('@deploymentswithprocessinfo'); // assume intercept in visitRiskDeployments
+                    // There is a request because of change in sorting.
                     cy.get(priorityColumnHeadingSelector).should('have.class', '-sort-desc');
                     cy.get(
                         `.rt-tr-group:first-child .rt-tr .rt-td:nth-child(5):contains("${priorityLast}")`
@@ -65,7 +65,7 @@ describe('Risk page', () => {
                         'eq',
                         '?sort[id]=Deployment%20Risk%20Priority&sort[desc]=false'
                     );
-                    cy.wait('@deploymentswithprocessinfo'); // assume intercept in visitRiskDeployments
+                    // There is a request because of change in sorting.
                     cy.get(priorityColumnHeadingSelector).should('have.class', '-sort-asc');
                     cy.get(
                         `.rt-tr-group:first-child .rt-tr .rt-td:nth-child(5):contains("${priorityFirst}")`
