@@ -1,7 +1,13 @@
 package dependency
 
-type Graph struct {}
+import "github.com/stackrox/rox/sensor/common/ingestion"
 
-func NewGraph() *Graph {
-	return &Graph{}
+type Graph struct {
+	stores *ingestion.ResourceStore
+}
+
+func NewGraph(stores *ingestion.ResourceStore) *Graph {
+	return &Graph{
+		stores: stores,
+	}
 }
