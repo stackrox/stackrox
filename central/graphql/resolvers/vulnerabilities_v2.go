@@ -454,8 +454,8 @@ func (resolver *Resolver) vulnCounterV2Query(ctx context.Context, query *v1.Quer
 
 func cveToVulnerabilityWithSeverity(in []*storage.CVE) []VulnerabilityWithSeverity {
 	ret := make([]VulnerabilityWithSeverity, len(in))
-	for _, vuln := range in {
-		ret = append(ret, vuln)
+	for i, vuln := range in {
+		ret[i] = vuln
 	}
 	return ret
 }
