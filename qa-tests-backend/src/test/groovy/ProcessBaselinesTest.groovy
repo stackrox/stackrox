@@ -444,12 +444,13 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         String containerName = deployment.getName()
 
-        // Wait on the process to be processed and added to the baseline
+        // Wait on the process to be baseline to come out of observation
         ProcessBaselineOuterClass.ProcessBaseline baseline = evaluateWithRetry(30, 3) {
             def tmpBaseline = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
-            if (baseline.elementsList.find { it.element.processName == processName } == null) {
+            def now = System.currentTimeSeconds()
+            if (tmpBaseline.getStackRoxLockedTimestamp().getSeconds() > now) {
                 throw new RuntimeException(
-                    "Baseline ${deployment} is waiting to receive process. Baseline is ${tmpBaseline}."
+                    "Baseline ${deployment} is still in observation. Baseline is ${tmpBaseline}."
                 )
             }
             return tmpBaseline
