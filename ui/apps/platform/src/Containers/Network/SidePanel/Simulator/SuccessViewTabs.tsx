@@ -42,9 +42,7 @@ function SuccessViewTabs({
         <Tabs headers={tabs}>
             <Tab>
                 <div className="flex flex-col bg-base-100 overflow-auto h-full">
-                    <pre className="p-3 pt-4 leading-tight whitespace-pre-wrap word-break">
-                        {displayYaml}
-                    </pre>
+                    <pre className="p-3 pt-4 whitespace-pre-wrap word-break">{displayYaml}</pre>
                 </div>
             </Tab>
         </Tabs>

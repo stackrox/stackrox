@@ -53,10 +53,11 @@ function NetworkPoliciesDetail({ policyIds }: NetworkPoliciesDetailProps): React
             )}
             {networkPolicies.map((networkPolicy) => {
                 const { id, name, yaml } = networkPolicy;
+                // text-base restores 12px font size which text-sm overrides in div element for overlay ancestor
                 return (
                     <CollapsibleCard title={name} cardClassName="border border-base-400" key={id}>
                         <div className="p-4 bg-primary-100">
-                            <pre className="font-600 font-sans h-full leading-normal p-3">
+                            <pre className="font-600 h-full leading-normal p-3 text-base whitespace-pre-wrap word-break">
                                 {yaml}
                             </pre>
                         </div>
