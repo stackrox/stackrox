@@ -829,7 +829,7 @@ openshift_ci_mods() {
 
     # Provide Circle CI vars that are commonly used
     export CIRCLE_JOB="${JOB_NAME:-${OPENSHIFT_BUILD_NAME}}"
-    CIRCLE_TAG="$(git tag --contains --sort=creatordate | tail -1)" || echo "Warning: Cannot get tag"
+    CIRCLE_TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
     export CIRCLE_TAG
 
     # For gradle
