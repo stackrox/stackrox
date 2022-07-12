@@ -203,7 +203,7 @@ push_main_image_set() {
 }
 
 push_docs_image() {
-    info "Pushing the docs image"
+    info "Pushing the docs image: $PIPELINE_DOCS_IMAGE"
 
     if ! is_OPENSHIFT_CI; then
         die "Only supported in OpenShift CI"
@@ -220,6 +220,20 @@ push_docs_image() {
         oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
         oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$(make --quiet tag)"
     done
+}
+
+push_race_condition_debug_image() {
+    info "Pushing the -race image: $MAIN_RCD_IMAGE"
+
+    if ! is_OPENSHIFT_CI; then
+        die "Only supported in OpenShift CI"
+    fi
+
+    oc registry login
+
+    local registry="quay.io/rhacs-eng"
+    registry_rw_login "$registry"
+    oc image mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet tag)-rcd"
 }
 
 registry_rw_login() {

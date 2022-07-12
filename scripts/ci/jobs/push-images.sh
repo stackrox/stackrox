@@ -49,6 +49,7 @@ push_images() {
     if [[ -n "${PIPELINE_DOCS_IMAGE:-}" ]]; then
         push_docs_image
     fi
+    push_race_condition_debug_image
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]]; then
         comment_on_pr
