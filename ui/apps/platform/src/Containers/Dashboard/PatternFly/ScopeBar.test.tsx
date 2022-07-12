@@ -54,13 +54,13 @@ describe('Resource scope bar', () => {
     it('should default to all clusters and namespaces selected', async () => {
         const { user } = await setup();
 
-        const clusterDropdownToggle = screen.getByRole('button', { name: 'Select clusters' });
-        const namespaceDropdownToggle = screen.getByRole('button', { name: 'Select namespaces' });
+        const clusterDropdownToggle = screen.getByLabelText('Select clusters');
+        const namespaceDropdownToggle = screen.getByLabelText('Select namespaces');
         await waitFor(() => expect(clusterDropdownToggle).not.toBeDisabled());
 
         // The default state is all clusters selected, with the ns dropdown disabled
         await user.click(clusterDropdownToggle);
-        expect(await screen.findByRole('checkbox', { name: 'All clusters' })).toBeChecked();
+        expect(await screen.findByLabelText('All clusters', { selector: 'input' })).toBeChecked();
         expect(namespaceDropdownToggle).toBeDisabled();
         await user.click(clusterDropdownToggle);
     });
@@ -68,43 +68,43 @@ describe('Resource scope bar', () => {
     it('allows selection of multiple clusters and namespaces', async () => {
         const { user } = await setup();
 
-        const clusterDropdownToggle = screen.getByRole('button', { name: 'Select clusters' });
-        const namespaceDropdownToggle = screen.getByRole('button', { name: 'Select namespaces' });
+        const clusterDropdownToggle = screen.getByLabelText('Select clusters');
+        const namespaceDropdownToggle = screen.getByLabelText('Select namespaces');
         await waitFor(() => expect(clusterDropdownToggle).not.toBeDisabled());
 
         // Selecting one or more clusters enables the ns dropdown
         await user.click(clusterDropdownToggle);
-        await user.click(screen.getByRole('checkbox', { name: 'production' }));
+        await user.click(screen.getByLabelText('production'));
         await user.click(clusterDropdownToggle);
         expect(namespaceDropdownToggle).not.toBeDisabled();
         expect(clusterDropdownToggle).toHaveTextContent('Clusters1');
 
         // Enable some namespaces and check that the select badge updates
         await user.click(namespaceDropdownToggle);
-        await user.click(screen.getByRole('checkbox', { name: 'frontend' }));
-        await user.click(screen.getByRole('checkbox', { name: 'backend' }));
-        await user.click(screen.getByRole('checkbox', { name: 'payments' }));
+        await user.click(screen.getByLabelText('frontend'));
+        await user.click(screen.getByLabelText('backend'));
+        await user.click(screen.getByLabelText('payments'));
         await user.click(namespaceDropdownToggle);
         expect(namespaceDropdownToggle).toHaveTextContent('Namespaces3');
 
         // Selecting another cluster when other namespaces are selected will explicitly select
         // all namespaces in that cluster
         await user.click(clusterDropdownToggle);
-        await user.click(screen.getByRole('checkbox', { name: 'security' }));
+        await user.click(screen.getByLabelText('security'));
         await user.click(clusterDropdownToggle);
         expect(namespaceDropdownToggle).toHaveTextContent('Namespaces6');
 
         // Selecting "All Namespaces" and then a single namespaces will result in a single
         // namespace being selected
         await user.click(namespaceDropdownToggle);
-        await user.click(screen.getByRole('checkbox', { name: 'All namespaces' }));
-        await user.click(screen.getByRole('checkbox', { name: 'frontend' }));
+        await user.click(screen.getByLabelText('All namespaces'));
+        await user.click(screen.getByLabelText('frontend'));
         await user.click(namespaceDropdownToggle);
         expect(namespaceDropdownToggle).toHaveTextContent('Namespaces1');
 
         // Selecting "All Clusters" will clear the namespace selection and disable the dropdown
         await user.click(clusterDropdownToggle);
-        await user.click(screen.getByRole('checkbox', { name: 'All clusters' }));
+        await user.click(screen.getByLabelText('All clusters'));
         await user.click(clusterDropdownToggle);
         expect(clusterDropdownToggle).toHaveTextContent('All clusters');
         expect(namespaceDropdownToggle).toHaveTextContent('All namespaces');
@@ -118,14 +118,14 @@ describe('Resource scope bar', () => {
         } = await setup();
 
         // Check that the default state of "select all" results in empty URL search parameters
-        const clusterDropdownToggle = screen.getByRole('button', { name: 'Select clusters' });
-        const namespaceDropdownToggle = screen.getByRole('button', { name: 'Select namespaces' });
+        const clusterDropdownToggle = screen.getByLabelText('Select clusters');
+        const namespaceDropdownToggle = screen.getByLabelText('Select namespaces');
         await waitFor(() => expect(clusterDropdownToggle).not.toBeDisabled());
         expect(history.location.search).toBe('');
 
         // Select a cluster and verify it has been added to the URL
         await user.click(clusterDropdownToggle);
-        await user.click(screen.getByRole('checkbox', { name: 'production' }));
+        await user.click(screen.getByLabelText('production'));
         await user.click(clusterDropdownToggle);
         expect(history.location.search).toMatch(new RegExp(`s\\[Cluster\\]\\[\\d\\]=production`));
 
@@ -141,8 +141,8 @@ describe('Resource scope bar', () => {
         const backend = productionNamespaces.find(findNsWithName('backend')) as Namespace;
         const payments = productionNamespaces.find(findNsWithName('payments')) as Namespace;
         await user.click(namespaceDropdownToggle);
-        await user.click(screen.getByRole('checkbox', { name: frontend.metadata.name }));
-        await user.click(screen.getByRole('checkbox', { name: backend.metadata.name }));
+        await user.click(screen.getByLabelText(frontend.metadata.name));
+        await user.click(screen.getByLabelText(backend.metadata.name));
         await user.click(namespaceDropdownToggle);
         expect(history.location.search).toMatch(new RegExp(`s\\[Cluster\\]\\[\\d\\]=production`));
         // Namespaces are tracked _by id_ in the URL, not name
