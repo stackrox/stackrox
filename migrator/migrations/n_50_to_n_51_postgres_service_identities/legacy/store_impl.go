@@ -6,7 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/postgresmigrationhelper/metrics"
+	"github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	bolt "go.etcd.io/bbolt"

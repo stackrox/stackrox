@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/postgresmigrationhelper/metrics"
+	"github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
 	"github.com/stackrox/rox/pkg/dberrors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	ops "github.com/stackrox/rox/pkg/metrics"

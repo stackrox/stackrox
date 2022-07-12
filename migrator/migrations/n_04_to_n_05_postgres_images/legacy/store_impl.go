@@ -15,7 +15,7 @@ import (
 	imageCVEEdgeDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/imagecveedge"
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/common"
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/store"
-	"github.com/stackrox/rox/migrator/migrations/postgresmigrationhelper/metrics"
+	"github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/edges"

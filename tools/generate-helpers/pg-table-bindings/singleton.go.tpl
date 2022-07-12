@@ -19,7 +19,7 @@ import (
     "github.com/jackc/pgx/v4/pgxpool"
     "github.com/pkg/errors"
     {{- if $inMigration}}
-    "github.com/stackrox/rox/migrator/migrations/postgresmigrationhelper/metrics"
+    "github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
     {{- else}}
     "github.com/stackrox/rox/central/metrics"
     "github.com/stackrox/rox/central/role/resources"

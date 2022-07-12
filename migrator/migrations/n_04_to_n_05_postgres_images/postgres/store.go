@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/common/v2"
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/store"
-	"github.com/stackrox/rox/migrator/migrations/postgresmigrationhelper/metrics"
+	"github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"

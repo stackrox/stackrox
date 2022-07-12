@@ -6,7 +6,7 @@ import (
 
 	proto "github.com/gogo/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	metrics "github.com/stackrox/rox/migrator/migrations/postgresmigrationhelper/metrics"
+	metrics "github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
 	singletonstore "github.com/stackrox/rox/pkg/bolthelper/singletonstore"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	bbolt "go.etcd.io/bbolt"

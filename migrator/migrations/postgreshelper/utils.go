@@ -1,4 +1,4 @@
-package postgresmigrationhelper
+package postgreshelper
 
 import (
 	"gorm.io/gorm"
