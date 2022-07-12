@@ -99,8 +99,12 @@ function launch_central {
     local STORAGE_ARGS=()
 
     local use_docker=1
-    if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
-    	use_docker=0
+    if [[ "${USE_LOCAL_ROXCTL:-}" == "true" ]]; then
+      echo "Using $(command -v roxctl) for install due to USE_LOCAL_ROXCTL==true"
+      use_docker=0
+    elif [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
+      echo "Using $(command -v roxctl) for install due to version match with MAIN_IMAGE_TAG $MAIN_IMAGE_TAG"
+      use_docker=0
     fi
 
     local DOCKER_PLATFORM_ARGS=()

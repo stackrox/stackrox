@@ -10,7 +10,6 @@ export COLLECTOR_IMAGE_REPO="${COLLECTOR_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/col
 echo "COLLECTOR_IMAGE_REPO set to $COLLECTOR_IMAGE_REPO"
 
 export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" tag)}"
-
 echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 
 export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
@@ -19,7 +18,10 @@ echo "StackRox image set to $MAIN_IMAGE"
 export CENTRAL_DB_IMAGE_REPO="${CENTRAL_DB_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/central-db}"
 echo "CENTRAL_DB_IMAGE_REPO set to $CENTRAL_DB_IMAGE_REPO"
 
-export CENTRAL_DB_IMAGE="${CENTRAL_DB_IMAGE:-${CENTRAL_DB_IMAGE_REPO}:${MAIN_IMAGE_TAG}}"
+export CENTRAL_DB_IMAGE_TAG="${CENTRAL_DB_IMAGE_TAG:-${MAIN_IMAGE_TAG}}"
+echo "StackRox central db image tag set to $CENTRAL_DB_IMAGE_TAG"
+
+export CENTRAL_DB_IMAGE="${CENTRAL_DB_IMAGE:-${CENTRAL_DB_IMAGE_REPO}:${CENTRAL_DB_IMAGE_TAG}}"
 echo "StackRox central db image set to $CENTRAL_DB_IMAGE"
 
 export ROXCTL_IMAGE_REPO="${ROXCTL_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/roxctl}"
