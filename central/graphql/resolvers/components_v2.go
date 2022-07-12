@@ -111,6 +111,9 @@ func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query
 }
 
 func (resolver *Resolver) imageComponentDataStoreQuery(ctx context.Context, args IDQuery) (*imageComponentResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
+	}
 	component, exists, err := resolver.ImageComponentDataStore.Get(ctx, string(*args.ID))
 	if err != nil {
 		return nil, err
@@ -121,6 +124,9 @@ func (resolver *Resolver) imageComponentDataStoreQuery(ctx context.Context, args
 }
 
 func (resolver *Resolver) imageComponentsLoaderQuery(ctx context.Context, query *v1.Query) ([]*imageComponentResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
+	}
 	componentLoader, err := loaders.GetComponentLoader(ctx)
 	if err != nil {
 		return nil, err
@@ -130,6 +136,9 @@ func (resolver *Resolver) imageComponentsLoaderQuery(ctx context.Context, query 
 }
 
 func (resolver *Resolver) componentCountV2(ctx context.Context, args RawQuery) (int32, error) {
+	if features.PostgresDatastore.Enabled() {
+		return 0, errors.New("attempted to invoke legacy datastores with postgres enabled")
+	}
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
