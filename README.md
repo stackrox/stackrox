@@ -3,8 +3,8 @@
 ## Table of contents
 
 - [StackRox Kubernetes Security Platform](#stackrox-kubernetes-security-platform)
-  - [Community](#community)
   - [Table of contents](#table-of-contents)
+  - [Community](#community)  
   - [Deploying StackRox](#deploying-stackrox)
     - [Installation via Helm](#installation-via-helm)
       - [Default Central Installation](#default-central-installation)
