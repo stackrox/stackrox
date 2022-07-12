@@ -16,7 +16,6 @@ var (
 )
 
 type Store interface {
-	// Get(ctx context.Context, id string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error)
     UpsertMany(ctx context.Context, objs []*storage.NetworkPolicyApplicationUndoDeploymentRecord) error
 	Walk(ctx context.Context, fn func(obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error) error
 }
@@ -45,16 +44,6 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 		crud: cacheCRUD,
 	}, nil
 }
-/*
-// Get returns the object, if it exists from the store
-func (b *storeImpl) Get(_ context.Context, id string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error) {
-	msg, exists, err := b.crud.Get(id)
-	if err != nil || !exists {
-		return nil, false, err
-	}
-	return msg.(*storage.NetworkPolicyApplicationUndoDeploymentRecord), true, nil
-}
-*/
 // UpsertMany batches objects into the DB
 func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
 	msgs := make([]proto.Message, 0, len(objs))

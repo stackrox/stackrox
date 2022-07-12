@@ -18,7 +18,6 @@ var (
 )
 
 type Store interface {
-	// Get(ctx context.Context, id string) (*storage.{{.Type}}, bool, error)
 	{{- if .NoKeyField}}
     UpsertManyWithIDs(ctx context.Context, ids []string, objs []*storage.{{.Type}}) error
     {{- else }}
@@ -70,16 +69,7 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 	}, nil
     {{- end}}
 }
-/*
-// Get returns the object, if it exists from the store
-func (b *storeImpl) Get(_ context.Context, id string) (*storage.{{.Type}}, bool, error) {
-	msg, exists, err := b.crud.Get(id)
-	if err != nil || !exists {
-		return nil, false, err
-	}
-	return msg.(*storage.{{.Type}}), true, nil
-}
-*/
+
 {{- if .NoKeyField}}
 // UpsertManyWithIDs batches objects into the DB
 func (b *storeImpl) UpsertManyWithIDs(_ context.Context, ids []string, objs []*storage.{{.Type}}) error {

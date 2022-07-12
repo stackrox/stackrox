@@ -15,7 +15,6 @@ var (
 )
 
 type Store interface {
-	// Get(ctx context.Context, id string) (*storage.Secret, bool, error)
     UpsertMany(ctx context.Context, objs []*storage.Secret) error
 	Walk(ctx context.Context, fn func(obj *storage.Secret) error) error
 }
@@ -38,16 +37,6 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, false)
     return  &storeImpl{crud: baseCRUD}, nil
 }
-/*
-// Get returns the object, if it exists from the store
-func (b *storeImpl) Get(_ context.Context, id string) (*storage.Secret, bool, error) {
-	msg, exists, err := b.crud.Get(id)
-	if err != nil || !exists {
-		return nil, false, err
-	}
-	return msg.(*storage.Secret), true, nil
-}
-*/
 // UpsertMany batches objects into the DB
 func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.Secret) error {
 	msgs := make([]proto.Message, 0, len(objs))

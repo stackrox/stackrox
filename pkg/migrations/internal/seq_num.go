@@ -6,5 +6,5 @@ var (
 	// It is a shared constant between central and the migrator binary.
 	CurrentDBVersionSeqNum = 106
 	// PostgresDBVersionPlus is the current DB version number with Postgres DB data migration.
-	PostgresDBVersionPlus = 1
+	PostgresDBVersionPlus = 56
 )

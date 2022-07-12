@@ -20,8 +20,8 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNum() + 14,
-		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum()) + 15},
+		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 14,
+		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 15},
 		Run: func(databases *types.Databases) error {
 			legacyStore, err := legacy.New(databases.PkgRocksDB)
 			if err != nil {

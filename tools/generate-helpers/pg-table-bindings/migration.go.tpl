@@ -38,8 +38,8 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNum() + {{.Migration.MigrateSequence}},
-		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum()) + {{add .Migration.MigrateSequence 1}}},
+		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + {{.Migration.MigrateSequence}},
+		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + {{add .Migration.MigrateSequence 1}}},
 		Run: func(databases *types.Databases) error {
 		    {{- if $rocksDB}}
 		        {{- if $dackbox}}
