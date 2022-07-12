@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -196,7 +195,6 @@ func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() (err error
 		if !found {
 			continue
 		}
-		fmt.Println("cleaning deployment", deploymentID)
 		err = s.deploymentStore.RemoveDeployment(ctx, deployment.GetClusterId(), deploymentID)
 		if err != nil {
 			return err

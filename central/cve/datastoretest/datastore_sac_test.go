@@ -3,6 +3,7 @@ package datastoretest
 import (
 	"context"
 	"testing"
+	"time"
 
 	genericCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
@@ -87,12 +88,18 @@ func (s *cveDataStoreSACTestSuite) getNodeCVEID(cve string) string {
 	return cve
 }
 
-func (s *cveDataStoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
+func (s *cveDataStoreSACTestSuite) cleanImageToVulnerabilitiesGraph(wait bool) {
 	s.Require().NoError(s.dackboxTestStore.CleanImageToVulnerabilitiesGraph())
+	if wait {
+		time.Sleep(1 * time.Second)
+	}
 }
 
-func (s *cveDataStoreSACTestSuite) cleanNodeToVulnerabilitiesGraph() {
+func (s *cveDataStoreSACTestSuite) cleanNodeToVulnerabilitiesGraph(wait bool) {
 	s.Require().NoError(s.dackboxTestStore.CleanNodeToVulnerabilitiesGraph())
+	if wait {
+		time.Sleep(1 * time.Second)
+	}
 }
 
 type cveTestCase struct {
@@ -418,7 +425,7 @@ var (
 func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsSingleScopeOnly() {
 	// Inject the fixture graph, and test exists for CVE-1234-0001
 	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE1234x0001()
 	cveName := targetCVE.GetCve()
@@ -436,7 +443,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsSingleScopeOnly() {
 func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsSharedAcrossComponents() {
 	// Inject the fixture graph, and test exists for CVE-4567-0002
 	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE4567x0002()
 	cveName := targetCVE.GetCve()
@@ -454,7 +461,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsSharedAcrossComponents()
 func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsFromSharedComponent() {
 	// Inject the fixture graph, and test exists for CVE-3456-0004
 	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE3456x0004()
 	cveName := targetCVE.GetCve()
@@ -472,7 +479,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsFromSharedComponent() {
 func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 	// Inject the fixture graph, and test retrieval for CVE-1234-0001
 	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE1234x0001()
 	cveName := targetCVE.GetCve()
@@ -498,7 +505,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSharedAcrossComponents() {
 	// Inject the fixture graph, and test retrieval for CVE-4567-0002
 	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE4567x0002()
 	cveName := targetCVE.GetCve()
@@ -524,7 +531,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSharedAcrossComponents() {
 func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetFromSharedComponent() {
 	// Inject the fixture graph, and test retrieval for CVE-3456-0004
 	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE3456x0004()
 	cveName := targetCVE.GetCve()
@@ -549,7 +556,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetFromSharedComponent() {
 
 func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetBatch() {
 	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE1 := fixtures.GetEmbeddedImageCVE1234x0001()
 	targetCVE2 := fixtures.GetEmbeddedImageCVE4567x0002()
@@ -592,15 +599,102 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVECount() {
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageCVESearch() {
-	s.T().Skip("Not implemented yet.")
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph(!features.PostgresDatastore.Enabled())
+	if !features.PostgresDatastore.Enabled() {
+		// Wait for bleve indexing to complete
+		time.Sleep(1 * time.Second)
+	}
+	s.Require().NoError(err)
+	for _, c := range imageCVETestCases {
+		s.Run(c.contextKey, func() {
+
+			testCtx := s.imageTestContexts[c.contextKey]
+			results, err := s.imageCVEStore.Search(testCtx, nil)
+			s.NoError(err)
+			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
+			for name, visible := range c.expectedCVEFound {
+				if visible {
+					expectedCVENames = append(expectedCVENames, s.getImageCVEID(name))
+				}
+			}
+			fetchedCVEIDs := make(map[string]bool, 0)
+			for _, result := range results {
+				fetchedCVEIDs[result.ID] = true
+			}
+			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
+			for id := range fetchedCVEIDs {
+				fetchedCVENames = append(fetchedCVENames, id)
+			}
+			s.ElementsMatch(fetchedCVENames, expectedCVENames)
+		})
+	}
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageCVESearchCVEs() {
-	s.T().Skip("Not implemented yet.")
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph(!features.PostgresDatastore.Enabled())
+	if !features.PostgresDatastore.Enabled() {
+		// Wait for bleve indexing to complete
+		time.Sleep(1 * time.Second)
+	}
+	s.Require().NoError(err)
+	for _, c := range imageCVETestCases {
+		s.Run(c.contextKey, func() {
+
+			testCtx := s.imageTestContexts[c.contextKey]
+			results, err := s.imageCVEStore.SearchImageCVEs(testCtx, nil)
+			s.NoError(err)
+			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
+			for name, visible := range c.expectedCVEFound {
+				if visible {
+					expectedCVENames = append(expectedCVENames, s.getImageCVEID(name))
+				}
+			}
+			fetchedCVEIDs := make(map[string]bool, 0)
+			for _, result := range results {
+				fetchedCVEIDs[result.GetId()] = true
+			}
+			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
+			for id := range fetchedCVEIDs {
+				fetchedCVENames = append(fetchedCVENames, id)
+			}
+			s.ElementsMatch(fetchedCVENames, expectedCVENames)
+		})
+	}
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageCVESearchRawCVEs() {
-	s.T().Skip("Not implemented yet.")
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph(!features.PostgresDatastore.Enabled())
+	if !features.PostgresDatastore.Enabled() {
+		// Wait for bleve indexing to complete
+		time.Sleep(1 * time.Second)
+	}
+	s.Require().NoError(err)
+	for _, c := range imageCVETestCases {
+		s.Run(c.contextKey, func() {
+
+			testCtx := s.imageTestContexts[c.contextKey]
+			results, err := s.imageCVEStore.SearchRawImageCVEs(testCtx, nil)
+			s.NoError(err)
+			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
+			for name, visible := range c.expectedCVEFound {
+				if visible {
+					expectedCVENames = append(expectedCVENames, s.getImageCVEID(name))
+				}
+			}
+			fetchedCVEIDs := make(map[string]bool, 0)
+			for _, result := range results {
+				fetchedCVEIDs[result.GetId()] = true
+			}
+			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
+			for id := range fetchedCVEIDs {
+				fetchedCVENames = append(fetchedCVENames, id)
+			}
+			s.ElementsMatch(fetchedCVENames, expectedCVENames)
+		})
+	}
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageCVESuppress() {
@@ -618,7 +712,7 @@ func (s *cveDataStoreSACTestSuite) TestSACEnrichImageWithSuppressedCVEs() {
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsSingleScopeOnly() {
 	// Inject the fixture graph, and test exists for CVE-1234-0001
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE1234x0001()
 	cveName := targetCVE.GetCve()
@@ -636,7 +730,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsSingleScopeOnly() {
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsSharedAcrossComponents() {
 	// Inject the fixture graph, and test exists for CVE-4567-0002
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE4567x0002()
 	cveName := targetCVE.GetCve()
@@ -654,7 +748,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsSharedAcrossComponents() 
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsFromSharedComponent() {
 	// Inject the fixture graph, and test exists for CVE-3456-0004
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE3456x0004()
 	cveName := targetCVE.GetCve()
@@ -672,7 +766,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsFromSharedComponent() {
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSingleScopeOnly() {
 	// Inject the fixture graph, and test retrieval for CVE-1234-0001
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE1234x0001()
 	cveName := targetCVE.GetCve()
@@ -698,7 +792,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSingleScopeOnly() {
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSharedAcrossComponents() {
 	// Inject the fixture graph, and test retrieval for CVE-4567-0002
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE4567x0002()
 	cveName := targetCVE.GetCve()
@@ -724,7 +818,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSharedAcrossComponents() {
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetFromSharedComponent() {
 	// Inject the fixture graph, and test retrieval for CVE-3456-0004
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE3456x0004()
 	cveName := targetCVE.GetCve()
@@ -749,7 +843,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetFromSharedComponent() {
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetBatch() {
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph(false)
 	s.Require().NoError(err)
 	targetCVE1 := fixtures.GetEmbeddedNodeCVE1234x0001()
 	targetCVE2 := fixtures.GetEmbeddedNodeCVE4567x0002()
@@ -789,7 +883,11 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetBatch() {
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVECount() {
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph(!features.PostgresDatastore.Enabled())
+	if !features.PostgresDatastore.Enabled() {
+		// Wait for bleve indexing to complete
+		time.Sleep(1 * time.Second)
+	}
 	s.Require().NoError(err)
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
@@ -811,15 +909,102 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVECount() {
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearch() {
-	s.T().Skip("Not implemented yet.")
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph(!features.PostgresDatastore.Enabled())
+	if !features.PostgresDatastore.Enabled() {
+		// Wait for bleve indexing to complete
+		time.Sleep(1 * time.Second)
+	}
+	s.Require().NoError(err)
+	for _, c := range nodeCVETestCases {
+		s.Run(c.contextKey, func() {
+
+			testCtx := s.nodeTestContexts[c.contextKey]
+			results, err := s.nodeCVEStore.Search(testCtx, nil)
+			s.NoError(err)
+			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
+			for name, visible := range c.expectedCVEFound {
+				if visible {
+					expectedCVENames = append(expectedCVENames, s.getNodeCVEID(name))
+				}
+			}
+			fetchedCVEIDs := make(map[string]bool, 0)
+			for _, result := range results {
+				fetchedCVEIDs[result.ID] = true
+			}
+			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
+			for id := range fetchedCVEIDs {
+				fetchedCVENames = append(fetchedCVENames, id)
+			}
+			s.ElementsMatch(fetchedCVENames, expectedCVENames)
+		})
+	}
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchCVEs() {
-	s.T().Skip("Not implemented yet.")
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph(!features.PostgresDatastore.Enabled())
+	if !features.PostgresDatastore.Enabled() {
+		// Wait for bleve indexing to complete
+		time.Sleep(1 * time.Second)
+	}
+	s.Require().NoError(err)
+	for _, c := range nodeCVETestCases {
+		s.Run(c.contextKey, func() {
+
+			testCtx := s.nodeTestContexts[c.contextKey]
+			results, err := s.nodeCVEStore.SearchCVEs(testCtx, nil)
+			s.NoError(err)
+			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
+			for name, visible := range c.expectedCVEFound {
+				if visible {
+					expectedCVENames = append(expectedCVENames, s.getNodeCVEID(name))
+				}
+			}
+			fetchedCVEIDs := make(map[string]bool, 0)
+			for _, result := range results {
+				fetchedCVEIDs[result.GetId()] = true
+			}
+			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
+			for id := range fetchedCVEIDs {
+				fetchedCVENames = append(fetchedCVENames, id)
+			}
+			s.ElementsMatch(fetchedCVENames, expectedCVENames)
+		})
+	}
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchRawCVEs() {
-	s.T().Skip("Not implemented yet.")
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph(!features.PostgresDatastore.Enabled())
+	if !features.PostgresDatastore.Enabled() {
+		// Wait for bleve indexing to complete
+		time.Sleep(1 * time.Second)
+	}
+	s.Require().NoError(err)
+	for _, c := range nodeCVETestCases {
+		s.Run(c.contextKey, func() {
+
+			testCtx := s.nodeTestContexts[c.contextKey]
+			results, err := s.nodeCVEStore.SearchRawCVEs(testCtx, nil)
+			s.NoError(err)
+			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
+			for name, visible := range c.expectedCVEFound {
+				if visible {
+					expectedCVENames = append(expectedCVENames, s.getNodeCVEID(name))
+				}
+			}
+			fetchedCVEIDs := make(map[string]bool, 0)
+			for _, result := range results {
+				fetchedCVEIDs[result.GetId()] = true
+			}
+			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
+			for id := range fetchedCVEIDs {
+				fetchedCVENames = append(fetchedCVENames, id)
+			}
+			s.ElementsMatch(fetchedCVENames, expectedCVENames)
+		})
+	}
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVESuppress() {
