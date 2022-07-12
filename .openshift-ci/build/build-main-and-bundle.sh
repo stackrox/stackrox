@@ -32,7 +32,8 @@ build_go_binaries() {
         info "Building main with args: ${main_build_args}"
     fi
 
-    make "${main_build_args}" main-build-nodeps
+    # shellcheck disable=SC2086
+    make ${main_build_args} main-build-nodeps
 
     make swagger-docs
 }
