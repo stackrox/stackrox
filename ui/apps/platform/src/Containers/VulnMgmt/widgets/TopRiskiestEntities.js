@@ -62,7 +62,7 @@ const TOP_RISKIEST_IMAGES = gql`
 
 const TOP_RISKIEST_IMAGE_VULNERABILITIES = gql`
     query topRiskiestImageVulnerabilities($query: String, $pagination: Pagination) {
-        results: imageVulnerabilities(query: $query, pagination: $pagination) {
+        results: images(query: $query, pagination: $pagination) {
             id
             name {
                 fullName
