@@ -378,7 +378,7 @@ func (resolver *imageCVEResolver) VulnerabilityState(ctx context.Context) string
 		log.Error(errors.Wrapf(err, "fetching vuln requests for image %s/%s:%s", img.GetName().GetRegistry(), img.GetName().GetRemote(), img.GetName().GetTag()))
 		return ""
 	}
-	if s, ok := states[resolver.data.GetId()]; ok {
+	if s, ok := states[resolver.data.GetCveBaseInfo().GetCve()]; ok {
 		return s.String()
 	}
 
@@ -443,7 +443,7 @@ func (resolver *imageCVEResolver) EffectiveVulnerabilityRequest(ctx context.Cont
 		return nil, nil
 	}
 
-	req, err := resolver.root.vulnReqQueryMgr.EffectiveVulnReq(ctx, resolver.data.GetId(),
+	req, err := resolver.root.vulnReqQueryMgr.EffectiveVulnReq(ctx, resolver.data.GetCveBaseInfo().GetCve(),
 		common.VulnReqScope{
 			Registry: img.GetName().GetRegistry(),
 			Remote:   img.GetName().GetRemote(),
