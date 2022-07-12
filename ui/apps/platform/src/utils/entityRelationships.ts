@@ -34,6 +34,8 @@ export const useCaseEntityMap = {
         ...baseEntities,
         entityTypes.IMAGE,
         entityTypes.COMPONENT,
+        entityTypes.IMAGE_COMPONENT,
+        entityTypes.NODE_COMPONENT,
     ],
 };
 
@@ -127,13 +129,13 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.NODE_COMPONENT]: {
         children: [],
         parents: [],
-        matches: [entityTypes.CVE, entityTypes.NODE],
+        matches: [entityTypes.NODE_CVE, entityTypes.NODE],
         extendedMatches: [],
     },
     [entityTypes.IMAGE_COMPONENT]: {
         children: [],
         parents: [],
-        matches: [entityTypes.IMAGE, entityTypes.CVE],
+        matches: [entityTypes.IMAGE, entityTypes.IMAGE_CVE],
         extendedMatches: [entityTypes.DEPLOYMENT],
     },
     // TODO: remove this old CVE entity type which encompasses node CVEs, image/component CVEs, k8s CVEs (for clusters)
@@ -146,13 +148,13 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.IMAGE_CVE]: {
         children: [],
         parents: [],
-        matches: [entityTypes.COMPONENT],
+        matches: [entityTypes.IMAGE_COMPONENT],
         extendedMatches: [entityTypes.IMAGE, entityTypes.DEPLOYMENT],
     },
     [entityTypes.NODE_CVE]: {
         children: [],
         parents: [],
-        matches: [entityTypes.COMPONENT],
+        matches: [entityTypes.NODE_COMPONENT],
         extendedMatches: [entityTypes.NODE],
     },
     [entityTypes.CLUSTER_CVE]: {
