@@ -154,7 +154,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         cleanup:
         "Remove deployment"
         log.info "Cleaning up deployment: ${deployment}"
-        orchestrator.deleteDeployment(deployment)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
 
         where:
         "Data inputs are :"
@@ -290,7 +290,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         cleanup:
         "Remove deployment"
-        orchestrator.deleteDeployment(deployment)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
 
         where:
         "Data inputs are :"
@@ -333,7 +333,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         cleanup:
         "Remove deployment"
-        orchestrator.deleteDeployment(deployment)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
     }
 
     @Unroll
@@ -394,7 +394,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         cleanup:
         "Remove deployment"
-        orchestrator.deleteDeployment(deployment)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
 
         where:
         deploymentName                                   | processName
@@ -428,7 +428,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         cleanup:
         "Remove deployment"
-        orchestrator.deleteDeployment(deployment)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
     }
 
     @Unroll
@@ -443,8 +443,18 @@ class ProcessBaselinesTest extends BaseSpecification {
         orchestrator.execInContainer(deployment, "ls")
 
         String containerName = deployment.getName()
-        ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
-                    getProcessBaseline(clusterId, deployment, containerName)
+
+        // Wait on the process to be processed and added to the baseline
+        ProcessBaselineOuterClass.ProcessBaseline baseline = evaluateWithRetry(30, 3) {
+            def tmpBaseline = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
+            if (baseline.elementsList.find { it.element.processName == processName } == null) {
+                throw new RuntimeException(
+                    "Baseline ${deployment} is waiting to receive process. Baseline is ${tmpBaseline}."
+                )
+            }
+            return tmpBaseline
+        }
+
         assert (baseline != null)
         assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                     (baseline.key.containerName.equalsIgnoreCase(containerName)))
@@ -489,7 +499,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         cleanup:
         "Remove deployment"
         log.info "Cleaning up deployment: ${deployment}"
-        orchestrator.deleteDeployment(deployment)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
 
         where:
         "Data inputs are :"

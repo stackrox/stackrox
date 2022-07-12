@@ -1726,7 +1726,7 @@ class Kubernetes implements OrchestratorMain {
 
     def execInContainerByPodName(String name, String namespace, String cmd, int retries = 1) {
         // Wait for container 0 to be running first.
-        def timer = new Timer(retries, 2)
+        def timer = new Timer(retries, 1)
         while (timer.IsValid()) {
             def p = client.pods().inNamespace(namespace).withName(name).get()
             if (p == null || p.status.containerStatuses.size() == 0) {
