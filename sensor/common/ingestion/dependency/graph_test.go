@@ -47,7 +47,11 @@ func (s *DependencyGraphSuite) SetupTest() {
 
 func (s *DependencyGraphSuite) Test_SingleDeployment() {
 	d1 := givenDeployment("example", "d1", nil)
-	s.deploymentStore.EXPECT().Get(gomock.Eq("d1")).Return(d1)
+	s.deploymentStore.EXPECT().Get(gomock.Eq("d1")).
+		AnyTimes().
+		Return(d1)
+	s.netpolStore.EXPECT().Find(gomock.Any(), gomock.Any()).
+		Return(map[string]*storage.NetworkPolicy{})
 
 	snapshot := s.graph.GenerateSnapshotFromUpsert("Deployment", "example", "d1")
 
@@ -58,13 +62,18 @@ func (s *DependencyGraphSuite) Test_SingleDeployment() {
 
 func (s *DependencyGraphSuite) Test_DeploymentWithOneNetPolicy() {
 	d1 := givenDeployment("example", "d1", appLabel("test"))
-	s.deploymentStore.EXPECT().Get(gomock.Eq("d1")).Return(d1)
+	s.deploymentStore.EXPECT().Get(gomock.Eq("d1")).
+		AnyTimes().Return(d1)
 	s.deploymentStore.EXPECT().GetMatchingDeployments(gomock.Eq("example"), gomock.Any()).
+		AnyTimes().
 		Return([]*storage.Deployment{d1})
 
 	n1 := givenNetworkPolicy("example", "n1", appLabel("test"))
-	s.netpolStore.EXPECT().Get(gomock.Eq("n1")).Return(n1)
+	s.netpolStore.EXPECT().Get(gomock.Eq("n1")).
+		AnyTimes().
+		Return(n1)
 	s.netpolStore.EXPECT().Find(gomock.Eq("example"), gomock.Eq(appLabel("test"))).
+		AnyTimes().
 		Return(map[string]*storage.NetworkPolicy{"n1": n1})
 
 	results := []*ClusterSnapshot{
