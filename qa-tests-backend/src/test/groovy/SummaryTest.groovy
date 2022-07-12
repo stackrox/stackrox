@@ -14,12 +14,11 @@ import services.NamespaceService
 import services.NodeService
 import services.SummaryService
 import spock.lang.IgnoreIf
-import util.Env
 
 class SummaryTest extends BaseSpecification {
 
     @Category([BAT])
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") || System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
+    @IgnoreIf({System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
         // https://issues.redhat.com/browse/ROX-6844
         Assume.assumeFalse(ClusterService.isOpenShift4())
@@ -54,7 +53,6 @@ class SummaryTest extends BaseSpecification {
     }
 
     @Category([BAT])
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify node details"() {
         given:
         "fetch the list of nodes"
