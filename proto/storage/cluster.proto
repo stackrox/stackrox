@@ -250,22 +250,6 @@ message UpgradeProgress {
     google.protobuf.Timestamp since    = 3;
 }
 
-message ClusterCVEEdge {
-  // base 64 encoded Cluster:CVE ids.
-  string        id          = 1[(gogoproto.moretags) = 'sql:"pk,id"'];
-
-  // TODO: search fields `Cluster CVE Fixable` and `Cluster CVE Fixed By` should be renamed to `Fixable` and `Fixed By` resp.
-  //  For now we need to keep those for backwards compatibility and the search field transformer handles the transformation.
-
-  bool          is_fixable  = 2 [(gogoproto.moretags) = 'search:"Cluster CVE Fixable,store,hidden"'];
-  // Whether there is a version the CVE is fixed in the Cluster.
-  oneof has_fixed_by {
-    string    fixed_by      = 3 [(gogoproto.moretags) = 'search:"Cluster CVE Fixed By,store,hidden"'];
-  }
-  string      cluster_id    = 4 [(gogoproto.moretags) = 'sql:"fk(Cluster:id)"'];
-  string      cve_id        = 5 [(gogoproto.moretags) = 'sql:"fk(ClusterCVE:id),no-fk-constraint"'];
-}
-
 // AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance
 // For internal use only
 message AuditLogFileState {
