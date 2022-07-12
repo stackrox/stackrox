@@ -279,4 +279,6 @@ export const entitySortFieldsMap = {
     [entityTypes.CVE]: cveSortFields,
     [entityTypes.POLICY]: policySortFields,
     [entityTypes.NODE]: nodeSortFields,
+    [entityTypes.IMAGE_CVE]: cveSortFields,
+    [entityTypes.NODE_CVE]: cveSortFields,
 };

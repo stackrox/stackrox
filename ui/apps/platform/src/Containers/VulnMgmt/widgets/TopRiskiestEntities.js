@@ -60,43 +60,6 @@ const TOP_RISKIEST_IMAGES = gql`
     }
 `;
 
-const TOP_RISKIEST_IMAGE_VULNERABILITIES = gql`
-    query topRiskiestImageVulnerabilities($query: String, $pagination: Pagination) {
-        results: images(query: $query, pagination: $pagination) {
-            id
-            name {
-                fullName
-            }
-            vulnCounter {
-                all {
-                    total
-                    fixable
-                }
-                low {
-                    total
-                    fixable
-                }
-                moderate {
-                    total
-                    fixable
-                }
-                important {
-                    total
-                    fixable
-                }
-                critical {
-                    total
-                    fixable
-                }
-            }
-            priority
-            scan {
-                scanTime
-            }
-        }
-    }
-`;
-
 const TOP_RISKIEST_COMPONENTS = gql`
     query topRiskiestComponents($query: String, $pagination: Pagination) {
         results: components(query: $query, pagination: $pagination) {
@@ -178,7 +141,21 @@ const getTextByEntityType = (entityType, data) => {
     }
 };
 
-const processData = (data, entityType, workflowState) => {
+function getSelectedEntity(selectedEntity, showVmUpdates) {
+    if (!showVmUpdates) {
+        return selectedEntity;
+    }
+    switch (selectedEntity) {
+        case entityTypes.NODE:
+            return entityTypes.NODE_CVE;
+        case entityTypes.IMAGE:
+        default:
+            return entityTypes.IMAGE_CVE;
+    }
+}
+
+const processData = (data, entityType, workflowState, showVmUpdates) => {
+    const currentEntityType = getSelectedEntity(entityType, showVmUpdates);
     const results = data.results
         .slice()
         .sort((a, b) => {
@@ -195,11 +172,11 @@ const processData = (data, entityType, workflowState) => {
             return d;
         })
         .map(({ id, vulnCounter, scan, lastScanned, ...rest }) => {
-            const text = getTextByEntityType(entityType, { ...rest });
-            const newState = workflowState.pushRelatedEntity(entityType, id);
+            const text = getTextByEntityType(currentEntityType, { ...rest });
+            const newState = workflowState.pushRelatedEntity(currentEntityType, id);
 
             const url = newState.toUrl();
-            const cveListState = newState.pushList(entityTypes.CVE);
+            const cveListState = newState.pushList(currentEntityType);
             const cvesUrl = cveListState.toUrl();
             const fixableUrl = cveListState.setSearch({ Fixable: true }).toUrl();
 
@@ -215,7 +192,7 @@ const processData = (data, entityType, workflowState) => {
                 <div className="flex-1 border-base-300 overflow-hidden">
                     <div className="mb-2">
                         <span className="text-base-600 font-700 mr-2 capitalize">
-                            {resourceLabels[entityType]}:
+                            {resourceLabels[currentEntityType]}:
                         </span>
                         <span className="font-600">{text}</span>
                     </div>
@@ -263,18 +240,6 @@ const processData = (data, entityType, workflowState) => {
     return results;
 };
 
-function getQueryBySelectedEntityVMUpdates(entityType) {
-    switch (entityType) {
-        case entityTypes.COMPONENT:
-            return TOP_RISKIEST_COMPONENTS;
-        case entityTypes.NODE:
-            return TOP_RISKIEST_NODES;
-        case entityTypes.IMAGE:
-        default:
-            return TOP_RISKIEST_IMAGE_VULNERABILITIES;
-    }
-}
-
 const getQueryBySelectedEntity = (entityType) => {
     switch (entityType) {
         case entityTypes.COMPONENT:
@@ -287,17 +252,26 @@ const getQueryBySelectedEntity = (entityType) => {
     }
 };
 
-const getEntitiesByContext = (entityContext) => {
+const getEntitiesByContext = (entityContext, showVmUpdates) => {
     const entities = [];
-    if (entityContext === {} || !entityContext[entityTypes.COMPONENT]) {
-        entities.push({ label: 'Top Riskiest Components', value: entityTypes.COMPONENT });
+    if (!showVmUpdates && (entityContext === {} || !entityContext[entityTypes.COMPONENT])) {
+        entities.push({
+            label: 'Top Riskiest Components',
+            value: entityTypes.COMPONENT,
+        });
     }
     if (entityContext === {} || !entityContext[entityTypes.IMAGE] || entities.length === 0) {
         // unshift so it sits at the front of the list (in case both entity types are added, image should come first)
-        entities.unshift({ label: 'Top Riskiest Image Vulnerabilities', value: entityTypes.IMAGE });
+        entities.unshift({
+            label: `Top Riskiest Image${showVmUpdates ? ' Vulnerabilities' : ''}`,
+            value: showVmUpdates ? entityTypes.IMAGE_CVE : entityTypes.IMAGE,
+        });
     }
     if (entityContext === {} || !entityContext[entityTypes.NODE]) {
-        entities.push({ label: 'Top Riskiest Nodes', value: entityTypes.NODE });
+        entities.push({
+            label: `Top Riskiest Node${showVmUpdates ? ' Vulnerabilities' : ''}`,
+            value: showVmUpdates ? entityTypes.NODE_CVE : entityTypes.NODE,
+        });
     }
     return entities;
 };
@@ -305,51 +279,35 @@ const getEntitiesByContext = (entityContext) => {
 const TopRiskiestEntities = ({ entityContext, limit }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
-    const entities = getEntitiesByContext(entityContext);
+    const entities = getEntitiesByContext(entityContext, showVmUpdates);
     const [selectedEntity, setSelectedEntity] = useState(entities[0].value);
 
     function onEntityChange(value) {
         setSelectedEntity(value);
     }
 
-    function getSelectedEntity() {
-        if (!showVmUpdates) {
-            return selectedEntity;
-        }
-        switch (selectedEntity) {
-            case entityTypes.IMAGE:
-            default:
-                return entityTypes.IMAGE_CVE;
-        }
-    }
-
     const {
         loading,
         data = {},
         error,
-    } = useQuery(
-        showVmUpdates
-            ? getQueryBySelectedEntityVMUpdates(selectedEntity)
-            : getQueryBySelectedEntity(selectedEntity),
-        {
-            variables: {
-                query: queryService.entityContextToQueryString(entityContext),
-                pagination: queryService.getPagination(
-                    {
-                        id: entityPriorityField[selectedEntity],
-                        desc: false,
-                    },
-                    WIDGET_PAGINATION_START_OFFSET,
-                    limit
-                ),
-            },
-        }
-    );
+    } = useQuery(getQueryBySelectedEntity(selectedEntity), {
+        variables: {
+            query: queryService.entityContextToQueryString(entityContext),
+            pagination: queryService.getPagination(
+                {
+                    id: entityPriorityField[selectedEntity],
+                    desc: false,
+                },
+                WIDGET_PAGINATION_START_OFFSET,
+                limit
+            ),
+        },
+    });
 
     const workflowState = useContext(workflowStateContext);
 
     const viewAllURL = workflowState
-        .pushList(showVmUpdates ? getSelectedEntity() : selectedEntity)
+        .pushList(getSelectedEntity(selectedEntity, showVmUpdates))
         .setSort([{ id: entitySortFieldsMap[selectedEntity].PRIORITY, desc: false }])
         .toUrl();
 
@@ -369,7 +327,7 @@ const TopRiskiestEntities = ({ entityContext, limit }) => {
                 <div className="flex mx-auto items-center">No scanner setup for this registry.</div>
             );
         } else {
-            const processedData = processData(data, selectedEntity, workflowState, limit);
+            const processedData = processData(data, selectedEntity, workflowState, showVmUpdates);
 
             if (processedData.length) {
                 content = (
