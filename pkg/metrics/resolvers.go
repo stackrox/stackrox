@@ -30,7 +30,7 @@ const (
 	Pods
 	ContainerInstances
 	ImageCVEs
-	NodeCVEs
-	ClusterCVEs
-	NodeComponents
+	// NodeCVEs
+	// ClusterCVEs
+	// NodeComponents
 )
