@@ -169,8 +169,10 @@ function validateFixableTabLinksInEntityPage(parentUrl) {
         if (fixableCount > 0) {
             cy.get(vulnManagementSelectors.tableBodyColumn).eq(0).click({ force: true });
             if (!parentUrl.includes('components')) {
-                cy.get(vulnManagementSelectors.tabButton, { timeout: 6000 })
-                    .contains('Fixable CVEs')
+                cy.get(`${vulnManagementSelectors.tabButton}:contains("Fixable")`, {
+                    timeout: 6000,
+                })
+                    .first()
                     .click();
             }
             cy.get(vulnManagementSelectors.getSidePanelTabHeader('fixable')).contains(fixableCount);
