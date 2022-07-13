@@ -57,7 +57,7 @@ message Node {
     oneof set_fixable {
         int32 fixable_cves                 = 21 [(gogoproto.moretags) = "search:\"Fixable CVE Count,store,hidden\""];
     }
-    int64 priority                         = 22;
+    int64 priority                         = 22 [(gogoproto.moretags) = 'search:"Node Risk Priority,hidden"'];
     float risk_score                       = 23 [(gogoproto.moretags) = "search:\"Node Risk Score,hidden\""];
     oneof set_top_cvss {
         float top_cvss                     = 24 [(gogoproto.moretags) = "search:\"Node Top CVSS,store\""];
