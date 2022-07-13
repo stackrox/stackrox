@@ -3,6 +3,9 @@ package resolvers
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -24,8 +27,41 @@ type PlottedNodeVulnerabilitiesResolver struct {
 }
 
 func newPlottedNodeVulnerabilitiesResolver(ctx context.Context, root *Resolver, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
-	query := withNodeCveTypeFiltering(args.String())
-	allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, root, RawQuery{Query: &query})
+	if !features.PostgresDatastore.Enabled() {
+		q := withNodeCveTypeFiltering(args.String())
+		allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, root, RawQuery{Query: &q})
+		if err != nil {
+			return nil, err
+		}
+
+		return &PlottedNodeVulnerabilitiesResolver{
+			root:    root,
+			all:     allCveIds,
+			fixable: fixableCount,
+		}, nil
+	}
+
+	query, err := getPlottedVulnsV1Query(args)
+	if err != nil {
+		return nil, err
+	}
+	logErrorOnQueryContainingField(query, search.Fixable, "PlottedNodeVulnerabilities")
+
+	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	allCves, err := vulnLoader.FromQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	allCveIds := make([]string, 0, len(allCves))
+	for _, cve := range allCves {
+		allCveIds = append(allCveIds, cve.GetId())
+	}
+
+	fixableCount, err := vulnLoader.CountFromQuery(ctx,
+		search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +69,7 @@ func newPlottedNodeVulnerabilitiesResolver(ctx context.Context, root *Resolver, 
 	return &PlottedNodeVulnerabilitiesResolver{
 		root:    root,
 		all:     allCveIds,
-		fixable: fixableCount,
+		fixable: int(fixableCount),
 	}, nil
 }
 
@@ -48,15 +84,10 @@ func (pvr *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounter(_ c
 }
 
 // NodeVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
-func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
-	vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, args)
-	if err != nil {
-		return nil, err
+func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args PaginationWrapper) ([]NodeVulnerabilityResolver, error) {
+	if len(pvr.all) == 0 {
+		return nil, nil
 	}
-
-	ret := make([]NodeVulnerabilityResolver, 0, len(vulnResolvers))
-	for _, resolver := range vulnResolvers {
-		ret = append(ret, resolver)
-	}
-	return ret, nil
+	q := search.NewQueryBuilder().AddExactMatches(search.CVEID, pvr.all...).Query()
+	return pvr.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &q, Pagination: args.Pagination})
 }
