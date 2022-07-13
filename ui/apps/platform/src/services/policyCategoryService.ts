@@ -16,6 +16,9 @@ export function getPolicyCategory(id: string): Promise<PolicyCategory> {
         .then((response) => response.data);
 }
 
+/*
+ * Although the request supports a search query string, UI does not need it.
+ */
 export function getPolicyCategories(): Promise<PolicyCategory[]> {
     return axios
         .get<{ categories: PolicyCategory[] }>(policyCategoriesUrl)
