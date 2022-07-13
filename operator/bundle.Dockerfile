@@ -21,7 +21,6 @@ LABEL operators.operatorframework.io.test.config.v1=tests/scorecard/
 LABEL com.redhat.openshift.versions="v4.6"
 LABEL com.redhat.delivery.operator.bundle=true
 
-# Use post-processed files (instead of the original ones).
-COPY build/bundle/manifests /manifests/
-COPY build/bundle/metadata /metadata/
-COPY build/bundle/tests/scorecard /tests/scorecard/
+COPY bundle/manifests /manifests/
+COPY bundle/metadata /metadata/
+COPY bundle/tests/scorecard /tests/scorecard/
