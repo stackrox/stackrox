@@ -42,11 +42,6 @@ const setup = async () => {
             <ScopeBar />
         </MockedProvider>
     );
-    // Allows the Apollo MockedProvider to transition from the 'loading' state to a state
-    // where data is available. This prevents `act()` errors that occur due to the ScopeBar
-    // component being rendered during `loading` and click events being dispatched before
-    // the data is ready.
-    await waitFor(() => new Promise((res) => setTimeout(res, 0)));
     return { user, utils };
 };
 
