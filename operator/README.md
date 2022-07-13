@@ -229,17 +229,16 @@ $ kubectl delete ns bundle-test
 
 ### Launch the Operator with OLM and Index
 
-Note this assumes OLM is already in place.
-
-So far only tested on an OpenShift cluster.
+Note this assumes OLM is already in place which is the case for OpenShift clusters.  
+If you're launching on non-OpenShift Kubernetes, first deploy OLM with `make operator-sdk && bin/operator-sdk-1.14.0 olm install`.
 
 ```bash
-./hack/olm-operator-install.sh index-test $(make --quiet image-tag-base) $(make --quiet tag)
+# Deploy
+# TODO(ROX-10967): drop branding here once operator is available from quay.io/stackrox-io
+ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm TEST_NAMESPACE=index-test
 
-# undeploy
-
-kubectl delete index-test
-
+# Undeploy
+kubectl delete ns index-test
 ```
 
 ## Extending the StackRox Custom Resource Definitions
