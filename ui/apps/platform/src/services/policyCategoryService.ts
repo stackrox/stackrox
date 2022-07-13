@@ -32,14 +32,9 @@ export function postPolicyCategory(policyCategory: PolicyCategory): Promise<Poli
         .then((response) => response.data);
 }
 
-/*
- * Because the response is empty:
- * For success: UI is responsible to update the name property of the renamed policyCategory object.
- * For failure: UI is responsible not to update the name property of the policyCategory object.
- */
-export function renamePolicyCategory(id: string, newCategoryName: string): Promise<Empty> {
+export function renamePolicyCategory(id: string, newCategoryName: string): Promise<PolicyCategory> {
     return axios
-        .put<Empty>(`${policyCategoriesUrl}/${id}`, { newCategoryName })
+        .put<PolicyCategory>(policyCategoriesUrl, { id, newCategoryName })
         .then((response) => response.data);
 }
 
