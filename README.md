@@ -184,7 +184,7 @@ After a few minutes, all resources should be deployed.
 
  **Credentials for the 'admin' user can be found in the `./deploy/k8s/central-deploy/password` file.**
 
-**Note:** While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted and you will not be able to alter the secret at runtime. If you loose the password, you will have to redeploy central.
+**Note:** While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted and you will not be able to alter the secret at runtime. If you lose the password, you will have to redeploy central.
 
 </details>
 
