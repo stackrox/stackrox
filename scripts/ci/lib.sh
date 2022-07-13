@@ -523,17 +523,16 @@ get_base_ref() {
             # presubmit, postsubmit and batch runs
             # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
             echo "${PULL_BASE_REF}"
-        elif [[ -n "${JOB_SPEC:-}" ]]; then
-            # periodics
-            # OpenShift CI adds 'extra_refs'
+        elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+            # periodics - CLONEREFS_OPTIONS exists in binary_build_commands and images.
             local base_ref
-            base_ref="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].base_ref')" || die "invalid JOB_SPEC yaml"
+            base_ref="$(jq -r <<<"${CLONEREFS_OPTIONS}" '.refs[0].base_ref')" || die "invalid CLONEREFS_OPTIONS yaml"
             if [[ "$base_ref" == "null" ]]; then
-                die "expect: base_ref in JOB_SEC.extra_refs[0]"
+                die "expect: base_ref in CLONEREFS_OPTIONS.refs[0]"
             fi
             echo "${base_ref}"
         else
-            die "Expect PULL_BASE_REF or JOB_SPEC"
+            die "Expect PULL_BASE_REF or CLONEREFS_OPTIONS"
         fi
     else
         die "unsupported"
@@ -550,19 +549,18 @@ get_repo_full_name() {
             # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
             [[ -n "${REPO_NAME:-}" ]] || die "expect: REPO_NAME"
             echo "${REPO_OWNER}/${REPO_NAME}"
-        elif [[ -n "${JOB_SPEC:-}" ]]; then
-            # periodics
-            # OpenShift CI adds 'extra_refs'
+        elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+            # periodics - CLONEREFS_OPTIONS exists in binary_build_commands and images.
             local org
             local repo
-            org="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].org')" || die "invalid JOB_SPEC yaml"
-            repo="$(jq -r <<<"${JOB_SPEC}" '.extra_refs[0].repo')" || die "invalid JOB_SPEC yaml"
+            org="$(jq -r <<<"${CLONEREFS_OPTIONS}" '.refs[0].org')" || die "invalid CLONEREFS_OPTIONS yaml"
+            repo="$(jq -r <<<"${CLONEREFS_OPTIONS}" '.refs[0].repo')" || die "invalid CLONEREFS_OPTIONS yaml"
             if [[ "$org" == "null" ]] || [[ "$repo" == "null" ]]; then
-                die "expect: org and repo in JOB_SEC.extra_refs[0]"
+                die "expect: org and repo in CLONEREFS_OPTIONS.refs[0]"
             fi
             echo "${org}/${repo}"
         else
-            die "Expect REPO_OWNER/NAME or JOB_SPEC"
+            die "Expect REPO_OWNER/NAME or CLONEREFS_OPTIONS"
         fi
     else
         die "unsupported"
@@ -827,7 +825,7 @@ openshift_ci_mods() {
     export CI=true
     export OPENSHIFT_CI=true
 
-    if is_in_PR_context; then
+    if is_in_PR_context && ! is_openshift_CI_rehearse_PR; then
         local sha
         sha=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].sha') || echo "WARNING: Cannot find pull sha"
         if [[ -n "${sha:-}" ]] && [[ "$sha" != "null" ]]; then
