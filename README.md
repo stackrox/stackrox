@@ -246,7 +246,7 @@ Then go to https://localhost:8000/ in your web browser.
 
 **Password (Helm)**   = The password is in the generated `stackrox-admin-password.txt` folder. 
 
-**Password (Script)** = The password will be located in the `/deploy` folder for the script install.
+**Password (Script)** = The password will be located in the `/deploy/<orchestrator>/central-deploy/password.txt` folder for the script install.
 
 </details>
 
