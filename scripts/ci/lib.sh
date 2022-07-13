@@ -1049,7 +1049,7 @@ send_slack_notice_for_failures_on_merge() {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Commit:* <$commit_url|$commit_msg>\n*Author:* $author\n*Log:* $log_url"
+                "text": "*Commit:* <$commit_url|$commit_msg>\n*Repo:* $repo\n*Author:* $author\n*Log:* $log_url"
             }
         },
 		{
