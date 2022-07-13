@@ -1,3 +1,4 @@
+{{ $inMigration := ne (index . "Migration") nil}}
 {{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
 {{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
 {{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
@@ -8,8 +9,6 @@
 
 {{- $ := . }}
 
-package postgres
-
 import (
     "context"
     "strings"
@@ -19,9 +18,13 @@ import (
     "github.com/jackc/pgx/v4"
     "github.com/jackc/pgx/v4/pgxpool"
     "github.com/pkg/errors"
+    {{- if $inMigration}}
+    "github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
+    {{- else}}
     "github.com/stackrox/rox/central/metrics"
-    pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     "github.com/stackrox/rox/central/role/resources"
+    {{- end}}
+    pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/auth/permissions"
@@ -45,7 +48,7 @@ var (
     log = logging.LoggerForModule()
     schema = {{ template "schemaVar" .Schema}}
     {{ if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) -}}
-    targetResource = resources.{{.Type | storageToResource}}
+    targetResource = {{if $inMigration}}permissions.ResourceMetadata{}{{else}}resources.{{.Type | storageToResource}}{{end}}
     {{- end }}
 )
 

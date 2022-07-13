@@ -24,7 +24,11 @@ type TestPostgres struct {
 	database string
 }
 
-func createDatabase(t testing.TB, database string) {
+func CreateADatabaseForT(t testing.TB) string {
+	suffix, err := random.GenerateString(5, random.AlphanumericCharacters)
+	require.NoError(t, err)
+
+	database := strings.ToLower(strings.ReplaceAll(t.Name(), "/", "_") + suffix)
 	// Bootstrap the test database by connecting to the default postgres database and running create
 	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName("postgres")
 	db, err := sql.Open("postgres", sourceWithPostgresDatabase)
@@ -33,9 +37,10 @@ func createDatabase(t testing.TB, database string) {
 	_, err = db.Exec("CREATE DATABASE " + database)
 	require.NoError(t, err)
 	require.NoError(t, db.Close())
+	return database
 }
 
-func dropDatabase(t testing.TB, database string) {
+func DropDatabase(t testing.TB, database string) {
 	// Bootstrap the test database by connecting to the default postgres database and running create
 	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName("postgres")
 	db, err := sql.Open("postgres", sourceWithPostgresDatabase)
@@ -48,13 +53,8 @@ func dropDatabase(t testing.TB, database string) {
 
 // ForT creates and returns a Postgres for the test
 func ForT(t testing.TB) *TestPostgres {
-	suffix, err := random.GenerateString(5, random.AlphanumericCharacters)
-	require.NoError(t, err)
-
-	database := strings.ToLower(t.Name() + suffix)
-
-	// Bootstrap the test database by connecting to the default postgres database and running create
-	createDatabase(t, database)
+	// Bootstrap a test database
+	database := CreateADatabaseForT(t)
 
 	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(database)
 	ctx := context.Background()
@@ -80,7 +80,7 @@ func (tp *TestPostgres) Teardown(t testing.TB) {
 		return
 	}
 	tp.Close()
-	dropDatabase(t, tp.database)
+	DropDatabase(t, tp.database)
 }
 
 // GetConnectionString returns a connection string for integration testing with Postgres
@@ -90,10 +90,20 @@ func GetConnectionString(_ *testing.T) string {
 
 // OpenGormDB opens a Gorm DB to the Postgres DB
 func OpenGormDB(t testing.TB, source string) *gorm.DB {
-	return conn.OpenGormDB(t, source)
+	return conn.OpenGormDB(t, source, false)
+}
+
+// OpenGormDBWithDisabledConstraints
+func OpenGormDBWithDisabledConstraints(t testing.TB, source string) *gorm.DB {
+	return conn.OpenGormDB(t, source, true)
 }
 
 // CloseGormDB closes connection to a Gorm DB
 func CloseGormDB(t testing.TB, db *gorm.DB) {
 	conn.CloseGormDB(t, db)
+}
+
+// CleanUpDB removes public schema together with all tables
+func CleanUpDB(ctx context.Context, t *testing.T, pool *pgxpool.Pool) {
+	conn.CleanUpDB(ctx, t, pool)
 }

@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 SCRIPT="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "${BASH_SOURCE[0]}")"
 
-go run "$(dirname "${SCRIPT}")/rocksdb-bindings" "$@"
+go run "$(dirname "${SCRIPT}")/rocksdb-bindings" "$@" --migration-root "$(dirname "${SCRIPT}")/../../migrator/migrations"

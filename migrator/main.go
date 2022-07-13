@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/compact"
@@ -72,7 +73,7 @@ func run() error {
 
 	if features.PostgresDatastore.Enabled() {
 		var gormDB *gorm.DB
-		gormDB, err = postgreshelper.Load(conf)
+		gormDB, _, err = postgreshelper.Load(conf)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to postgres DB")
 		}
@@ -114,17 +115,20 @@ func upgrade(conf *config.Config) error {
 	}()
 
 	var gormDB *gorm.DB
+	var postgresDB *pgxpool.Pool
 	if features.PostgresDatastore.Enabled() {
-		gormDB, err = postgreshelper.Load(conf)
+		gormDB, postgresDB, err = postgreshelper.Load(conf)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to postgres DB")
 		}
 	}
 
 	err = runner.Run(&types.Databases{
-		BoltDB:  boltDB,
-		RocksDB: rocksdb,
-		GormDB:  gormDB,
+		BoltDB:     boltDB,
+		RocksDB:    rocksdb.DB,
+		PkgRocksDB: rocksdb,
+		GormDB:     gormDB,
+		PostgresDB: postgresDB,
 	})
 	if err != nil {
 		return errors.Wrap(err, "migrations failed")
