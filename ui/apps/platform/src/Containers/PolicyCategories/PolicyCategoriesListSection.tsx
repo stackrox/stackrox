@@ -15,7 +15,6 @@ type PolicyCategoriesListSectionProps = {
 };
 
 function PolicyCategoriesListSection({ policyCategories }: PolicyCategoriesListSectionProps) {
-    // const [selectedCategory, setSelectedCategory] = useState('');
     // TODO: to remove once proto is in
     const allPolicyCategories = policyCategories.map((category) => ({
         id: category,
@@ -24,14 +23,16 @@ function PolicyCategoriesListSection({ policyCategories }: PolicyCategoriesListS
     }));
     const customPolicyCategories = allPolicyCategories.filter(({ isDefault }) => !isDefault);
     const defaultPolicyCategories = allPolicyCategories.filter(({ isDefault }) => isDefault);
-    //
+
     const [currentPolicyCategories, setCurrentPolicyCategories] = useState(allPolicyCategories);
     const [filterTerm, setFilterTerm] = useState('');
     const [filteredCategories, setFilteredCategories] = useState(currentPolicyCategories);
 
     useEffect(() => {
         setFilteredCategories(
-            currentPolicyCategories.filter(({ name }) => name.includes(filterTerm))
+            currentPolicyCategories.filter(({ name }) =>
+                name.toLowerCase().includes(filterTerm.toLowerCase())
+            )
         );
     }, [filterTerm, currentPolicyCategories]);
 

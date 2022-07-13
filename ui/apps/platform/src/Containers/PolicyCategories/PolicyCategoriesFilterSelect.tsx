@@ -9,13 +9,15 @@ type PolicyCategoriesFilterSelectProps = {
     customPolicyCategories: PolicyCategory[];
 };
 
+type CategoryFilter = 'Default categories' | 'Custom categories';
+
 function PolicyCategoriesFilterSelect({
     setCurrentPolicyCategories,
     defaultPolicyCategories,
     customPolicyCategories,
 }: PolicyCategoriesFilterSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedFilters, setSelectedFilters] = useState<string[]>([
+    const [selectedFilters, setSelectedFilters] = useState<CategoryFilter[]>([
         'Default categories',
         'Custom categories',
     ]);
