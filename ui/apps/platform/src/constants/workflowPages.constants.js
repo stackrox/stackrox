@@ -13,6 +13,8 @@ export const defaultCountKeyMap = {
     [entityTypes.NODE_COMPONENT]: 'componentCount: nodeComponentCount',
     [entityTypes.IMAGE_COMPONENT]: 'componentCount: imageComponentCount',
     [entityTypes.CVE]: 'vulnCount',
+    [entityTypes.NODE_CVE]: 'vulnCount',
+    [entityTypes.IMAGE_CVE]: 'vulnCount',
     [entityTypes.K8S_CVE]: 'vulnCount: k8sVulnCount',
     [entityTypes.DEPLOYMENT]: 'deploymentCount',
     [entityTypes.NAMESPACE]: 'namespaceCount',
