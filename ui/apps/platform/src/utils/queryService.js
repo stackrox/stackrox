@@ -111,6 +111,18 @@ function getListFieldName(entityType, listType, useCase) {
         }
     }
 
+    if (listType === entityTypes.IMAGE_CVE) {
+        return 'imageVulnerabilities';
+    }
+
+    if (listType === entityTypes.NODE_CVE) {
+        return 'nodeVulnerabilities';
+    }
+
+    if (listType === entityTypes.CLUSTER_CVE) {
+        return 'clusterVulnerabilities';
+    }
+
     if (entityType === entityTypes.IMAGE) {
         if (listType === entityTypes.CVE) {
             return 'vulns';
@@ -204,6 +216,10 @@ function getFragmentName(entityType, listType) {
                 return 'imageCVEFields';
             }
             return 'cveFields';
+        case entityTypes.IMAGE_CVE:
+            return 'imageCVEFields';
+        case entityTypes.NODE_CVE:
+            return 'nodeCVEFields';
         case entityTypes.CLUSTER_CVE:
             return 'clusterCVEFields';
         case entityTypes.NODE_CVE:

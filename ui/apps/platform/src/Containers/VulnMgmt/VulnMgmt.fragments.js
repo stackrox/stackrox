@@ -44,6 +44,94 @@ export const CLUSTER_LIST_FRAGMENT = gql`
     }
 `;
 
+export const CLUSTER_LIST_FRAGMENT_UPDATED = gql`
+    fragment clusterFields on Cluster {
+        id
+        name
+        imageVulnerabilityCounter {
+            all {
+                fixable
+                total
+            }
+            critical {
+                fixable
+                total
+            }
+            important {
+                fixable
+                total
+            }
+            moderate {
+                fixable
+                total
+            }
+            low {
+                fixable
+                total
+            }
+        }
+        nodeVulnerabilityCounter {
+            all {
+                fixable
+                total
+            }
+            critical {
+                fixable
+                total
+            }
+            important {
+                fixable
+                total
+            }
+            moderate {
+                fixable
+                total
+            }
+            low {
+                fixable
+                total
+            }
+        }
+        clusterVulnerabilityCounter {
+            all {
+                fixable
+                total
+            }
+            critical {
+                fixable
+                total
+            }
+            important {
+                fixable
+                total
+            }
+            moderate {
+                fixable
+                total
+            }
+            low {
+                fixable
+                total
+            }
+        }
+        status {
+            orchestratorMetadata {
+                version
+            }
+        }
+        # createdAt
+        namespaceCount
+        deploymentCount
+        nodeCount
+        # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        policyStatus(query: $policyQuery) {
+            status
+        }
+        latestViolation(query: $policyQuery)
+        priority
+    }
+`;
+
 export const VULN_CVE_ONLY_FRAGMENT = gql`
     fragment cveFields on EmbeddedVulnerability {
         id
