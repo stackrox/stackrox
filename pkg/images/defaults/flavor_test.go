@@ -84,6 +84,43 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 	}
 }
 
+func (s *imageFlavorTestSuite) TestCheckChartRepo() {
+	oss_repo_url := "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/"
+	oss_repo_icon := "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/StackRox_icon.png"
+	acs_repo_url := "https://mirror.openshift.com/pub/rhacs/charts"
+	acs_repo_icon := "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png"
+
+	testCases := map[string]struct {
+		isRelease        bool
+		expectedRepoURL  string
+		expectedRepoIcon string
+	}{
+		"development_build": {
+			isRelease:        false,
+			expectedRepoURL:  acs_repo_url,
+			expectedRepoIcon: acs_repo_icon,
+		},
+		"rhacs": {
+			isRelease:        true,
+			expectedRepoURL:  acs_repo_url,
+			expectedRepoIcon: acs_repo_icon,
+		},
+		"opensource": {
+			isRelease:        true,
+			expectedRepoURL:  oss_repo_url,
+			expectedRepoIcon: oss_repo_icon,
+		},
+	}
+
+	for flavorName, testCase := range testCases {
+		s.Run(flavorName, func() {
+			flavor, _ := GetImageFlavorByName(flavorName, testCase.isRelease)
+			s.Equal(testCase.expectedRepoURL, flavor.ChartRepo.URL)
+			s.Equal(testCase.expectedRepoIcon, flavor.ChartRepo.IconURL)
+		})
+	}
+}
+
 func (s *imageFlavorTestSuite) TestOpenSourceImageFlavorDevReleaseTags() {
 	f := OpenSourceImageFlavor()
 	if buildinfo.ReleaseBuild {
