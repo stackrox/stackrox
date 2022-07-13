@@ -35,14 +35,14 @@ function create_pull_secret() {
 
 function apply_operator_manifests() {
   log "Applying operator manifests..."
-  local -r image_registry="${IMAGE_TAG_BASE%/*}"
   local -r operator_ns="$1"
   local -r index_version="$2"
   local -r operator_version="$3"
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
-    `# TODO(ROX-7740): Remove the following two once we have a single dev+CI repo.` \
-    IMAGE_TAG_BASE="${IMAGE_TAG_BASE}" IMAGE_REGISTRY="${image_registry}" \
+    IMAGE_TAG_BASE="${IMAGE_TAG_BASE}" \
+    `# TODO: IMAGE_REGISTRY is provided for compatibility with versions 71 and older. Remove after we release 72.` \
+    IMAGE_REGISTRY="${IMAGE_TAG_BASE%/*}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | kubectl -n "${operator_ns}" apply -f -
 }

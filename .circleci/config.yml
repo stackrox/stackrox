@@ -3214,9 +3214,6 @@ jobs:
     executor: custom
     resource_class: small
     environment:
-    - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
-    - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
-    - IMAGE_REPO: "quay.io/rhacs-eng"
     - IMAGE_TAG_BASE: "quay.io/rhacs-eng/stackrox-operator"
 
     steps:
@@ -3285,9 +3282,6 @@ jobs:
     executor: custom
     resource_class: small
     environment:
-    - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
-    - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
-    - IMAGE_REPO: "quay.io/rhacs-eng"
     - IMAGE_TAG_BASE: "quay.io/rhacs-eng/stackrox-operator"
 
     steps:
