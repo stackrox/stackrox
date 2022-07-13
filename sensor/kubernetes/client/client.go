@@ -89,14 +89,9 @@ func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
 	return client
 }
 
-// MustCreateInterface creates a client interface for both Kubernetes and Openshift clients
-func MustCreateInterface() Interface {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		log.Panicf("Obtaining in-cluster Kubernetes config: %v", err)
-	}
+// MustCreateInterfaceFromRest creates a client interface using a rest config as a parameter
+func MustCreateInterfaceFromRest(config *rest.Config) Interface {
 	config.ContentType = clientContentType
-
 	return &clientSet{
 		dynamic:         mustCreateDynamicClient(config),
 		k8s:             mustCreateK8sClient(config),
@@ -104,6 +99,15 @@ func MustCreateInterface() Interface {
 		openshiftConfig: mustCreateOpenshiftConfigClient(config),
 		openshiftRoute:  mustCreateOpenshiftRouteClient(config),
 	}
+}
+
+// MustCreateInterface creates a client interface for both Kubernetes and Openshift clients
+func MustCreateInterface() Interface {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		log.Panicf("Obtaining in-cluster Kubernetes config: %v", err)
+	}
+	return MustCreateInterfaceFromRest(config)
 }
 
 func (c *clientSet) Kubernetes() kubernetes.Interface {
