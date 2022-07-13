@@ -445,7 +445,7 @@ func (resolver *nodeResolver) getNodeQuery() *v1.Query {
 
 // Vulns returns all of the vulnerabilities in the node.
 func (resolver *nodeResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Vulnerabilities")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Vulns")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -520,6 +520,7 @@ func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args
 
 // PlottedVulns returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *nodeResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "PlottedVulns")
 	if features.PostgresDatastore.Enabled() {
 		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedNodeVulnerabilities.")
 	}
