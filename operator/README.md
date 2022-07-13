@@ -170,7 +170,7 @@ Note that unlike the `make deploy` route, deployment with OLM does not require c
 $ make operator-sdk
 
 # 1. Install OLM.
-$ bin/operator-sdk-1.9.0 olm install
+$ bin/operator-sdk-1.14.0 olm install
 
 # 2. Create a namespace for testing bundle.
 $ kubectl create ns bundle-test
@@ -189,7 +189,7 @@ $ kubectl -n bundle-test patch serviceaccount default -p '{"imagePullSecrets": [
 # Use one-liner above.
 
 # 4. Run bundle.
-$ bin/operator-sdk-1.9.0 run bundle \
+$ bin/operator-sdk-1.14.0 run bundle \
   docker.io/stackrox/stackrox-operator-bundle:v$(make --quiet tag) \
   --pull-secret-name my-opm-image-pull-secrets \
   --service-account default \
@@ -223,7 +223,7 @@ kubectl -n bundle-test delete catalogsources.operators.coreos.com rhacs-operator
 Also, you can blow everything away with
 
 ```bash
-$ bin/operator-sdk-1.9.0 olm uninstall
+$ bin/operator-sdk-1.14.0 olm uninstall
 $ kubectl delete ns bundle-test
 ```
 
@@ -234,7 +234,7 @@ If you're launching on non-OpenShift Kubernetes, first deploy OLM with `make ope
 
 ```bash
 # Deploy
-# TODO(ROX-10967): drop branding here once operator is available from quay.io/stackrox-io
+# TODO(ROX-11744): drop branding here once operator is available from quay.io/stackrox-io
 ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm TEST_NAMESPACE=index-test
 
 # Undeploy
