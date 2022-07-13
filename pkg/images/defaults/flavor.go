@@ -61,7 +61,8 @@ var (
 
 // ChartRepo contains information about where the Helm charts are published.
 type ChartRepo struct {
-	URL string
+	URL     string
+	IconURL string
 }
 
 // ImagePullSecrets represents the image pull secret defaults.
@@ -121,7 +122,8 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		ScannerDBSlimImageName: "scanner-db-slim",
 
 		ChartRepo: ChartRepo{
-			URL: "https://charts.stackrox.io",
+			URL:     "https://mirror.openshift.com/pub/rhacs/charts",
+			IconURL: "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
@@ -153,7 +155,8 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 		ScannerDBSlimImageName: "scanner-db-slim",
 
 		ChartRepo: ChartRepo{
-			URL: "https://charts.stackrox.io",
+			URL:     "https://charts.stackrox.io",
+			IconURL: "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: false,
@@ -186,7 +189,8 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel8",
 
 		ChartRepo: ChartRepo{
-			URL: "https://mirror.openshift.com/pub/rhacs/charts",
+			URL:     "https://mirror.openshift.com/pub/rhacs/charts",
+			IconURL: "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
@@ -231,7 +235,8 @@ func OpenSourceImageFlavor() ImageFlavor {
 		ScannerDBSlimImageName: "scanner-db-slim",
 
 		ChartRepo: ChartRepo{
-			URL: "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/",
+			URL:     "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/",
+			IconURL: "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/StackRox_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
