@@ -11,7 +11,7 @@ from clusters import GKECluster
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
 # use -rcd image for stackrox/main
-os.environ["MAIN_IMAGE_TAG"] = os.environ["STACKROX_BUILD_TAG"] + "-tag"
+os.environ["MAIN_IMAGE_TAG"] = os.environ["STACKROX_BUILD_TAG"] + "-rcd"
 os.environ["CENTRAL_DB_IMAGE_TAG"] = os.environ["STACKROX_BUILD_TAG"]
 os.environ["USE_LOCAL_ROXCTL"] = "true"
 
