@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestInitBundleMetaMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var initBundleMetas []*storage.InitBundleMeta
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var initBundleMetas []*storage.InitBundleMeta
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		initBundleMeta := &storage.InitBundleMeta{}
 		s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		initBundleMetas = append(initBundleMetas, initBundleMeta)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, initBundleMetas))
 
 	// Move

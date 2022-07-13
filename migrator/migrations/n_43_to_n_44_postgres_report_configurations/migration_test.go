@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestReportConfigurationMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var reportConfigurations []*storage.ReportConfiguration
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var reportConfigurations []*storage.ReportConfiguration
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		reportConfiguration := &storage.ReportConfiguration{}
 		s.NoError(testutils.FullInit(reportConfiguration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		reportConfigurations = append(reportConfigurations, reportConfiguration)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, reportConfigurations))
 
 	// Move

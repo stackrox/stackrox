@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestSecretMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var secrets []*storage.Secret
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var secrets []*storage.Secret
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		secret := &storage.Secret{}
 		s.NoError(testutils.FullInit(secret, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		secrets = append(secrets, secret)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, secrets))
 
 	// Move

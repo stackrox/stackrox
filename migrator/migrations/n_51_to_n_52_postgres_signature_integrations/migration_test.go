@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestSignatureIntegrationMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var signatureIntegrations []*storage.SignatureIntegration
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var signatureIntegrations []*storage.SignatureIntegration
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		signatureIntegration := &storage.SignatureIntegration{}
 		s.NoError(testutils.FullInit(signatureIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		signatureIntegrations = append(signatureIntegrations, signatureIntegration)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, signatureIntegrations))
 
 	// Move

@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestNetworkBaselineMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var networkBaselines []*storage.NetworkBaseline
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var networkBaselines []*storage.NetworkBaseline
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		networkBaseline := &storage.NetworkBaseline{}
 		s.NoError(testutils.FullInit(networkBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkBaselines = append(networkBaselines, networkBaseline)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, networkBaselines))
 
 	// Move

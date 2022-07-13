@@ -66,9 +66,11 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestNetworkPolicyMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
+	legacyStore := legacy.New(s.legacyDB)
+
 	// Prepare data and write to legacy DB
 	var networkPolicys []*storage.NetworkPolicy
-	legacyStore := legacy.New(s.legacyDB)
+
 	for i := 0; i < 200; i++ {
 		networkPolicy := &storage.NetworkPolicy{}
 		s.NoError(testutils.FullInit(networkPolicy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

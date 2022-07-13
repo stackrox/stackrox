@@ -66,9 +66,11 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestExternalBackupMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
+	legacyStore := legacy.New(s.legacyDB)
+
 	// Prepare data and write to legacy DB
 	var externalBackups []*storage.ExternalBackup
-	legacyStore := legacy.New(s.legacyDB)
+
 	for i := 0; i < 200; i++ {
 		externalBackup := &storage.ExternalBackup{}
 		s.NoError(testutils.FullInit(externalBackup, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

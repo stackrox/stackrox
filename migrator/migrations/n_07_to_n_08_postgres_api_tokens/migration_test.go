@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestTokenMetadataMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var tokenMetadatas []*storage.TokenMetadata
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var tokenMetadatas []*storage.TokenMetadata
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		tokenMetadata := &storage.TokenMetadata{}
 		s.NoError(testutils.FullInit(tokenMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		tokenMetadatas = append(tokenMetadatas, tokenMetadata)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, tokenMetadatas))
 
 	// Move

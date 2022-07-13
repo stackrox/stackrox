@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestIntegrationHealthMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var integrationHealths []*storage.IntegrationHealth
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var integrationHealths []*storage.IntegrationHealth
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		integrationHealth := &storage.IntegrationHealth{}
 		s.NoError(testutils.FullInit(integrationHealth, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		integrationHealths = append(integrationHealths, integrationHealth)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, integrationHealths))
 
 	// Move

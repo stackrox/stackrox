@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestServiceAccountMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var serviceAccounts []*storage.ServiceAccount
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var serviceAccounts []*storage.ServiceAccount
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		serviceAccount := &storage.ServiceAccount{}
 		s.NoError(testutils.FullInit(serviceAccount, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		serviceAccounts = append(serviceAccounts, serviceAccount)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, serviceAccounts))
 
 	// Move

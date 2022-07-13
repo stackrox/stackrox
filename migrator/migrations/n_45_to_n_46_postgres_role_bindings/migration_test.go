@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestK8SRoleBindingMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var k8SRoleBindings []*storage.K8SRoleBinding
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var k8SRoleBindings []*storage.K8SRoleBinding
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		k8SRoleBinding := &storage.K8SRoleBinding{}
 		s.NoError(testutils.FullInit(k8SRoleBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		k8SRoleBindings = append(k8SRoleBindings, k8SRoleBinding)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, k8SRoleBindings))
 
 	// Move

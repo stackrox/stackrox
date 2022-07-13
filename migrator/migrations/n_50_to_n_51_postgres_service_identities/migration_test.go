@@ -66,9 +66,11 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestServiceIdentityMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
+	legacyStore := legacy.New(s.legacyDB)
+
 	// Prepare data and write to legacy DB
 	var serviceIdentitys []*storage.ServiceIdentity
-	legacyStore := legacy.New(s.legacyDB)
+
 	for i := 0; i < 200; i++ {
 		serviceIdentity := &storage.ServiceIdentity{}
 		s.NoError(testutils.FullInit(serviceIdentity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

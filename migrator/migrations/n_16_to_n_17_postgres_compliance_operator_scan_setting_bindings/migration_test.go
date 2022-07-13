@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestComplianceOperatorScanSettingBindingMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var complianceOperatorScanSettingBindings []*storage.ComplianceOperatorScanSettingBinding
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var complianceOperatorScanSettingBindings []*storage.ComplianceOperatorScanSettingBinding
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		complianceOperatorScanSettingBinding := &storage.ComplianceOperatorScanSettingBinding{}
 		s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorScanSettingBindings = append(complianceOperatorScanSettingBindings, complianceOperatorScanSettingBinding)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, complianceOperatorScanSettingBindings))
 
 	// Move

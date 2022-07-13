@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestComplianceStringsMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var complianceStringss []*storage.ComplianceStrings
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var complianceStringss []*storage.ComplianceStrings
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		complianceStrings := &storage.ComplianceStrings{}
 		s.NoError(testutils.FullInit(complianceStrings, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceStringss = append(complianceStringss, complianceStrings)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, complianceStringss))
 
 	// Move

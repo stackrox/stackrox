@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestSimpleAccessScopeMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var simpleAccessScopes []*storage.SimpleAccessScope
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var simpleAccessScopes []*storage.SimpleAccessScope
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		simpleAccessScope := &storage.SimpleAccessScope{}
 		s.NoError(testutils.FullInit(simpleAccessScope, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		simpleAccessScopes = append(simpleAccessScopes, simpleAccessScope)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, simpleAccessScopes))
 
 	// Move

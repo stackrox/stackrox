@@ -77,56 +77,52 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) Test{{.TrimmedType}}Migration() {
 	newStore := pgStore.New({{if .Migration.SingletonStore}}s.ctx, {{end}}s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
     {{- if .Migration.SingletonStore}}
     legacyStore := legacy.New(s.legacyDB)
+    {{- else if $dackbox}}
+    dacky, err := dackbox.NewRocksDBDackBox(s.legacyDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
+    s.NoError(err)
+    legacyStore := legacy.New(dacky, concurrency.NewKeyFence())
+    {{- else if $rocksDB}}
+	legacyStore, err := legacy.New(s.legacyDB)
+	s.NoError(err)
+	{{- else}}{{/* boltDB*/}}
+	legacyStore := legacy.New(s.legacyDB)
+	{{- end}}
+
+	// Prepare data and write to legacy DB
+    {{- if .Migration.SingletonStore}}
     {{$name}} := &{{.Type}}{}
     s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
     s.NoError(legacyStore.Upsert(s.ctx, {{$name}}))
+    {{- else}}{{/* non-singleton store*/}}
+    var {{$name}}s []*{{.Type}}
+    {{- if $rocksDB}}
+    batchSize = 48
+    rocksWriteBatch := gorocksdb.NewWriteBatch()
+    defer rocksWriteBatch.Destroy()
+    {{- end}}
+
+    for i := 0; i < 200; i++ {
+        {{$name}} := &{{.Type}}{}
+        s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+        {{$name}}s = append({{$name}}s, {{$name}})
+        {{ if $boltDB}}s.NoError(legacyStore.Upsert(s.ctx, {{$name}})){{- end -}}
+    }
+
+    {{ if $rocksDB}}s.NoError(legacyStore.UpsertMany(s.ctx, {{$name}}s)){{- end}}
+    {{- end}}{{/* non-singleton store*/}}
+
     // Move
     s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+
     // Verify
+    {{- if .Migration.SingletonStore}}
     fetched, found, err := newStore.Get(s.ctx)
     s.NoError(err)
     s.True(found)
     s.Equal({{$name}}, fetched)
     {{- else}}
-	var {{$name}}s []*{{.Type}}
-	{{- if $rocksDB}}
-        {{- if $dackbox}}
-        dacky, err := dackbox.NewRocksDBDackBox(s.legacyDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
-        s.NoError(err)
-        legacyStore := legacy.New(dacky, concurrency.NewKeyFence())
-        {{- else}}
-	    legacyStore, err := legacy.New(s.legacyDB)
-	    s.NoError(err)
-	    {{- end}}
-	{{- end}}
-	{{- if $boltDB}}
-	legacyStore := legacy.New(s.legacyDB)
-	{{- end}}
-	{{- if $rocksDB}}
-	batchSize = 48
-	rocksWriteBatch := gorocksdb.NewWriteBatch()
-	defer rocksWriteBatch.Destroy()
-	{{- end}}
-	for i := 0; i < 200; i++ {
-		{{$name}} := &{{.Type}}{}
-		s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		{{$name}}s = append({{$name}}s, {{$name}})
-		{{- if not $rocksDB}}
-		s.NoError(legacyStore.Upsert(s.ctx, {{$name}}))
-		{{- end}}
-	}
-
-    {{- if $rocksDB}}
-    s.NoError(legacyStore.UpsertMany(s.ctx, {{$name}}s))
-	{{- end}}
-
-	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
-
-	// Verify
 	count, err := newStore.Count(s.ctx)
     s.NoError(err)
 	s.Equal(len({{$name}}s), count)

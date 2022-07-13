@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestWatchedImageMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var watchedImages []*storage.WatchedImage
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var watchedImages []*storage.WatchedImage
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		watchedImage := &storage.WatchedImage{}
 		s.NoError(testutils.FullInit(watchedImage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		watchedImages = append(watchedImages, watchedImage)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, watchedImages))
 
 	// Move

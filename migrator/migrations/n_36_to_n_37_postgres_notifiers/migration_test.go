@@ -66,9 +66,11 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestNotifierMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
+	legacyStore := legacy.New(s.legacyDB)
+
 	// Prepare data and write to legacy DB
 	var notifiers []*storage.Notifier
-	legacyStore := legacy.New(s.legacyDB)
+
 	for i := 0; i < 200; i++ {
 		notifier := &storage.Notifier{}
 		s.NoError(testutils.FullInit(notifier, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

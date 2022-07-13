@@ -65,19 +65,22 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestActiveComponentMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var activeComponents []*storage.ActiveComponent
 	dacky, err := dackbox.NewRocksDBDackBox(s.legacyDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	s.NoError(err)
 	legacyStore := legacy.New(dacky, concurrency.NewKeyFence())
+
+	// Prepare data and write to legacy DB
+	var activeComponents []*storage.ActiveComponent
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		activeComponent := &storage.ActiveComponent{}
 		s.NoError(testutils.FullInit(activeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		activeComponents = append(activeComponents, activeComponent)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, activeComponents))
 
 	// Move

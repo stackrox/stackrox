@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestProcessBaselineResultsMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var processBaselineResultss []*storage.ProcessBaselineResults
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var processBaselineResultss []*storage.ProcessBaselineResults
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		processBaselineResults := &storage.ProcessBaselineResults{}
 		s.NoError(testutils.FullInit(processBaselineResults, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processBaselineResultss = append(processBaselineResultss, processBaselineResults)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, processBaselineResultss))
 
 	// Move

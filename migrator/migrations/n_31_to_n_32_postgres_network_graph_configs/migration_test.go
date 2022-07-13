@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestNetworkGraphConfigMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var networkGraphConfigs []*storage.NetworkGraphConfig
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var networkGraphConfigs []*storage.NetworkGraphConfig
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		networkGraphConfig := &storage.NetworkGraphConfig{}
 		s.NoError(testutils.FullInit(networkGraphConfig, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkGraphConfigs = append(networkGraphConfigs, networkGraphConfig)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, networkGraphConfigs))
 
 	// Move

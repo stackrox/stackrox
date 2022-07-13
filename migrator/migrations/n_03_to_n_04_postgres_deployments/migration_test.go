@@ -65,19 +65,22 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestDeploymentMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var deployments []*storage.Deployment
 	dacky, err := dackbox.NewRocksDBDackBox(s.legacyDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	s.NoError(err)
 	legacyStore := legacy.New(dacky, concurrency.NewKeyFence())
+
+	// Prepare data and write to legacy DB
+	var deployments []*storage.Deployment
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		deployment := &storage.Deployment{}
 		s.NoError(testutils.FullInit(deployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		deployments = append(deployments, deployment)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, deployments))
 
 	// Move

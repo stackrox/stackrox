@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestProcessIndicatorMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var processIndicators []*storage.ProcessIndicator
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var processIndicators []*storage.ProcessIndicator
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		processIndicator := &storage.ProcessIndicator{}
 		s.NoError(testutils.FullInit(processIndicator, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processIndicators = append(processIndicators, processIndicator)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, processIndicators))
 
 	// Move

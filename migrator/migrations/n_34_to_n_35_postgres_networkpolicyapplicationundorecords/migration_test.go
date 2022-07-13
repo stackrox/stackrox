@@ -66,9 +66,11 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestNetworkPolicyApplicationUndoRecordMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
+	legacyStore := legacy.New(s.legacyDB)
+
 	// Prepare data and write to legacy DB
 	var networkPolicyApplicationUndoRecords []*storage.NetworkPolicyApplicationUndoRecord
-	legacyStore := legacy.New(s.legacyDB)
+
 	for i := 0; i < 200; i++ {
 		networkPolicyApplicationUndoRecord := &storage.NetworkPolicyApplicationUndoRecord{}
 		s.NoError(testutils.FullInit(networkPolicyApplicationUndoRecord, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

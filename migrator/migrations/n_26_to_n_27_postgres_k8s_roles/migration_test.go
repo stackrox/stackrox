@@ -63,18 +63,21 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestK8SRoleMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
-	var k8SRoles []*storage.K8SRole
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
+
+	// Prepare data and write to legacy DB
+	var k8SRoles []*storage.K8SRole
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
+
 	for i := 0; i < 200; i++ {
 		k8SRole := &storage.K8SRole{}
 		s.NoError(testutils.FullInit(k8SRole, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		k8SRoles = append(k8SRoles, k8SRole)
 	}
+
 	s.NoError(legacyStore.UpsertMany(s.ctx, k8SRoles))
 
 	// Move

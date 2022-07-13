@@ -66,13 +66,16 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) TestInstallationInfoMigration() {
 	newStore := pgStore.New(s.ctx, s.postgresDB.Pool)
-	// Prepare data and write to legacy DB
 	legacyStore := legacy.New(s.legacyDB)
+
+	// Prepare data and write to legacy DB
 	installationInfo := &storage.InstallationInfo{}
 	s.NoError(testutils.FullInit(installationInfo, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	s.NoError(legacyStore.Upsert(s.ctx, installationInfo))
+
 	// Move
 	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+
 	// Verify
 	fetched, found, err := newStore.Get(s.ctx)
 	s.NoError(err)
