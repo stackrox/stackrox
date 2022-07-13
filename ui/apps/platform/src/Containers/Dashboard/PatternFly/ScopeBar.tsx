@@ -14,7 +14,7 @@ type NamespacesResponse = {
     clusters: Cluster[];
 };
 
-const namespacesQuery = gql`
+export const namespacesQuery = gql`
     query getAllNamespacesByCluster($query: String) {
         clusters(query: $query) {
             id

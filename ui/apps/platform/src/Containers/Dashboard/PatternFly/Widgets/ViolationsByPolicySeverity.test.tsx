@@ -77,8 +77,9 @@ describe('Violations by policy severity widget', () => {
     it('should display total violations in the title that match the sum of the individual tiles', async () => {
         setup();
 
-        // Find items on the screen that with text that contains -only- an integer
-        const tiles = await screen.findAllByText(/^\d+$/);
+        const tiles = await screen.findAllByRole('link', {
+            name: /^\d+ (Low|Medium|High|Critical)$/,
+        });
         expect(tiles).toHaveLength(4);
 
         let alertCount = 0;
