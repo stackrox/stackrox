@@ -253,9 +253,9 @@ Then go to https://localhost:8000/ in your web browser.
 ---
 ## Development
 
-- **UI Dev Docs**: please refer to [ui/README.md](./ui/README.md)
+- **UI Dev Docs**: Refer to [ui/README.md](./ui/README.md)
 
-- **E2E Dev Docs**: please refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
+- **E2E Dev Docs**: Refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
 
 ### Quickstart
 
