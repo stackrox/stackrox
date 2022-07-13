@@ -106,7 +106,7 @@ get_central_debug_dump() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
 
-    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug dump --output-dir "${output_dir}"
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central debug dump --output-dir "${output_dir}"
     ls -l "${output_dir}"
 }
 
