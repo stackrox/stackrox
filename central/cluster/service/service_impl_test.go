@@ -82,9 +82,15 @@ func (suite *ClusterServiceTestSuite) TestGetClusterDefaults() {
 }
 
 func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
+	isolator := envisolator.NewEnvIsolator(suite.T())
+	defer isolator.RestoreAll()
+
+	isolator.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
 	if !features.DecommissionedClusterRetention.Enabled() {
-		suite.T().Skip("Skipping GetCluster with RetentionInfo tests because decommissioned cluster retention feature is turned off")
+		// if it's still not enabled, we're probably in release tests so skip
+		suite.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
 	}
+
 	config := suite.getTestSystemConfig()
 
 	cases := map[string]struct {
@@ -152,8 +158,13 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 }
 
 func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
+	isolator := envisolator.NewEnvIsolator(suite.T())
+	defer isolator.RestoreAll()
+
+	isolator.Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
 	if !features.DecommissionedClusterRetention.Enabled() {
-		suite.T().Skip("Skipping GetClusters with RetentionInfo map tests because decommissioned cluster retention feature is turned off")
+		// if it's still not enabled, we're probably in release tests so skip
+		suite.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
 	}
 
 	config := suite.getTestSystemConfig()

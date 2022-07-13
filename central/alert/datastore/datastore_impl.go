@@ -309,34 +309,8 @@ func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject 
 	return nil
 }
 
-func copyScopingInformationToObjectRoot(alert *storage.Alert) {
-	switch alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_:
-		entity := alert.GetDeployment()
-		alert.ClusterId = entity.ClusterId
-		alert.ClusterName = entity.ClusterName
-		alert.Namespace = entity.Namespace
-		alert.NamespaceId = entity.NamespaceId
-	case *storage.Alert_Resource_:
-		entity := alert.GetResource()
-		alert.ClusterId = entity.ClusterId
-		alert.ClusterName = entity.ClusterName
-		alert.Namespace = entity.Namespace
-		alert.NamespaceId = entity.NamespaceId
-	case *storage.Alert_Image:
-		// Image doesn't have a ns/cluster
-		alert.ClusterId = ""
-		alert.ClusterName = ""
-		alert.Namespace = ""
-		alert.NamespaceId = ""
-	default:
-		log.Errorf("UNEXPECTED: Alert Entity %s unknown", alert.GetEntity())
-	}
-}
-
 func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alert *storage.Alert) error {
 	// Checks pass then update.
-	copyScopingInformationToObjectRoot(alert)
 	if err := ds.storage.Upsert(ctx, alert); err != nil {
 		return err
 	}

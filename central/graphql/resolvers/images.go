@@ -165,6 +165,9 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVuln")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("TopVuln not supported with postgres enabled. Please use TopImageVulnerability.")
+	}
 
 	vulnResolver, err := resolver.topVulnV2(ctx, args)
 	if err != nil || vulnResolver == nil {
@@ -252,6 +255,9 @@ func (resolver *imageResolver) ImageVulnerabilityCounter(ctx context.Context, ar
 // Vulns returns all of the vulnerabilities in the image.
 func (resolver *imageResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Vulns")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("Vulns not supported with postgres enabled. Please use ImageVulnerabilities.")
+	}
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 
@@ -266,6 +272,9 @@ func (resolver *imageResolver) Vulns(ctx context.Context, args PaginatedQuery) (
 // VulnCount returns the number of vulnerabilities the image has.
 func (resolver *imageResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnCount")
+	if features.PostgresDatastore.Enabled() {
+		return 0, errors.New("VulnCount not supported with postgres enabled. Please use ImageVulnerabilityCount.")
+	}
 
 	// if the request isn't being filtered down we can use cached data
 	if args.IsEmpty() {
@@ -290,6 +299,9 @@ func (resolver *imageResolver) VulnCount(ctx context.Context, args RawQuery) (in
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
 func (resolver *imageResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnCounter")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("VulnCounter not supported with postgres enabled. Please use ImageVulnerabilityCounter.")
+	}
 
 	// if the request isn't being filtered down we can use cached data
 	if args.IsEmpty() {

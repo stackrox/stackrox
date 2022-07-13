@@ -85,11 +85,15 @@ func (s *serviceImpl) PostPolicyCategory(ctx context.Context, request *v1.PostPo
 	return ToV1Proto(category), nil
 }
 
-func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.NewRenamePolicyCategoryRequest) (*v1.Empty, error) {
+func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.NewRenamePolicyCategoryRequest) (*v1.PolicyCategory, error) {
 	if !validateName.MatchString(request.GetNewCategoryName()) {
 		return nil, errors.Wrap(errox.InvalidArgs, invalidNameErrString)
 	}
-	return &v1.Empty{}, s.policyCategoriesDatastore.RenamePolicyCategory(ctx, request.GetId(), request.GetNewCategoryName())
+	c, err := s.policyCategoriesDatastore.RenamePolicyCategory(ctx, request.GetId(), request.GetNewCategoryName())
+	if err != nil {
+		return nil, err
+	}
+	return ToV1Proto(c), nil
 }
 
 func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.NewDeletePolicyCategoryRequest) (*v1.Empty, error) {
@@ -104,7 +108,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v1.RegisterPolicyServiceHandler(ctx, mux, conn)
+	return v1.RegisterPolicyCategoryServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.

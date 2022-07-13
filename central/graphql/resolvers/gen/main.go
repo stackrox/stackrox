@@ -20,6 +20,7 @@ var (
 			reflect.TypeOf((*storage.ActiveComponent_ActiveContext)(nil)),
 			reflect.TypeOf((*storage.Alert)(nil)),
 			reflect.TypeOf((*storage.Cluster)(nil)),
+			//reflect.TypeOf((*storage.ClusterCVE)(nil)), TODO rox-11259
 			reflect.TypeOf((*storage.ComplianceAggregation_Response)(nil)),
 			reflect.TypeOf((*storage.ComplianceControlResult)(nil)),
 			reflect.TypeOf((*storage.CVE)(nil)),
@@ -28,6 +29,7 @@ var (
 			reflect.TypeOf((*storage.Group)(nil)),
 			reflect.TypeOf((*storage.Image)(nil)),
 			reflect.TypeOf((*storage.ImageComponent)(nil)),
+			reflect.TypeOf((*storage.ImageCVE)(nil)),
 			reflect.TypeOf((*storage.K8SRole)(nil)),
 			reflect.TypeOf((*storage.K8SRoleBinding)(nil)),
 			reflect.TypeOf((*storage.ListAlert)(nil)),

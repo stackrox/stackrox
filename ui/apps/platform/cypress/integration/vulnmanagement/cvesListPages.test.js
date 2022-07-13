@@ -262,7 +262,8 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
         });
     });
 
-    describe('adding selected CVEs to policy', () => {
+    // @TODO: Rework this test. Seems like each of these do the same thing
+    describe.skip('adding selected CVEs to policy', () => {
         it('should add CVEs to new policies', () => {
             visitVulnerabilityManagementEntities('cves');
 

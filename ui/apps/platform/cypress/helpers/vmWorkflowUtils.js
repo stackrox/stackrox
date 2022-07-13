@@ -31,20 +31,24 @@ function validateDataInEntityListPage(entityCountAndName, entityURL) {
 }
 
 function validateLinksInListPage(col, parentUrl) {
-    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`, {
+        timeout: 8000,
+    })
         .invoke('text')
         .then((value) => {
-            cy.get(
-                `${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`
-            ).click({
-                force: true,
-            });
+            cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+                .first()
+                .click({
+                    force: true,
+                });
             validateDataInEntityListPage(value, parentUrl);
         });
 }
 
 function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
-    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`, {
+        timeout: 8000,
+    })
         .invoke('text')
         .then((value) => {
             cy.get(colSelector).eq(0).click({ force: true });
@@ -79,7 +83,9 @@ function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
 }
 
 function validateTabsInEntityPage(parentUrl, colSelector, col) {
-    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`, {
+        timeout: 8000,
+    })
         .invoke('text')
         .then((value) => {
             cy.get(colSelector).eq(0).click({ force: true });
@@ -169,8 +175,10 @@ function validateFixableTabLinksInEntityPage(parentUrl) {
         if (fixableCount > 0) {
             cy.get(vulnManagementSelectors.tableBodyColumn).eq(0).click({ force: true });
             if (!parentUrl.includes('components')) {
-                cy.get(vulnManagementSelectors.tabButton, { timeout: 6000 })
-                    .contains('Fixable CVEs')
+                cy.get(`${vulnManagementSelectors.tabButton}:contains("Fixable")`, {
+                    timeout: 6000,
+                })
+                    .first()
                     .click();
             }
             cy.get(vulnManagementSelectors.getSidePanelTabHeader('fixable')).contains(fixableCount);
