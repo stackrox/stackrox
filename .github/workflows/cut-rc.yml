@@ -323,6 +323,7 @@ jobs:
     with:
       flavor: openshift-4-demo
       name: openshift-4-demo-${{needs.variables.outputs.milestone}}
+      args: openshift-version=ocp/stable-4.10
       lifespan: 48h
       wait: true
 
