@@ -42,6 +42,7 @@ The StackRox Kubernetes Security platform is built on the foundation of
 the product formerly known as Prevent, which itself was called Mitigate and
 Apollo. You may find references to these previous names in code or
 documentation.
+
 ---
 
 ## Community
