@@ -10,6 +10,8 @@ SOURCES += $(shell find apps -type d \( -name node_modules \) -prune -o -print)
 # tracking package.json files of monorepo packages is the easiest way to discover such situations
 PACKAGE_JSON_FILES := $(shell find . -type d \( -name node_modules \) -prune -false -o -name package.json)
 
+export REACT_APP_ROX_PRODUCT_BRANDING := $(shell $(MAKE) --quiet --no-print-directory -C .. product-branding)
+
 deps: yarn.lock $(PACKAGE_JSON_FILES)
 	yarn install --frozen-lockfile
 	@touch deps
