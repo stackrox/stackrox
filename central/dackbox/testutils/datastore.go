@@ -57,11 +57,11 @@ type DackboxTestDataStore interface {
 	GetKeyFence() concurrency.KeyFence
 	GetIndexQ() queue.WaitableQueue
 	// Data injection
-	PushImageToVulnerabilitiesGraph() error
-	PushNodeToVulnerabilitiesGraph() error
+	PushImageToVulnerabilitiesGraph(waitForIndexing bool) error
+	PushNodeToVulnerabilitiesGraph(waitForIndexing bool) error
 	// Data cleanup
-	CleanImageToVulnerabilitiesGraph() error
-	CleanNodeToVulnerabilitiesGraph() error
+	CleanImageToVulnerabilitiesGraph(waitForIndexing bool) error
+	CleanNodeToVulnerabilitiesGraph(waitForIndexing bool) error
 	// Post test cleanup (TearDown)
 	Cleanup(t *testing.T) error
 }
@@ -120,7 +120,7 @@ func (s *dackboxTestDataStoreImpl) GetIndexQ() queue.WaitableQueue {
 // names deployments.
 // Sherlock holmes is the deployment / image part from Cluster1 and NamespaceA.
 // Dr Jekyll is the deployment / image part from Cluster2 and NamespaceB.
-func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() (err error) {
+func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph(waitForIndexing bool) (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	testNamespace1 := fixtures.GetNamespace(testconsts.Cluster1, testconsts.Cluster1, testconsts.NamespaceA)
 	testNamespace2 := fixtures.GetNamespace(testconsts.Cluster2, testconsts.Cluster2, testconsts.NamespaceB)
@@ -158,6 +158,9 @@ func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() (err error)
 		return err
 	}
 	s.storedDeployments = append(s.storedDeployments, testDeployment2.GetId())
+	if waitForIndexing {
+		s.waitForIndexing()
+	}
 	return nil
 }
 
@@ -165,7 +168,7 @@ func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() (err error)
 // in the dackbox fixture (see the comment at the top of the image section for more details).
 // Sherlock holmes is the node part from Cluster1.
 // Dr Jekyll is the node part from Cluster2.
-func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph() (err error) {
+func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph(waitForIndexing bool) (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	testNode1 := fixtures.GetScopedNode1(uuid.NewV4().String(), testconsts.Cluster1)
 	testNode2 := fixtures.GetScopedNode2(uuid.NewV4().String(), testconsts.Cluster2)
@@ -179,12 +182,14 @@ func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph() (err error) 
 		return err
 	}
 	s.storedNodes = append(s.storedNodes, testNode2.GetId())
+	if waitForIndexing {
+		s.waitForIndexing()
+	}
 	return nil
-
 }
 
 // CleanImageToVulnerabilitiesGraph removes from database the data injected by PushImageToVulnerabilitiesGraph.
-func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() (err error) {
+func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph(waitForIndexing bool) (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	storedDeployments := s.storedDeployments
 	for _, deploymentID := range storedDeployments {
@@ -217,11 +222,14 @@ func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() (err error
 		}
 	}
 	s.storedNamespaces = s.storedNamespaces[:0]
+	if waitForIndexing {
+		s.waitForIndexing()
+	}
 	return nil
 }
 
 // CleanNodeToVulnerabilitiesGraph removes from database the data injected by PushNodeToVulnerabilitiesGraph.
-func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() (err error) {
+func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph(waitForIndexing bool) (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	storedNodes := s.storedNodes
 	for _, nodeID := range storedNodes {
@@ -231,7 +239,21 @@ func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() (err error)
 		}
 	}
 	s.storedNodes = s.storedNodes[:0]
+	if waitForIndexing {
+		s.waitForIndexing()
+	}
 	return nil
+}
+
+func (s *dackboxTestDataStoreImpl) waitForIndexing() {
+	if !features.PostgresDatastore.Enabled() {
+		indexingCompleted := concurrency.NewSignal()
+		s.indexQ.PushSignal(&indexingCompleted)
+		select {
+		case <-indexingCompleted.Done():
+		}
+	}
+	return
 }
 
 func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
