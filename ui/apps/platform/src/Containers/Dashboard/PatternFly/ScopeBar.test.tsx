@@ -35,7 +35,7 @@ beforeEach(() => {
     jest.resetModules();
 });
 
-const setup = async () => {
+const setup = () => {
     const user = userEvent.setup();
     const utils = renderWithRouter(
         <MockedProvider mocks={mocks} addTypename={false}>
@@ -47,7 +47,7 @@ const setup = async () => {
 
 describe('Resource scope bar', () => {
     it('should default to all clusters and namespaces selected', async () => {
-        const { user } = await setup();
+        const { user } = setup();
 
         const clusterDropdownToggle = screen.getByLabelText('Select clusters');
         const namespaceDropdownToggle = screen.getByLabelText('Select namespaces');
@@ -61,7 +61,7 @@ describe('Resource scope bar', () => {
     });
 
     it('allows selection of multiple clusters and namespaces', async () => {
-        const { user } = await setup();
+        const { user } = setup();
 
         const clusterDropdownToggle = screen.getByLabelText('Select clusters');
         const namespaceDropdownToggle = screen.getByLabelText('Select namespaces');
@@ -110,7 +110,7 @@ describe('Resource scope bar', () => {
         const {
             user,
             utils: { history },
-        } = await setup();
+        } = setup();
 
         // Check that the default state of "select all" results in empty URL search parameters
         const clusterDropdownToggle = screen.getByLabelText('Select clusters');
