@@ -8,9 +8,9 @@
   - [Deploying StackRox](#deploying-stackrox)
     - [Installation via Helm](#installation-via-helm)
       - [Default Central Installation](#default-central-installation)
-      - [Limited Central Resource Installation](#limited-central-resource-installation)
+      - [Install Central in Clusters With Limited Resources](#install-central-in-clusters-with-limited-resources)
       - [Default Secured Cluster Installation](#default-secured-cluster-installation)
-      - [Limited Secured Cluster Resource Installation](#limited-secured-cluster-resource-installation)
+      - [Install Secured Cluster with Limited Resources](#install-secured-cluster-with-limited-resources)
     - [Installation via Scripts](#installation-via-scripts)
       - [Kubernetes Distributions (EKS, AKS, GKE)](#kubernetes-distributions-eks-aks-gke)
       - [OpenShift](#openshift)
@@ -88,7 +88,7 @@ From here you can install stackrox-central-services to get Central and Scanner c
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="$(cat stackrox-admin-password.txt)"
 ```
 
-#### Limited Central Resource Installation
+#### Install Central in Clusters With Limited Resources
 
 If you're deploying StackRox on nodes with limited resources such as a local development cluster, run the following command to reduce StackRox resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 
@@ -131,7 +131,7 @@ helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-sec
 ```
 When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services are deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
-#### Limited Secured Cluster Resource Installation
+#### Install Secured Cluster with Limited Resources
 When deploying StackRox Secured Cluster Services on a small node, you can install with additional options. This should reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not recommended for a production setup.
 
 ```sh
