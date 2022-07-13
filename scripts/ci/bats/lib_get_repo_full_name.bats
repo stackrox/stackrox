@@ -7,7 +7,7 @@ function setup() {
     unset OPENSHIFT_CI
     unset REPO_OWNER
     unset REPO_NAME
-    unset JOB_SPEC
+    unset CLONEREFS_OPTIONS
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 }
 
@@ -21,7 +21,7 @@ function setup() {
     export OPENSHIFT_CI=true
     run get_repo_full_name
     assert_failure 1
-    assert_output --partial 'Expect REPO_OWNER/NAME or JOB_SPEC'
+    assert_output --partial 'Expect REPO_OWNER/NAME or CLONEREFS_OPTIONS'
 }
 
 @test "REPO_OWNER without REPO_NAME" {
@@ -41,49 +41,49 @@ function setup() {
     assert_output 'acme/products'
 }
 
-@test "with invalid JOB_SPEC I" {
+@test "with invalid CLONEREFS_OPTIONS I" {
     export OPENSHIFT_CI=true
-    export JOB_SPEC='{ }'
+    export CLONEREFS_OPTIONS='{ }'
     run get_repo_full_name
     assert_failure 1
     assert_output --partial 'expect: org and repo'
 }
 
-@test "with invalid JOB_SPEC II" {
+@test "with invalid CLONEREFS_OPTIONS II" {
     export OPENSHIFT_CI=true
-    export JOB_SPEC='{ "extra_refs": [] }'
+    export CLONEREFS_OPTIONS='{ "refs": [] }'
     run get_repo_full_name
     assert_failure 1
     assert_output --partial 'expect: org and repo'
 }
 
-@test "with invalid JOB_SPEC III" {
+@test "with invalid CLONEREFS_OPTIONS III" {
     export OPENSHIFT_CI=true
-    export JOB_SPEC='{ "extra_refs": [{ "org": "acme" }] }'
+    export CLONEREFS_OPTIONS='{ "refs": [{ "org": "acme" }] }'
     run get_repo_full_name
     assert_failure 1
     assert_output --partial 'expect: org and repo'
 }
 
-@test "with invalid JOB_SPEC IV" {
+@test "with invalid CLONEREFS_OPTIONS IV" {
     export OPENSHIFT_CI=true
-    export JOB_SPEC='{ "not yamls" }'
+    export CLONEREFS_OPTIONS='{ "not yamls" }'
     run get_repo_full_name
     assert_failure 1
-    assert_output --partial 'invalid JOB_SPEC yaml'
+    assert_output --partial 'invalid CLONEREFS_OPTIONS yaml'
 }
 
-@test "with invalid JOB_SPEC V" {
+@test "with invalid CLONEREFS_OPTIONS V" {
     export OPENSHIFT_CI=true
-    export JOB_SPEC='{ "extra_refs": "" }'
+    export CLONEREFS_OPTIONS='{ "refs": "" }'
     run get_repo_full_name
     assert_failure 1
-    assert_output --partial 'invalid JOB_SPEC yaml'
+    assert_output --partial 'invalid CLONEREFS_OPTIONS yaml'
 }
 
-@test "with valid JOB_SPEC" {
+@test "with valid CLONEREFS_OPTIONS" {
     export OPENSHIFT_CI=true
-    export JOB_SPEC='{ "extra_refs": [{ "org": "acme", "repo": "products" }] }'
+    export CLONEREFS_OPTIONS='{ "refs": [{ "org": "acme", "repo": "products" }] }'
     run get_repo_full_name
     assert_success
     assert_output 'acme/products'
