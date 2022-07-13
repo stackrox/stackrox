@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var namespaces []*storage.NamespaceMetadata
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.NamespaceMetadata) error {
+	err := walk(ctx, legacyStore, func(obj *storage.NamespaceMetadata) error {
 		namespaces = append(namespaces, obj)
 		if len(namespaces) == batchSize {
 			if err := store.UpsertMany(ctx, namespaces); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(namespaces) > 0 {
 		if err = store.UpsertMany(ctx, namespaces); err != nil {
 			log.WriteToStderrf("failed to persist namespaces to store %v", err)

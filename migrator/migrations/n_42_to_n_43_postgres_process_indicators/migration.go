@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var processIndicators []*storage.ProcessIndicator
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.ProcessIndicator) error {
+	err := walk(ctx, legacyStore, func(obj *storage.ProcessIndicator) error {
 		processIndicators = append(processIndicators, obj)
 		if len(processIndicators) == batchSize {
 			if err := store.UpsertMany(ctx, processIndicators); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(processIndicators) > 0 {
 		if err = store.UpsertMany(ctx, processIndicators); err != nil {
 			log.WriteToStderrf("failed to persist process_indicators to store %v", err)

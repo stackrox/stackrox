@@ -36,10 +36,10 @@ func uniqKeyFunc(msg proto.Message) []byte {
 
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
-//	globaldb.RegisterBucket(bucket, "PolicyCategory")
 	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, false)
     return  &storeImpl{crud: baseCRUD}, nil
 }
+
 // UpsertMany batches objects into the DB
 func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.PolicyCategory) error {
 	msgs := make([]proto.Message, 0, len(objs))
@@ -49,6 +49,7 @@ func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.PolicyCategory
 
 	return b.crud.UpsertMany(msgs)
 }
+
 // Walk iterates over all of the objects in the store and applies the closure
 func (b *storeImpl) Walk(_ context.Context, fn func(obj *storage.PolicyCategory) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {

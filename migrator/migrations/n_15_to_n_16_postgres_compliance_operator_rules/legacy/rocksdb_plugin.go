@@ -34,7 +34,6 @@ func keyFunc(msg proto.Message) []byte {
 
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
-//	globaldb.RegisterBucket(bucket, "ComplianceOperatorRule")
 	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, false)
 	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
 	if err != nil {
@@ -44,6 +43,7 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 		crud: cacheCRUD,
 	}, nil
 }
+
 // UpsertMany batches objects into the DB
 func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.ComplianceOperatorRule) error {
 	msgs := make([]proto.Message, 0, len(objs))
@@ -53,6 +53,7 @@ func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.ComplianceOper
 
 	return b.crud.UpsertMany(msgs)
 }
+
 // Walk iterates over all of the objects in the store and applies the closure
 func (b *storeImpl) Walk(_ context.Context, fn func(obj *storage.ComplianceOperatorRule) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {

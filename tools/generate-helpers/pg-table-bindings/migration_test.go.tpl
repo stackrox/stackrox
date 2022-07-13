@@ -1,5 +1,4 @@
 //go:build sql_integration
-{{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 {{- $name := .TrimmedType|lowerCamelCase }}
 package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 {{define "getterParamList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $idx, $pk := .Schema.PrimaryKeys}}{{if $idx}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
@@ -9,30 +8,25 @@ package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 
 import (
 	"context"
-	"sort"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/{{.Migration.Dir}}/postgres"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
-	{{if $dackbox}}rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"{{end}}
-	{{if $dackbox}}"github.com/stackrox/rox/pkg/dackbox"{{end}}
-	{{if $dackbox}}"github.com/stackrox/rox/pkg/concurrency"{{end}}
+	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
+	{{ if $rocksDB}}"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"{{end}}
+	{{ if $boltDB}}"github.com/stackrox/rox/pkg/bolthelper"{{end}}
+	{{ if $dackbox}}"github.com/stackrox/rox/pkg/concurrency"{{end}}
+	{{ if $dackbox}}"github.com/stackrox/rox/pkg/dackbox"{{end}}
+	{{ if $dackbox}}rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"{{end}}
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	{{ if $rocksDB}}"github.com/stackrox/rox/pkg/rocksdb"{{end}}
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	{{ if $rocksDB}}"github.com/stackrox/rox/pkg/testutils/rocksdbtest"{{end}}
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
-	bolt "go.etcd.io/bbolt"
-	"gorm.io/gorm"
+	{{ if $rocksDB}}"github.com/tecbot/gorocksdb"{{end}}
+	{{ if $boltDB}}bolt "go.etcd.io/bbolt"{{end}}
 )
 
 func TestMigration(t *testing.T) {
@@ -44,12 +38,8 @@ type postgresMigrationSuite struct {
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
 
-	// LegacyDB to migrate from
 	legacyDB {{if $boltDB}}*bolt.DB{{else}}*rocksdb.RocksDB{{end}}
-
-	// PostgresDB
-	pool   *pgxpool.Pool
-	gormDB *gorm.DB
+	postgresDB *pghelper.TestPostgres
 }
 
 var _ suite.TearDownTestSuite = (*postgresMigrationSuite)(nil)
@@ -65,22 +55,15 @@ func (s *postgresMigrationSuite) SetupTest() {
 	var err error
     {{- if $rocksDB}}
 	s.legacyDB, err = rocksdb.NewTemp(s.T().Name())
-	s.NoError(err)
-	{{- end}}
-	{{- if $boltDB}}
+	{{- else}}
     s.legacyDB, err = bolthelper.NewTemp(s.T().Name() + ".db")
-    s.NoError(err)
 	{{- end}}
+    s.NoError(err)
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
 	s.ctx = sac.WithAllAccess(context.Background())
-	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
-	s.Require().NoError(err)
-	pgtest.CleanUpDB(s.ctx, s.T(), s.pool)
-	s.gormDB = pgtest.OpenGormDBWithDisabledConstraints(s.T(), source)
+	s.postgresDB = pghelper.ForT(s.T(), true)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
@@ -89,14 +72,11 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	{{- else}}
 	rocksdbtest.TearDownRocksDB(s.legacyDB)
 	{{- end}}
-	_ = s.gormDB.Migrator().DropTable({{template "createTableStmtVar" .Schema}}.GormModel)
-	pgtest.CleanUpDB(s.ctx, s.T(), s.pool)
-	pgtest.CloseGormDB(s.T(), s.gormDB)
-    s.pool.Close()
+	s.postgresDB.Teardown(s.T())
 }
 
 func (s *postgresMigrationSuite) TestMigration() {
-	newStore := pgStore.New({{if .Migration.SingletonStore}}s.ctx, {{end}}s.pool)
+	newStore := pgStore.New({{if .Migration.SingletonStore}}s.ctx, {{end}}s.postgresDB.Pool)
 	// Prepare data and write to legacy DB
     {{- if .Migration.SingletonStore}}
     legacyStore := legacy.New(s.legacyDB)
@@ -104,7 +84,7 @@ func (s *postgresMigrationSuite) TestMigration() {
     s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
     s.NoError(legacyStore.Upsert(s.ctx, {{$name}}))
     // Move
-    s.NoError(move(s.gormDB, s.pool, legacyStore))
+    s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
     // Verify
     fetched, found, err := newStore.Get(s.ctx)
     s.NoError(err)
@@ -144,7 +124,7 @@ func (s *postgresMigrationSuite) TestMigration() {
 	{{- end}}
 
 	// Move
-	s.NoError(move(s.gormDB, s.pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)

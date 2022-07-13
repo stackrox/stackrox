@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var watchedImages []*storage.WatchedImage
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.WatchedImage) error {
+	err := walk(ctx, legacyStore, func(obj *storage.WatchedImage) error {
 		watchedImages = append(watchedImages, obj)
 		if len(watchedImages) == batchSize {
 			if err := store.UpsertMany(ctx, watchedImages); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(watchedImages) > 0 {
 		if err = store.UpsertMany(ctx, watchedImages); err != nil {
 			log.WriteToStderrf("failed to persist watched_images to store %v", err)

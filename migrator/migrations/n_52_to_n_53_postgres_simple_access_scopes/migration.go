@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var simpleAccessScopes []*storage.SimpleAccessScope
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.SimpleAccessScope) error {
+	err := walk(ctx, legacyStore, func(obj *storage.SimpleAccessScope) error {
 		simpleAccessScopes = append(simpleAccessScopes, obj)
 		if len(simpleAccessScopes) == batchSize {
 			if err := store.UpsertMany(ctx, simpleAccessScopes); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(simpleAccessScopes) > 0 {
 		if err = store.UpsertMany(ctx, simpleAccessScopes); err != nil {
 			log.WriteToStderrf("failed to persist simple_access_scopes to store %v", err)

@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var permissionSets []*storage.PermissionSet
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.PermissionSet) error {
+	err := walk(ctx, legacyStore, func(obj *storage.PermissionSet) error {
 		permissionSets = append(permissionSets, obj)
 		if len(permissionSets) == batchSize {
 			if err := store.UpsertMany(ctx, permissionSets); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(permissionSets) > 0 {
 		if err = store.UpsertMany(ctx, permissionSets); err != nil {
 			log.WriteToStderrf("failed to persist permission_sets to store %v", err)

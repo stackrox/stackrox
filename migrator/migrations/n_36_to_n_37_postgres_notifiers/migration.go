@@ -42,7 +42,6 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	notifiers, err := legacyStore.GetAll(ctx)
 	if err != nil {
-		log.WriteToStderr("failed to fetch all notifiers")
 		return err
 	}
 	if len(notifiers) > 0 {

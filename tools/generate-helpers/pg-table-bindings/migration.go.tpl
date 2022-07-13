@@ -89,8 +89,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
         {{- /* Assume rocksdb and postgres agrees on if it should have GetAll function. Not acurate but works well. */}}
 	    {{- if or $rocksDB (not .GetAll) }}
 	    var {{.Table|lowerCamelCase}} []*{{.Type}}
-	    var err error
-	    walk(ctx, legacyStore, func(obj *{{.Type}}) error {
+	    err := walk(ctx, legacyStore, func(obj *{{.Type}}) error {
 		    {{.Table|lowerCamelCase}} = append({{.Table|lowerCamelCase}}, obj)
 		    if len({{.Table|lowerCamelCase}}) == batchSize {
 			    if err := store.UpsertMany(ctx, {{.Table|lowerCamelCase}}); err != nil {
@@ -103,11 +102,10 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	    })
 	    {{- else}}
 	    {{.Table|lowerCamelCase}}, err := legacyStore.GetAll(ctx)
+	    {{- end}}
         if err != nil {
-            log.WriteToStderr("failed to fetch all {{.Table|lowerCamelCase}}")
             return err
         }
-	    {{- end}}
 	    if len({{.Table|lowerCamelCase}}) > 0 {
 		    if err = store.UpsertMany(ctx, {{.Table|lowerCamelCase}}); err != nil {
 			    log.WriteToStderrf("failed to persist {{.Table|lowerCase}} to store %v", err)

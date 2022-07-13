@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var reportConfigurations []*storage.ReportConfiguration
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.ReportConfiguration) error {
+	err := walk(ctx, legacyStore, func(obj *storage.ReportConfiguration) error {
 		reportConfigurations = append(reportConfigurations, obj)
 		if len(reportConfigurations) == batchSize {
 			if err := store.UpsertMany(ctx, reportConfigurations); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(reportConfigurations) > 0 {
 		if err = store.UpsertMany(ctx, reportConfigurations); err != nil {
 			log.WriteToStderrf("failed to persist report_configurations to store %v", err)

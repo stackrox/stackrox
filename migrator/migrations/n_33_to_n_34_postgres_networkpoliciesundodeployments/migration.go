@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var networkpoliciesundodeployments []*storage.NetworkPolicyApplicationUndoDeploymentRecord
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+	err := walk(ctx, legacyStore, func(obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
 		networkpoliciesundodeployments = append(networkpoliciesundodeployments, obj)
 		if len(networkpoliciesundodeployments) == batchSize {
 			if err := store.UpsertMany(ctx, networkpoliciesundodeployments); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(networkpoliciesundodeployments) > 0 {
 		if err = store.UpsertMany(ctx, networkpoliciesundodeployments); err != nil {
 			log.WriteToStderrf("failed to persist networkpoliciesundodeployments to store %v", err)

@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var complianceOperatorScanSettingBindings []*storage.ComplianceOperatorScanSettingBinding
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.ComplianceOperatorScanSettingBinding) error {
+	err := walk(ctx, legacyStore, func(obj *storage.ComplianceOperatorScanSettingBinding) error {
 		complianceOperatorScanSettingBindings = append(complianceOperatorScanSettingBindings, obj)
 		if len(complianceOperatorScanSettingBindings) == batchSize {
 			if err := store.UpsertMany(ctx, complianceOperatorScanSettingBindings); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(complianceOperatorScanSettingBindings) > 0 {
 		if err = store.UpsertMany(ctx, complianceOperatorScanSettingBindings); err != nil {
 			log.WriteToStderrf("failed to persist compliance_operator_scan_setting_bindings to store %v", err)

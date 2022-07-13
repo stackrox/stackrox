@@ -8,21 +8,22 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_48_to_n_49_postgres_sensor_upgrade_configs/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_48_to_n_49_postgres_sensor_upgrade_configs/postgres"
+	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
+
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/sac"
 
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+
 	"github.com/stretchr/testify/suite"
+
 	bolt "go.etcd.io/bbolt"
-	"gorm.io/gorm"
 )
 
 func TestMigration(t *testing.T) {
@@ -34,12 +35,8 @@ type postgresMigrationSuite struct {
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
 
-	// LegacyDB to migrate from
-	legacyDB *bolt.DB
-
-	// PostgresDB
-	pool   *pgxpool.Pool
-	gormDB *gorm.DB
+	legacyDB   *bolt.DB
+	postgresDB *pghelper.TestPostgres
 }
 
 var _ suite.TearDownTestSuite = (*postgresMigrationSuite)(nil)
@@ -56,34 +53,26 @@ func (s *postgresMigrationSuite) SetupTest() {
 	s.legacyDB, err = bolthelper.NewTemp(s.T().Name() + ".db")
 	s.NoError(err)
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
 	s.ctx = sac.WithAllAccess(context.Background())
-	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
-	s.Require().NoError(err)
-	pgtest.CleanUpDB(s.ctx, s.T(), s.pool)
-	s.gormDB = pgtest.OpenGormDBWithDisabledConstraints(s.T(), source)
+	s.postgresDB = pghelper.ForT(s.T(), true)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
 	testutils.TearDownDB(s.legacyDB)
-	_ = s.gormDB.Migrator().DropTable(pkgSchema.CreateTableSensorUpgradeConfigsStmt.GormModel)
-	pgtest.CleanUpDB(s.ctx, s.T(), s.pool)
-	pgtest.CloseGormDB(s.T(), s.gormDB)
-	s.pool.Close()
+	s.postgresDB.Teardown(s.T())
 }
 
 func (s *postgresMigrationSuite) TestMigration() {
-	newStore := pgStore.New(s.ctx, s.pool)
+	newStore := pgStore.New(s.ctx, s.postgresDB.Pool)
 	// Prepare data and write to legacy DB
 	legacyStore := legacy.New(s.legacyDB)
 	sensorUpgradeConfig := &storage.SensorUpgradeConfig{}
 	s.NoError(testutils.FullInit(sensorUpgradeConfig, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	s.NoError(legacyStore.Upsert(s.ctx, sensorUpgradeConfig))
 	// Move
-	s.NoError(move(s.gormDB, s.pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
 	// Verify
 	fetched, found, err := newStore.Get(s.ctx)
 	s.NoError(err)

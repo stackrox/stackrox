@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var networkGraphConfigs []*storage.NetworkGraphConfig
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.NetworkGraphConfig) error {
+	err := walk(ctx, legacyStore, func(obj *storage.NetworkGraphConfig) error {
 		networkGraphConfigs = append(networkGraphConfigs, obj)
 		if len(networkGraphConfigs) == batchSize {
 			if err := store.UpsertMany(ctx, networkGraphConfigs); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(networkGraphConfigs) > 0 {
 		if err = store.UpsertMany(ctx, networkGraphConfigs); err != nil {
 			log.WriteToStderrf("failed to persist network_graph_configs to store %v", err)

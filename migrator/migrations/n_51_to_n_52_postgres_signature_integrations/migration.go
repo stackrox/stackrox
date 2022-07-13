@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var signatureIntegrations []*storage.SignatureIntegration
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.SignatureIntegration) error {
+	err := walk(ctx, legacyStore, func(obj *storage.SignatureIntegration) error {
 		signatureIntegrations = append(signatureIntegrations, obj)
 		if len(signatureIntegrations) == batchSize {
 			if err := store.UpsertMany(ctx, signatureIntegrations); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(signatureIntegrations) > 0 {
 		if err = store.UpsertMany(ctx, signatureIntegrations); err != nil {
 			log.WriteToStderrf("failed to persist signature_integrations to store %v", err)

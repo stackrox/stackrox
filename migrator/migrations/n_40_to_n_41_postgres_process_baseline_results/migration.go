@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var processBaselineResults []*storage.ProcessBaselineResults
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.ProcessBaselineResults) error {
+	err := walk(ctx, legacyStore, func(obj *storage.ProcessBaselineResults) error {
 		processBaselineResults = append(processBaselineResults, obj)
 		if len(processBaselineResults) == batchSize {
 			if err := store.UpsertMany(ctx, processBaselineResults); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(processBaselineResults) > 0 {
 		if err = store.UpsertMany(ctx, processBaselineResults); err != nil {
 			log.WriteToStderrf("failed to persist process_baseline_results to store %v", err)

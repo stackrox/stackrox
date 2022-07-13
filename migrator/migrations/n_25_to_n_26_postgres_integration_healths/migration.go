@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var integrationHealths []*storage.IntegrationHealth
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.IntegrationHealth) error {
+	err := walk(ctx, legacyStore, func(obj *storage.IntegrationHealth) error {
 		integrationHealths = append(integrationHealths, obj)
 		if len(integrationHealths) == batchSize {
 			if err := store.UpsertMany(ctx, integrationHealths); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(integrationHealths) > 0 {
 		if err = store.UpsertMany(ctx, integrationHealths); err != nil {
 			log.WriteToStderrf("failed to persist integration_healths to store %v", err)

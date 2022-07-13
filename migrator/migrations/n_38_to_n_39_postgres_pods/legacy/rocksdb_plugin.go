@@ -33,10 +33,10 @@ func keyFunc(msg proto.Message) []byte {
 
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
-//	globaldb.RegisterBucket(bucket, "Pod")
 	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, true)
     return  &storeImpl{crud: baseCRUD}, nil
 }
+
 // UpsertMany batches objects into the DB
 func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.Pod) error {
 	msgs := make([]proto.Message, 0, len(objs))
@@ -46,6 +46,7 @@ func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.Pod) error {
 
 	return b.crud.UpsertMany(msgs)
 }
+
 // Walk iterates over all of the objects in the store and applies the closure
 func (b *storeImpl) Walk(_ context.Context, fn func(obj *storage.Pod) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {

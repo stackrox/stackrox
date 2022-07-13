@@ -8,15 +8,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_03_to_n_04_postgres_deployments/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_03_to_n_04_postgres_deployments/postgres"
+	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
+
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -24,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/tecbot/gorocksdb"
-	"gorm.io/gorm"
 )
 
 func TestMigration(t *testing.T) {
@@ -36,12 +34,8 @@ type postgresMigrationSuite struct {
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
 
-	// LegacyDB to migrate from
-	legacyDB *rocksdb.RocksDB
-
-	// PostgresDB
-	pool   *pgxpool.Pool
-	gormDB *gorm.DB
+	legacyDB   *rocksdb.RocksDB
+	postgresDB *pghelper.TestPostgres
 }
 
 var _ suite.TearDownTestSuite = (*postgresMigrationSuite)(nil)
@@ -58,27 +52,20 @@ func (s *postgresMigrationSuite) SetupTest() {
 	s.legacyDB, err = rocksdb.NewTemp(s.T().Name())
 	s.NoError(err)
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 
 	s.ctx = sac.WithAllAccess(context.Background())
-	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
-	s.Require().NoError(err)
-	pgtest.CleanUpDB(s.ctx, s.T(), s.pool)
-	s.gormDB = pgtest.OpenGormDBWithDisabledConstraints(s.T(), source)
+	s.postgresDB = pghelper.ForT(s.T(), true)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
 	rocksdbtest.TearDownRocksDB(s.legacyDB)
-	_ = s.gormDB.Migrator().DropTable(pkgSchema.CreateTableDeploymentsStmt.GormModel)
-	pgtest.CleanUpDB(s.ctx, s.T(), s.pool)
-	pgtest.CloseGormDB(s.T(), s.gormDB)
-	s.pool.Close()
+	s.postgresDB.Teardown(s.T())
+
 }
 
 func (s *postgresMigrationSuite) TestMigration() {
-	newStore := pgStore.New(s.pool)
+	newStore := pgStore.New(s.postgresDB.Pool)
 	// Prepare data and write to legacy DB
 	var deployments []*storage.Deployment
 	dacky, err := dackbox.NewRocksDBDackBox(s.legacyDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
@@ -95,7 +82,7 @@ func (s *postgresMigrationSuite) TestMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, deployments))
 
 	// Move
-	s.NoError(move(s.gormDB, s.pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)

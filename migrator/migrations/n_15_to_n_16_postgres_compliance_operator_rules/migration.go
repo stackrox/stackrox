@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var complianceOperatorRules []*storage.ComplianceOperatorRule
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.ComplianceOperatorRule) error {
+	err := walk(ctx, legacyStore, func(obj *storage.ComplianceOperatorRule) error {
 		complianceOperatorRules = append(complianceOperatorRules, obj)
 		if len(complianceOperatorRules) == batchSize {
 			if err := store.UpsertMany(ctx, complianceOperatorRules); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(complianceOperatorRules) > 0 {
 		if err = store.UpsertMany(ctx, complianceOperatorRules); err != nil {
 			log.WriteToStderrf("failed to persist compliance_operator_rules to store %v", err)

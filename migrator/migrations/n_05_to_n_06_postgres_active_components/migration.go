@@ -42,8 +42,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var activeComponents []*storage.ActiveComponent
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.ActiveComponent) error {
+	err := walk(ctx, legacyStore, func(obj *storage.ActiveComponent) error {
 		activeComponents = append(activeComponents, obj)
 		if len(activeComponents) == batchSize {
 			if err := store.UpsertMany(ctx, activeComponents); err != nil {
@@ -54,6 +53,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(activeComponents) > 0 {
 		if err = store.UpsertMany(ctx, activeComponents); err != nil {
 			log.WriteToStderrf("failed to persist active_components to store %v", err)

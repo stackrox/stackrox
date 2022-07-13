@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var networkBaselines []*storage.NetworkBaseline
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.NetworkBaseline) error {
+	err := walk(ctx, legacyStore, func(obj *storage.NetworkBaseline) error {
 		networkBaselines = append(networkBaselines, obj)
 		if len(networkBaselines) == batchSize {
 			if err := store.UpsertMany(ctx, networkBaselines); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(networkBaselines) > 0 {
 		if err = store.UpsertMany(ctx, networkBaselines); err != nil {
 			log.WriteToStderrf("failed to persist network_baselines to store %v", err)

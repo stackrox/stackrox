@@ -44,8 +44,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var risks []*storage.Risk
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.Risk) error {
+	err := walk(ctx, legacyStore, func(obj *storage.Risk) error {
 		risks = append(risks, obj)
 		if len(risks) == batchSize {
 			if err := store.UpsertMany(ctx, risks); err != nil {
@@ -56,6 +55,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(risks) > 0 {
 		if err = store.UpsertMany(ctx, risks); err != nil {
 			log.WriteToStderrf("failed to persist risks to store %v", err)

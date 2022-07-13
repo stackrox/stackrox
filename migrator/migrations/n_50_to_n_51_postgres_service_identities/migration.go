@@ -42,7 +42,6 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	serviceIdentities, err := legacyStore.GetAll(ctx)
 	if err != nil {
-		log.WriteToStderr("failed to fetch all serviceIdentities")
 		return err
 	}
 	if len(serviceIdentities) > 0 {
