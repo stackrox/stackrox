@@ -831,6 +831,10 @@ commands:
       - fetch-ui-deps
 
       - run:
+          name: Set branding environment variable
+          command: cci-export ROX_PRODUCT_BRANDING << parameters.branding >>
+
+      - run:
           name: Prepare UI tree state file
           command: |
             git log -n 1 --pretty=format:%H -- ui/ >/tmp/ui-tree-state
@@ -2394,7 +2398,6 @@ jobs:
     resource_class: large
     environment:
       EKS_AUTOMATION_VERSION: 0.2.17
-      REACT_APP_ROX_PRODUCT_BRANDING: RHACS_BRANDING
     steps:
       - pre-build-ui:
           branding: RHACS_BRANDING
