@@ -38,9 +38,6 @@ var singletonFile string
 //go:embed singleton_test.go.tpl
 var singletonTestFile string
 
-//go:embed store_common.go.tpl
-var storeCommonFile string
-
 //go:embed store.go.tpl
 var storeFile string
 
@@ -63,12 +60,12 @@ var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
 	singletonTestTemplate     = newTemplate(singletonTestFile)
-	storeTemplate             = newTemplate(strings.Join([]string{storeCommonFile, storeFile}, "\n"))
+	storeTemplate             = newTemplate(storeFile)
 	storeTestTemplate         = newTemplate(storeTestFile)
 	indexTemplate             = newTemplate(indexFile)
 	permissionCheckerTemplate = newTemplate(permissionCheckerFile)
 	migrationTemplate         = newTemplate(migrationFile)
-	migrationTestTemplate     = newTemplate(strings.Join([]string{storeCommonFile, migrationTestFile}, "\n"))
+	migrationTestTemplate     = newTemplate(migrationTestFile)
 )
 
 type properties struct {
@@ -108,7 +105,7 @@ type properties struct {
 	// Migration root
 	MigrateRoot string
 
-	// Where the data are migrated from in the format of "database:bucket", eg, \"rocksdb:alerts\" or \"boltdb:version\"")
+	// Where the data are migrated from in the format of "database:bucket", eg, \"rocksdb\", \"dackbox\" or \"boltdb\"")
 	MigrateFrom string
 
 	// The unique sequence number to migrate all tables to Postgres
@@ -188,7 +185,7 @@ func main() {
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 	c.Flags().StringVar(&props.MigrateRoot, "migration-root", "", "Root for migrations")
-	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from in the format of \"<database>:<bucket>\", eg, \"rocksdb:alerts\" or \"boltdb:version\"")
+	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from, including \"rocksdb\", \"dackbox\" and \"boltdb\"")
 	c.Flags().IntVar(&props.MigrateSeq, "migration-seq", 0, "the unique sequence number to migrate to Postgres")
 
 	c.RunE = func(*cobra.Command, []string) error {
@@ -329,11 +326,6 @@ func main() {
 			}
 			if err := renderFile(templateMap, postgresPluginTemplate, filepath.Join(root, "postgres/postgres_plugin.go")); err != nil {
 				return err
-			}
-			if permissionCheckerEnabled {
-				if err := renderFile(templateMap, permissionCheckerTemplate, filepath.Join(root, "postgres/permission_checker.go")); err != nil {
-					return err
-				}
 			}
 		}
 

@@ -16,7 +16,7 @@ var (
 )
 
 type Store interface {
-    UpsertMany(ctx context.Context, objs []*storage.SignatureIntegration) error
+	UpsertMany(ctx context.Context, objs []*storage.SignatureIntegration) error
 	Walk(ctx context.Context, fn func(obj *storage.SignatureIntegration) error) error
 }
 
@@ -52,7 +52,7 @@ func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.SignatureInteg
 	msgs := make([]proto.Message, 0, len(objs))
 	for _, o := range objs {
 		msgs = append(msgs, o)
-    }
+	}
 
 	return b.crud.UpsertMany(msgs)
 }

@@ -18,7 +18,7 @@ var (
 )
 
 type Store interface {
-    UpsertMany(ctx context.Context, objs []*storage.{{.Type}}) error
+	UpsertMany(ctx context.Context, objs []*storage.{{.Type}}) error
 	Walk(ctx context.Context, fn func(obj *storage.{{.Type}}) error) error
 }
 
@@ -47,9 +47,9 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 	{{- else}}
 	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, {{.TrackIndex}})
 	{{- end}}
-    {{- if not .Cache}}
-    return  &storeImpl{crud: baseCRUD}, nil
-    {{- else}}
+	{{- if not .Cache}}
+	return  &storeImpl{crud: baseCRUD}, nil
+	{{- else}}
 	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 	return &storeImpl{
 		crud: cacheCRUD,
 	}, nil
-    {{- end}}
+	{{- end}}
 }
 
 // UpsertMany batches objects into the DB
@@ -65,7 +65,7 @@ func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.{{.Type}}) err
 	msgs := make([]proto.Message, 0, len(objs))
 	for _, o := range objs {
 		msgs = append(msgs, o)
-    }
+	}
 
 	return b.crud.UpsertMany(msgs)
 }

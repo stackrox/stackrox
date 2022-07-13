@@ -16,7 +16,7 @@ var (
 )
 
 type Store interface {
-    UpsertMany(ctx context.Context, objs []*storage.Role) error
+	UpsertMany(ctx context.Context, objs []*storage.Role) error
 	Walk(ctx context.Context, fn func(obj *storage.Role) error) error
 }
 
@@ -49,7 +49,7 @@ func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.Role) error {
 	msgs := make([]proto.Message, 0, len(objs))
 	for _, o := range objs {
 		msgs = append(msgs, o)
-    }
+	}
 
 	return b.crud.UpsertMany(msgs)
 }

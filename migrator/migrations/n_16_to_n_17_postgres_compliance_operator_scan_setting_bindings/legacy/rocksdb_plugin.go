@@ -16,7 +16,7 @@ var (
 )
 
 type Store interface {
-    UpsertMany(ctx context.Context, objs []*storage.ComplianceOperatorScanSettingBinding) error
+	UpsertMany(ctx context.Context, objs []*storage.ComplianceOperatorScanSettingBinding) error
 	Walk(ctx context.Context, fn func(obj *storage.ComplianceOperatorScanSettingBinding) error) error
 }
 
@@ -49,7 +49,7 @@ func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.ComplianceOper
 	msgs := make([]proto.Message, 0, len(objs))
 	for _, o := range objs {
 		msgs = append(msgs, o)
-    }
+	}
 
 	return b.crud.UpsertMany(msgs)
 }

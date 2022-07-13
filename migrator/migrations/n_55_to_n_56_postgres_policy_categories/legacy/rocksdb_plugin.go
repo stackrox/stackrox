@@ -15,7 +15,7 @@ var (
 )
 
 type Store interface {
-    UpsertMany(ctx context.Context, objs []*storage.PolicyCategory) error
+	UpsertMany(ctx context.Context, objs []*storage.PolicyCategory) error
 	Walk(ctx context.Context, fn func(obj *storage.PolicyCategory) error) error
 }
 
@@ -37,7 +37,7 @@ func uniqKeyFunc(msg proto.Message) []byte {
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
 	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, false)
-    return  &storeImpl{crud: baseCRUD}, nil
+	return  &storeImpl{crud: baseCRUD}, nil
 }
 
 // UpsertMany batches objects into the DB
@@ -45,7 +45,7 @@ func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.PolicyCategory
 	msgs := make([]proto.Message, 0, len(objs))
 	for _, o := range objs {
 		msgs = append(msgs, o)
-    }
+	}
 
 	return b.crud.UpsertMany(msgs)
 }
