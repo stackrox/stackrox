@@ -5,7 +5,6 @@ set -eu -o pipefail
 source "$(dirname "$0")/common.sh"
 
 declare allow_dirty_tag=false
-declare -r IMAGE_TAG_BASE="${IMAGE_TAG_BASE:-quay.io/stackrox-io/stackrox-operator}"
 
 function main() {
   case "$1" in
@@ -16,26 +15,27 @@ function main() {
   esac
 
   local -r operator_ns="${1:-}"
+  local -r image_tag_base="${2:-}"
 
   case $# in
-  2)
-    local -r index_version="${2:-}"
-    local -r operator_version="${2:-}"
-    ;;
   3)
-    local -r index_version="${2:-}"
+    local -r index_version="${3:-}"
     local -r operator_version="${3:-}"
     ;;
+  4)
+    local -r index_version="${3:-}"
+    local -r operator_version="${4:-}"
+    ;;
   *)
-    echo "Usage: $0 [--allow-dirty-tag | -d] <operator_ns> <index-version> [<install-version>]" >&2
+    echo "Usage: $0 [--allow-dirty-tag | -d] <operator_ns> <image_tag_base> <index-version> [<install-version>]" >&2
     exit 1
     ;;
   esac
 
   check_version_tag "${operator_version}" "${allow_dirty_tag}"
   create_namespace "${operator_ns}"
-  create_pull_secret "${operator_ns}" "${IMAGE_TAG_BASE%%/*}"
-  apply_operator_manifests "${operator_ns}" "${IMAGE_TAG_BASE}" "${index_version}" "${operator_version}"
+  create_pull_secret "${operator_ns}" "${image_tag_base%%/*}"
+  apply_operator_manifests "${operator_ns}" "${image_tag_base}" "${index_version}" "${operator_version}"
 
   approve_install_plan "${operator_ns}" "${operator_version}"
   nurse_deployment_until_available "${operator_ns}" "${operator_version}"

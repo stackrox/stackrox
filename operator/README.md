@@ -234,7 +234,7 @@ Note this assumes OLM is already in place.
 So far only tested on an OpenShift cluster.
 
 ```bash
-./hack/olm-operator-install.sh index-test $(make --quiet tag)
+./hack/olm-operator-install.sh index-test $(make --quiet image-tag-base) $(make --quiet tag)
 
 # undeploy
 
