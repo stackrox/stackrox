@@ -405,9 +405,7 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 		return nil, err
 	}
 	vulns, err := vulnLoader.FromQuery(ctx, query)
-	if err != nil {
-		return nil, err
-	} else if len(vulns) == 0 {
+	if err != nil || len(vulns) == 0 {
 		return nil, err
 	} else if len(vulns) > 1 {
 		return nil, errors.New("multiple vulnerabilities matched for top node vulnerability")

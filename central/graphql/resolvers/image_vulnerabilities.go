@@ -171,9 +171,8 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	if err != nil {
 		return nil, err
 	}
-
 	// check for Fixable fields in args
-	ErrorOnQueryContainingField(query, search.Fixable, "Unexpected `Fixable` field in ImageVulnerabilityCounter resolver")
+	logErrorOnQueryContainingField(query, search.Fixable, "ImageVulnerabilityCounter")
 
 	// get loader
 	loader, err := loaders.GetImageCVELoader(ctx)
@@ -276,9 +275,8 @@ func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) 
 	if err != nil {
 		return false, err
 	}
-
 	// check for Fixable fields in args
-	ErrorOnQueryContainingField(query, search.Fixable, "Unexpected `Fixable` field in IsFixable sub resolver")
+	logErrorOnQueryContainingField(query, search.Fixable, "IsFixable")
 
 	conjuncts := []*v1.Query{query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
 
