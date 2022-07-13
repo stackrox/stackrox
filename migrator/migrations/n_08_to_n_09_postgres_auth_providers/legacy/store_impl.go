@@ -2,15 +2,12 @@ package store
 
 import (
 	"context"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dberrors"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	bolt "go.etcd.io/bbolt"
 )
@@ -49,7 +46,6 @@ func updateUniqueCheck(tx *bolt.Tx, authProvider *storage.AuthProvider) error {
 
 // GetAll retrieves authProviders from bolt
 func (s *storeImpl) GetAll(_ context.Context) ([]*storage.AuthProvider, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "AuthProvider")
 	var authProviders []*storage.AuthProvider
 	err := s.db.View(func(tx *bolt.Tx) error {
 		provB := tx.Bucket(authProviderBucket)
@@ -69,8 +65,6 @@ func (s *storeImpl) GetAll(_ context.Context) ([]*storage.AuthProvider, error) {
 
 // Exists checks if an auth provider exists
 func (s *storeImpl) Exists(_ context.Context, id string) (bool, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Exists, "AuthProvider")
-
 	var exists bool
 	err := s.db.View(func(tx *bolt.Tx) error {
 		exists = tx.Bucket(authProviderBucket).Get([]byte(id)) != nil
@@ -81,8 +75,6 @@ func (s *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 
 // Upsert upserts an auth provider into bolt
 func (s *storeImpl) Upsert(_ context.Context, authProvider *storage.AuthProvider) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "AuthProvider")
-
 	return s.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(authProviderBucket)
 		if bolthelper.Exists(bucket, authProvider.GetId()) {
@@ -105,8 +97,6 @@ func (s *storeImpl) Upsert(_ context.Context, authProvider *storage.AuthProvider
 
 // Delete removes an auth provider from bolt
 func (s *storeImpl) Delete(_ context.Context, id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "AuthProvider")
-
 	return s.db.Update(func(tx *bolt.Tx) error {
 		ab := tx.Bucket(authProviderBucket)
 		key := []byte(id)

@@ -93,17 +93,7 @@ func OpenGormDB(t testing.TB, source string) *gorm.DB {
 	return conn.OpenGormDB(t, source, false)
 }
 
-// OpenGormDBWithDisabledConstraints
-func OpenGormDBWithDisabledConstraints(t testing.TB, source string) *gorm.DB {
-	return conn.OpenGormDB(t, source, true)
-}
-
 // CloseGormDB closes connection to a Gorm DB
 func CloseGormDB(t testing.TB, db *gorm.DB) {
 	conn.CloseGormDB(t, db)
-}
-
-// CleanUpDB removes public schema together with all tables
-func CleanUpDB(ctx context.Context, t *testing.T, pool *pgxpool.Pool) {
-	conn.CleanUpDB(ctx, t, pool)
 }
