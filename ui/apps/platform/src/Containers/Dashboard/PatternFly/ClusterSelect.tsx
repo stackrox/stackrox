@@ -83,6 +83,7 @@ function ClusterSelect({
 
     return (
         <Select
+            toggleAriaLabel="Select clusters"
             variant={SelectVariant.checkbox}
             isOpen={isOpen}
             onToggle={onToggle}
