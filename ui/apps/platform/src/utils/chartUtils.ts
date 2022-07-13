@@ -5,7 +5,7 @@ import merge from 'lodash/merge';
 
 import { severityColors } from 'constants/visuals/colors';
 
-export const solidBlueChartColor = 'var(--pf-global--palette--blue-400)';
+export const solidBlueChartColor = 'var(--pf-chart-color-blue-400)';
 
 export const severityColorScale = Object.values(severityColors);
 

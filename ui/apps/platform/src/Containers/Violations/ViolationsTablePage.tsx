@@ -161,7 +161,7 @@ function ViolationsTablePage(): ReactElement {
                 <Title headingLevel="h1">Violations</Title>
                 <Divider className="pf-u-py-md" />
                 <SearchFilterInput
-                    className="theme-light pf-search-shim"
+                    className="pf-search-shim"
                     handleChangeSearchFilter={setSearchFilter}
                     placeholder="Filter violations"
                     searchCategory={searchCategory}

@@ -17,6 +17,14 @@
     --color-severity-critical: var(--pf-global--palette--red-100);
 }
 
+:root:where(.pf-theme-dark) {
+    /*
+    Red is the only color from the severity pallette that is defined differently 
+    in the PatternFly charts dark theme
+    */
+    --color-severity-critical: var(--pf-global--palette--red-200);
+}
+
 /*
  * A button with small font size like `isSmall` and reduced padding:
  * 4px instead of 6px vertical
