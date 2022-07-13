@@ -769,8 +769,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchNodeComponents() {
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchRawNodeComponents() {
+<<<<<<< HEAD
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
+=======
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(true)
+	defer s.cleanNodeToVulnerabilitiesGraph(true)
+>>>>>>> acdd6eb6c6 (Implement search tests for ImageComponent and NodeComponent)
 	s.Require().NoError(err)
 	for _, c := range nodeComponentTestCases {
 		s.Run(c.contextKey, func() {
