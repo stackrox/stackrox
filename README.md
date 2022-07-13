@@ -571,7 +571,7 @@ StackRox is known to work on the recent versions of the following operating syst
 
 **Recommended Web Browsers**
 
-The following table outlines the browsers that can view the StackRox web user interface.
+The following table lists the browsers that can view the StackRox web user interface.
 
 - Google Chrome 88.0 (64-bit)
 - Microsoft Internet Explorer Edge
