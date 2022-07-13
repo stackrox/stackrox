@@ -1060,9 +1060,8 @@ send_slack_notice_for_failures_on_merge() {
 }
 '
 
-    echo "$body" | \
     jq --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
-       --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" | \
+       --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body" | \
     curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
