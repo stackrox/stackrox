@@ -73,6 +73,7 @@ func (f *networkPolicyFinder) FindDependants(raw interface{}, stores *ingestion.
 	sel := selector.CreateSelector(networkPolicy.GetSpec().GetPodSelector().
 		GetMatchLabels(), selector.EmptyMatchesEverything())
 	deployments := stores.Deployments.GetMatchingDeployments(networkPolicy.Namespace, sel)
+	log.Infof("found %d deployments from selector %+v", len(deployments), sel)
 	var result []Identifier
 	for _, dep := range deployments {
 		result = append(result, Identifier{

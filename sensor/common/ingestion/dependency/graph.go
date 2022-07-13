@@ -4,11 +4,17 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/ingestion"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 type graphNode struct {
+	canonicalId string
 	kind string
 	// canonicalId for children
 	dependencies set.StringSet
@@ -58,20 +64,76 @@ func (g *Graph) GenerateSnapshotFromUpsert(kind, namespace, id string) *ClusterS
 		Namespace: namespace,
 		Id:        id,
 	}
+	topLevelNodesToBeUpdated := set.NewStringSet()
 
 	canonicalId := makeCanonicalId(identifier)
-	if _, exists := g.nodeIndex[canonicalId]; exists {
+	if node, exists := g.nodeIndex[canonicalId]; exists {
+		log.Infof("Adding node %s that already exists. Checking if edges need to be updated", canonicalId)
 		// TODO: check if edges were updated and then re-compute the graph for that node
+		finder, ok := FinderForKind[identifier.Kind]
+		if !ok {
+			panic(fmt.Sprintf("finder for kind %s not implemented", identifier.Kind))
+		}
+
+		resourceObject := g.getResourceById(identifier.Kind, identifier.Id)
+		g.updateDependencyEdges(node, asSet(finder.FindDependencies(resourceObject, g.stores)))
+		dependants := finder.FindDependants(resourceObject, g.stores)
+		dependantsThatNeedReprocessing := g.updateDependentEdges(node, asSet(dependants))
+		log.Infof("Object: \n%+v\nDependants:\n%+v\nDependants that require reprocessing:\n%+v", resourceObject, dependants, dependantsThatNeedReprocessing)
+		for _, dependantId := range dependantsThatNeedReprocessing.AsSlice() {
+			g.forEachTopLevelNode(dependantId, func(s string) {
+				topLevelNodesToBeUpdated.Add(s)
+			})
+		}
 	} else {
 		g.addNodeAndAdjacentIfMissing(identifier)
 	}
-
-	// On a regular update or create, we want to find the top-level node, and genreate a snapshot from there.
-	var nodes []string
 	g.forEachTopLevelNode(canonicalId, func(s string) {
-		nodes = append(nodes, s)
+		topLevelNodesToBeUpdated.Add(s)
 	})
-	return g.makeSnapshotFrom(nodes)
+	return g.makeSnapshotFrom(topLevelNodesToBeUpdated.AsSlice())
+}
+
+func asSet(identifiers []Identifier) set.StringSet {
+	stringSet := set.NewStringSet()
+	for _, i := range identifiers {
+		stringSet.Add(makeCanonicalId(i))
+	}
+	return stringSet
+}
+
+func (g *Graph) updateDependencyEdges(origin *graphNode, newSet set.StringSet) {
+	newlyAddedEgdes := newSet.Difference(origin.dependencies)
+	removedEdges := origin.dependencies.Difference(newSet)
+
+	origin.dependencies = newSet
+	for _, newEdge := range newlyAddedEgdes.AsSlice() {
+		// TODO: what if the node is not in the graph yet?
+		g.nodeIndex[newEdge].dependants.Add(origin.canonicalId)
+	}
+
+	for _, removedEdge := range removedEdges.AsSlice() {
+		g.nodeIndex[removedEdge].dependants.Remove(origin.canonicalId)
+	}
+}
+
+func (g *Graph) updateDependentEdges(origin *graphNode, newSet set.StringSet) set.StringSet {
+	newlyAddedEgdes := newSet.Difference(origin.dependants)
+	removedEdges := origin.dependants.Difference(newSet)
+
+	origin.dependants = newSet
+	for _, newEdge := range newlyAddedEgdes.AsSlice() {
+		// TODO: what if the node is not in the graph yet?
+		g.nodeIndex[newEdge].dependencies.Add(origin.canonicalId)
+	}
+
+	for _, removedEdge := range removedEdges.AsSlice() {
+		g.nodeIndex[removedEdge].dependencies.Remove(origin.canonicalId)
+	}
+
+	// We need to inform if any edges were removed. If that's the case, then we need to also
+	// compute the top-level nodes of the removed edges
+	return removedEdges
 }
 
 func (g *Graph) addNodeAndAdjacentIfMissing(identifier Identifier) {
@@ -83,6 +145,7 @@ func (g *Graph) addNodeAndAdjacentIfMissing(identifier Identifier) {
 	} else {
 		// node doesn't exist, we need to add it to the graph
 		g.nodeIndex[canonicalId] = &graphNode{
+			canonicalId: canonicalId,
 			kind: identifier.Kind,
 		}
 
