@@ -805,7 +805,7 @@ func (resolver *deploymentResolver) PlottedVulns(ctx context.Context, args RawQu
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *deploymentResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PlottedImageVulnerabilities")
-	return newPlottedImageVulnerabilitiesResolver(resolver.withDeploymentScope(ctx), resolver.root, args)
+	return resolver.PlottedImageVulnerabilities(resolver.withDeploymentScope(ctx), args)
 }
 
 func (resolver *deploymentResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
