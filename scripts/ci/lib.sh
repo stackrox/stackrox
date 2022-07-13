@@ -1034,16 +1034,16 @@ send_slack_notice_for_failures_on_merge() {
 
     local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
 
-    local body
-    body=$(cat <<_EOB_
+    # shellcheck disable=SC2016
+    local body='
 {
-    "text": "*Job Name:* \$job_name",
+    "text": "*Job Name:* $job_name",
     "blocks": [
 		{
 			"type": "header",
 			"text": {
 				"type": "plain_text",
-				"text": "Prow job failure: \$job_name"
+				"text": "Prow job failure: $job_name"
 			}
 		},
         {
@@ -1058,11 +1058,11 @@ send_slack_notice_for_failures_on_merge() {
 		}
     ]
 }
-_EOB_
-    )
+'
 
     echo "$body" | \
-    jq --arg job_name "$job_name" | \
+    jq --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
+       --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" | \
     curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
