@@ -20,6 +20,7 @@ var (
                    Id varchar,
                    Name varchar,
                    Version varchar,
+                   Priority integer,
                    RiskScore numeric,
                    TopCvss numeric,
                    serialized bytea,
@@ -61,6 +62,7 @@ type NodeComponents struct {
 	Id         string  `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string  `gorm:"column:name;type:varchar"`
 	Version    string  `gorm:"column:version;type:varchar"`
+	Priority   int64   `gorm:"column:priority;type:integer"`
 	RiskScore  float32 `gorm:"column:riskscore;type:numeric"`
 	TopCvss    float32 `gorm:"column:topcvss;type:numeric"`
 	Serialized []byte  `gorm:"column:serialized;type:bytea"`
