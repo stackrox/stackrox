@@ -243,8 +243,11 @@ kubectl port-forward -n 'stackrox' svc/central "8000:443"
 Then go to https://localhost:8000/ in your web browser.
 
 **Username** = The default user is `admin` 
-**Password (Helm)**   = The password is int he generated `stackrox-admin-password.txt` folder. 
+
+**Password (Helm)**   = The password is in the generated `stackrox-admin-password.txt` folder. 
+
 **Password (Script)** = The password will be located in the `/deploy` folder for the script install.
+
 </details>
 
 ---
@@ -539,7 +542,7 @@ bash openshift/central.sh
 
 The following information has been gathered to help with the installation and operation of the open source StackRox project. These recommendations were developed for the [Red Hat Advanced Cluster Security for Kubernetes](https://www.redhat.com/en/resources/advanced-cluster-security-for-kubernetes-datasheet) product and have not been tested with the upstream StackRox project.
 
-**Tested Kubernetes Distributions**
+**Recommended Kubernetes Distributions**
 
 The Kubernetes Platforms that StackRox has been deployed onto with minimal issues are listed below. 
 
@@ -552,7 +555,7 @@ The Kubernetes Platforms that StackRox has been deployed onto with minimal issue
 
 If you deploy into a Kubernetes distribution other than the ones listed above you may encounter issues. 
 
-**Tested Operating Systems**
+**Recommended Operating Systems**
 
 StackRox is known to work on the recent versions of the following operating systems.
 
@@ -566,14 +569,14 @@ StackRox is known to work on the recent versions of the following operating syst
 - Amazon Linux
 - Garden Linux
 
-**Tested Web Browsers**
+**Recommended Web Browsers**
 
 The following table outlines the browsers that can view the StackRox web user interface.
 
 - Google Chrome 88.0 (64-bit)
 - Microsoft Internet Explorer Edge
     - Version 44 and later (Windows) 
-    - Version 81 (Official build) (64-bit) (MacOS) 
+    - Version 81 (Official build) (64-bit) 
 - Safari on MacOS (Mojave) - Version 14.0
 - Mozilla Firefox Version 82.0.2 (64-bit)
 
