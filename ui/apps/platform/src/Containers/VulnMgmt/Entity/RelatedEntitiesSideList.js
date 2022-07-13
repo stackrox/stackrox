@@ -9,8 +9,12 @@ import { getEntityTypesByRelationship } from 'utils/entityRelationships';
 import relationshipTypes from 'constants/relationshipTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import TileList from 'Components/TileList';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityContext }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+
     const { isDarkMode } = useTheme();
     const workflowState = useContext(workflowStateContext);
     const { useCase } = workflowState;
@@ -22,32 +26,57 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
 
     const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
         .map((matchEntity) => {
+            // @TODO: Modify the actual relationship entities once ROX_FRONTEND_VM_UPDATES is in
+            let newMatchEntity = matchEntity;
+            if (showVMUpdates && entityType === 'NODE_COMPONENT' && matchEntity === 'CVE') {
+                newMatchEntity = 'NODE_CVE';
+            } else if (showVMUpdates && entityType === 'IMAGE_COMPONENT' && matchEntity === 'CVE') {
+                newMatchEntity = 'IMAGE_CVE';
+            }
+
             const countKeyToUse =
-                countKeyMap[matchEntity].includes('imageComponentCount') ||
-                countKeyMap[matchEntity].includes('nodeComponentCount')
+                countKeyMap[newMatchEntity].includes('imageComponentCount') ||
+                countKeyMap[newMatchEntity].includes('nodeComponentCount')
                     ? 'componentCount'
-                    : countKeyMap[matchEntity];
+                    : countKeyMap[newMatchEntity];
             const count = data[countKeyToUse];
+
             return {
                 count,
-                label: pluralize(matchEntity, count),
-                entity: matchEntity,
-                url: workflowState.pushList(matchEntity).setSearch('').toUrl(),
+                label: pluralize(newMatchEntity, count).replace('_', ' '),
+                entity: newMatchEntity,
+                url: workflowState.pushList(newMatchEntity).setSearch('').toUrl(),
             };
         })
-        .filter((matchObj) => matchObj.count && !entityContext[matchObj.entity]);
+        .filter((matchObj) => {
+            return matchObj.count && !entityContext[matchObj.entity];
+        });
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
         .map((containEntity) => {
-            const count = data[countKeyMap[containEntity]];
-            const entityLabel = entityLabels[containEntity].toUpperCase();
+            // @TODO: Modify the actual relationship entities once ROX_FRONTEND_VM_UPDATES is in
+            let newContainEntity = containEntity;
+            if (showVMUpdates && entityType === 'NODE_COMPONENT' && containEntity === 'CVE') {
+                newContainEntity = 'NODE_CVE';
+            } else if (
+                showVMUpdates &&
+                entityType === 'IMAGE_COMPONENT' &&
+                containEntity === 'CVE'
+            ) {
+                newContainEntity = 'IMAGE_CVE';
+            }
+
+            const count = data[countKeyMap[newContainEntity]];
+            const entityLabel = entityLabels[newContainEntity].toUpperCase();
             return {
                 count,
                 label: pluralize(entityLabel, count),
-                entity: containEntity,
-                url: workflowState.pushList(containEntity).setSearch('').toUrl(),
+                entity: newContainEntity,
+                url: workflowState.pushList(newContainEntity).setSearch('').toUrl(),
             };
         })
-        .filter((containObj) => containObj.count && !entityContext[containObj.entity]);
+        .filter((containObj) => {
+            return containObj.count && !entityContext[containObj.entity];
+        });
     if (!matches.length && !contains.length) {
         return null;
     }

@@ -67,10 +67,15 @@ export const entityGroupMap = {
     [entityTypes.NAMESPACE]: entityGroups.APPLICATION_RESOURCES,
     [entityTypes.IMAGE]: entityGroups.APPLICATION_RESOURCES,
     [entityTypes.COMPONENT]: entityGroups.APPLICATION_RESOURCES,
+    [entityTypes.NODE_COMPONENT]: entityGroups.APPLICATION_RESOURCES,
+    [entityTypes.IMAGE_COMPONENT]: entityGroups.APPLICATION_RESOURCES,
 
     [entityTypes.POLICY]: entityGroups.SECURITY,
     [entityTypes.CONTROL]: entityGroups.SECURITY,
     [entityTypes.CVE]: entityGroups.SECURITY,
+    [entityTypes.NODE_CVE]: entityGroups.SECURITY,
+    [entityTypes.IMAGE_CVE]: entityGroups.SECURITY,
+    [entityTypes.CLUSTER_CVE]: entityGroups.SECURITY,
 };
 
 type EntityRelationshipData = {
