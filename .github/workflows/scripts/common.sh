@@ -49,7 +49,8 @@ gh_summary() {
 }
 export -f gh_summary
 
-if [ "$#" -gt 0 ]; then
+# bash trick to check if the script is sourced.
+if ! (return 0 2>/dev/null); then # called
     SCRIPT="$1"
     check_not_empty \
         SCRIPT \
