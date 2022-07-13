@@ -59,10 +59,9 @@ func (s *postgresMigrationSuite) SetupTest() {
 func (s *postgresMigrationSuite) TearDownTest() {
 	rocksdbtest.TearDownRocksDB(s.legacyDB)
 	s.postgresDB.Teardown(s.T())
-
 }
 
-func (s *postgresMigrationSuite) TestMigration() {
+func (s *postgresMigrationSuite) TestComplianceOperatorRuleMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
 	// Prepare data and write to legacy DB
 	var complianceOperatorRules []*storage.ComplianceOperatorRule

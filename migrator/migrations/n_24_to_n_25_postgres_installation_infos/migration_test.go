@@ -62,10 +62,9 @@ func (s *postgresMigrationSuite) SetupTest() {
 func (s *postgresMigrationSuite) TearDownTest() {
 	testutils.TearDownDB(s.legacyDB)
 	s.postgresDB.Teardown(s.T())
-
 }
 
-func (s *postgresMigrationSuite) TestMigration() {
+func (s *postgresMigrationSuite) TestInstallationInfoMigration() {
 	newStore := pgStore.New(s.ctx, s.postgresDB.Pool)
 	// Prepare data and write to legacy DB
 	legacyStore := legacy.New(s.legacyDB)

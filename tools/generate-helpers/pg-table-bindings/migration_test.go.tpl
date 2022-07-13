@@ -1,10 +1,10 @@
 //go:build sql_integration
 {{- $name := .TrimmedType|lowerCamelCase }}
-package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 {{define "getterParamList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $idx, $pk := .Schema.PrimaryKeys}}{{if $idx}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
 {{ $boltDB := eq .Migration.MigrateFromDB "boltdb" }}
 {{ $dackbox := eq .Migration.MigrateFromDB "dackbox" }}
 {{ $rocksDB := or $dackbox (eq .Migration.MigrateFromDB "rocksdb") }}
+package n{{.Migration.MigrateSequence}}ton{{add .Migration.MigrateSequence 1}}
 
 import (
 	"context"
@@ -75,7 +75,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	s.postgresDB.Teardown(s.T())
 }
 
-func (s *postgresMigrationSuite) TestMigration() {
+func (s *postgresMigrationSuite) Test{{.TrimmedType}}Migration() {
 	newStore := pgStore.New({{if .Migration.SingletonStore}}s.ctx, {{end}}s.postgresDB.Pool)
 	// Prepare data and write to legacy DB
     {{- if .Migration.SingletonStore}}

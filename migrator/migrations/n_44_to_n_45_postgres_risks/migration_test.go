@@ -61,7 +61,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	s.postgresDB.Teardown(s.T())
 }
 
-func (s *postgresMigrationSuite) TestMigration() {
+func (s *postgresMigrationSuite) TestRiskMigration() {
 	newStore := pgStore.New(s.postgresDB.Pool)
 	// Prepare data and write to legacy DB
 	var risks []*storage.Risk
