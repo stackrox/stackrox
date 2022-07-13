@@ -1,6 +1,5 @@
 # A library of bash functions useful for installing operator using OLM.
 
-declare -r IMAGE_TAG_BASE="${IMAGE_TAG_BASE:-quay.io/stackrox-io/stackrox-operator}"
 declare -r KUTTL="${KUTTL:-kubectl-kuttl}"
 declare -r pull_secret="operator-pull-secret"
 # `declare` ignores `errexit`: http://mywiki.wooledge.org/BashFAQ/105
@@ -20,10 +19,10 @@ function create_namespace() {
 
 function create_pull_secret() {
   local -r operator_ns="$1"
+  local -r registry_hostname="$2"
   # Note: can get rid of this secret once its in the cluster global pull secrets,
   # see https://stack-rox.atlassian.net/browse/RS-261
   log "Creating image pull secret..."
-  local -r registry_hostname="${IMAGE_TAG_BASE%%/*}"
   "${ROOT_DIR}/deploy/common/pull-secret.sh" "${pull_secret}" "${registry_hostname}" \
     | kubectl -n "${operator_ns}" apply -f -
 
@@ -36,13 +35,14 @@ function create_pull_secret() {
 function apply_operator_manifests() {
   log "Applying operator manifests..."
   local -r operator_ns="$1"
-  local -r index_version="$2"
-  local -r operator_version="$3"
+  local -r image_tag_base="$2"
+  local -r index_version="$3"
+  local -r operator_version="$4"
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
-    IMAGE_TAG_BASE="${IMAGE_TAG_BASE}" \
+    IMAGE_TAG_BASE="${image_tag_base}" \
     `# TODO: IMAGE_REGISTRY is provided for compatibility with versions 71 and older. Remove after we release 72.` \
-    IMAGE_REGISTRY="${IMAGE_TAG_BASE%/*}" \
+    IMAGE_REGISTRY="${image_tag_base%/*}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | kubectl -n "${operator_ns}" apply -f -
 }
