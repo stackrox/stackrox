@@ -139,6 +139,7 @@ func (resolver *imageResolver) Deployments(ctx context.Context, args PaginatedQu
 
 // DeploymentCount returns the number of deployments which use this image for the identified image, if it exists
 func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "DeploymentCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
@@ -392,6 +393,7 @@ func (resolver *imageResolver) getImageQuery() *v1.Query {
 }
 
 func (resolver *imageResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "PlottedVulns")
 	if features.PostgresDatastore.Enabled() {
 		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
 	}
@@ -406,6 +408,7 @@ func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, 
 }
 
 func (resolver *imageResolver) WatchStatus(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "WatchStatus")
 	if err := readAuth(resources.WatchedImage)(ctx); err != nil {
 		return "", err
 	}
