@@ -30,6 +30,11 @@ type PaginatedQuery struct {
 	Pagination *inputtypes.Pagination
 }
 
+// PaginationWrapper represents pagination without any query
+type PaginationWrapper struct {
+	Pagination *inputtypes.Pagination
+}
+
 // AsV1QueryOrEmpty returns a proto query or empty proto query if pagination query is empty
 func (r *PaginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
 	var q *v1.Query

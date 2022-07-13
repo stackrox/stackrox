@@ -33,6 +33,7 @@ func init() {
 				"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 				"imageCount(query: String): Int!",
 				"images(query: String, pagination: Pagination): [Image!]!",
+				"vulnerabilityState: String!",
 			)),
 		schema.AddQuery("imageVulnerability(id: ID): ImageVulnerability"),
 		schema.AddQuery("imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!"),
@@ -54,6 +55,7 @@ type ImageVulnerabilityResolver interface {
 	ImageComponentCount(ctx context.Context, args RawQuery) (int32, error)
 	ImageCount(ctx context.Context, args RawQuery) (int32, error)
 	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
+	VulnerabilityState(ctx context.Context) string
 }
 
 // ImageVulnerability returns a vulnerability of the given id
@@ -169,14 +171,8 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	if err != nil {
 		return nil, err
 	}
-
 	// check for Fixable fields in args
-	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
-		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if ok && mfQ.MatchFieldQuery.GetField() == search.Fixable.String() {
-			log.Errorf("Unexpected `Fixable` field in ImageVulnerabilityCounter resolver")
-		}
-	})
+	logErrorOnQueryContainingField(query, search.Fixable, "ImageVulnerabilityCounter")
 
 	// get loader
 	loader, err := loaders.GetImageCVELoader(ctx)
@@ -275,18 +271,12 @@ func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, e
 
 func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
-	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID), search.ExcludeFieldLabel(search.Fixable))
+	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID))
 	if err != nil {
 		return false, err
 	}
-
 	// check for Fixable fields in args
-	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
-		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if ok && mfQ.MatchFieldQuery.GetField() == search.Fixable.String() {
-			log.Errorf("Unexpected `Fixable` field in IsFixable sub resolver")
-		}
-	})
+	logErrorOnQueryContainingField(query, search.Fixable, "IsFixable")
 
 	conjuncts := []*v1.Query{query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
 

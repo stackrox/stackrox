@@ -631,38 +631,27 @@ func (resolver *clusterResolver) VulnCounter(ctx context.Context, args RawQuery)
 func (resolver *clusterResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilities")
 
-	if !features.PostgresDatastore.Enabled() {
-		// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return resolver.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilities in Cluster does not support postgres yet")
+	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+	return resolver.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // NodeVulnerabilityCount returns the number of node vulnerabilities in the cluster.
 func (resolver *clusterResolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCount")
 
-	if !features.PostgresDatastore.Enabled() {
-		// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return resolver.root.NodeVulnerabilityCount(ctx, RawQuery{Query: &query})
-	}
-	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeVulnerabilityCount in Cluster does not support postgres yet")
+	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+	return resolver.root.NodeVulnerabilityCount(ctx, RawQuery{Query: &query})
 }
 
 // NodeVulnerabilityCounter resolves the number of different types of node vulnerabilities contained in the cluster.
 func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCounter")
 
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return resolver.root.NodeVulnCounter(ctx, RawQuery{Query: &query})
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in Cluster does not support postgres yet")
+	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+	return resolver.root.NodeVulnerabilityCounter(ctx, RawQuery{Query: &query})
 }
 
 func (resolver *clusterResolver) withClusterScope(ctx context.Context) context.Context {
@@ -1129,12 +1118,9 @@ func (resolver *clusterResolver) LatestViolation(ctx context.Context, args RawQu
 func (resolver *clusterResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlottedNodeVulnerabilities")
 
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return newPlottedNodeVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver PlottedNodeVulnerabilities in Cluster does not support postgres yet")
+	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+	return newPlottedNodeVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }
 
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard

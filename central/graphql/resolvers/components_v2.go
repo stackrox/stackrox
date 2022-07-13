@@ -421,7 +421,7 @@ func (eicr *imageComponentResolver) NodeVulnerabilityCount(_ context.Context, ar
 func (eicr *imageComponentResolver) NodeVulnerabilityCounter(_ context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "NodeVulnerabilityCounter")
 	if !features.PostgresDatastore.Enabled() {
-		return eicr.root.NodeVulnCounter(eicr.imageComponentScopeContext(), args)
+		return eicr.root.NodeVulnerabilityCounter(eicr.imageComponentScopeContext(), args)
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in NodeComponent does not support postgres yet")
