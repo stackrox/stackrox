@@ -170,7 +170,7 @@ Further steps are orchestrator specific.
 
 <details><summary>Click to expand</summary>
 
-Follow the guide below to quickly deploy a specific version of StackRox to your Kubernetes cluster in the `stackrox` namespace. If you want to install a specific version, make sure to define/set it in `MAIN_IMAGE_TAG`, otherwise it will install the latest nightly.
+Follow the guide below to quickly deploy a specific version of StackRox to your Kubernetes cluster in the `stackrox` namespace. If you want to install a specific version, make sure to define/set it in `MAIN_IMAGE_TAG`, otherwise it will install the latest nightly build.
 
 Run the following in your working directory of choice:
 
