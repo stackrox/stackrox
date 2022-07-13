@@ -3383,6 +3383,11 @@
   dependencies:
     "@types/node" ">= 8"
 
+"@patternfly/patternfly@^4.206.3":
+  version "4.206.3"
+  resolved "https://registry.yarnpkg.com/@patternfly/patternfly/-/patternfly-4.206.3.tgz#cdf3f42df06cd84f2a25bd5bf07e6e69d5d7af84"
+  integrity sha512-2Ar6qaZAozyx/KBzlqqskoEf45HUZIbk668qFwYHWaTkuucYw/usoxw03OwnGCS4GgBlMf06X2uonHgQLhVT8A==
+
 "@patternfly/react-charts@6.84.8":
   version "6.84.8"
   resolved "https://registry.yarnpkg.com/@patternfly/react-charts/-/react-charts-6.84.8.tgz#9d816a8f45426acbf114a4623626688325b95b8b"

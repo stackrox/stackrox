@@ -98,7 +98,7 @@ function RequirementRowAddKey({
                         className="pf-m-smallest"
                         onClick={handleRequirementKeyCancel}
                     >
-                        <TimesCircleIcon color="var(--pf-global--color--100)" />
+                        <TimesCircleIcon />
                     </Button>
                 </Tooltip>
             </Td>

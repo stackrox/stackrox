@@ -59,13 +59,6 @@
 /* See also style rule to override classic opacity. */
 
 /*
- * ToggleGroupItem button that is disabled needs lighter background like any other form control.
- */
- button.pf-c-toggle-group__button:disabled {
-    background-color: var(--pf-global--disabled-color--300);
-}
-
-/*
  * ToggleGroupItem button that is disabled and selected needs more contrast to distinguish from unselected button.
  */
 button.pf-c-toggle-group__button.pf-m-selected:disabled {

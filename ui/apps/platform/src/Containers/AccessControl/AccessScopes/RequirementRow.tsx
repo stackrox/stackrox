@@ -168,7 +168,7 @@ function RequirementRow({
                                     className="pf-m-smallest"
                                     onClick={handleRequirementCancel}
                                 >
-                                    <TimesCircleIcon color="var(--pf-global--color--100)" />
+                                    <TimesCircleIcon />
                                 </Button>
                             </Tooltip>
                         </>

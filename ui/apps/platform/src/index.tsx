@@ -25,6 +25,11 @@ import '@patternfly/react-styles/css/utilities/Sizing/sizing.css';
 import '@patternfly/react-styles/css/utilities/Spacing/spacing.css';
 import '@patternfly/react-styles/css/utilities/Text/text.css';
 
+// The below line and the `@patternfly/patternfly` dependency can be removed if and when
+// the following import is merged into the main react-charts CSS.
+// See https://coreos.slack.com/archives/C033X08HCHW/p1654019149008199?thread_ts=1654013255.032159&cid=C033X08HCHW
+import '@patternfly/patternfly/patternfly-charts-theme-dark.css';
+
 // Advanced Cluster Security extensions to PatternFly styles
 import 'css/acs.css';
 // We need the following file, to smooth out rough edges, as we migrate to PatternFly

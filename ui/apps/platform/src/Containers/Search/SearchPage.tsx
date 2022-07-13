@@ -183,7 +183,7 @@ function SearchPage(): ReactElement {
                         </Alert>
                     ) : (
                         <SearchFilterInput
-                            className="theme-light pf-search-shim z-xs-101"
+                            className="pf-search-shim z-xs-101"
                             handleChangeSearchFilter={handleChangeSearchFilter}
                             isDisabled={isLoadingSearchOptions || isLoadingSearchResponse}
                             placeholder="Filter resources"

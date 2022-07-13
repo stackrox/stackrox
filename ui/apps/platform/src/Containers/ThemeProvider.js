@@ -44,19 +44,22 @@ const ThemeProvider = ({ children }) => {
         return <div />;
     }
 
-    const getTheme = (isDarkMode) => (isDarkMode ? 'theme-dark' : 'theme-light');
-    document.body.classList.add(getTheme(themeState.isDarkMode));
-    document.body.classList.remove(getTheme(!themeState.isDarkMode));
+    // Note: Once the app has been fully migrated to PatternFly the `theme-light` and
+    // `theme-dark` classes can be removed
+    const getThemeClasses = (isDarkMode) =>
+        isDarkMode ? ['theme-dark', 'pf-theme-dark'] : ['theme-light'];
+    document.documentElement.classList.add(...getThemeClasses(themeState.isDarkMode));
+    document.documentElement.classList.remove(...getThemeClasses(!themeState.isDarkMode));
 
     const toggle = () => {
-        const prevTheme = getTheme(themeState.isDarkMode);
+        const prevTheme = getThemeClasses(themeState.isDarkMode);
         const darkModeToggled = !themeState.isDarkMode;
         localStorage.setItem(DARK_MODE_KEY, JSON.stringify(darkModeToggled));
-        document.body.classList.remove(prevTheme);
+        document.documentElement.classList.remove(...prevTheme);
         setThemeState({ ...themeState, isDarkMode: darkModeToggled });
-        const newTheme = getTheme(darkModeToggled);
+        const newTheme = getThemeClasses(darkModeToggled);
 
-        document.body.classList.add(newTheme);
+        document.documentElement.classList.add(...newTheme);
     };
 
     return (
