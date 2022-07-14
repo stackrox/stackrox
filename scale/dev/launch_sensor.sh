@@ -18,6 +18,8 @@ if [ ! -f "$file" ]; then
     exit 1
 fi
 
+SENSOR_HELM_DEPLOY=false CLUSTER="${namespace}" NAMESPACE_OVERRIDE="${namespace}" "$DIR/../../deploy/k8s/sensor.sh"
+
 # This is purposefully kept as stackrox because this is where central should be run
 if ! kubectl -n stackrox get pvc/stackrox-db > /dev/null; then
   >&2 echo "Running the scale workload requires a PVC"
@@ -36,8 +38,4 @@ if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
   exit 0
 fi
 
-if [[ -n "$CI" ]]; then
-  kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"8Gi","cpu":"5"},"limits":{"memory":"16Gi","cpu":"8"}}}]}}}}'
-else
-  kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
-fi
+kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"8Gi","cpu":"4"},"limits":{"memory":"20Gi","cpu":"8"}}}]}}}}'

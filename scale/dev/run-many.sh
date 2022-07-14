@@ -7,7 +7,12 @@ if [[ -z "$1" ]]; then
   exit 1
 fi
 
-./launch_central.sh
+if ! kubectl -n stackrox get deploy/central; then
+  ./launch_central.sh
+else
+  killpf 8000
+  ./port-forward.sh 8000
+fi
 
 for i in $(seq 1 $2); do
   namespace="stackrox$i"
