@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -20,6 +21,7 @@ import (
 
 var (
 	sacHelper = sac.ForResource(resources.Image).MustCreatePgSearchHelper()
+	log       = logging.LoggerForModule()
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.
@@ -103,6 +105,7 @@ func (s *searcherImplV2) searchImages(ctx context.Context, q *v1.Query) ([]*stor
 }
 
 func (s *searcherImplV2) Search(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
+	log.Info("searching images")
 	return s.searcher.Search(ctx, q)
 }
 
