@@ -74,6 +74,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		reconciler.WithMaxReleaseHistory(maxReleaseHistorySize),
 		reconciler.WithMarkFailedAfter(markReleaseFailedAfter),
 		reconciler.SkipPrimaryGVKSchemeRegistration(true),
+		reconciler.WithLog(ctrl.Log.WithName("controllers").WithName(gvk.Kind)),
 	}
 	reconcilerOpts = append(reconcilerOpts, extraOpts...)
 
