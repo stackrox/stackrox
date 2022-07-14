@@ -1,13 +1,19 @@
 package version
 
 import (
+	"context"
 	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/version/store"
+	"github.com/stackrox/rox/central/version/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
@@ -23,28 +29,53 @@ type EnsurerTestSuite struct {
 
 	boltDB       *bolt.DB
 	rocksDB      *rocksdb.RocksDB
+	pgStore      postgres.Store
+	pool         *pgxpool.Pool
 	versionStore store.Store
 }
 
 func (suite *EnsurerTestSuite) SetupTest() {
-	boltDB, err := bolthelper.NewTemp(testutils.DBFileName(suite))
-	suite.Require().NoError(err, "Failed to make BoltDB")
+	if features.PostgresDatastore.Enabled() {
+		source := pgtest.GetConnectionString(suite.T())
+		config, err := pgxpool.ParseConfig(source)
+		suite.Require().NoError(err)
+		ctx := sac.WithAllAccess(context.Background())
+		pool, err := pgxpool.ConnectConfig(ctx, config)
+		suite.pool = pool
 
-	rocksDB := rocksdbtest.RocksDBForT(suite.T())
-	suite.Require().NoError(err, "Failed to create RocksDB")
+		// Ensure we are starting fresh
+		postgres.Destroy(ctx, pool)
+		suite.versionStore = store.NewPostgres(pool)
+	} else {
+		boltDB, err := bolthelper.NewTemp(testutils.DBFileName(suite))
+		suite.Require().NoError(err, "Failed to make BoltDB")
 
-	suite.boltDB = boltDB
-	suite.rocksDB = rocksDB
-	suite.versionStore = store.New(boltDB, rocksDB)
+		rocksDB := rocksdbtest.RocksDBForT(suite.T())
+		suite.Require().NoError(err, "Failed to create RocksDB")
+
+		suite.boltDB = boltDB
+		suite.rocksDB = rocksDB
+
+		suite.versionStore = store.New(boltDB, rocksDB)
+	}
 }
 
 func (suite *EnsurerTestSuite) TearDownTest() {
-	suite.NoError(suite.boltDB.Close())
+	if features.PostgresDatastore.Enabled() {
+		if suite.pool != nil {
+			suite.pool.Close()
+		}
+	} else {
+		suite.NoError(suite.boltDB.Close())
+	}
 }
 
 func (suite *EnsurerTestSuite) TestWithEmptyDB() {
-
-	suite.NoError(Ensure(store.New(suite.boltDB, suite.rocksDB)))
+	if features.PostgresDatastore.Enabled() {
+		suite.NoError(Ensure(store.NewPostgres(suite.pool)))
+	} else {
+		suite.NoError(Ensure(store.New(suite.boltDB, suite.rocksDB)))
+	}
 	version, err := suite.versionStore.GetVersion()
 	suite.NoError(err)
 	suite.Equal(migrations.CurrentDBVersionSeqNum(), int(version.GetSeqNum()))
@@ -52,7 +83,11 @@ func (suite *EnsurerTestSuite) TestWithEmptyDB() {
 
 func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: int32(migrations.CurrentDBVersionSeqNum())}))
-	suite.NoError(Ensure(store.New(suite.boltDB, suite.rocksDB)))
+	if features.PostgresDatastore.Enabled() {
+		suite.NoError(Ensure(store.NewPostgres(suite.pool)))
+	} else {
+		suite.NoError(Ensure(store.New(suite.boltDB, suite.rocksDB)))
+	}
 
 	version, err := suite.versionStore.GetVersion()
 	suite.NoError(err)
@@ -61,5 +96,9 @@ func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 
 func (suite *EnsurerTestSuite) TestWithIncorrectVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: int32(migrations.CurrentDBVersionSeqNum()) - 2}))
-	suite.Error(Ensure(store.New(suite.boltDB, suite.rocksDB)))
+	if features.PostgresDatastore.Enabled() {
+		suite.Error(Ensure(store.NewPostgres(suite.pool)))
+	} else {
+		suite.Error(Ensure(store.New(suite.boltDB, suite.rocksDB)))
+	}
 }
