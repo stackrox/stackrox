@@ -253,7 +253,6 @@ func (s *dackboxTestDataStoreImpl) waitForIndexing() {
 		case <-indexingCompleted.Done():
 		}
 	}
-	return
 }
 
 func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
