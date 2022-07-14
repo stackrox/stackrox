@@ -181,7 +181,7 @@ push_main_image_set() {
     fi
 
     local tag
-    tag="$(make --quiet -C operator tag)"
+    tag="$(make --quiet tag)"
     for registry in "${destination_registries[@]}"; do
         registry_rw_login "$registry"
 
@@ -257,7 +257,7 @@ push_operator_image_set() {
     fi
 
     local tag
-    tag="$(make --quiet tag)"
+    tag="$(make --quiet -C operator tag)"
     for registry in "${destination_registries[@]}"; do
         registry_rw_login "$registry"
 
