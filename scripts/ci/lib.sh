@@ -915,7 +915,7 @@ handle_nightly_runs() {
     fi
 }
 
-handle_nightly_roxctl_mismatch() {
+handle_nightly_binary_version_mismatch() {
     if ! is_OPENSHIFT_CI; then
         die "Only for OpenShift CI"
     fi
@@ -934,11 +934,11 @@ handle_nightly_roxctl_mismatch() {
         echo "JOB_NAME_SAFE: ${JOB_NAME_SAFE:-}"
     fi
 
-    info "Correcting roxctl version for nightly e2e tests"
+    info "Correcting binary versions for nightly e2e tests"
     echo "Current roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
 
     if ! [[ "$(roxctl version || true)" =~ nightly-$(date '+%Y%m%d') ]]; then
-        make cli-build
+        make cli-build upgrader
         install_built_roxctl_in_gopath
         echo "Replacement roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
     fi
