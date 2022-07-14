@@ -1025,6 +1025,7 @@ send_slack_notice_for_failures_on_merge() {
 
     local commit_msg
     commit_msg=$(jq -r <<<"$commit_details" '.commit.message') || return 1
+    commit_msg="${commit_msg%%$'\n'*}" # use first line of commit msg
     local commit_url
     commit_url=$(jq -r <<<"$commit_details" '.html_url') || return 1
     local author
@@ -1033,23 +1034,23 @@ send_slack_notice_for_failures_on_merge() {
 
     local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
 
-    local body
-    body=$(cat <<_EOB_
+    # shellcheck disable=SC2016
+    local body='
 {
-    "text": "*Job Name:* $job_name",
+    "text": "*Job Name:* \($job_name)",
     "blocks": [
 		{
 			"type": "header",
 			"text": {
 				"type": "plain_text",
-				"text": "Prow job failure: $job_name"
+				"text": "Prow job failure: \($job_name)"
 			}
 		},
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Commit:* <$commit_url|$commit_msg>\n*Author:* $author\n*Log:* $log_url"
+                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author)\n*Log:* \($log_url)"
             }
         },
 		{
@@ -1057,10 +1058,15 @@ send_slack_notice_for_failures_on_merge() {
 		}
     ]
 }
-_EOB_
-    )
+'
 
-    echo "$body" | jq | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    echo "About to post:"
+    jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
+       --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body"
+
+    jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
+       --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body" | \
+    curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
