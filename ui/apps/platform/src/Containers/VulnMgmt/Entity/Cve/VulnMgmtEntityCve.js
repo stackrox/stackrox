@@ -3,7 +3,7 @@ import { gql } from '@apollo/client';
 
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import {
@@ -22,6 +22,13 @@ import {
     getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
 
+const validCVETypes = [
+    resourceTypes.CVE,
+    resourceTypes.IMAGE_CVE,
+    resourceTypes.NODE_CVE,
+    resourceTypes.CLUSTER_CVE,
+];
+
 const vulnQueryMap = {
     CVE: 'vulnerability',
     IMAGE_CVE: 'imageVulnerability',
@@ -35,9 +42,20 @@ const vulnFieldMap = {
     CLUSTER_CVE: CLUSTER_CVE_DETAIL_FRAGMENT,
 };
 
+function getCVETypeFromStack(worklowStateStack) {
+    const cveTypes = worklowStateStack.filter((state) => {
+        return validCVETypes.includes(state.t);
+    });
+    if (cveTypes.length) {
+        return cveTypes[0].t;
+    }
+    return undefined;
+}
+
 const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const workflowState = useContext(workflowStateContext);
-    const cveType = workflowState.getBaseEntityType() || entityTypes.IMAGE_CVE;
+    const worklowStateStack = workflowState.getStateStack();
+    const cveType = getCVETypeFromStack(worklowStateStack) || entityTypes.IMAGE_CVE;
     const vulnQuery = vulnQueryMap[cveType];
     const vulnFields = vulnFieldMap[cveType];
 
