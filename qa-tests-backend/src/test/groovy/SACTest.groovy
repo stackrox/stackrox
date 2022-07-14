@@ -229,7 +229,6 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify that only namespace #sacResource is visible when using SAC"() {
         when:
         "Create test API token with a built-in role"
@@ -428,7 +427,6 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Autocomplete on #category resources using the #tokenName token returns #numResults results"() {
         when:
         "Search is called using a token without view access to Deployments"
