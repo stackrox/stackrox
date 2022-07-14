@@ -1026,6 +1026,7 @@ send_slack_notice_for_failures_on_merge() {
 
     local commit_msg
     commit_msg=$(jq -r <<<"$commit_details" '.commit.message') || return 1
+    commit_msg="${commit_msg%%$'\n'*}" # use first line of commit msg
     local commit_url
     commit_url=$(jq -r <<<"$commit_details" '.html_url') || return 1
     local author
