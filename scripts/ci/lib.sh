@@ -1037,20 +1037,20 @@ send_slack_notice_for_failures_on_merge() {
     # shellcheck disable=SC2016
     local body='
 {
-    "text": "*Job Name:* $job_name",
+    "text": "*Job Name:* \($job_name)",
     "blocks": [
 		{
 			"type": "header",
 			"text": {
 				"type": "plain_text",
-				"text": "Prow job failure: $job_name"
+				"text": "Prow job failure: \($job_name)"
 			}
 		},
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Commit:* <$commit_url|$commit_msg>\n*Repo:* $repo\n*Author:* $author\n*Log:* $log_url"
+                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author)\n*Log:* \($log_url)"
             }
         },
 		{
