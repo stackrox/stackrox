@@ -5,12 +5,17 @@ import (
 
 	"github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/central/nodecomponentedge/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
+)
+
+var (
+	sacHelper = sac.ForResource(resources.Node).MustCreatePgSearchHelper()
 )
 
 // Searcher provides search functionality on existing node component edges.
@@ -29,7 +34,7 @@ func New(storage store.Store, indexer index.Indexer) Searcher {
 		indexer: indexer,
 		searcher: func() search.Searcher {
 			if features.PostgresDatastore.Enabled() {
-				return pkgPostgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(indexer))
+				return pkgPostgres.WithScoping(sacHelper.FilteredSearcher(indexer))
 			}
 			return formatSearcher(indexer)
 		}(),

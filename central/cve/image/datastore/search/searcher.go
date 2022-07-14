@@ -5,11 +5,16 @@ import (
 
 	"github.com/stackrox/rox/central/cve/image/datastore/index"
 	"github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
+)
+
+var (
+	sacHelper = sac.ForResource(resources.Image).MustCreatePgSearchHelper()
 )
 
 // Searcher provides search functionality on existing cves.
@@ -26,6 +31,6 @@ func New(storage postgres.Store, indexer index.Indexer) Searcher {
 	return &searcherImpl{
 		storage:  storage,
 		indexer:  indexer,
-		searcher: pkgPostgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(indexer)),
+		searcher: pkgPostgres.WithScoping(sacHelper.FilteredSearcher(indexer)),
 	}
 }

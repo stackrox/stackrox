@@ -105,8 +105,9 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 }
 
 var (
-	namespaceSAC             = sac.ForResource(resources.Namespace)
-	namespaceSACSearchHelper = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
+	namespaceSAC                     = sac.ForResource(resources.Namespace)
+	namespaceSACSearchHelper         = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
+	namespaceSACPostgresSearchHelper = namespaceSAC.MustCreatePgSearchHelper()
 
 	log = logging.LoggerForModule()
 
@@ -310,7 +311,7 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 ///////////////////////////////////////////////
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	safeSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher)
+	safeSearcher := namespaceSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher)
 	prioritySortedSearcher := sorted.Searcher(safeSearcher, search.NamespacePriority, namespaceRanker)
 	return paginated.WithDefaultSortOption(prioritySortedSearcher, defaultSortOption)
 }
