@@ -61,13 +61,13 @@ const TOP_RISKIEST_IMAGES = gql`
 `;
 
 const TOP_RISKIEST_IMAGE_VULNS = gql`
-    query topRiskiestImages($query: String, $pagination: Pagination) {
-        results: imageVulnerabilityCounter(query: $query, pagination: $pagination) {
+    query topRiskiestImageVulns($query: String, $pagination: Pagination) {
+        results: images(query: $query, pagination: $pagination) {
             id
             name {
                 fullName
             }
-            vulnCounter {
+            vulnCounter: imageVulnerabilityCounter {
                 all {
                     total
                     fixable
@@ -168,11 +168,11 @@ const TOP_RISKIEST_NODES = gql`
 `;
 
 const TOP_RISKIEST_NODE_VULNS = gql`
-    query topRiskiestNodes($query: String, $pagination: Pagination) {
-        results: nodeVulnerabilityCounter(query: $query, pagination: $pagination) {
+    query topRiskiestNodeVulns($query: String, $pagination: Pagination) {
+        results: nodes(query: $query, pagination: $pagination) {
             id
             name
-            vulnCounter {
+            vulnCounter: nodeVulnerabilityCounter {
                 all {
                     total
                     fixable
