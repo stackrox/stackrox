@@ -62,7 +62,11 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 Cell: ({ original, pdf }) => {
                     const { vulnCounter, id, scan, notes } = original;
 
-                    const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+                    const newState = workflowState
+                        .pushListItem(id)
+                        .pushList(
+                            isFrontendVMUpdatesEnabled ? entityTypes.IMAGE_CVE : entityTypes.CVE
+                        );
                     const url = newState.toUrl();
                     const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 

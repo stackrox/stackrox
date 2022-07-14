@@ -13,6 +13,7 @@ import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
 
@@ -39,6 +40,9 @@ const emptyNode = {
 };
 
 const VulnMgmtNodeOverview = ({ data, entityContext }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+
     const workflowState = useContext(workflowStateContext);
 
     // guard against incomplete GraphQL-cached data
@@ -139,6 +143,7 @@ const VulnMgmtNodeOverview = ({ data, entityContext }) => {
                             entityType={entityTypes.NODE}
                             name={safeData?.name}
                             id={safeData?.id}
+                            vulnType={showVMUpdates ? entityTypes.NODE_CVE : entityTypes.CVE}
                         />
                     </div>
                 </CollapsibleSection>

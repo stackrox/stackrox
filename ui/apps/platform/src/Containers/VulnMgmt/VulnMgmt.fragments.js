@@ -580,6 +580,50 @@ export const NODE_LIST_FRAGMENT = gql`
     }
 `;
 
+export const NODE_LIST_FRAGMENT_UPDATED = gql`
+    fragment nodeFields on Node {
+        id
+        name
+        vulnCounter: nodeVulnerabilityCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            moderate {
+                total
+                fixable
+            }
+            important {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        topVuln: topNodeVulnerability {
+            cvss
+            scoreVersion
+        }
+        notes
+        scan {
+            scanTime
+            notes
+        }
+        osImage
+        containerRuntimeVersion
+        clusterName
+        clusterId
+        joinedAt
+        priority
+    }
+`;
+
 export const IMAGE_LIST_FRAGMENT = gql`
     fragment imageFields on Image {
         id

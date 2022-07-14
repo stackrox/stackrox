@@ -127,6 +127,9 @@ function getListFieldName(entityType, listType, useCase) {
         if (listType === entityTypes.CVE) {
             return 'vulns';
         }
+        if (listType === entityTypes.IMAGE_CVE) {
+            return 'imageVulnerabilities';
+        }
     }
 
     if (entityType === entityTypes.CLUSTER) {
@@ -145,6 +148,9 @@ function getListFieldName(entityType, listType, useCase) {
     if (entityType === entityTypes.NODE) {
         if (listType === entityTypes.CVE) {
             return 'vulns';
+        }
+        if (listType === entityTypes.NODE_CVE) {
+            return 'nodeVulnerabilities';
         }
     }
 
