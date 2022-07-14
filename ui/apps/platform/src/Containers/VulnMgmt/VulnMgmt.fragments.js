@@ -258,7 +258,6 @@ export const NODE_CVE_DETAIL_FRAGMENT = gql`
                 vector
             }
         }
-        vulnerabilityState
         componentCount: nodeComponentCount(query: $query)
         nodeCount(query: $query)
     }
@@ -296,7 +295,6 @@ export const CLUSTER_CVE_DETAIL_FRAGMENT = gql`
                 vector
             }
         }
-        vulnerabilityState
         vulnerabilityType
         vulnerabilityTypes
     }
@@ -381,7 +379,6 @@ export const CLUSTER_CVE_LIST_FRAGMENT = gql`
         suppressActivation
         suppressExpiry
         suppressed
-        vulnerabilityState
         vulnerabilityType
         vulnerabilityTypes
     }
@@ -407,7 +404,6 @@ export const NODE_CVE_LIST_FRAGMENT = gql`
         suppressActivation
         suppressExpiry
         suppressed
-        vulnerabilityState
         componentCount: nodeComponentCount
         nodeCount
     }
@@ -445,6 +441,56 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
         id
         name
         vulnCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            moderate {
+                total
+                fixable
+            }
+            important {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        deployAlerts {
+            policy {
+                id
+            }
+            time
+        }
+        # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        # failingPolicyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        policyStatus(query: $policyQuery)
+        clusterName
+        clusterId
+        namespace
+        namespaceId
+        imageCount
+        latestViolation(query: $policyQuery)
+        priority
+        images {
+            scan {
+                scanTime
+            }
+        }
+    }
+`;
+
+export const DEPLOYMENT_LIST_FRAGMENT_UPDATED = gql`
+    fragment deploymentFields on Deployment {
+        id
+        name
+        imageVulnerabilityCounter {
             all {
                 total
                 fixable
@@ -761,6 +807,45 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
             name
         }
         vulnCounter {
+            all {
+                fixable
+                total
+            }
+            critical {
+                fixable
+                total
+            }
+            important {
+                fixable
+                total
+            }
+            moderate {
+                fixable
+                total
+            }
+            low {
+                fixable
+                total
+            }
+        }
+        deploymentCount
+        imageCount(query: $query)
+        # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        policyStatusOnly(query: $policyQuery)
+        latestViolation(query: $policyQuery)
+    }
+`;
+
+export const NAMESPACE_LIST_FRAGMENT_UPDATED = gql`
+    fragment namespaceFields on Namespace {
+        metadata {
+            id
+            clusterName
+            clusterId
+            priority
+            name
+        }
+        imageVulnerabilityCounter {
             all {
                 fixable
                 total

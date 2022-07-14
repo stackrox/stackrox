@@ -222,10 +222,6 @@ function getFragmentName(entityType, listType) {
             return 'nodeCVEFields';
         case entityTypes.CLUSTER_CVE:
             return 'clusterCVEFields';
-        case entityTypes.NODE_CVE:
-            return 'nodeCVEFields';
-        case entityTypes.IMAGE_CVE:
-            return 'imageCVEFields';
         case entityTypes.COMPONENT:
             return 'componentFields';
         case entityTypes.NODE_COMPONENT:
