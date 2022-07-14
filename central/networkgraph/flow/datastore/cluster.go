@@ -32,7 +32,7 @@ func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.D
 	}
 }
 
-// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+// GetTestPostgresClusterDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresClusterDataStore(t *testing.T, pool *pgxpool.Pool) (ClusterDataStore, error) {
 	dbstore := postgres.NewClusterStore(pool)
 	configStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
@@ -41,11 +41,14 @@ func GetTestPostgresClusterDataStore(t *testing.T, pool *pgxpool.Pool) (ClusterD
 	}
 	networkTreeMgr := networktree.Singleton()
 	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
-	networkTreeMgr.Initialize(entitiesByCluster)
+	err = networkTreeMgr.Initialize(entitiesByCluster)
+	if err != nil {
+		return nil, err
+	}
 	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil), nil
 }
 
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+// GetTestRocksBleveClusterDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
 func GetTestRocksBleveClusterDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) (ClusterDataStore, error) {
 	dbstore := rocksdb.NewClusterStore(rocksengine)
 	configStore, err := graphConfigDS.GetTestRocksBleveDataStore(t, rocksengine)
@@ -54,6 +57,9 @@ func GetTestRocksBleveClusterDataStore(t *testing.T, rocksengine *rocksdbBase.Ro
 	}
 	networkTreeMgr := networktree.Singleton()
 	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
-	networkTreeMgr.Initialize(entitiesByCluster)
+	err = networkTreeMgr.Initialize(entitiesByCluster)
+	if err != nil {
+		return nil, err
+	}
 	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil), nil
 }
