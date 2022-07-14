@@ -241,10 +241,8 @@ func (resolver *Resolver) TopImageVulnerability(ctx context.Context, args RawQue
 
 	// invoke query
 	topVuln, err := loader.FromQuery(ctx, query)
-	if err != nil {
+	if err != nil || len(topVuln) == 0 {
 		return nil, err
-	} else if len(topVuln) == 0 {
-		return nil, errors.New("TopImageVulnerability query found no vulnerabilities")
 	} else if len(topVuln) > 1 {
 		return nil, errors.New("TopImageVulnerability query returned more than one vulnerabilities")
 	}

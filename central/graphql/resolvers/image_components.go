@@ -245,7 +245,7 @@ func (resolver *imageComponentResolver) ActiveState(ctx context.Context, args Ra
 		return nil, err
 	}
 
-	deploymentID := getDeploymentScope(scopeQuery, ctx)
+	deploymentID := getDeploymentScope(scopeQuery, resolver.ctx)
 	if deploymentID == "" {
 		return nil, nil
 	}
@@ -359,7 +359,7 @@ func (resolver *imageComponentResolver) Location(ctx context.Context, args RawQu
 	scope, hasScope := scoped.GetScope(ctx)
 	if hasScope && scope.Level == v1.SearchCategory_IMAGES {
 		imageID = scope.ID
-	} else if !hasScope || scope.Level != v1.SearchCategory_IMAGES {
+	} else {
 		var err error
 		imageID, err = getImageIDFromIfImageShaQuery(ctx, resolver.root, args)
 		if err != nil {
@@ -402,8 +402,7 @@ func (resolver *imageComponentResolver) UnusedVarSink(ctx context.Context, args 
 	return nil
 }
 
-// Follows are functions that return information that is nested in the CVEInfo object
-// or are convenience functions to allow time for UI to migrate to new naming schemes
+// Following are deprecated functions that are retained to allow UI time to migrate away from them
 
 func (resolver *imageComponentResolver) FixedIn(_ context.Context) string {
 	return resolver.data.GetFixedBy()

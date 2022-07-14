@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -49,8 +50,17 @@ func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args 
 	if err != nil {
 		return nil, err
 	}
-	query = tryUnsuppressedQuery(query)
 	logErrorOnQueryContainingField(query, search.Fixable, "PlottedImageVulnerabilities")
+
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.CVSS.String(),
+				Reversed: true,
+			},
+		},
+	}
+	query = tryUnsuppressedQuery(query)
 
 	vulnLoader, err := loaders.GetImageCVELoader(ctx)
 	if err != nil {
