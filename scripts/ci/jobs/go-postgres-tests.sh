@@ -7,6 +7,8 @@ set -euo pipefail
 
 go_postgres_unit_tests() {
     info "Starting go postgres unit tests"
+
+    touch /tmp/hold
 }
 
 go_postgres_unit_tests "$*"
