@@ -97,6 +97,7 @@ const TOP_RISKIEST_IMAGE_VULNS = gql`
     }
 `;
 
+// TODO: remove once ROX_FRONTEND_VM_UDPATES is enabled
 const TOP_RISKIEST_COMPONENTS = gql`
     query topRiskiestComponents($query: String, $pagination: Pagination) {
         results: components(query: $query, pagination: $pagination) {
@@ -105,6 +106,74 @@ const TOP_RISKIEST_COMPONENTS = gql`
             version
             lastScanned
             vulnCounter {
+                all {
+                    total
+                    fixable
+                }
+                low {
+                    total
+                    fixable
+                }
+                moderate {
+                    total
+                    fixable
+                }
+                important {
+                    total
+                    fixable
+                }
+                critical {
+                    total
+                    fixable
+                }
+            }
+            priority
+        }
+    }
+`;
+
+const TOP_RISKIEST_IMAGE_COMPONENTS = gql`
+    query topRiskiestImageComponents($query: String, $pagination: Pagination) {
+        results: imageComponents(query: $query, pagination: $pagination) {
+            id
+            name
+            version
+            lastScanned
+            vulnCounter: imageVulnerabilityCounter {
+                all {
+                    total
+                    fixable
+                }
+                low {
+                    total
+                    fixable
+                }
+                moderate {
+                    total
+                    fixable
+                }
+                important {
+                    total
+                    fixable
+                }
+                critical {
+                    total
+                    fixable
+                }
+            }
+            priority
+        }
+    }
+`;
+
+const TOP_RISKIEST_NODE_COMPONENTS = gql`
+    query topRiskiestNodeComponents($query: String, $pagination: Pagination) {
+        results: nodeComponents(query: $query, pagination: $pagination) {
+            id
+            name
+            version
+            lastScanned: nodeComponentLastScanned
+            vulnCounter: nodeVulnerabilityCounter {
                 all {
                     total
                     fixable
@@ -207,6 +276,8 @@ const getTextByEntityType = (entityType, data) => {
         case entityTypes.NODE:
             return data.name;
         case entityTypes.COMPONENT:
+        case entityTypes.NODE_COMPONENT:
+        case entityTypes.IMAGE_COMPONENT:
             return `${data.name}:${data.version}`;
         case entityTypes.IMAGE:
         default:
@@ -219,6 +290,10 @@ function getSelectedEntity(selectedEntity, showVmUpdates) {
         return selectedEntity;
     }
     switch (selectedEntity) {
+        case entityTypes.NODE_COMPONENT:
+            return entityTypes.NODE_COMPONENT;
+        case entityTypes.IMAGE_COMPONENT:
+            return entityTypes.IMAGE_COMPONENT;
         case entityTypes.NODE:
             return entityTypes.NODE_CVE;
         case entityTypes.IMAGE:
@@ -327,8 +402,10 @@ const getQueryBySelectedEntity = (entityType) => {
 
 function getQueryBySelectedEntityVulns(entityType) {
     switch (entityType) {
-        case entityTypes.COMPONENT:
-            return TOP_RISKIEST_COMPONENTS;
+        case entityTypes.IMAGE_COMPONENT:
+            return TOP_RISKIEST_IMAGE_COMPONENTS;
+        case entityTypes.NODE_COMPONENT:
+            return TOP_RISKIEST_NODE_COMPONENTS;
         case entityTypes.NODE:
             return TOP_RISKIEST_NODE_VULNS;
         case entityTypes.IMAGE:
@@ -339,11 +416,26 @@ function getQueryBySelectedEntityVulns(entityType) {
 
 const getEntitiesByContext = (entityContext, showVmUpdates) => {
     const entities = [];
-    if (entityContext === {} || !entityContext[entityTypes.COMPONENT]) {
-        entities.push({
-            label: 'Top Riskiest Components',
-            value: entityTypes.COMPONENT,
-        });
+    if (!showVmUpdates) {
+        if (entityContext === {} || !entityContext[entityTypes.COMPONENT]) {
+            entities.push({
+                label: 'Top Riskiest Components',
+                value: entityTypes.COMPONENT,
+            });
+        }
+    } else {
+        if (entityContext === {} || !entityContext[entityTypes.NODE_COMPONENT]) {
+            entities.push({
+                label: 'Top Riskiest Node Components',
+                value: entityTypes.NODE_COMPONENT,
+            });
+        }
+        if (entityContext === {} || !entityContext[entityTypes.IMAGE_COMPONENT]) {
+            entities.push({
+                label: 'Top Riskiest Image Components',
+                value: entityTypes.IMAGE_COMPONENT,
+            });
+        }
     }
     if (entityContext === {} || !entityContext[entityTypes.IMAGE] || entities.length === 0) {
         // unshift so it sits at the front of the list (in case both entity types are added, image should come first)
