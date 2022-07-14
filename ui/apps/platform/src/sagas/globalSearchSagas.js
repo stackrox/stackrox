@@ -38,8 +38,5 @@ function* watchSetGlobalSearchCategory() {
 }
 
 export default function* globalSearch() {
-    yield all([
-        fork(watchGlobalsearchSearchOptions),
-        fork(watchSetGlobalSearchCategory),
-    ]);
+    yield all([fork(watchGlobalsearchSearchOptions), fork(watchSetGlobalSearchCategory)]);
 }
