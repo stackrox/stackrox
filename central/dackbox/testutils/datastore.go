@@ -47,6 +47,8 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+// DackboxTestDataStore provides the interface to a utility for dackbox testing, with accessors to some internals,
+// as well as test data injection and cleanup functions.
 type DackboxTestDataStore interface {
 	// Expose internal for the case other datastores would be needed for testing purposes
 	GetPostgresPool() *pgxpool.Pool
@@ -122,10 +124,10 @@ func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() (err error)
 	ctx := sac.WithAllAccess(context.Background())
 	testNamespace1 := fixtures.GetNamespace(testconsts.Cluster1, testconsts.Cluster1, testconsts.NamespaceA)
 	testNamespace2 := fixtures.GetNamespace(testconsts.Cluster2, testconsts.Cluster2, testconsts.NamespaceB)
-	testImage1 := fixtures.GetImageSherlockHolmes_1()
-	testImage2 := fixtures.GetImageDoctorJekyll_2()
-	testDeployment1 := fixtures.GetDeploymentSherlockHolmes_1(uuid.NewV4().String(), testNamespace1)
-	testDeployment2 := fixtures.GetDeploymentDoctorJekyll_2(uuid.NewV4().String(), testNamespace2)
+	testImage1 := fixtures.GetImageSherlockHolmes1()
+	testImage2 := fixtures.GetImageDoctorJekyll2()
+	testDeployment1 := fixtures.GetDeploymentSherlockHolmes1(uuid.NewV4().String(), testNamespace1)
+	testDeployment2 := fixtures.GetDeploymentDoctorJekyll2(uuid.NewV4().String(), testNamespace2)
 	err = s.namespaceStore.AddNamespace(ctx, testNamespace1)
 	if err != nil {
 		return err
@@ -165,8 +167,8 @@ func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() (err error)
 // Dr Jekyll is the node part from Cluster2.
 func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
-	testNode1 := fixtures.GetScopedNode_1(uuid.NewV4().String(), testconsts.Cluster1)
-	testNode2 := fixtures.GetScopedNode_2(uuid.NewV4().String(), testconsts.Cluster2)
+	testNode1 := fixtures.GetScopedNode1(uuid.NewV4().String(), testconsts.Cluster1)
+	testNode2 := fixtures.GetScopedNode2(uuid.NewV4().String(), testconsts.Cluster2)
 	err = s.nodeStore.UpsertNode(ctx, testNode1)
 	if err != nil {
 		return err
@@ -181,6 +183,7 @@ func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph() (err error) 
 
 }
 
+// CleanImageToVulnerabilitiesGraph removes from database the data injected by PushImageToVulnerabilitiesGraph.
 func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	storedDeployments := s.storedDeployments
@@ -218,6 +221,7 @@ func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() (err error
 	return nil
 }
 
+// CleanNodeToVulnerabilitiesGraph removes from database the data injected by PushNodeToVulnerabilitiesGraph.
 func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	storedNodes := s.storedNodes
@@ -234,7 +238,6 @@ func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() (err error)
 func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 	if features.PostgresDatastore.Enabled() {
 		s.pgtestbase.Teardown(t)
-		return nil
 	} else {
 		err = s.bleveIndex.Close()
 		if err != nil {
@@ -244,10 +247,12 @@ func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 		if err != nil {
 			return err
 		}
-		return nil
 	}
+	return nil
 }
 
+// NewDackboxTestDataStore provides a utility for dackbox storage testing, which contains a set of connected
+// dackbox datastores, as well as a set of functions to inject and cleanup data.
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	var err error
 	s := &dackboxTestDataStoreImpl{}
@@ -318,5 +323,6 @@ func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	s.storedNamespaces = make([]string, 0)
 	s.storedImages = make([]string, 0)
 	s.storedNodes = make([]string, 0)
+
 	return s, nil
 }

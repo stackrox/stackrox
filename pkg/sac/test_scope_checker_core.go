@@ -64,7 +64,10 @@ func (c *testScopeCheckerCore) EffectiveAccessScope(resource permissions.Resourc
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
 	resourceCore := resourceMap[resource.Resource.GetResource()]
-	if resourceCore == nil || !resourceCore.Included || len(resourceCore.Clusters) == 0 {
+	if resourceCore == nil {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+	if !resourceCore.Included && len(resourceCore.Clusters) == 0 {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
 	if resourceCore.Included {
