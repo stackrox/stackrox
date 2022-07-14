@@ -1,5 +1,4 @@
 import { schema } from 'normalizr';
 
-export const image = new schema.Entity('image');
-
+/* eslint-disable import/prefer-default-export */
 export const cluster = new schema.Entity('cluster');
