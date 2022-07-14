@@ -55,6 +55,8 @@ func Load(conf *config.Config) (*gorm.DB, error) {
 
 		if err != nil {
 			log.WriteToStderrf("timed out connecting to database: %v", err)
+		} else {
+			log.WriteToStderr("Successfully connected to central database.")
 		}
 	})
 	return gormDB, err
