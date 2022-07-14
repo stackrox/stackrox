@@ -2263,15 +2263,6 @@ jobs:
             - CI_TAG
             - COLLECTOR_VERSION
 
-  pre-build-ui-stackrox:
-    executor: custom
-    resource_class: large
-    environment:
-      EKS_AUTOMATION_VERSION: 0.2.17
-    steps:
-      - pre-build-ui:
-          branding: STACKROX_BRANDING
-
   pre-build-ui-rhacs:
     executor: custom
     resource_class: large
@@ -2377,15 +2368,6 @@ jobs:
             - generated # Used to speed up k8s-tests
 
       - cleanup-clusters-on-fail
-
-  build-stackrox:
-    executor: custom
-    resource_class: medium
-    environment:
-      EKS_AUTOMATION_VERSION: 0.2.17
-      ROX_PRODUCT_BRANDING: "STACKROX_BRANDING"
-    steps:
-      - build
 
   build-rhacs:
     executor: custom
@@ -3802,10 +3784,6 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-create-parameters:
           <<: *runOnAllTagsWithQuayIOPullCtx
-      - pre-build-ui-stackrox:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - pre-create-parameters
       - pre-build-ui-rhacs:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -3818,12 +3796,6 @@ workflows:
           <<: *runOnAllTagsWithPushCtx
           requires:
             - pre-create-parameters
-      - build-stackrox:
-          <<: *runOnAllTagsWithPushCtx
-          requires:
-            - pre-build-ui-stackrox
-            - pre-build-cli
-            - pre-build-go-binaries
       - build-rhacs:
           <<: *runOnAllTagsWithPushCtx
           requires:
@@ -3845,7 +3817,6 @@ workflows:
       - gke-postgres-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-postgres-api-e2e-tests
@@ -3854,7 +3825,6 @@ workflows:
       - gke-kernel-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-kernel-api-e2e-tests
@@ -3863,7 +3833,6 @@ workflows:
       - gke-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-scale-tests
@@ -3872,7 +3841,6 @@ workflows:
       - gke-postgres-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-          - build-stackrox
           - build-rhacs
           - build-scale-monitoring-and-mock-server
           - provision-gke-postgres-api-scale-tests
@@ -3881,7 +3849,6 @@ workflows:
       - openshift-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-openshift-api-e2e-tests
@@ -3890,7 +3857,6 @@ workflows:
       - openshift-crio-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-openshift-crio-api-e2e-tests
@@ -3899,7 +3865,6 @@ workflows:
       - eks-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-eks-api-e2e-tests
@@ -3909,7 +3874,6 @@ workflows:
       # - aks-api-e2e-tests:
       #     <<: *runOnAllTagsWithQuayIOPullCtx
       #     requires:
-      #       - build-stackrox
       #       - build-rhacs
       #       - build-scale-monitoring-and-mock-server
       #       - provision-aks-api-e2e-tests
@@ -3920,14 +3884,12 @@ workflows:
       - openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-operator
             - provision-openshift-4-operator-e2e-tests
       - openshift-4-6-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-operator
             - provision-openshift-4-6-operator-e2e-tests
@@ -3955,7 +3917,6 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-rosa-api-e2e-tests
-            - build-stackrox
             - build-rhacs
           context:
             - osd-cluster-manager
@@ -3975,7 +3936,6 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-aro-api-e2e-tests
-            - build-stackrox
             - build-rhacs
           context:
             - com-redhat-cloud
@@ -3995,7 +3955,6 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-osd-aws-api-e2e-tests
-            - build-stackrox
             - build-rhacs
           context:
             - quay-rhacs-eng-readonly
@@ -4012,7 +3971,6 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-osd-gcp-api-e2e-tests
-            - build-stackrox
             - build-rhacs
           context:
             - quay-rhacs-eng-readonly
@@ -4023,7 +3981,6 @@ workflows:
           context:
           - quay-rhacs-eng-readonly
           requires:
-            - build-stackrox
             - build-rhacs
 
       - retrigger-master-workflow:
