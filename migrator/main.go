@@ -81,7 +81,7 @@ func run() error {
 			return errors.Wrap(err, "failed to connect to postgres DB")
 		}
 		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
-		log.WriteToStderr("Used gorm to apply schemas")
+		log.WriteToStderr("Applied all table schemas.")
 	}
 
 	return nil
