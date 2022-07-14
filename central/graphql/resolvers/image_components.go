@@ -245,7 +245,7 @@ func (resolver *imageComponentResolver) ActiveState(ctx context.Context, args Ra
 		return nil, err
 	}
 
-	deploymentID := getDeploymentScope(scopeQuery, ctx, resolver.ctx)
+	deploymentID := getDeploymentScope(scopeQuery, ctx)
 	if deploymentID == "" {
 		return nil, nil
 	}
@@ -260,7 +260,7 @@ func (resolver *imageComponentResolver) ActiveState(ctx context.Context, args Ra
 
 	var found bool
 	imageID := getImageIDFromQuery(scopeQuery)
-	if imageID != "" {
+	if imageID == "" {
 		found, err = resolver.root.ActiveComponent.Exists(ctx, acID)
 		if err != nil {
 			return nil, err
