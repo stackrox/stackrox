@@ -9,7 +9,7 @@ fi
 
 namespace=${2:-stackrox}
 
-workload_dir="${DIR}/workloads"
+workload_dir="${DIR}/../workloads"
 file="${workload_dir}/$1.yaml"
 if [ ! -f "$file" ]; then
     >&2 echo "$file does not exist."

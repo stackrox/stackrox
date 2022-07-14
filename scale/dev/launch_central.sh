@@ -2,6 +2,8 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
+$DIR/../../deploy/k8s/central.sh
+
 # This is purposefully kept as stackrox because this is where central should be run
 if ! kubectl -n stackrox get pvc/stackrox-db > /dev/null; then
   >&2 echo "Running the scale workload requires a PVC"
