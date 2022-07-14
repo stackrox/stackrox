@@ -126,7 +126,6 @@ fragment cveFields on EmbeddedVulnerability {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify severities and CVSS #imageDigest #component #severity #cvss"() {
         when:
         def gqlService = new GraphQLService()

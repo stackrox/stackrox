@@ -152,7 +152,6 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
 
     @Unroll
     @Category(GraphQL)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify image info from #CVEID in GraphQL"() {
         when:
         "Fetch the results of the CVE,image from GraphQL "
@@ -172,7 +171,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     private GraphQLService.Response waitForImagesTobeFetched(String cveId , int retries = 30, int interval = 4) {
         Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
-            def result2Ret = gqlService.Call(GET_IMAGE_INFO_FROM_VULN_QUERY, [id: cveId])
+            def result2Ret = gqlService.Call(GET_IMAGE_INFO_FROM_VULN_QUERY, [cve: cveId])
             assert result2Ret.getCode() == 200
             if (result2Ret.getValue().result != null) {
                 log.info "images fetched from cve"
