@@ -1002,18 +1002,17 @@ store_test_results() {
 send_slack_notice_for_failures_on_merge() {
     local exitstatus="${1:-}"
 
-    # if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
-    #     return 0
-    # fi
+    if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
+        return 0
+    fi
 
-    # local tag
-    # tag="$(make --quiet tag)"
-    # if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
-    #     return 0
-    # fi
+    local tag
+    tag="$(make --quiet tag)"
+    if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
+        return 0
+    fi
 
-    # local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
-    local webhook_url="${SLACK_MAIN_WEBHOOK}"
+    local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
     local commit_details
     org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org') || return 1
