@@ -592,9 +592,25 @@ pr_has_label() {
     pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
         info "Warning: checking for a label in a non PR context"
-        false
+        return 1
     fi
-    jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
+
+    if is_openshift_CI_rehearse_PR; then
+        pr_has_label_in_body "${expected_label}" "$pr_details"
+    else
+        jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
+    fi
+}
+
+pr_has_label_in_body() {
+    if [[ "$#" -ne 2 ]]; then
+        die "usage: pr_has_label_in_body <expected label> <pr details>"
+    fi
+
+    local expected_label="$1"
+    local pr_details="$2"
+
+    [[ "$(jq -r '.body' <<<"$pr_details")" =~ \/label:[[:space:]]*$expected_label ]]
 }
 
 # get_pr_details() from GitHub and display the result. Exits 1 if not run in CI in a PR context.
