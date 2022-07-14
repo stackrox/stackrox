@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
@@ -31,8 +32,8 @@ func NewV2(storage store.Store, indexer index.Indexer, clusterRanker *ranking.Ra
 }
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, clusterRanker *ranking.Ranker) search.Searcher {
-	safeSearcher := sacHelper.FilteredSearcher(unsafeSearcher)
-	prioritySortedSearcher := sorted.Searcher(safeSearcher, search.ClusterPriority, clusterRanker)
+	scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(unsafeSearcher))
+	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.ClusterPriority, clusterRanker)
 	return paginated.WithDefaultSortOption(prioritySortedSearcher, defaultSortOption)
 }
 

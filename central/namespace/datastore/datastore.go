@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
@@ -311,8 +312,8 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 ///////////////////////////////////////////////
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	safeSearcher := namespaceSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher)
-	prioritySortedSearcher := sorted.Searcher(safeSearcher, search.NamespacePriority, namespaceRanker)
+	scopedSearcher := pkgPostgres.WithScoping(namespaceSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher))
+	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.NamespacePriority, namespaceRanker)
 	return paginated.WithDefaultSortOption(prioritySortedSearcher, defaultSortOption)
 }
 
