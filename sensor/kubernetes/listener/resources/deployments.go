@@ -130,6 +130,14 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	// because IF the object is a pod, we want to process the pod event.
 	objAsPod, _ := obj.(*v1.Pod)
 
+	//if objAsPod != nil && objAsPod.Namespace == "sensor-integration" {
+	//	fmt.Printf("== [DEBUG] POD EVENT: %s\n", objAsPod.Name)
+	//}
+	//
+	//if deploymentWrap != nil && deploymentWrap.Namespace == "sensor-integration" {
+	//	fmt.Printf("== [DEBUG] DEPLOYMENT EVENT: %s\n", deploymentWrap.Name)
+	//}
+
 	var events []*central.SensorEvent
 	// If the object is a pod, process the pod event.
 	if objAsPod != nil {

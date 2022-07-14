@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/message"
@@ -40,12 +41,35 @@ type YamlTestFile struct {
 }
 
 var (
-	NginxDeployment  = YamlTestFile{"Deployment", "nginx.yaml"}
-	NginxRole        = YamlTestFile{"Role", "nginx-role.yaml"}
-	NginxRoleBinding = YamlTestFile{"Binding", "nginx-binding.yaml"}
+
+	NginxDeployment     = YamlTestFile{"Deployment", "nginx.yaml"}
+	NginxServiceAccount = YamlTestFile{"ServiceAccount", "nginx-sa.yaml"}
+	NginxRole           = YamlTestFile{"Role", "nginx-role.yaml"}
+	NginxRoleBinding    = YamlTestFile{"Binding", "nginx-binding.yaml"}
+	NginxPod            = YamlTestFile{"Pod", "nginx-pod.yaml"}
 )
 
-type TestCallback func(t *testing.T, testContext *TestContext)
+// objByKind returns the supported dynamic k8s resources that can be created
+// add new ones here to support adding new resource files
+func objByKind(kind string) k8s.Object {
+	switch kind {
+	case "Deployment":
+		return &appsV1.Deployment{}
+	case "Role":
+		return &v12.Role{}
+	case "Binding":
+		return &v12.RoleBinding{}
+	case "Pod":
+		return &v1.Pod{}
+	case "ServiceAccount":
+		return &v1.ServiceAccount{}
+	default:
+		log.Fatalf("unrecognized resource kind %s\n", kind)
+		return nil
+	}
+}
+
+type TestCallback func(t *testing.T, testContext *TestContext, objects map[string]k8s.Object)
 
 type TestContext struct {
 	t               *testing.T
@@ -53,6 +77,7 @@ type TestContext struct {
 	env             *envconf.Config
 	fakeCentral     *centralDebug.FakeService
 	centralReceived chan *central.MsgFromSensor
+	stopFn          func()
 }
 
 func NewContext(t *testing.T) (*TestContext, error) {
@@ -61,7 +86,7 @@ func NewContext(t *testing.T) (*TestContext, error) {
 	if err != nil {
 		return nil, err
 	}
-	fakeCentral, startFn := startSensorAndFakeCentral(envConfig)
+	fakeCentral, startFn, stopFn := startSensorAndFakeCentral(envConfig)
 	ch := make(chan *central.MsgFromSensor, 100)
 	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
 		ch <- msg
@@ -69,8 +94,16 @@ func NewContext(t *testing.T) (*TestContext, error) {
 
 	startFn()
 	return &TestContext{
-		t, r, envConfig, fakeCentral, ch,
+		t, r, envConfig, fakeCentral, ch, stopFn,
 	}, nil
+}
+
+func (c *TestContext) Stop() {
+	c.stopFn()
+}
+
+func (c *TestContext) Resources() *resources.Resources {
+	return c.r
 }
 
 func createTestNs(ctx context.Context, r *resources.Resources, name string) (*v1.Namespace, func() error, error) {
@@ -97,28 +130,29 @@ func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
 	return c.fakeCentral
 }
 
-func (c *TestContext) RunWithResources(files []YamlTestFile, name string, testCase TestCallback) {
-	c.t.Run(name, func(t *testing.T) {
-		_, removeNamespace, err := createTestNs(context.Background(), c.r, "sensor-integration")
-		defer utils.IgnoreError(removeNamespace)
+func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallback) {
+	_, removeNamespace, err := createTestNs(context.Background(), c.r, "sensor-integration")
+	defer utils.IgnoreError(removeNamespace)
+	if err != nil {
+		c.t.Fatalf("failed to create namespace: %s", err)
+	}
+	var removeFunctions []func() error
+	fileToObj := map[string]k8s.Object{}
+	for _, file := range files {
+		obj := objByKind(file.Kind)
+		removeFn, err := c.ApplyFile(context.Background(), "sensor-integration", file, obj)
 		if err != nil {
-			t.Fatalf("failed to create namespace: %s", err)
+			c.t.Fatalf("fail to apply resource: %s", err)
 		}
-		var removeFunctions []func() error
-		for _, file := range files {
-			removeFn, err := c.ApplyFile(context.Background(), "sensor-integration", file)
-			if err != nil {
-				t.Fatalf("fail to apply resource: %s", err)
-			}
-			removeFunctions = append(removeFunctions, removeFn)
+		removeFunctions = append(removeFunctions, removeFn)
+		fileToObj[file.File] = obj
+	}
+	defer func() {
+		for _, fn := range removeFunctions {
+			utils.IgnoreError(fn)
 		}
-		defer func() {
-			for _, fn := range removeFunctions {
-				utils.IgnoreError(fn)
-			}
-		}()
-		testCase(t, c)
-	})
+	}()
+	testCase(c.t, c, fileToObj)
 }
 
 func (c *TestContext) RunBare(name string, testCase TestCallback) {
@@ -128,7 +162,7 @@ func (c *TestContext) RunBare(name string, testCase TestCallback) {
 		if err != nil {
 			t.Fatalf("failed to create namespace: %s", err)
 		}
-		testCase(t, c)
+		testCase(t, c, nil)
 	})
 }
 
@@ -136,7 +170,9 @@ func (c *TestContext) RunWithResourcesPermutation(files []YamlTestFile, name str
 	runPermutation(files, 0, func(f []YamlTestFile) {
 		newF := make([]YamlTestFile, len(f))
 		copy(newF, f)
-		c.RunWithResources(newF, fmt.Sprintf("%s_Permutation_%s", name, permutationKind(newF)), testCase)
+		c.t.Run(fmt.Sprintf("%s_Permutation_%s", name, permutationKind(newF)), func(t *testing.T) {
+			c.RunWithResources(newF, testCase)
+		})
 	})
 }
 
@@ -161,7 +197,8 @@ func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
 	}
 }
 
-func startSensorAndFakeCentral(env *envconf.Config) (*centralDebug.FakeService, func()) {
+
+func startSensorAndFakeCentral(env *envconf.Config) (*centralDebug.FakeService, func(), func()) {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../../tools/local-sensor/certs/cert.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../../tools/local-sensor/certs/key.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../../tools/local-sensor/certs/caCert.pem"))
@@ -187,9 +224,12 @@ func startSensorAndFakeCentral(env *envconf.Config) (*centralDebug.FakeService, 
 	}
 
 	return fakeCentral, func() {
-		go s.Start()
-		spyCentral.ConnectionStarted.Wait()
-	}
+			go s.Start()
+			spyCentral.ConnectionStarted.Wait()
+		}, func() {
+			go s.Stop()
+			spyCentral.KillSwitch.Done()
+		}
 }
 
 func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, *centralDebug.FakeService, func()) {
@@ -221,23 +261,13 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, fakeCentral, closeF
 }
 
-func objByKind(kind string) k8s.Object {
-	switch kind {
-	case "Deployment":
-		return &appsV1.Deployment{}
-	case "Role":
-		return &v12.Role{}
-	case "Binding":
-		return &v12.RoleBinding{}
-	default:
-		log.Fatalf("unrecognized resource kind %s\n", kind)
-		return nil
-	}
+func (c *TestContext) ApplyFileNoObject(ctx context.Context, ns string, file YamlTestFile) (func() error, error) {
+	obj := objByKind(file.Kind)
+	return c.ApplyFile(ctx, ns, file, obj)
 }
 
-func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFile) (func() error, error) {
+func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFile, obj k8s.Object) (func() error, error) {
 	d := os.DirFS("../yaml")
-	obj := objByKind(file.Kind)
 	if err := decoder.DecodeFile(
 		d,
 		file.File,
@@ -251,8 +281,7 @@ func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFil
 		return nil, err
 	}
 
-	// Only wait for deployment events to be fully processed
-	if file.Kind == "Deployment" {
+	if file.Kind == "Deployment" || file.Kind == "Pod" {
 		if err := c.waitForResource(5*time.Second, deploymentName(obj.GetName())); err != nil {
 			return nil, err
 		}
@@ -286,4 +315,38 @@ func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error
 			}
 		}
 	}
+}
+
+func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n string) *central.MsgFromSensor {
+	var lastMessage *central.MsgFromSensor
+	for i := len(messages) - 1; i > 0; i-- {
+		if messages[i].GetEvent().GetDeployment().GetName() == n {
+			lastMessage = messages[i]
+			break
+		}
+	}
+	return lastMessage
+}
+
+func GetUniquePodNamesFromPrefix(messages []*central.MsgFromSensor, prefix string) []string {
+	uniqueNames := set.NewStringSet()
+	for _, msg := range messages {
+		if msg.GetEvent().GetPod() != nil {
+			pod := msg.GetEvent().GetPod()
+			if strings.Contains(pod.GetName(), prefix) {
+				uniqueNames.Add(pod.GetName())
+			}
+		}
+	}
+	return uniqueNames.AsSlice()
+}
+
+func GetUniqueDeploymentNames(messages []*central.MsgFromSensor) []string {
+	uniqueNames := set.NewStringSet()
+	for _, msg := range messages {
+		if msg.GetEvent().GetDeployment() != nil {
+			uniqueNames.Add(msg.GetEvent().GetDeployment().GetName())
+		}
+	}
+	return uniqueNames.AsSlice()
 }

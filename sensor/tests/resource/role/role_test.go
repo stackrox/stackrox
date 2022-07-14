@@ -13,9 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
 
-func getLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n string) *central.MsgFromSensor {
+func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n string) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
 	for i := len(messages) - 1; i >= 0; i-- {
 		if messages[i].GetEvent().GetDeployment().GetName() == n {
@@ -27,7 +28,7 @@ func getLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n strin
 }
 
 func assertLastDeploymentHasPermissionLevel(t *testing.T, messages []*central.MsgFromSensor, permissionLevel storage.PermissionLevel) {
-	lastNginxDeploymentUpdate := getLastMessageWithDeploymentName(messages, "nginx-deployment")
+	lastNginxDeploymentUpdate := GetLastMessageWithDeploymentName(messages, "nginx-deployment")
 	require.NotNil(t, lastNginxDeploymentUpdate, "should have found a message for nginx-deployment")
 	deployment := lastNginxDeploymentUpdate.GetEvent().GetDeployment()
 	assert.Equal(
@@ -63,7 +64,7 @@ func (s *RoleDependencySuite) Test_PermutationTest() {
 			resource.NginxDeployment,
 			resource.NginxRole,
 			resource.NginxRoleBinding,
-		}, "Role Dependency", func(t *testing.T, testC *resource.TestContext) {
+		}, "Role Dependency", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
 			time.Sleep(2 * time.Second)
 			assertLastDeploymentHasPermissionLevel(
@@ -81,7 +82,7 @@ func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 		[]resource.YamlTestFile{
 			resource.NginxDeployment,
 			resource.NginxRole,
-		}, "Permission level is set to None if no binding is found", func(t *testing.T, testC *resource.TestContext) {
+		}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
 			time.Sleep(2 * time.Second)
 			assertLastDeploymentHasPermissionLevel(
@@ -94,16 +95,17 @@ func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 }
 
 func (s *RoleDependencySuite) Test_MultipleDeploymentUpdates() {
-	s.testContext.RunBare("Update permission level", func(t *testing.T, testC *resource.TestContext) {
-		deleteDep, err := testC.ApplyFile(context.Background(), "sensor-integration", resource.NginxDeployment)
+	s.testContext.RunBare("Update permission level", func(t *testing.T, testC *resource.TestContext,  _ map[string]k8s.Object) {
+		deleteDep, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", resource.NginxDeployment)
 		defer utils.IgnoreError(deleteDep)
 		require.NoError(t, err)
 
-		deleteRoleBinding, err := testC.ApplyFile(context.Background(), "sensor-integration", resource.NginxRoleBinding)
+		deleteRoleBinding, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", resource.NginxRoleBinding)
 		defer utils.IgnoreError(deleteRoleBinding)
 		require.NoError(t, err)
 
-		deleteRole, err := testC.ApplyFile(context.Background(), "sensor-integration", resource.NginxRole)
+		deleteRole, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", resource.NginxRole)
+
 		defer utils.IgnoreError(deleteRole)
 		require.NoError(t, err)
 
