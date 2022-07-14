@@ -39,9 +39,12 @@ func (suite *EnsurerTestSuite) SetupTest() {
 		source := pgtest.GetConnectionString(suite.T())
 		config, err := pgxpool.ParseConfig(source)
 		suite.Require().NoError(err)
-		pool, err := pgxpool.ConnectConfig(sac.WithAllAccess(context.Background()), config)
+		ctx := sac.WithAllAccess(context.Background())
+		pool, err := pgxpool.ConnectConfig(ctx, config)
 		suite.pool = pool
 
+		// Ensure we are starting fresh
+		postgres.Destroy(ctx, pool)
 		suite.versionStore = store.NewPostgres(pool)
 	} else {
 		boltDB, err := bolthelper.NewTemp(testutils.DBFileName(suite))
