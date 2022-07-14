@@ -30,7 +30,7 @@ case "$ci_job" in
 esac
 
 if [[ "$ci_job" =~ e2e|upgrade ]]; then
-    handle_nightly_roxctl_mismatch
+    handle_nightly_binary_version_mismatch
 fi
 
 export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
