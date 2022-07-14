@@ -9,14 +9,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// NewFullStore augments the generated store with ListDeployment functions
+// NewFullStore augments the generated store with ListDeployment functions.
 func NewFullStore(ctx context.Context, db *pgxpool.Pool) store.Store {
 	return &fullStoreImpl{
 		Store: New(db),
 	}
 }
 
-// FullStoreWrap augments the wrapped store with ListDeployment functions
+// FullStoreWrap augments the wrapped store with ListDeployment functions.
 func FullStoreWrap(wrapped Store) store.Store {
 	return &fullStoreImpl{
 		Store: wrapped,
@@ -27,7 +27,7 @@ type fullStoreImpl struct {
 	Store
 }
 
-// GetListDeployment returns the list deployment of the passed ID
+// GetListDeployment returns the list deployment of the passed ID.
 func (f *fullStoreImpl) GetListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
 	dep, exists, err := f.Get(ctx, id)
 	if err != nil || !exists {
@@ -36,7 +36,7 @@ func (f *fullStoreImpl) GetListDeployment(ctx context.Context, id string) (*stor
 	return types.ConvertDeploymentToDeploymentList(dep), true, nil
 }
 
-// GetManyListDeployments returns the list deployments as specified by the passed IDs
+// GetManyListDeployments returns the list deployments as specified by the passed IDs.
 func (f *fullStoreImpl) GetManyListDeployments(ctx context.Context, ids ...string) ([]*storage.ListDeployment, []int, error) {
 	deployments, missing, err := f.GetMany(ctx, ids)
 	if err != nil {
