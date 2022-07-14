@@ -274,118 +274,17 @@ const TOP_RISKIEST_NODE_VULNS = gql`
 const getTextByEntityType = (entityType, data) => {
     switch (entityType) {
         case entityTypes.NODE:
-            return data.name;
+        case entityTypes.NODE_CVE:
+            return data.name.fullName || data.name;
         case entityTypes.COMPONENT:
         case entityTypes.NODE_COMPONENT:
         case entityTypes.IMAGE_COMPONENT:
             return `${data.name}:${data.version}`;
         case entityTypes.IMAGE:
+        case entityTypes.IMAGE_CVE:
         default:
             return data.name.fullName;
     }
-};
-
-function getSelectedEntity(selectedEntity, showVmUpdates) {
-    if (!showVmUpdates) {
-        return selectedEntity;
-    }
-    switch (selectedEntity) {
-        case entityTypes.NODE_COMPONENT:
-            return entityTypes.NODE_COMPONENT;
-        case entityTypes.IMAGE_COMPONENT:
-            return entityTypes.IMAGE_COMPONENT;
-        case entityTypes.NODE:
-            return entityTypes.NODE_CVE;
-        case entityTypes.IMAGE:
-        default:
-            return entityTypes.IMAGE_CVE;
-    }
-}
-
-const processData = (data, entityType, workflowState, showVmUpdates) => {
-    const currentEntityType = getSelectedEntity(entityType, showVmUpdates);
-    const results = data.results
-        .slice()
-        .sort((a, b) => {
-            const d = a.priority - b.priority;
-            if (d === 0) {
-                return d;
-            }
-            if (a.priority === 0) {
-                return 1;
-            }
-            if (b.priority === 0) {
-                return -1;
-            }
-            return d;
-        })
-        .map(({ id, vulnCounter, scan, lastScanned, ...rest }) => {
-            const text = getTextByEntityType(currentEntityType, { ...rest });
-            const newState = workflowState.pushRelatedEntity(currentEntityType, id);
-
-            const url = newState.toUrl();
-            const cveListState = newState.pushList(currentEntityType);
-            const cvesUrl = cveListState.toUrl();
-            const fixableUrl = cveListState.setSearch({ Fixable: true }).toUrl();
-
-            const { critical, important, moderate, low } = vulnCounter;
-
-            const scanTimeToUse = scan?.scanTime || lastScanned;
-            const formattedDate = format(scanTimeToUse, dateTimeFormat);
-            const tooltipTitle =
-                formattedDate && formattedDate !== 'Invalid Date'
-                    ? formattedDate
-                    : 'Date and time not available';
-            const tooltipBody = (
-                <div className="flex-1 border-base-300 overflow-hidden">
-                    <div className="mb-2">
-                        <span className="text-base-600 font-700 mr-2 capitalize">
-                            {resourceLabels[currentEntityType]}:
-                        </span>
-                        <span className="font-600">{text}</span>
-                    </div>
-                    <div>
-                        <span className="text-base-600 font-700 mr-2 mb-1">
-                            Criticality Distribution:
-                        </span>
-                        <div>
-                            {critical.total} Critical CVEs ({critical.fixable} Fixable)
-                        </div>
-                        <div>
-                            {important.total} Important CVEs ({important.fixable} Fixable)
-                        </div>
-                        <div>
-                            {moderate.total} Moderate CVEs ({moderate.fixable} Fixable)
-                        </div>
-                        <div>
-                            {low.total} Low CVEs ({low.fixable} Fixable)
-                        </div>
-                    </div>
-                </div>
-            );
-
-            return {
-                text,
-                url,
-                component: (
-                    <div className="flex">
-                        <CVEStackedPill
-                            vulnCounter={vulnCounter}
-                            url={cvesUrl}
-                            fixableUrl={fixableUrl}
-                            horizontal
-                            showTooltip={false}
-                        />
-                    </div>
-                ),
-                tooltip: {
-                    title: tooltipTitle,
-                    body: tooltipBody,
-                },
-            };
-        });
-
-    return results;
 };
 
 const getQueryBySelectedEntity = (entityType) => {
@@ -441,16 +340,115 @@ const getEntitiesByContext = (entityContext, showVmUpdates) => {
         // unshift so it sits at the front of the list (in case both entity types are added, image should come first)
         entities.unshift({
             label: 'Top Riskiest Images',
-            value: showVmUpdates ? entityTypes.IMAGE_CVE : entityTypes.IMAGE,
+            value: entityTypes.IMAGE,
         });
     }
     if (entityContext === {} || !entityContext[entityTypes.NODE]) {
         entities.push({
             label: 'Top Riskiest Nodes',
-            value: showVmUpdates ? entityTypes.NODE_CVE : entityTypes.NODE,
+            value: entityTypes.NODE,
         });
     }
     return entities;
+};
+
+function getCVEListType(entityType, showVmUpdates) {
+    if (!showVmUpdates) {
+        return entityType.CVE;
+    }
+    switch (entityType) {
+        case entityTypes.NODE_COMPONENT:
+            return entityTypes.NODE_CVE;
+        case entityTypes.IMAGE_COMPONENT:
+            return entityTypes.IMAGE_CVE;
+        default:
+            return entityTypes.CVE;
+    }
+}
+
+const processData = (data, entityType, workflowState, showVmUpdates) => {
+    const results = data.results
+        .slice()
+        .sort((a, b) => {
+            const d = a.priority - b.priority;
+            if (d === 0) {
+                return d;
+            }
+            if (a.priority === 0) {
+                return 1;
+            }
+            if (b.priority === 0) {
+                return -1;
+            }
+            return d;
+        })
+        .map(({ id, vulnCounter, scan, lastScanned, ...rest }) => {
+            const text = getTextByEntityType(entityType, { ...rest });
+            const newState = workflowState.pushRelatedEntity(entityType, id);
+
+            const url = newState.toUrl();
+            const cveListState = newState.pushList(getCVEListType(entityType, showVmUpdates));
+            const cvesUrl = cveListState.toUrl();
+            const fixableUrl = cveListState.setSearch({ Fixable: true }).toUrl();
+
+            const { critical, important, moderate, low } = vulnCounter;
+
+            const scanTimeToUse = scan?.scanTime || lastScanned;
+            const formattedDate = format(scanTimeToUse, dateTimeFormat);
+            const tooltipTitle =
+                formattedDate && formattedDate !== 'Invalid Date'
+                    ? formattedDate
+                    : 'Date and time not available';
+            const tooltipBody = (
+                <div className="flex-1 border-base-300 overflow-hidden">
+                    <div className="mb-2">
+                        <span className="text-base-600 font-700 mr-2 capitalize">
+                            {resourceLabels[entityType]}:
+                        </span>
+                        <span className="font-600">{text}</span>
+                    </div>
+                    <div>
+                        <span className="text-base-600 font-700 mr-2 mb-1">
+                            Criticality Distribution:
+                        </span>
+                        <div>
+                            {critical.total} Critical CVEs ({critical.fixable} Fixable)
+                        </div>
+                        <div>
+                            {important.total} Important CVEs ({important.fixable} Fixable)
+                        </div>
+                        <div>
+                            {moderate.total} Moderate CVEs ({moderate.fixable} Fixable)
+                        </div>
+                        <div>
+                            {low.total} Low CVEs ({low.fixable} Fixable)
+                        </div>
+                    </div>
+                </div>
+            );
+
+            return {
+                text,
+                url,
+                component: (
+                    <div className="flex">
+                        <CVEStackedPill
+                            vulnCounter={vulnCounter}
+                            url={cvesUrl}
+                            fixableUrl={fixableUrl}
+                            horizontal
+                            showTooltip={false}
+                        />
+                    </div>
+                ),
+                tooltip: {
+                    title: tooltipTitle,
+                    body: tooltipBody,
+                },
+            };
+        });
+
+    return results;
 };
 
 const TopRiskiestEntities = ({ entityContext, limit }) => {
@@ -489,7 +487,7 @@ const TopRiskiestEntities = ({ entityContext, limit }) => {
     const workflowState = useContext(workflowStateContext);
 
     const viewAllURL = workflowState
-        .pushList(getSelectedEntity(selectedEntity, showVmUpdates))
+        .pushList(selectedEntity)
         .setSort([{ id: entitySortFieldsMap[selectedEntity].PRIORITY, desc: false }])
         .toUrl();
 
