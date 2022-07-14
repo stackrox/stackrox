@@ -86,9 +86,9 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 
 func (s *imageFlavorTestSuite) TestCheckChartRepo() {
 	oss_repo_url := "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/"
-	oss_repo_icon := "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/StackRox_icon.png"
+	oss_repo_icon := "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png"
 	acs_repo_url := "https://mirror.openshift.com/pub/rhacs/charts"
-	acs_repo_icon := "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png"
+	acs_repo_icon := "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png"
 
 	testCases := map[string]struct {
 		isRelease        bool

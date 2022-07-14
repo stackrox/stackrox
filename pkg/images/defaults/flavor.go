@@ -123,7 +123,7 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 
 		ChartRepo: ChartRepo{
 			URL:     "https://mirror.openshift.com/pub/rhacs/charts",
-			IconURL: "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
@@ -156,7 +156,7 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 
 		ChartRepo: ChartRepo{
 			URL:     "https://charts.stackrox.io",
-			IconURL: "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: false,
@@ -190,7 +190,7 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 
 		ChartRepo: ChartRepo{
 			URL:     "https://mirror.openshift.com/pub/rhacs/charts",
-			IconURL: "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
@@ -236,7 +236,7 @@ func OpenSourceImageFlavor() ImageFlavor {
 
 		ChartRepo: ChartRepo{
 			URL:     "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/",
-			IconURL: "https://github.com/stackrox/stackrox/blob/master/image/templates/helm/shared/assets/StackRox_icon.png",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
