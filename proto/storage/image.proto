@@ -37,7 +37,7 @@ message Image {
     bool                            is_cluster_local            = 17;
 
     reserved 6;  // was map<string,string> clusterns_scopes
-    int64                           priority                    = 11;
+    int64                           priority                    = 11 [(gogoproto.moretags) = 'search:"Image Risk Priority,hidden"'];
     float                           risk_score                  = 12 [(gogoproto.moretags) = "search:\"Image Risk Score,hidden\""];
     oneof set_top_cvss {
         float                       top_cvss                    = 13 [(gogoproto.moretags) = "search:\"Image Top CVSS,store\""];
