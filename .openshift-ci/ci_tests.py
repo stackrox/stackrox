@@ -58,7 +58,7 @@ class OperatorE2eTest(BaseTest):
 
         print("Executing operator e2e tests")
         self.run_with_graceful_kill(
-            ["make", "-C", "operator", "deploy-via-olm", "test-e2e-deployed"], OperatorE2eTest.E2E_TEST_TIMEOUT_SEC
+            ["make", "-C", "operator", "kuttl", "deploy-via-olm", "test-e2e-deployed"], OperatorE2eTest.E2E_TEST_TIMEOUT_SEC
         )
 
         print("Executing Operator Bundle Scorecard tests")
