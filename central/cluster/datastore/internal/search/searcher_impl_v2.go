@@ -7,12 +7,18 @@ import (
 	"github.com/stackrox/rox/central/cluster/index"
 	store "github.com/stackrox/rox/central/cluster/store/cluster"
 	"github.com/stackrox/rox/central/ranking"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/sorted"
+)
+
+var (
+	sacHelper = sac.ForResource(resources.Cluster).MustCreatePgSearchHelper()
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.
@@ -25,7 +31,7 @@ func NewV2(storage store.Store, indexer index.Indexer, clusterRanker *ranking.Ra
 }
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, clusterRanker *ranking.Ranker) search.Searcher {
-	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
+	safeSearcher := sacHelper.FilteredSearcher(unsafeSearcher)
 	prioritySortedSearcher := sorted.Searcher(safeSearcher, search.ClusterPriority, clusterRanker)
 	return paginated.WithDefaultSortOption(prioritySortedSearcher, defaultSortOption)
 }
