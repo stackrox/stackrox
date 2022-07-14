@@ -1061,10 +1061,10 @@ send_slack_notice_for_failures_on_merge() {
 '
 
     echo "About to post:"
-    jq --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
+    jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
        --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body"
 
-    jq --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
+    jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
        --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body" | \
     curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
