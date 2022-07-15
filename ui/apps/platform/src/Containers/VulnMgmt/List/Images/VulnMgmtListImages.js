@@ -55,8 +55,8 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 sortField: imageSortFields.NAME,
             },
             {
-                Header: `CVEs`,
-                entityType: entityTypes.CVE,
+                Header: isFrontendVMUpdatesEnabled ? 'Image CVEs' : 'CVEs',
+                entityType: isFrontendVMUpdatesEnabled ? entityTypes.IMAGE_CVE : entityTypes.CVE,
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
