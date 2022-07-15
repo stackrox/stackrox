@@ -1,36 +1,54 @@
 import * as api from '../constants/apiEndpoints';
 import { selectors, url as policiesUrl } from '../constants/PoliciesPagePatternFly';
 import { visitFromLeftNavExpandable } from './nav';
+import { visit } from './visit';
 
 // Navigation
 
-export function visitPolicies() {
-    // Include empty search query to distinguish from intercept with search query.
-    cy.intercept('GET', `${api.policies.policies}?query=`).as('getPolicies');
-    cy.visit(policiesUrl);
-    cy.wait('@getPolicies');
-}
+const routeMatcherMap = {
+    notifiers: {
+        method: 'GET',
+        url: api.integrations.notifiers,
+    },
+    'search/metadata/options': {
+        method: 'GET',
+        url: `/v1/search/metadata/options?categories=POLICIES`,
+    },
+    policies: {
+        method: 'GET',
+        // Include empty search query to distinguish from intercept with search query.
+        url: `${api.policies.policies}?query=`,
+    },
+};
 
-export function visitPoliciesCallback(callback) {
-    // Include empty search query to distinguish from intercept with search query.
-    cy.intercept('GET', `${api.policies.policies}?query=`).as('getPolicies');
-    cy.visit(policiesUrl);
-    cy.wait('@getPolicies').then(({ response }) => {
-        callback(response.body.policies);
-    });
+export function visitPolicies(staticResponseMap) {
+    visit(policiesUrl, { routeMatcherMap }, staticResponseMap);
+
+    cy.get('h1:contains("Policy management")');
+    cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
 }
 
 export function visitPoliciesFromLeftNav() {
-    // Include empty search query to distinguish from intercept with search query.
-    cy.intercept('GET', `${api.policies.policies}?query=`).as('getPolicies');
-    visitFromLeftNavExpandable('Platform Configuration', 'Policy Management');
-    cy.wait('@getPolicies');
+    visitFromLeftNavExpandable('Platform Configuration', 'Policy Management', { routeMatcherMap });
+
+    cy.get('h1:contains("Policy management")');
+    cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
 }
 
-export function visitPolicy(policyId) {
-    cy.intercept('GET', api.policies.policy).as('getPolicy');
-    cy.visit(`${policiesUrl}/${policyId}`);
-    cy.wait('@getPolicy');
+export function visitPolicy(policyId, staticResponseMap) {
+    const routeMatcherMapPolicy = {
+        'policies/id': {
+            method: 'GET',
+            url: api.policies.policy,
+        },
+    };
+
+    visit(
+        `${policiesUrl}/${policyId}`,
+        { routeMatcherMap: routeMatcherMapPolicy },
+        staticResponseMap
+    );
+    cy.get('h2:contains("Policy details")');
 }
 
 // Actions on policy table
@@ -39,9 +57,30 @@ export function createPolicy() {}
 
 export function doPolicyRowAction(trSelector, titleOfActionItem) {
     cy.get(`${trSelector} ${selectors.table.actionsToggleButton}`).click();
-    cy.get(
-        `${trSelector} ${selectors.table.actionsItemButton}:contains("${titleOfActionItem}")`
-    ).click();
+    cy.get(`${trSelector} ${selectors.table.actionsItemButton}:contains("${titleOfActionItem}")`)
+        .should('be.enabled')
+        .click();
+}
+
+export function changePolicyStatusInTable({ policyName, statusPrev, actionText, statusNext }) {
+    const trSelector = `tr:has('td[data-label="Policy"] a:contains("${policyName}")')`;
+
+    cy.get(`${trSelector} td[data-label="Status"]:contains("${statusPrev}")`);
+    cy.intercept('PATCH', api.policies.policy).as('PATCH_policies/id');
+    doPolicyRowAction(trSelector, actionText);
+    cy.wait('@PATCH_policies/id');
+    cy.wait('@policies'); // assume alias from visitPolicies function call
+    cy.get(`${trSelector} td[data-label="Status"]:contains("${statusNext}")`);
+}
+
+export function deletePolicyInTable({ policyName, actionText }) {
+    const trSelector = `tr:has('td[data-label="Policy"] a:contains("${policyName}")')`;
+
+    cy.intercept('DELETE', api.policies.policy).as('DELETE_policies/id');
+    doPolicyRowAction(trSelector, actionText);
+    cy.get('[role="dialog"][aria-label="Confirm delete"] button:contains("Delete")').click();
+    cy.wait('@DELETE_policies/id');
+    cy.wait('@policies'); // assume alias from visitPolicies function call
 }
 
 export function searchPolicies(category, value) {
@@ -51,24 +90,42 @@ export function searchPolicies(category, value) {
         query: {
             query: `${category}:${value}`,
         },
-    }).as('getPoliciesWithSearchQuery');
+    }).as('policies?query');
     cy.get(selectors.table.searchInput).type(`${category}:{enter}`);
     cy.get(selectors.table.searchInput).type(`${value}{enter}{esc}`);
-    cy.wait('@getPoliciesWithSearchQuery');
+    cy.wait('@policies?query');
 }
 
 export function goToFirstPolicy() {
-    cy.intercept('GET', api.policies.policy).as('getPolicy');
+    cy.intercept('GET', api.policies.policy).as('policies/id');
     cy.get(selectors.tableFirstRowName).click();
-    cy.wait('@getPolicy');
+    cy.wait('policies/id');
 }
 
 export function editFirstPolicyFromTable() {
-    doPolicyRowAction(selectors.table.firstRow, 'Edit');
+    cy.get(`${selectors.table.firstRow} td[data-label="Policy"] a`).then(($a) => {
+        const policyName = $a.text();
+
+        cy.intercept('GET', api.policies.policy).as('policies/id');
+        doPolicyRowAction(selectors.table.firstRow, 'Edit policy');
+        cy.wait('@policies/id');
+
+        cy.location('search').should('eq', '?action=edit');
+        cy.get(`h1:contains("${policyName}")`);
+    });
 }
 
 export function cloneFirstPolicyFromTable() {
-    doPolicyRowAction(selectors.table.firstRow, 'Clone');
+    cy.get(`${selectors.table.firstRow} td[data-label="Policy"] a`).then(($a) => {
+        const policyName = $a.text();
+
+        cy.intercept('GET', api.policies.policy).as('policies/id');
+        doPolicyRowAction(selectors.table.firstRow, 'Clone policy');
+        cy.wait('@policies/id');
+
+        cy.location('search').should('eq', '?action=clone');
+        cy.get(`h1:contains("${policyName}")`);
+    });
 }
 
 // Actions on policy detail page
