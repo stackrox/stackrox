@@ -126,7 +126,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetServiceAccount() {
 	suite.Equal(listDeployment.GetName(), sa.SaAndRole.DeploymentRelationships[0].GetName())
 	suite.Equal(1, len(sa.SaAndRole.ScopedRoles))
 	suite.Equal(1, len(sa.SaAndRole.ClusterRoles))
-	suite.Equal("namspace", sa.SaAndRole.ScopedRoles[0].Namespace)
+	suite.Equal("namespace", sa.SaAndRole.ScopedRoles[0].Namespace)
 }
 
 // Test that when we fail to find a service account, an error is returned.
