@@ -41,7 +41,7 @@ func (v *insecureVerifierWithWarning) VerifyPeerCertificate(leaf *x509.Certifica
 	if err != nil {
 		v.printWarningOnce.Do(func() {
 			v.logger.WarnfLn(warningMsg)
-			v.logger.ErrfLn("Certificate validation error:", err.Error())
+			v.logger.ErrfLn("Certificate validation error: %s", err.Error())
 		})
 	}
 	return nil
