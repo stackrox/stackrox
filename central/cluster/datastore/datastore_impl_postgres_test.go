@@ -17,13 +17,16 @@ import (
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -116,11 +119,6 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	})
 	s.NoError(err)
 
-	// Basic unscoped search.
-	results, err := s.clusterDatastore.Search(ctx, pkgSearch.EmptyQuery())
-	s.NoError(err)
-	s.Len(results, 1)
-
 	// Upsert cluster.
 	s.netFlows.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(s.mockCtrl), nil)
 	c2ID, err := s.clusterDatastore.AddCluster(ctx, &storage.Cluster{
@@ -131,58 +129,221 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	})
 	s.NoError(err)
 
-	// Basic unscoped search.
-	results, err = s.clusterDatastore.Search(ctx, pkgSearch.EmptyQuery())
-	s.NoError(err)
-	s.Len(results, 2)
-
 	ns1C1 := fixtures.GetNamespace(c1ID, "c1", "n1")
 	ns2C1 := fixtures.GetNamespace(c1ID, "c1", "n2")
 	ns1C2 := fixtures.GetNamespace(c2ID, "c2", "n1")
 
-	// Upsert namespace.
+	// Upsert namespaces.
 	s.NoError(s.nsDatastore.AddNamespace(ctx, ns1C1))
-
-	// Basic unscoped search.
-	results, err = s.nsDatastore.Search(ctx, pkgSearch.EmptyQuery())
-	s.NoError(err)
-	s.Len(results, 1)
-
-	// Upsert.
 	s.NoError(s.nsDatastore.UpdateNamespace(ctx, ns2C1))
 	s.NoError(s.nsDatastore.UpdateNamespace(ctx, ns1C2))
 
-	// Basic unscoped search.
-	results, err = s.nsDatastore.Search(ctx, pkgSearch.EmptyQuery())
-	s.NoError(err)
-	s.Len(results, 3)
+	for _, tc := range []struct {
+		desc         string
+		ctx          context.Context
+		query        *v1.Query
+		orderMatters bool
+		expectedIDs  []string
+		queryNs      bool
+	}{
+		{
+			desc:         "Search clusters with empty query",
+			ctx:          ctx,
+			query:        pkgSearch.EmptyQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{c1ID, c2ID},
+		},
+		{
+			desc:         "Search clusters with cluster query",
+			ctx:          ctx,
+			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, c1ID).ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{c1ID},
+		},
+		{
+			desc:         "Search clusters with namespace query",
+			ctx:          ctx,
+			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n2").ProtoQuery(),
+			orderMatters: true,
+			expectedIDs:  []string{c1ID},
+		},
+		{
+			desc:         "Search clusters with cluster+namespace query",
+			ctx:          ctx,
+			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddMapQuery(pkgSearch.ClusterLabel, "team", "team").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{c1ID, c2ID},
+		},
+		{
+			desc:         "Search clusters with cluster scope",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			query:        pkgSearch.EmptyQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{c1ID},
+		},
+		{
+			desc:         "Search clusters with cluster scope and in-scope cluster query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			query:        pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{c1ID},
+		},
+		{
+			desc:         "Search clusters with cluster scope and out-of-scope cluster query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			query:        pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{},
+		},
+		{
+			desc:         "Search clusters with cluster scope and in-scope namespace query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{c1ID},
+		},
+		{
+			desc:         "Search clusters with cluster scope and out-of-scope namespace query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: c2ID, Level: v1.SearchCategory_CLUSTERS}),
+			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n2").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{},
+		},
+		{
+			desc:         "Search clusters with namespace scope",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			query:        pkgSearch.EmptyQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{c1ID},
+		},
+		{
+			desc:         "Search clusters with namespace scope and in-scope cluster query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			query:        pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{c1ID},
+		},
+		{
+			desc:         "Search clusters with namespace scope and out-of-scope cluster query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			query:        pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{},
+		},
 
-	// Query cluster with namespace search field.
-	results, err = s.clusterDatastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n2").ProtoQuery())
-	s.NoError(err)
-	s.Len(results, 1)
-	s.Equal(c1ID, results[0].ID)
-
-	// Query namespace with cluster search field.
-	results, err = s.nsDatastore.Search(ctx, pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery())
-	s.NoError(err)
-	s.Len(results, 1)
-	s.Equal(ns1C2.Id, results[0].ID)
-
-	// Query cluster with cluster+namespace search fields.
-	results, err = s.clusterDatastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddMapQuery(pkgSearch.ClusterLabel, "team", "team").ProtoQuery())
-	s.NoError(err)
-	s.Len(results, 2)
-	s.ElementsMatch([]string{c1ID, c2ID}, pkgSearch.ResultsToIDs(results))
-
-	// Query namespace with cluster+namespace search fields.
-	results, err = s.nsDatastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddMapQuery(pkgSearch.ClusterLabel, "team", "team").ProtoQuery())
-	s.NoError(err)
-	s.Len(results, 2)
-	s.ElementsMatch([]string{ns1C1.Id, ns1C2.Id}, pkgSearch.ResultsToIDs(results))
-
-	// Query namespace with cluster+namespace search fields.
-	results, err = s.nsDatastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddMapQuery(pkgSearch.ClusterLabel, "team", "blah").ProtoQuery())
-	s.NoError(err)
-	s.Len(results, 0)
+		{
+			desc:         "Search namespaces with empty query",
+			ctx:          ctx,
+			query:        pkgSearch.EmptyQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{ns1C1.Id, ns2C1.Id, ns1C2.Id},
+			queryNs:      true,
+		},
+		{
+			desc:         "Search namespaces with cluster query",
+			ctx:          ctx,
+			query:        pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
+			orderMatters: true,
+			expectedIDs:  []string{ns1C2.Id},
+			queryNs:      true,
+		},
+		{
+			desc:         "Search namespaces with cluster+namespace query",
+			ctx:          ctx,
+			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddMapQuery(pkgSearch.ClusterLabel, "team", "team").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{ns1C1.Id, ns1C2.Id},
+			queryNs:      true,
+		},
+		{
+			desc:         "Search namespaces with cluster+namespace non-matching search fields",
+			ctx:          ctx,
+			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddMapQuery(pkgSearch.ClusterLabel, "team", "blah").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{},
+			queryNs:      true,
+		},
+		{
+			desc:         "Search namespace with namespace scope",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			query:        pkgSearch.EmptyQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{ns1C1.Id},
+			queryNs:      true,
+		},
+		{
+			desc:         "Search namespace with namespace scope and in-scope cluster query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			query:        pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{ns1C1.Id},
+			queryNs:      true,
+		},
+		{
+			desc:         "Search namespace with namespace scope and out-of-scope cluster query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			query:        pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{},
+			queryNs:      true,
+		},
+		{
+			desc:         "Search namespace with namespace scope and in-scope namespace query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{ns1C1.Id},
+			queryNs:      true,
+		},
+		{
+			desc:         "Search namespace with namespace scope and out-of-scope namespace query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: ns1C1.Id, Level: v1.SearchCategory_NAMESPACES}),
+			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n2").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{},
+			queryNs:      true,
+		},
+		{
+			desc:         "Search namespaces with cluster scope",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			query:        pkgSearch.EmptyQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{ns1C1.Id, ns2C1.Id},
+			queryNs:      true,
+		},
+		{
+			desc:         "Search namespaces with cluster scope and in-scope cluster query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			query:        pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{ns1C1.Id, ns2C1.Id},
+			queryNs:      true,
+		},
+		{
+			desc:         "Search namespaces with cluster scope and out-of-scope cluster query",
+			ctx:          scoped.Context(ctx, scoped.Scope{ID: c1ID, Level: v1.SearchCategory_CLUSTERS}),
+			query:        pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{},
+			queryNs:      true,
+		},
+	} {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			var actual []pkgSearch.Result
+			var err error
+			if tc.queryNs {
+				actual, err = s.nsDatastore.Search(tc.ctx, tc.query)
+			} else {
+				actual, err = s.clusterDatastore.Search(tc.ctx, tc.query)
+			}
+			assert.NoError(t, err)
+			assert.Len(t, actual, len(tc.expectedIDs))
+			actualIDs := pkgSearch.ResultsToIDs(actual)
+			if tc.orderMatters {
+				assert.Equal(t, tc.expectedIDs, actualIDs)
+			} else {
+				assert.ElementsMatch(t, tc.expectedIDs, actualIDs)
+			}
+		})
+	}
 }
