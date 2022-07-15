@@ -359,8 +359,21 @@ func (resolver *clusterCVEResolver) EnvImpact(ctx context.Context) (float64, err
 }
 
 func (resolver *clusterCVEResolver) FixedByVersion(ctx context.Context) (string, error) {
-	// TODO
-	return "", nil
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "FixedByVersion")
+	scope, hasScope := scoped.GetScope(ctx)
+	if !hasScope {
+		return "", nil
+	}
+	if scope.Level != v1.SearchCategory_CLUSTERS {
+		return "", nil
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	edges, err := resolver.root.ClusterCVEEdgeDataStore.SearchRawEdges(ctx, query)
+	if err != nil || len(edges) == 0 {
+		return "", err
+	}
+	return edges[0].GetFixedBy(), nil
 }
 
 func (resolver *clusterCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
@@ -392,8 +405,8 @@ func (resolver *clusterCVEResolver) IsFixable(ctx context.Context, args RawQuery
 }
 
 func (resolver *clusterCVEResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
-	// TODO
-	return nil, nil
+	// TODO we're temporarily pointing it at LastModified until this information is actually in the data model
+	return resolver.LastModified(ctx)
 }
 
 func (resolver *clusterCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver {

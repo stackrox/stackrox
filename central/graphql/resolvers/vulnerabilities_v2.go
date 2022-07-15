@@ -537,7 +537,7 @@ func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, 
 	}
 	if cve.ContainsClusterCVE(resolver.data.GetTypes()) {
 		query := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, true).ProtoQuery())
-		count, err := resolver.root.clusterCVEEdgeDataStore.Count(ctx, query)
+		count, err := resolver.root.ClusterCVEEdgeDataStore.Count(ctx, query)
 		if err != nil {
 			return false, err
 		}
@@ -915,7 +915,7 @@ func (resolver *cVEResolver) getClusterFixedByVersion(_ context.Context) (string
 	}
 
 	edgeID := edges.EdgeID{ParentID: scope.ID, ChildID: resolver.data.GetId()}.ToString()
-	edge, found, err := resolver.root.clusterCVEEdgeDataStore.Get(resolver.ctx, edgeID)
+	edge, found, err := resolver.root.ClusterCVEEdgeDataStore.Get(resolver.ctx, edgeID)
 	if err != nil || !found {
 		return "", err
 	}
