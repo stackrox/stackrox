@@ -106,7 +106,7 @@ get_central_debug_dump() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
 
-    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug dump --output-dir "${output_dir}"
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central debug dump --output-dir "${output_dir}"
     ls -l "${output_dir}"
 }
 
@@ -203,7 +203,7 @@ push_main_image_set() {
 }
 
 push_docs_image() {
-    info "Pushing the docs image"
+    info "Pushing the docs image: $PIPELINE_DOCS_IMAGE"
 
     if ! is_OPENSHIFT_CI; then
         die "Only supported in OpenShift CI"
@@ -220,6 +220,20 @@ push_docs_image() {
         oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
         oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$(make --quiet tag)"
     done
+}
+
+push_race_condition_debug_image() {
+    info "Pushing the -race image: $MAIN_RCD_IMAGE"
+
+    if ! is_OPENSHIFT_CI; then
+        die "Only supported in OpenShift CI"
+    fi
+
+    oc registry login
+
+    local registry="quay.io/rhacs-eng"
+    registry_rw_login "$registry"
+    oc image mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet tag)-rcd"
 }
 
 registry_rw_login() {
@@ -578,9 +592,25 @@ pr_has_label() {
     pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
         info "Warning: checking for a label in a non PR context"
-        false
+        return 1
     fi
-    jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
+
+    if is_openshift_CI_rehearse_PR; then
+        pr_has_label_in_body "${expected_label}" "$pr_details"
+    else
+        jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
+    fi
+}
+
+pr_has_label_in_body() {
+    if [[ "$#" -ne 2 ]]; then
+        die "usage: pr_has_label_in_body <expected label> <pr details>"
+    fi
+
+    local expected_label="$1"
+    local pr_details="$2"
+
+    [[ "$(jq -r '.body' <<<"$pr_details")" =~ \/label:[[:space:]]*$expected_label ]]
 }
 
 # get_pr_details() from GitHub and display the result. Exits 1 if not run in CI in a PR context.
@@ -848,6 +878,9 @@ openshift_ci_mods() {
 
     info "Status after mods:"
     "$ROOT/status.sh" || true
+
+    STACKROX_BUILD_TAG=$(make --quiet tag)
+    export STACKROX_BUILD_TAG
 
     info "END OpenShift CI mods"
 }

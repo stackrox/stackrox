@@ -1,7 +1,7 @@
 #!/usr/bin/env -S python3 -u
 
 """
-Run qa-tests-backend in a GKE cluster
+Run qa-tests-backend in a GKE cluster with a postgres DB
 """
 import os
 from base_qa_e2e_test import make_qa_e2e_test_runner
