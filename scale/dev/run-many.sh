@@ -17,5 +17,6 @@ fi
 for i in $(seq 1 $2); do
   namespace="stackrox$i"
   kubectl get ns $namespace && kubectl delete ns $namespace
+  kubectl create ns $namespace
   ./launch_sensor.sh $1 $namespace
 done
