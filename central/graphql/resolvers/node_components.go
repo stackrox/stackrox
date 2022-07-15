@@ -17,25 +17,20 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered
-		schema.AddType("NodeComponent", []string{
+		schema.AddExtraResolvers("NodeComponent", []string{
 			"fixedIn: String!",
-			"id: ID!",
 			"nodeComponentLastScanned: Time",
 			"license: License",
 			"location(query: String): String!",
-			"name: String!",
 			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
 			"nodeCount(query: String, scopeQuery: String): Int!",
 			"nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!",
 			"nodeVulnerabilityCount(query: String, scopeQuery: String): Int!",
 			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!",
-			"priority: Int!",
-			"riskScore: Float!",
 			"source: String!",
 			"topNodeVulnerability: NodeVulnerability",
 			"unusedVarSink(query: String): Int",
-			"version: String!",
 		}),
 
 		schema.AddQuery("nodeComponent(id: ID): NodeComponent"),
@@ -48,7 +43,7 @@ func init() {
 // NOTE: This list is and should remain alphabetically ordered
 type NodeComponentResolver interface {
 	FixedIn(ctx context.Context) string
-	ID(ctx context.Context) graphql.ID
+	Id(ctx context.Context) graphql.ID
 	NodeComponentLastScanned(ctx context.Context) (*graphql.Time, error)
 	License(ctx context.Context) (*licenseResolver, error)
 	Location(ctx context.Context, args RawQuery) (string, error)
@@ -58,6 +53,7 @@ type NodeComponentResolver interface {
 	NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error)
 	NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error)
 	NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
+	OperatingSystem(ctx context.Context) string
 	PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error)
 	Priority(ctx context.Context) int32
 	RiskScore(ctx context.Context) float64
@@ -101,7 +97,67 @@ func (resolver *Resolver) NodeComponentCount(ctx context.Context, args RawQuery)
 	return 0, errors.New("Resolver NodeComponentCount does not support postgres yet")
 }
 
+/*
+Utility Functions
+*/
+
 func queryWithNodeIDRegexFilter(q string) string {
 	return search.AddRawQueriesAsConjunction(q,
 		search.NewQueryBuilder().AddRegexes(search.NodeID, ".+").Query())
+}
+
+/*
+Sub Resolver Functions
+*/
+
+func (resolver *nodeComponentResolver) FixedIn(ctx context.Context) string {
+
+}
+
+func (resolver *nodeComponentResolver) NodeComponentLastScanned(ctx context.Context) (*graphql.Time, error) {
+
+}
+
+func (resolver *nodeComponentResolver) License(ctx context.Context) (*licenseResolver, error) {
+
+}
+
+func (resolver *nodeComponentResolver) Location(ctx context.Context, args RawQuery) (string, error) {
+
+}
+
+func (resolver *nodeComponentResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
+
+}
+
+func (resolver *nodeComponentResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
+
+}
+
+func (resolver *nodeComponentResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+
+}
+
+func (resolver *nodeComponentResolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+
+}
+
+func (resolver *nodeComponentResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+
+}
+
+func (resolver *nodeComponentResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
+
+}
+
+func (resolver *nodeComponentResolver) Source(ctx context.Context) string {
+
+}
+
+func (resolver *nodeComponentResolver) TopNodeVulnerability(ctx context.Context) (NodeVulnerabilityResolver, error) {
+
+}
+
+func (resolver *nodeComponentResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+	return nil
 }
