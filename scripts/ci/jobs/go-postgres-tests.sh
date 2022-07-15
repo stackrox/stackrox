@@ -13,7 +13,13 @@ go_postgres_unit_tests() {
     export PGHOST=/tmp
     createuser -s postgres
 
-    make go-postgres-unit-tests
+    make go-postgres-unit-tests || touch FAIL
+
+    info "Saving junit XML report"
+    make generate-junit-reports || touch FAIL
+    store_test_results junit-reports reports
+
+    [[ ! -f FAIL ]] || die "Unit tests failed"
 }
 
 go_postgres_unit_tests "$*"
