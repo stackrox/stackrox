@@ -249,9 +249,7 @@ func (s *dackboxTestDataStoreImpl) waitForIndexing() {
 	if !features.PostgresDatastore.Enabled() {
 		indexingCompleted := concurrency.NewSignal()
 		s.indexQ.PushSignal(&indexingCompleted)
-		select {
-		case <-indexingCompleted.Done():
-		}
+		<-indexingCompleted.Done()
 	}
 }
 
