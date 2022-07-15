@@ -83,10 +83,6 @@ func fetchCategoriesToAdd(db *bolt.DB) (set.FrozenStringSet, error) {
 	categories := set.NewStringSet()
 	err := db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policiesBucket)
-		// Pre-req: Migrating a non-existent bucket should not fail.
-		if bucket == nil {
-			return nil
-		}
 		return bucket.ForEach(func(k, v []byte) error {
 			policy := &storage.Policy{}
 			if err := proto.Unmarshal(v, policy); err != nil {
