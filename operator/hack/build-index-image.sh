@@ -118,6 +118,14 @@ if [[ "${REPLACED_VERSION}" = v* ]]; then
   REPLACED_VERSION="${REPLACED_VERSION:1}"
 fi
 
+# TODO(porridge): remove
+echo BASE_DIR:
+ls -la "${BASE_DIR}"
+echo BASE_DIR/bin:
+ls -la "${BASE_DIR}/bin"
+echo dirname of OPM
+ls -la "$(dirname "${OPM}")"
+
 echo "Detected that bundle ${BUNDLE_TAG} updates (replaces) version ${REPLACED_VERSION}. Will use index image ${BASE_INDEX_TAG} as the base for the current one." >&2
 
 # Exports for docker build and opm in case it builds the image
