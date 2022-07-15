@@ -13,6 +13,9 @@ else
   killpf 8000
   ./port-forward.sh 8000
 fi
+kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout 2m
+echo "Set retention settings"
+roxcurl v1/config -X PUT -d @config.json
 
 for i in $(seq 1 $2); do
   namespace="stackrox$i"

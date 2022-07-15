@@ -38,4 +38,4 @@ if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
   exit 0
 fi
 
-kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"8Gi","cpu":"4"},"limits":{"memory":"20Gi","cpu":"8"}}}]}}}}'
+kubectl -n "${namespace}" patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"8Gi","cpu":"4"},"limits":{"memory":"20Gi","cpu":"8"}}}]}}}}'
