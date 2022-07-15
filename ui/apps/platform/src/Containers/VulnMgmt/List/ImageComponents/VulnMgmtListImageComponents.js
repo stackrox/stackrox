@@ -50,7 +50,7 @@ export function getComponentTableColumns(workflowState) {
             sortField: componentSortFields.COMPONENT,
         },
         {
-            Header: `CVEs`,
+            Header: `Image CVEs`,
             entityType: entityTypes.CVE,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
