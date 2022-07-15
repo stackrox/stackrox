@@ -1984,36 +1984,6 @@ commands:
       - ci-artifacts/store:
           path: << parameters.path >>
 
-  pre-go-unit-tests:
-    description: "Common pre go test steps"
-    steps:
-      - checkout
-      - check-to-run:
-          run-on-master: true
-          run-on-tags: true
-          changed-path-ignore: "^ui/"
-      - restore-go-mod-cache
-      - setup-go-build-env
-      - *restoreGoBuildCache
-
-  post-go-unit-tests:
-    description: "Common post go test steps"
-    parameters:
-      path:
-        type: string
-    steps:
-      - *saveGoBuildCache
-
-      - run:
-          name: Generate JUnit reports
-          command: |
-            make generate-junit-reports
-            cp -a junit-reports << parameters.path >>
-          when: always
-
-      - store-test-results-and-artifacts:
-          path: << parameters.path >>
-
   create-openshift-4-cluster:
     description: "Create an OpenShift 4 cluster"
     parameters:
@@ -2083,27 +2053,6 @@ jobs:
               --arg tag "$CIRCLE_TAG" \
               '{"text": "CircleCI build for tag `\($tag)` started! Check the status of the build under the following URL: https://circleci.com/workflow-run/\($workflow_id)"}' \
             | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
-
-  go-postgres-tests:
-    docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.42
-        auth:
-          username: $QUAY_RHACS_ENG_RO_USERNAME
-          password: $QUAY_RHACS_ENG_RO_PASSWORD
-      - image: postgres:14.2-alpine
-        environment:
-          POSTGRES_PASSWORD: password
-    resource_class: xlarge
-    environment:
-      ROX_IMAGE_FLAVOR: stackrox.io
-    steps:
-    - pre-go-unit-tests
-    - run:
-        name: Run Go postgres unit tests
-        command: |
-          make go-postgres-unit-tests
-    - post-go-unit-tests:
-        path: go-unit-release-junit-reports
 
   designated-image-tests:
 
@@ -3780,8 +3729,6 @@ workflows:
       - slack-notify:
           <<: *runOnTagsOnly
           context: custom-executor-pull
-      - go-postgres-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-create-parameters:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-build-ui-rhacs:
