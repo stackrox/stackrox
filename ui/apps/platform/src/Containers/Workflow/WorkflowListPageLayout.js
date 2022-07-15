@@ -28,8 +28,6 @@ const WorkflowListPageLayout = ({ location }) => {
         const newTypes = useCaseEntityMap['vulnerability-management'].filter(
             (entityType) => entityType !== entityTypes.COMPONENT
         );
-        newTypes.push(entityTypes.NODE_COMPONENT);
-        newTypes.push(entityTypes.IMAGE_COMPONENT);
         useCaseEntityMap['vulnerability-management'] = newTypes;
     }
 
