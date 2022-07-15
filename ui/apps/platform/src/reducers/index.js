@@ -20,7 +20,6 @@ import metadata, { selectors as metadataSelectors } from './metadata';
 import loading, { selectors as loadingSelectors } from './loading';
 import { selectors as routeSelectors } from './routes';
 import network, { selectors as networkSelectors } from './network/reducer';
-import processes, { selectors as processSelectors } from './processes';
 import groups, { selectors as groupsSelectors } from './groups';
 import attributes, { selectors as attributesSelectors } from './attributes';
 import pdfDownload, { selectors as pdfDownloadSelectors } from './pdfDownload';
@@ -45,7 +44,6 @@ const appReducer = combineReducers({
     loading,
     metadata,
     network,
-    processes,
     groups,
     attributes,
     pdfDownload,
@@ -82,7 +80,6 @@ const getServerError = (state) => getApp(state).serverError;
 const getLoadingStatus = (state) => getApp(state).loading;
 const getMetadata = (state) => getApp(state).metadata;
 const getNetwork = (state) => getApp(state).network;
-const getProcesses = (state) => getApp(state).processes;
 const getRuleGroups = (state) => getApp(state).groups;
 const getAttributes = (state) => getApp(state).attributes;
 const getPdfDownload = (state) => getApp(state).pdfDownload;
@@ -106,7 +103,6 @@ const boundSelectors = {
     ...bindSelectors(getLoadingStatus, loadingSelectors),
     ...bindSelectors(getMetadata, metadataSelectors),
     ...bindSelectors(getNetwork, networkSelectors),
-    ...bindSelectors(getProcesses, processSelectors),
     ...bindSelectors(getRuleGroups, groupsSelectors),
     ...bindSelectors(getAttributes, attributesSelectors),
     ...bindSelectors(getPdfDownload, pdfDownloadSelectors),
