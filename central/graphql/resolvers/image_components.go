@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -371,6 +372,14 @@ func (resolver *imageComponentResolver) Location(ctx context.Context, args RawQu
 		return "", nil
 	}
 
+	if !features.PostgresDatastore.Enabled() {
+		edgeID := edges.EdgeID{ParentID: imageID, ChildID: resolver.data.GetId()}.ToString()
+		edge, found, err := resolver.root.ImageComponentEdgeDataStore.Get(ctx, edgeID)
+		if err != nil || !found {
+			return "", err
+		}
+		return edge.GetLocation(), nil
+	}
 	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
 	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(ctx, query)
 	if err != nil || len(edges) == 0 {
