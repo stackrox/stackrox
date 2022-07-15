@@ -44,6 +44,17 @@ const EntityTabs = ({ entityType, activeTab }) => {
         return null;
     }
 
+    if (showVMUpdates && entityType === 'NODE') {
+        relationships = relationships.map((relatedEntityType) => {
+            if (relatedEntityType === 'COMPONENT') {
+                return 'NODE_COMPONENT';
+            }
+            if (relatedEntityType === 'CVE') {
+                return 'NODE_CVE';
+            }
+            return relatedEntityType;
+        });
+    }
     if (showVMUpdates && entityType === 'NODE_COMPONENT') {
         relationships = relationships.map((relatedEntityType) => {
             if (relatedEntityType === 'CVE') {
@@ -54,6 +65,17 @@ const EntityTabs = ({ entityType, activeTab }) => {
     }
     if (showVMUpdates && entityType === 'IMAGE_COMPONENT') {
         relationships = relationships.map((relatedEntityType) => {
+            if (relatedEntityType === 'CVE') {
+                return 'IMAGE_CVE';
+            }
+            return relatedEntityType;
+        });
+    }
+    if (showVMUpdates && entityType === 'IMAGE') {
+        relationships = relationships.map((relatedEntityType) => {
+            if (relatedEntityType === 'COMPONENT') {
+                return 'IMAGE_COMPONENT';
+            }
             if (relatedEntityType === 'CVE') {
                 return 'IMAGE_CVE';
             }

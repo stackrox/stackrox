@@ -3,14 +3,20 @@ import { Link } from 'react-router-dom';
 import { Button } from '@patternfly/react-core';
 
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import entityTypes from 'constants/entityTypes';
 
 type CVESummaryLinkProps = {
     cve: string;
 };
 
 function CVESummaryLink({ cve }: CVESummaryLinkProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const entityType = showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE;
+
     const workflowState = useContext(workflowStateContext);
-    const url = workflowState.pushRelatedEntity('CVE', cve).toUrl();
+    const url = workflowState.pushRelatedEntity(entityType, cve).toUrl();
 
     return (
         <Button variant="link" isInline>

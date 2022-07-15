@@ -28,10 +28,22 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
         .map((matchEntity) => {
             // @TODO: Modify the actual relationship entities once ROX_FRONTEND_VM_UPDATES is in
             let newMatchEntity = matchEntity;
-            if (showVMUpdates && entityType === 'NODE_COMPONENT' && matchEntity === 'CVE') {
+            if (
+                showVMUpdates &&
+                (entityType === 'NODE_COMPONENT' || entityType === 'NODE') &&
+                matchEntity === 'CVE'
+            ) {
                 newMatchEntity = 'NODE_CVE';
-            } else if (showVMUpdates && entityType === 'IMAGE_COMPONENT' && matchEntity === 'CVE') {
+            } else if (
+                showVMUpdates &&
+                (entityType === 'IMAGE_COMPONENT' || entityType === 'IMAGE') &&
+                matchEntity === 'CVE'
+            ) {
                 newMatchEntity = 'IMAGE_CVE';
+            } else if (showVMUpdates && entityType === 'NODE' && matchEntity === 'COMPONENT') {
+                newMatchEntity = 'NODE_COMPONENT';
+            } else if (showVMUpdates && entityType === 'IMAGE' && matchEntity === 'COMPONENT') {
+                newMatchEntity = 'IMAGE_COMPONENT';
             }
 
             const countKeyToUse =
@@ -55,14 +67,22 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
         .map((containEntity) => {
             // @TODO: Modify the actual relationship entities once ROX_FRONTEND_VM_UPDATES is in
             let newContainEntity = containEntity;
-            if (showVMUpdates && entityType === 'NODE_COMPONENT' && containEntity === 'CVE') {
+            if (
+                showVMUpdates &&
+                (entityType === 'NODE_COMPONENT' || entityType === 'NODE') &&
+                containEntity === 'CVE'
+            ) {
                 newContainEntity = 'NODE_CVE';
             } else if (
                 showVMUpdates &&
-                entityType === 'IMAGE_COMPONENT' &&
+                (entityType === 'IMAGE_COMPONENT' || entityType === 'IMAGE') &&
                 containEntity === 'CVE'
             ) {
                 newContainEntity = 'IMAGE_CVE';
+            } else if (showVMUpdates && entityType === 'NODE' && containEntity === 'COMPONENT') {
+                newContainEntity = 'NODE_COMPONENT';
+            } else if (showVMUpdates && entityType === 'IMAGE' && containEntity === 'COMPONENT') {
+                newContainEntity = 'IMAGE_COMPONENT';
             }
 
             const count = data[countKeyMap[newContainEntity]];
