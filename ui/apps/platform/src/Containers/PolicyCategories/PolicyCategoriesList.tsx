@@ -17,7 +17,7 @@ function PolicyCategoriesList({ policyCategories }: PolicyCategoriesListProps) {
                     key={id}
                     onClick={() => {}}
                     isActive={false}
-                    componentProps={{ isDisabled: isDefault }}
+                    componentProps={{ disabled: isDefault }}
                 >
                     {name}
                 </SimpleListItem>

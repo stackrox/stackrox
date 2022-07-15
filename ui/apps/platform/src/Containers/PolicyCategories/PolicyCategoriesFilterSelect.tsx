@@ -1,26 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 
-import { PolicyCategory } from 'types/policy.proto';
+export type CategoryFilter = 'Default categories' | 'Custom categories';
 
 type PolicyCategoriesFilterSelectProps = {
-    setCurrentPolicyCategories: (policyCategories: PolicyCategory[]) => void;
-    defaultPolicyCategories: PolicyCategory[];
-    customPolicyCategories: PolicyCategory[];
+    selectedFilters: CategoryFilter[];
+    setSelectedFilters: (selectedFilters: CategoryFilter[]) => void;
 };
 
-type CategoryFilter = 'Default categories' | 'Custom categories';
-
 function PolicyCategoriesFilterSelect({
-    setCurrentPolicyCategories,
-    defaultPolicyCategories,
-    customPolicyCategories,
+    selectedFilters,
+    setSelectedFilters,
 }: PolicyCategoriesFilterSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedFilters, setSelectedFilters] = useState<CategoryFilter[]>([
-        'Default categories',
-        'Custom categories',
-    ]);
 
     function onSelect(e, selection) {
         if (selectedFilters.includes(selection)) {
@@ -29,20 +21,6 @@ function PolicyCategoriesFilterSelect({
             setSelectedFilters([...selectedFilters, selection]);
         }
     }
-
-    useEffect(() => {
-        if (selectedFilters.length === 1) {
-            if (selectedFilters[0] === 'Default categories') {
-                setCurrentPolicyCategories(defaultPolicyCategories);
-            }
-            if (selectedFilters[0] === 'Custom categories') {
-                setCurrentPolicyCategories(customPolicyCategories);
-            }
-        } else {
-            setCurrentPolicyCategories([...defaultPolicyCategories, ...customPolicyCategories]);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedFilters]);
 
     return (
         <Select

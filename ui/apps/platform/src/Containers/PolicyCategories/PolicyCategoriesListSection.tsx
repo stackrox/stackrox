@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { PageSection, Title, Flex, TextInput } from '@patternfly/react-core';
 
 import PolicyCategoriesList from './PolicyCategoriesList';
-import PolicyCategoriesFilterSelect from './PolicyCategoriesFilterSelect';
+import PolicyCategoriesFilterSelect, { CategoryFilter } from './PolicyCategoriesFilterSelect';
 
 type PolicyCategoriesListSectionProps = {
     // TODO: change once proto goes in
@@ -23,8 +23,19 @@ function PolicyCategoriesListSection({ policyCategories }: PolicyCategoriesListS
     }));
     const customPolicyCategories = allPolicyCategories.filter(({ isDefault }) => !isDefault);
     const defaultPolicyCategories = allPolicyCategories.filter(({ isDefault }) => isDefault);
-
-    const [currentPolicyCategories, setCurrentPolicyCategories] = useState(allPolicyCategories);
+    const [selectedFilters, setSelectedFilters] = useState<CategoryFilter[]>([
+        'Default categories',
+        'Custom categories',
+    ]);
+    let currentPolicyCategories = allPolicyCategories;
+    if (selectedFilters.length === 1) {
+        if (selectedFilters[0] === 'Default categories') {
+            currentPolicyCategories = defaultPolicyCategories;
+        }
+        if (selectedFilters[0] === 'Custom categories') {
+            currentPolicyCategories = customPolicyCategories;
+        }
+    }
     const [filterTerm, setFilterTerm] = useState('');
     const [filteredCategories, setFilteredCategories] = useState(currentPolicyCategories);
 
@@ -34,7 +45,8 @@ function PolicyCategoriesListSection({ policyCategories }: PolicyCategoriesListS
                 name.toLowerCase().includes(filterTerm.toLowerCase())
             )
         );
-    }, [filterTerm, currentPolicyCategories]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filterTerm, selectedFilters]);
 
     return (
         <PageSection isFilled id="policy-categories-list-section">
@@ -57,11 +69,11 @@ function PolicyCategoriesListSection({ policyCategories }: PolicyCategoriesListS
                             type="text"
                             value={filterTerm}
                             placeholder="Filter by category name..."
+                            id="policy-categories-filter-input"
                         />
                         <PolicyCategoriesFilterSelect
-                            setCurrentPolicyCategories={setCurrentPolicyCategories}
-                            defaultPolicyCategories={defaultPolicyCategories}
-                            customPolicyCategories={customPolicyCategories}
+                            selectedFilters={selectedFilters}
+                            setSelectedFilters={setSelectedFilters}
                         />
                     </Flex>
                     {filteredCategories.length > 0 && (
