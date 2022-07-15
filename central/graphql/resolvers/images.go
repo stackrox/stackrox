@@ -401,7 +401,7 @@ func (resolver *imageResolver) PlottedVulns(ctx context.Context, args RawQuery) 
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "PlottedImageVulnerabilities")
-	return resolver.PlottedImageVulnerabilities(resolver.imageScopeContext(ctx), args)
+	return resolver.root.PlottedImageVulnerabilities(resolver.imageScopeContext(ctx), args)
 }
 
 func (resolver *imageResolver) WatchStatus(ctx context.Context) (string, error) {

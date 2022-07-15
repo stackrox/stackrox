@@ -541,7 +541,7 @@ func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, ar
 
 	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
-	return resolver.PlottedNodeVulnerabilities(ctx, RawQuery{Query: &query})
+	return resolver.root.PlottedNodeVulnerabilities(ctx, RawQuery{Query: &query})
 }
 
 func (resolver *nodeResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
