@@ -159,8 +159,7 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 		}
 		return vulnResolver, nil
 	}
-	// TODO postgres support
-	return nil, errors.New("Sub-resolver TopVulnerability in image does not support postgres")
+	return resolver.root.TopImageVulnerability(resolver.imageScopeContext(ctx), args)
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
@@ -327,13 +326,11 @@ func (resolver *imageResolver) VulnCounter(ctx context.Context, args RawQuery) (
 
 func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
-
 	return resolver.root.ImageComponents(resolver.imageScopeContext(ctx), args)
 }
 
 func (resolver *imageResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponentCount")
-
 	return resolver.root.ImageComponentCount(resolver.imageScopeContext(ctx), args)
 }
 
@@ -404,7 +401,7 @@ func (resolver *imageResolver) PlottedVulns(ctx context.Context, args RawQuery) 
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "PlottedImageVulnerabilities")
-	return newPlottedImageVulnerabilitiesResolver(resolver.imageScopeContext(ctx), resolver.root, args)
+	return resolver.PlottedImageVulnerabilities(resolver.imageScopeContext(ctx), args)
 }
 
 func (resolver *imageResolver) WatchStatus(ctx context.Context) (string, error) {
