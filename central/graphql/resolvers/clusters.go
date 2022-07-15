@@ -1120,13 +1120,13 @@ func (resolver *clusterResolver) PlottedNodeVulnerabilities(ctx context.Context,
 
 	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-	return resolver.PlottedNodeVulnerabilities(ctx, RawQuery{Query: &query})
+	return resolver.root.PlottedNodeVulnerabilities(ctx, RawQuery{Query: &query})
 }
 
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *clusterResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlottedImageVulnerabilities")
-	return resolver.PlottedImageVulnerabilities(resolver.withClusterScope(ctx), args)
+	return resolver.root.PlottedImageVulnerabilities(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

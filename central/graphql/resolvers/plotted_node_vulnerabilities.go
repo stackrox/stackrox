@@ -66,13 +66,9 @@ func (resolver *Resolver) PlottedNodeVulnerabilities(ctx context.Context, args R
 	if err != nil {
 		return nil, err
 	}
-	allCves, err := vulnLoader.FromQuery(ctx, query)
+	allCveIds, err := vulnLoader.GetIDs(ctx, query)
 	if err != nil {
 		return nil, err
-	}
-	allCveIds := make([]string, 0, len(allCves))
-	for _, cve := range allCves {
-		allCveIds = append(allCveIds, cve.GetId())
 	}
 
 	fixableCount, err := vulnLoader.CountFromQuery(ctx,

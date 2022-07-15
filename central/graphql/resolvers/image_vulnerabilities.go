@@ -263,9 +263,15 @@ func imageCveToVulnerabilityWithSeverity(in []*storage.ImageCVE) []Vulnerability
 }
 
 func (resolver *imageCVEResolver) withImageVulnerabilityScope(ctx context.Context) context.Context {
+	if features.PostgresDatastore.Enabled() {
+		return scoped.Context(ctx, scoped.Scope{
+			ID:    resolver.data.GetId(),
+			Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+		})
+	}
 	return scoped.Context(ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
-		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+		Level: v1.SearchCategory_VULNERABILITIES,
 	})
 }
 
