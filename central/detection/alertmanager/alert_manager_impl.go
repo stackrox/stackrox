@@ -319,7 +319,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 			if mergedAlert != matchingOld && !proto.Equal(mergedAlert, matchingOld) {
 				updatedAlerts = append(updatedAlerts, mergedAlert)
 			} else {
-				metrics.IncDedupedAlerts(alert.GetLifecycleStage(), alert.GetPolicy().GetName())
+				metrics.IncDedupedAlerts(alert.GetLifecycleStage(), alert.GetPolicy().GetId())
 			}
 			continue
 		}
