@@ -123,57 +123,20 @@ func (s *riskDatastoreSACSuite) deleteRisk(id string) {
 }
 
 func (s *riskDatastoreSACSuite) TestUpsertRisk() {
-	cases := map[string]struct {
-		scopeKey    string
-		expectFail  bool
-		expectedErr error
-	}{
-		"global read-only should not be able to add": {
-			scopeKey:    testutils.UnrestrictedReadCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"global read-write should be able to add": {
-			scopeKey: testutils.UnrestrictedReadWriteCtx,
-		},
-		"read-write on wrong cluster should not be able to add": {
-			scopeKey:    testutils.Cluster1ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and namespace should not be able to add": {
-			scopeKey:    testutils.Cluster1NamespaceAReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace should not be able to add": {
-			scopeKey:    testutils.Cluster1NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and wrong namespace should not be able to add": {
-			scopeKey:    testutils.Cluster2NamespaceAReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and no namespace should not be able to add": {
-			scopeKey:    testutils.Cluster2ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-	}
+	testedVerb := "upsert"
+	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			risk := fixtures.GetScopedRisk(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			s.testRiskIDs = append(s.testRiskIDs, risk.GetSubject().GetId())
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			err := s.datastore.UpsertRisk(ctx, risk)
 			defer s.deleteRisk(risk.GetSubject().GetId())
-			if c.expectFail {
+			if c.ExpectError {
 				s.Require().Error(err)
-				s.ErrorIs(err, c.expectedErr)
+				s.ErrorIs(err, c.ExpectedError)
 			} else {
 				s.NoError(err)
 			}
@@ -188,47 +151,14 @@ func (s *riskDatastoreSACSuite) TestGetRisk() {
 	s.Require().NoError(err)
 	s.testRiskIDs = append(s.testRiskIDs, risk.GetSubject().GetId())
 
-	cases := map[string]struct {
-		scopeKey string
-		found    bool
-	}{
-		"global read-only can get": {
-			scopeKey: testutils.UnrestrictedReadCtx,
-			found:    true,
-		},
-		"global read-write can get": {
-			scopeKey: testutils.UnrestrictedReadWriteCtx,
-			found:    true,
-		},
-		"read-write on wrong cluster cannot get": {
-			scopeKey: testutils.Cluster1ReadWriteCtx,
-		},
-		"read-write on wrong cluster and wrong namespace cannot get": {
-			scopeKey: testutils.Cluster1NamespaceAReadWriteCtx,
-		},
-		"read-write on wrong cluster and matching namespace cannot get": {
-			scopeKey: testutils.Cluster1NamespaceBReadWriteCtx,
-		},
-		"read-write on matching cluster but wrong namespaces cannot get": {
-			scopeKey: testutils.Cluster2NamespacesACReadWriteCtx,
-		},
-		"read-write on matching cluster cannot read": {
-			scopeKey: testutils.Cluster2ReadWriteCtx,
-		},
-		"read-write on the matching cluster and namespace cannot get": {
-			scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
-		},
-		"read-write on the matching cluster and at least one matching namespace cannot get": {
-			scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
-		},
-	}
+	cases := testutils.GenericGlobalSACGetTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			res, found, err := s.datastore.GetRisk(ctx, risk.GetSubject().GetId(), storage.RiskSubjectType_DEPLOYMENT)
 			s.Require().NoError(err)
-			if c.found {
+			if c.ExpectedFound {
 				s.Require().True(found)
 				s.Equal(*risk, *res)
 			} else {
@@ -252,50 +182,14 @@ func (s *riskDatastoreSACSuite) TestGetRiskForDeployment() {
 		Namespace: testconsts.NamespaceB,
 	}
 
-	cases := map[string]struct {
-		scopeKey string
-		found    bool
-	}{
-		"global read-only can get": {
-			scopeKey: testutils.UnrestrictedReadCtx,
-			found:    true,
-		},
-		"global read-write can get": {
-			scopeKey: testutils.UnrestrictedReadWriteCtx,
-			found:    true,
-		},
-		"read-write on wrong cluster cannot get": {
-			scopeKey: testutils.Cluster1ReadWriteCtx,
-		},
-		"read-write on wrong cluster and wrong namespace cannot get": {
-			scopeKey: testutils.Cluster1NamespaceAReadWriteCtx,
-		},
-		"read-write on wrong cluster and matching namespace cannot get": {
-			scopeKey: testutils.Cluster1NamespaceBReadWriteCtx,
-		},
-		"read-write on matching cluster but wrong namespaces cannot get": {
-			scopeKey: testutils.Cluster2NamespacesACReadWriteCtx,
-		},
-		"read-write on matching cluster can read": {
-			scopeKey: testutils.Cluster2ReadWriteCtx,
-			found:    true,
-		},
-		"read-write on the matching cluster and namespace can get": {
-			scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
-			found:    true,
-		},
-		"read-write on the matching cluster and at least one matching namespace can get": {
-			scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
-			found:    true,
-		},
-	}
+	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			res, found, err := s.datastore.GetRiskForDeployment(ctx, d)
 			s.Require().NoError(err)
-			if c.found {
+			if c.ExpectedFound {
 				s.Require().True(found)
 				s.Equal(*risk, *res)
 			} else {
@@ -307,56 +201,7 @@ func (s *riskDatastoreSACSuite) TestGetRiskForDeployment() {
 }
 
 func (s *riskDatastoreSACSuite) TestRemoveRisk() {
-	cases := map[string]struct {
-		scopeKey    string
-		expectFail  bool
-		expectedErr error
-	}{
-		"global read-only cannot remove": {
-			scopeKey:    testutils.UnrestrictedReadCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"global read-write can remove": {
-			scopeKey:    testutils.UnrestrictedReadWriteCtx,
-			expectedErr: nil,
-		},
-		"read-write on wrong cluster cannot remove": {
-			scopeKey:    testutils.Cluster1ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and wrong namespace cannot remove": {
-			scopeKey:    testutils.Cluster1NamespaceAReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace cannot remove": {
-			scopeKey:    testutils.Cluster1NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster but wrong namespaces cannot remove": {
-			scopeKey:    testutils.Cluster2NamespacesACReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"full read-write on matching cluster cannot remove": {
-			scopeKey:    testutils.Cluster2ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on the matching cluster and namespace cannot remove": {
-			scopeKey:    testutils.Cluster2NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on the matching cluster and at least the right namespace cannot remove": {
-			scopeKey:    testutils.Cluster2NamespacesABReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-	}
+	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -364,15 +209,15 @@ func (s *riskDatastoreSACSuite) TestRemoveRisk() {
 				testconsts.NamespaceB)
 			s.testRiskIDs = append(s.testRiskIDs, risk.GetSubject().GetId())
 
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			err := s.datastore.UpsertRisk(s.testContexts[testutils.UnrestrictedReadWriteCtx], risk)
 			s.Require().NoError(err)
 			defer s.deleteRisk(risk.GetId())
 
 			err = s.datastore.RemoveRisk(ctx, risk.GetSubject().GetId(), storage.RiskSubjectType_DEPLOYMENT)
-			if c.expectFail {
+			if c.ExpectError {
 				s.Require().Error(err)
-				s.ErrorIs(err, c.expectedErr)
+				s.ErrorIs(err, c.ExpectedError)
 			} else {
 				s.NoError(err)
 			}

@@ -120,67 +120,20 @@ func (s *k8sRoleSACSuite) deleteK8sRole(id string) {
 }
 
 func (s *k8sRoleSACSuite) TestUpsertRole() {
-	cases := map[string]struct {
-		scopeKey    string
-		expectFail  bool
-		expectedErr error
-	}{
-		"global read-only should not be able to add": {
-			scopeKey:    testutils.UnrestrictedReadCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"global read-write should be able to add": {
-			scopeKey: testutils.UnrestrictedReadWriteCtx,
-		},
-		"read-write on wrong cluster should not be able to add": {
-			scopeKey:    testutils.Cluster1ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and namespace should not be able to add": {
-			scopeKey:    testutils.Cluster1NamespaceAReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace should not be able to add": {
-			scopeKey:    testutils.Cluster1NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and wrong namespace should not be able to add": {
-			scopeKey:    testutils.Cluster2NamespaceAReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and matching namespace should be able to add": {
-			scopeKey:    testutils.Cluster2NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and no namespace should not be able to add": {
-			scopeKey:    testutils.Cluster2ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and at least one matching namespace should be able to add": {
-			scopeKey:    testutils.Cluster2NamespacesABReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-	}
+	testedVerb := "upsert"
+	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			role := fixtures.GetScopedK8SRole(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			s.testK8sRoleIDs = append(s.testK8sRoleIDs, role.GetId())
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			err := s.datastore.UpsertRole(ctx, role)
 			defer s.deleteK8sRole(role.GetId())
-			if c.expectFail {
+			if c.ExpectError {
 				s.Require().Error(err)
-				s.ErrorIs(err, c.expectedErr)
+				s.ErrorIs(err, c.ExpectedError)
 			} else {
 				s.NoError(err)
 			}
@@ -195,50 +148,14 @@ func (s *k8sRoleSACSuite) TestGetRole() {
 	s.Require().NoError(err)
 	s.testK8sRoleIDs = append(s.testK8sRoleIDs, role.GetId())
 
-	cases := map[string]struct {
-		scopeKey string
-		found    bool
-	}{
-		"global read-only can get": {
-			scopeKey: testutils.UnrestrictedReadCtx,
-			found:    true,
-		},
-		"global read-write can get": {
-			scopeKey: testutils.UnrestrictedReadWriteCtx,
-			found:    true,
-		},
-		"read-write on wrong cluster cannot get": {
-			scopeKey: testutils.Cluster1ReadWriteCtx,
-		},
-		"read-write on wrong cluster and wrong namespace cannot get": {
-			scopeKey: testutils.Cluster1NamespaceAReadWriteCtx,
-		},
-		"read-write on wrong cluster and matching namespace cannot get": {
-			scopeKey: testutils.Cluster1NamespaceBReadWriteCtx,
-		},
-		"read-write on matching cluster but wrong namespaces cannot get": {
-			scopeKey: testutils.Cluster2NamespacesACReadWriteCtx,
-		},
-		"read-write on matching cluster can read": {
-			scopeKey: testutils.Cluster2ReadWriteCtx,
-			found:    true,
-		},
-		"read-write on the matching cluster and namespace can get": {
-			scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
-			found:    true,
-		},
-		"read-write on the matching cluster and at least one matching namespace can get": {
-			scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
-			found:    true,
-		},
-	}
+	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			res, found, err := s.datastore.GetRole(ctx, role.GetId())
 			s.Require().NoError(err)
-			if c.found {
+			if c.ExpectedFound {
 				s.True(found)
 				s.Equal(*role, *res)
 			} else {
@@ -250,56 +167,7 @@ func (s *k8sRoleSACSuite) TestGetRole() {
 }
 
 func (s *k8sRoleSACSuite) TestRemoveRole() {
-	cases := map[string]struct {
-		scopeKey    string
-		expectFail  bool
-		expectedErr error
-	}{
-		"global read-only cannot remove": {
-			scopeKey:    testutils.UnrestrictedReadCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"global read-write can remove": {
-			scopeKey:    testutils.UnrestrictedReadWriteCtx,
-			expectedErr: nil,
-		},
-		"read-write on wrong cluster cannot remove": {
-			scopeKey:    testutils.Cluster1ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and wrong namespace cannot remove": {
-			scopeKey:    testutils.Cluster1NamespaceAReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace cannot remove": {
-			scopeKey:    testutils.Cluster1NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster but wrong namespaces cannot remove": {
-			scopeKey:    testutils.Cluster2NamespacesACReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"full read-write on matching cluster cannot remove": {
-			scopeKey:    testutils.Cluster2ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on the matching cluster and namespace cannot remove": {
-			scopeKey:    testutils.Cluster2NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on the matching cluster and at least the right namespace cannot remove": {
-			scopeKey:    testutils.Cluster2NamespacesABReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-	}
+	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -307,15 +175,15 @@ func (s *k8sRoleSACSuite) TestRemoveRole() {
 				testconsts.NamespaceB)
 			s.testK8sRoleIDs = append(s.testK8sRoleIDs, role.GetId())
 
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			err := s.datastore.UpsertRole(s.testContexts[testutils.UnrestrictedReadWriteCtx], role)
 			s.Require().NoError(err)
 			defer s.deleteK8sRole(role.GetId())
 
 			err = s.datastore.RemoveRole(ctx, role.GetId())
-			if c.expectFail {
+			if c.ExpectError {
 				s.Require().Error(err)
-				s.ErrorIs(err, c.expectedErr)
+				s.ErrorIs(err, c.ExpectedError)
 			} else {
 				s.NoError(err)
 			}

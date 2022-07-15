@@ -135,61 +135,41 @@ func (s *processBaselineSACTestSuite) deleteProcessBaseline(id string) {
 	}
 }
 
-func (s *processBaselineSACTestSuite) TestUpsertProcessBaseline() {
-	cases := map[string]struct {
-		scopeKey    string
-		expectFail  bool
-		expectedErr error
-	}{
-		"global read-only should not be able to add": {
-			scopeKey:    testutils.UnrestrictedReadCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"global read-write should be able to add": {
-			scopeKey: testutils.UnrestrictedReadWriteCtx,
-		},
-		"read-write on wrong cluster should not be able to add": {
-			scopeKey:    testutils.Cluster1ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and namespace should not be able to add": {
-			scopeKey:    testutils.Cluster1NamespaceAReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace should not be able to add": {
-			scopeKey:    testutils.Cluster1NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and wrong namespace should not be able to add": {
-			scopeKey:    testutils.Cluster2NamespaceAReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and matching namespace should be able to add": {
-			scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
-		},
-		"read-write on matching cluster and no namespace should be able to add": {
-			scopeKey: testutils.Cluster2ReadWriteCtx,
-		},
-		"read-write on matching cluster and at least one matching namespace should be able to add": {
-			scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
-		},
-	}
+func (s *processBaselineSACTestSuite) TestAddProcessBaseline() {
+	testedVerb := "add"
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testedVerb)
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
+			key, err := s.datastore.AddProcessBaseline(ctx, processBaseline)
+			defer s.deleteProcessBaseline(key)
+			if c.ExpectError {
+				s.Require().Error(err)
+				s.ErrorIs(err, c.ExpectedError)
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
+}
+
+func (s *processBaselineSACTestSuite) TestUpsertProcessBaseline() {
+	testedVerb := "upsert"
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testedVerb)
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			ctx := s.testContexts[c.ScopeKey]
 			processBaseline, err := s.datastore.UpsertProcessBaseline(ctx, processBaseline.GetKey(), nil, false, false)
 			defer s.deleteProcessBaseline(processBaseline.GetId())
-			if c.expectFail {
+			if c.ExpectError {
 				s.Require().Error(err)
-				s.ErrorIs(err, c.expectedErr)
+				s.ErrorIs(err, c.ExpectedError)
 			} else {
 				s.NoError(err)
 			}
@@ -204,58 +184,17 @@ func (s *processBaselineSACTestSuite) TestUpdateProcessBaselineElements() {
 	s.Require().NoError(err)
 	s.testProcessBaselineIDs = append(s.testProcessBaselineIDs, processBaseline.GetId())
 
-	cases := map[string]struct {
-		scopeKey    string
-		expectFail  bool
-		expectedErr error
-	}{
-		"global read-only should not be able to add": {
-			scopeKey:    testutils.UnrestrictedReadCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"global read-write should be able to add": {
-			scopeKey: testutils.UnrestrictedReadWriteCtx,
-		},
-		"read-write on wrong cluster should not be able to add": {
-			scopeKey:    testutils.Cluster1ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and namespace should not be able to add": {
-			scopeKey:    testutils.Cluster1NamespaceAReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace should not be able to add": {
-			scopeKey:    testutils.Cluster1NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and wrong namespace should not be able to add": {
-			scopeKey:    testutils.Cluster2NamespaceAReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and matching namespace should be able to add": {
-			scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
-		},
-		"read-write on matching cluster and no namespace should be able to add": {
-			scopeKey: testutils.Cluster2ReadWriteCtx,
-		},
-		"read-write on matching cluster and at least one matching namespace should be able to add": {
-			scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
-		},
-	}
+	testedVerb := "update"
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testedVerb)
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			_, err := s.datastore.UpdateProcessBaselineElements(
 				ctx, processBaseline.GetKey(), nil, nil, false)
-			if c.expectFail {
+			if c.ExpectError {
 				s.Require().Error(err)
-				s.ErrorIs(err, c.expectedErr)
+				s.ErrorIs(err, c.ExpectedError)
 			} else {
 				s.NoError(err)
 			}
@@ -270,50 +209,14 @@ func (s *processBaselineSACTestSuite) TestGetProcessBaseline() {
 	s.Require().NoError(err)
 	s.testProcessBaselineIDs = append(s.testProcessBaselineIDs, processBaseline.GetId())
 
-	cases := map[string]struct {
-		scopeKey string
-		found    bool
-	}{
-		"global read-only can get": {
-			scopeKey: testutils.UnrestrictedReadCtx,
-			found:    true,
-		},
-		"global read-write can get": {
-			scopeKey: testutils.UnrestrictedReadWriteCtx,
-			found:    true,
-		},
-		"read-write on wrong cluster cannot get": {
-			scopeKey: testutils.Cluster1ReadWriteCtx,
-		},
-		"read-write on wrong cluster and wrong namespace cannot get": {
-			scopeKey: testutils.Cluster1NamespaceAReadWriteCtx,
-		},
-		"read-write on wrong cluster and matching namespace cannot get": {
-			scopeKey: testutils.Cluster1NamespaceBReadWriteCtx,
-		},
-		"read-write on matching cluster but wrong namespaces cannot get": {
-			scopeKey: testutils.Cluster2NamespacesACReadWriteCtx,
-		},
-		"read-write on matching cluster can read": {
-			scopeKey: testutils.Cluster2ReadWriteCtx,
-			found:    true,
-		},
-		"read-write on the matching cluster and namespace can get": {
-			scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
-			found:    true,
-		},
-		"read-write on the matching cluster and at least one matching namespace can get": {
-			scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
-			found:    true,
-		},
-	}
+	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			res, found, err := s.datastore.GetProcessBaseline(ctx, processBaseline.GetKey())
 			s.Require().NoError(err)
-			if c.found {
+			if c.ExpectedFound {
 				s.Require().True(found)
 				s.Equal(*processBaseline, *res)
 			} else {
@@ -325,50 +228,7 @@ func (s *processBaselineSACTestSuite) TestGetProcessBaseline() {
 }
 
 func (s *processBaselineSACTestSuite) TestRemoveProcessBaseline() {
-	cases := map[string]struct {
-		scopeKey    string
-		expectFail  bool
-		expectedErr error
-	}{
-		"global read-only cannot remove": {
-			scopeKey:    testutils.UnrestrictedReadCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"global read-write can remove": {
-			scopeKey:    testutils.UnrestrictedReadWriteCtx,
-			expectedErr: nil,
-		},
-		"read-write on wrong cluster cannot remove": {
-			scopeKey:    testutils.Cluster1ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and wrong namespace cannot remove": {
-			scopeKey:    testutils.Cluster1NamespaceAReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace cannot remove": {
-			scopeKey:    testutils.Cluster1NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster but wrong namespaces cannot remove": {
-			scopeKey:    testutils.Cluster2NamespacesACReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"full read-write on matching cluster can remove": {
-			scopeKey: testutils.Cluster2ReadWriteCtx,
-		},
-		"read-write on the matching cluster and namespace can remove": {
-			scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
-		},
-		"read-write on the matching cluster and at least the right namespace can remove": {
-			scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
-		},
-	}
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	s.processBaselineResultMock.EXPECT().DeleteBaselineResults(gomock.Any(), gomock.Any()).Return(nil).
 		AnyTimes()
@@ -382,11 +242,11 @@ func (s *processBaselineSACTestSuite) TestRemoveProcessBaseline() {
 			s.testProcessBaselineIDs = append(s.testProcessBaselineIDs, processBaseline.GetId())
 			defer s.deleteProcessBaseline(processBaseline.GetId())
 
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			err = s.datastore.RemoveProcessBaseline(ctx, processBaseline.GetKey())
-			if c.expectFail {
+			if c.ExpectError {
 				s.Require().Error(err)
-				s.ErrorIs(err, c.expectedErr)
+				s.ErrorIs(err, c.ExpectedError)
 			} else {
 				s.NoError(err)
 			}

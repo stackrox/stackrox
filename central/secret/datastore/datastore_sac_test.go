@@ -114,84 +114,26 @@ func (s *secretDatastoreSACTestSuite) TearDownTest() {
 	}
 }
 
-type crudTest struct {
-	scopeKey      string
-	expectedError error
-	expectError   bool
-	expectFound   bool
-}
-
 func (s *secretDatastoreSACTestSuite) cleanupSecret(ID string) {
 	err := s.datastore.RemoveSecret(s.testContexts[cleanupCtxKey], ID)
 	s.NoError(err)
 }
 
 func (s *secretDatastoreSACTestSuite) TestUpsertSecret() {
-	cases := map[string]crudTest{
-		"(full) read-only cannot upsert": {
-			scopeKey:      testutils.UnrestrictedReadCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write can upsert": {
-			scopeKey:      testutils.UnrestrictedReadWriteCtx,
-			expectError:   false,
-			expectedError: nil,
-		},
-		"full read-write on wrong cluster cannot upsert": {
-			scopeKey:      testutils.Cluster1ReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and wrong namespace cannot upsert": {
-			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace cannot upsert": {
-			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on right cluster but wrong namespaces cannot upsert": {
-			scopeKey:      testutils.Cluster2NamespacesACReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write on right cluster cannot upsert": {
-			scopeKey:      testutils.Cluster2ReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-			//expectError:   false,
-			//expectedError: nil,
-		},
-		"read-write on the right cluster and namespace cannot upsert": {
-			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-			//expectError:   false,
-			//expectedError: nil,
-		},
-		"read-write on the right cluster and at least the right namespace can upsert": {
-			scopeKey:      testutils.Cluster2NamespacesABReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-			//expectError:   false,
-			//expectedError: nil,
-		},
-	}
+	testedVerb := "upsert"
+	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			testSecret := fixtures.GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			s.testSecretIDs = append(s.testSecretIDs, testSecret.GetId())
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			err := s.datastore.UpsertSecret(ctx, testSecret)
 			defer s.cleanupSecret(testSecret.GetId())
-			if !c.expectError {
+			if !c.ExpectError {
 				s.NoError(err)
 			} else {
-				s.Equal(c.expectedError, err)
+				s.Equal(c.ExpectedError, err)
 			}
 		})
 	}
@@ -204,51 +146,14 @@ func (s *secretDatastoreSACTestSuite) TestGetSecret() {
 	s.testSecretIDs = append(s.testSecretIDs, testSecret.GetId())
 	s.NoError(err)
 
-	cases := map[string]crudTest{
-		"(full) read-only can read": {
-			scopeKey:    testutils.UnrestrictedReadCtx,
-			expectFound: true,
-		},
-		"full read-write can read": {
-			scopeKey:    testutils.UnrestrictedReadCtx,
-			expectFound: true,
-		},
-		"full read-write on wrong cluster cannot read": {
-			scopeKey:    testutils.Cluster1ReadWriteCtx,
-			expectFound: false,
-		},
-		"read-write on wrong cluster and wrong namespace cannot read": {
-			scopeKey:    testutils.Cluster1NamespaceAReadWriteCtx,
-			expectFound: false,
-		},
-		"read-write on wrong cluster and matching namespace cannot read": {
-			scopeKey:    testutils.Cluster1NamespaceBReadWriteCtx,
-			expectFound: false,
-		},
-		"read-write on right cluster but wrong namespaces cannot read": {
-			scopeKey:    testutils.Cluster2NamespacesACReadWriteCtx,
-			expectFound: false,
-		},
-		"full read-write on right cluster can read": {
-			scopeKey:    testutils.Cluster2ReadWriteCtx,
-			expectFound: true,
-		},
-		"read-write on the right cluster and namespace can read": {
-			scopeKey:    testutils.Cluster2NamespaceBReadWriteCtx,
-			expectFound: true,
-		},
-		"read-write on the right cluster and at least the right namespace can read": {
-			scopeKey:    testutils.Cluster2NamespacesABReadWriteCtx,
-			expectFound: true,
-		},
-	}
+	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			readSecret, found, getErr := s.datastore.GetSecret(ctx, testSecret.GetId())
 			s.NoError(getErr)
-			if c.expectFound {
+			if c.ExpectedFound {
 				s.True(found)
 				s.Equal(*testSecret, *readSecret)
 			} else {
@@ -260,74 +165,22 @@ func (s *secretDatastoreSACTestSuite) TestGetSecret() {
 }
 
 func (s *secretDatastoreSACTestSuite) TestRemoveSecret() {
-	cases := map[string]crudTest{
-		"(full) read-only cannot remove": {
-			scopeKey:      testutils.UnrestrictedReadCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write can remove": {
-			scopeKey:      testutils.UnrestrictedReadWriteCtx,
-			expectError:   false,
-			expectedError: nil,
-		},
-		"full read-write on wrong cluster cannot remove": {
-			scopeKey:      testutils.Cluster1ReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and wrong namespace cannot remove": {
-			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace cannot remove": {
-			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on right cluster but wrong namespaces cannot remove": {
-			scopeKey:      testutils.Cluster2NamespacesACReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write on right cluster cannot remove": {
-			scopeKey:      testutils.Cluster2ReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-			//expectError:   false,
-			//expectedError: nil,
-		},
-		"read-write on the right cluster and namespace cannot remove": {
-			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-			//expectError:   false,
-			//expectedError: nil,
-		},
-		"read-write on the right cluster and at least the right namespace cannot remove": {
-			scopeKey:      testutils.Cluster2NamespacesABReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-			//expectError:   false,
-			//expectedError: nil,
-		},
-	}
+	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			testSecret := fixtures.GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			s.testSecretIDs = append(s.testSecretIDs, testSecret.GetId())
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			var err error
 			err = s.datastore.UpsertSecret(s.testContexts[testutils.UnrestrictedReadWriteCtx], testSecret)
 			defer s.cleanupSecret(testSecret.GetId())
 			s.NoError(err)
 			err = s.datastore.RemoveSecret(ctx, testSecret.GetId())
-			if !c.expectError {
+			if !c.ExpectError {
 				s.NoError(err)
 			} else {
-				s.Equal(c.expectedError, err)
+				s.Equal(c.ExpectedError, err)
 			}
 		})
 	}
