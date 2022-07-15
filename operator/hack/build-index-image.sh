@@ -4,7 +4,8 @@
 set -eou pipefail
 
 # Global script variables
-OPM_VERSION="1.21.0"
+OPM_VERSION="1.21.0-render-dir"
+OPM_ORG="porridge"
 YQ_VERSION="4.24.2"
 
 function usage() {
@@ -91,7 +92,7 @@ function fetch_opm() {
   local -r arch=$(go env GOARCH) || true
 
   OPM="${BASE_DIR}/bin/opm-${OPM_VERSION}"
-  "${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from "https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/${os_name}-${arch}-opm"
+  "${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from "https://github.com/${OPM_ORG}/operator-registry/releases/download/v${OPM_VERSION}/${os_name}-${arch}-opm"
 }
 
 YQ="yq"
