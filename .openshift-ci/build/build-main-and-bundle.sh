@@ -22,11 +22,18 @@ build_go_binaries() {
         ci_export GOTAGS release
     fi
 
-    if pr_has_label "ci-race-tests"; then
-        RACE=true make main-build-nodeps
-    else
-        make main-build-nodeps
+    local main_build_args="${MAIN_BUILD_ARGS:-}"
+
+    if pr_has_label "ci-race-tests" || [[ "${RACE_CONDITION_DEBUG:-}" == "true" ]]; then
+        main_build_args="${main_build_args} RACE=true"
     fi
+
+    if [[ -n "${main_build_args}" ]]; then
+        info "Building main with args: ${main_build_args}"
+    fi
+
+    # shellcheck disable=SC2086
+    make ${main_build_args} main-build-nodeps
 
     make swagger-docs
 }

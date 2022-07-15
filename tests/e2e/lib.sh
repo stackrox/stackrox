@@ -238,7 +238,7 @@ check_for_errors_in_stackrox_logs() {
     if [[ -n "$filtered" ]]; then
         # shellcheck disable=SC2086
         if ! scripts/ci/logcheck/check.sh $filtered; then
-            die "Found at least one suspicious log file entry."
+            die "ERROR: Found at least one suspicious log file entry."
         fi
     fi
 }
