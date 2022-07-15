@@ -473,7 +473,7 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 		scopeKey: testutils.Cluster1ReadWriteCtx,
 		resultCounts: map[string]map[string]int{
 			testconsts.Cluster1: {
-				testconsts.NamespaceA: 8,
+				testconsts.NamespaceA: 7,
 				testconsts.NamespaceB: 5,
 			},
 		},
