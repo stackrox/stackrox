@@ -201,9 +201,15 @@ func withNodeCveTypeFiltering(q string) string {
 }
 
 func (resolver *nodeCVEResolver) withNodeVulnerabilityScope(ctx context.Context) context.Context {
+	if features.PostgresDatastore.Enabled() {
+		return scoped.Context(ctx, scoped.Scope{
+			ID:    resolver.data.GetId(),
+			Level: v1.SearchCategory_NODE_VULNERABILITIES,
+		})
+	}
 	return scoped.Context(ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
-		Level: v1.SearchCategory_NODE_VULNERABILITIES,
+		Level: v1.SearchCategory_VULNERABILITIES,
 	})
 }
 

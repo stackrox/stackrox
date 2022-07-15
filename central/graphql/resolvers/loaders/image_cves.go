@@ -46,7 +46,7 @@ type ImageCVELoader interface {
 	FromIDs(ctx context.Context, ids []string) ([]*storage.ImageCVE, error)
 	FromID(ctx context.Context, id string) (*storage.ImageCVE, error)
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageCVE, error)
-
+	GetIDs(ctx context.Context, query *v1.Query) ([]string, error)
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
 	CountAll(ctx context.Context) (int32, error)
 }
@@ -84,6 +84,14 @@ func (idl *imageCveLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) (
 		return nil, err
 	}
 	return idl.FromIDs(ctx, search.ResultsToIDs(results))
+}
+
+func (idl *imageCveLoaderImpl) GetIDs(ctx context.Context, query *v1.Query) ([]string, error) {
+	results, err := idl.ds.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return search.ResultsToIDs(results), nil
 }
 
 func (idl *imageCveLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
