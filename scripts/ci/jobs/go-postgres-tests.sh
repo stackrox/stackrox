@@ -8,7 +8,12 @@ set -euo pipefail
 go_postgres_unit_tests() {
     info "Starting go postgres unit tests"
 
-    touch /tmp/hold
+    initdb "${HOME}/data"
+    pg_ctl -D "${HOME}/data" -l logfile -o "-k /tmp" start
+    export PGHOST=/tmp
+    createuser -s postgres
+
+    make go-postgres-unit-tests
 }
 
 go_postgres_unit_tests "$*"
