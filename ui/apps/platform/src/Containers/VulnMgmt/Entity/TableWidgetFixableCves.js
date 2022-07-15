@@ -9,7 +9,7 @@ import { getCveTableColumns, defaultCveSort } from 'Containers/VulnMgmt/List/Cve
 import {
     CLUSTER_CVE_LIST_FRAGMENT,
     NODE_CVE_LIST_FRAGMENT,
-    VULN_IMAGE_CVE_LIST_FRAGMENT,
+    IMAGE_CVE_LIST_FRAGMENT,
     VULN_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
@@ -60,12 +60,12 @@ const TableWidgetFixableCves = ({
         queryVulnsFieldName = 'nodeVulnerabilities';
         queryCVEFieldsName = 'nodeCVEFields';
         queryFragment = NODE_CVE_LIST_FRAGMENT;
-    } else if (entityType === entityTypes.IMAGE_COMPONENT) {
+    } else if (entityType === entityTypes.IMAGE_COMPONENT || vulnType === entityTypes.IMAGE_CVE) {
         // TODO: after the split of CVE types is released, make this the default
         queryVulnCounterFieldName = 'imageVulnerabilityCounter';
         queryVulnsFieldName = 'imageVulnerabilities';
         queryCVEFieldsName = 'imageCVEFields';
-        queryFragment = VULN_IMAGE_CVE_LIST_FRAGMENT;
+        queryFragment = IMAGE_CVE_LIST_FRAGMENT;
     }
 
     // `id` field is not needed in result,
