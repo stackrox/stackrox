@@ -92,17 +92,24 @@ describe('Cluster page clusterRetentionInfo', () => {
         cy.get('div:contains("Cluster Deletion"):contains("in 1 day")'); // FYI red color
     });
 
+    it('should display Imminent for 0 days in Cluster Deletion widget for mock request', () => {
+        const clusterRetentionInfo = { daysUntilDeletion: 0 };
+        visitClusterWithRetentionInfo(clusterRetentionInfo);
+
+        cy.get('div:contains("Cluster Deletion"):contains("Imminent")'); // FYI red color
+    });
+
+    it('should display Imminent for -1 days in Cluster Deletion widget for mock request', () => {
+        const clusterRetentionInfo = { daysUntilDeletion: -1 };
+        visitClusterWithRetentionInfo(clusterRetentionInfo);
+
+        cy.get('div:contains("Cluster Deletion"):contains("Imminent")'); // FYI red color
+    });
+
     it('should display Excuded from deletion in Cluster Deletion widget for mock request', () => {
         const clusterRetentionInfo = { isExcluded: true };
         visitClusterWithRetentionInfo(clusterRetentionInfo);
 
         cy.get('div:contains("Cluster Deletion"):contains("Excluded from deletion")');
-    });
-
-    it('should display Deletion is turned off in Cluster Deletion widget for mock request', () => {
-        const clusterRetentionInfo = { isExcluded: false };
-        visitClusterWithRetentionInfo(clusterRetentionInfo);
-
-        cy.get('div:contains("Cluster Deletion"):contains("Deletion is turned off")');
     });
 });
