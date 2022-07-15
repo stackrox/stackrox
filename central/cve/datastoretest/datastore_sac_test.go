@@ -69,7 +69,7 @@ func (s *cveDataStoreSACTestSuite) TearDownSuite() {
 // operating system information as well. This information is propagated from the image
 // scan data.
 // This helper is here to ease testing against the various datastore flavours.
-func (s *cveDataStoreSACTestSuite) getImageCVEID(cve string) string {
+func getImageCVEID(cve string) string {
 	if features.PostgresDatastore.Enabled() {
 		return cve + "#crime-stories"
 	}
@@ -80,7 +80,7 @@ func (s *cveDataStoreSACTestSuite) getImageCVEID(cve string) string {
 // operating system information as well. This information is propagated from the node
 // scan data.
 // This helper is here to ease testing against the various datastore flavours.
-func (s *cveDataStoreSACTestSuite) getNodeCVEID(cve string) string {
+func getNodeCVEID(cve string) string {
 	if features.PostgresDatastore.Enabled() {
 		return cve + "#Linux"
 	}
@@ -311,6 +311,16 @@ var (
 		},
 	}
 
+	imageCVEByIDMap = map[string]*storage.EmbeddedVulnerability{
+		getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0001().GetCve()): fixtures.GetEmbeddedImageCVE1234x0001(),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE4567x0002().GetCve()): fixtures.GetEmbeddedImageCVE4567x0002(),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE1234x0003().GetCve()): fixtures.GetEmbeddedImageCVE1234x0003(),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0004().GetCve()): fixtures.GetEmbeddedImageCVE3456x0004(),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE3456x0005().GetCve()): fixtures.GetEmbeddedImageCVE3456x0005(),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0006().GetCve()): fixtures.GetEmbeddedImageCVE2345x0006(),
+		getImageCVEID(fixtures.GetEmbeddedImageCVE2345x0007().GetCve()): fixtures.GetEmbeddedImageCVE2345x0007(),
+	}
+
 	nodeCVETestCases = []cveTestCase{
 		{
 			contextKey: sacTestUtils.UnrestrictedReadCtx,
@@ -413,6 +423,16 @@ var (
 			},
 		},
 	}
+
+	nodeCVEByIDMap = map[string]*storage.EmbeddedVulnerability{
+		getNodeCVEID(fixtures.GetEmbeddedNodeCVE1234x0001().GetCve()): fixtures.GetEmbeddedNodeCVE1234x0001(),
+		getNodeCVEID(fixtures.GetEmbeddedNodeCVE4567x0002().GetCve()): fixtures.GetEmbeddedNodeCVE4567x0002(),
+		getNodeCVEID(fixtures.GetEmbeddedNodeCVE1234x0003().GetCve()): fixtures.GetEmbeddedNodeCVE1234x0003(),
+		getNodeCVEID(fixtures.GetEmbeddedNodeCVE3456x0004().GetCve()): fixtures.GetEmbeddedNodeCVE3456x0004(),
+		getNodeCVEID(fixtures.GetEmbeddedNodeCVE3456x0005().GetCve()): fixtures.GetEmbeddedNodeCVE3456x0005(),
+		getNodeCVEID(fixtures.GetEmbeddedNodeCVE2345x0006().GetCve()): fixtures.GetEmbeddedNodeCVE2345x0006(),
+		getNodeCVEID(fixtures.GetEmbeddedNodeCVE2345x0007().GetCve()): fixtures.GetEmbeddedNodeCVE2345x0007(),
+	}
 )
 
 func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsSingleScopeOnly() {
@@ -422,7 +442,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsSingleScopeOnly() {
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE1234x0001()
 	cveName := targetCVE.GetCve()
-	cveID := s.getImageCVEID(cveName)
+	cveID := getImageCVEID(cveName)
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
@@ -440,7 +460,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsSharedAcrossComponents()
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE4567x0002()
 	cveName := targetCVE.GetCve()
-	cveID := s.getImageCVEID(cveName)
+	cveID := getImageCVEID(cveName)
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
@@ -458,7 +478,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsFromSharedComponent() {
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE3456x0004()
 	cveName := targetCVE.GetCve()
-	cveID := s.getImageCVEID(cveName)
+	cveID := getImageCVEID(cveName)
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
@@ -476,7 +496,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE1234x0001()
 	cveName := targetCVE.GetCve()
-	cveID := s.getImageCVEID(cveName)
+	cveID := getImageCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
@@ -502,7 +522,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSharedAcrossComponents() {
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE4567x0002()
 	cveName := targetCVE.GetCve()
-	cveID := s.getImageCVEID(cveName)
+	cveID := getImageCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
@@ -528,7 +548,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetFromSharedComponent() {
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedImageCVE3456x0004()
 	cveName := targetCVE.GetCve()
-	cveID := s.getImageCVEID(cveName)
+	cveID := getImageCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
@@ -565,7 +585,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetBatch() {
 	}
 	cveIDs := make([]string, 0, len(batchCVEs))
 	for _, cve := range batchCVEs {
-		cveIDs = append(cveIDs, s.getImageCVEID(cve.GetCve()))
+		cveIDs = append(cveIDs, getImageCVEID(cve.GetCve()))
 	}
 	for _, c := range imageCVETestCases {
 		s.Run(c.contextKey, func() {
@@ -575,7 +595,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetBatch() {
 			expectedCVEIDs := make([]string, 0, len(cveIDs))
 			for _, cve := range batchCVEs {
 				if c.expectedCVEFound[cve.GetCve()] {
-					expectedCVEIDs = append(expectedCVEIDs, s.getImageCVEID(cve.GetCve()))
+					expectedCVEIDs = append(expectedCVEIDs, getImageCVEID(cve.GetCve()))
 				}
 			}
 			fetchedCVEIDs := make([]string, 0, len(imageCVEs))
@@ -623,7 +643,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearch() {
 			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
 			for name, visible := range c.expectedCVEFound {
 				if visible {
-					expectedCVENames = append(expectedCVENames, s.getImageCVEID(name))
+					expectedCVENames = append(expectedCVENames, getImageCVEID(name))
 				}
 			}
 			fetchedCVEIDs := make(map[string]bool, 0)
@@ -652,7 +672,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearchCVEs() {
 			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
 			for name, visible := range c.expectedCVEFound {
 				if visible {
-					expectedCVENames = append(expectedCVENames, s.getImageCVEID(name))
+					expectedCVENames = append(expectedCVENames, getImageCVEID(name))
 				}
 			}
 			fetchedCVEIDs := make(map[string]bool, 0)
@@ -681,12 +701,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearchRawCVEs() {
 			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
 			for name, visible := range c.expectedCVEFound {
 				if visible {
-					expectedCVENames = append(expectedCVENames, s.getImageCVEID(name))
+					expectedCVENames = append(expectedCVENames, getImageCVEID(name))
 				}
 			}
 			fetchedCVEIDs := make(map[string]bool, 0)
 			for _, result := range results {
 				fetchedCVEIDs[result.GetId()] = true
+				s.Equal(imageCVEByIDMap[result.GetId()].GetCvss(), result.GetCvss())
 			}
 			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
 			for id := range fetchedCVEIDs {
@@ -716,7 +737,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsSingleScopeOnly() {
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE1234x0001()
 	cveName := targetCVE.GetCve()
-	cveID := s.getNodeCVEID(cveName)
+	cveID := getNodeCVEID(cveName)
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
@@ -734,7 +755,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsSharedAcrossComponents() 
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE4567x0002()
 	cveName := targetCVE.GetCve()
-	cveID := s.getNodeCVEID(cveName)
+	cveID := getNodeCVEID(cveName)
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
@@ -752,7 +773,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsFromSharedComponent() {
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE3456x0004()
 	cveName := targetCVE.GetCve()
-	cveID := s.getNodeCVEID(cveName)
+	cveID := getNodeCVEID(cveName)
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
@@ -770,7 +791,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSingleScopeOnly() {
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE1234x0001()
 	cveName := targetCVE.GetCve()
-	cveID := s.getNodeCVEID(cveName)
+	cveID := getNodeCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
@@ -796,7 +817,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSharedAcrossComponents() {
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE4567x0002()
 	cveName := targetCVE.GetCve()
-	cveID := s.getNodeCVEID(cveName)
+	cveID := getNodeCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
@@ -822,7 +843,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetFromSharedComponent() {
 	s.Require().NoError(err)
 	targetCVE := fixtures.GetEmbeddedNodeCVE3456x0004()
 	cveName := targetCVE.GetCve()
-	cveID := s.getNodeCVEID(cveName)
+	cveID := getNodeCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
@@ -859,7 +880,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetBatch() {
 	}
 	cveIDs := make([]string, 0, len(batchCVEs))
 	for _, cve := range batchCVEs {
-		cveIDs = append(cveIDs, s.getNodeCVEID(cve.GetCve()))
+		cveIDs = append(cveIDs, getNodeCVEID(cve.GetCve()))
 	}
 	for _, c := range nodeCVETestCases {
 		s.Run(c.contextKey, func() {
@@ -869,7 +890,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetBatch() {
 			expectedCVEIDs := make([]string, 0, len(batchCVEs))
 			for _, cve := range batchCVEs {
 				if c.expectedCVEFound[cve.GetCve()] {
-					expectedCVEIDs = append(expectedCVEIDs, s.getNodeCVEID(cve.GetCve()))
+					expectedCVEIDs = append(expectedCVEIDs, getNodeCVEID(cve.GetCve()))
 				}
 			}
 			fetchedCVEIDs := make([]string, 0, len(nodeCVEs))
@@ -914,7 +935,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearch() {
 			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
 			for name, visible := range c.expectedCVEFound {
 				if visible {
-					expectedCVENames = append(expectedCVENames, s.getNodeCVEID(name))
+					expectedCVENames = append(expectedCVENames, getNodeCVEID(name))
 				}
 			}
 			fetchedCVEIDs := make(map[string]bool, 0)
@@ -943,7 +964,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchCVEs() {
 			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
 			for name, visible := range c.expectedCVEFound {
 				if visible {
-					expectedCVENames = append(expectedCVENames, s.getNodeCVEID(name))
+					expectedCVENames = append(expectedCVENames, getNodeCVEID(name))
 				}
 			}
 			fetchedCVEIDs := make(map[string]bool, 0)
@@ -972,12 +993,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchRawCVEs() {
 			expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
 			for name, visible := range c.expectedCVEFound {
 				if visible {
-					expectedCVENames = append(expectedCVENames, s.getNodeCVEID(name))
+					expectedCVENames = append(expectedCVENames, getNodeCVEID(name))
 				}
 			}
 			fetchedCVEIDs := make(map[string]bool, 0)
 			for _, result := range results {
 				fetchedCVEIDs[result.GetId()] = true
+				s.Equal(nodeCVEByIDMap[result.GetId()].GetCvss(), result.GetCvss())
 			}
 			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
 			for id := range fetchedCVEIDs {
