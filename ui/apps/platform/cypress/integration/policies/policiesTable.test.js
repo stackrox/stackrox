@@ -3,21 +3,24 @@ import { selectors, url } from '../../constants/PoliciesPagePatternFly';
 import withAuth from '../../helpers/basicAuth';
 import { generateNameWithDate } from '../../helpers/formHelpers';
 import {
-    doPolicyRowAction,
+    changePolicyStatusInTable,
+    cloneFirstPolicyFromTable,
+    deletePolicyInTable,
+    editFirstPolicyFromTable,
     searchPolicies,
     visitPolicies,
-    visitPoliciesCallback,
     visitPoliciesFromLeftNav,
 } from '../../helpers/policiesPatternFly';
+import { visit } from '../../helpers/visit';
 import navSelectors from '../../selectors/navigation';
 
 describe('Policy Management URL redirect', () => {
     withAuth();
 
     it('should redirect old policies URL to new policy management URL', () => {
-        cy.intercept('GET', `${api.policies.policies}?query=`).as('getPolicies');
-        cy.visit('main/policies');
-        cy.wait('@getPolicies');
+        cy.intercept('GET', `${api.policies.policies}?query=`).as('policies');
+        visit('/main/policies');
+        cy.wait('@policies');
 
         cy.location('pathname').should('eq', url);
     });
@@ -27,9 +30,9 @@ describe('Policy Management URL redirect', () => {
         cy.get(`${selectors.table.policyLink}:first`).click();
         cy.location('pathname').then((pathname) => {
             const policyId = pathname.split('/').pop();
-            cy.intercept('GET', api.policies.policy).as('getPolicy');
-            cy.visit(`main/policies/${policyId}`);
-            cy.wait('@getPolicy');
+            cy.intercept('GET', api.policies.policy).as('policies/id');
+            visit(`/main/policies/${policyId}`);
+            cy.wait('@policies/id');
             cy.location('pathname').should('eq', `${url}/${policyId}`);
         });
     });
@@ -42,7 +45,6 @@ describe('Policies table', () => {
         visitPoliciesFromLeftNav();
 
         cy.location('pathname').should('eq', url);
-        cy.get('h1:contains("Policy management")');
     });
 
     it('should have selected item in nav bar', () => {
@@ -156,145 +158,83 @@ describe('Policies table', () => {
 
     it('should have row action to edit policy and then cancel', () => {
         visitPolicies();
+        editFirstPolicyFromTable();
+        cy.get(`button:contains("Cancel")`).click();
 
-        cy.intercept('GET', api.policies.policy).as('getPolicy');
-        cy.intercept('GET', api.policies.policies).as('getPolicies');
-
-        cy.get(selectors.table.firstRow).then(([tr]) => {
-            cy.wrap(tr)
-                .find(selectors.table.policyLink)
-                .invoke('text')
-                .then((name) => {
-                    cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
-                    cy.wrap(tr)
-                        .find(`${selectors.table.actionsItemButton}:contains("Edit policy")`)
-                        .click();
-                    cy.wait('@getPolicy');
-
-                    // Policy wizard
-                    cy.location('search').should('eq', '?action=edit');
-                    cy.get(`h1:contains("${name}")`);
-                    cy.get(`button:contains("Cancel")`).click();
-                    cy.wait('@getPolicies');
-
-                    // Policy table
-                    cy.get(`.pf-c-title:contains('Policy management')`);
-                    cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
-                });
-        });
+        // Policy table
+        cy.location('search').should('eq', '');
+        cy.get(`.pf-c-title:contains('Policy management')`);
+        cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
     });
 
     it('should have row action to clone policy and then cancel', () => {
         visitPolicies();
+        cloneFirstPolicyFromTable();
+        cy.get(`button:contains("Cancel")`).click();
 
-        cy.intercept('GET', api.policies.policy).as('getPolicy');
-        cy.intercept('GET', api.policies.policies).as('getPolicies');
-
-        cy.get(selectors.table.firstRow).then(([tr]) => {
-            cy.wrap(tr)
-                .find(selectors.table.policyLink)
-                .invoke('text')
-                .then((name) => {
-                    cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
-                    cy.wrap(tr)
-                        .find(`${selectors.table.actionsItemButton}:contains("Clone policy")`)
-                        .click();
-                    cy.wait('@getPolicy');
-
-                    // Policy wizard
-                    cy.location('search').should('eq', '?action=clone');
-                    cy.get(`h1:contains("${name}")`);
-                    cy.get(`button:contains("Cancel")`).click();
-                    cy.wait('@getPolicies');
-
-                    // Policy table
-                    cy.get(`.pf-c-title:contains('Policy management')`);
-                    cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
-                });
-        });
+        // Policy table
+        cy.location('search').should('eq', '');
+        cy.get(`.pf-c-title:contains('Policy management')`);
+        cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
     });
 
     it('should have row action to disable policy that has enabled status and then enable it again', () => {
-        visitPoliciesCallback((policies) => {
-            const policy = policies.find(({ disabled }) => disabled === false);
-            const { name } = policy;
-            const trSelector = `tr:has('td[data-label="Policy"] a:contains("${name}")')`;
+        visitPolicies();
 
-            cy.intercept('PATCH', api.policies.policy).as('patchPolicy');
+        cy.get(
+            `tr:has('td[data-label="Status"]:contains("Enabled")'):nth(0) td[data-label="Policy"] a`
+        ).then(($a) => {
+            const policyName = $a.text();
 
-            cy.get(trSelector).then(([tr]) => {
-                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Enabled")`);
-                cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
-                cy.wrap(tr)
-                    .find(`${selectors.table.actionsItemButton}:contains("Disable policy")`)
-                    .should('be.enabled')
-                    .click();
-                cy.wait('@patchPolicy');
+            changePolicyStatusInTable({
+                policyName,
+                statusPrev: 'Enabled',
+                actionText: 'Disable policy',
+                statusNext: 'Disabled',
             });
 
-            // Get tr element again after table renders.
-            cy.get(trSelector).then(([tr]) => {
-                cy.wrap(tr)
-                    .find(`${selectors.table.statusCell}:contains("Disabled")`)
-                    .scrollIntoView();
-                cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
-                cy.wrap(tr)
-                    .find(`${selectors.table.actionsItemButton}:contains("Enable policy")`)
-                    .should('be.enabled')
-                    .click();
-                cy.wait('@patchPolicy');
+            changePolicyStatusInTable({
+                policyName,
+                statusPrev: 'Disabled',
+                actionText: 'Enable policy',
+                statusNext: 'Enabled',
             });
-
-            // Get tr element again after table renders.
-            cy.get(trSelector).then(([tr]) => {
-                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Enabled")`);
-            });
-
-            // Policy has same state before and after the test.
         });
     });
 
     it('should have disabled row action to delete system default policy', () => {
-        visitPoliciesCallback((policies) => {
-            const policy = policies.find(({ isDefault }) => isDefault === true);
-            const { name } = policy;
-            const trSelector = `tr:has('td[data-label="Policy"] a:contains("${name}")')`;
+        visitPolicies();
 
-            cy.get(trSelector).then(([tr]) => {
-                cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
-                cy.wrap(tr)
-                    .find(
-                        `${selectors.table.actionsItemButton}:contains("Cannot delete a default policy")`
-                    )
-                    .should('have.attr', 'aria-disabled', 'true');
-            });
-        });
+        const name = '30-Day Scan Age';
+        const trSelector = `tr:has('td[data-label="Policy"] a:contains("${name}")')`;
+
+        cy.get(`${trSelector} ${selectors.table.actionsToggleButton}`).click();
+        cy.get(
+            `${trSelector} ${selectors.table.actionsItemButton}:contains("Cannot delete a default policy")`
+        ).should('have.attr', 'aria-disabled', 'true');
     });
 
     it('should have enabled row action to delete user generated policy', () => {
         visitPolicies();
+        cloneFirstPolicyFromTable();
 
-        const name = generateNameWithDate('A test policy');
-        doPolicyRowAction(selectors.table.firstRow, 'Clone');
+        const policyName = generateNameWithDate('A test policy');
 
-        // getInputByLabel('Name').clear().type(name);
-        cy.get('input#name').clear().type(name);
+        // getInputByLabel('Name').clear().type(policyName);
+        cy.get('input#name').clear().type(policyName);
 
         cy.intercept('POST', `${api.policies.policies}?enableStrictValidation=true`).as(
-            'postPolicies'
+            'POST_policies'
         );
         cy.get(selectors.wizardBtns.step5).click();
         cy.get('button:contains("Save")').click();
-        cy.wait('@postPolicies');
+        cy.wait('@POST_policies');
+        cy.get(`${selectors.table.policyLink}:contains("${policyName}")`).should('exist');
 
-        cy.intercept('GET', api.policies.policies).as('getPolicies');
-        cy.intercept('DELETE', api.policies.policy).as('deletePolicy');
-        doPolicyRowAction(`${selectors.table.rows}:contains("${name}")`, 'Delete policy');
-        cy.get('[role="dialog"][aria-label="Confirm delete"] button:contains("Delete")').click();
-        cy.wait(['@deletePolicy', '@getPolicies']);
+        deletePolicyInTable({ policyName, actionText: 'Delete policy' });
 
         cy.get(`.pf-c-title:contains('Policy management')`);
         cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
-        cy.get(`${selectors.table.policyLink}:contains("${name}")`).should('not.exist');
+        cy.get(`${selectors.table.policyLink}:contains("${policyName}")`).should('not.exist');
     });
 });
