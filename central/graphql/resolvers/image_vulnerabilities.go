@@ -286,7 +286,11 @@ func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) 
 	}
 
 	query = search.ConjunctionQuery(conjuncts...)
-	count, err := resolver.root.ImageCVEDataStore.Count(ctx, query)
+	loader, err := loaders.GetImageCVELoader(ctx)
+	if err != nil {
+		return false, err
+	}
+	count, err := loader.CountFromQuery(ctx, query)
 	if err != nil {
 		return false, err
 	}
