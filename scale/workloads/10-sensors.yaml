@@ -10,8 +10,8 @@ deploymentWorkload:
     numContainers: 3
     numPods: 3
     processWorkload:
-      alertRate: 0.001
-      processInterval: 1m0s
+      alertRate: 0.005
+      processInterval: 1m30s
   updateInterval: 10m0s
 networkWorkload:
   batchSize: 100
