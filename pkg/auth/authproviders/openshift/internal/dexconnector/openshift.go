@@ -202,9 +202,7 @@ func validateEndpoint(endpoint string, tlsConfig *tls.Config) error {
 
 // LoginURL returns the URL to redirect the user to login with.
 func (c *openshiftConnector) LoginURL(_ connector.Scopes, callbackURL string, state string) (string, error) {
-	clonedConfig := *c.oauth2Config
-	clonedConfig.RedirectURL = callbackURL
-	return clonedConfig.AuthCodeURL(state, oauth2.SetAuthURLParam("redirect_uri", callbackURL)), nil
+	return c.oauth2Config.AuthCodeURL(state, oauth2.SetAuthURLParam("redirect_uri", callbackURL)), nil
 }
 
 // HandleCallback parses the request and returns the user's identity.
@@ -219,7 +217,20 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 		ctx = context.WithValue(r.Context(), oauth2.HTTPClient, c.httpClient)
 	}
 
-	token, err := c.oauth2Config.Exchange(ctx, q.Get("code"))
+	// r.URL might not get the Host part, therefore use r.Host here.
+	redirect_uri := &url.URL{
+		Scheme: "https",
+		Host:   r.Host,
+		Path:   r.URL.Path,
+	}
+	if r.URL.Port() != "" {
+		redirect_uri.Host = redirect_uri.Host + ":" + r.URL.Port()
+	}
+
+	// redirect_uri is set here to support the mulitple redirect URI case.
+	token, err := c.oauth2Config.Exchange(ctx, q.Get("code"),
+		oauth2.SetAuthURLParam("redirect_uri", redirect_uri.String()))
+
 	if err != nil {
 		return identity, errors.Wrap(err, "failed to get token")
 	}
