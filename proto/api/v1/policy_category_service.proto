@@ -24,14 +24,13 @@ message GetPolicyCategoriesResponse {
     repeated v1.PolicyCategory categories = 1;
 }
 
-// Note: Needed to rename these messages, since we cannot deprecate the existing category messages in policy_service.proto until 72
-// In 72, once older messages are deprecated, these messages will be renamed.
-message NewRenamePolicyCategoryRequest {
+
+message RenamePolicyCategoryRequest {
     string id = 1;
     string new_category_name = 2;
 }
 
-message NewDeletePolicyCategoryRequest {
+message DeletePolicyCategoryRequest {
     string id = 1;
 }
 
@@ -61,7 +60,7 @@ service PolicyCategoryService {
     }
 
     // RenamePolicyCategory renames the given policy category.
-    rpc RenamePolicyCategory (NewRenamePolicyCategoryRequest) returns (v1.PolicyCategory) {
+    rpc RenamePolicyCategory (RenamePolicyCategoryRequest) returns (v1.PolicyCategory) {
         option (google.api.http) = {
             put: "/v1/policycategories"
             body: "*"
@@ -69,7 +68,7 @@ service PolicyCategoryService {
     }
 
     // DeletePolicyCategory removes the given policy category.
-    rpc DeletePolicyCategory (NewDeletePolicyCategoryRequest) returns (Empty) {
+    rpc DeletePolicyCategory (DeletePolicyCategoryRequest) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/policycategories/{id}"
         };
