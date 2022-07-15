@@ -17,6 +17,7 @@ export const defaultCountKeyMap = {
     [entityTypes.NODE_CVE]: 'vulnCount: nodeVulnerabilityCount',
     [entityTypes.CLUSTER_CVE]: 'vulnCount: clusterVulnerabilityCount',
     [entityTypes.K8S_CVE]: 'vulnCount: k8sVulnCount',
+    [entityTypes.CLUSTER]: 'clusterCount',
     [entityTypes.DEPLOYMENT]: 'deploymentCount',
     [entityTypes.NAMESPACE]: 'namespaceCount',
     [entityTypes.NODE]: 'nodeCount',
