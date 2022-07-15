@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -26,26 +27,40 @@ type PlottedNodeVulnerabilitiesResolver struct {
 	fixable int
 }
 
-func newPlottedNodeVulnerabilitiesResolver(ctx context.Context, root *Resolver, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
+func (resolver *Resolver) wrapPlottedNodeVulnerabilities(all []string, fixable int) (*PlottedNodeVulnerabilitiesResolver, error) {
+	return &PlottedNodeVulnerabilitiesResolver{
+		root:    resolver,
+		all:     all,
+		fixable: fixable,
+	}, nil
+}
+
+func (resolver *Resolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	if !features.PostgresDatastore.Enabled() {
 		q := withNodeCveTypeFiltering(args.String())
-		allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, root, RawQuery{Query: &q})
+		allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, resolver, RawQuery{Query: &q})
 		if err != nil {
 			return nil, err
 		}
 
-		return &PlottedNodeVulnerabilitiesResolver{
-			root:    root,
-			all:     allCveIds,
-			fixable: fixableCount,
-		}, nil
+		return resolver.wrapPlottedNodeVulnerabilities(allCveIds, fixableCount)
 	}
 
-	query, err := getPlottedVulnsV1Query(args)
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
 	logErrorOnQueryContainingField(query, search.Fixable, "PlottedNodeVulnerabilities")
+
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.CVSS.String(),
+				Reversed: true,
+			},
+		},
+	}
+	query = tryUnsuppressedQuery(query)
 
 	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
 	if err != nil {
@@ -66,11 +81,7 @@ func newPlottedNodeVulnerabilitiesResolver(ctx context.Context, root *Resolver, 
 		return nil, err
 	}
 
-	return &PlottedNodeVulnerabilitiesResolver{
-		root:    root,
-		all:     allCveIds,
-		fixable: int(fixableCount),
-	}, nil
+	return resolver.wrapPlottedNodeVulnerabilities(allCveIds, int(fixableCount))
 }
 
 // BasicNodeVulnerabilityCounter returns the NodeVulnerabilityCounter for scatter-plot with only total and fixable

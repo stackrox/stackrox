@@ -200,6 +200,56 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 	return mapCVEsToVulnerabilityCounter(fixable, unfixable), nil
 }
 
+// TopImageVulnerability returns the most severe image vulnerability found in the scoped context
+func (resolver *Resolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "TopImageVulnerability")
+
+	// verify scoping
+	scope, ok := scoped.GetScope(ctx)
+	if !ok {
+		return nil, errors.New("TopImageVulnerability called without scope context")
+	} else if scope.Level != v1.SearchCategory_IMAGE_COMPONENTS && scope.Level != v1.SearchCategory_IMAGES {
+		return nil, errors.New("TopImageVulnerability called with improper scope context")
+	}
+
+	// form query
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.CVSS.String(),
+				Reversed: true,
+			},
+			{
+				Field:    search.CVE.String(),
+				Reversed: true,
+			},
+		},
+		Limit:  1,
+		Offset: 0,
+	}
+
+	// get loader
+	loader, err := loaders.GetImageCVELoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	query = tryUnsuppressedQuery(query)
+
+	// invoke query
+	topVuln, err := loader.FromQuery(ctx, query)
+	if err != nil || len(topVuln) == 0 {
+		return nil, err
+	} else if len(topVuln) > 1 {
+		return nil, errors.New("TopImageVulnerability query returned more than one vulnerabilities")
+	}
+
+	return resolver.wrapImageCVE(topVuln[0], true, nil)
+}
+
 /*
 Utility Functions
 */
