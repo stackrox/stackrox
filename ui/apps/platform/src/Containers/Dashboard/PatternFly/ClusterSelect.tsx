@@ -93,6 +93,7 @@ function ClusterSelect({
             selections={currentSelection}
             isDisabled={isDisabled}
             maxHeight="50vh"
+            width={180}
             position="right"
             hasInlineFilter
         >
