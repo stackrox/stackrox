@@ -81,17 +81,17 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getCve${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
-            result: ${vulnQuery}(id: $id) {
-                id
-                ${defaultCountKeyMap[entityListType]}(query: $query)
-                ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
-                unusedVarSink(query: $policyQuery)
-                unusedVarSink(query: $scopeQuery)
+            query getCve${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+                result: ${vulnQuery}(id: $id) {
+                    id
+                    ${defaultCountKeyMap[entityListType]}(query: $query)
+                    ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                    unusedVarSink(query: $policyQuery)
+                    unusedVarSink(query: $scopeQuery)
+                }
             }
-        }
-        ${fragment}
-    `;
+            ${fragment}
+        `;
     }
 
     const fullEntityContext = workflowState.getEntityContext();
