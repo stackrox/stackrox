@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { CSSProperties, ReactNode } from 'react';
 import { Skeleton, Card, CardBody, CardHeader } from '@patternfly/react-core';
 
 import { defaultChartHeight } from 'utils/chartUtils';
@@ -43,7 +43,12 @@ function WidgetCard({
             <CardHeader>
                 <div className="pf-u-flex-grow-1">{header}</div>
             </CardHeader>
-            <CardBody>{cardContent}</CardBody>
+            <CardBody
+                className="pf-u-min-height"
+                style={{ '--pf-u-min-height--MinHeight': height } as CSSProperties}
+            >
+                {cardContent}
+            </CardBody>
         </Card>
     );
 }
