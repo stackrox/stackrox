@@ -106,6 +106,7 @@ function NamespaceSelect({
             isDisabled={isDisabled}
             maxHeight="50vh"
             position="right"
+            width={210}
             isGrouped
             hasInlineFilter
         >
