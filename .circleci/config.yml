@@ -458,6 +458,7 @@ commands:
               ./scripts/ci/collect-service-logs.sh openshift-authentication
               ./scripts/ci/collect-service-logs.sh openshift-etcd
               ./scripts/ci/collect-service-logs.sh openshift-controller-manager
+              (cd /tmp/k8s-service-logs && oc adm must-gather -- /usr/bin/gather_audit_logs && du -sh must-gather*) || true
             fi
           when: always
 
