@@ -14,10 +14,14 @@ import entityTypes from 'constants/entityTypes';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import CVEStackedPill from 'Components/CVEStackedPill';
 
-import { CLUSTER_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import {
+    CLUSTER_LIST_FRAGMENT,
+    CLUSTER_LIST_FRAGMENT_UPDATED,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import { clusterSortFields } from 'constants/sortFields';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 
@@ -29,6 +33,13 @@ export const defaultClusterSort = [
 ];
 
 const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+
+    const fragmentToUse = isFrontendVMUpdatesEnabled
+        ? CLUSTER_LIST_FRAGMENT_UPDATED
+        : CLUSTER_LIST_FRAGMENT;
+
     const query = gql`
         query getClusters(
             $query: String
@@ -43,7 +54,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
             }
             count: clusterCount(query: $query)
         }
-        ${CLUSTER_LIST_FRAGMENT}
+        ${fragmentToUse}
     `;
 
     const tableSort = sort || defaultClusterSort;
@@ -89,6 +100,95 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                     return (
                         <CVEStackedPill
                             vulnCounter={vulnCounter}
+                            url={url}
+                            fixableUrl={fixableUrl}
+                            hideLink={pdf}
+                        />
+                    );
+                },
+                id: clusterSortFields.CVE_COUNT,
+                accessor: 'vulnCounter.all.total',
+                sortField: clusterSortFields.CVE_COUNT,
+            },
+            {
+                Header: `Image CVEs`,
+                entityType: entityTypes.IMAGE_CVE,
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${defaultColumnClassName}`,
+                Cell: ({ original, pdf }) => {
+                    const { imageVulnerabilityCounter, id } = original;
+                    if (!imageVulnerabilityCounter || imageVulnerabilityCounter.all.total === 0) {
+                        return 'No CVEs';
+                    }
+
+                    const newState = workflowState.pushListItem(id).pushList(entityTypes.IMAGE_CVE);
+                    const url = newState.toUrl();
+                    const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
+
+                    return (
+                        <CVEStackedPill
+                            vulnCounter={imageVulnerabilityCounter}
+                            url={url}
+                            fixableUrl={fixableUrl}
+                            hideLink={pdf}
+                        />
+                    );
+                },
+                id: clusterSortFields.CVE_COUNT,
+                accessor: 'vulnCounter.all.total',
+                sortField: clusterSortFields.CVE_COUNT,
+            },
+            {
+                Header: `Node CVEs`,
+                entityType: entityTypes.NODE_CVE,
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${defaultColumnClassName}`,
+                Cell: ({ original, pdf }) => {
+                    const { nodeVulnerabilityCounter, id } = original;
+                    if (!nodeVulnerabilityCounter || nodeVulnerabilityCounter.all.total === 0) {
+                        return 'No CVEs';
+                    }
+
+                    const newState = workflowState.pushListItem(id).pushList(entityTypes.NODE_CVE);
+                    const url = newState.toUrl();
+                    const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
+
+                    return (
+                        <CVEStackedPill
+                            vulnCounter={nodeVulnerabilityCounter}
+                            url={url}
+                            fixableUrl={fixableUrl}
+                            hideLink={pdf}
+                        />
+                    );
+                },
+                id: clusterSortFields.CVE_COUNT,
+                accessor: 'vulnCounter.all.total',
+                sortField: clusterSortFields.CVE_COUNT,
+            },
+            {
+                Header: `Platform CVEs`,
+                entityType: entityTypes.CLUSTER_CVE,
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${defaultColumnClassName}`,
+                Cell: ({ original, pdf }) => {
+                    const { clusterVulnerabilityCounter, id } = original;
+                    if (
+                        !clusterVulnerabilityCounter ||
+                        clusterVulnerabilityCounter.all.total === 0
+                    ) {
+                        return 'No CVEs';
+                    }
+
+                    const newState = workflowState
+                        .pushListItem(id)
+                        .pushList(entityTypes.CLUSTER_CVE);
+                    const url = newState.toUrl();
+                    const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
+
+                    return (
+                        <CVEStackedPill
+                            vulnCounter={clusterVulnerabilityCounter}
                             url={url}
                             fixableUrl={fixableUrl}
                             hideLink={pdf}
@@ -189,7 +289,22 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 sortable: true,
             },
         ];
-        return removeEntityContextColumns(tableColumns, workflowState);
+
+        const flagGatedTableColumns = tableColumns.filter((col) => {
+            if (isFrontendVMUpdatesEnabled) {
+                if (col.Header === 'CVEs') {
+                    return false;
+                }
+            } else if (
+                col.Header === 'Image CVEs' ||
+                col.Header === 'Node CVEs' ||
+                col.Header === 'Platform CVEs'
+            ) {
+                return false;
+            }
+            return true;
+        });
+        return removeEntityContextColumns(flagGatedTableColumns, workflowState);
     }
 
     return (
