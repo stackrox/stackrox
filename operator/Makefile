@@ -33,6 +33,9 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+# Set to "--skip-build" to avoid the "docker build" part in index-build target.
+SKIP_INDEX_DOCKER_BUILD ?=
+
 # IMAGE_REPO is the repository (server and namespace) into which the operator images will get pushed.
 IMAGE_REPO ?= $(shell $(MAKE) --quiet --no-print-directory -C .. default-image-registry)
 # IMAGE_TAG_BASE defines the quay.io namespace and part of the image name for remote images.
@@ -426,7 +429,8 @@ index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the 
 		--index-tag "$(INDEX_IMG)" \
 		--bundle-tag "$(BUNDLE_IMG)" \
 		--replaced-version "$${replaced_version}" \
-		--clean-output-dir
+		--clean-output-dir \
+		$(SKIP_INDEX_DOCKER_BUILD)
 
 ##@ Push images
 
