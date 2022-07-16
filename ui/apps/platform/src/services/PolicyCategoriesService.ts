@@ -1,6 +1,6 @@
 import axios from './instance';
 
-const policyCategoriesUrl = '/v1/policycategories';
+const policyCategoriesUrl = '/v1/policyCategories';
 
 export type PolicyCategory = {
     id: string;

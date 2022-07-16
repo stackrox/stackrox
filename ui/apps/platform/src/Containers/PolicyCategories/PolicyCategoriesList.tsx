@@ -7,21 +7,30 @@ type PolicyCategoriesListProps = {
         name: string;
         isDefault: boolean;
     }[];
+    setSelectedCategory: (selectedCategory: string) => void;
 };
 
-function PolicyCategoriesList({ policyCategories }: PolicyCategoriesListProps) {
+function PolicyCategoriesList({
+    policyCategories,
+    setSelectedCategory,
+}: PolicyCategoriesListProps) {
     return (
         <SimpleList onSelect={() => {}}>
-            {policyCategories.map(({ id, name, isDefault }) => (
-                <SimpleListItem
-                    key={id}
-                    onClick={() => {}}
-                    isActive={false}
-                    componentProps={{ disabled: isDefault }}
-                >
-                    {name}
-                </SimpleListItem>
-            ))}
+            {policyCategories.map((category) => {
+                const { id, name, isDefault } = category;
+                return (
+                    <SimpleListItem
+                        key={id}
+                        onClick={() => {
+                            setSelectedCategory(category);
+                        }}
+                        isActive={false}
+                        // componentProps={{ disabled: isDefault }}
+                    >
+                        {name}
+                    </SimpleListItem>
+                );
+            })}
         </SimpleList>
     );
 }

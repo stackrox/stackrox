@@ -23,7 +23,7 @@ function PolicyCategoriesPage(): React.ReactElement {
     // TODO switch type once new API is in
     const [policyCategories, setPolicyCategories] = useState<string[]>([]);
 
-    let pageContent = (
+    let listContent = (
         <PageSection variant="light" isFilled id="policies-table-loading">
             <Bullseye>
                 <Spinner isSVG />
@@ -32,7 +32,7 @@ function PolicyCategoriesPage(): React.ReactElement {
     );
 
     if (errorMessage) {
-        pageContent = (
+        listContent = (
             <PageSection variant="light" isFilled id="policies-table-error">
                 <Bullseye>
                     <Alert variant="danger" title={errorMessage} />
@@ -42,7 +42,7 @@ function PolicyCategoriesPage(): React.ReactElement {
     }
 
     if (!isLoading && !errorMessage) {
-        pageContent = <PolicyCategoriesListSection policyCategories={policyCategories} />;
+        listContent = <PolicyCategoriesListSection policyCategories={policyCategories} />;
     }
 
     useEffect(() => {
@@ -82,7 +82,7 @@ function PolicyCategoriesPage(): React.ReactElement {
                 </Toolbar>
             </PageSection>
             <Divider component="div" />
-            {pageContent}
+            {listContent}
         </>
     );
 }
