@@ -239,16 +239,6 @@ func main() {
 
 	devmode.StartOnDevBuilds("central")
 
-	done := make(chan bool)
-	m := make(map[string]string)
-	m["name"] = "world"
-	go func() {
-		m["name"] = "data race"
-		done <- true
-	}()
-	log.Infof("Hello %s", m["name"])
-	<-done
-
 	if features.PostgresDatastore.Enabled() {
 		sourceMap, config, err := globaldb.GetPostgresConfig()
 		if err != nil {
