@@ -54,11 +54,11 @@ deploy_central() {
 
     # If we're running a nightly build or race condition check, then set CGO_CHECKS=true so that central is
     # deployed with strict checks
-    if is_nightly_run || pr_has_label ci-race-tests; then
+    if is_nightly_run || pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
         ci_export CGO_CHECKS "true"
     fi
 
-    if pr_has_label ci-race-tests; then
+    if pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
         ci_export IS_RACE_BUILD "true"
     fi
 
