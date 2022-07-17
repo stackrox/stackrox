@@ -265,6 +265,7 @@ export const vulnMgmt = {
 
 export const integrationHealth = {
     imageIntegrations: '/v1/integrationhealth/imageintegrations',
+    signatureIntegrations: '/v1/signatureintegrations',
     notifiers: '/v1/integrationhealth/notifiers',
     externalBackups: '/v1/integrationhealth/externalbackups',
     vulnDefinitions: '/v1/integrationhealth/vulndefinitions',
