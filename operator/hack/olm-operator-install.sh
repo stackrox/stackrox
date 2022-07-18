@@ -16,6 +16,7 @@ function main() {
 
   local -r operator_ns="${1:-}"
   local -r image_tag_base="${2:-}"
+  local -r image_registry="${image_tag_base%%/*}"
 
   case $# in
   3)
@@ -36,7 +37,7 @@ function main() {
 
   check_version_tag "${operator_version}" "${allow_dirty_tag}"
   create_namespace "${operator_ns}"
-  create_pull_secret "${operator_ns}" "${image_tag_base%%/*}"
+  create_pull_secret "${operator_ns}" "${image_registry}"
   apply_operator_manifests "${operator_ns}" "${image_tag_base}" "${index_version}" "${operator_version}"
 
   approve_install_plan "${operator_ns}" "${operator_version}"
