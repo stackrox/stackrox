@@ -41,7 +41,7 @@ function apply_operator_manifests() {
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
     IMAGE_TAG_BASE="${image_tag_base}" \
-    `# TODO: IMAGE_REGISTRY is provided for compatibility with versions 71 and older. Remove after we release 72.` \
+    `# TODO(ROX-11808): IMAGE_REGISTRY is provided for compatibility with versions 71 and older. Remove after we release 72.` \
     IMAGE_REGISTRY="${image_tag_base%/*}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | kubectl -n "${operator_ns}" apply -f -
