@@ -5,12 +5,16 @@ package datastore
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/image/datastore/store/postgres"
+	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
+	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
+	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -21,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -36,11 +41,12 @@ func TestImageDataStoreWithPostgresTestImageDataStoreWithPostgres(t *testing.T) 
 type ImagePostgresDataStoreTestSuite struct {
 	suite.Suite
 
-	ctx       context.Context
-	db        *pgxpool.Pool
-	gormDB    *gorm.DB
-	datastore DataStore
-	mockRisk  *mockRisks.MockDataStore
+	ctx                context.Context
+	db                 *pgxpool.Pool
+	gormDB             *gorm.DB
+	datastore          DataStore
+	mockRisk           *mockRisks.MockDataStore
+	componentDataStore imageComponentDS.DataStore
 
 	envIsolator *envisolator.EnvIsolator
 }
@@ -71,6 +77,11 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
 	s.datastore = NewWithPostgres(postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), postgres.NewIndexer(s.db), s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+
+	componentStorage := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	componentIndexer := imageComponentPostgres.NewIndexer(s.db)
+	componentSearcher := imageComponentSearch.NewV2(componentStorage, componentIndexer)
+	s.componentDataStore = imageComponentDS.New(nil, componentStorage, componentIndexer, componentSearcher, s.mockRisk, ranking.ComponentRanker())
 }
 
 func (s *ImagePostgresDataStoreTestSuite) TearDownSuite() {
@@ -244,4 +255,47 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 	s.NoError(err)
 	s.Len(results, 2)
 	s.ElementsMatch([]string{image.GetId(), cloned.GetId()}, pkgSearch.ResultsToIDs(results))
+}
+
+// Test sort by Component search label sorts by Component+Version to ensure backward compatibility.
+func (s *ImagePostgresDataStoreTestSuite) TestSortByComponent() {
+	ctx := sac.WithAllAccess(context.Background())
+	node := fixtures.GetImageWithUniqueComponents()
+	componentIDs := make([]string, 0, len(node.GetScan().GetComponents()))
+	for _, component := range node.GetScan().GetComponents() {
+		componentIDs = append(componentIDs,
+			scancomponent.ComponentID(
+				component.GetName(),
+				component.GetVersion(),
+				node.GetScan().GetOperatingSystem(),
+			))
+	}
+
+	s.NoError(s.datastore.UpsertImage(ctx, node))
+
+	// Verify sort by Component search label is transformed to sort by Component+Version.
+	query := pkgSearch.EmptyQuery()
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field: pkgSearch.Component.String(),
+			},
+		},
+	}
+	// Component ID is Name+Version+Operating System. Therefore, sort by ID is same as Component+Version.
+	sort.SliceStable(componentIDs, func(i, j int) bool {
+		return componentIDs[i] < componentIDs[j]
+	})
+	results, err := s.componentDataStore.Search(ctx, query)
+	s.NoError(err)
+	s.Equal(componentIDs, pkgSearch.ResultsToIDs(results))
+
+	// Verify reverse sort.
+	sort.SliceStable(componentIDs, func(i, j int) bool {
+		return componentIDs[i] > componentIDs[j]
+	})
+	query.Pagination.SortOptions[0].Reversed = true
+	results, err = s.componentDataStore.Search(ctx, query)
+	s.NoError(err)
+	s.Equal(componentIDs, pkgSearch.ResultsToIDs(results))
 }
