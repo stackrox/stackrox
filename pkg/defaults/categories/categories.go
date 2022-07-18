@@ -23,8 +23,8 @@ var (
 	categoriesFS embed.FS
 )
 
-// DefaultPolicyCategories returns a slice of the default policy categories.
-func DefaultPolicyCategories() ([]*storage.PolicyCategory, error) {
+// DefaultPolicies returns a slice of the default policies.
+func DefaultPolicies() ([]*storage.PolicyCategory, error) {
 	files, err := categoriesFS.ReadDir(categoriesDir)
 	// Sanity check embedded directory.
 	utils.CrashOnError(err)

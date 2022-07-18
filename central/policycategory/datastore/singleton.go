@@ -8,10 +8,8 @@ import (
 	policyCategoryStore "github.com/stackrox/rox/central/policycategory/store"
 	policyCategoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
 	"github.com/stackrox/rox/central/policycategory/store/rocksdb"
-	"github.com/stackrox/rox/pkg/defaults/categories"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -43,19 +41,7 @@ func Singleton() DataStore {
 	return ad
 }
 
+// TODO: implement addDefaults adds the default categories into the postgres table for policy categories.
 func addDefaults(s policyCategoryStore.Store) {
-	// Preload the default policies.
-	defaultCategories, err := categories.DefaultPolicyCategories()
-	// Hard panic here is okay, since we can always guarantee that we will be able to get the default policies out.
-	utils.CrashOnError(err)
-
-	var count int
-	for _, p := range defaultCategories {
-		if err := s.Upsert(policyCategoryCtx, p); err != nil {
-			utils.CrashOnError(err)
-		}
-		count++
-	}
-	log.Infof("Loaded %d new default policy categories", count)
 
 }
