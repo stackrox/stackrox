@@ -9,7 +9,6 @@ central/graphql/resolvers/generated.go
 central/networkpolicies/graph/evaluator_test.go
 central/pruning/pruning_test.go
 central/splunk/violations_test.go
-deploy/charts/monitoring/dashboards/dataplane.json
 generated/**/*.pb.go
 generated/**/*.pb.gw.go
 generated/**/*.swagger.json
