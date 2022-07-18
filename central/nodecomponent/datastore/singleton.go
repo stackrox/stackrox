@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -19,10 +18,7 @@ var (
 func initialize() {
 	storage := postgres.New(globaldb.GetPostgres())
 	indexer := postgres.NewIndexer(globaldb.GetPostgres())
-
-	var err error
-	ds, err = New(storage, indexer, search.New(storage, indexer), riskDataStore.Singleton(), ranking.NodeComponentRanker())
-	utils.CrashOnError(err)
+	ds = New(storage, indexer, search.New(storage, indexer), riskDataStore.Singleton(), ranking.NodeComponentRanker())
 }
 
 // Singleton returns a singleton instance of cve datastore
