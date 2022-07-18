@@ -339,6 +339,39 @@ func getImageIDFromIfImageShaQuery(ctx context.Context, resolver *Resolver, args
 	return res[0].ID, nil
 }
 
+func getNodeIDFromQueryIfNodeIDFieldInQuery(ctx context.Context, resolver *Resolver, args RawQuery) (string, error) {
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return "", err
+	}
+
+	query, filtered := search.FilterQuery(query, func(bq *v1.BaseQuery) bool {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok {
+			if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.NodeID.String()) {
+				return true
+			}
+		}
+		return false
+	})
+
+	if !filtered || query == search.EmptyQuery() {
+		return "", nil
+	}
+
+	res, err := resolver.NodeGlobalDataStore.Search(ctx, query)
+	if err != nil {
+		return "", err
+	}
+	if len(res) != 1 {
+		return "", errors.Errorf(
+			"received %d nodes in query response when 1 node was expected. Please check the query",
+			len(res))
+	}
+
+	return res[0].ID, nil
+}
+
 // V1RawQueryAsResolverQuery parse v1.RawQuery into inputtypes.RawQuery and inputtypes.Pagination queries used by graphQL resolvers.
 func V1RawQueryAsResolverQuery(rQ *v1.RawQuery) (RawQuery, PaginatedQuery) {
 	if rQ.GetPagination() == nil {

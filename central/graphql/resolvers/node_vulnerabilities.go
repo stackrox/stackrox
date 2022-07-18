@@ -174,6 +174,55 @@ func (resolver *Resolver) NodeVulnerabilityCounter(ctx context.Context, args Raw
 	return mapCVEsToVulnerabilityCounter(fixable, unfixable), nil
 }
 
+// TopNodeVulnerability returns the most severe node vulnerability found in the scoped context
+func (resolver *Resolver) TopNodeVulnerability(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "TopNodeVulnerability")
+
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+
+	scope, ok := scoped.GetScope(ctx)
+	if !ok {
+		return nil, errors.New("TopNodeVulnerability called without scope context")
+	} else if scope.Level != v1.SearchCategory_NODE_COMPONENTS && scope.Level != v1.SearchCategory_NODES {
+		return nil, errors.New("TopNodeVulnerability called with improper scope context")
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.CVSS.String(),
+				Reversed: true,
+			},
+			{
+				Field:    search.CVE.String(),
+				Reversed: true,
+			},
+		},
+		Limit:  1,
+		Offset: 0,
+	}
+
+	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	query = tryUnsuppressedQuery(query)
+	vulns, err := vulnLoader.FromQuery(ctx, query)
+	if err != nil || len(vulns) == 0 {
+		return nil, err
+	} else if len(vulns) > 1 {
+		return nil, errors.New("multiple vulnerabilities matched for top node vulnerability")
+	}
+
+	return resolver.wrapNodeCVE(vulns[0], true, nil)
+}
+
 /*
 Utility Functions
 */
