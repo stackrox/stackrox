@@ -11,7 +11,7 @@ import (
 	cveIndex "github.com/stackrox/rox/central/cve/index"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	imageIndex "github.com/stackrox/rox/central/image/index"
-	"github.com/stackrox/rox/central/imagecomponent/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
 	"github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/imagecomponent/search"
 	"github.com/stackrox/rox/central/imagecomponent/store"
@@ -45,7 +45,7 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDataStore.DataStore, ranker *ranking.Ranker) (DataStore, error) {
+func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDataStore.DataStore, ranker *ranking.Ranker) DataStore {
 	ds := &datastoreImpl{
 		storage:              storage,
 		indexer:              indexer,
@@ -56,7 +56,7 @@ func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexe
 	}
 
 	ds.initializeRankers()
-	return ds, nil
+	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
@@ -68,7 +68,7 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 	if err != nil {
 		return nil, err
 	}
-	return New(nil, dbstore, indexer, searcher, riskStore, ranking.ComponentRanker())
+	return New(nil, dbstore, indexer, searcher, riskStore, ranking.ComponentRanker()), nil
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
@@ -93,5 +93,5 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-	return New(dacky, dbstore, indexer, searcher, riskStore, ranking.ComponentRanker())
+	return New(dacky, dbstore, indexer, searcher, riskStore, ranking.ComponentRanker()), nil
 }
