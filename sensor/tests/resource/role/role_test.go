@@ -16,6 +16,13 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
 
+var (
+	NginxDeployment     = resource.YamlTestFile{Kind: "Deployment", File: "nginx.yaml"}
+	NginxRole           = resource.YamlTestFile{Kind: "Role", File: "nginx-role.yaml"}
+	NginxRoleBinding    = resource.YamlTestFile{Kind: "Binding", File: "nginx-binding.yaml"}
+)
+
+
 func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n string) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
 	for i := len(messages) - 1; i >= 0; i-- {
@@ -61,9 +68,9 @@ func (s *RoleDependencySuite) SetupSuite() {
 func (s *RoleDependencySuite) Test_PermutationTest() {
 	s.testContext.RunWithResourcesPermutation(
 		[]resource.YamlTestFile{
-			resource.NginxDeployment,
-			resource.NginxRole,
-			resource.NginxRoleBinding,
+			NginxDeployment,
+			NginxRole,
+			NginxRoleBinding,
 		}, "Role Dependency", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
 			time.Sleep(2 * time.Second)
@@ -80,8 +87,8 @@ func (s *RoleDependencySuite) Test_PermutationTest() {
 func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 	s.testContext.RunWithResources(
 		[]resource.YamlTestFile{
-			resource.NginxDeployment,
-			resource.NginxRole,
+			NginxDeployment,
+			NginxRole,
 		}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
 			time.Sleep(2 * time.Second)
@@ -96,15 +103,15 @@ func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 
 func (s *RoleDependencySuite) Test_MultipleDeploymentUpdates() {
 	s.testContext.RunBare("Update permission level", func(t *testing.T, testC *resource.TestContext,  _ map[string]k8s.Object) {
-		deleteDep, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", resource.NginxDeployment)
+		deleteDep, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", NginxDeployment)
 		defer utils.IgnoreError(deleteDep)
 		require.NoError(t, err)
 
-		deleteRoleBinding, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", resource.NginxRoleBinding)
+		deleteRoleBinding, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", NginxRoleBinding)
 		defer utils.IgnoreError(deleteRoleBinding)
 		require.NoError(t, err)
 
-		deleteRole, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", resource.NginxRole)
+		deleteRole, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", NginxRole)
 
 		defer utils.IgnoreError(deleteRole)
 		require.NoError(t, err)

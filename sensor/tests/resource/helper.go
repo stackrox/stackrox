@@ -40,15 +40,6 @@ type YamlTestFile struct {
 	File string
 }
 
-var (
-
-	NginxDeployment     = YamlTestFile{"Deployment", "nginx.yaml"}
-	NginxServiceAccount = YamlTestFile{"ServiceAccount", "nginx-sa.yaml"}
-	NginxRole           = YamlTestFile{"Role", "nginx-role.yaml"}
-	NginxRoleBinding    = YamlTestFile{"Binding", "nginx-binding.yaml"}
-	NginxPod            = YamlTestFile{"Pod", "nginx-pod.yaml"}
-)
-
 // objByKind returns the supported dynamic k8s resources that can be created
 // add new ones here to support adding new resource files
 func objByKind(kind string) k8s.Object {
@@ -267,7 +258,7 @@ func (c *TestContext) ApplyFileNoObject(ctx context.Context, ns string, file Yam
 }
 
 func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFile, obj k8s.Object) (func() error, error) {
-	d := os.DirFS("../yaml")
+	d := os.DirFS("yaml")
 	if err := decoder.DecodeFile(
 		d,
 		file.File,
@@ -317,10 +308,11 @@ func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error
 	}
 }
 
-func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n string) *central.MsgFromSensor {
+func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, name string) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
 	for i := len(messages) - 1; i > 0; i-- {
-		if messages[i].GetEvent().GetDeployment().GetName() == n {
+		deployment := messages[i].GetEvent().GetDeployment()
+		if deployment.GetName() == name && deployment.GetNamespace() == ns {
 			lastMessage = messages[i]
 			break
 		}
@@ -328,11 +320,11 @@ func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n strin
 	return lastMessage
 }
 
-func GetUniquePodNamesFromPrefix(messages []*central.MsgFromSensor, prefix string) []string {
+func GetUniquePodNamesFromPrefix(messages []*central.MsgFromSensor, ns, prefix string) []string {
 	uniqueNames := set.NewStringSet()
 	for _, msg := range messages {
-		if msg.GetEvent().GetPod() != nil {
-			pod := msg.GetEvent().GetPod()
+		pod := msg.GetEvent().GetPod()
+		if pod != nil && pod.GetNamespace() == ns {
 			if strings.Contains(pod.GetName(), prefix) {
 				uniqueNames.Add(pod.GetName())
 			}
@@ -341,11 +333,12 @@ func GetUniquePodNamesFromPrefix(messages []*central.MsgFromSensor, prefix strin
 	return uniqueNames.AsSlice()
 }
 
-func GetUniqueDeploymentNames(messages []*central.MsgFromSensor) []string {
+func GetUniqueDeploymentNames(messages []*central.MsgFromSensor, ns string) []string {
 	uniqueNames := set.NewStringSet()
 	for _, msg := range messages {
-		if msg.GetEvent().GetDeployment() != nil {
-			uniqueNames.Add(msg.GetEvent().GetDeployment().GetName())
+		deployment := msg.GetEvent().GetDeployment()
+		if deployment != nil && deployment.GetNamespace() == ns {
+			uniqueNames.Add(deployment.GetName())
 		}
 	}
 	return uniqueNames.AsSlice()
