@@ -121,7 +121,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1NewRenamePolicyCategoryRequest"
+              "$ref": "#/definitions/v1RenamePolicyCategoryRequest"
             }
           }
         ],
@@ -242,18 +242,6 @@
         }
       }
     },
-    "v1NewRenamePolicyCategoryRequest": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "newCategoryName": {
-          "type": "string"
-        }
-      },
-      "description": "Note: Needed to rename these messages, since we cannot deprecate the existing category messages in policy_service.proto until 72\nIn 72, once older messages are deprecated, these messages will be renamed."
-    },
     "v1Pagination": {
       "type": "object",
       "properties": {
@@ -281,6 +269,17 @@
         },
         "isDefault": {
           "type": "boolean"
+        }
+      }
+    },
+    "v1RenamePolicyCategoryRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "newCategoryName": {
+          "type": "string"
         }
       }
     },

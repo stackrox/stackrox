@@ -158,7 +158,7 @@ func local_request_PolicyCategoryService_PostPolicyCategory_0(ctx context.Contex
 }
 
 func request_PolicyCategoryService_RenamePolicyCategory_0(ctx context.Context, marshaler runtime.Marshaler, client PolicyCategoryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq NewRenamePolicyCategoryRequest
+	var protoReq RenamePolicyCategoryRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -175,7 +175,7 @@ func request_PolicyCategoryService_RenamePolicyCategory_0(ctx context.Context, m
 }
 
 func local_request_PolicyCategoryService_RenamePolicyCategory_0(ctx context.Context, marshaler runtime.Marshaler, server PolicyCategoryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq NewRenamePolicyCategoryRequest
+	var protoReq RenamePolicyCategoryRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -192,7 +192,7 @@ func local_request_PolicyCategoryService_RenamePolicyCategory_0(ctx context.Cont
 }
 
 func request_PolicyCategoryService_DeletePolicyCategory_0(ctx context.Context, marshaler runtime.Marshaler, client PolicyCategoryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq NewDeletePolicyCategoryRequest
+	var protoReq DeletePolicyCategoryRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -219,7 +219,7 @@ func request_PolicyCategoryService_DeletePolicyCategory_0(ctx context.Context, m
 }
 
 func local_request_PolicyCategoryService_DeletePolicyCategory_0(ctx context.Context, marshaler runtime.Marshaler, server PolicyCategoryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq NewDeletePolicyCategoryRequest
+	var protoReq DeletePolicyCategoryRequest
 	var metadata runtime.ServerMetadata
 
 	var (
