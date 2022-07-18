@@ -4,18 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"reflect"
-	"sort"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/sync"
 	bolt "go.etcd.io/bbolt"
@@ -265,70 +262,6 @@ func (s *storeImpl) Delete(_ context.Context, id string) error {
 	}
 
 	return nil
-}
-
-// RenamePolicyCategory renames all occurrence of a policy category to the new requested category.
-func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Rename, "PolicyCategory")
-	return s.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(policyBucket)
-		return b.ForEach(func(k, v []byte) error {
-			var policy storage.Policy
-			if err := proto.Unmarshal(v, &policy); err != nil {
-				return err
-			}
-
-			modified := false
-			for i, c := range policy.GetCategories() {
-				if c == request.GetOldCategory() {
-					policy.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
-					policy.Categories[i] = request.GetNewCategory()
-					modified = true
-				}
-			}
-
-			if modified {
-				sort.Strings(policy.Categories)
-				bytes, err := proto.Marshal(&policy)
-				if err != nil {
-					return err
-				}
-				return b.Put([]byte(policy.GetId()), bytes)
-			}
-			return nil
-		})
-	})
-}
-
-// DeletePolicyCategory removes a category from all policies.
-func (s *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "PolicyCategory")
-	return s.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(policyBucket)
-		return b.ForEach(func(k, v []byte) error {
-			var policy storage.Policy
-			if err := proto.Unmarshal(v, &policy); err != nil {
-				return err
-			}
-
-			removed := policy.GetCategories()[:0]
-			for _, c := range policy.GetCategories() {
-				if c != request.GetCategory() {
-					removed = append(removed, c)
-				}
-			}
-
-			if len(removed) != len(policy.GetCategories()) {
-				policy.Categories = removed
-				bytes, err := proto.Marshal(&policy)
-				if err != nil {
-					return err
-				}
-				return b.Put([]byte(policy.GetId()), bytes)
-			}
-			return nil
-		})
-	})
 }
 
 func (s *storeImpl) verifySettingFieldsAreUnchanged(newPolicy *storage.Policy) error {

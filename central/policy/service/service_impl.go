@@ -76,8 +76,6 @@ var (
 			"/v1.PolicyService/DryRunPolicy",
 			"/v1.PolicyService/SubmitDryRunPolicyJob",
 			"/v1.PolicyService/CancelDryRunJob",
-			"/v1.PolicyService/RenamePolicyCategory",
-			"/v1.PolicyService/DeletePolicyCategory",
 			"/v1.PolicyService/EnableDisablePolicyNotification",
 			"/v1.PolicyService/ImportPolicies",
 		},
@@ -552,45 +550,6 @@ func (s *serviceImpl) GetPolicyCategories(ctx context.Context, _ *v1.Empty) (*v1
 	sort.Strings(response.Categories)
 
 	return response, nil
-}
-
-// RenamePolicyCategory changes all usage of the category in policies to the requsted name.
-func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*v1.Empty, error) {
-	if request.GetOldCategory() == request.GetNewCategory() {
-		return &v1.Empty{}, nil
-	}
-
-	if err := s.policies.RenamePolicyCategory(ctx, request); err != nil {
-		return nil, err
-	}
-
-	if err := s.syncPoliciesWithSensors(); err != nil {
-		return nil, err
-	}
-
-	return &v1.Empty{}, nil
-}
-
-// DeletePolicyCategory removes all usage of the category in policies. Policies may end up with no configured category.
-func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) (*v1.Empty, error) {
-	categorySet, err := s.getPolicyCategorySet(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if !categorySet.Contains(request.GetCategory()) {
-		return nil, errors.Wrapf(errox.NotFound, "Policy Category %s does not exist", request.GetCategory())
-	}
-
-	if err := s.policies.DeletePolicyCategory(ctx, request); err != nil {
-		return nil, err
-	}
-
-	if err := s.syncPoliciesWithSensors(); err != nil {
-		return nil, err
-	}
-
-	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) getPolicyCategorySet(ctx context.Context) (categorySet set.StringSet, err error) {

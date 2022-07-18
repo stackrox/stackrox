@@ -85,10 +85,6 @@ type Store interface {
 {{- if not .JoinTable }}
     DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error
 {{- end }}
-{{- if eq .TrimmedType "Policy" }}
-    RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
-    DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
-{{- end }}
 {{- end }}
 
     Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error

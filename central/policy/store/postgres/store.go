@@ -56,8 +56,6 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Policy, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
-	RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
-	DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
 
 	Walk(ctx context.Context, fn func(obj *storage.Policy) error) error
 
