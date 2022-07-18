@@ -14,10 +14,9 @@ import (
 )
 
 var (
-	NginxDeployment     = resource.YamlTestFile{Kind: "Deployment", File: "nginx.yaml"}
-	NginxPod            = resource.YamlTestFile{Kind: "Pod", File: "nginx-pod.yaml"}
+	NginxDeployment = resource.YamlTestFile{Kind: "Deployment", File: "nginx.yaml"}
+	NginxPod        = resource.YamlTestFile{Kind: "Pod", File: "nginx-pod.yaml"}
 )
-
 
 type PodHierarchySuite struct {
 	testContext *resource.TestContext

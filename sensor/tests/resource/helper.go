@@ -111,7 +111,7 @@ func createTestNs(ctx context.Context, r *resources.Resources, name string) (*v1
 
 		// wait for deletion to be finished
 		if err := wait.For(conditions.New(r).ResourceDeleted(&nsObj)); err != nil {
-			fmt.Printf("failed to wait for namespace deletion")
+			fmt.Println("failed to wait for namespace deletion")
 		}
 		return nil
 	}, nil
@@ -187,7 +187,6 @@ func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
 		files[i], files[j] = files[j], files[i]
 	}
 }
-
 
 func startSensorAndFakeCentral(env *envconf.Config) (*centralDebug.FakeService, func(), func()) {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../../tools/local-sensor/certs/cert.pem"))

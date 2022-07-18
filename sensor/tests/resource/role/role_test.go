@@ -17,11 +17,10 @@ import (
 )
 
 var (
-	NginxDeployment     = resource.YamlTestFile{Kind: "Deployment", File: "nginx.yaml"}
-	NginxRole           = resource.YamlTestFile{Kind: "Role", File: "nginx-role.yaml"}
-	NginxRoleBinding    = resource.YamlTestFile{Kind: "Binding", File: "nginx-binding.yaml"}
+	NginxDeployment  = resource.YamlTestFile{Kind: "Deployment", File: "nginx.yaml"}
+	NginxRole        = resource.YamlTestFile{Kind: "Role", File: "nginx-role.yaml"}
+	NginxRoleBinding = resource.YamlTestFile{Kind: "Binding", File: "nginx-binding.yaml"}
 )
-
 
 func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, n string) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
@@ -56,6 +55,12 @@ func Test_RoleDependency(t *testing.T) {
 }
 
 var _ suite.SetupAllSuite = &RoleDependencySuite{}
+var _ suite.TearDownTestSuite = &RoleDependencySuite{}
+
+func (s *RoleDependencySuite) TearDownTest() {
+	// Clear any messages received in fake central during the test run
+	s.testContext.GetFakeCentral().ClearReceivedBuffer()
+}
 
 func (s *RoleDependencySuite) SetupSuite() {
 	if testContext, err := resource.NewContext(s.T()); err != nil {
@@ -102,7 +107,7 @@ func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 }
 
 func (s *RoleDependencySuite) Test_MultipleDeploymentUpdates() {
-	s.testContext.RunBare("Update permission level", func(t *testing.T, testC *resource.TestContext,  _ map[string]k8s.Object) {
+	s.testContext.RunBare("Update permission level", func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
 		deleteDep, err := testC.ApplyFileNoObject(context.Background(), "sensor-integration", NginxDeployment)
 		defer utils.IgnoreError(deleteDep)
 		require.NoError(t, err)
