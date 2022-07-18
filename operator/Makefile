@@ -298,7 +298,7 @@ docker-build: test ## Build docker image with the operator.
 olm-install: operator-sdk ## Install OLM on Kubernetes cluster
 	$(OPERATOR_SDK) olm install
 
-.PHONY: uninstall-olm
+.PHONY: olm-uninstall
 olm-uninstall: operator-sdk ## Uninstall OLM previously installed on Kubernetes cluster
 	$(OPERATOR_SDK) olm uninstall
 
