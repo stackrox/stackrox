@@ -44,7 +44,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 
 	metaVals.ImagePullSecrets.AllowNone = true
 
-	chart, err := image.GetDefaultImage().LoadChart(chartPrefix, metaVals)
+	chart, err := image.GetImage("3.69.0").LoadChart(chartPrefix, metaVals)
 	if err != nil {
 		return err
 	}

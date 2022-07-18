@@ -67,7 +67,7 @@ func (s *service) serveChart(w http.ResponseWriter, req *http.Request) {
 	flavor := defaults.GetImageFlavorFromEnv()
 
 	// Render template files.
-	renderedChartFiles, err := helmImage.LoadAndInstantiateChartTemplate(chartPathPrefix, pkgCharts.GetMetaValuesForFlavor(flavor))
+	renderedChartFiles, err := helmImage.LoadAndInstantiateChartTemplate(chartPathPrefix, pkgCharts.GetMetaValuesForFlavor(flavor), "")
 	if err != nil {
 		http.Error(w, errors.Wrapf(err, "loading and instantiating %s helmtpl", chartName).Error(), http.StatusInternalServerError)
 		return

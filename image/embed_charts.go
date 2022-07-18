@@ -2,6 +2,7 @@ package image
 
 import (
 	"embed"
+	"fmt"
 	"io/fs"
 	"path"
 	"strings"
@@ -81,6 +82,13 @@ func GetDefaultImage() *Image {
 	return defaultImage
 }
 
+func GetImage(version string) *Image {
+	if version == "" {
+		return defaultImage
+	}
+
+}
+
 // LoadFileContents resolves a given file's contents.
 func (i *Image) LoadFileContents(filename string) (string, error) {
 	content, err := fs.ReadFile(AssetFS, filename)
@@ -155,7 +163,21 @@ var (
 
 // LoadAndInstantiateChartTemplate loads a Helm chart (meta-)template from an embed.FS, and instantiates
 // it, using default chart values.
-func (i *Image) LoadAndInstantiateChartTemplate(chartPrefixPath ChartPrefix, metaVals *charts.MetaValues) ([]*loader.BufferedFile, error) {
+func (i *Image) LoadAndInstantiateChartTemplate(chartPrefixPath ChartPrefix, metaVals *charts.MetaValues, version string) ([]*loader.BufferedFile, error) {
+	if version != "" {
+		source := fmt.Sprintf("templates-%s.zip", version)
+		err := DownloadFile("https://downgit.github.io/#/home?url=https:%2F%2Fgithub.com%2Fstackrox%2Fstackrox%2Ftree%2Fmaster%2Fimage%2Ftemplates", source)
+		if err != nil {
+			return nil, err
+		}
+
+		unzipSource(source, "")
+
+		parts := strings.Split(string(chartPrefixPath), "/")
+		chartPrefixPath = ChartPrefix(fmt.Sprintf("templates/", version, parts[len(parts)-1]))
+		fmt.Printf("Loading path %s\n", chartPrefixPath)
+	}
+
 	chartTplFiles, err := i.getChartFiles(chartPrefixPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystems", chartPrefixPath)
@@ -237,7 +259,7 @@ func (i *Image) getFiles(prefixPath string) ([]*loader.BufferedFile, error) {
 
 // LoadChart loads the given Helm chart template and renders it as a Helm chart
 func (i *Image) LoadChart(chartPrefix ChartPrefix, metaValues *charts.MetaValues) (*chart.Chart, error) {
-	renderedChartFiles, err := i.LoadAndInstantiateChartTemplate(chartPrefix, metaValues)
+	renderedChartFiles, err := i.LoadAndInstantiateChartTemplate(chartPrefix, metaValues, "")
 	if err != nil {
 		return nil, errors.Wrapf(err, "loading and instantiating embedded chart %q failed", chartPrefix)
 	}
