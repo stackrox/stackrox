@@ -294,6 +294,14 @@ docker-build: test ## Build docker image with the operator.
 
 ##@ Deployment
 
+.PHONY: olm-install
+olm-install: operator-sdk ## Install OLM on Kubernetes cluster
+	$(OPERATOR_SDK) olm install
+
+.PHONY: uninstall-olm
+olm-uninstall: operator-sdk ## Uninstall OLM previously installed on Kubernetes cluster
+	$(OPERATOR_SDK) olm uninstall
+
 .PHONY: install
 install: check-ci-setup manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -

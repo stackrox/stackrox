@@ -170,7 +170,7 @@ Note that unlike the `make deploy` route, deployment with OLM does not require c
 $ make operator-sdk
 
 # 1. Install OLM.
-$ bin/operator-sdk-1.14.0 olm install
+$ make olm-install
 
 # 2. Create a namespace for testing bundle.
 $ kubectl create ns bundle-test
@@ -223,14 +223,14 @@ kubectl -n bundle-test delete catalogsources.operators.coreos.com rhacs-operator
 Also, you can blow everything away with
 
 ```bash
-$ bin/operator-sdk-1.14.0 olm uninstall
+$ make olm-uninstall
 $ kubectl delete ns bundle-test
 ```
 
 ### Launch the Operator with OLM and Index
 
 Note this assumes OLM is already in place which is the case for OpenShift clusters.  
-If you're launching on non-OpenShift Kubernetes, first deploy OLM with `make operator-sdk && bin/operator-sdk-1.14.0 olm install`.
+If you're launching on non-OpenShift Kubernetes, first deploy OLM with `make olm-install`.
 
 ```bash
 # Deploy
