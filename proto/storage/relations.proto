@@ -67,6 +67,8 @@ message NodeComponentCVEEdge {
   string    node_cve_id         = 5 [(gogoproto.moretags) = 'sql:"fk(NodeCVE:id),no-fk-constraint"'];
 }
 
+//// Cluster related relations.
+
 message ClusterCVEEdge {
   // base 64 encoded Cluster:CVE ids.
   string        id          = 1[(gogoproto.moretags) = 'sql:"pk,id"'];

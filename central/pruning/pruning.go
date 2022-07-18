@@ -600,7 +600,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 }
 
 func (g *garbageCollectorImpl) checkIfClusterContainsCentral(cluster *storage.Cluster) (bool, error) {
-	//This query could be expensive, but it's a rare occurrence. It only happens if there is a cluster that has been unhealthy for a long time (configurable)
+	// This query could be expensive, but it's a rare occurrence. It only happens if there is a cluster that has been unhealthy for a long time (configurable)
 	query := search.NewQueryBuilder().
 		AddStrings(search.ClusterID, cluster.GetId()).
 		AddExactMatches(search.DeploymentName, "central")
