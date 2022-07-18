@@ -106,7 +106,7 @@ describe('Cluster page clusterRetentionInfo', () => {
         cy.get('div:contains("Cluster Deletion"):contains("Imminent")'); // FYI red color
     });
 
-    it('should display Excuded from deletion in Cluster Deletion widget for mock request', () => {
+    it('should display Excluded from deletion in Cluster Deletion widget for mock request', () => {
         const clusterRetentionInfo = { isExcluded: true };
         visitClusterWithRetentionInfo(clusterRetentionInfo);
 
