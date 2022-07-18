@@ -9,10 +9,12 @@ import (
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
 	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -649,9 +651,9 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearch() {
 					expectedCVENames = append(expectedCVENames, getImageCVEID(name))
 				}
 			}
-			fetchedCVEIDs := make(map[string]bool, 0)
+			fetchedCVEIDs := make(map[string]search.Result, 0)
 			for _, result := range results {
-				fetchedCVEIDs[result.ID] = true
+				fetchedCVEIDs[result.ID] = result
 			}
 			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
 			for id := range fetchedCVEIDs {
@@ -678,9 +680,9 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearchCVEs() {
 					expectedCVENames = append(expectedCVENames, getImageCVEID(name))
 				}
 			}
-			fetchedCVEIDs := make(map[string]bool, 0)
+			fetchedCVEIDs := make(map[string]*v1.SearchResult, 0)
 			for _, result := range results {
-				fetchedCVEIDs[result.GetId()] = true
+				fetchedCVEIDs[result.GetId()] = result
 			}
 			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
 			for id := range fetchedCVEIDs {
@@ -707,9 +709,9 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearchRawCVEs() {
 					expectedCVENames = append(expectedCVENames, getImageCVEID(name))
 				}
 			}
-			fetchedCVEIDs := make(map[string]bool, 0)
+			fetchedCVEIDs := make(map[string]*storage.ImageCVE, 0)
 			for _, result := range results {
-				fetchedCVEIDs[result.GetId()] = true
+				fetchedCVEIDs[result.GetId()] = result
 				s.Equal(imageCVEByIDMap[result.GetId()].GetCvss(), result.GetCvss())
 			}
 			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
@@ -941,9 +943,9 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearch() {
 					expectedCVENames = append(expectedCVENames, getNodeCVEID(name))
 				}
 			}
-			fetchedCVEIDs := make(map[string]bool, 0)
+			fetchedCVEIDs := make(map[string]search.Result, 0)
 			for _, result := range results {
-				fetchedCVEIDs[result.ID] = true
+				fetchedCVEIDs[result.ID] = result
 			}
 			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
 			for id := range fetchedCVEIDs {
@@ -970,9 +972,9 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchCVEs() {
 					expectedCVENames = append(expectedCVENames, getNodeCVEID(name))
 				}
 			}
-			fetchedCVEIDs := make(map[string]bool, 0)
+			fetchedCVEIDs := make(map[string]*v1.SearchResult, 0)
 			for _, result := range results {
-				fetchedCVEIDs[result.GetId()] = true
+				fetchedCVEIDs[result.GetId()] = result
 			}
 			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))
 			for id := range fetchedCVEIDs {
@@ -999,9 +1001,9 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchRawCVEs() {
 					expectedCVENames = append(expectedCVENames, getNodeCVEID(name))
 				}
 			}
-			fetchedCVEIDs := make(map[string]bool, 0)
+			fetchedCVEIDs := make(map[string]*storage.NodeCVE, 0)
 			for _, result := range results {
-				fetchedCVEIDs[result.GetId()] = true
+				fetchedCVEIDs[result.GetId()] = result
 				s.Equal(nodeCVEByIDMap[result.GetId()].GetCvss(), result.GetCvss())
 			}
 			fetchedCVENames := make([]string, 0, len(fetchedCVEIDs))

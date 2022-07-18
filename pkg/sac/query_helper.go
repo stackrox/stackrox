@@ -17,9 +17,9 @@ func BuildClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.
 	return buildClusterLevelSACQueryFilter(root, true)
 }
 
-// BuildSilentClusterLevelSACQueryFilter builds a Scoped Access Control query filter that can be
+// BuildNonVerboseClusterLevelSACQueryFilter builds a Scoped Access Control query filter that can be
 // injected in search queries for resource types that have direct cluster scope level.
-func BuildSilentClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
+func BuildNonVerboseClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
 	return buildClusterLevelSACQueryFilter(root, false)
 }
 
@@ -60,9 +60,9 @@ func BuildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTr
 	return buildClusterNamespaceLevelSACQueryFilter(root, true)
 }
 
-// BuildSilentClusterNamespaceLevelSACQueryFilter builds a Scoped Access Control query filter that can be
+// BuildNonVerboseClusterNamespaceLevelSACQueryFilter builds a Scoped Access Control query filter that can be
 // injected in search queries for resource types that have direct namespace scope level.
-func BuildSilentClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
+func BuildNonVerboseClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
 	return buildClusterNamespaceLevelSACQueryFilter(root, false)
 }
 
