@@ -415,7 +415,7 @@ bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in t
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
-index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundle. Bundle image must be pushed beforehand.
+index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
 # If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise,
 # validation of the index fails because more than one version is identified as the head of the channel. An example of an
 # error: `multiple channel heads found in graph: rhacs-operator.v3.67.0, rhacs-operator.v3.69.0`
@@ -429,6 +429,14 @@ index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the 
 		--index-tag "$(INDEX_IMG)" \
 		--bundle-tag "$(BUNDLE_IMG)" \
 		--replaced-version "$${replaced_version}" \
+		--clean-output-dir \
+		$(SKIP_INDEX_DOCKER_BUILD)
+
+.PHONY: index-build-no-base
+index-build-no-base: bundle-post-process ## Build Index (a.k.a. Catalog) image with the current bundle only. Bundle image must be pushed beforehand.
+	./hack/build-index-image.sh \
+		--index-tag "$(INDEX_IMG)" \
+		--bundle-tag "$(BUNDLE_IMG)" \
 		--clean-output-dir \
 		$(SKIP_INDEX_DOCKER_BUILD)
 
