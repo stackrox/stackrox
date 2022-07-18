@@ -68,7 +68,7 @@ export function getNodeTableColumns(showVMUpdates) {
                 sortField: nodeSortFields.NODE,
             },
             {
-                Header: `Node CVEs`,
+                Header: showVMUpdates ? `Node CVEs` : 'CVEs',
                 entityType: entityTypes.CVE,
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 ${defaultColumnClassName}`,
