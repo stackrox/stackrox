@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/deployment/store"
@@ -47,4 +48,11 @@ func (f *fullStoreImpl) GetManyListDeployments(ctx context.Context, ids ...strin
 		listDeployments = append(listDeployments, types.ConvertDeploymentToDeploymentList(d))
 	}
 	return listDeployments, missing, nil
+}
+
+// NewFullTestStore is used for testing.
+func NewFullTestStore(t *testing.T, store Store) store.Store {
+	return &fullStoreImpl{
+		Store: store,
+	}
 }
