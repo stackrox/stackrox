@@ -105,7 +105,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1Empty"
+              "$ref": "#/definitions/v1PolicyCategory"
             }
           },
           "default": {

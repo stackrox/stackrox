@@ -3,6 +3,10 @@ package resolvers
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -23,40 +27,74 @@ type PlottedImageVulnerabilitiesResolver struct {
 	fixable int
 }
 
-func newPlottedImageVulnerabilitiesResolver(ctx context.Context, root *Resolver, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
-	query := withImageCveTypeFiltering(args.String())
-	allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, root, RawQuery{Query: &query})
+func (resolver *Resolver) wrapPlottedImageVulnerabilities(all []string, fixable int) (*PlottedImageVulnerabilitiesResolver, error) {
+	return &PlottedImageVulnerabilitiesResolver{
+		root:    resolver,
+		all:     all,
+		fixable: fixable,
+	}, nil
+}
+
+func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	if !features.PostgresDatastore.Enabled() {
+		query := withImageCveTypeFiltering(args.String())
+		allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, resolver, RawQuery{Query: &query})
+		if err != nil {
+			return nil, err
+		}
+
+		return resolver.wrapPlottedImageVulnerabilities(allCveIds, fixableCount)
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	logErrorOnQueryContainingField(query, search.Fixable, "PlottedImageVulnerabilities")
+
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.CVSS.String(),
+				Reversed: true,
+			},
+		},
+	}
+	query = tryUnsuppressedQuery(query)
+
+	vulnLoader, err := loaders.GetImageCVELoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	allCveIds, err := vulnLoader.GetIDs(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
-	return &PlottedImageVulnerabilitiesResolver{
-		root:    root,
-		all:     allCveIds,
-		fixable: fixableCount,
-	}, nil
+	fixableCount, err := vulnLoader.CountFromQuery(ctx,
+		search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
+	if err != nil {
+		return nil, err
+	}
+
+	return resolver.wrapPlottedImageVulnerabilities(allCveIds, int(fixableCount))
 }
 
 // BasicImageVulnerabilityCounter returns the ImageVulnerabilityCounter for scatter-plot with only total and fixable
-func (pvr *PlottedImageVulnerabilitiesResolver) BasicImageVulnerabilityCounter(_ context.Context) (*VulnerabilityCounterResolver, error) {
+func (resolver *PlottedImageVulnerabilitiesResolver) BasicImageVulnerabilityCounter(_ context.Context) (*VulnerabilityCounterResolver, error) {
 	return &VulnerabilityCounterResolver{
 		all: &VulnerabilityFixableCounterResolver{
-			total:   int32(len(pvr.all)),
-			fixable: int32(pvr.fixable),
+			total:   int32(len(resolver.all)),
+			fixable: int32(resolver.fixable),
 		},
 	}, nil
 }
 
-// ImageVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
-func (pvr *PlottedImageVulnerabilitiesResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
-	vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, args)
-	if err != nil {
-		return nil, err
+// ImageVulnerabilities returns the image vulnerabilities for top risky images scatter-plot
+func (resolver *PlottedImageVulnerabilitiesResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	if len(resolver.all) == 0 {
+		return nil, nil
 	}
-
-	ret := make([]ImageVulnerabilityResolver, 0, len(vulnResolvers))
-	for _, resolver := range vulnResolvers {
-		ret = append(ret, resolver)
-	}
-	return ret, nil
+	q := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.all...).Query()
+	return resolver.root.ImageVulnerabilities(ctx, PaginatedQuery{Query: &q, Pagination: args.Pagination})
 }

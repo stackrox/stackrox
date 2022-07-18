@@ -94,6 +94,7 @@ function NamespaceSelect({
 
     return (
         <Select
+            toggleAriaLabel="Select namespaces"
             className="namespace-select"
             variant={SelectVariant.checkbox}
             isOpen={isOpen}
@@ -105,6 +106,7 @@ function NamespaceSelect({
             isDisabled={isDisabled}
             maxHeight="50vh"
             position="right"
+            width={210}
             isGrouped
             hasInlineFilter
         >

@@ -19,6 +19,8 @@ var (
                create table if not exists test_grandparents (
                    Id varchar,
                    Val varchar,
+                   Priority integer,
+                   RiskScore numeric,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
@@ -84,9 +86,11 @@ const (
 
 // TestGrandparents holds the Gorm model for Postgres table `test_grandparents`.
 type TestGrandparents struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
-	Val        string `gorm:"column:val;type:varchar"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Id         string  `gorm:"column:id;type:varchar;primaryKey"`
+	Val        string  `gorm:"column:val;type:varchar"`
+	Priority   int64   `gorm:"column:priority;type:integer"`
+	RiskScore  float32 `gorm:"column:riskscore;type:numeric"`
+	Serialized []byte  `gorm:"column:serialized;type:bytea"`
 }
 
 // TestGrandparentsEmbeddeds holds the Gorm model for Postgres table `test_grandparents_embeddeds`.

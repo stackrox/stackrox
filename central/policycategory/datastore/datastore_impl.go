@@ -127,6 +127,8 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 	if category.Id == "" {
 		category.Id = uuid.NewV4().String()
 	}
+	// Any category added after startup must be marked custom category.
+	category.IsDefault = false
 
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
@@ -140,7 +142,48 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 }
 
 // RenamePolicyCategory renames a policy category
-func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName string) error {
+func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName string) (*storage.PolicyCategory, error) {
+	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, sac.ErrResourceAccessDenied
+	}
+
+	ds.categoryMutex.Lock()
+	defer ds.categoryMutex.Unlock()
+
+	category, exists, err := ds.storage.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errorsPkg.Wrapf(errox.NotFound, "policy category with id '%s' does not exist", id)
+	}
+
+	if category.GetIsDefault() {
+		return nil, errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be renamed", id))
+	}
+
+	category.Name = strings.Title(newName)
+	err = ds.storage.Upsert(ctx, category)
+	if err != nil {
+		return nil, errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
+	}
+
+	err = ds.indexer.AddPolicyCategory(category)
+	if err != nil {
+		return nil, errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
+	}
+
+	return &storage.PolicyCategory{
+		Id:        category.GetId(),
+		Name:      category.GetName(),
+		IsDefault: category.GetIsDefault(),
+	}, nil
+}
+
+// DeletePolicyCategory removes a policy from the storage and the indexer
+func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) error {
 	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -155,28 +198,11 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 		return err
 	}
 	if !exists {
-		return errorsPkg.Wrapf(errox.NotFound, "policy category with id '%s' does not exist", id)
+		return nil
 	}
-
-	category.Name = strings.Title(newName)
-	err = ds.storage.Upsert(ctx, category)
-	if err != nil {
-		return errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
+	if category.GetIsDefault() {
+		return errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be removed", id))
 	}
-
-	return ds.indexer.AddPolicyCategory(category)
-}
-
-// DeletePolicyCategory removes a policy from the storage and the indexer
-func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) error {
-	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	ds.categoryMutex.Lock()
-	defer ds.categoryMutex.Unlock()
 
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return err

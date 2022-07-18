@@ -15,17 +15,17 @@ import {
 } from '@patternfly/react-core';
 
 import { ClientPolicy } from 'types/policy.proto';
-import { Image } from 'types/image.proto';
+import { ListImage } from 'types/image.proto';
 import { ListDeployment } from 'types/deployment.proto';
 import { Cluster } from 'types/cluster.proto';
 import { fetchClustersAsArray } from 'services/ClustersService';
-import { fetchImages } from 'services/ImagesService';
+import { getImages } from 'services/imageService';
 import { fetchDeploymentsLegacy as fetchDeployments } from 'services/DeploymentsService';
 import PolicyScopeCard from './PolicyScopeCard';
 
 function PolicyScopeForm() {
     const [isExcludeImagesOpen, setIsExcludeImagesOpen] = React.useState(false);
-    const [images, setImages] = React.useState<Image[]>([]);
+    const [images, setImages] = React.useState<ListImage[]>([]);
     const [deployments, setDeployments] = React.useState<ListDeployment[]>([]);
     const [clusters, setClusters] = React.useState<Cluster[]>([]);
     const { values, setFieldValue } = useFormikContext<ClientPolicy>();
@@ -75,7 +75,7 @@ function PolicyScopeForm() {
     }, []);
 
     React.useEffect(() => {
-        fetchImages()
+        getImages()
             .then((response) => {
                 setImages(response);
             })

@@ -49,6 +49,9 @@ push_images() {
     if [[ -n "${PIPELINE_DOCS_IMAGE:-}" ]]; then
         push_docs_image
     fi
+    if [[ -n "${MAIN_RCD_IMAGE:-}" ]]; then
+        push_race_condition_debug_image
+    fi
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]]; then
         comment_on_pr
@@ -115,7 +118,7 @@ slack_build_notice() {
     if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
         local release
         release="$(get_release_stream "$tag")"
-        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*release-$release.x*"
+        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*release-$release*"
         if is_release_test_stream "$tag"; then
             # send to #slack-test when testing the release process
             webhook_url="${SLACK_MAIN_WEBHOOK}"

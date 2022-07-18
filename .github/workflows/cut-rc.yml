@@ -16,6 +16,21 @@ on:
         required: false
         default: true
         type: boolean
+      create-k8s-cluster:
+        description: Create a GKE demo cluster
+        required: true
+        default: true
+        type: boolean
+      create-os4-cluster:
+        description: Create an Openshift 4 demo cluster
+        required: true
+        default: true
+        type: boolean
+      create-long-cluster:
+        description: Create a long-running cluster on RC1
+        required: true
+        default: true
+        type: boolean
 
 env:
   main_branch: ${{github.event.repository.default_branch}}
@@ -209,6 +224,24 @@ jobs:
           git push --follow-tags
       - run: |
           echo "Release branch has been tagged with ${{needs.variables.outputs.milestone}}." >> $GITHUB_STEP_SUMMARY
+      - name: Create next milestone
+        if: env.DRY_RUN == 'false'
+        run: |
+          set -u
+          if ! http_code=$(gh api --silent -X POST \
+            "repos/${{github.repository}}/milestones" \
+            -f "title"="${{needs.variables.outputs.next-milestone}}" \
+            2>&1); then
+
+            if grep "HTTP 422" <<< "$http_code"; then
+              echo "Milestone ${{needs.variables.outputs.next-milestone}} already exists." >> $GITHUB_STEP_SUMMARY
+            else
+              echo "::error::Couldn't create milestone ${{needs.variables.outputs.next-milestone}}: $http_code"
+              exit 1
+            fi
+          else
+            echo "Milestone ${{needs.variables.outputs.next-milestone}} has been created." >> $GITHUB_STEP_SUMMARY
+          fi
 
   reopen-milestone:
     name: Reopen milestone ${{needs.variables.outputs.milestone}}
@@ -233,9 +266,10 @@ jobs:
         id: pre-release
         if: env.DRY_RUN == 'false'
         run: |
+          _MD_SECTION="${{needs.variables.outputs.release-patch}}"
           URL=$(gh release create "${{needs.variables.outputs.milestone}}" \
             --prerelease \
-            --generate-notes \
+            --notes "**Changelog**: ${{github.repository}}/blob/master/CHANGELOG.md#${_MD_SECTION//./}" \
             --repo "${{github.repository}}" \
             --target "${{needs.variables.outputs.branch}}")
           echo "::set-output name=url::$URL"
@@ -269,26 +303,27 @@ jobs:
   create-k8s-cluster:
     name: Create k8s cluster
     needs: [variables, cut-rc]
-    # Cannot use env.DRY_RUN here. `dry-run` can be 'true', 'false' or empty.
-    if: github.event.inputs.dry-run != 'true'
+    # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
+    if: github.event.inputs.dry-run != 'true' && github.event.inputs.create-gke-cluster != 'false'
     uses: ./.github/workflows/create-cluster.yml
     secrets: inherit
     with:
       flavor: qa-demo
       name: qa-k8s-${{needs.variables.outputs.milestone}}
-      args: main-image=docker.io/stackrox/main:${{needs.variables.outputs.milestone}}
+      args: main-image=quay.io/rhacs-eng/main:${{needs.variables.outputs.milestone}}
       lifespan: 48h
 
   create-os4-cluster:
     name: Create OS4 cluster
     needs: [variables, cut-rc]
-    # Cannot use env.DRY_RUN here. `dry-run` can be 'true', 'false' or empty.
-    if: github.event.inputs.dry-run != 'true'
+    # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
+    if: github.event.inputs.dry-run != 'true' && github.event.inputs.create-os4-cluster != 'false'
     uses: ./.github/workflows/create-cluster.yml
     secrets: inherit
     with:
       flavor: openshift-4-demo
       name: openshift-4-demo-${{needs.variables.outputs.milestone}}
+      args: openshift-version=ocp/stable-4.10
       lifespan: 48h
       wait: true
 
@@ -327,13 +362,13 @@ jobs:
           tar xf oc.tar
       - name: Patch central
         run: |
-          ./oc -n stackrox set image deploy/central central=docker.io/stackrox/main:$TAG
+          ./oc -n stackrox set image deploy/central central=quay.io/rhacs-eng/main:$TAG
       - name: Patch scanner
         run: |
           ./oc -n stackrox patch hpa/scanner -p '{"spec":{"minReplicas":2}}'
-          ./oc -n stackrox set image deploy/scanner scanner=docker.io/stackrox/scanner:$TAG
-          ./oc -n stackrox set image deploy/scanner-db db=docker.io/stackrox/scanner-db:$TAG
-          ./oc -n stackrox set image deploy/scanner-db init-db=docker.io/stackrox/scanner-db:$TAG
+          ./oc -n stackrox set image deploy/scanner scanner=quay.io/rhacs-eng/scanner:$TAG
+          ./oc -n stackrox set image deploy/scanner-db db=quay.io/rhacs-eng/scanner-db:$TAG
+          ./oc -n stackrox set image deploy/scanner-db init-db=quay.io/rhacs-eng/scanner-db:$TAG
       - name: Patch sensor
         env:
           PATCH: >-
@@ -360,20 +395,21 @@ jobs:
             }
         run: |
           ./oc -n stackrox patch deploy/sensor -p '${{env.PATCH}}'
-          ./oc -n stackrox set image deploy/sensor sensor=docker.io/stackrox/main:$TAG
+          ./oc -n stackrox set image deploy/sensor sensor=quay.io/rhacs-eng/main:$TAG
       - name: Patch collector
         run: |
-          ./oc -n stackrox set image ds/collector compliance=docker.io/stackrox/main:$TAG
-          ./oc -n stackrox set image ds/collector collector=docker.io/stackrox/collector:$TAG
-          ./oc -n stackrox set image deploy/admission-control admission-control=docker.io/stackrox/main:$TAG
+          ./oc -n stackrox set image ds/collector compliance=quay.io/rhacs-eng/main:$TAG
+          ./oc -n stackrox set image ds/collector collector=quay.io/rhacs-eng/collector:$TAG
+          ./oc -n stackrox set image deploy/admission-control admission-control=quay.io/rhacs-eng/main:$TAG
 
   create-long-running-cluster:
     name: Create GKE long-running cluster
     needs: [variables, cut-rc]
-    # Cannot use env.DRY_RUN here. `dry-run` can be 'true', 'false' or empty.
+    # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
     if: >-
       github.event.inputs.dry-run != 'true' &&
-      needs.variables.outputs.rc == '1'
+      needs.variables.outputs.rc == '1' &&
+      github.event.inputs.create-long-cluster != 'false'
     uses: ./.github/workflows/create-cluster.yml
     secrets: inherit
     with:

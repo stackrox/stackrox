@@ -2006,38 +2006,6 @@
             ]
           },
           {
-            "name": "ClusterCVEEdge",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "is_fixable",
-                "type": "bool",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster CVE Fixable,store,hidden\\\""
-                  }
-                ]
-              },
-              {
-                "id": 3,
-                "name": "fixed_by",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster CVE Fixed By,store,hidden\\\""
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "name": "AuditLogFileState",
             "fields": [
               {
@@ -12155,6 +12123,38 @@
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "sql:\"pk,fk(NodeCVE:id),no-fk-constraint\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ClusterCVEEdge",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "is_fixable",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster CVE Fixable,store,hidden\\\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "fixed_by",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster CVE Fixed By,store,hidden\\\""
                   }
                 ]
               }

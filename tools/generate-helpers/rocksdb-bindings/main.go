@@ -44,20 +44,11 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id string) (*storage.{{.Type}}, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.{{.Type}}, []int, error)
-	{{- if .NoKeyField}}
-	UpsertWithID(ctx context.Context, id string, obj *storage.{{.Type}}) error
-	UpsertManyWithIDs(ctx context.Context, ids []string, objs []*storage.{{.Type}}) error
-	{{- else }}
 	Upsert(ctx context.Context, obj *storage.{{.Type}}) error
 	UpsertMany(ctx context.Context, objs []*storage.{{.Type}}) error
-	{{- end}}
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
-	{{- if .NoKeyField}}
-	WalkAllWithID(ctx context.Context, fn func(id string, obj *storage.{{.Type}}) error) error
-	{{- else }}
 	Walk(ctx context.Context, fn func(obj *storage.{{.Type}}) error) error
-	{{- end}}
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
@@ -70,12 +61,9 @@ func alloc() proto.Message {
 	return &storage.{{.Type}}{}
 }
 
-{{- if not .NoKeyField}}
-
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.{{.Type}}).{{.KeyFunc}})
 }
-{{- end}}
 
 {{- if .UniqKeyFunc}}
 
@@ -89,11 +77,11 @@ func uniqKeyFunc(msg proto.Message) []byte {
 func New(db *rocksdb.RocksDB) (Store, error) {
 	globaldb.RegisterBucket(bucket, "{{.Type}}")
 	{{- if .UniqKeyFunc}}
-	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, uniqKeyFunc, {{.TrackIndex}})
+	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, {{.TrackIndex}})
 	{{- else}}
-	baseCRUD := generic.NewCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, {{.TrackIndex}})
+	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, {{.TrackIndex}})
 	{{- end}}
-	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, {{if .NoKeyField}}nil{{else}}keyFunc{{end}})
+	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -106,11 +94,11 @@ func New(db *rocksdb.RocksDB) Store {
 	globaldb.RegisterBucket(bucket, "{{.Type}}")
 	{{- if .UniqKeyFunc}}
 	return &storeImpl{
-		crud: generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, uniqKeyFunc, {{.TrackIndex}}),
+		crud: generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, {{.TrackIndex}}),
 	}
 	{{- else}}
 	return &storeImpl{
-		crud: generic.NewCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, {{.TrackIndex}}),
+		crud: generic.NewCRUD(db, bucket, keyFunc, alloc, {{.TrackIndex}}),
 	}
 	{{- end}}
 }
@@ -163,27 +151,6 @@ func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.{{.Type
 	return objs, missingIndices, nil
 }
 
-{{- if .NoKeyField}}
-// UpsertWithID inserts the object into the DB
-func (b *storeImpl) UpsertWithID(_ context.Context, id string, obj *storage.{{.Type}}) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "{{.Type}}")
-
-	return b.crud.UpsertWithID(id, obj)
-}
-
-// UpsertManyWithIDs batches objects into the DB
-func (b *storeImpl) UpsertManyWithIDs(_ context.Context, ids []string, objs []*storage.{{.Type}}) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "{{.Type}}")
-
-	msgs := make([]proto.Message, 0, len(objs))
-	for _, o := range objs {
-		msgs = append(msgs, o)
-    }
-
-	return b.crud.UpsertManyWithIDs(ids, msgs)
-}
-{{- else}}
-
 // Upsert inserts the object into the DB
 func (b *storeImpl) Upsert(_ context.Context, obj *storage.{{.Type}}) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "{{.Type}}")
@@ -202,7 +169,6 @@ func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.{{.Type}}) err
 
 	return b.crud.UpsertMany(msgs)
 }
-{{- end}}
 
 // Delete removes the specified ID from the store
 func (b *storeImpl) Delete(_ context.Context, id string) error {
@@ -218,22 +184,12 @@ func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	return b.crud.DeleteMany(ids)
 }
 
-{{- if .NoKeyField}}
-// WalkAllWithID iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) WalkAllWithID(_ context.Context, fn func(id string, obj *storage.{{.Type}}) error) error {
-	return b.crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
-		return fn(string(id), msg.(*storage.{{.Type}}))
-	})
-}
-{{- else}}
-
 // Walk iterates over all of the objects in the store and applies the closure
 func (b *storeImpl) Walk(_ context.Context, fn func(obj *storage.{{.Type}}) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {
 		return fn(msg.(*storage.{{.Type}}))
 	})
 }
-{{- end}}
 
 // AckKeysIndexed acknowledges the passed keys were indexed
 func (b *storeImpl) AckKeysIndexed(_ context.Context, keys ...string) error {
@@ -249,7 +205,6 @@ func (b *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 type properties struct {
 	Type        string
 	Bucket      string
-	NoKeyField  bool
 	KeyFunc     string
 	UniqKeyFunc string
 	Cache       bool
@@ -268,7 +223,6 @@ func main() {
 	c.Flags().StringVar(&props.Bucket, "bucket", "", "the logical bucket of the objects")
 	utils.Must(c.MarkFlagRequired("bucket"))
 
-	c.Flags().BoolVar(&props.NoKeyField, "no-key-field", false, "whether or not object contains key field. If no, then to key function is not applied on object")
 	c.Flags().StringVar(&props.KeyFunc, "key-func", "GetId()", "the function on the object to retrieve the key")
 	c.Flags().StringVar(&props.UniqKeyFunc, "uniq-key-func", "", "when set, unique key constraint is added on the object field retrieved by the function")
 	c.Flags().BoolVar(&props.Cache, "cache", false, "whether or not to add a fully inmem cache")
@@ -278,7 +232,6 @@ func main() {
 		templateMap := map[string]interface{}{
 			"Type":        props.Type,
 			"Bucket":      props.Bucket,
-			"NoKeyField":  props.NoKeyField,
 			"KeyFunc":     props.KeyFunc,
 			"UniqKeyFunc": props.UniqKeyFunc,
 			"Cache":       props.Cache,

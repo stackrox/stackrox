@@ -1,7 +1,6 @@
 import { takeLatest, all, call, fork, put, select } from 'redux-saga/effects';
 import { fetchGlobalSearchResults } from 'services/SearchService';
 import { actions, types } from 'reducers/globalSearch';
-import { actions as policiesActions } from 'reducers/policies/search';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
@@ -30,16 +29,6 @@ export function* getGlobalSearchResults() {
     }
 }
 
-export function* passthroughGlobalSearchOptions({ searchOptions, category }) {
-    switch (category) {
-        case 'POLICIES':
-            yield put(policiesActions.setPoliciesSearchOptions(searchOptions));
-            break;
-        default:
-            break;
-    }
-}
-
 function* watchGlobalsearchSearchOptions() {
     yield takeLatest(types.SET_SEARCH_OPTIONS, getGlobalSearchResults);
 }
@@ -48,14 +37,6 @@ function* watchSetGlobalSearchCategory() {
     yield takeLatest(types.SET_GLOBAL_SEARCH_CATEGORY, getGlobalSearchResults);
 }
 
-function* watchPassthroughGlobalSearchOptions() {
-    yield takeLatest(types.PASSTHROUGH_GLOBAL_SEARCH_OPTIONS, passthroughGlobalSearchOptions);
-}
-
 export default function* globalSearch() {
-    yield all([
-        fork(watchGlobalsearchSearchOptions),
-        fork(watchSetGlobalSearchCategory),
-        fork(watchPassthroughGlobalSearchOptions),
-    ]);
+    yield all([fork(watchGlobalsearchSearchOptions), fork(watchSetGlobalSearchCategory)]);
 }

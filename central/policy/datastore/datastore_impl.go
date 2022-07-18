@@ -165,7 +165,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		return "", fmt.Errorf("Could not add policy due to name validation, policy with name %s already exists", policy.GetName())
 	}
 	utils.FillSortHelperFields(policy)
-	// Any policy added after statup must be marked custom policy.
+	// Any policy added after startup must be marked custom policy.
 	markPoliciesAsCustom(policy)
 
 	// No need to lock here because nobody can update the policy

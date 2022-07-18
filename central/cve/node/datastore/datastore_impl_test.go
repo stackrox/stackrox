@@ -12,6 +12,7 @@ import (
 	searchMocks "github.com/stackrox/rox/central/cve/node/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/node/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -48,7 +49,7 @@ func (suite *NodeCVEDataStoreSuite) SetupSuite() {
 
 	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.NodeCVE{}, nil)
 
-	ds, err := New(suite.storage, suite.indexer, suite.searcher)
+	ds, err := New(suite.storage, suite.indexer, suite.searcher, concurrency.NewKeyFence())
 	suite.Require().NoError(err)
 	suite.datastore = ds.(*datastoreImpl)
 }

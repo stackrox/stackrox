@@ -357,3 +357,13 @@ func V1RawQueryAsResolverQuery(rQ *v1.RawQuery) (RawQuery, PaginatedQuery) {
 		},
 	}
 }
+
+// logErrorOnQueryContainingField logs error if the query contains the given field label.
+func logErrorOnQueryContainingField(query *v1.Query, label search.FieldLabel, resolver string) {
+	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok && mfQ.MatchFieldQuery.GetField() == label.String() {
+			log.Errorf("Unexpected field (%s) found in query to resolver (%s). Response maybe unexpected.", label.String(), resolver)
+		}
+	})
+}

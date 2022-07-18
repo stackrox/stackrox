@@ -8,13 +8,13 @@ recommendations to proactively improve security by hardening the environment.
 StackRox integrates with every stage of container lifecycle: build, deploy and
 runtime.
 
-Note: the StackRox Kubernetes Security platform is built on the foundation of 
+Note: the StackRox Kubernetes Security platform is built on the foundation of
 the product formerly known as Prevent, which itself was called Mitigate and
 Apollo. You may find references to these previous names in code or
 documentation.
 
 ## Community
-You can reach out to us through [Slack](https://cloud-native.slack.com/archives/C01TDE3GK0E) (#stackrox).  
+You can reach out to us through [Slack](https://cloud-native.slack.com/archives/C01TDE3GK0E) (#stackrox).
 For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackrox.io/).
 
 ## Table of contents
@@ -132,7 +132,7 @@ If you are using docker for desktop or minikube use
 `./deploy/k8s/deploy-local.sh`. And for openshift:
 `./deploy/openshift/deploy.sh`.
 
-When the deployment has completed a port-forward should exist so you can connect
+When the deployment has completed a port-forward should exist, so you can connect
 to https://localhost:8000/. Credentials for the 'admin' user can be found in
 `./deploy/k8s/central-deploy/password`
 (`deploy/openshift/central-deploy/password` in the OpenShift case).
@@ -253,7 +253,7 @@ $ make main-build-dockerized
 # Displays the docker image tag which would be generated
 $ make tag
 
-# Note: there are integration tests in some components, and we currently 
+# Note: there are integration tests in some components, and we currently
 # run those manually. They will be re-enabled at some point.
 $ make test
 
@@ -290,7 +290,7 @@ $ roxcurl /v1/metadata
 # Run quickstyle checks, faster than roxs' "make style"
 $ quickstyle
 
-# The workflow repository includes some tools for supporting 
+# The workflow repository includes some tools for supporting
 # working with multiple inter-dependent branches.
 # Examples:
 $ smart-branch <branch-name>    # create new branch
@@ -305,8 +305,8 @@ $ smart-diff                    # check diff relative to parent branch
 
 If you're using GoLand for development, the following can help improve the experience.
 
-Make sure the `Protocol Buffers` plugin is installed. The plugin comes installed by default in GoLand.  
-If it isn't, use `Help | Find Action...`, type `Plugins` and hit enter, then switch to `Marketplace`, type its name and install the plugin.  
+Make sure the `Protocol Buffers` plugin is installed. The plugin comes installed by default in GoLand.
+If it isn't, use `Help | Find Action...`, type `Plugins` and hit enter, then switch to `Marketplace`, type its name and install the plugin.
 This plugin does not know where to look for `.proto` imports by default in GoLand therefore you need to explicitly
 configure paths for this plugin.
 
@@ -320,7 +320,7 @@ configure paths for this plugin.
 
 #### Debugging
 
-With GoLand, you can naturally use breakpoints and debugger when running unit tests in IDE.  
+With GoLand, you can naturally use breakpoints and debugger when running unit tests in IDE.
 If you would like to debug local or even remote deployment, follow the procedure below.
 
 <details><summary>Kubernetes debugger setup</summary>
@@ -344,7 +344,7 @@ If you would like to debug local or even remote deployment, follow the procedure
     1. Open `Run | Edit Configurations …`, click on the `+` icon to add new configuration, choose `Go Remote` template.
     2. Choose `Host:` `localhost` and `Port:` `40000`. Give this configuration some name.
     3. Select `On disconnect:` `Leave it running` (this prevents GoLand forgetting breakpoints on reconnect).
- 5. Attach GoLand to debugging port: select `Run | Debug…` and choose configuration you've created.  
+ 5. Attach GoLand to debugging port: select `Run | Debug…` and choose configuration you've created.
     If all done right, you should see `Connected` message in the `Debug | Debugger | Variables` window at the lower part
     of the screen.
  6. Set some code breakpoints, trigger corresponding actions and happy debugging!
@@ -433,7 +433,7 @@ Now Central has been deployed. Use the UI to deploy Sensor.
 
 <details><summary>OpenShift</summary>
 
-Note: If using a host mount, you need to allow the container to access it by using  
+Note: If using a host mount, you need to allow the container to access it by using
 `sudo chcon -Rt svirt_sandbox_file_t <full volume path>`
 
 Take the image-setup.sh script from this repo and run it to do the pull/push to

@@ -35,7 +35,6 @@ runOnAllTagsWithQuayIOPullCtx: &runOnAllTagsWithQuayIOPullCtx
 runOnAllTagsWithPushCtx: &runOnAllTagsWithPushCtx
   <<: *runOnAllTags
   context:
-  - docker-io-push
   - quay-stackrox-io-readwrite
   - quay-rhacs-eng-readwrite
   - quay-rhacs-eng-readonly
@@ -181,18 +180,6 @@ setupRoxctl: &setupRoxctl
     command: |
       source scripts/ci/lib.sh
       install_built_roxctl_in_gopath
-
-setupLicense: &setupLicense
-  run:
-    name: Creating License Key
-    command: |
-      if [[ -n "$CIRCLE_TAG" ]] || .circleci/pr_has_label.sh "ci-release-build"; then
-        echo "Issuing a CI license for testing the release build"
-        ROX_LICENSE_KEY="$(licenses/ci.sh)"
-        cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
-      else
-        echo "Using no license for CI"
-      fi
 
 setupDefaultTLSCerts: &setupDefaultTLSCerts
   run:
@@ -793,27 +780,11 @@ commands:
 
           when: always
 
-  continue-when-in-a-pr-context:
+  poll-for-builds-from-other-ci:
     steps:
       - run:
-          name: Continue when in a PR context
+          name: Poll for builds from OpenShift CI
           command: |
-            if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
-              echo "This is a PR, will continue with the remaining steps in this job"
-              exit 0
-            fi
-            echo "This is not a PR, will skip the remaining steps in this job"
-            circleci step halt
-
-  poll-for-builds-when-not-in-a-pr-context:
-    steps:
-      - run:
-          name: Poll for builds from OpenShift CI when not in a PR context
-          command: |
-            if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
-              echo "This is a PR, will continue with the remaining steps in this job"
-              exit 0
-            fi
             source scripts/ci/lib.sh
             poll_for_system_test_images 3600
             echo "The required images were built"
@@ -825,11 +796,14 @@ commands:
         default: stackrox
     steps:
       - checkout
-      - continue-when-in-a-pr-context
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-npm-deps-cache
       - fetch-ui-deps
+
+      - run:
+          name: Set branding environment variable
+          command: cci-export ROX_PRODUCT_BRANDING << parameters.branding >>
 
       - run:
           name: Prepare UI tree state file
@@ -877,98 +851,8 @@ commands:
 
   build:
     steps:
-      - checkout-with-submodules
-      - poll-for-builds-when-not-in-a-pr-context
-      - continue-when-in-a-pr-context
-
-      - setup_remote_docker:
-          version: << pipeline.parameters.docker_version >>
-      - setup-dep-env:
-          docker-login: true
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - run:
-          name: Ensure product branding is set
-          command: |
-            if [[ -z "${ROX_PRODUCT_BRANDING}" ]]; then
-              echo >&2 "Will not proceed until ROX_PRODUCT_BRANDING env variable is defined"
-              exit 2
-            fi
-
-      - run:
-          name: Restore the branded UI
-          command: |
-            cp -au ui-${ROX_PRODUCT_BRANDING}/* ui
-
-      - *refreshAlpineBaseImage
-
-      - restore-go-mod-cache
-      - setup-go-build-env
-
-      - run:
-          name: Generate OSS notice
-          command: |
-            make ossls-notice
-
-      - run:
-          name: Build main image
-          command: |
-            make docker-build-main-image
-
-      - run:
-          name: Check debugger presence in the main image
-          command: make check-debugger
-
-      - run:
-          name: Build roxctl image
-          command: make docker-build-roxctl-image
-
-      - run:
-          name: Push new Docker image
-          command: |
-            source ./scripts/ci/lib.sh
-            push_main_image_set "${CIRCLE_BRANCH}" "${ROX_PRODUCT_BRANDING}"
-
-      - run:
-          name: Push collector & scanner images tagged with main-version to registries
-          command: |
-            source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images "${ROX_PRODUCT_BRANDING}"
-
-      - run:
-          name: Publish new versions of NPM packages if any
-          command: |
-            if [[ "${CIRCLE_BRANCH}" == "master" && "${ROX_PRODUCT_BRANDING}" == "STACKROX_BRANDING" ]]; then
-              echo "//npm.pkg.github.com/:_authToken=\"$GITHUB_PACKAGES_PUBLISH_TOKEN\"" > ~/.npmrc
-              make ui-publish-packages
-            else
-              echo "Not on master and not the StackRox brand, skipping publishing NPM packages."
-            fi
-
-      - *saveGoModCache
-
-      - ci-artifacts/store:
-          path: bin/linux/roxctl
-          destination: roxctl/roxctl-linux
-
-      - ci-artifacts/store:
-          path: bin/darwin/roxctl
-          destination: roxctl/roxctl-darwin
-
-      - run:
-          name: Comment on PR
-          command: |
-            if [[ "${ROX_PRODUCT_BRANDING}" == "STACKROX_BRANDING" ]]; then
-              wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
-              echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
-              sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
-
-              export TAG=$(make --quiet tag)
-              hub-comment -template-file .circleci/comment-template.tpl
-            fi
-
+      - checkout
+      - poll-for-builds-from-other-ci
       - cleanup-clusters-on-fail
 
   cleanup-clusters-on-fail:
@@ -1422,7 +1306,6 @@ commands:
           steps: << parameters.connect-to-cluster >>
       - remove-existing-stackrox-resources
       - *setupGoogleAppCreds
-      - *setupLicense
 
       - *setupDefaultTLSCerts
 
@@ -1765,7 +1648,6 @@ commands:
 
       - remove-existing-stackrox-resources
       - *setupGoogleAppCreds
-      - *setupLicense
 
       - *setupDefaultTLSCerts
 
@@ -2102,36 +1984,6 @@ commands:
       - ci-artifacts/store:
           path: << parameters.path >>
 
-  pre-go-unit-tests:
-    description: "Common pre go test steps"
-    steps:
-      - checkout
-      - check-to-run:
-          run-on-master: true
-          run-on-tags: true
-          changed-path-ignore: "^ui/"
-      - restore-go-mod-cache
-      - setup-go-build-env
-      - *restoreGoBuildCache
-
-  post-go-unit-tests:
-    description: "Common post go test steps"
-    parameters:
-      path:
-        type: string
-    steps:
-      - *saveGoBuildCache
-
-      - run:
-          name: Generate JUnit reports
-          command: |
-            make generate-junit-reports
-            cp -a junit-reports << parameters.path >>
-          when: always
-
-      - store-test-results-and-artifacts:
-          path: << parameters.path >>
-
   create-openshift-4-cluster:
     description: "Create an OpenShift 4 cluster"
     parameters:
@@ -2190,6 +2042,8 @@ jobs:
             # Cannot use .circleci/is-nightly-tag.sh because this job doesn't have access to git
             if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
               webhook_url="$NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK"
+            elif [[ "$CIRCLE_TAG" =~ << pipeline.parameters.release_rc_tag_bash_regex >> ]]; then
+              webhook_url="$RELEASE_WORKFLOW_NOTIFY_WEBHOOK"
             else
               exit 0
             fi
@@ -2199,27 +2053,6 @@ jobs:
               --arg tag "$CIRCLE_TAG" \
               '{"text": "CircleCI build for tag `\($tag)` started! Check the status of the build under the following URL: https://circleci.com/workflow-run/\($workflow_id)"}' \
             | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
-
-  go-postgres-tests:
-    docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.42
-        auth:
-          username: $QUAY_RHACS_ENG_RO_USERNAME
-          password: $QUAY_RHACS_ENG_RO_PASSWORD
-      - image: postgres:14.2-alpine
-        environment:
-          POSTGRES_PASSWORD: password
-    resource_class: xlarge
-    environment:
-      ROX_IMAGE_FLAVOR: stackrox.io
-    steps:
-    - pre-go-unit-tests
-    - run:
-        name: Run Go postgres unit tests
-        command: |
-          make go-postgres-unit-tests
-    - post-go-unit-tests:
-        path: go-unit-release-junit-reports
 
   designated-image-tests:
 
@@ -2379,21 +2212,11 @@ jobs:
             - CI_TAG
             - COLLECTOR_VERSION
 
-  pre-build-ui-stackrox:
-    executor: custom
-    resource_class: large
-    environment:
-      EKS_AUTOMATION_VERSION: 0.2.17
-    steps:
-      - pre-build-ui:
-          branding: STACKROX_BRANDING
-
   pre-build-ui-rhacs:
     executor: custom
     resource_class: large
     environment:
       EKS_AUTOMATION_VERSION: 0.2.17
-      REACT_APP_ROX_PRODUCT_BRANDING: RHACS_BRANDING
     steps:
       - pre-build-ui:
           branding: RHACS_BRANDING
@@ -2495,15 +2318,6 @@ jobs:
 
       - cleanup-clusters-on-fail
 
-  build-stackrox:
-    executor: custom
-    resource_class: medium
-    environment:
-      EKS_AUTOMATION_VERSION: 0.2.17
-      ROX_PRODUCT_BRANDING: "STACKROX_BRANDING"
-    steps:
-      - build
-
   build-rhacs:
     executor: custom
     resource_class: medium
@@ -2554,9 +2368,6 @@ jobs:
           command: |
             TAG="$(make --quiet tag)"
 
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-            ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main:${TAG}" | cat
-
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             docker tag "stackrox/main:${TAG}" "quay.io/rhacs-eng/main:${TAG}"
             ./scripts/ci/push-as-manifest-list.sh "quay.io/rhacs-eng/main:${TAG}" | cat
@@ -2594,7 +2405,6 @@ jobs:
       - run:
           name: Login to Docker Hub and Quay.io
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
       - attach_workspace:
@@ -2604,37 +2414,14 @@ jobs:
       - setup-go-build-env
 
       - run:
-          name: Build Operator Bundle image
+          name: Build and push images for quay.io/rhacs-eng
           command: |
-            make -C operator/ bundle bundle-build
-      - run:
-          name: Build Operator image
-          no_output_timeout: 30m
-          command: make -C operator/ build docker-build
-      - run:
-          name: Check that Operator image is runnable
-          command: docker run --rm stackrox/stackrox-operator:$(make --quiet -C operator tag) --help
+            ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator/ everything
 
       - run:
-          name: Push images
+          name: Check that Operator image is runnable - quay.io/rhacs-eng
           command: |
-            make -C operator/ docker-push docker-push-bundle | cat
-
-      # Index image can only be built once bundle was pushed
-      - run:
-          name: Build index
-          command: |
-            make -C operator/ index-build
-
-      - run:
-          name: Push index image
-          command: |
-            make -C operator/ docker-push-index | cat
-
-      - run:
-          name: Build and push images for quay.io
-          command: |
-            IMAGE_REPO=quay.io/rhacs-eng make -C operator/ everything
+            docker run --rm quay.io/rhacs-eng/stackrox-operator:$(make --quiet -C operator tag) --help
 
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
@@ -2694,7 +2481,6 @@ jobs:
       - run:
           name: Build images
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             make scale-image mock-grpc-server-image
 
       - *saveGoBuildCache
@@ -2702,14 +2488,12 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
             TAG=$(make --quiet tag)
 
             QUAY_REPO="rhacs-eng"
             for img in scale grpc-server; do
-              ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/${img}:${TAG}" | cat
               ./scripts/ci/push-as-manifest-list.sh "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
             done
 
@@ -3062,7 +2846,6 @@ jobs:
       - remove-existing-stackrox-resources
 
       - *setupGoogleAppCreds
-      - *setupLicense
 
       - run:
           name: Launch Sensor and Central with scale workload
@@ -3141,7 +2924,6 @@ jobs:
     - remove-existing-stackrox-resources
 
     - *setupGoogleAppCreds
-    - *setupLicense
 
     - run:
         name: Launch Sensor and Central with scale workload
@@ -3267,7 +3049,6 @@ jobs:
             cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
 
       - *setupGoogleAppCreds
-      - *setupLicense
 
       - *setupDefaultTLSCerts
 
@@ -3350,9 +3131,6 @@ jobs:
     executor: custom
     resource_class: small
     environment:
-    - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
-    - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
-    - IMAGE_REPO: "quay.io/rhacs-eng"
     - IMAGE_TAG_BASE: "quay.io/rhacs-eng/stackrox-operator"
 
     steps:
@@ -3421,9 +3199,6 @@ jobs:
     executor: custom
     resource_class: small
     environment:
-    - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
-    - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
-    - IMAGE_REPO: "quay.io/rhacs-eng"
     - IMAGE_TAG_BASE: "quay.io/rhacs-eng/stackrox-operator"
 
     steps:
@@ -3948,14 +3723,8 @@ workflows:
       - slack-notify:
           <<: *runOnTagsOnly
           context: custom-executor-pull
-      - go-postgres-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-create-parameters:
           <<: *runOnAllTagsWithQuayIOPullCtx
-      - pre-build-ui-stackrox:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - pre-create-parameters
       - pre-build-ui-rhacs:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -3968,12 +3737,6 @@ workflows:
           <<: *runOnAllTagsWithPushCtx
           requires:
             - pre-create-parameters
-      - build-stackrox:
-          <<: *runOnAllTagsWithPushCtx
-          requires:
-            - pre-build-ui-stackrox
-            - pre-build-cli
-            - pre-build-go-binaries
       - build-rhacs:
           <<: *runOnAllTagsWithPushCtx
           requires:
@@ -3981,7 +3744,11 @@ workflows:
             - pre-build-cli
             - pre-build-go-binaries
       - build-operator:
-          <<: *runOnAllTagsWithPushCtx
+          <<: *runOnAllTags
+          context:
+            - quay-stackrox-io-readwrite
+            - quay-rhacs-eng-readwrite
+            - quay-rhacs-eng-readonly
       - build-race-condition-debug-image:
           <<: *runOnAllTagsWithPushCtx
       - build-scale-monitoring-and-mock-server:
@@ -3991,7 +3758,6 @@ workflows:
       - gke-postgres-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-postgres-api-e2e-tests
@@ -4000,7 +3766,6 @@ workflows:
       - gke-kernel-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-kernel-api-e2e-tests
@@ -4009,7 +3774,6 @@ workflows:
       - gke-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-scale-tests
@@ -4018,7 +3782,6 @@ workflows:
       - gke-postgres-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-          - build-stackrox
           - build-rhacs
           - build-scale-monitoring-and-mock-server
           - provision-gke-postgres-api-scale-tests
@@ -4027,7 +3790,6 @@ workflows:
       - openshift-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-openshift-api-e2e-tests
@@ -4036,7 +3798,6 @@ workflows:
       - openshift-crio-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-openshift-crio-api-e2e-tests
@@ -4045,7 +3806,6 @@ workflows:
       - eks-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-eks-api-e2e-tests
@@ -4055,7 +3815,6 @@ workflows:
       # - aks-api-e2e-tests:
       #     <<: *runOnAllTagsWithQuayIOPullCtx
       #     requires:
-      #       - build-stackrox
       #       - build-rhacs
       #       - build-scale-monitoring-and-mock-server
       #       - provision-aks-api-e2e-tests
@@ -4066,14 +3825,12 @@ workflows:
       - openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-operator
             - provision-openshift-4-operator-e2e-tests
       - openshift-4-6-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build-stackrox
             - build-rhacs
             - build-operator
             - provision-openshift-4-6-operator-e2e-tests
@@ -4101,7 +3858,6 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-rosa-api-e2e-tests
-            - build-stackrox
             - build-rhacs
           context:
             - osd-cluster-manager
@@ -4121,7 +3877,6 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-aro-api-e2e-tests
-            - build-stackrox
             - build-rhacs
           context:
             - com-redhat-cloud
@@ -4141,7 +3896,6 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-osd-aws-api-e2e-tests
-            - build-stackrox
             - build-rhacs
           context:
             - quay-rhacs-eng-readonly
@@ -4158,7 +3912,6 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-osd-gcp-api-e2e-tests
-            - build-stackrox
             - build-rhacs
           context:
             - quay-rhacs-eng-readonly
@@ -4169,7 +3922,6 @@ workflows:
           context:
           - quay-rhacs-eng-readonly
           requires:
-            - build-stackrox
             - build-rhacs
 
       - retrigger-master-workflow:
@@ -4222,11 +3974,9 @@ workflows:
           requires:
             - pre-create-parameters
       - pre-build-go-binaries:
-          context: docker-io-push
           requires:
             - pre-create-parameters
       - build-rhacs:
-          context: docker-io-push
           requires:
             - pre-build-ui-rhacs
             - pre-build-cli

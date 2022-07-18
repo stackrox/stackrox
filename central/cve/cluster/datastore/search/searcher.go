@@ -6,16 +6,19 @@ import (
 	"github.com/stackrox/rox/central/cve/cluster/datastore/index"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
 	"github.com/stackrox/rox/central/cve/edgefields"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log       = logging.LoggerForModule()
+	sacHelper = sac.ForResource(resources.Cluster).MustCreatePgSearchHelper()
 )
 
 // Searcher provides search functionality on existing cves.
@@ -37,6 +40,6 @@ func New(storage store.Store, indexer index.Indexer) Searcher {
 }
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	scopedSearcher := pkgPostgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher))
+	scopedSearcher := pkgPostgres.WithScoping(sacHelper.FilteredSearcher(unsafeSearcher))
 	return edgefields.TransformFixableFields(scopedSearcher)
 }

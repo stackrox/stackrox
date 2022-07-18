@@ -87,13 +87,14 @@ func insertIntoImageComponents(ctx context.Context, batch *pgx.Batch, obj *stora
 		obj.GetId(),
 		obj.GetName(),
 		obj.GetVersion(),
+		obj.GetPriority(),
 		obj.GetSource(),
 		obj.GetRiskScore(),
 		obj.GetTopCvss(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_components (Id, Name, Version, Source, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_components (Id, Name, Version, Priority, Source, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -116,6 +117,8 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs
 		"name",
 
 		"version",
+
+		"priority",
 
 		"source",
 
@@ -142,6 +145,8 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs
 			obj.GetName(),
 
 			obj.GetVersion(),
+
+			obj.GetPriority(),
 
 			obj.GetSource(),
 
@@ -222,7 +227,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ImageComponent)
 			_, err := batchResults.Exec()
 			result = multierror.Append(result, err)
 		}
-		batchResults.Close()
+		if err := batchResults.Close(); err != nil {
+			return err
+		}
 		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
@@ -307,7 +314,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store

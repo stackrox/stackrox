@@ -210,6 +210,7 @@ func (resolver *clusterResolver) AlertCount(ctx context.Context, args RawQuery) 
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.
 func (resolver *clusterResolver) FailingPolicyCounter(ctx context.Context, args RawQuery) (*PolicyCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "FailingPolicyCounter")
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
@@ -246,6 +247,7 @@ func (resolver *clusterResolver) Deployments(ctx context.Context, args Paginated
 
 // DeploymentCount returns count of all deployments in this cluster
 func (resolver *clusterResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "DeploymentCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
@@ -321,6 +323,7 @@ func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Nam
 
 // NamespaceCount returns counts of namespaces on a cluster.
 func (resolver *clusterResolver) NamespaceCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NamespaceCount")
 	if err := readNamespaces(ctx); err != nil {
 		return 0, err
 	}
@@ -574,7 +577,7 @@ func (resolver *clusterResolver) ImageComponents(ctx context.Context, args Pagin
 }
 
 func (resolver *clusterResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponents")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponentCount")
 	return resolver.root.ImageComponentCount(resolver.withClusterScope(ctx), args)
 }
 
@@ -591,7 +594,7 @@ func (resolver *clusterResolver) NodeComponents(ctx context.Context, args Pagina
 
 // NodeComponentCount returns the number of node components in the cluster
 func (resolver *clusterResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponents")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponentCount")
 
 	if !features.PostgresDatastore.Enabled() {
 		return resolver.root.NodeComponentCount(resolver.withClusterScope(ctx), args)
@@ -628,38 +631,27 @@ func (resolver *clusterResolver) VulnCounter(ctx context.Context, args RawQuery)
 func (resolver *clusterResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilities")
 
-	if !features.PostgresDatastore.Enabled() {
-		// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return resolver.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilities in Cluster does not support postgres yet")
+	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+	return resolver.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // NodeVulnerabilityCount returns the number of node vulnerabilities in the cluster.
 func (resolver *clusterResolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCount")
 
-	if !features.PostgresDatastore.Enabled() {
-		// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return resolver.root.NodeVulnerabilityCount(ctx, RawQuery{Query: &query})
-	}
-	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeVulnerabilityCount in Cluster does not support postgres yet")
+	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+	return resolver.root.NodeVulnerabilityCount(ctx, RawQuery{Query: &query})
 }
 
 // NodeVulnerabilityCounter resolves the number of different types of node vulnerabilities contained in the cluster.
 func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCounter")
 
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return resolver.root.NodeVulnCounter(ctx, RawQuery{Query: &query})
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in Cluster does not support postgres yet")
+	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+	return resolver.root.NodeVulnerabilityCounter(ctx, RawQuery{Query: &query})
 }
 
 func (resolver *clusterResolver) withClusterScope(ctx context.Context) context.Context {
@@ -840,6 +832,7 @@ func (resolver *clusterResolver) getApplicablePolicies(ctx context.Context, q *v
 }
 
 func (resolver *clusterResolver) PolicyCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PolicyCount")
 	if err := readPolicies(ctx); err != nil {
 		return 0, err
 	}
@@ -1084,17 +1077,20 @@ func (resolver *clusterResolver) getClusterRisk(ctx context.Context) (*storage.R
 }
 
 func (resolver *clusterResolver) IsGKECluster() (bool, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IsGKECluster")
 	version := resolver.data.GetStatus().GetOrchestratorMetadata().GetVersion()
 	ok := resolver.root.cveMatcher.IsGKEVersion(version)
 	return ok, nil
 }
 
 func (resolver *clusterResolver) IsOpenShiftCluster() (bool, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IsOpenShiftCluster")
 	metadata := resolver.data.GetStatus().GetOrchestratorMetadata()
 	return metadata.GetIsOpenshift() != nil, nil
 }
 
 func (resolver *clusterResolver) IstioEnabled(ctx context.Context) (bool, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IstioEnabled")
 	res, err := resolver.root.NamespaceDataStore.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.Namespace, "istio-system").ProtoQuery())
 	if err != nil {
 		return false, err
@@ -1103,7 +1099,7 @@ func (resolver *clusterResolver) IstioEnabled(ctx context.Context) (bool, error)
 }
 
 func (resolver *clusterResolver) LatestViolation(ctx context.Context, args RawQuery) (*graphql.Time, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Latest Violation")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "LatestViolation")
 
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
@@ -1122,18 +1118,15 @@ func (resolver *clusterResolver) LatestViolation(ctx context.Context, args RawQu
 func (resolver *clusterResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlottedNodeVulnerabilities")
 
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return newPlottedNodeVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver PlottedNodeVulnerabilities in Cluster does not support postgres yet")
+	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+	return resolver.root.PlottedNodeVulnerabilities(ctx, RawQuery{Query: &query})
 }
 
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *clusterResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlottedImageVulnerabilities")
-	return newPlottedImageVulnerabilitiesResolver(resolver.withClusterScope(ctx), resolver.root, args)
+	return resolver.root.PlottedImageVulnerabilities(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

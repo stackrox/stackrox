@@ -86,10 +86,12 @@ func insertIntoTestGrandparents(ctx context.Context, batch *pgx.Batch, obj *stor
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetVal(),
+		obj.GetPriority(),
+		obj.GetRiskScore(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO test_grandparents (Id, Val, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_grandparents (Id, Val, Priority, RiskScore, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -162,6 +164,10 @@ func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx pgx.Tx, obj
 
 		"val",
 
+		"priority",
+
+		"riskscore",
+
 		"serialized",
 	}
 
@@ -179,6 +185,10 @@ func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx pgx.Tx, obj
 			obj.GetId(),
 
 			obj.GetVal(),
+
+			obj.GetPriority(),
+
+			obj.GetRiskScore(),
 
 			serialized,
 		})
@@ -367,7 +377,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestGrandparent
 			_, err := batchResults.Exec()
 			result = multierror.Append(result, err)
 		}
-		batchResults.Close()
+		if err := batchResults.Close(); err != nil {
+			return err
+		}
 		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
@@ -452,7 +464,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store

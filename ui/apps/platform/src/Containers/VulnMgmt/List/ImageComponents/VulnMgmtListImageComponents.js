@@ -60,7 +60,7 @@ export function getComponentTableColumns(workflowState) {
                     return 'No CVEs';
                 }
 
-                const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+                const newState = workflowState.pushListItem(id).pushList(entityTypes.IMAGE_CVE);
                 const url = newState.toUrl();
                 const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
@@ -229,7 +229,7 @@ const VulnMgmtNodeComponents = ({ selectedRowId, search, sort, page, data, total
             query={query}
             queryOptions={queryOptions}
             idAttribute="id"
-            entityListType={entityTypes.IMAGE_COMPONENT}
+            entityListType={entityTypes.COMPONENT}
             getTableColumns={getComponentTableColumns}
             selectedRowId={selectedRowId}
             search={search}

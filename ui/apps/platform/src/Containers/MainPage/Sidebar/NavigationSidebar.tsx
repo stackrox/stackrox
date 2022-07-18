@@ -17,7 +17,7 @@ import {
     configManagementPath,
     riskBasePath,
     clustersBasePath,
-    policiesBasePath,
+    policyManagementBasePath,
     integrationsPath,
     accessControlBasePathV2,
     systemConfigPath,
@@ -28,7 +28,7 @@ import LeftNavItem from './LeftNavItem';
 
 const platformConfigurationPaths = [
     clustersBasePath,
-    policiesBasePath,
+    policyManagementBasePath,
     integrationsPath,
     accessControlBasePathV2,
     systemConfigPath,

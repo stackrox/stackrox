@@ -55,14 +55,18 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 sortField: imageSortFields.NAME,
             },
             {
-                Header: `CVEs`,
-                entityType: entityTypes.CVE,
+                Header: isFrontendVMUpdatesEnabled ? 'Image CVEs' : 'CVEs',
+                entityType: isFrontendVMUpdatesEnabled ? entityTypes.IMAGE_CVE : entityTypes.CVE,
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
                     const { vulnCounter, id, scan, notes } = original;
 
-                    const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+                    const newState = workflowState
+                        .pushListItem(id)
+                        .pushList(
+                            isFrontendVMUpdatesEnabled ? entityTypes.IMAGE_CVE : entityTypes.CVE
+                        );
                     const url = newState.toUrl();
                     const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 

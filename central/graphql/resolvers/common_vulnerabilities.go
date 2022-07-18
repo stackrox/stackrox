@@ -33,7 +33,6 @@ var commonVulnerabilitySubResolvers = []string{
 	"suppressed: Boolean!",
 	"unusedVarSink(query: String): Int",
 	"vectors: EmbeddedVulnerabilityVectors",
-	"vulnerabilityState: String!",
 }
 
 // CommonVulnerabilityResolver represents the supported API on all vulnerabilities
@@ -59,5 +58,4 @@ type CommonVulnerabilityResolver interface {
 	Suppressed(ctx context.Context) bool
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 	Vectors() *EmbeddedVulnerabilityVectorsResolver
-	VulnerabilityState(ctx context.Context) string
 }

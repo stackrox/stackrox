@@ -5,11 +5,16 @@ import (
 
 	"github.com/stackrox/rox/central/imagecomponentedge/index"
 	"github.com/stackrox/rox/central/imagecomponentedge/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
+)
+
+var (
+	sacHelper = sac.ForResource(resources.Image).MustCreatePgSearchHelper()
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.
@@ -17,7 +22,7 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImplV2{
 		storage:  storage,
 		indexer:  indexer,
-		searcher: postgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(indexer)),
+		searcher: postgres.WithScoping(sacHelper.FilteredSearcher(indexer)),
 	}
 }
 

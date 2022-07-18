@@ -57,13 +57,19 @@ beforeEach(() => {
     jest.resetModules();
 });
 
+const setup = () => {
+    const user = userEvent.setup();
+    const utils = renderWithRouter(
+        <MockedProvider mocks={mocks} addTypename={false}>
+            <AgingImages />
+        </MockedProvider>
+    );
+    return { user, utils };
+};
+
 describe('AgingImages dashboard widget', () => {
     it('should render the correct number of images with default settings', async () => {
-        renderWithRouter(
-            <MockedProvider mocks={mocks} addTypename={false}>
-                <AgingImages />
-            </MockedProvider>
-        );
+        setup();
 
         // When all items are selected, the total should be equal to the total of all buckets
         // returned by the server
@@ -81,12 +87,7 @@ describe('AgingImages dashboard widget', () => {
     });
 
     it('should render graph bars with the correct image counts when time buckets are toggled', async () => {
-        const user = userEvent.setup();
-        renderWithRouter(
-            <MockedProvider mocks={mocks} addTypename={false}>
-                <AgingImages />
-            </MockedProvider>
-        );
+        const { user } = setup();
 
         await user.click(await screen.findByRole('button', { name: `Options` }));
         const checkboxes = await screen.findAllByRole('checkbox');
@@ -135,5 +136,31 @@ describe('AgingImages dashboard widget', () => {
         expect(await screen.findByText(`${range0}-${range1} days`)).toBeInTheDocument();
         expect(await screen.findByText(`${range1}-${range3} days`)).toBeInTheDocument();
         expect(await screen.findByText(`>1 year`)).toBeInTheDocument();
+    });
+
+    it('links users to the correct filtered image list', async () => {
+        const {
+            user,
+            utils: { history },
+        } = setup();
+
+        // Check default links
+        await user.click(await screen.findByRole('link', { name: `30-90 days` }));
+        expect(history.location.search).toContain('s[Image Created Time]=30d-90d');
+
+        await user.click(await screen.findByRole('link', { name: '90-180 days' }));
+        expect(history.location.search).toContain('s[Image Created Time]=90d-180d');
+
+        await user.click(await screen.findByRole('link', { name: '>1 year' }));
+        expect(history.location.search).toContain('s[Image Created Time]=>365d');
+
+        // Deselect the second time range, merging the first and second time buckets
+        await user.click(await screen.findByRole('button', { name: `Options` }));
+        const checkboxes = await screen.findAllByRole('checkbox');
+        await user.click(checkboxes[1]);
+        await user.click(await screen.findByRole('button', { name: `Options` }));
+
+        await user.click(await screen.findByRole('link', { name: '30-180 days' }));
+        expect(history.location.search).toContain('s[Image Created Time]=30d-180d');
     });
 });

@@ -160,6 +160,9 @@ func (resolver *Resolver) VulnCounter(ctx context.Context, args RawQuery) (*Vuln
 // K8sVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
 func (resolver *Resolver) K8sVulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sVulnerability")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("K8sVulnerability graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
+	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -170,6 +173,9 @@ func (resolver *Resolver) K8sVulnerability(ctx context.Context, args IDQuery) (V
 // K8sVulnerabilities resolves a set of k8s vulnerabilities based on a query.
 func (resolver *Resolver) K8sVulnerabilities(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sVulnerabilities")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("K8sVulnerabilities graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
+	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -180,6 +186,9 @@ func (resolver *Resolver) K8sVulnerabilities(ctx context.Context, args Paginated
 // IstioVulnerability resolves a single istio vulnerability based on an id (the CVE value).
 func (resolver *Resolver) IstioVulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioVulnerability")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("IstioVulnerability graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
+	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -190,6 +199,9 @@ func (resolver *Resolver) IstioVulnerability(ctx context.Context, args IDQuery) 
 // IstioVulnerabilities resolves a set of istio vulnerabilities based on a query.
 func (resolver *Resolver) IstioVulnerabilities(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioVulnerabilities")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("IstioVulnerabilities graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
+	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -200,6 +212,9 @@ func (resolver *Resolver) IstioVulnerabilities(ctx context.Context, args Paginat
 // OpenShiftVulnerability resolves a single OpenShift vulnerability based on an id (the CVE value).
 func (resolver *Resolver) OpenShiftVulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftVulnerability")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("OpenShiftVulnerability graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
+	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -210,6 +225,9 @@ func (resolver *Resolver) OpenShiftVulnerability(ctx context.Context, args IDQue
 // OpenShiftVulnerabilities resolves a set of OpenShift vulnerabilities based on a query.
 func (resolver *Resolver) OpenShiftVulnerabilities(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftVulnerabilities")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("OpenShiftVulnerabilities graphQL resolver is not support on postgres. Use ClusterVulnerability resolver.")
+	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}

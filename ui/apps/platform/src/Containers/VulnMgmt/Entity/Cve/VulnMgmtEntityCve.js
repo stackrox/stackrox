@@ -3,7 +3,7 @@ import { gql } from '@apollo/client';
 
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import {
@@ -13,6 +13,7 @@ import {
     CLUSTER_CVE_DETAIL_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import VulnMgmtCveOverview from './VulnMgmtCveOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
 import {
@@ -20,6 +21,13 @@ import {
     tryUpdateQueryWithVulMgmtPolicyClause,
     getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
+
+const validCVETypes = [
+    resourceTypes.CVE,
+    resourceTypes.IMAGE_CVE,
+    resourceTypes.NODE_CVE,
+    resourceTypes.CLUSTER_CVE,
+];
 
 const vulnQueryMap = {
     CVE: 'vulnerability',
@@ -34,11 +42,33 @@ const vulnFieldMap = {
     CLUSTER_CVE: CLUSTER_CVE_DETAIL_FRAGMENT,
 };
 
+function getCVETypeFromStack(worklowStateStack) {
+    const cveTypes = worklowStateStack.filter((state) => {
+        return validCVETypes.includes(state.t);
+    });
+    if (cveTypes.length) {
+        return cveTypes[0].t;
+    }
+    return undefined;
+}
+
 const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const workflowState = useContext(workflowStateContext);
-    const cveType = workflowState.getBaseEntityType() || entityTypes.IMAGE_CVE;
+    const worklowStateStack = workflowState.getStateStack();
+    const cveType = getCVETypeFromStack(worklowStateStack) || entityTypes.IMAGE_CVE;
     const vulnQuery = vulnQueryMap[cveType];
     const vulnFields = vulnFieldMap[cveType];
+
+    // When switching between workflow states, the entity state changes before this component dismounts
+    if (!entityListType && (!vulnQuery || !vulnFields)) {
+        return (
+            <NoResultsMessage
+                message={`No vulnerability found of type ${cveType}`}
+                className="p-3"
+                icon="info"
+            />
+        );
+    }
 
     const overviewQuery = gql`
         query getCve($id: ID!, $query: String, $scopeQuery: String) {
