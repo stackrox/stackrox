@@ -49,13 +49,11 @@ func addDefaults(s policyCategoryStore.Store) {
 	// Hard panic here is okay, since we can always guarantee that we will be able to get the default policies out.
 	utils.CrashOnError(err)
 
-	var count int
 	for _, p := range defaultCategories {
 		if err := s.Upsert(policyCategoryCtx, p); err != nil {
 			utils.CrashOnError(err)
 		}
-		count++
 	}
-	log.Infof("Loaded %d new default policy categories", count)
+	log.Infof("Loaded %d default policy categories", len(defaultCategories))
 
 }
