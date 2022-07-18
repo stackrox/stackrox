@@ -162,6 +162,13 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			expectedIDs:  []string{dep2.Id},
 		},
 		{
+			desc:         "Search deployments with non-matching image query",
+			ctx:          ctx,
+			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageOS, "mars").ProtoQuery(),
+			orderMatters: false,
+			expectedIDs:  []string{},
+		},
+		{
 			desc:         "Search deployments with deployments+image query",
 			ctx:          ctx,
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, dep2.GetNamespace()).AddExactMatches(pkgSearch.ImageOS, img2.GetScan().GetOperatingSystem()).ProtoQuery(),
@@ -266,7 +273,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			queryImages:  true,
 		},
 		{
-			desc:         "Search images with deployment+namespace query",
+			desc:         "Search images with deployment+image query",
 			ctx:          ctx,
 			query:        pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddExactMatches(pkgSearch.ImageName, img1.GetName().GetFullName()).ProtoQuery(),
 			orderMatters: false,
