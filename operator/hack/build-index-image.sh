@@ -2,6 +2,7 @@
 # Builds operator index image.
 
 set -eou pipefail
+set -x
 
 # Global script variables
 OPM_VERSION="1.21.0-render-dir"
