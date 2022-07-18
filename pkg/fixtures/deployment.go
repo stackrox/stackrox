@@ -4,6 +4,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	types2 "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // LightweightDeploymentImage returns the full images referenced by GetLightweightDeployment
@@ -113,5 +114,17 @@ func LightweightDeployment() *storage.Deployment {
 func GetDeployment() *storage.Deployment {
 	dep := LightweightDeployment()
 	dep.Containers = append(dep.Containers, &storage.Container{Name: "supervulnerable", Image: types2.ToContainerImage(GetImage())})
+	return dep
+}
+
+// GetDeploymentWithImage returns a Mock Deployment with specified image
+func GetDeploymentWithImage(cluster, namespace string, image *storage.Image) *storage.Deployment {
+	dep := LightweightDeployment()
+	dep.Id = uuid.NewV4().String()
+	dep.ClusterName = cluster
+	dep.ClusterId = cluster
+	dep.Namespace = namespace
+	dep.NamespaceId = cluster + namespace
+	dep.Containers = append(dep.Containers, &storage.Container{Name: "supervulnerable", Image: types2.ToContainerImage(image)})
 	return dep
 }

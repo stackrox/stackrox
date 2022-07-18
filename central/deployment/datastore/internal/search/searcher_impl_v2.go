@@ -27,13 +27,13 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImplV2{
 		storage:  storage,
 		indexer:  indexer,
-		searcher: postgres.WithScoping(sacHelper.FilteredSearcher(indexer)),
+		searcher: formatSearcherV2(indexer),
 	}
 }
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
-	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, schema.DeploymentsSchema.OptionsMap)
+	scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(unsafeSearcher))
+	transformedSortFieldSearcher := sortfields.TransformSortFields(scopedSearcher, schema.DeploymentsSchema.OptionsMap)
 	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
 }
 
