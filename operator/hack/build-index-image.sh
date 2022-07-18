@@ -136,15 +136,6 @@ if [[ "${CLEAN_OUTPUT_DIR}" = "true" ]]; then
   rm -rf "${BASE_DIR}/build/index"
 fi
 
-
-# TODO(porridge): remove
-echo BASE_DIR:
-ls -la "${BASE_DIR}"
-echo BASE_DIR/bin:
-ls -la "${BASE_DIR}/bin"
-echo dirname of OPM
-ls -la "$(dirname "${OPM}")"
-
 # Exports for docker build and opm in case it builds the image
 export DOCKER_BUILDKIT=1
 export BUILDKIT_PROGRESS="plain"
