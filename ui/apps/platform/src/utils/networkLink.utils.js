@@ -28,6 +28,13 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
         targetNS === 'stackrox' ||
         isBetweenNonIsolated(source, target) ||
         !!networkEdgeMap[edgeKey]?.allowed;
+    // Historical note: isDisallowed was added in rox#2070 and then disabled in rox#2747
+    /*
+    const isDisallowed = (edgeKey, link) =>
+        UIfeatureFlags.SHOW_DISALLOWED_CONNECTIONS &&
+        isActive(edgeKey) &&
+        !isAllowed(edgeKey, link);
+    */
 
     nodes.forEach((node) => {
         const isHoverable = getIsNodeHoverable(node?.entity?.type);

@@ -47,6 +47,11 @@ export const getExternalEntitiesNode = (data, configObj = {}) => {
     const isBackground =
         !isAdjacent && !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
     // DEPRECATED: const isNonIsolated = getIsNonIsolatedNode(externalNode);
+    // Historical note: isDisallowed was added in rox#2070 and then disabled in rox#2747
+    /*
+    const isDisallowed =
+        filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
+    */
     const isExternallyConnected = externallyConnected && filterState !== filterModes.allowed;
     const classes = getClasses({
         active: false, // externalNode.isActive,
@@ -117,6 +122,11 @@ export const getCIDRBlockNodes = (data, configObj = {}) => {
         const isBackground =
             !isAdjacent && !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
         // DEPRECATED: const isNonIsolated = getIsNonIsolatedNode(externalNode);
+        // Historical note: isDisallowed was added in rox#2070 and then disabled in rox#2747
+        /*
+        const isDisallowed =
+            filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
+        */
         const isExternallyConnected = externallyConnected && filterState !== filterModes.allowed;
         const classes = getClasses({
             active: false,
