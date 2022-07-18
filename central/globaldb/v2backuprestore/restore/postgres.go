@@ -118,5 +118,5 @@ func CheckIfRestoreDBExists(dbConfig *pgxpool.Config) bool {
 
 func getRestoreDBName() string {
 	// Build the active database name for the connection
-	return fmt.Sprintf("%s%s", config.GetConfig().CentralDB.RootDatabaseName, restoreSuffix)
+	return fmt.Sprintf("%s%s", config.GetConfig().CentralDB.DatabaseName, restoreSuffix)
 }

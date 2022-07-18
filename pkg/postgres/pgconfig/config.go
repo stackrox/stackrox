@@ -61,5 +61,5 @@ func ParseSource(source string) (map[string]string, error) {
 
 // GetActiveDB - returns the name of the active database
 func GetActiveDB() string {
-	return fmt.Sprintf("%s%s", config.GetConfig().CentralDB.RootDatabaseName, activeSuffix)
+	return fmt.Sprintf("%s%s", config.GetConfig().CentralDB.DatabaseName, activeSuffix)
 }

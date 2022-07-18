@@ -18,7 +18,7 @@ var (
 	defaultBucketFillFraction = 0.5
 	defaultCompactionState    = true
 	defaultDBSource           = "host=central-db.stackrox port=5432 user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=1 pool_max_conns=90"
-	defaultRootDatabase       = "central"
+	defaultDatabase           = "central"
 
 	once   sync.Once
 	config *Config
@@ -76,8 +76,8 @@ func (m *Maintenance) validate() error {
 
 // CentralDB defines the config options to access central-db
 type CentralDB struct {
-	Source           string `yaml:"source"`
-	RootDatabaseName string `yaml:"rootDatabaseName"`
+	Source       string `yaml:"source"`
+	DatabaseName string
 }
 
 func (c *CentralDB) applyDefaults() {
@@ -86,9 +86,9 @@ func (c *CentralDB) applyDefaults() {
 		c.Source = defaultDBSource
 	}
 
-	c.RootDatabaseName = strings.TrimSpace(c.RootDatabaseName)
-	if c.RootDatabaseName == "" {
-		c.RootDatabaseName = defaultRootDatabase
+	c.DatabaseName = strings.TrimSpace(c.DatabaseName)
+	if c.DatabaseName == "" {
+		c.DatabaseName = defaultDatabase
 	}
 }
 
