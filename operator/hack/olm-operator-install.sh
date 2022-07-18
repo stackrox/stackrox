@@ -7,7 +7,7 @@ source "$(dirname "$0")/common.sh"
 declare allow_dirty_tag=false
 
 function main() {
-  case "$1" in
+  case "${1:-}" in
   -d | --allow-dirty-tag)
     allow_dirty_tag=true
     shift
@@ -27,7 +27,9 @@ function main() {
     local -r operator_version="${4:-}"
     ;;
   *)
-    echo "Usage: $0 [--allow-dirty-tag | -d] <operator_ns> <image_tag_base> <index-version> [<install-version>]" >&2
+    echo -e "Usage:\n\t$0 [--allow-dirty-tag | -d] <operator_ns> <image_tag_base> <index-version> [<install-version>]" >&2
+    echo -e "Example:\n\t$0 -d index-test quay.io/rhacs-eng/stackrox-operator 3.70.1 3.70.1" >&2
+    echo -e "Note that KUTTL environment variable must be defined and point to a kuttl executable." >&2
     exit 1
     ;;
   esac
