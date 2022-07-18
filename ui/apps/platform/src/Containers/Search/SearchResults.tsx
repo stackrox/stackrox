@@ -139,7 +139,6 @@ function SearchResults({
     globalSearchResults,
     globalSearchOptions,
     setGlobalSearchCategory,
-    passthroughGlobalSearchOptions,
     tabs,
     defaultTab = null,
 }: SearchResultsProps): ReactElement {
@@ -215,17 +214,9 @@ function SearchResults({
         return [...globalSearchOptions];
     };
 
-    const onLinkHandler =
-        (searchCategory: string, category: string, toURL: string, name: string) => () => {
-            const searchOptions = amendSearchOptions(searchCategory, name);
-            passthroughGlobalSearchOptions(searchOptions, category);
-            onClose(toURL);
-        };
-
     const onFilterLinkHandler =
         (searchCategory: string, category: string, toURL: string, name: string) => () => {
             const searchOptions = amendSearchOptions(searchCategory, name);
-            passthroughGlobalSearchOptions(searchOptions, category);
             const searchFilter = searchOptionsToSearchFilter(searchOptions);
             const queryString = getUrlQueryStringForSearchFilter(searchFilter);
             onClose(`${toURL}?${queryString}`);
@@ -304,12 +295,7 @@ function SearchResults({
                                                 <RelatedLink
                                                     data-testid="view-on-label-chip"
                                                     id={id}
-                                                    onClick={onLinkHandler(
-                                                        category,
-                                                        item,
-                                                        getLink(item, id),
-                                                        name
-                                                    )}
+                                                    onClick={() => onClose(getLink(item, id))}
                                                 >
                                                     {item}
                                                 </RelatedLink>
@@ -452,10 +438,6 @@ const mapDispatchToProps = (dispatch) => ({
         // TODO: type redux props
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         dispatch(globalSearchActions.setGlobalSearchCategory(category)),
-    passthroughGlobalSearchOptions: (searchOptions, category) =>
-        // TODO: type redux props
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        dispatch(globalSearchActions.passthroughGlobalSearchOptions(searchOptions, category)),
 });
 
 export default connect<StateProps, DispatchProps, PassedProps>(

@@ -1,8 +1,7 @@
 import { all, put, call } from 'redux-saga/effects';
 
-import { mainPath, policiesPath } from 'routePaths';
+import { mainPath } from 'routePaths';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import { actions as policiesActions } from 'reducers/policies/search';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { fetchOptions } from 'services/SearchService';
 import capitalize from 'lodash/capitalize';
@@ -71,15 +70,6 @@ export default function* searches() {
             globalSearchActions.setGlobalSearchSuggestions,
             null,
             ''
-        ),
-        // TODO: remove once policies is fully migrated over to PF
-        takeEveryNewlyMatchedLocation(
-            policiesPath,
-            getSearchOptions,
-            policiesActions.setPoliciesSearchModifiers,
-            policiesActions.setPoliciesSearchSuggestions,
-            policiesActions.setPoliciesSearchOptions,
-            'categories=POLICIES'
         ),
     ]);
 }
