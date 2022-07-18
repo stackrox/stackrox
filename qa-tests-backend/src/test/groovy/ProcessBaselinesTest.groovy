@@ -122,7 +122,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         assert baseline.elementsList.find { it.element.processName == processName } != null
 
         // wait for baseline to come out of observation
-        baseline = evaluateWithRetry(30, 3) {
+        baseline = evaluateWithRetry(10, 10) {
             def tmpBaseline = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
             def now = System.currentTimeSeconds()
             if (tmpBaseline.getStackRoxLockedTimestamp().getSeconds() > now) {
@@ -223,7 +223,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         String containerName = deployment.getName()
         // Need to make sure the processes show up before we lock.
-        def baseline = evaluateWithRetry(30, 4) {
+        def baseline = evaluateWithRetry(10, 10) {
             def tmpBaseline = ProcessBaselineService.
                  getProcessBaseline(clusterId, deployment, containerName)
             if (tmpBaseline.elementsList.size() == 0) {
@@ -445,7 +445,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         String containerName = deployment.getName()
 
         // Wait on the process to be baseline to come out of observation
-        ProcessBaselineOuterClass.ProcessBaseline baseline = evaluateWithRetry(30, 3) {
+        ProcessBaselineOuterClass.ProcessBaseline baseline = evaluateWithRetry(10, 10) {
             def tmpBaseline = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
             def now = System.currentTimeSeconds()
             if (tmpBaseline.getStackRoxLockedTimestamp().getSeconds() > now) {
@@ -471,7 +471,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         assert  ( baselineAfterDelete.elementsList == [] )
 
         // Give the baseline time to come back out of observation
-        baselineAfterDelete = evaluateWithRetry(30, 3) {
+        baselineAfterDelete = evaluateWithRetry(10, 10) {
             def tmpBaseline = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
             def now = System.currentTimeSeconds()
             if (tmpBaseline.getStackRoxLockedTimestamp().getSeconds() > now) {
