@@ -170,7 +170,7 @@ Note that unlike the `make deploy` route, deployment with OLM does not require c
 $ make operator-sdk
 
 # 1. Install OLM.
-$ bin/operator-sdk-1.9.0 olm install
+$ make olm-install
 
 # 2. Create a namespace for testing bundle.
 $ kubectl create ns bundle-test
@@ -189,7 +189,7 @@ $ kubectl -n bundle-test patch serviceaccount default -p '{"imagePullSecrets": [
 # Use one-liner above.
 
 # 4. Run bundle.
-$ bin/operator-sdk-1.9.0 run bundle \
+$ bin/operator-sdk-1.14.0 run bundle \
   docker.io/stackrox/stackrox-operator-bundle:v$(make --quiet tag) \
   --pull-secret-name my-opm-image-pull-secrets \
   --service-account default \
@@ -223,23 +223,22 @@ kubectl -n bundle-test delete catalogsources.operators.coreos.com rhacs-operator
 Also, you can blow everything away with
 
 ```bash
-$ bin/operator-sdk-1.9.0 olm uninstall
+$ make olm-uninstall
 $ kubectl delete ns bundle-test
 ```
 
 ### Launch the Operator with OLM and Index
 
-Note this assumes OLM is already in place.
-
-So far only tested on an OpenShift cluster.
+Note this assumes OLM is already in place which is the case for OpenShift clusters.  
+If you're launching on non-OpenShift Kubernetes, first deploy OLM with `make olm-install`.
 
 ```bash
-./hack/olm-operator-install.sh index-test $(make --quiet tag)
+# Deploy
+# TODO(ROX-11744): drop branding here once operator is available from quay.io/stackrox-io
+ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm TEST_NAMESPACE=index-test
 
-# undeploy
-
-kubectl delete index-test
-
+# Undeploy
+kubectl delete ns index-test
 ```
 
 ## Extending the StackRox Custom Resource Definitions
