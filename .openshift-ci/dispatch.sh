@@ -28,7 +28,7 @@ case "$ci_job" in
         openshift_ci_e2e_mods
         ;;
     openshift-*-operator-e2e-tests)
-        registry_ro_login
+        registry_ro_login "quay.io/rhacs-eng"
         ;;
 esac
 
