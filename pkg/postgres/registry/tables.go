@@ -1,4 +1,4 @@
-package schema
+package registry
 
 import (
 	"context"
@@ -31,6 +31,7 @@ func RegisterTable(schema *walker.Schema, stmt *postgres.CreateStmts) {
 		return
 	}
 	registeredTables[schema.Table] = &registeredTable{Schema: schema, CreateStmt: stmt}
+	registerCategoryToTable(schema.OptionsMap.PrimaryCategory(), schema)
 }
 
 // GetSchemaForTable return the schema registered for specified table name.

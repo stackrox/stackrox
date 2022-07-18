@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -53,7 +54,7 @@ var (
 
 	// ActiveComponentsSchema is the go schema for table `active_components`.
 	ActiveComponentsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("active_components")
+		schema := registry.GetSchemaForTable("active_components")
 		if schema != nil {
 			return schema
 		}
@@ -67,7 +68,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ACTIVE_COMPONENT, "activecomponent", (*storage.ActiveComponent)(nil)))
-		RegisterTable(schema, CreateTableActiveComponentsStmt)
+		registry.RegisterTable(schema, CreateTableActiveComponentsStmt)
 		return schema
 	}()
 )

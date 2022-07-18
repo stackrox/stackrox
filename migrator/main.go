@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/registry"
 	"gorm.io/gorm"
 )
 

@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -30,13 +31,13 @@ var (
 
 	// NetworkEntitiesSchema is the go schema for table `network_entities`.
 	NetworkEntitiesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("network_entities")
+		schema := registry.GetSchemaForTable("network_entities")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NetworkEntity)(nil)), "network_entities")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_ENTITY, "networkentity", (*storage.NetworkEntity)(nil)))
-		RegisterTable(schema, CreateTableNetworkEntitiesStmt)
+		registry.RegisterTable(schema, CreateTableNetworkEntitiesStmt)
 		return schema
 	}()
 )

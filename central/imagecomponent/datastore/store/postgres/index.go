@@ -12,12 +12,7 @@ import (
 	search "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
-
-func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_COMPONENTS, schema)
-}
 
 // NewIndexer returns new indexer for `storage.ImageComponent`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {

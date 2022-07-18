@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -35,13 +36,13 @@ var (
 
 	// ServiceAccountsSchema is the go schema for table `service_accounts`.
 	ServiceAccountsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("service_accounts")
+		schema := registry.GetSchemaForTable("service_accounts")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ServiceAccount)(nil)), "service_accounts")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SERVICE_ACCOUNTS, "serviceaccount", (*storage.ServiceAccount)(nil)))
-		RegisterTable(schema, CreateTableServiceAccountsStmt)
+		registry.RegisterTable(schema, CreateTableServiceAccountsStmt)
 		return schema
 	}()
 )

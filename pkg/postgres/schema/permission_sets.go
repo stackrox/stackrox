@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
@@ -28,12 +29,12 @@ var (
 
 	// PermissionSetsSchema is the go schema for table `permission_sets`.
 	PermissionSetsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("permission_sets")
+		schema := registry.GetSchemaForTable("permission_sets")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.PermissionSet)(nil)), "permission_sets")
-		RegisterTable(schema, CreateTablePermissionSetsStmt)
+		registry.RegisterTable(schema, CreateTablePermissionSetsStmt)
 		return schema
 	}()
 )

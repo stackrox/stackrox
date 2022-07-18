@@ -13,11 +13,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	testChild1 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild1"
 	testChild1P4 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild1p4"
@@ -41,7 +41,7 @@ var (
 
 	getTestSchema = func() func(t *testing.T, typeName string) *walker.Schema {
 		relevantSchemas := make(map[string]*walker.Schema)
-		allSchemas := mapping.GetAllRegisteredSchemas()
+		allSchemas := registry.GetAllRegisteredSchemas()
 		for _, schema := range allSchemas {
 			lowerTypeName := strings.ToLower(schema.TypeName)
 			if strings.HasPrefix(lowerTypeName, "test") {

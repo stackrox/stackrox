@@ -12,12 +12,7 @@ import (
 	search "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
-
-func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_BASELINE_RESULTS, schema)
-}
 
 // NewIndexer returns new indexer for `storage.ProcessBaselineResults`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {

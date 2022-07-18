@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
@@ -27,12 +28,12 @@ var (
 
 	// ComplianceOperatorProfilesSchema is the go schema for table `compliance_operator_profiles`.
 	ComplianceOperatorProfilesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("compliance_operator_profiles")
+		schema := registry.GetSchemaForTable("compliance_operator_profiles")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorProfile)(nil)), "compliance_operator_profiles")
-		RegisterTable(schema, CreateTableComplianceOperatorProfilesStmt)
+		registry.RegisterTable(schema, CreateTableComplianceOperatorProfilesStmt)
 		return schema
 	}()
 )

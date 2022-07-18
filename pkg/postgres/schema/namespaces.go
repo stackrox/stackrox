@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -35,7 +36,7 @@ var (
 
 	// NamespacesSchema is the go schema for table `namespaces`.
 	NamespacesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("namespaces")
+		schema := registry.GetSchemaForTable("namespaces")
 		if schema != nil {
 			return schema
 		}
@@ -59,7 +60,7 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
-		RegisterTable(schema, CreateTableNamespacesStmt)
+		registry.RegisterTable(schema, CreateTableNamespacesStmt)
 		return schema
 	}()
 )

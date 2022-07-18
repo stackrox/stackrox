@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -38,7 +39,7 @@ var (
 
 	// ClusterHealthStatusesSchema is the go schema for table `cluster_health_statuses`.
 	ClusterHealthStatusesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("cluster_health_statuses")
+		schema := registry.GetSchemaForTable("cluster_health_statuses")
 		if schema != nil {
 			return schema
 		}
@@ -51,7 +52,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_HEALTH, "clusterhealthstatus", (*storage.ClusterHealthStatus)(nil)))
-		RegisterTable(schema, CreateTableClusterHealthStatusesStmt)
+		registry.RegisterTable(schema, CreateTableClusterHealthStatusesStmt)
 		return schema
 	}()
 )

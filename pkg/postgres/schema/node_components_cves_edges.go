@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -35,7 +36,7 @@ var (
 
 	// NodeComponentsCvesEdgesSchema is the go schema for table `node_components_cves_edges`.
 	NodeComponentsCvesEdgesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("node_components_cves_edges")
+		schema := registry.GetSchemaForTable("node_components_cves_edges")
 		if schema != nil {
 			return schema
 		}
@@ -57,7 +58,7 @@ var (
 			v1.SearchCategory_NODES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
-		RegisterTable(schema, CreateTableNodeComponentsCvesEdgesStmt)
+		registry.RegisterTable(schema, CreateTableNodeComponentsCvesEdgesStmt)
 		return schema
 	}()
 )

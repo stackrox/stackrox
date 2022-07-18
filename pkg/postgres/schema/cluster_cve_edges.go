@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -35,7 +36,7 @@ var (
 
 	// ClusterCveEdgesSchema is the go schema for table `cluster_cve_edges`.
 	ClusterCveEdgesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("cluster_cve_edges")
+		schema := registry.GetSchemaForTable("cluster_cve_edges")
 		if schema != nil {
 			return schema
 		}
@@ -53,7 +54,7 @@ var (
 			v1.SearchCategory_CLUSTER_VULNERABILITIES,
 			v1.SearchCategory_CLUSTER_VULN_EDGE,
 		}...)
-		RegisterTable(schema, CreateTableClusterCveEdgesStmt)
+		registry.RegisterTable(schema, CreateTableClusterCveEdgesStmt)
 		return schema
 	}()
 )

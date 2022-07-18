@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
@@ -27,12 +28,12 @@ var (
 
 	// LogImbuesSchema is the go schema for table `log_imbues`.
 	LogImbuesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("log_imbues")
+		schema := registry.GetSchemaForTable("log_imbues")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.LogImbue)(nil)), "log_imbues")
-		RegisterTable(schema, CreateTableLogImbuesStmt)
+		registry.RegisterTable(schema, CreateTableLogImbuesStmt)
 		return schema
 	}()
 )

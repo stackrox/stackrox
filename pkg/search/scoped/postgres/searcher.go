@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -41,7 +41,7 @@ func WithScoping(searcher search.Searcher) search.Searcher {
 }
 
 func scopeQuery(q *v1.Query, scope scoped.Scope) (*v1.Query, error) {
-	schema := mapping.GetTableFromCategory(scope.Level)
+	schema := registry.GetTableFromCategory(scope.Level)
 	if schema == nil {
 		utils.Should(errors.Errorf("no schema registered for search category %s", scope.Level))
 		return q, nil

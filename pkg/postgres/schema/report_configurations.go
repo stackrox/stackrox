@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -31,13 +32,13 @@ var (
 
 	// ReportConfigurationsSchema is the go schema for table `report_configurations`.
 	ReportConfigurationsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("report_configurations")
+		schema := registry.GetSchemaForTable("report_configurations")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ReportConfiguration)(nil)), "report_configurations")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_REPORT_CONFIGURATIONS, "reportconfiguration", (*storage.ReportConfiguration)(nil)))
-		RegisterTable(schema, CreateTableReportConfigurationsStmt)
+		registry.RegisterTable(schema, CreateTableReportConfigurationsStmt)
 		return schema
 	}()
 )

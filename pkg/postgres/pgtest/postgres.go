@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/random"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"

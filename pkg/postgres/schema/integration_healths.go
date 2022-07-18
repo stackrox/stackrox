@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
@@ -27,12 +28,12 @@ var (
 
 	// IntegrationHealthsSchema is the go schema for table `integration_healths`.
 	IntegrationHealthsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("integration_healths")
+		schema := registry.GetSchemaForTable("integration_healths")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.IntegrationHealth)(nil)), "integration_healths")
-		RegisterTable(schema, CreateTableIntegrationHealthsStmt)
+		registry.RegisterTable(schema, CreateTableIntegrationHealthsStmt)
 		return schema
 	}()
 )

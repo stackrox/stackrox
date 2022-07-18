@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
@@ -28,12 +29,12 @@ var (
 
 	// SignatureIntegrationsSchema is the go schema for table `signature_integrations`.
 	SignatureIntegrationsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("signature_integrations")
+		schema := registry.GetSchemaForTable("signature_integrations")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.SignatureIntegration)(nil)), "signature_integrations")
-		RegisterTable(schema, CreateTableSignatureIntegrationsStmt)
+		registry.RegisterTable(schema, CreateTableSignatureIntegrationsStmt)
 		return schema
 	}()
 )

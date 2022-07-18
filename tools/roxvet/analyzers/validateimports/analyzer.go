@@ -198,6 +198,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/migrations",
 			"pkg/postgres/pgutils",
 			"pkg/postgres/schema",
+			"pkg/postgres/registry",
 			"pkg/process/id",
 			"pkg/retry",
 			"pkg/rocksdb",

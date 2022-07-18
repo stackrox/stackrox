@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -30,13 +31,13 @@ var (
 
 	// PolicyCategoriesSchema is the go schema for table `policy_categories`.
 	PolicyCategoriesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("policy_categories")
+		schema := registry.GetSchemaForTable("policy_categories")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.PolicyCategory)(nil)), "policy_categories")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICY_CATEGORIES, "policycategory", (*storage.PolicyCategory)(nil)))
-		RegisterTable(schema, CreateTablePolicyCategoriesStmt)
+		registry.RegisterTable(schema, CreateTablePolicyCategoriesStmt)
 		return schema
 	}()
 )

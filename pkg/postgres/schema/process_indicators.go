@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -43,13 +44,13 @@ var (
 
 	// ProcessIndicatorsSchema is the go schema for table `process_indicators`.
 	ProcessIndicatorsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("process_indicators")
+		schema := registry.GetSchemaForTable("process_indicators")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_INDICATORS, "processindicator", (*storage.ProcessIndicator)(nil)))
-		RegisterTable(schema, CreateTableProcessIndicatorsStmt)
+		registry.RegisterTable(schema, CreateTableProcessIndicatorsStmt)
 		return schema
 	}()
 )

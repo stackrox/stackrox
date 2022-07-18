@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
@@ -28,12 +29,12 @@ var (
 
 	// SimpleAccessScopesSchema is the go schema for table `simple_access_scopes`.
 	SimpleAccessScopesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("simple_access_scopes")
+		schema := registry.GetSchemaForTable("simple_access_scopes")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.SimpleAccessScope)(nil)), "simple_access_scopes")
-		RegisterTable(schema, CreateTableSimpleAccessScopesStmt)
+		registry.RegisterTable(schema, CreateTableSimpleAccessScopesStmt)
 		return schema
 	}()
 )

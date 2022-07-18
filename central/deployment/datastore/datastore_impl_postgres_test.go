@@ -19,11 +19,9 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -82,21 +80,9 @@ func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
 		deploymentPostgres.NewFullTestStore(s.T(), deploymentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)),
 		nil, s.db, nil, nil, nil, s.imageDatastore, nil, nil, s.riskDataStore,
 		nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
-
-	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_COMPONENTS, schema.ImageComponentsSchema)
-	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULNERABILITIES, schema.ImageCvesSchema)
-	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_COMPONENT_EDGE, schema.ImageComponentEdgesSchema)
-	mapping.RegisterCategoryToTable(v1.SearchCategory_COMPONENT_VULN_EDGE, schema.ImageComponentCveEdgesSchema)
-	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULN_EDGE, schema.ImageCveEdgesSchema)
 }
 
 func (s *DeploymentPostgresDataStoreTestSuite) TearDownSuite() {
-	mapping.UnregisterCategory(v1.SearchCategory_IMAGE_COMPONENTS)
-	mapping.UnregisterCategory(v1.SearchCategory_IMAGE_VULNERABILITIES)
-	mapping.UnregisterCategory(v1.SearchCategory_IMAGE_COMPONENT_EDGE)
-	mapping.UnregisterCategory(v1.SearchCategory_COMPONENT_VULN_EDGE)
-	mapping.UnregisterCategory(v1.SearchCategory_IMAGE_VULN_EDGE)
-
 	s.db.Close()
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 	s.mockCtrl.Finish()

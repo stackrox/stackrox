@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -36,7 +37,7 @@ var (
 
 	// ImageComponentEdgesSchema is the go schema for table `image_component_edges`.
 	ImageComponentEdgesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("image_component_edges")
+		schema := registry.GetSchemaForTable("image_component_edges")
 		if schema != nil {
 			return schema
 		}
@@ -61,7 +62,7 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
-		RegisterTable(schema, CreateTableImageComponentEdgesStmt)
+		registry.RegisterTable(schema, CreateTableImageComponentEdgesStmt)
 		return schema
 	}()
 )

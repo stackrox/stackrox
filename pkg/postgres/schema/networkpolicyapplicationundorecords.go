@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
@@ -27,12 +28,12 @@ var (
 
 	// NetworkpolicyapplicationundorecordsSchema is the go schema for table `networkpolicyapplicationundorecords`.
 	NetworkpolicyapplicationundorecordsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("networkpolicyapplicationundorecords")
+		schema := registry.GetSchemaForTable("networkpolicyapplicationundorecords")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NetworkPolicyApplicationUndoRecord)(nil)), "networkpolicyapplicationundorecords")
-		RegisterTable(schema, CreateTableNetworkpolicyapplicationundorecordsStmt)
+		registry.RegisterTable(schema, CreateTableNetworkpolicyapplicationundorecordsStmt)
 		return schema
 	}()
 )

@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -31,13 +32,13 @@ var (
 
 	// NetworkpoliciesSchema is the go schema for table `networkpolicies`.
 	NetworkpoliciesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("networkpolicies")
+		schema := registry.GetSchemaForTable("networkpolicies")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NetworkPolicy)(nil)), "networkpolicies")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_POLICIES, "networkpolicy", (*storage.NetworkPolicy)(nil)))
-		RegisterTable(schema, CreateTableNetworkpoliciesStmt)
+		registry.RegisterTable(schema, CreateTableNetworkpoliciesStmt)
 		return schema
 	}()
 )

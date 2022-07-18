@@ -13,6 +13,7 @@ import (
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/postgres"
+    "github.com/stackrox/rox/pkg/postgres/registry"
     "github.com/stackrox/rox/pkg/postgres/walker"
     "github.com/stackrox/rox/pkg/search"
 )
@@ -53,7 +54,7 @@ var (
 
     // {{template "schemaVar" .Schema.Table}} is the go schema for table `{{.Schema.Table|lowerCase}}`.
     {{template "schemaVar" .Schema.Table}} = func() *walker.Schema {
-        schema := GetSchemaForTable("{{.Schema.Table}}")
+        schema := registry.GetSchemaForTable("{{.Schema.Table}}")
         if schema != nil {
             return schema
         }
@@ -86,7 +87,7 @@ var (
             }...)
             {{- end }}
         {{- end }}
-        RegisterTable(schema, {{template "createTableStmtVar" .Schema }})
+        registry.RegisterTable(schema, {{template "createTableStmtVar" .Schema }})
         return schema
     }()
 )

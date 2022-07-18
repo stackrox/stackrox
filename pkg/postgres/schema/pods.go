@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -51,7 +52,7 @@ var (
 
 	// PodsSchema is the go schema for table `pods`.
 	PodsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("pods")
+		schema := registry.GetSchemaForTable("pods")
 		if schema != nil {
 			return schema
 		}
@@ -64,7 +65,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PODS, "pod", (*storage.Pod)(nil)))
-		RegisterTable(schema, CreateTablePodsStmt)
+		registry.RegisterTable(schema, CreateTablePodsStmt)
 		return schema
 	}()
 )

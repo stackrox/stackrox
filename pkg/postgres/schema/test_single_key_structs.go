@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -43,13 +44,13 @@ var (
 
 	// TestSingleKeyStructsSchema is the go schema for table `test_single_key_structs`.
 	TestSingleKeyStructsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("test_single_key_structs")
+		schema := registry.GetSchemaForTable("test_single_key_structs")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestSingleKeyStruct)(nil)), "test_single_key_structs")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "testsinglekeystruct", (*storage.TestSingleKeyStruct)(nil)))
-		RegisterTable(schema, CreateTableTestSingleKeyStructsStmt)
+		registry.RegisterTable(schema, CreateTableTestSingleKeyStructsStmt)
 		return schema
 	}()
 )

@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/testcommon"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )

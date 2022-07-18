@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -38,7 +39,7 @@ var (
 
 	// ImageCveEdgesSchema is the go schema for table `image_cve_edges`.
 	ImageCveEdgesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("image_cve_edges")
+		schema := registry.GetSchemaForTable("image_cve_edges")
 		if schema != nil {
 			return schema
 		}
@@ -63,7 +64,7 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
-		RegisterTable(schema, CreateTableImageCveEdgesStmt)
+		registry.RegisterTable(schema, CreateTableImageCveEdgesStmt)
 		return schema
 	}()
 )

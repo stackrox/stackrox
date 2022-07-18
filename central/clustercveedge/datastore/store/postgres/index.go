@@ -12,12 +12,7 @@ import (
 	search "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
-
-func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTER_VULN_EDGE, schema)
-}
 
 // NewIndexer returns new indexer for `storage.ClusterCVEEdge`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {

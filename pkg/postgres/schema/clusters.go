@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -31,13 +32,13 @@ var (
 
 	// ClustersSchema is the go schema for table `clusters`.
 	ClustersSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("clusters")
+		schema := registry.GetSchemaForTable("clusters")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), "clusters")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTERS, "cluster", (*storage.Cluster)(nil)))
-		RegisterTable(schema, CreateTableClustersStmt)
+		registry.RegisterTable(schema, CreateTableClustersStmt)
 		return schema
 	}()
 )

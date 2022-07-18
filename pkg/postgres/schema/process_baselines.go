@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -32,13 +33,13 @@ var (
 
 	// ProcessBaselinesSchema is the go schema for table `process_baselines`.
 	ProcessBaselinesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("process_baselines")
+		schema := registry.GetSchemaForTable("process_baselines")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ProcessBaseline)(nil)), "process_baselines")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_BASELINES, "processbaseline", (*storage.ProcessBaseline)(nil)))
-		RegisterTable(schema, CreateTableProcessBaselinesStmt)
+		registry.RegisterTable(schema, CreateTableProcessBaselinesStmt)
 		return schema
 	}()
 )

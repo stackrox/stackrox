@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -31,13 +32,13 @@ var (
 
 	// NetworkBaselinesSchema is the go schema for table `network_baselines`.
 	NetworkBaselinesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("network_baselines")
+		schema := registry.GetSchemaForTable("network_baselines")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NetworkBaseline)(nil)), "network_baselines")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_BASELINE, "networkbaseline", (*storage.NetworkBaseline)(nil)))
-		RegisterTable(schema, CreateTableNetworkBaselinesStmt)
+		registry.RegisterTable(schema, CreateTableNetworkBaselinesStmt)
 		return schema
 	}()
 )

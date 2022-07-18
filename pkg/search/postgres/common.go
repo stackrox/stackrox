@@ -14,10 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/random"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -482,7 +482,7 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 
 // RunSearchRequest executes a request against the database for given category
 func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) ([]searchPkg.Result, error) {
-	schema := mapping.GetTableFromCategory(category)
+	schema := registry.GetTableFromCategory(category)
 	return RunSearchRequestForSchema(schema, q, db)
 }
 
@@ -587,7 +587,7 @@ func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 
 // RunCountRequest executes a request for just the count against the database
 func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) (int, error) {
-	schema := mapping.GetTableFromCategory(category)
+	schema := registry.GetTableFromCategory(category)
 	return RunCountRequestForSchema(schema, q, db)
 }
 

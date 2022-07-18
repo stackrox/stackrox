@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
@@ -28,12 +29,12 @@ var (
 
 	// AuthProvidersSchema is the go schema for table `auth_providers`.
 	AuthProvidersSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("auth_providers")
+		schema := registry.GetSchemaForTable("auth_providers")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.AuthProvider)(nil)), "auth_providers")
-		RegisterTable(schema, CreateTableAuthProvidersStmt)
+		registry.RegisterTable(schema, CreateTableAuthProvidersStmt)
 		return schema
 	}()
 )

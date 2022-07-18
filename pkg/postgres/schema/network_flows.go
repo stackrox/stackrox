@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
@@ -44,12 +45,12 @@ var (
 
 	// NetworkFlowsSchema is the go schema for table `nodes`.
 	NetworkFlowsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("network_flows")
+		schema := registry.GetSchemaForTable("network_flows")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), "network_flows")
-		RegisterTable(schema, CreateTableNetworkFlowsStmt)
+		registry.RegisterTable(schema, CreateTableNetworkFlowsStmt)
 		return schema
 	}()
 )

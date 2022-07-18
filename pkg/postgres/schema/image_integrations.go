@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
@@ -28,12 +29,12 @@ var (
 
 	// ImageIntegrationsSchema is the go schema for table `image_integrations`.
 	ImageIntegrationsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("image_integrations")
+		schema := registry.GetSchemaForTable("image_integrations")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageIntegration)(nil)), "image_integrations")
-		RegisterTable(schema, CreateTableImageIntegrationsStmt)
+		registry.RegisterTable(schema, CreateTableImageIntegrationsStmt)
 		return schema
 	}()
 )

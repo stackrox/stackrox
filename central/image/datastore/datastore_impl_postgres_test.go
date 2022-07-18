@@ -23,11 +23,9 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -159,7 +157,6 @@ func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.Equal(image.GetId(), results[0].ID)
 
 	// Scope search by vulns.
-	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULNERABILITIES, schema.ImageCvesSchema)
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		ID:    "cve3#blah",
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,

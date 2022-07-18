@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -33,7 +34,7 @@ var (
 
 	// TestParent4Schema is the go schema for table `test_parent4`.
 	TestParent4Schema = func() *walker.Schema {
-		schema := GetSchemaForTable("test_parent4")
+		schema := registry.GetSchemaForTable("test_parent4")
 		if schema != nil {
 			return schema
 		}
@@ -50,7 +51,7 @@ var (
 			v1.SearchCategory(61),
 			v1.SearchCategory(74),
 		}...)
-		RegisterTable(schema, CreateTableTestParent4Stmt)
+		registry.RegisterTable(schema, CreateTableTestParent4Stmt)
 		return schema
 	}()
 )

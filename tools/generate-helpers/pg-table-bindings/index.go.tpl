@@ -10,16 +10,11 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
-
-func init() {
-	mapping.RegisterCategoryToTable(v1.{{.SearchCategory}}, schema)
-}
 
 // NewIndexer returns new indexer for `{{.Type}}`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {

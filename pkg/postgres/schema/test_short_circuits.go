@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -32,7 +33,7 @@ var (
 
 	// TestShortCircuitsSchema is the go schema for table `test_short_circuits`.
 	TestShortCircuitsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("test_short_circuits")
+		schema := registry.GetSchemaForTable("test_short_circuits")
 		if schema != nil {
 			return schema
 		}
@@ -46,7 +47,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory(71), "testshortcircuit", (*storage.TestShortCircuit)(nil)))
-		RegisterTable(schema, CreateTableTestShortCircuitsStmt)
+		registry.RegisterTable(schema, CreateTableTestShortCircuitsStmt)
 		return schema
 	}()
 )

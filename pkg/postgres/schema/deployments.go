@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -178,7 +179,7 @@ var (
 
 	// DeploymentsSchema is the go schema for table `deployments`.
 	DeploymentsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("deployments")
+		schema := registry.GetSchemaForTable("deployments")
 		if schema != nil {
 			return schema
 		}
@@ -203,7 +204,7 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
-		RegisterTable(schema, CreateTableDeploymentsStmt)
+		registry.RegisterTable(schema, CreateTableDeploymentsStmt)
 		return schema
 	}()
 )
