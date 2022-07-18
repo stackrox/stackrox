@@ -297,6 +297,14 @@ docker-build: test ## Build docker image with the operator.
 
 ##@ Deployment
 
+.PHONY: olm-install
+olm-install: operator-sdk ## Install OLM on Kubernetes cluster
+	$(OPERATOR_SDK) olm install
+
+.PHONY: olm-uninstall
+olm-uninstall: operator-sdk ## Uninstall OLM previously installed on Kubernetes cluster
+	$(OPERATOR_SDK) olm uninstall
+
 .PHONY: install
 install: check-ci-setup manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
@@ -322,12 +330,12 @@ undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s clust
 deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION)
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION)
 
 .PHONY: deploy-dirty-tag-via-olm
 deploy-dirty-tag-via-olm: ## Deploy operator dirty tagged image to the cluster using OLM.
 # This target ignores filter for dirty tagged images.
-	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(VERSION)
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION)
 
 .PHONY: deploy-previous-via-olm
 deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLM.
@@ -335,7 +343,7 @@ deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
 	$(SILENT)replaced_version_no_v=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.v(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
 	set -x ;\
-	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION) $${replaced_version_no_v}
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION) $${replaced_version_no_v}
 
 .PHONY: upgrade-via-olm
 upgrade-via-olm: kuttl
