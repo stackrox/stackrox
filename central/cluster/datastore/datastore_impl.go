@@ -93,7 +93,7 @@ type datastoreImpl struct {
 
 	lock sync.Mutex
 
-	imageintegrationDataStore imageintegrationDataStore.DataStore
+	imageIntegrationDataStore imageintegrationDataStore.DataStore
 }
 
 func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
@@ -155,20 +155,20 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
-func (ds *datastoreImpl) removeImageIntegrationByClusterID(ctx context.Context, cluster *storage.Cluster) {
+func (ds *datastoreImpl) removeImageIntegrationByCluster(ctx context.Context, cluster *storage.Cluster) {
 
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
-	imageintegrations, err := ds.imageintegrationDataStore.Search(ctx, q)
+	imageIntegrations, err := ds.imageIntegrationDataStore.Search(ctx, q)
 	if err != nil {
 		log.Errorf("failed to get image integrations for removed cluster %s: %v", cluster.GetId(), err)
+		return
 	}
-	for _, imageintegration := range imageintegrations {
-		err = ds.imageintegrationDataStore.RemoveImageIntegration(ctx, imageintegration.ID)
+	for _, imageIntegration := range imageIntegrations {
+		err = ds.imageIntegrationDataStore.RemoveImageIntegration(ctx, imageIntegration.ID)
 		if err != nil {
-			log.Errorf("failed to remove image integration %s in deleted cluster: %v", imageintegration.ID, err)
+			log.Errorf("failed to remove image integration %s in deleted cluster: %v", imageIntegration.ID, err)
 		}
 	}
-	return
 }
 
 func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
@@ -563,6 +563,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	ds.removeClusterServiceAccounts(ctx, cluster)
 	ds.removeK8SRoles(ctx, cluster)
 	ds.removeRoleBindings(ctx, cluster)
+	ds.removeImageIntegrationByCluster(ctx, cluster)
 
 	// TODO: Apparently, cluster cves are only cleaned up at next cve fetch cycle.
 

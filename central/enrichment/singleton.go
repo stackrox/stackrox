@@ -55,13 +55,14 @@ func initialize() {
 		signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations)
 	ne = nodeEnricher.New(nodeCVESuppressor, metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
+	ad = imageintegrationDataStore.Singleton()
 	cf = fetcher.SingletonManager()
 	manager = newManager(imageintegration.Set(), ne, cf)
-
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
 	if err != nil {
 		log.Errorf("unable to use previous integrations: %s", err)
+		return
 	}
 	for _, ii := range integrations {
 		if err := manager.Upsert(ii); err != nil {
