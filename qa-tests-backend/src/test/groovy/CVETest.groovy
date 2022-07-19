@@ -465,7 +465,7 @@ class CVETest extends BaseSpecification {
     }
 
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+    //@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable for entities when scoped by CVE is still correct"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"
