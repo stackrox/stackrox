@@ -232,13 +232,13 @@ class CVETest extends BaseSpecification {
             "docker.io/library/debian@${UNFIXABLE_VULN_IMAGE_DIGEST}"
 
     def setupSpec() {
-        //ImageService.scanImage("us.gcr.io/stackrox-ci/nginx:1.9")
-        //ImageService.scanImage(NGINX_1_10_2_IMAGE)
+        ImageService.scanImage("us.gcr.io/stackrox-ci/nginx:1.9")
+        ImageService.scanImage(NGINX_1_10_2_IMAGE)
         ImageService.scanImage(RED_HAT_IMAGE)
         ImageService.scanImage(UBUNTU_IMAGE)
         ImageService.scanImage(FIXABLE_VULN_IMAGE)
         ImageService.scanImage(UNFIXABLE_VULN_IMAGE)
-        //orchestrator.createDeployment(CVE_DEPLOYMENT)
+        orchestrator.createDeployment(CVE_DEPLOYMENT)
     }
 
     def cleanupSpec() {
