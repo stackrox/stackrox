@@ -214,7 +214,7 @@ class VulnMgmtSACTest extends BaseSpecification {
     @Retry(count = 0)
     @Unroll
     //@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
-    def "Verify role based scoping on vuln mgmt: image-role #baseQuery"() {
+    def "Verify role based scoping on vuln mgmt: image-role Image:*"() {
         when:
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
