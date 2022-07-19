@@ -163,6 +163,7 @@ func (s *namespaceDatastoreSACSuite) TestGetNamespaces() {
 		s.deleteNamespace(id)
 	}
 	s.testNamespaceIDs = s.testNamespaceIDs[:0]
+
 	// Inject data for current test.
 	cluster1NamespaceA := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA)
 	cluster1NamespaceC := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC)
