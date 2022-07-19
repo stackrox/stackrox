@@ -84,7 +84,7 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 	}
 }
 
-func (s *imageFlavorTestSuite) TestCheckChartRepo() {
+func (s *imageFlavorTestSuite) TestChartRepoAndIcon() {
 	oss_repo_url := "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/"
 	oss_repo_icon := "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png"
 	acs_repo_url := "https://mirror.openshift.com/pub/rhacs/charts"
