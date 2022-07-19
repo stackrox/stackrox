@@ -39,10 +39,72 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
     """
 
+    private static final GET_IMAGE_CVES_QUERY = """
+    query getCves(\$query: String, \$pagination: Pagination)
+    {
+        results: imageVulnerabilities(query: \$query, pagination: \$pagination) {
+            ...cveFields
+            __typename
+        }
+        count: vulnerabilityCount(query: \$query)
+    }
+
+    fragment cveFields on EmbeddedVulnerability {
+        cve
+    }
+    """
+
+    private static final GET_NODE_CVES_QUERY = """
+    query getCves(\$query: String, \$pagination: Pagination)
+    {
+        results: nodeVulnerabilities(query: \$query, pagination: \$pagination) {
+            ...cveFields
+            __typename
+        }
+        count: vulnerabilityCount(query: \$query)
+    }
+
+    fragment cveFields on EmbeddedVulnerability {
+        cve
+    }
+    """
+
     private static final GET_COMPONENTS_QUERY = """
     query getComponents(\$query: String, \$pagination: Pagination)
     {
         results: components(query: \$query, pagination: \$pagination) {
+            ...componentFields
+            __typename
+        }
+        count: componentCount(query: \$query)
+    }
+
+    fragment componentFields on EmbeddedImageScanComponent {
+        name
+        version
+    }
+    """
+
+    private static final GET_IMAGE_COMPONENTS_QUERY = """
+    query getComponents(\$query: String, \$pagination: Pagination)
+    {
+        results: imageComponents(query: \$query, pagination: \$pagination) {
+            ...componentFields
+            __typename
+        }
+        count: componentCount(query: \$query)
+    }
+
+    fragment componentFields on EmbeddedImageScanComponent {
+        name
+        version
+    }
+    """
+
+    private static final GET_NODE_COMPONENTS_QUERY = """
+    query getComponents(\$query: String, \$pagination: Pagination)
+    {
+        results: nodeComponents(query: \$query, pagination: \$pagination) {
             ...componentFields
             __typename
         }
@@ -102,6 +164,104 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
+    //@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+    def "Verify role based scoping on vuln mgmt: node-role Node:*"() {
+        when:
+        "Get Node CVEs and components"
+        BaseService.useBasicAuth()
+        def cve_query = ""
+        if Env.CI_JOBNAME.contains("postgres") {
+            cve_query = GET_NODE_CVES_QUERY
+        } else {
+            cve_query = GET_CVES_QUERY
+        }
+        def component_query = ""
+        if Env.CI_JOBNAME.contains("postgres") {
+            component_query = GET_NODE_COMPONENTS_QUERY
+        } else {
+            component_query = GET_COMPONENTS_QUERY
+        }
+        def gqlService = new GraphQLService()
+        def baseVulnCallResult = gqlService.Call(cve_query, [query: baseQuery])
+        assert baseVulnCallResult.hasNoErrors()
+        def baseComponentCallResult = gqlService.Call(component_query, [query: baseQuery])
+        assert baseComponentCallResult.hasNoErrors()
+
+        and:
+        gqlService = new GraphQLService(getToken(roleName, roleName))
+        def vulnCallResult = gqlService.Call(cve_query, [query: ""])
+        assert vulnCallResult.hasNoErrors()
+        def componentCallResult = gqlService.Call(component_query, [query: ""])
+        assert componentCallResult.hasNoErrors()
+
+        then:
+        baseVulnCallResult.code == vulnCallResult.code
+        extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
+
+        baseComponentCallResult.code == componentCallResult.code
+        extractCVEsAndSort(baseComponentCallResult.value) == extractCVEsAndSort(componentCallResult.value)
+
+        cleanup:
+        "Cleanup"
+        BaseService.useBasicAuth()
+
+        //where:
+        //"Data inputs are: "
+        //roleName        | baseQuery
+        //NODE_ROLE       | "Node:*"
+    }
+
+    @Retry(count = 0)
+    @Unroll
+    //@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+    def "Verify role based scoping on vuln mgmt: image-role #baseQuery"() {
+        when:
+        "Get Node CVEs and components"
+        BaseService.useBasicAuth()
+        def cve_query = ""
+        if Env.CI_JOBNAME.contains("postgres") {
+            cve_query = GET_IMAGE_CVES_QUERY
+        } else {
+            cve_query = GET_CVES_QUERY
+        }
+        def component_query = ""
+        if Env.CI_JOBNAME.contains("postgres") {
+            component_query = GET_IMAGE_COMPONENTS_QUERY
+        } else {
+            component_query = GET_COMPONENTS_QUERY
+        }
+        def gqlService = new GraphQLService()
+        def baseVulnCallResult = gqlService.Call(cve_query, [query: baseQuery])
+        assert baseVulnCallResult.hasNoErrors()
+        def baseComponentCallResult = gqlService.Call(component_query, [query: baseQuery])
+        assert baseComponentCallResult.hasNoErrors()
+
+        and:
+        gqlService = new GraphQLService(getToken(roleName, roleName))
+        def vulnCallResult = gqlService.Call(cve_query, [query: ""])
+        assert vulnCallResult.hasNoErrors()
+        def componentCallResult = gqlService.Call(component_query, [query: ""])
+        assert componentCallResult.hasNoErrors()
+
+        then:
+        baseVulnCallResult.code == vulnCallResult.code
+        extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
+
+        baseComponentCallResult.code == componentCallResult.code
+        extractCVEsAndSort(baseComponentCallResult.value) == extractCVEsAndSort(componentCallResult.value)
+
+        cleanup:
+        "Cleanup"
+        BaseService.useBasicAuth()
+
+        //where:
+        //"Data inputs are: "
+        //roleName        | baseQuery
+        //IMAGE_ROLE      | "Image:*"
+    }
+
+    @Retry(count = 0)
+    @Unroll
     @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify role based scoping on vuln mgmt: #roleName #baseQuery"() {
         when:
@@ -134,8 +294,6 @@ class VulnMgmtSACTest extends BaseSpecification {
         where:
         "Data inputs are: "
         roleName        | baseQuery
-        NODE_ROLE       | "Node:*"
-        IMAGE_ROLE      | "Image:*"
         NODE_IMAGE_ROLE | "Component:*"
     }
 
