@@ -151,9 +151,57 @@ class CVETest extends BaseSpecification {
     }
     """
 
+    private static final FIXABLE_CVES_BY_ENTITY_POSTGRES_QUERY = """
+    query getFixableCvesForEntity(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
+     \$vulnPagination: Pagination) {
+      result: image(id: \$id) {
+        id
+        imageVulnerabilityCounter {
+          all {
+            fixable
+            __typename
+          }
+          __typename
+        }
+        vulnerabilities: imageVulnerabilities(query: \$vulnQuery, pagination: \$vulnPagination) {
+          ...cveFields
+          __typename
+        }
+        __typename
+      }
+    }
+
+    fragment cveFields on EmbeddedVulnerability {
+      id: cve
+      cve
+      cvss
+      vulnerabilityType
+      scoreVersion
+      envImpact
+      impactScore
+      summary
+      fixedByVersion
+      isFixable(query: \$scopeQuery)
+      createdAt
+      publishedOn
+      deploymentCount(query: \$query)
+      imageCount(query: \$query)
+      componentCount(query: \$query)
+      __typename
+    }
+    """
+
     private static final SCOPED_FIXABLE_QUERY = """
     query getCve(\$id: ID!, \$scopeQuery: String) {
       result: vulnerability(id: \$id) {
+        isFixable(query: \$scopeQuery)
+      }
+    }
+    """
+
+    private static final SCOPED_FIXABLE_POSTGRES_QUERY = """
+    query getCve(\$id: ID!, \$scopeQuery: String) {
+      result: imageVulnerability(id: \$id) {
         isFixable(query: \$scopeQuery)
       }
     }
@@ -420,12 +468,18 @@ class CVETest extends BaseSpecification {
     }
 
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+    // @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable for entities when scoped by CVE is still correct"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"
         def gqlService = new GraphQLService()
-        def ret = gqlService.Call(FIXABLE_CVES_BY_ENTITY_QUERY, [
+        def fixableCvesByEntityQuery = ""
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            fixableCvesByEntityQuery = FIXABLE_CVES_BY_ENTITY_POSTGRES_QUERY
+        } else {
+            fixableCvesByEntityQuery = FIXABLE_CVES_BY_ENTITY_QUERY
+        }
+        def ret = gqlService.Call(fixableCvesByEntityQuery, [
                 id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
                 query: "",
                 scopeQuery: "CVE:CVE-2020-8285",
@@ -440,12 +494,18 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+    //@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable is correct when scoped (#digest, #fixable)"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"
         def gqlService = new GraphQLService()
-        def ret = gqlService.Call(SCOPED_FIXABLE_QUERY, [
+        def scopedFixableQuery = ""
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            scopedFixableQuery = SCOPED_FIXABLE_POSTGRES_QUERY
+        } else {
+            scopedFixableQuery = SCOPED_FIXABLE_QUERY
+        }
+        def ret = gqlService.Call(scopedFixableQuery, [
                 id: "CVE-2019-9893",
                 scopeQuery: "Image Sha:${digest}+CVE:CVE-2019-9893",
         ])

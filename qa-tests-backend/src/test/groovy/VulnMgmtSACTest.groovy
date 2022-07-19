@@ -170,13 +170,13 @@ class VulnMgmtSACTest extends BaseSpecification {
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
         def cve_query = ""
-        if Env.CI_JOBNAME.contains("postgres") {
+        if (Env.CI_JOBNAME.contains("postgres")) {
             cve_query = GET_NODE_CVES_QUERY
         } else {
             cve_query = GET_CVES_QUERY
         }
         def component_query = ""
-        if Env.CI_JOBNAME.contains("postgres") {
+        if (Env.CI_JOBNAME.contains("postgres")) {
             component_query = GET_NODE_COMPONENTS_QUERY
         } else {
             component_query = GET_COMPONENTS_QUERY
@@ -219,13 +219,13 @@ class VulnMgmtSACTest extends BaseSpecification {
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
         def cve_query = ""
-        if Env.CI_JOBNAME.contains("postgres") {
+        if (Env.CI_JOBNAME.contains("postgres")) {
             cve_query = GET_IMAGE_CVES_QUERY
         } else {
             cve_query = GET_CVES_QUERY
         }
         def component_query = ""
-        if Env.CI_JOBNAME.contains("postgres") {
+        if (Env.CI_JOBNAME.contains("postgres")) {
             component_query = GET_IMAGE_COMPONENTS_QUERY
         } else {
             component_query = GET_COMPONENTS_QUERY
