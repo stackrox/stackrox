@@ -109,7 +109,7 @@ class NetworkGraphUtil {
         }
     }
 
-    static checkForEdge(String sourceId, String targetId, Timestamp since = null, int timeoutSeconds = 90) {
+    static checkForEdge(String sourceId, String targetId, Timestamp since = null, int timeoutSeconds = 90, String query = null) {
         int intervalSeconds = 1
         int waitTime
         def startTime = System.currentTimeMillis()
@@ -118,7 +118,7 @@ class NetworkGraphUtil {
                 sleep intervalSeconds * 1000
             }
 
-            def graph = NetworkGraphService.getNetworkGraph(since)
+            def graph = NetworkGraphService.getNetworkGraph(since, query)
             def edges = NetworkGraphUtil.findEdges(graph, sourceId, targetId)
             if (edges != null && edges.size() > 0) {
                 log.debug "Found source ${sourceId} -> target ${targetId} " +
