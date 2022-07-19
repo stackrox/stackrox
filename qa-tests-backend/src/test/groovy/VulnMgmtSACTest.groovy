@@ -168,29 +168,30 @@ class VulnMgmtSACTest extends BaseSpecification {
         when:
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
-        def cve_query = ""
+        def baseQuery = "Node:*"
+        def cveQuery = ""
         if (Env.CI_JOBNAME.contains("postgres")) {
-            cve_query = GET_NODE_CVES_QUERY
+            cveQuery = GET_NODE_CVES_QUERY
         } else {
-            cve_query = GET_CVES_QUERY
+            cveQuery = GET_CVES_QUERY
         }
-        def component_query = ""
+        def componentQuery = ""
         if (Env.CI_JOBNAME.contains("postgres")) {
-            component_query = GET_NODE_COMPONENTS_QUERY
+            componentQuery = GET_NODE_COMPONENTS_QUERY
         } else {
-            component_query = GET_COMPONENTS_QUERY
+            componenQuery = GET_COMPONENTS_QUERY
         }
         def gqlService = new GraphQLService()
-        def baseVulnCallResult = gqlService.Call(cve_query, [query: baseQuery])
+        def baseVulnCallResult = gqlService.Call(cveQuery, [query: baseQuery])
         assert baseVulnCallResult.hasNoErrors()
-        def baseComponentCallResult = gqlService.Call(component_query, [query: baseQuery])
+        def baseComponentCallResult = gqlService.Call(componentQuery, [query: baseQuery])
         assert baseComponentCallResult.hasNoErrors()
 
         and:
         gqlService = new GraphQLService(getToken(roleName, roleName))
-        def vulnCallResult = gqlService.Call(cve_query, [query: ""])
+        def vulnCallResult = gqlService.Call(cveQuery, [query: ""])
         assert vulnCallResult.hasNoErrors()
-        def componentCallResult = gqlService.Call(component_query, [query: ""])
+        def componentCallResult = gqlService.Call(componentQuery, [query: ""])
         assert componentCallResult.hasNoErrors()
 
         then:
@@ -211,29 +212,30 @@ class VulnMgmtSACTest extends BaseSpecification {
         when:
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
-        def cve_query = ""
+        def baseQuery = "Image:*"
+        def cveQuery = ""
         if (Env.CI_JOBNAME.contains("postgres")) {
-            cve_query = GET_IMAGE_CVES_QUERY
+            cveQuery = GET_IMAGE_CVES_QUERY
         } else {
-            cve_query = GET_CVES_QUERY
+            cveQuery = GET_CVES_QUERY
         }
-        def component_query = ""
+        def componentQuery = ""
         if (Env.CI_JOBNAME.contains("postgres")) {
-            component_query = GET_IMAGE_COMPONENTS_QUERY
+            componentQuery = GET_IMAGE_COMPONENTS_QUERY
         } else {
-            component_query = GET_COMPONENTS_QUERY
+            componentQuery = GET_COMPONENTS_QUERY
         }
         def gqlService = new GraphQLService()
-        def baseVulnCallResult = gqlService.Call(cve_query, [query: baseQuery])
+        def baseVulnCallResult = gqlService.Call(cveQuery, [query: baseQuery])
         assert baseVulnCallResult.hasNoErrors()
-        def baseComponentCallResult = gqlService.Call(component_query, [query: baseQuery])
+        def baseComponentCallResult = gqlService.Call(componentQuery, [query: baseQuery])
         assert baseComponentCallResult.hasNoErrors()
 
         and:
         gqlService = new GraphQLService(getToken(roleName, roleName))
-        def vulnCallResult = gqlService.Call(cve_query, [query: ""])
+        def vulnCallResult = gqlService.Call(cveQuery, [query: ""])
         assert vulnCallResult.hasNoErrors()
-        def componentCallResult = gqlService.Call(component_query, [query: ""])
+        def componentCallResult = gqlService.Call(componentQuery, [query: ""])
         assert componentCallResult.hasNoErrors()
 
         then:
