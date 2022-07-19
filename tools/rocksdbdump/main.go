@@ -77,6 +77,7 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"nodes":                                (*storage.Node)(nil),
 	"permission_sets":                      (*storage.PermissionSet)(nil),
 	"pods":                                 (*storage.Pod)(nil),
+	"policy_categories":                    (*storage.PolicyCategory)(nil),
 	"processWhitelistResults":              (*storage.ProcessBaselineResults)(nil),
 	"processWhitelists2":                   (*storage.ProcessBaseline)(nil),
 	"process_indicators2":                  (*storage.ProcessIndicator)(nil),
