@@ -3,7 +3,7 @@ import React, { ReactElement } from 'react';
 import { resourceTypes } from 'constants/entityTypes';
 import TableCountLink from 'Components/workflow/TableCountLink';
 
-type TableCountLinksProps = {
+type ClusterTableCountLinksProps = {
     row: {
         namespaceCount: number;
         deploymentCount: number;
@@ -13,7 +13,7 @@ type TableCountLinksProps = {
     textOnly: boolean;
 };
 
-function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement {
+function ClusterTableCountLinks({ row, textOnly }: ClusterTableCountLinksProps): ReactElement {
     const { deploymentCount, namespaceCount, nodeCount, id } = row;
 
     // Only show entity counts on relevant pages. Node count is not currently supported.
@@ -41,4 +41,4 @@ function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement 
     );
 }
 
-export default TableCountLinks;
+export default ClusterTableCountLinks;
