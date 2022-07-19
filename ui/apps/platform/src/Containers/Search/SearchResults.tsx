@@ -318,7 +318,7 @@ function ViewLinks({ id, onClose, searchCategory }: ViewLinksProps): ReactElemen
     if (searchCategoryDescriptor) {
         const { viewOn } = searchCategoryDescriptor;
 
-        if (viewOn.length > 0) {
+        if (viewOn.length !== 0) {
             return (
                 <>
                     {viewOn.map(({ basePath, linkText }) => (
@@ -360,7 +360,7 @@ function FilterLinks({
     if (searchCategoryDescriptor) {
         const { filterCategory, filterOn } = searchCategoryDescriptor;
 
-        if (filterOn.length > 0) {
+        if (filterOn.length !== 0) {
             const searchOptions: SearchEntry[] = filterValue
                 ? [
                       ...globalSearchOptions,
