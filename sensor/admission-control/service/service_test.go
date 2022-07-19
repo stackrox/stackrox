@@ -39,8 +39,9 @@ func TestExecIntoPodNameEventPolicy(t *testing.T) {
 	require.NoError(t, err)
 	defer mgr.Stop()
 
+	const deploymentID = "f3237faf-8350-4c39-b045-ff4c493ddb71"
 	managerTesting.ProcessDeploymentEvent(t, mgr, &storage.Deployment{
-		Id:        "f3237faf-8350-4c39-b045-ff4c493ddb71",
+		Id:        deploymentID,
 		Name:      "sensor",
 		Type:      "Deployment",
 		Namespace: "stackrox",
@@ -48,7 +49,7 @@ func TestExecIntoPodNameEventPolicy(t *testing.T) {
 	managerTesting.ProcessPodEvent(t, mgr, &storage.Pod{
 		Id:           "64a1d6ee-2425-5f19-990e-a2d8b18c1e4c",
 		Name:         "sensor-74f6965874-qckz6",
-		DeploymentId: "f3237faf-8350-4c39-b045-ff4c493ddb71",
+		DeploymentId: deploymentID,
 		Namespace:    "stackrox",
 	})
 
@@ -183,7 +184,7 @@ func (r serviceTestRun) execute() {
 	assert.Equal(r.t, http.StatusOK, resp.Code)
 
 	select {
-	case <-time.After(1 * time.Second):
+	case <-time.After(30 * time.Second):
 		assert.Fail(r.t, "Did not receive any alerts before timeout expired, but expected some")
 	case alerts := <-r.mgr.Alerts():
 		r.assertionFunc(r.t, resp.Result(), alerts)
