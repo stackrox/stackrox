@@ -222,8 +222,15 @@ push_operator_image_set() {
         local registry="$1"
         local tag="$2"
 
+        local v
         for image in "${operator_image_set[@]}"; do
-            "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "${registry}/${image}:${tag}" | cat
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "${registry}/${image}:${v}${tag}" | cat
         done
     }
 
@@ -232,8 +239,15 @@ push_operator_image_set() {
         local registry="$2"
         local remote_tag="$3"
 
+        local v
         for image in "${operator_image_set[@]}"; do
-            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${remote_tag}"
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${v}${remote_tag}"
         done
     }
 
@@ -242,8 +256,15 @@ push_operator_image_set() {
         local tag="$2"
 
         local idx=0
+        local v
         for image in "${operator_image_set[@]}"; do
-            oc image mirror "${operator_image_srcs[$idx]}" "${registry}/${image}:${tag}"
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            oc image mirror "${operator_image_srcs[$idx]}" "${registry}/${image}:${v}${tag}"
             (( idx++ )) || true
         done
     }
@@ -257,7 +278,7 @@ push_operator_image_set() {
     fi
 
     local tag
-    tag="v$(make --quiet -C operator tag)"
+    tag="$(make --quiet -C operator tag)"
     for registry in "${destination_registries[@]}"; do
         registry_rw_login "$registry"
 
