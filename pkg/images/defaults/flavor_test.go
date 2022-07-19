@@ -85,39 +85,42 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 }
 
 func (s *imageFlavorTestSuite) TestChartRepoAndIcon() {
-	oss_repo_url := "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/"
-	oss_repo_icon := "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png"
-	acs_repo_url := "https://mirror.openshift.com/pub/rhacs/charts"
-	acs_repo_icon := "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png"
+	ossRepoUrl := "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/"
+	ossRepoIcon := "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png"
+	acsRepoUrl := "https://mirror.openshift.com/pub/rhacs/charts"
+	acsRepoIcon := "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png"
 
 	testCases := map[string]struct {
-		isRelease        bool
+		isRelease        []bool
 		expectedRepoURL  string
 		expectedRepoIcon string
 	}{
 		"development_build": {
-			isRelease:        false,
-			expectedRepoURL:  acs_repo_url,
-			expectedRepoIcon: acs_repo_icon,
+			isRelease:        []bool{false},
+			expectedRepoURL:  acsRepoUrl,
+			expectedRepoIcon: acsRepoIcon,
 		},
 		"rhacs": {
-			isRelease:        true,
-			expectedRepoURL:  acs_repo_url,
-			expectedRepoIcon: acs_repo_icon,
+			isRelease:        []bool{false},
+			expectedRepoURL:  acsRepoUrl,
+			expectedRepoIcon: acsRepoIcon,
 		},
 		"opensource": {
-			isRelease:        true,
-			expectedRepoURL:  oss_repo_url,
-			expectedRepoIcon: oss_repo_icon,
+			isRelease:        []bool{true, false},
+			expectedRepoURL:  ossRepoUrl,
+			expectedRepoIcon: ossRepoIcon,
 		},
 	}
 
 	for flavorName, testCase := range testCases {
-		s.Run(flavorName, func() {
-			flavor, _ := GetImageFlavorByName(flavorName, testCase.isRelease)
-			s.Equal(testCase.expectedRepoURL, flavor.ChartRepo.URL)
-			s.Equal(testCase.expectedRepoIcon, flavor.ChartRepo.IconURL)
-		})
+		for _, releaseType := range testCase.isRelease {
+			s.Run(flavorName, func() {
+				flavor, err := GetImageFlavorByName(flavorName, releaseType)
+				s.NoError(err)
+				s.Equal(testCase.expectedRepoURL, flavor.ChartRepo.URL)
+				s.Equal(testCase.expectedRepoIcon, flavor.ChartRepo.IconURL)
+			})
+		}
 	}
 }
 
