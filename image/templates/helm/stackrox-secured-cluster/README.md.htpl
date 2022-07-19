@@ -11,6 +11,12 @@ refer to [Installing the secured-cluster-services Helm chart](https://docs.opens
 To deploy the secured cluster services for the StackRox Kubernetes Security Platform, you must:
 - Have at least version 3.1 of the Helm tool installed on your machine
 
+> **IMPORTANT**
+>
+> We publish new Helm charts with every new release of the StackRox Kubernetes
+> Security Platform. Make sure to use a version of this chart that matches the
+> StackRox Kubernetes Security Platform version you have installed.
+
 ## Add the canonical chart location as a Helm repository
 
 The canonical repository for StackRox Helm charts is [< required "" .ChartRepo.URL >].
@@ -59,13 +65,13 @@ You can use the following command to deploy secured cluster services by using
 this Helm chart:
 ```sh
 helm install -n stackrox --create-namespace \
-    stackrox-secured-cluster-services stackrox/secured-cluster-services \
+    stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
     -f <path to cluster-init-bundle.yaml> \
     --set clusterName=<name of the secured cluster> \
     --set centralEndpoint=<endpoint of Central service>
 ```
 - In this command, you can replace the chart name
-  `stackrox/secured-cluster-services` with the chart's file path if you have it
+  `stackrox/stackrox-secured-cluster-services` with the chart's file path if you have it
   locally.
 - The provided cluster name can either denote the intended name for a new secured cluster
   or the name of an existing cluster, in which case the name will be reused and associated
@@ -78,6 +84,26 @@ itself to StackRox Central, and it is visible in the StackRox portal as a
 Helm-managed cluster. If the provided cluster name is already associated with
 an existing secured cluster, the name will be reused and associated with the
 cluster on which the chart is installed.
+
+In case you use image mirroring or otherwise access StackRox container images from non-standard location,
+you may also need to provide image pull credentials.
+There are several ways to inject the required credentials (if any) into the installation process:
+
+- **Explicitly specify username and password:** Use this if you are using a registry that supports username/password
+  authentication. Pass the following arguments to the `helm install` command:
+  ```sh
+  --set imagePullSecrets.username=<registry username> --set imagePullSecrets.password=<registry password>
+  ```
+- **Use pre-existing image pull secrets:** If you already have one or several image pull secrets
+  created in the namespace to which you are deploying, you can reference these in the following
+  way (we assume that your secrets are called `pull-secret-1` and `pull-secret-2`):
+  ```sh
+  --set imagePullSecrets.useExisting="pull-secret-1;pull-secret-2"
+  ```
+- **Do not use image pull secrets:** If you are pulling your images from quay.io/stackrox-io or a registry in a private
+  network that does not require authentication, or if the default service account in the namespace
+  to which you are deploying is already configured with appropriate image pull secrets, you do
+  not need to specify any additional image pull secrets.
 
 ### Applying custom configuration options
 
@@ -171,7 +197,7 @@ Secured Cluster Services:
 For example, to apply configuration changes for the secured cluster, use the following command:
 ```sh
 helm upgrade -n stackrox \
-    stackrox-secured-cluster-services stackrox/secured-cluster-services \
+    stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
     --reuse-values \
     -f values-public.yaml \
     -f values-private.yaml
@@ -371,7 +397,7 @@ doesn't need to be kept secret.
    run the `helm install` or the `helm upgrade` command,
    pass the option `-f ca-config.yaml`:
    ```sh
-   helm install -n stackrox stackrox-secured-cluster-services stackrox/secured-cluster-services \
+   helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
      -f ca-config.yaml \
      <other options ...>
    ```

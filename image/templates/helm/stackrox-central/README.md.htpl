@@ -32,10 +32,30 @@ beforehand.
 The basic command for deploying the central services is
 ```sh
 helm install -n stackrox --create-namespace \
-    stackrox-central-services stackrox/central-services
+    stackrox-central-services stackrox/stackrox-central-services
 ```
 If you have a copy of this chart on your machine, you can also reference the
-path to this copy instead of `stackrox/central-services` above.
+path to this copy instead of `stackrox/stackrox-central-services` above.
+
+In case you use image mirroring or otherwise access StackRox container images from non-standard location,
+you may also need to provide image pull credentials.
+There are several ways to inject the required credentials (if any) into the installation process:
+
+- **Explicitly specify username and password:** Use this if you are using a registry that supports username/password
+  authentication. Pass the following arguments to the `helm install` command:
+  ```sh
+  --set imagePullSecrets.username=<registry username> --set imagePullSecrets.password=<registry password>
+  ```
+- **Use pre-existing image pull secrets:** If you already have one or several image pull secrets
+  created in the namespace to which you are deploying, you can reference these in the following
+  way (we assume that your secrets are called `pull-secret-1` and `pull-secret-2`):
+  ```sh
+  --set imagePullSecrets.useExisting="pull-secret-1;pull-secret-2"
+  ```
+- **Do not use image pull secrets:** If you are pulling your images from quay.io/stackrox-io or a registry in a private
+  network that does not require authentication, or if the default service account in the namespace
+  to which you are deploying is already configured with appropriate image pull secrets, you do
+  not need to specify any additional image pull secrets.
 
 ### Accessing the StackRox Portal After Deployment
 
@@ -146,7 +166,7 @@ If you wish to make any changes to the deployment, simply change the configurati
 in your `values-public.yaml` and/or `values-private.yaml` file(s), and inject them into an
 `helm upgrade` invocation:
 ```sh
-helm upgrade -n stackrox stackrox-central-services stackrox/central-services \
+helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-services \
     -f values-public.yaml \
     -f values-private.yaml
 ```
