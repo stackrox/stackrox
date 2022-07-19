@@ -31,6 +31,7 @@ import (
     "github.com/pkg/errors"
     "github.com/stackrox/rox/central/metrics"
     pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+    "github.com/stackrox/rox/pkg/postgres/registry"
     "github.com/stackrox/rox/central/role/resources"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
@@ -852,7 +853,7 @@ func Destroy(ctx context.Context, db *pgxpool.Pool) {
 
 // CreateTableAndNewStore returns a new Store instance for testing
 func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	registry.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
 
