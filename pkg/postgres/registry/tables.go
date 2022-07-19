@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -31,7 +32,9 @@ func RegisterTable(schema *walker.Schema, stmt *postgres.CreateStmts) {
 		return
 	}
 	registeredTables[schema.Table] = &registeredTable{Schema: schema, CreateStmt: stmt}
-	registerCategoryToTable(schema.OptionsMap.PrimaryCategory(), schema)
+	if schema.OptionsMap != nil && schema.OptionsMap.PrimaryCategory() != v1.SearchCategory_SEARCH_UNSET {
+		registerCategoryToTable(schema.OptionsMap.PrimaryCategory(), schema)
+	}
 }
 
 // GetSchemaForTable return the schema registered for specified table name.
