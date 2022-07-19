@@ -180,7 +180,7 @@ class ImageManagementTest extends BaseSpecification {
             CVEService.suppressCVE(cve)
         }
         scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
-        assert scanResults.alertsList.find { x -> x.policy.id == policy.id } == null
+        assert scanResults.alertsList.find { y -> y.policy.id == policy.id } == null
 
         and:
         "Unsuppress CVE"
@@ -193,7 +193,7 @@ class ImageManagementTest extends BaseSpecification {
 
         then:
         "Verify unsuppressing lets the CVE show up again"
-        assert scanResults.alertsList.find { x -> x.policy.id == policy.id } != null
+        assert scanResults.alertsList.find { z -> z.policy.id == policy.id } != null
 
         cleanup:
         "Delete policy"
