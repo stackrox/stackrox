@@ -37,7 +37,7 @@ describe('Network Baseline Flows', () => {
                 cy.get(tabbedOverlayHeader).contains('central');
 
                 cy.get(sensorTableRow).trigger('mouseover');
-                cy.get(navigateButton).click();
+                cy.get(navigateButton).click({ force: true }); // because network-zoom-buttons can cover it
 
                 cy.get(tabbedOverlayHeader).contains('sensor');
             });
