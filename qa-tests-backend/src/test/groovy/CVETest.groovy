@@ -171,11 +171,10 @@ class CVETest extends BaseSpecification {
       }
     }
 
-    fragment cveFields on EmbeddedVulnerability {
+    fragment cveFields on ImageVulnerability {
       id: cve
       cve
       cvss
-      vulnerabilityType
       scoreVersion
       envImpact
       impactScore
@@ -186,7 +185,7 @@ class CVETest extends BaseSpecification {
       publishedOn
       deploymentCount(query: \$query)
       imageCount(query: \$query)
-      componentCount(query: \$query)
+      imageComponentCount(query: \$query)
       __typename
     }
     """
@@ -233,13 +232,13 @@ class CVETest extends BaseSpecification {
             "docker.io/library/debian@${UNFIXABLE_VULN_IMAGE_DIGEST}"
 
     def setupSpec() {
-        ImageService.scanImage("us.gcr.io/stackrox-ci/nginx:1.9")
-        ImageService.scanImage(NGINX_1_10_2_IMAGE)
+        //ImageService.scanImage("us.gcr.io/stackrox-ci/nginx:1.9")
+        //ImageService.scanImage(NGINX_1_10_2_IMAGE)
         ImageService.scanImage(RED_HAT_IMAGE)
         ImageService.scanImage(UBUNTU_IMAGE)
         ImageService.scanImage(FIXABLE_VULN_IMAGE)
         ImageService.scanImage(UNFIXABLE_VULN_IMAGE)
-        orchestrator.createDeployment(CVE_DEPLOYMENT)
+        //orchestrator.createDeployment(CVE_DEPLOYMENT)
     }
 
     def cleanupSpec() {
@@ -468,7 +467,7 @@ class CVETest extends BaseSpecification {
     }
 
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+    //@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable for entities when scoped by CVE is still correct"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"
