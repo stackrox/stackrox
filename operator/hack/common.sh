@@ -85,7 +85,8 @@ function approve_install_plan() {
   local -r version_tag="$2"
 
   log "Waiting for an install plan to be created"
-  retry 10 5 kubectl -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s
+  # TODO(ROX-9895): change back 50 to 10 after solving synchronization with the push-images job
+  retry 50 5 kubectl -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s
 
   log "Verifying that the subscription is progressing to the expected CSV of ${version_tag}..."
   local current_csv
