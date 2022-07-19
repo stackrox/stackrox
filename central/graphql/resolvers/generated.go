@@ -266,6 +266,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"tolerationsConfig: TolerationsConfig",
 		"type: ClusterType!",
 	}))
+	utils.Must(builder.AddType("ClusterCVE", []string{
+		"cveBaseInfo: CVEInfo",
+		"cvss: Float!",
+		"id: ID!",
+		"impactScore: Float!",
+		"severity: VulnerabilitySeverity!",
+		"snoozeExpiry: Time",
+		"snoozeStart: Time",
+		"snoozed: Boolean!",
+		"type: CVE_CVEType!",
+	}))
 	utils.Must(builder.AddType("ClusterCertExpiryStatus", []string{
 		"sensorCertExpiry: Time",
 		"sensorCertNotBefore: Time",
@@ -3348,6 +3359,75 @@ func (resolver *clusterResolver) TolerationsConfig(ctx context.Context) (*tolera
 }
 
 func (resolver *clusterResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
+type clusterCVEResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ClusterCVE
+}
+
+func (resolver *Resolver) wrapClusterCVE(value *storage.ClusterCVE, ok bool, err error) (*clusterCVEResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterCVEResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapClusterCVEs(values []*storage.ClusterCVE, err error) ([]*clusterCVEResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterCVEResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterCVEResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *clusterCVEResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
+	value := resolver.data.GetCveBaseInfo()
+	return resolver.root.wrapCVEInfo(value, true, nil)
+}
+
+func (resolver *clusterCVEResolver) Cvss(ctx context.Context) float64 {
+	value := resolver.data.GetCvss()
+	return float64(value)
+}
+
+func (resolver *clusterCVEResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *clusterCVEResolver) ImpactScore(ctx context.Context) float64 {
+	value := resolver.data.GetImpactScore()
+	return float64(value)
+}
+
+func (resolver *clusterCVEResolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
+	return value.String()
+}
+
+func (resolver *clusterCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeExpiry()
+	return timestamp(value)
+}
+
+func (resolver *clusterCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeStart()
+	return timestamp(value)
+}
+
+func (resolver *clusterCVEResolver) Snoozed(ctx context.Context) bool {
+	value := resolver.data.GetSnoozed()
+	return value
+}
+
+func (resolver *clusterCVEResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value.String()
 }
