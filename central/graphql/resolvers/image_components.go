@@ -133,7 +133,6 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 	}
 
 	// get values
-	query = tryUnsuppressedQuery(query)
 	componentResolvers, err := resolver.wrapImageComponents(loader.FromQuery(ctx, query))
 	if err != nil {
 		return nil, err
@@ -173,7 +172,6 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 	if err != nil {
 		return 0, err
 	}
-	query = tryUnsuppressedQuery(query)
 
 	return loader.CountFromQuery(ctx, query)
 }

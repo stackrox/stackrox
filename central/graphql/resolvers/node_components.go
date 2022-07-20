@@ -223,7 +223,7 @@ func (resolver *nodeComponentResolver) License(ctx context.Context) (*licenseRes
 // Location of the node component.
 func (resolver *nodeComponentResolver) Location(ctx context.Context, args RawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "Location")
-	return "", nil
+	return "Not Available", nil
 }
 
 // Nodes that contain the node component.
