@@ -67,7 +67,11 @@ SCORECARD_STORAGE_IMAGE ?= $(SCORECARD_STORAGE_IMAGE_BASE):$(SCORECARD_STORAGE_I
 SCORECARD_WAIT_TIME_DURATION ?= 5m
 
 # SCORECARD_ARGS should be passed to any invocation of "$(OPERATOR_SDK) scorecard".
-SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SCORECARD_WAIT_TIME_DURATION)" --verbose
+# TODO(ROX-11889): The `--namespace default` is a workaround for failures such as the following when running in a pod:
+# TODO(ROX-11889):   Error: error running tests error creating ConfigMap namespaces "ci-op-05qx07r3" not found
+# TODO(ROX-11889): These seem to happen despite unsetting the $NAMESPACE environment variable.
+# TODO(ROX-11889): Figure out where scorecard gets the namespace name from, elliminate this source, and remove the flag here.
+SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SCORECARD_WAIT_TIME_DURATION)" --verbose --namespace default
 
 # TEST_NAMESPACE is where the operator is installed for e2e tests by CI.
 TEST_NAMESPACE ?= stackrox-operator
