@@ -149,7 +149,8 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *Rend
 		// Hardcoding RHACS charts repo for now.
 		// TODO: fill ChartRepo based on the current image flavor.
 		ChartRepo: defaults.ChartRepo{
-			URL: "http://mirror.openshift.com/pub/rhacs/charts",
+			URL:     "http://mirror.openshift.com/pub/rhacs/charts",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
 		},
 
 		TolerationsEnabled: !c.GetTolerationsConfig().GetDisabled(),
