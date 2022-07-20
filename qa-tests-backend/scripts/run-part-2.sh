@@ -10,7 +10,7 @@ set -euo pipefail
 run_tests_part_2() {
     info "QA Automation Platform Part 2"
 
-    if [[ -e "$ROOT/SKIP_PART_II" ]]; then
+    if [[ -f "$ROOT/SKIP_PART_II" ]]; then
         info "Skipping part 2 tests due to earlier failure"
         exit 0
     fi
