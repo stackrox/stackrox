@@ -16,11 +16,11 @@ export function* getGlobalSearchResults() {
         const filters = {
             query: searchOptionsToQuery(searchOptions),
         };
-        if (category !== '') {
-            filters.categories = category;
+        if (category !== 'SEARCH_UNSET') {
+            filters.categories = [category];
         }
         const result = yield call(fetchGlobalSearchResults, filters);
-        yield put(actions.fetchGlobalSearchResults.success(result.response, { category }));
+        yield put(actions.fetchGlobalSearchResults.success(result, { category }));
     } catch (error) {
         yield put(actions.fetchGlobalSearchResults.failure(error));
         if (error.response && error.response.status >= 500 && error.response.data.error) {

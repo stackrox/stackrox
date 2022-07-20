@@ -59,7 +59,7 @@ describe('Global Search Modal', () => {
         visitSearch();
         searchWithFixture([['Cluster:', 'remote']], 'search/globalSearchResults.json');
 
-        cy.get(`section#All ${selectors.viewOnChip}:contains("VIOLATIONS")`).click();
+        cy.get(`section[aria-label="All"] ${selectors.viewOnChip}:contains("Violations")`).click();
         // TODO because 404 for /v1/alerts/6f68ef75-a96d-4121-ad89-92cf8cde0062
         // replace button with anchor and assert on href attribute?
         cy.location('pathname').should(
@@ -72,7 +72,7 @@ describe('Global Search Modal', () => {
         visitSearch();
         searchWithFixture([['Cluster:', 'remote']], 'search/globalSearchResults.json');
 
-        cy.get(`section#All ${selectors.viewOnChip}:contains("RISK")`).click();
+        cy.get(`section[aria-label="All"] ${selectors.viewOnChip}:contains("Risk")`).click();
         // TODO because 404 for /v1/deploymentswithrisk/ppqqu24i8x16j7annv2bjphyy
         // replace button with anchor and assert on href attribute?
         cy.location('pathname').should('eq', '/main/risk/ppqqu24i8x16j7annv2bjphyy');
@@ -82,7 +82,7 @@ describe('Global Search Modal', () => {
         visitSearch();
         searchWithFixture([['Cluster:', 'remote']], 'search/globalSearchResults.json');
 
-        cy.get(`section#All ${selectors.viewOnChip}:contains("POLICIES")`).click();
+        cy.get(`section[aria-label="All"] ${selectors.viewOnChip}:contains("Policies")`).click();
         // TODO because 404 for /v1/policies/0ea8d235-b02a-41ee-a61d-edcb2c1b0eac
         // replace button with anchor and assert on href attribute?
         cy.location('pathname').should(
@@ -95,7 +95,7 @@ describe('Global Search Modal', () => {
         visitSearch();
         searchWithFixture([['Cluster:', 'remote']], 'search/globalSearchResults.json');
 
-        cy.get(`section#All ${selectors.viewOnChip}:contains("IMAGES")`).click();
+        cy.get(`section[aria-label="All"] ${selectors.viewOnChip}:contains("Images")`).click();
         // TODO because could not find image for id
         // replace button with anchor and assert on href attribute?
         cy.location('pathname').should(

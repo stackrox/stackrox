@@ -12,7 +12,7 @@ describe('Search Sagas Test', () => {
     it('Should load search modifiers/suggestions for Global Search once when hit any `main` location', () => {
         const options = ['option1', 'option2'];
         return expectSaga(saga)
-            .provide([[matchers.call.fn(fetchOptions), { options }]])
+            .provide([[matchers.call.fn(fetchOptions), options]])
             .put(globalSearchActions.setGlobalSearchModifiers(options))
             .put(globalSearchActions.setGlobalSearchSuggestions(options))
             .not.put(globalSearchActions.setGlobalSearchModifiers(options)) // should not do it second time
