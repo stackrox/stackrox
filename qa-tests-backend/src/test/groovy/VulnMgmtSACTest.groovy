@@ -169,6 +169,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
         def baseQuery = "Node:*"
+        def roleName = "node-role"
         def cveQuery = ""
         if (Env.CI_JOBNAME.contains("postgres")) {
             cveQuery = GET_NODE_CVES_QUERY
@@ -179,7 +180,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         if (Env.CI_JOBNAME.contains("postgres")) {
             componentQuery = GET_NODE_COMPONENTS_QUERY
         } else {
-            componenQuery = GET_COMPONENTS_QUERY
+            componentQuery = GET_COMPONENTS_QUERY
         }
         def gqlService = new GraphQLService()
         def baseVulnCallResult = gqlService.Call(cveQuery, [query: baseQuery])
@@ -213,6 +214,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
         def baseQuery = "Image:*"
+        def roleName = "image-role"
         def cveQuery = ""
         if (Env.CI_JOBNAME.contains("postgres")) {
             cveQuery = GET_IMAGE_CVES_QUERY
