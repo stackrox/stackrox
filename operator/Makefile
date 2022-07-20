@@ -268,7 +268,8 @@ ensure-rox-main-image-exists:
 build: generate fmt vet ## Build operator local binary.
 	../scripts/go-build-file.sh ./main.go bin/manager
 
-docker-build: test ## Build docker image with the operator.
+.PHONY: smuggled-status-sh
+smuggled-status-sh:
 	$(SILENT)( \
 		`# status.sh file is used by scripts/go-build.sh which we try to run in the docker container.` \
 		`# status.sh needs git repo, make and Makefile and who knows what else but its actual output is simple.` \
@@ -284,6 +285,8 @@ docker-build: test ## Build docker image with the operator.
 		`# Verify that the resulting status.sh is actually runnable` \
 		"$${smuggled_status_sh}" ;\
 	)
+
+docker-build: test smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
 		--build-arg "GO_VERSION=${GO_VERSION}" \
 		-t ${IMG} \
