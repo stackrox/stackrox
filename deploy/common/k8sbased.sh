@@ -361,7 +361,7 @@ function launch_central {
     # On some systems there's a race condition when port-forward connects to central but its pod then gets deleted due
     # to ongoing modifications to the central deployment. This port-forward dies and the script hangs "Waiting for
     # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
-    kubectl -n stackrox rollout status deploy/central --timeout=3m
+    kubectl -n stackrox rollout status deploy/central --timeout=6m
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
