@@ -10,10 +10,10 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 
-deploy_stackrox() {
+_deploy_stackrox() {
 
     exit 99
-    
+
     deploy_central
 
     get_central_basic_auth_creds
@@ -27,6 +27,14 @@ deploy_stackrox() {
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     sensor_wait
+}
+
+deploy_stackrox() {
+    _deploy_stackrox 2>&1 | tee "$TEST_ROOT/deployment_output.txt" || {
+        local exitstatus="$?"
+        save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "$(tail -10 "$TEST_ROOT/deployment_output.txt")" || true
+        exit "$exitstatus"
+    }
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
