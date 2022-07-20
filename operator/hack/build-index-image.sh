@@ -22,6 +22,7 @@ OPTION:
   --base-dir           Working directory for the script. Default: '.'
   --clean-output-dir   Delete '{base-dir}/build/index' directory.
   --use-http           Use plain HTTP for container image registries.
+  --skip-build         Skip the actual \"docker build\" command.
 " >&2
 }
 
@@ -36,6 +37,7 @@ INDEX_TAG=""
 BUNDLE_TAG=""
 REPLACED_VERSION=""
 BASE_DIR="."
+RUN_BUILD=1
 
 # Helpful for local development and testing
 CLEAN_OUTPUT_DIR=""
@@ -58,6 +60,8 @@ function read_arguments() {
                 CLEAN_OUTPUT_DIR="true";;
             "--use-http")
                 USE_HTTP="--use-http";;
+            "--skip-build")
+                RUN_BUILD=0;;
             *)
                 echo "Error: Unknown parameter: ${1}" >&2
                 usage_exit
@@ -140,6 +144,11 @@ EOF
 "${YQ}" --inplace --prettyPrint "with(select(${YQ_FILTER_CHANNEL_DOCUMENT}); .entries += ${YQ_NEW_BUNDLE_ENTRY})" "${BUILD_INDEX_DIR}/index.yaml"
 "${OPM}" render "${BUNDLE_TAG}" --output=yaml ${USE_HTTP} >> "${BUILD_INDEX_DIR}/index.yaml"
 "${OPM}" validate "${BUILD_INDEX_DIR}"
-docker build --quiet --file "${BUILD_INDEX_DIR}.Dockerfile" --tag "${INDEX_TAG}" "${BUILD_INDEX_DIR}/.."
 
-echo "Index image ${INDEX_TAG} is successfully created."
+if (( RUN_BUILD )); then
+  docker build --quiet --file "${BUILD_INDEX_DIR}.Dockerfile" --tag "${INDEX_TAG}" "${BUILD_INDEX_DIR}/.."
+
+  echo "Index image ${INDEX_TAG} is successfully created."
+else
+  echo "Skipping 'docker build' of ${BUILD_INDEX_DIR} as requested."
+fi
