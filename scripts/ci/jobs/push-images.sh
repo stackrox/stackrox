@@ -44,7 +44,10 @@ push_images() {
         push_context="merge-to-master"
     fi
 
-    push_operator_image_set "$push_context" "$brand"
+    # TODO(ROX-11889): make this unconditional once the openshift/release side is ready
+    if [[ -n "${OPERATOR_IMAGE:-}" ]]; then
+      push_operator_image_set "$push_context" "$brand"
+    fi
     push_main_image_set "$push_context" "$brand"
     push_matching_collector_scanner_images "$brand"
     if [[ -n "${PIPELINE_DOCS_IMAGE:-}" ]]; then
