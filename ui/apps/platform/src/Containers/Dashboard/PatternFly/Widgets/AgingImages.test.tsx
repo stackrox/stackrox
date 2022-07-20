@@ -73,9 +73,9 @@ describe('AgingImages dashboard widget', () => {
 
         // When all items are selected, the total should be equal to the total of all buckets
         // returned by the server
-        const cardHeading = await screen.findByRole('heading', {
-            name: `${result0 + result1 + result2 + result3} Aging images`,
-        });
+        const cardHeading = await screen.findByText(
+            `${result0 + result1 + result2 + result3} Aging images`
+        );
         expect(cardHeading).toBeInTheDocument();
 
         // Each bar should display text that is specific to that time bucket, not
@@ -89,8 +89,12 @@ describe('AgingImages dashboard widget', () => {
     it('should render graph bars with the correct image counts when time buckets are toggled', async () => {
         const { user } = setup();
 
-        await user.click(await screen.findByRole('button', { name: `Options` }));
-        const checkboxes = await screen.findAllByRole('checkbox');
+        expect(
+            await screen.findByText(`${result0 + result1 + result2 + result3} Aging images`)
+        ).toBeInTheDocument();
+
+        await user.click(await screen.findByText(`Options`));
+        const checkboxes = await screen.findAllByLabelText('Toggle image time range');
         expect(checkboxes).toHaveLength(4);
 
         // Disable the first bucket
@@ -99,9 +103,7 @@ describe('AgingImages dashboard widget', () => {
         // With the first item deselected, aging images < 90 days should no longer be present
         // in the chart or the card header
         expect(
-            await screen.findByRole('heading', {
-                name: `${result1 + result2 + result3} Aging images`,
-            })
+            await screen.findByText(`${result1 + result2 + result3} Aging images`)
         ).toBeInTheDocument();
 
         // Test values at top of each bar
@@ -121,9 +123,7 @@ describe('AgingImages dashboard widget', () => {
         // With the first item re-selected (regardless of the other selected items), the heading total
         // should revert to the original value.
         expect(
-            await screen.findByRole('heading', {
-                name: `${result0 + result1 + result2 + result3} Aging images`,
-            })
+            await screen.findByText(`${result0 + result1 + result2 + result3} Aging images`)
         ).toBeInTheDocument();
 
         expect(await screen.findByText(result0)).toBeInTheDocument();
@@ -145,22 +145,22 @@ describe('AgingImages dashboard widget', () => {
         } = setup();
 
         // Check default links
-        await user.click(await screen.findByRole('link', { name: `30-90 days` }));
+        await user.click(await screen.findByText(`30-90 days`));
         expect(history.location.search).toContain('s[Image Created Time]=30d-90d');
 
-        await user.click(await screen.findByRole('link', { name: '90-180 days' }));
+        await user.click(await screen.findByText('90-180 days'));
         expect(history.location.search).toContain('s[Image Created Time]=90d-180d');
 
-        await user.click(await screen.findByRole('link', { name: '>1 year' }));
+        await user.click(await screen.findByText('>1 year'));
         expect(history.location.search).toContain('s[Image Created Time]=>365d');
 
         // Deselect the second time range, merging the first and second time buckets
-        await user.click(await screen.findByRole('button', { name: `Options` }));
-        const checkboxes = await screen.findAllByRole('checkbox');
+        await user.click(await screen.findByText(`Options`));
+        const checkboxes = await screen.findAllByLabelText('Toggle image time range');
         await user.click(checkboxes[1]);
-        await user.click(await screen.findByRole('button', { name: `Options` }));
+        await user.click(await screen.findByText(`Options`));
 
-        await user.click(await screen.findByRole('link', { name: '30-180 days' }));
+        await user.click(await screen.findByText('30-180 days'));
         expect(history.location.search).toContain('s[Image Created Time]=30d-180d');
     });
 });
