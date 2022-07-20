@@ -46,7 +46,7 @@ class VulnMgmtSACTest extends BaseSpecification {
             ...cveFields
             __typename
         }
-        count: vulnerabilityCount(query: \$query)
+        count: imageVulnerabilityCount(query: \$query)
     }
 
     fragment cveFields on EmbeddedVulnerability {
@@ -61,7 +61,7 @@ class VulnMgmtSACTest extends BaseSpecification {
             ...cveFields
             __typename
         }
-        count: vulnerabilityCount(query: \$query)
+        count: nodeVulnerabilityCount(query: \$query)
     }
 
     fragment cveFields on EmbeddedVulnerability {
@@ -92,7 +92,7 @@ class VulnMgmtSACTest extends BaseSpecification {
             ...componentFields
             __typename
         }
-        count: componentCount(query: \$query)
+        count: imageComponentCount(query: \$query)
     }
 
     fragment componentFields on EmbeddedImageScanComponent {
@@ -108,7 +108,7 @@ class VulnMgmtSACTest extends BaseSpecification {
             ...componentFields
             __typename
         }
-        count: componentCount(query: \$query)
+        count: nodeComponentCount(query: \$query)
     }
 
     fragment componentFields on EmbeddedImageScanComponent {

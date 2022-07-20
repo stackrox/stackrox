@@ -172,7 +172,7 @@ class CVETest extends BaseSpecification {
     }
 
     fragment cveFields on ImageVulnerability {
-      id: cve
+      id
       cve
       cvss
       scoreVersion
