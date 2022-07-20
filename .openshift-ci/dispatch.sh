@@ -27,6 +27,18 @@ case "$ci_job" in
     gke-qa-e2e-tests|gke-nongroovy-e2e-tests|gke-upgrade-tests|gke-ui-e2e-tests)
         openshift_ci_e2e_mods
         ;;
+    openshift-*-operator-e2e-tests)
+        registry_ro_login "quay.io/rhacs-eng"
+        # NAMESPACE is injected by OpenShift CI for the cluster that is running the
+        # tests but this can have side effects for operator tests due to its use as
+        # the default namespace e.g. in opertor-sdk scorecard.
+        # Cannot use `openshift_ci_e2e_mods` for the following, since it also nukes KUBECONFIG,
+        # which we need.
+        if [[ -n "${NAMESPACE:-}" ]]; then
+            export OPENSHIFT_CI_NAMESPACE="$NAMESPACE"
+            unset NAMESPACE
+        fi
+        ;;
 esac
 
 if [[ "$ci_job" =~ e2e|upgrade ]]; then
