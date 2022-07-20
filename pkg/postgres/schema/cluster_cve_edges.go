@@ -52,6 +52,7 @@ var (
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_CLUSTER_VULNERABILITIES,
 			v1.SearchCategory_CLUSTER_VULN_EDGE,
+			v1.SearchCategory_CLUSTERS,
 		}...)
 		RegisterTable(schema, CreateTableClusterCveEdgesStmt)
 		return schema
