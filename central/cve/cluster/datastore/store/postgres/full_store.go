@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -26,6 +27,14 @@ func NewFullStore(db *pgxpool.Pool) store.Store {
 	}
 }
 
+// NewFullTestStore is used for testing.
+func NewFullTestStore(t *testing.T, db *pgxpool.Pool, store Store) store.Store {
+	return &fullStoreImpl{
+		db:    db,
+		Store: store,
+	}
+}
+
 type fullStoreImpl struct {
 	db *pgxpool.Pool
 
@@ -44,7 +53,7 @@ func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, cluster
 		return err
 	}
 
-	_, err = tx.Exec(ctx, "DELETE FROM "+pkgSchema.ClusterCveEdgesTableName+" WHERE clusterid == $1", clusterID)
+	_, err = tx.Exec(ctx, "DELETE FROM "+pkgSchema.ClusterCveEdgesTableName+" WHERE clusterid = $1", clusterID)
 	if err != nil {
 		return err
 	}
@@ -114,6 +123,7 @@ func copyFromCVEs(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, o
 	var deletes []string
 	copyCols := []string{
 		"id",
+		"type",
 		"cvebaseinfo_cve",
 		"cvebaseinfo_publishedon",
 		"cvebaseinfo_createdat",
@@ -133,10 +143,10 @@ func copyFromCVEs(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, o
 
 	for idx, obj := range objs {
 		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
-			obj.Snoozed = storedCVE.GetSuppressed()
-			obj.CveBaseInfo.CreatedAt = storedCVE.GetCreatedAt()
-			obj.SnoozeStart = storedCVE.GetSuppressActivation()
-			obj.SnoozeExpiry = storedCVE.GetSuppressExpiry()
+			obj.Snoozed = storedCVE.GetSnoozed()
+			obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
+			obj.SnoozeStart = storedCVE.GetSnoozeStart()
+			obj.SnoozeExpiry = storedCVE.GetSnoozeExpiry()
 		} else {
 			obj.CveBaseInfo.CreatedAt = iTime
 		}
@@ -148,9 +158,10 @@ func copyFromCVEs(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, o
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
+			obj.GetType(),
 			obj.GetCveBaseInfo().GetCve(),
-			obj.GetCveBaseInfo().GetPublishedOn(),
-			obj.GetCveBaseInfo().GetCreatedAt(),
+			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+			pgutils.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),
@@ -245,7 +256,7 @@ func copyFromClusterCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.Cl
 	return err
 }
 
-func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.CVE, error) {
+func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.ClusterCVE, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "CVE")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+pkgSchema.ClusterCvesTableName+" WHERE id = ANY($1::text[])", cveIDs)
@@ -254,13 +265,13 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 	}
 	defer rows.Close()
 
-	idToCVEMap := make(map[string]*storage.CVE)
+	idToCVEMap := make(map[string]*storage.ClusterCVE)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, err
 		}
-		msg := &storage.CVE{}
+		msg := &storage.ClusterCVE{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
@@ -270,8 +281,12 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 }
 
 func removeEdgesAndCVEsForClusters(ctx context.Context, tx pgx.Tx, cveType storage.CVE_CVEType, clusterIDs []string) error {
-	_, err := tx.Exec(ctx, "DELETE FROM "+pkgSchema.ClusterCveEdgesTableName+" WHERE clusterid == ANY($1::text[]) and cveid in (select id from "+pkgSchema.ClusterCvesTableName+" where cvetype = $2)", clusterIDs, cveType)
+	_, err := tx.Exec(ctx, "DELETE FROM "+pkgSchema.ClusterCveEdgesTableName+" WHERE clusterid = ANY($1::text[]) and cveid in (select id from "+pkgSchema.ClusterCvesTableName+" where type = $2)", clusterIDs, cveType)
 	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec(ctx, "delete from "+pkgSchema.ClusterCvesTableName+" where not exists (select "+pkgSchema.ClusterCveEdgesTableName+".cveid FROM "+pkgSchema.ClusterCveEdgesTableName+" where "+pkgSchema.ClusterCvesTableName+".id = "+pkgSchema.ClusterCveEdgesTableName+".cveid)"); err != nil {
 		return err
 	}
 	return nil

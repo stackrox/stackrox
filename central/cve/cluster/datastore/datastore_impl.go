@@ -164,21 +164,6 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 	return nil
 }
 
-func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
-	ds.cveSuppressionLock.RLock()
-	defer ds.cveSuppressionLock.RUnlock()
-
-	for _, component := range node.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulnerabilities() {
-			if entry, ok := ds.cveSuppressionCache[vuln.GetCveBaseInfo().GetCve()]; ok {
-				vuln.Snoozed = true
-				vuln.SnoozeStart = entry.SuppressActivation
-				vuln.SnoozeExpiry = entry.SuppressExpiry
-			}
-		}
-	}
-}
-
 func getSuppressExpiry(start *types.Timestamp, duration *types.Duration) (*types.Timestamp, error) {
 	d, err := types.DurationFromProto(duration)
 	if err != nil || d == 0 {
