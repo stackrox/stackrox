@@ -114,7 +114,7 @@ describe('Compliance levels by standard dashboard widget', () => {
         const { user } = setup();
 
         // Allow graph to load
-        await screen.findAllByRole('presentation');
+        await screen.findByLabelText('Compliance coverage by standard');
 
         async function getBarPercentages() {
             // eslint-disable-next-line testing-library/no-node-access
@@ -138,8 +138,8 @@ describe('Compliance levels by standard dashboard widget', () => {
 
         // Sort by descending
         await act(async () => {
-            await user.click(screen.getByRole('button', { name: 'Options' }));
-            await user.click(screen.getByRole('button', { name: 'Descending' }));
+            await user.click(screen.getByText('Options'));
+            await user.click(screen.getByText('Descending'));
         });
 
         await waitFor(async () => {
@@ -156,12 +156,15 @@ describe('Compliance levels by standard dashboard widget', () => {
             utils: { history },
         } = setup();
 
-        await user.click(await screen.findByRole('link', { name: 'View all' }));
+        // Allow graph to load
+        await screen.findByLabelText('Compliance coverage by standard');
+
+        await user.click(await screen.findByText('View all'));
         expect(history.location.pathname).toBe(complianceBasePath);
 
         const standard = 'CIS Docker v1.2.0';
         await act(async () => {
-            await user.click(await screen.findByRole('link', { name: standard }));
+            await user.click(await screen.findByText(standard));
         });
         expect(history.location.pathname).toBe(
             `${complianceBasePath}/${urlEntityListTypes[standardEntityTypes.CONTROL]}`
