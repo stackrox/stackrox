@@ -12,7 +12,7 @@ type CVESummaryLinkProps = {
 
 function CVESummaryLink({ cve }: CVESummaryLinkProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
     const entityType = showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE;
 
     const workflowState = useContext(workflowStateContext);

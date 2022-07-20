@@ -22,7 +22,7 @@ import { resourceLabels } from 'messages/common';
 import { entityPriorityField } from 'Containers/VulnMgmt/VulnMgmt.constants';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
-// TODO: remove once ROX_FRONTEND_VM_UDPATES is enabled
+// TODO: remove once ROX_FRONTEND_VM_UPDATES is enabled
 const TOP_RISKIEST_IMAGES = gql`
     query topRiskiestImages($query: String, $pagination: Pagination) {
         results: images(query: $query, pagination: $pagination) {
@@ -97,7 +97,7 @@ const TOP_RISKIEST_IMAGE_VULNS = gql`
     }
 `;
 
-// TODO: remove once ROX_FRONTEND_VM_UDPATES is enabled
+// TODO: remove once ROX_FRONTEND_VM_UPDATES is enabled
 const TOP_RISKIEST_COMPONENTS = gql`
     query topRiskiestComponents($query: String, $pagination: Pagination) {
         results: components(query: $query, pagination: $pagination) {
@@ -200,7 +200,7 @@ const TOP_RISKIEST_NODE_COMPONENTS = gql`
     }
 `;
 
-// TODO: remove once ROX_FRONTEND_VM_UDPATES is enabled
+// TODO: remove once ROX_FRONTEND_VM_UPDATES is enabled
 const TOP_RISKIEST_NODES = gql`
     query topRiskiestNodes($query: String, $pagination: Pagination) {
         results: nodes(query: $query, pagination: $pagination) {
@@ -455,7 +455,7 @@ const processData = (data, entityType, workflowState, showVmUpdates) => {
 
 const TopRiskiestEntities = ({ entityContext, limit }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
     const entities = getEntitiesByContext(entityContext, showVmUpdates);
     const [selectedEntity, setSelectedEntity] = useState(entities[0].value);
 
