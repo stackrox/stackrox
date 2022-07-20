@@ -46,11 +46,21 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
                 newMatchEntity = 'IMAGE_COMPONENT';
             }
 
-            const countKeyToUse =
+            let countKeyToUse = countKeyMap[newMatchEntity];
+            if (
                 countKeyMap[newMatchEntity].includes('imageComponentCount') ||
                 countKeyMap[newMatchEntity].includes('nodeComponentCount')
-                    ? 'componentCount'
-                    : countKeyMap[newMatchEntity];
+            ) {
+                countKeyToUse = 'componentCount';
+            }
+            if (
+                countKeyMap[newMatchEntity].includes('imageVulnerabilityCount') ||
+                countKeyMap[newMatchEntity].includes('nodeVulnerabilityCount') ||
+                countKeyMap[newMatchEntity].includes('clusterVulnerabilityCount') ||
+                countKeyMap[newMatchEntity].includes('k8sVulnCount')
+            ) {
+                countKeyToUse = 'vulnCount';
+            }
             const count = data[countKeyToUse];
 
             return {
@@ -85,7 +95,23 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
                 newContainEntity = 'IMAGE_COMPONENT';
             }
 
-            const count = data[countKeyMap[newContainEntity]];
+            let countKeyToUse = countKeyMap[newContainEntity];
+            if (
+                countKeyMap[newContainEntity].includes('imageComponentCount') ||
+                countKeyMap[newContainEntity].includes('nodeComponentCount')
+            ) {
+                countKeyToUse = 'componentCount';
+            }
+            if (
+                countKeyMap[newContainEntity].includes('imageVulnerabilityCount') ||
+                countKeyMap[newContainEntity].includes('nodeVulnerabilityCount') ||
+                countKeyMap[newContainEntity].includes('clusterVulnerabilityCount') ||
+                countKeyMap[newContainEntity].includes('k8sVulnCount')
+            ) {
+                countKeyToUse = 'vulnCount';
+            }
+            const count = data[countKeyToUse];
+
             const entityLabel = entityLabels[newContainEntity].toUpperCase();
             return {
                 count,

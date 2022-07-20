@@ -357,8 +357,10 @@ function getCVEListType(entityType, showVmUpdates) {
         return entityType.CVE;
     }
     switch (entityType) {
+        case entityTypes.NODE:
         case entityTypes.NODE_COMPONENT:
             return entityTypes.NODE_CVE;
+        case entityTypes.IMAGE:
         case entityTypes.IMAGE_COMPONENT:
             return entityTypes.IMAGE_CVE;
         default:

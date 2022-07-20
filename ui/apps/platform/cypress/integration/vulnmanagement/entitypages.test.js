@@ -2,16 +2,25 @@ import * as api from '../../constants/apiEndpoints';
 import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
+import { hasFeatureFlag } from '../../helpers/features';
 
 describe('Entities single views', () => {
     withAuth();
 
     it('related entities tile links should unset search params upon navigation', () => {
+        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UDPATES');
+
         visitVulnerabilityManagementEntities('clusters');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('clusters', 'IMAGE_CVE')).as(
-            'clustersCVE'
-        );
+        if (usingVMUpdates) {
+            cy.intercept('POST', api.vulnMgmt.graphqlEntities2('clusters', 'IMAGE_CVE')).as(
+                'clustersCVE'
+            );
+        } else {
+            cy.intercept('POST', api.vulnMgmt.graphqlEntities2('clusters', 'CVE')).as(
+                'clustersCVE'
+            );
+        }
         cy.get(`${selectors.tableBodyRows} ${selectors.fixableCvesLink}:eq(0)`).click();
         cy.wait('@clustersCVE');
 

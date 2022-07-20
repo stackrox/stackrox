@@ -64,14 +64,13 @@ describe('Vuln Management Dashboard Page', () => {
 
     it('should show same number of images between the tile and the images list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.get(selectors.tileLinks)
-            .eq(2)
-
+        cy.get(selectors.tileLinks, { timeout: 8000 })
+            .eq(3)
             .find(selectors.tileLinkValue)
             .invoke('text')
             .then((value) => {
                 const numImages = value;
-                cy.get(selectors.tileLinks).eq(2).click();
+                cy.get(selectors.tileLinks).eq(3).click();
                 cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
                     .invoke('text')
                     .then((panelHeaderText) => {
