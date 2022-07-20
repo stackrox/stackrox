@@ -103,7 +103,7 @@ class NetworkBaselineTest extends BaseSpecification {
     }
 
     def validateBaseline(NetworkBaselineOuterClass.NetworkBaseline baseline, long beforeCreate,
-                         long justAfterCreate, List<Tuple2<String, Boolean>> expectedPeers, List<String> notExpectedPeers) {
+                         long justAfterCreate, List<Tuple2<String, Boolean>> expectedPeers, List<String> explicitMissingPeers) {
         assert baseline.getObservationPeriodEnd().getSeconds() > beforeCreate - CLOCK_SKEW_ALLOWANCE_SECONDS
         assert baseline.getObservationPeriodEnd().getSeconds() <
             justAfterCreate + EXPECTED_BASELINE_DURATION_SECONDS + CLOCK_SKEW_ALLOWANCE_SECONDS
@@ -124,7 +124,7 @@ class NetworkBaselineTest extends BaseSpecification {
             assert properties.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
         }
 
-        for (def checkMissingId : notExpectedPeers) {
+        for (def checkMissingId : explicitMissingPeers) {
             def actualPeer = baseline.getPeersList().find { it.getEntity().getInfo().getId() == checkMissingId }
             assert actualPeer == null
         }
