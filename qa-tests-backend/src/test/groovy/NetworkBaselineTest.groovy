@@ -235,9 +235,9 @@ class NetworkBaselineTest extends BaseSpecification {
         "Validate the updated baselines"
         validateBaseline(serverBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
             [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true),
-             // Currently, we add conns to the baseline if it's within the observation period
+             // Currently, we add cons to the baseline if it's within the observation period
              // of _at least_ one of the deployments. Therefore, the deferred client->server connection
-             // gets added since it's within the deferred client's obervation period, and
+             // gets added since it's within the deferred client's observation period, and
              // the server's baseline is modified as well since we keep things consistent.
              new Tuple2<String, Boolean>(deferredBaselinedClientDeploymentID, true),
             ], [anomalousClientDeploymentID]
