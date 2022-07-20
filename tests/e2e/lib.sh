@@ -11,6 +11,9 @@ source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 
 deploy_stackrox() {
+
+    exit 99
+    
     deploy_central
 
     get_central_basic_auth_creds
