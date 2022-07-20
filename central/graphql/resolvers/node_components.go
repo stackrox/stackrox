@@ -110,7 +110,6 @@ func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) 
 		return nil, err
 	}
 
-	query = tryUnsuppressedQuery(query)
 	componentResolvers, err := resolver.wrapNodeComponents(loader.FromQuery(ctx, query))
 	if err != nil {
 		return nil, err
@@ -144,7 +143,6 @@ func (resolver *Resolver) NodeComponentCount(ctx context.Context, args RawQuery)
 	if err != nil {
 		return 0, err
 	}
-	query = tryUnsuppressedQuery(query)
 
 	return loader.CountFromQuery(ctx, query)
 }

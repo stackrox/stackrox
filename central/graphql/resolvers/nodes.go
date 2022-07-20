@@ -338,13 +338,7 @@ func (resolver *nodeResolver) NodeComponents(ctx context.Context, args Paginated
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
-		return resolver.root.NodeComponents(resolver.withNodeScopeContext(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeComponents in Node does not support postgres yet")
+	return resolver.root.NodeComponents(resolver.withNodeScopeContext(ctx), args)
 }
 
 // NodeComponentCount returns the number of components in the node
@@ -353,13 +347,7 @@ func (resolver *nodeResolver) NodeComponentCount(ctx context.Context, args RawQu
 	if err := readNodes(ctx); err != nil {
 		return 0, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
-		return resolver.root.NodeComponentCount(resolver.withNodeScopeContext(ctx), RawQuery{Query: &query})
-	}
-	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeComponentCount in Node does not support postgres yet")
+	return resolver.root.NodeComponentCount(resolver.withNodeScopeContext(ctx), args)
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.

@@ -156,7 +156,7 @@ func (resolver *Resolver) componentCountV2Query(ctx context.Context, query *v1.Q
 // NodeComponentLastScanned is the last time the node component was scanned in a node.
 func (eicr *imageComponentResolver) NodeComponentLastScanned(ctx context.Context) (*graphql.Time, error) {
 	if features.PostgresDatastore.Enabled() {
-		return nil, errors.New("unexpected access to legacy component datastore")
+		return nil, errors.New("unexpected access to legacy component datastore with postgres enabled")
 	}
 
 	if err := readNodes(ctx); err != nil {
@@ -202,7 +202,7 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 func (eicr *imageComponentResolver) TopNodeVulnerability(ctx context.Context) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopNodeVulnerability")
 	if features.PostgresDatastore.Enabled() {
-		return nil, errors.New("unexpected access to legacy CVE datastore")
+		return nil, errors.New("unexpected access to legacy CVE datastore with postgres enabled")
 	}
 
 	vulnResolver, err := eicr.unwrappedTopVulnQuery(ctx)
@@ -337,7 +337,7 @@ func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, args RawQue
 func (eicr *imageComponentResolver) NodeVulnerabilities(_ context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "NodeVulnerabilities")
 	if features.PostgresDatastore.Enabled() {
-		return nil, errors.New("unexpected access to legacy CVE datastore")
+		return nil, errors.New("unexpected access to legacy CVE datastore with postgres enabled")
 	}
 	return eicr.root.NodeVulnerabilities(eicr.imageComponentScopeContext(), args)
 }
@@ -346,7 +346,7 @@ func (eicr *imageComponentResolver) NodeVulnerabilities(_ context.Context, args 
 func (eicr *imageComponentResolver) NodeVulnerabilityCount(_ context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "NodeVulnerabilityCount")
 	if features.PostgresDatastore.Enabled() {
-		return 0, errors.New("unexpected access to legacy CVE datastore")
+		return 0, errors.New("unexpected access to legacy CVE datastore with postgres enabled")
 	}
 	return eicr.root.NodeVulnerabilityCount(eicr.imageComponentScopeContext(), args)
 }
@@ -355,7 +355,7 @@ func (eicr *imageComponentResolver) NodeVulnerabilityCount(_ context.Context, ar
 func (eicr *imageComponentResolver) NodeVulnerabilityCounter(_ context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "NodeVulnerabilityCounter")
 	if features.PostgresDatastore.Enabled() {
-		return nil, errors.New("unexpected access to legacy CVE datastore")
+		return nil, errors.New("unexpected access to legacy CVE datastore with postgres enabled")
 	}
 	return eicr.root.NodeVulnerabilityCounter(eicr.imageComponentScopeContext(), args)
 }
@@ -423,7 +423,7 @@ func (eicr *imageComponentResolver) PlottedVulns(ctx context.Context, args RawQu
 func (eicr *imageComponentResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "PlottedNodeVulnerabilities")
 	if features.PostgresDatastore.Enabled() {
-		return nil, errors.New("unexpected access to legacy CVE datastore")
+		return nil, errors.New("unexpected access to legacy CVE datastore with postgres enabled")
 	}
 	return eicr.root.PlottedNodeVulnerabilities(eicr.imageComponentScopeContext(), args)
 }

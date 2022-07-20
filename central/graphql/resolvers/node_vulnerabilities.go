@@ -392,14 +392,12 @@ func (resolver *nodeCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver
 // NodeComponentCount is the number of node components that contain the node CVE.
 func (resolver *nodeCVEResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "NodeComponentCount")
-
 	return resolver.root.NodeComponentCount(resolver.withNodeVulnerabilityScope(ctx), args)
 }
 
 // NodeComponents are the node components that contain the node CVE.
 func (resolver *nodeCVEResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "NodeComponents")
-
 	return resolver.root.NodeComponents(resolver.withNodeVulnerabilityScope(ctx), args)
 }
 
