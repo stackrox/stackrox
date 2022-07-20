@@ -17,7 +17,9 @@ import (
 	"github.com/dexidp/dex/connector"
 	"github.com/dexidp/dex/storage/kubernetes/k8sapi"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2"
@@ -205,6 +207,22 @@ func (c *openshiftConnector) LoginURL(_ connector.Scopes, callbackURL string, st
 	return c.oauth2Config.AuthCodeURL(state, oauth2.SetAuthURLParam("redirect_uri", callbackURL)), nil
 }
 
+// MakeRedirectURI constructs redirect URI from request info and the path.
+func MakeRedirectURI(ri *requestinfo.RequestInfo, path string) *url.URL {
+	scheme := "https"
+
+	// Allow HTTP only if the client did not use TLS and the host is localhost.
+	if !ri.ClientUsedTLS && netutil.IsLocalEndpoint(ri.Hostname) {
+		scheme = "http"
+	}
+
+	return &url.URL{
+		Scheme: scheme,
+		Host:   ri.Hostname,
+		Path:   path,
+	}
+}
+
 // HandleCallback parses the request and returns the user's identity.
 func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request) (identity connector.Identity, err error) {
 	q := r.URL.Query()
@@ -217,15 +235,8 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 		ctx = context.WithValue(r.Context(), oauth2.HTTPClient, c.httpClient)
 	}
 
-	// r.URL might not get the Host part, therefore use r.Host here.
-	redirect_uri := &url.URL{
-		Scheme: "https",
-		Host:   r.Host,
-		Path:   r.URL.Path,
-	}
-	if r.URL.Port() != "" {
-		redirect_uri.Host = redirect_uri.Host + ":" + r.URL.Port()
-	}
+	ri := requestinfo.FromContext(ctx)
+	redirect_uri := MakeRedirectURI(&ri, ri.HTTPRequest.URL.Path)
 
 	// redirect_uri is set here to support the mulitple redirect URI case.
 	token, err := c.oauth2Config.Exchange(ctx, q.Get("code"),
