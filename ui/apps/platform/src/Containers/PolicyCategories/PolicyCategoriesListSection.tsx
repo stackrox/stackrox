@@ -7,13 +7,11 @@ import PolicyCategoriesFilterSelect, { CategoryFilter } from './PolicyCategories
 import PolicyCategorySidePanel from './PolicyCategorySidePanel';
 
 type PolicyCategoriesListSectionProps = {
-    // TODO: change once proto goes in
-    // policyCategories: {
-    //     id: string;
-    //     name: string;
-    //     isDefault: boolean;
-    // }[];
-    policyCategories: string[];
+    policyCategories: {
+        id: string;
+        name: string;
+        isDefault: boolean;
+    }[];
     addToast: (message) => void;
 };
 
@@ -22,20 +20,13 @@ function PolicyCategoriesListSection({
     addToast,
 }: PolicyCategoriesListSectionProps) {
     const [selectedCategory, setSelectedCategory] = useState<PolicyCategory>();
-
-    // TODO: to remove once proto is in
-    const allPolicyCategories = policyCategories.map((category) => ({
-        id: category,
-        name: category,
-        isDefault: true,
-    }));
-    const customPolicyCategories = allPolicyCategories.filter(({ isDefault }) => !isDefault);
-    const defaultPolicyCategories = allPolicyCategories.filter(({ isDefault }) => isDefault);
+    const customPolicyCategories = policyCategories.filter(({ isDefault }) => !isDefault);
+    const defaultPolicyCategories = policyCategories.filter(({ isDefault }) => isDefault);
     const [selectedFilters, setSelectedFilters] = useState<CategoryFilter[]>([
         'Default categories',
         'Custom categories',
     ]);
-    let currentPolicyCategories = allPolicyCategories;
+    let currentPolicyCategories = policyCategories;
     if (selectedFilters.length === 1) {
         if (selectedFilters[0] === 'Default categories') {
             currentPolicyCategories = defaultPolicyCategories;

@@ -17,7 +17,8 @@ import {
 
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { getPolicyCategories } from 'services/PoliciesService';
+import { PolicyCategory } from 'types/policy.proto';
+import { getPolicyCategories } from 'services/PolicyCategoriesService';
 import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
 import PolicyCategoriesListSection from './PolicyCategoriesListSection';
 
@@ -25,7 +26,7 @@ function PolicyCategoriesPage(): React.ReactElement {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     // TODO switch type once new API is in
-    const [policyCategories, setPolicyCategories] = useState<string[]>([]);
+    const [policyCategories, setPolicyCategories] = useState<PolicyCategory[]>([]);
     const { toasts, addToast, removeToast } = useToasts();
 
     let listContent = (
