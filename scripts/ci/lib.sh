@@ -202,6 +202,103 @@ push_main_image_set() {
     done
 }
 
+push_operator_image_set() {
+    info "Pushing stackrox-operator, stackrox-operator-bundle and stackrox-operator-index images"
+
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_operator_image_set <push_context> <brand>"
+    fi
+
+    local push_context="$1"
+    local brand="$2"
+
+    local operator_image_set=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index")
+    if is_OPENSHIFT_CI; then
+        local operator_image_srcs=("$OPERATOR_IMAGE" "$OPERATOR_BUNDLE_IMAGE" "$OPERATOR_BUNDLE_INDEX_MAGE")
+        oc registry login
+    fi
+
+    _push_operator_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        local v
+        for image in "${operator_image_set[@]}"; do
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "${registry}/${image}:${v}${tag}" | cat
+        done
+    }
+
+    _tag_operator_image_set() {
+        local local_tag="$1"
+        local registry="$2"
+        local remote_tag="$3"
+
+        local v
+        for image in "${operator_image_set[@]}"; do
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${v}${remote_tag}"
+        done
+    }
+
+    _mirror_operator_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        local idx=0
+        local v
+        for image in "${operator_image_set[@]}"; do
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            oc image mirror "${operator_image_srcs[$idx]}" "${registry}/${image}:${v}${tag}"
+            (( idx++ )) || true
+        done
+    }
+
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        local destination_registries=("quay.io/stackrox-io")
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        local destination_registries=("quay.io/rhacs-eng")
+    else
+        die "$brand is not a supported brand"
+    fi
+
+    local tag
+    tag="$(make --quiet -C operator tag)"
+    for registry in "${destination_registries[@]}"; do
+        registry_rw_login "$registry"
+
+        if is_OPENSHIFT_CI; then
+            _mirror_operator_image_set "$registry" "$tag"
+        else
+            _tag_operator_image_set "$tag" "$registry" "$tag"
+            _push_operator_image_set "$registry" "$tag"
+        fi
+        if [[ "$push_context" == "merge-to-master" ]]; then
+            if is_OPENSHIFT_CI; then
+                _mirror_operator_image_set "$registry" "latest"
+            else
+                _tag_operator_image_set "$tag" "$registry" "latest"
+                _push_operator_image_set "$registry" "latest"
+            fi
+        fi
+    done
+}
+
 push_docs_image() {
     info "Pushing the docs image: $PIPELINE_DOCS_IMAGE"
 
