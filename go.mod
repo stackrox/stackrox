@@ -206,4 +206,4 @@ exclude k8s.io/client-go v12.0.0+incompatible
 
 exclude github.com/openshift/client-go v3.9.0+incompatible
 
-replace helm.sh/helm/v3 => github.com/porridge/helm/v3 v3.7.3-0.20220712081439-a4d429d11bd9
+replace helm.sh/helm/v3 => github.com/porridge/helm/v3 v3.7.3-0.20220719213745-59a08440474d
