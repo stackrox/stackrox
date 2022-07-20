@@ -100,7 +100,7 @@ func newWrap(obj interface{}, kind, clusterID, registryOverride string, registry
 	}
 }
 
-func (w *deploymentWrap) populateK8sComponentIfNecessary(o *v1.Pod) *metav1.LabelSelector {
+func (w *deploymentWrap) populateK8sComponentIfNecessary(o *v1.Pod, hierarchy references.ParentHierarchy) *metav1.LabelSelector {
 	if o.Namespace == kubeSystemNamespace {
 		for _, labelKey := range k8sComponentLabelKeys {
 			value, ok := o.Labels[labelKey]
@@ -110,6 +110,7 @@ func (w *deploymentWrap) populateK8sComponentIfNecessary(o *v1.Pod) *metav1.Labe
 			w.Id = getK8sComponentID(w.GetClusterId(), value)
 			w.Name = fmt.Sprintf("static-%s-pods", value)
 			w.Type = k8sStandalonePodType
+			hierarchy.AddManually(string(o.UID), w.Id)
 			return &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					labelKey: value,
@@ -182,7 +183,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
 		podLabels = o.Labels
-		labelSelector = w.populateK8sComponentIfNecessary(o)
+		labelSelector = w.populateK8sComponentIfNecessary(o, hierarchy)
 	case *v1beta1.CronJob:
 		// Cron jobs have a Job spec that then have a Pod Template underneath
 		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()

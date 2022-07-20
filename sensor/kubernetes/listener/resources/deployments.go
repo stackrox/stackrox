@@ -135,7 +135,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	if objAsPod != nil {
 		var owningDeploymentID string
 		uid := string(objAsPod.GetUID())
-		if deploymentWrap != nil {
+		if deploymentWrap != nil && deploymentWrap.GetType() != k8sStandalonePodType {
 			// The pod is a top-level object, so it is its own owner.
 			owningDeploymentID = uid
 		} else {
