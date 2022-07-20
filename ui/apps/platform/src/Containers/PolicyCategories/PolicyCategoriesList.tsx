@@ -1,13 +1,15 @@
 import React from 'react';
 import { SimpleList, SimpleListItem } from '@patternfly/react-core';
 
+import { PolicyCategory } from 'types/policy.proto';
+
 type PolicyCategoriesListProps = {
     policyCategories: {
         id: string;
         name: string;
         isDefault: boolean;
     }[];
-    setSelectedCategory: (selectedCategory: string) => void;
+    setSelectedCategory: (selectedCategory: PolicyCategory) => void;
 };
 
 function PolicyCategoriesList({
@@ -17,7 +19,7 @@ function PolicyCategoriesList({
     return (
         <SimpleList onSelect={() => {}}>
             {policyCategories.map((category) => {
-                const { id, name, isDefault } = category;
+                const { id, name } = category;
                 return (
                     <SimpleListItem
                         key={id}

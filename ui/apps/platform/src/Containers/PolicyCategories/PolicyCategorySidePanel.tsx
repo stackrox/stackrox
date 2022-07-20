@@ -4,7 +4,6 @@ import {
     PageSection,
     Title,
     Flex,
-    FlexItem,
     TextInput,
     Button,
     Form,
@@ -18,15 +17,18 @@ import { renamePolicyCategory } from 'services/PolicyCategoriesService';
 type PolicyCategoriesSidePanelProps = {
     selectedCategory: PolicyCategory;
     setSelectedCategory: (selectedCategory?: PolicyCategory) => void;
+    addToast: (toast) => void;
 };
 
 function PolicyCategorySidePanel({
     selectedCategory,
     setSelectedCategory,
+    addToast,
 }: PolicyCategoriesSidePanelProps) {
     const formik = useFormik({
         initialValues: selectedCategory,
         onSubmit: (values, { setSubmitting }) => {
+            console.log('onSumbit');
             setSubmitting(false);
             const { id, name } = values;
             renamePolicyCategory(id, name)
@@ -34,7 +36,7 @@ function PolicyCategorySidePanel({
                     setSelectedCategory(values);
                 })
                 .catch((error) => {
-                    console.error(error);
+                    addToast(error.message);
                 })
                 .finally(() => {
                     setSubmitting(false);
@@ -42,47 +44,61 @@ function PolicyCategorySidePanel({
         },
     });
 
+    const { values, handleChange, dirty, handleSubmit } = formik;
+
+    function onChange(_value, event) {
+        handleChange(event);
+    }
+
+    function clearSelectedCategory() {
+        setSelectedCategory();
+    }
+
+    const { name } = selectedCategory;
+
     return (
         <>
-            <PageSection isFilled variant="light">
-                <Flex direction={{ default: 'column' }}>
+            <PageSection isFilled variant="light" className="pf-u-h-100">
+                <Flex direction={{ default: 'column' }} className="pf-u-h-100">
                     <Flex
                         justifyContent={{ default: 'justifyContentSpaceBetween' }}
                         fullWidth={{ default: 'fullWidth' }}
+                        flexWrap={{ default: 'nowrap' }}
                     >
-                        <Title headingLevel="h3">{selectedCategory}</Title>
+                        <Title headingLevel="h3">{name}</Title>
                         <Button variant="secondary" isDanger>
                             Delete category
                         </Button>
                     </Flex>
-                    <FlexItem>
-                        <FormikProvider value={formik}>
-                            <Form>
-                                <FormGroup
-                                    fieldId="policy-category-name"
-                                    label="Category name"
-                                    isRequired
-                                    helperText="Provide a descriptive and unique category name."
+                    <FormikProvider value={formik}>
+                        <Form>
+                            <FormGroup
+                                fieldId="policy-category-name"
+                                label="Category name"
+                                isRequired
+                                helperText="Provide a descriptive and unique category name."
+                            >
+                                <TextInput
+                                    id="name"
+                                    type="text"
+                                    value={values.name}
+                                    onChange={onChange}
+                                />
+                            </FormGroup>
+                            <ActionGroup>
+                                <Button
+                                    variant="primary"
+                                    isDisabled={!dirty}
+                                    onClick={() => handleSubmit()}
                                 >
-                                    <TextInput
-                                        id="policy-category-name"
-                                        type="text"
-                                        value={selectedCategory.name}
-                                        onChange={() => {}}
-                                    />
-                                </FormGroup>
-                                <ActionGroup>
-                                    <Button variant="primary">Save</Button>
-                                    <Button
-                                        variant="secondary"
-                                        onClick={() => setSelectedCategory()}
-                                    >
-                                        Cancel
-                                    </Button>
-                                </ActionGroup>
-                            </Form>
-                        </FormikProvider>
-                    </FlexItem>
+                                    Save
+                                </Button>
+                                <Button variant="secondary" onClick={clearSelectedCategory}>
+                                    Cancel
+                                </Button>
+                            </ActionGroup>
+                        </Form>
+                    </FormikProvider>
                 </Flex>
             </PageSection>
         </>

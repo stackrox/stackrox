@@ -14,9 +14,13 @@ type PolicyCategoriesListSectionProps = {
     //     isDefault: boolean;
     // }[];
     policyCategories: string[];
+    addToast: (message) => void;
 };
 
-function PolicyCategoriesListSection({ policyCategories }: PolicyCategoriesListSectionProps) {
+function PolicyCategoriesListSection({
+    policyCategories,
+    addToast,
+}: PolicyCategoriesListSectionProps) {
     const [selectedCategory, setSelectedCategory] = useState<PolicyCategory>();
 
     // TODO: to remove once proto is in
@@ -54,9 +58,13 @@ function PolicyCategoriesListSection({ policyCategories }: PolicyCategoriesListS
 
     return (
         <PageSection id="policy-categories-list-section">
-            <Flex spaceItems={{ default: 'spaceItemsNone' }}>
+            <Flex
+                spaceItems={{ default: 'spaceItemsNone' }}
+                alignItems={{ default: 'alignItemsStretch' }}
+                className="pf-u-h-100"
+            >
                 <FlexItem flex={{ default: 'flex_1' }}>
-                    <PageSection isFilled variant="light">
+                    <PageSection isFilled variant="light" className="pf-u-h-100">
                         <Flex direction={{ default: 'column' }}>
                             <Flex
                                 justifyContent={{ default: 'justifyContentSpaceBetween' }}
@@ -105,6 +113,7 @@ function PolicyCategoriesListSection({ policyCategories }: PolicyCategoriesListS
                             <PolicyCategorySidePanel
                                 selectedCategory={selectedCategory}
                                 setSelectedCategory={setSelectedCategory}
+                                addToast={addToast}
                             />
                         </FlexItem>
                     </>
