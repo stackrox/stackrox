@@ -396,6 +396,13 @@ func (resolver *imageComponentResolver) PlottedImageVulnerabilities(ctx context.
 
 func (resolver *imageComponentResolver) TopImageVulnerability(ctx context.Context) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopImageVulnerability")
+	if !features.PostgresDatastore.Enabled() {
+		vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx)
+		if err != nil || vulnResolver == nil {
+			return nil, err
+		}
+		return vulnResolver, nil
+	}
 	return resolver.root.TopImageVulnerability(resolver.withImageComponentScope(ctx), RawQuery{})
 }
 
