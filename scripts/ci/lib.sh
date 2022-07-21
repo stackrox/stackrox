@@ -167,7 +167,7 @@ push_main_image_set() {
 
         local idx=0
         for image in "${main_image_set[@]}"; do
-            oc image mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
+            oc_image_mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
             (( idx++ )) || true
         done
     }
@@ -217,8 +217,8 @@ push_docs_image() {
 
     for registry in "${registries[@]}"; do
         registry_rw_login "$registry"
-        oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
-        oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$(make --quiet tag)"
+        oc_image_mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
+        oc_image_mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$(make --quiet tag)"
     done
 }
 
@@ -233,7 +233,7 @@ push_race_condition_debug_image() {
 
     local registry="quay.io/rhacs-eng"
     registry_rw_login "$registry"
-    oc image mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet tag)-rcd"
+    oc_image_mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet tag)-rcd"
 }
 
 registry_rw_login() {
@@ -296,7 +296,7 @@ push_matching_collector_scanner_images() {
 
     _retag_or_mirror() {
         if is_OPENSHIFT_CI; then
-            oc image mirror "$1" "$2"
+            oc_image_mirror "$1" "$2"
         else
             "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
         fi
@@ -320,6 +320,10 @@ push_matching_collector_scanner_images() {
         _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
         _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
     done
+}
+
+oc_image_mirror() {
+    retry 5 true oc image mirror "$1" "$2"
 }
 
 poll_for_system_test_images() {
