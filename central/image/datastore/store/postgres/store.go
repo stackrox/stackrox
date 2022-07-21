@@ -431,7 +431,7 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*sto
 		})
 
 		// Add the id to be deleted.
-		deletes.Add(obj.GetImageComponentId())
+		deletes.Add(obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {

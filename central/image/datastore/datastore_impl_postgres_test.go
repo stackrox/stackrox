@@ -28,11 +28,9 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -83,12 +81,12 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 	postgres.Destroy(s.ctx, s.db)
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-	s.datastore = NewWithPostgres(postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), postgres.NewIndexer(s.db), s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+	s.datastore = NewWithPostgres(postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), postgres.NewIndexer(s.db), s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	componentIndexer := imageComponentPostgres.NewIndexer(s.db)
 	componentSearcher := imageComponentSearch.NewV2(componentStorage, componentIndexer)
-	s.componentDataStore = imageComponentDS.New(nil, componentStorage, componentIndexer, componentSearcher, s.mockRisk, ranking.ComponentRanker())
+	s.componentDataStore = imageComponentDS.New(nil, componentStorage, componentIndexer, componentSearcher, s.mockRisk, ranking.NewRanker())
 
 	cveStorage := imageCVEPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	cveIndexer := imageCVEPostgres.NewIndexer(s.db)
@@ -173,7 +171,6 @@ func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.Equal(image.GetId(), results[0].ID)
 
 	// Scope search by vulns.
-	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULNERABILITIES, schema.ImageCvesSchema)
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		ID:    "cve3#blah",
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
