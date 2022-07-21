@@ -102,6 +102,15 @@ class NetworkBaselineTest extends BaseSpecification {
         }
     }
 
+    // validateBaseline checks that `expectedPeers` are present in the baseline and `explicitMissingPeers` are not.
+    // Any other peer found is going to be ignored.
+    //
+    // Apparently there is a TCP connection via port 9537 that gets started in OpenShift clusters against any pod with
+    // exposed ports. This was causing the test to fail since the expected baseline didn't match the size of the actual.
+    // Although the anomalous flow filtering was working correctly, the additional flow shown in the baseline was coming
+    // from this OpenShift connection in port 9537. To fix the issue, the split between `expectedPeers` and
+    // `explicitMissingPeers` was introduced.
+    // Check issues ROX-11142 and PR#2459 for more information.
     def validateBaseline(NetworkBaselineOuterClass.NetworkBaseline baseline, long beforeCreate,
                          long justAfterCreate, List<Tuple2<String, Boolean>> expectedPeers, List<String> explicitMissingPeers) {
         assert baseline.getObservationPeriodEnd().getSeconds() > beforeCreate - CLOCK_SKEW_ALLOWANCE_SECONDS
@@ -183,13 +192,15 @@ class NetworkBaselineTest extends BaseSpecification {
         def baselinedClientBaseline = NetworkBaselineService.getNetworkBaseline(baselinedClientDeploymentID)
         assert baselinedClientDeploymentID
 
+        // Deployment IDs that must be explicitly check that are missing from server baseline
+        def mustNotBeInBaseline = [anomalousClientDeploymentID]
+
         then:
         "Validate server baseline"
         // The anomalous client->server connection should not be baselined since the anonymous client
         // sleeps for a time period longer than the observation period before connecting to the server.
         validateBaseline(serverBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
-            [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true)],
-            [anomalousClientDeploymentID])
+            [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true)], mustNotBeInBaseline)
         validateBaseline(anomalousClientBaseline, beforeDeploymentCreate, justAfterDeploymentCreate, [], [])
         validateBaseline(baselinedClientBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
             [new Tuple2<String, Boolean>(serverDeploymentID, false)], []
@@ -240,7 +251,7 @@ class NetworkBaselineTest extends BaseSpecification {
              // gets added since it's within the deferred client's observation period, and
              // the server's baseline is modified as well since we keep things consistent.
              new Tuple2<String, Boolean>(deferredBaselinedClientDeploymentID, true),
-            ], [anomalousClientDeploymentID]
+            ], mustNotBeInBaseline
         )
         validateBaseline(deferredBaselinedClientBaseline, beforeDeferredCreate, justAfterDeferredCreate,
             [new Tuple2<String, Boolean>(serverDeploymentID, false)], [])
@@ -280,7 +291,7 @@ class NetworkBaselineTest extends BaseSpecification {
         validateBaseline(serverBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
             [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true),
              new Tuple2<String, Boolean>(deferredBaselinedClientDeploymentID, true),
-            ], [anomalousClientDeploymentID]
+            ], mustNotBeInBaseline
         )
         validateBaseline(postLockClientBaseline, beforeDeferredCreate, justAfterDeferredCreate,
             [], [])
