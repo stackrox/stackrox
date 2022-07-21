@@ -3,8 +3,8 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/cve/node/datastore/internal/index"
-	"github.com/stackrox/rox/central/cve/node/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/cve/node/datastore/index"
+	"github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
