@@ -47,7 +47,11 @@ func getK8sComponentID(clusterID string, component string) string {
 	u, err := uuid.FromString(clusterID)
 	if err != nil {
 		log.Error(err)
-		return ""
+		// ClusterID is sometimes not a valid UUID when we're doing testing,
+		// so let's be forgiving in that case.
+		// Unfortunately, we can't replace the entire implementation of the function with this
+		// line due to backward compatibility implications.
+		return uuid.NewV5FromNonUUIDs(clusterID, component).String()
 	}
 	return uuid.NewV5(u, component).String()
 }

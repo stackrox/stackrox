@@ -41,11 +41,7 @@ class GroupsTest extends BaseSpecification {
                     .build(),
     ]
 
-<<<<<<< HEAD
     private static final GROUPIDS = ["": ""]
-=======
-    private static final GROUP_IDS = ["": ""]
->>>>>>> 84b314e271 (Add groovy test)
 
     def setupSpec() {
         for (def group : GROUPS) {

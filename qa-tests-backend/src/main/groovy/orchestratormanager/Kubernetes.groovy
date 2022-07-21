@@ -1806,13 +1806,8 @@ class Kubernetes implements OrchestratorMain {
      * Here are examples of channel contents for successful and unsuccessful command runs:
      * {"metadata":{},"status":"Success"}
      * {"metadata":{},"status":"Failure","message":"command terminated with non-zero exit code:
-<<<<<<< HEAD
      *   Error executing in Docker Container: 7","reason":"NonZeroExitCode",
      *   "details":{"causes":[{"reason":"ExitCode","message":"7"}]}}
-=======
-     * Error executing in Docker Container: 7","reason":"NonZeroExitCode",
-     * "details":{"causes":[{"reason":"ExitCode","message":"7"}]}}
->>>>>>> 84b314e271 (Add groovy test)
      */
     private static Tuple2<ExecStatus, String> parseExecStatus(String execStatusChannelContents) {
         ExecStatus status = ExecStatus.UNKNOWN
@@ -1924,13 +1919,8 @@ class Kubernetes implements OrchestratorMain {
             Helpers.withK8sClientRetry(maxNumRetries, 1) {
                 client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
                 int att = Helpers.getAttemptCount()
-<<<<<<< HEAD
                 log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". " +
                           "Attempt " + att + " of " + maxNumRetries
-=======
-                log.debug "Told the orchestrator to createOrReplace " +
-                        deployment.name + ". Attempt " + att + " of " + maxNumRetries
->>>>>>> 84b314e271 (Add groovy test)
             }
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
