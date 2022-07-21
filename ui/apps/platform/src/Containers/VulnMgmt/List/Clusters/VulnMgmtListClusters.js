@@ -34,7 +34,7 @@ export const defaultClusterSort = [
 
 const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const fragmentToUse = isFrontendVMUpdatesEnabled
         ? CLUSTER_LIST_FRAGMENT_UPDATED

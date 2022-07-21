@@ -11,22 +11,30 @@ let opnamesForDashboard = [
     'getNodes',
     'getImages',
     'topRiskyDeployments',
-    'topRiskiestImages',
+    'topRiskiestImagesOld',
+    'topRiskiestImageVulns',
     'frequentlyViolatedPolicies',
     'recentlyDetectedVulnerabilities',
     'recentlyDetectedImageVulnerabilities',
     'mostCommonVulnerabilities',
+    'mostCommonImageVulnerabilities',
     'deploymentsWithMostSeverePolicyViolations',
     'clustersWithMostOrchestratorIstioVulnerabilities',
 ];
 
-if (hasFeatureFlag('ROX_FRONTEND_VM_UDPATES')) {
+if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
     opnamesForDashboard = opnamesForDashboard.filter(
-        (opname) => opname !== 'recentlyDetectedVulnerabilities'
+        (opname) =>
+            opname !== 'recentlyDetectedVulnerabilities' &&
+            opname !== 'topRiskiestImagesOld' &&
+            opname !== 'mostCommonVulnerabilities'
     );
 } else {
     opnamesForDashboard = opnamesForDashboard.filter(
-        (opname) => opname !== 'recentlyDetectedImageVulnerabilities'
+        (opname) =>
+            opname !== 'recentlyDetectedImageVulnerabilities' &&
+            opname !== 'topRiskiestImageVuln' &&
+            opname !== 'mostCommonImageVulnerabilities'
     );
 }
 
@@ -36,6 +44,7 @@ export function visitVulnerabilityManagementDashboardFromLeftNav() {
     });
 
     visitFromLeftNavExpandable('Vulnerability Management', 'Dashboard');
+    cy.log(`${opnamesForDashboard}`);
 
     cy.wait(opnamesForDashboard.map((opname) => `@${opname}`));
     cy.get('h1:contains("Vulnerability Management")');
