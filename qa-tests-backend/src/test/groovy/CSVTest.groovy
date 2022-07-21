@@ -30,6 +30,18 @@ class CSVTest extends BaseSpecification {
     }
     """
 
+    private static final CVE_POSTGRES_FIELDS_FRAGEMENT = """
+    fragment cveFields on ImageVulnerability {
+      id: cve
+      cvss
+      isFixable(query: \$scopeQuery)
+      deploymentCount(query: \$query)
+      imageCount(query: \$query)
+      componentCount(query: \$query)
+      __typename
+    }
+    """
+
     private static final FIXABLE_CVES_IN_IMAGE_QUERY = """
     query getFixableCvesInImage(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
      \$vulnPagination: Pagination) {
@@ -57,7 +69,7 @@ class CSVTest extends BaseSpecification {
         __typename
       }
     }
-    ${CVE_FIELDS_FRAGEMENT}
+    ${CVE_POSTGRES_FIELDS_FRAGEMENT}
     """
 
     private static final FIXABLE_CVES_IN_COMPONENT_QUERY = """
@@ -78,7 +90,7 @@ class CSVTest extends BaseSpecification {
     private static final FIXABLE_CVES_IN_COMPONENT_POSTGRES_QUERY = """
     query getFixableCvesInComponent(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
      \$vulnPagination: Pagination) {
-      result: component(id: \$id) {
+      result: imageComponent(id: \$id) {
         id
         vulnerabilities: imageVulnerabilities(query: \$vulnQuery, pagination: \$vulnPagination) {
           ...cveFields
@@ -87,7 +99,7 @@ class CSVTest extends BaseSpecification {
         __typename
       }
     }
-    ${CVE_FIELDS_FRAGEMENT}
+    ${CVE_POSTGRES_FIELDS_FRAGEMENT}
     """
 
     private static final FIXABLE_CVES_IN_DEPLOYMENT_QUERY = """
@@ -117,7 +129,7 @@ class CSVTest extends BaseSpecification {
         __typename
       }
     }
-    ${CVE_FIELDS_FRAGEMENT}
+    ${CVE_POSTGRES_FIELDS_FRAGEMENT}
     """
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
