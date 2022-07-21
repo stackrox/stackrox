@@ -33,6 +33,9 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+# Set to "--skip-build" to avoid the "docker build" part in index-build target.
+SKIP_INDEX_DOCKER_BUILD ?=
+
 # IMAGE_REPO is the repository (server and namespace) into which the operator images will get pushed.
 IMAGE_REPO ?= $(shell $(MAKE) --quiet --no-print-directory -C .. default-image-registry)
 # IMAGE_TAG_BASE defines the quay.io namespace and part of the image name for remote images.
@@ -67,7 +70,11 @@ SCORECARD_STORAGE_IMAGE ?= $(SCORECARD_STORAGE_IMAGE_BASE):$(SCORECARD_STORAGE_I
 SCORECARD_WAIT_TIME_DURATION ?= 5m
 
 # SCORECARD_ARGS should be passed to any invocation of "$(OPERATOR_SDK) scorecard".
-SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SCORECARD_WAIT_TIME_DURATION)" --verbose
+# TODO(ROX-11889): The `--namespace default` is a workaround for failures such as the following when running in a pod:
+# TODO(ROX-11889):   Error: error running tests error creating ConfigMap namespaces "ci-op-05qx07r3" not found
+# TODO(ROX-11889): These seem to happen despite unsetting the $NAMESPACE environment variable.
+# TODO(ROX-11889): Figure out where scorecard gets the namespace name from, elliminate this source, and remove the flag here.
+SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SCORECARD_WAIT_TIME_DURATION)" --verbose --namespace default
 
 # TEST_NAMESPACE is where the operator is installed for e2e tests by CI.
 TEST_NAMESPACE ?= stackrox-operator
@@ -237,13 +244,13 @@ test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e
 
 test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	KUTTL=$(KUTTL) SKIP_MANAGER_START=1 $(KUTTL) test
+	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} SKIP_MANAGER_START=1 $(KUTTL) test
 
 test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	SKIP_MANAGER_START=1 \
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
-	KUTTL=$(KUTTL) $(KUTTL) test --config kuttl-test.yaml tests/upgrade
+	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} $(KUTTL) test --config kuttl-test.yaml tests/upgrade
 
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
 # Create stackrox namespace if not exists.
@@ -268,7 +275,8 @@ ensure-rox-main-image-exists:
 build: generate fmt vet ## Build operator local binary.
 	../scripts/go-build-file.sh ./main.go bin/manager
 
-docker-build: test ## Build docker image with the operator.
+.PHONY: smuggled-status-sh
+smuggled-status-sh:
 	$(SILENT)( \
 		`# status.sh file is used by scripts/go-build.sh which we try to run in the docker container.` \
 		`# status.sh needs git repo, make and Makefile and who knows what else but its actual output is simple.` \
@@ -284,6 +292,8 @@ docker-build: test ## Build docker image with the operator.
 		`# Verify that the resulting status.sh is actually runnable` \
 		"$${smuggled_status_sh}" ;\
 	)
+
+docker-build: test smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
 		--build-arg "GO_VERSION=${GO_VERSION}" \
 		-t ${IMG} \
@@ -420,7 +430,7 @@ bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in t
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
-index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundle. Bundle image must be pushed beforehand.
+index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
 # If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise,
 # validation of the index fails because more than one version is identified as the head of the channel. An example of an
 # error: `multiple channel heads found in graph: rhacs-operator.v3.67.0, rhacs-operator.v3.69.0`
@@ -434,7 +444,8 @@ index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the 
 		--index-tag "$(INDEX_IMG)" \
 		--bundle-tag "$(BUNDLE_IMG)" \
 		--replaced-version "$${replaced_version}" \
-		--clean-output-dir
+		--clean-output-dir \
+		$(SKIP_INDEX_DOCKER_BUILD)
 
 ##@ Push images
 
