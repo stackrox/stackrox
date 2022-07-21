@@ -30,11 +30,9 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -89,12 +87,12 @@ func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
 	storage := postgres.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
 	indexer := postgres.NewIndexer(suite.db)
 	searcher := search.NewV2(storage, indexer)
-	suite.datastore = NewWithPostgres(storage, indexer, searcher, suite.mockRisk, ranking.NodeRanker(), ranking.NodeComponentRanker())
+	suite.datastore = NewWithPostgres(storage, indexer, searcher, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := nodeComponentPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
 	componentIndexer := nodeComponentPostgres.NewIndexer(suite.db)
 	componentSearcher := nodeComponentSearch.New(componentStorage, componentIndexer)
-	suite.componentDataStore = nodeComponentDS.New(componentStorage, componentIndexer, componentSearcher, suite.mockRisk, ranking.NodeComponentRanker())
+	suite.componentDataStore = nodeComponentDS.New(componentStorage, componentIndexer, componentSearcher, suite.mockRisk, ranking.NewRanker())
 
 	cveStorage := nodeCVEPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
 	cveIndexer := nodeCVEPostgres.NewIndexer(suite.db)
@@ -266,7 +264,6 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicSearch() {
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestSearchByVuln() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_VULNERABILITIES, schema.NodeCvesSchema)
 	ctx := sac.WithAllAccess(context.Background())
 	suite.upsertTestNodes(ctx)
 
