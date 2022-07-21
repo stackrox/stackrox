@@ -62,11 +62,11 @@ func (s *cveDataStoreSACTestSuite) TearDownSuite() {
 	s.Require().NoError(s.dackboxTestStore.Cleanup(s.T()))
 }
 
-func getImageComponentId(component *storage.EmbeddedImageScanComponent, os string) string {
+func getImageComponentID(component *storage.EmbeddedImageScanComponent, os string) string {
 	return scancomponent.ComponentID(component.GetName(), component.GetVersion(), os)
 }
 
-func getNodeComponentId(component *storage.EmbeddedNodeScanComponent, os string) string {
+func getNodeComponentID(component *storage.EmbeddedNodeScanComponent, os string) string {
 	return scancomponent.ComponentID(component.GetName(), component.GetVersion(), os)
 }
 
@@ -91,11 +91,11 @@ var (
 	imageComponent1s2x3   = fixtures.GetEmbeddedImageComponent1s2x3()
 	imageComponent2x4     = fixtures.GetEmbeddedImageComponent2x4()
 	imageComponent2x5     = fixtures.GetEmbeddedImageComponent2x5()
-	imageComponentID1x1   = getImageComponentId(imageComponent1x1, image1OS)
-	imageComponentID1x2   = getImageComponentId(imageComponent1x2, image1OS)
-	imageComponentID1s2x3 = getImageComponentId(imageComponent1s2x3, image1OS)
-	imageComponentID2x4   = getImageComponentId(imageComponent2x4, image2OS)
-	imageComponentID2x5   = getImageComponentId(imageComponent2x5, image2OS)
+	imageComponentID1x1   = getImageComponentID(imageComponent1x1, image1OS)
+	imageComponentID1x2   = getImageComponentID(imageComponent1x2, image1OS)
+	imageComponentID1s2x3 = getImageComponentID(imageComponent1s2x3, image1OS)
+	imageComponentID2x4   = getImageComponentID(imageComponent2x4, image2OS)
+	imageComponentID2x5   = getImageComponentID(imageComponent2x5, image2OS)
 
 	imageComponentTestCases = []componentTestCase{
 		{
@@ -280,11 +280,11 @@ var (
 	nodeComponent1s2x3   = fixtures.GetEmbeddedNodeComponent1s2x3()
 	nodeComponent2x4     = fixtures.GetEmbeddedNodeComponent2x4()
 	nodeComponent2x5     = fixtures.GetEmbeddedNodeComponent2x5()
-	nodeComponentID1x1   = getNodeComponentId(nodeComponent1x1, node1OS)
-	nodeComponentID1x2   = getNodeComponentId(nodeComponent1x2, node1OS)
-	nodeComponentID1s2x3 = getNodeComponentId(nodeComponent1s2x3, node1OS)
-	nodeComponentID2x4   = getNodeComponentId(nodeComponent2x4, node2OS)
-	nodeComponentID2x5   = getNodeComponentId(nodeComponent2x5, node2OS)
+	nodeComponentID1x1   = getNodeComponentID(nodeComponent1x1, node1OS)
+	nodeComponentID1x2   = getNodeComponentID(nodeComponent1x2, node1OS)
+	nodeComponentID1s2x3 = getNodeComponentID(nodeComponent1s2x3, node1OS)
+	nodeComponentID2x4   = getNodeComponentID(nodeComponent2x4, node2OS)
+	nodeComponentID2x5   = getNodeComponentID(nodeComponent2x5, node2OS)
 
 	nodeComponentTestCases = []componentTestCase{
 		{
@@ -702,7 +702,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentCount() {
 			expectedCount := 0
 			for _, visible := range c.expectedComponentFound {
 				if visible {
-					expectedCount += 1
+					expectedCount++
 				}
 			}
 			s.Equal(expectedCount, count)

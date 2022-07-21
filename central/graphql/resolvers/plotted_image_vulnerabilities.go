@@ -35,6 +35,7 @@ func (resolver *Resolver) wrapPlottedImageVulnerabilities(all []string, fixable 
 	}, nil
 }
 
+// PlottedImageVulnerabilities
 func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	if !features.PostgresDatastore.Enabled() {
 		query := withImageCveTypeFiltering(args.String())

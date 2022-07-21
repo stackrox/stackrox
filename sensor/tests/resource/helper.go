@@ -25,6 +25,7 @@ import (
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	v12 "k8s.io/api/rbac/v1"
+	// import gcp
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/klient/decoder"
@@ -35,6 +36,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
+// YamlTestFile is a test file in YAML
 type YamlTestFile struct {
 	Kind string
 	File string
@@ -60,8 +62,10 @@ func objByKind(kind string) k8s.Object {
 	}
 }
 
+// TestCallback the test callback
 type TestCallback func(t *testing.T, testContext *TestContext, objects map[string]k8s.Object)
 
+// TestContext the test context
 type TestContext struct {
 	t               *testing.T
 	r               *resources.Resources
@@ -71,6 +75,7 @@ type TestContext struct {
 	stopFn          func()
 }
 
+// NewContext - a new context
 func NewContext(t *testing.T) (*TestContext, error) {
 	envConfig := envconf.New().WithKubeconfigFile(conf.ResolveKubeConfigFile())
 	r, err := resources.New(envConfig.Client().RESTConfig())
@@ -89,10 +94,12 @@ func NewContext(t *testing.T) (*TestContext, error) {
 	}, nil
 }
 
+// Stop - stop the test
 func (c *TestContext) Stop() {
 	c.stopFn()
 }
 
+// Resources - test resources
 func (c *TestContext) Resources() *resources.Resources {
 	return c.r
 }
@@ -117,10 +124,12 @@ func createTestNs(ctx context.Context, r *resources.Resources, name string) (*v1
 	}, nil
 }
 
+// GetFakeCentral - gets a fake central
 func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
 	return c.fakeCentral
 }
 
+// RunWithResources - runs with resources
 func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallback) {
 	_, removeNamespace, err := createTestNs(context.Background(), c.r, "sensor-integration")
 	defer utils.IgnoreError(removeNamespace)
@@ -146,6 +155,7 @@ func (c *TestContext) RunWithResources(files []YamlTestFile, testCase TestCallba
 	testCase(c.t, c, fileToObj)
 }
 
+// RunBare - runs bare
 func (c *TestContext) RunBare(name string, testCase TestCallback) {
 	c.t.Run(name, func(t *testing.T) {
 		_, removeNamespace, err := createTestNs(context.Background(), c.r, "sensor-integration")
@@ -157,6 +167,7 @@ func (c *TestContext) RunBare(name string, testCase TestCallback) {
 	})
 }
 
+// RunWithResourcesPermutation - runs with resource permutation
 func (c *TestContext) RunWithResourcesPermutation(files []YamlTestFile, name string, testCase TestCallback) {
 	runPermutation(files, 0, func(f []YamlTestFile) {
 		newF := make([]YamlTestFile, len(f))
@@ -251,11 +262,13 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, fakeCentral, closeF
 }
 
+// ApplyFileNoObject - apply a file without an object
 func (c *TestContext) ApplyFileNoObject(ctx context.Context, ns string, file YamlTestFile) (func() error, error) {
 	obj := objByKind(file.Kind)
 	return c.ApplyFile(ctx, ns, file, obj)
 }
 
+// ApplyFile - applies a file
 func (c *TestContext) ApplyFile(ctx context.Context, ns string, file YamlTestFile, obj k8s.Object) (func() error, error) {
 	d := os.DirFS("yaml")
 	if err := decoder.DecodeFile(
@@ -307,6 +320,7 @@ func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error
 	}
 }
 
+// GetLastMessageWithDeploymentName - gets the last message by deployment name
 func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, name string) *central.MsgFromSensor {
 	var lastMessage *central.MsgFromSensor
 	for i := len(messages) - 1; i > 0; i-- {
@@ -319,6 +333,7 @@ func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, nam
 	return lastMessage
 }
 
+// GetUniquePodNamesFromPrefix - gets unique pod names by prefix
 func GetUniquePodNamesFromPrefix(messages []*central.MsgFromSensor, ns, prefix string) []string {
 	uniqueNames := set.NewStringSet()
 	for _, msg := range messages {
@@ -332,6 +347,7 @@ func GetUniquePodNamesFromPrefix(messages []*central.MsgFromSensor, ns, prefix s
 	return uniqueNames.AsSlice()
 }
 
+// GetUniqueDeploymentNames - gets unique deployment names
 func GetUniqueDeploymentNames(messages []*central.MsgFromSensor, ns string) []string {
 	uniqueNames := set.NewStringSet()
 	for _, msg := range messages {

@@ -590,9 +590,9 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 		return
 	}
 
-	for _, clusterId := range clustersToPrune {
-		log.Infof("[Cluster Pruning] Removing cluster with ID %s", clusterId)
-		if err := g.clusters.RemoveCluster(pruningCtx, clusterId, nil); err != nil {
+	for _, clusterID := range clustersToPrune {
+		log.Infof("[Cluster Pruning] Removing cluster with ID %s", clusterID)
+		if err := g.clusters.RemoveCluster(pruningCtx, clusterID, nil); err != nil {
 			log.Error(err)
 			return
 		}
