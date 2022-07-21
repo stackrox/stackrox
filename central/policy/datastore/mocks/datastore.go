@@ -67,20 +67,6 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// DeletePolicyCategory mocks base method.
-func (m *MockDataStore) DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeletePolicyCategory", ctx, request)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeletePolicyCategory indicates an expected call of DeletePolicyCategory.
-func (mr *MockDataStoreMockRecorder) DeletePolicyCategory(ctx, request interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicyCategory", reflect.TypeOf((*MockDataStore)(nil).DeletePolicyCategory), ctx, request)
-}
-
 // GetAllPolicies mocks base method.
 func (m *MockDataStore) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
 	m.ctrl.T.Helper()
@@ -172,20 +158,6 @@ func (m *MockDataStore) RemovePolicy(ctx context.Context, id string) error {
 func (mr *MockDataStoreMockRecorder) RemovePolicy(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePolicy", reflect.TypeOf((*MockDataStore)(nil).RemovePolicy), ctx, id)
-}
-
-// RenamePolicyCategory mocks base method.
-func (m *MockDataStore) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RenamePolicyCategory", ctx, request)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RenamePolicyCategory indicates an expected call of RenamePolicyCategory.
-func (mr *MockDataStoreMockRecorder) RenamePolicyCategory(ctx, request interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenamePolicyCategory", reflect.TypeOf((*MockDataStore)(nil).RenamePolicyCategory), ctx, request)
 }
 
 // Search mocks base method.

@@ -5,6 +5,7 @@ package datastore
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/gogo/protobuf/types"
@@ -12,12 +13,16 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/node/datastore/internal/search"
 	"github.com/stackrox/rox/central/node/datastore/internal/store/postgres"
+	nodeComponentDS "github.com/stackrox/rox/central/nodecomponent/datastore"
+	nodeComponentSearch "github.com/stackrox/rox/central/nodecomponent/datastore/search"
+	nodeComponentPostgres "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -37,13 +42,14 @@ func TestNodeDataStoreWithPostgres(t *testing.T) {
 type NodePostgresDataStoreTestSuite struct {
 	suite.Suite
 
-	ctx       context.Context
-	db        *pgxpool.Pool
-	gormDB    *gorm.DB
-	datastore DataStore
-	mockRisk  *mockRisks.MockDataStore
-
-	envIsolator *envisolator.EnvIsolator
+	ctx                context.Context
+	db                 *pgxpool.Pool
+	gormDB             *gorm.DB
+	datastore          DataStore
+	mockCtrl           *gomock.Controller
+	mockRisk           *mockRisks.MockDataStore
+	componentDataStore nodeComponentDS.DataStore
+	envIsolator        *envisolator.EnvIsolator
 }
 
 func (suite *NodePostgresDataStoreTestSuite) SetupSuite() {
@@ -70,17 +76,24 @@ func (suite *NodePostgresDataStoreTestSuite) SetupSuite() {
 func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
 	postgres.Destroy(suite.ctx, suite.db)
 
-	suite.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(suite.T()))
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockRisk = mockRisks.NewMockDataStore(suite.mockCtrl)
 	storage := postgres.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
 	indexer := postgres.NewIndexer(suite.db)
 	searcher := search.NewV2(storage, indexer)
 	suite.datastore = NewWithPostgres(storage, indexer, searcher, suite.mockRisk, ranking.NodeRanker(), ranking.NodeComponentRanker())
+
+	componentStorage := nodeComponentPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
+	componentIndexer := nodeComponentPostgres.NewIndexer(suite.db)
+	componentSearcher := nodeComponentSearch.New(componentStorage, componentIndexer)
+	suite.componentDataStore = nodeComponentDS.New(componentStorage, componentIndexer, componentSearcher, suite.mockRisk, ranking.NodeComponentRanker())
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TearDownSuite() {
-	suite.envIsolator.RestoreAll()
+	suite.mockCtrl.Finish()
 	suite.db.Close()
 	pgtest.CloseGormDB(suite.T(), suite.gormDB)
+	suite.envIsolator.RestoreAll()
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
@@ -296,7 +309,6 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByVuln() {
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestSearchByComponent() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_COMPONENTS, schema.NodeComponentsSchema)
 	ctx := sac.WithAllAccess(context.Background())
 	suite.upsertTestNodes(ctx)
 
@@ -344,6 +356,49 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByComponent() {
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
 	suite.NoError(err)
 	suite.Empty(results)
+}
+
+// Test sort by Component search label sorts by Component+Version to ensure backward compatibility.
+func (suite *NodePostgresDataStoreTestSuite) TestSortByComponent() {
+	ctx := sac.WithAllAccess(context.Background())
+	node := fixtures.GetNodeWithUniqueComponents()
+	componentIDs := make([]string, 0, len(node.GetScan().GetComponents()))
+	for _, component := range node.GetScan().GetComponents() {
+		componentIDs = append(componentIDs,
+			scancomponent.ComponentID(
+				component.GetName(),
+				component.GetVersion(),
+				node.GetScan().GetOperatingSystem(),
+			))
+	}
+
+	suite.NoError(suite.datastore.UpsertNode(ctx, node))
+
+	// Verify sort by Component search label is transformed to sort by Component+Version.
+	query := pkgSearch.EmptyQuery()
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field: pkgSearch.Component.String(),
+			},
+		},
+	}
+	// Component ID is Name+Version+Operating System. Therefore, sort by ID is same as Component+Version.
+	sort.SliceStable(componentIDs, func(i, j int) bool {
+		return componentIDs[i] < componentIDs[j]
+	})
+	results, err := suite.componentDataStore.Search(ctx, query)
+	suite.NoError(err)
+	suite.Equal(componentIDs, pkgSearch.ResultsToIDs(results))
+
+	// Verify reverse sort.
+	sort.SliceStable(componentIDs, func(i, j int) bool {
+		return componentIDs[i] > componentIDs[j]
+	})
+	query.Pagination.SortOptions[0].Reversed = true
+	results, err = suite.componentDataStore.Search(ctx, query)
+	suite.NoError(err)
+	suite.Equal(componentIDs, pkgSearch.ResultsToIDs(results))
 }
 
 func (suite *NodePostgresDataStoreTestSuite) upsertTestNodes(ctx context.Context) {

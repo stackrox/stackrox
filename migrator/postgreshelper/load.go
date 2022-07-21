@@ -7,6 +7,8 @@ import (
 
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/postgres/pgadmin"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
@@ -38,7 +40,21 @@ func Load(conf *config.Config) (*gorm.DB, error) {
 			log.WriteToStderrf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
 			return
 		}
-		source := fmt.Sprintf("%s password=%s", conf.CentralDB.Source, password)
+
+		activeDB := pgconfig.GetActiveDB()
+
+		sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
+		// Create the central database if necessary
+		if !pgadmin.CheckIfDBExists(adminConfig, activeDB) {
+			err = pgadmin.CreateDB(sourceMap, adminConfig, pgadmin.AdminDB, activeDB)
+			if err != nil {
+				log.WriteToStderrf("Could not create central database: %v", err)
+				return
+			}
+		}
+
+		// Add the active database and password to the source
+		source := fmt.Sprintf("%s password=%s database=%s", conf.CentralDB.Source, password, activeDB)
 		source = pgutils.PgxpoolDsnToPgxDsn(source)
 
 		// Waits for central-db ready with retries
@@ -59,5 +75,6 @@ func Load(conf *config.Config) (*gorm.DB, error) {
 			log.WriteToStderr("Successfully connected to central database.")
 		}
 	})
+
 	return gormDB, err
 }

@@ -326,12 +326,6 @@ fetchBundleForRemoteClusterInTheDB: &fetchBundleForRemoteClusterInTheDB
       roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" "${extra_args[@]}" sensor get-bundle remote
       [[ -d sensor-remote ]]
 
-checkToRunSeparateRaceConditionTestPipe: &checkToRunSeparateRaceConditionTestPipe
-  check-to-run:
-    run-on-master: true
-    run-on-tags: true
-    label: ci-race-tests
-
 version: 2.1
 
 parameters:
@@ -2327,78 +2321,12 @@ jobs:
     steps:
       - build
 
-  build-race-condition-debug-image:
-    executor: custom
-    resource_class: large
-    steps:
-      - checkout-with-submodules
-      - *checkToRunSeparateRaceConditionTestPipe
-
-      - run:
-          name: Override the main image tag with a '-rcd' suffix
-          command: |
-            TAG="$(make --quiet tag)"
-            echo "${TAG}-rcd" > CI_TAG
-            make --quiet tag
-
-      - setup_remote_docker:
-          version: << pipeline.parameters.docker_version >>
-
-      - restore-go-mod-cache
-      - setup-go-build-env
-
-      - restore-npm-deps-cache
-      - fetch-ui-deps
-
-      - run:
-          name: Generate OSS notice
-          command: |
-            make ossls-notice
-
-      - setup-dep-env:
-          docker-login: true
-
-      - run:
-          name: Build main image with race condition checks
-          command: |
-            make RACE=true CIRCLE_TAG="$(make --quiet tag)" main-image
-
-      - run:
-          name: Push new main-image with '-rcd' suffix
-          command: |
-            TAG="$(make --quiet tag)"
-
-            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-            docker tag "stackrox/main:${TAG}" "quay.io/rhacs-eng/main:${TAG}"
-            ./scripts/ci/push-as-manifest-list.sh "quay.io/rhacs-eng/main:${TAG}" | cat
-
-      - run:
-          # Apparently builds for race-condition-tests get GOTAGS=release due to explicitly set CIRCLE_TAG value.
-          # This results in the release image flavor set. Release image flavor expects unified image tags for collector,
-          # scanner and scanner-db images. Here we ensure that such images with unified tags exist.
-          name: Retag scanner, scanner-db and collector images with '-rcd' suffix
-          command: |
-            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-            MAIN_TAG="$(make --quiet tag)"
-            SCANNER_VERSION="$(make --quiet scanner-tag)"
-            COLLECTOR_VERSION="$(make --quiet collector-tag)"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "quay.io/rhacs-eng/scanner:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "quay.io/rhacs-eng/collector:${MAIN_TAG}"
-            ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "quay.io/rhacs-eng/collector-slim:${MAIN_TAG}"
-
-      - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
-          paths:
-            - CI_TAG
-            - bin/linux/roxctl
-
   build-operator:
     executor: custom
     resource_class: large
     steps:
       - checkout
-
+      - poll-for-builds-from-other-ci
       - setup_remote_docker:
           # Default docker server version isn't new enough therefore we're asking for more recent one to enjoy Buildkit.
           version: << pipeline.parameters.docker_version >>
@@ -2406,18 +2334,6 @@ jobs:
           name: Login to Docker Hub and Quay.io
           command: |
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - restore-go-mod-cache
-      - setup-go-build-env
-
-      - run:
-          name: Build and push images for quay.io/rhacs-eng
-          command: |
-            ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator/ everything
-
       - run:
           name: Check that Operator image is runnable - quay.io/rhacs-eng
           command: |
@@ -2746,20 +2662,6 @@ jobs:
     - destroy-openshift-4-cluster:
         when: on_fail
         cluster-name: operator-oc4-6
-
-  provision-race-condition-tests:
-    executor: custom
-    resource_class: small
-    environment:
-      GCP_IMAGE_TYPE: "COS"
-      POD_SECURITY_POLICIES: "false"
-    steps:
-      - checkout
-      - check-backend-changes
-      - *checkToRunSeparateRaceConditionTestPipe
-
-      - provision-gke-cluster:
-          cluster-id: race-condition-tests
 
   ###
   # Test jobs against built artifacts
@@ -3307,30 +3209,6 @@ jobs:
             printf "Versions:\n  from YAML: %s\nfrom roxctl: %s\n" "${version_from_yaml}" "${version_from_roxctl}"
             test "${version_from_yaml}" = "${version_from_roxctl}"
 
-  race-condition-tests:
-    executor: custom
-    environment:
-      LOCAL_PORT: 443
-      COLLECTION_METHOD: ebpf
-      GCP_IMAGE_TYPE: "COS"
-      MONITORING_SUPPORT: "false"
-      SCANNER_SUPPORT: "true"
-      ROX_BASELINE_GENERATION_DURATION: 1m
-      LOAD_BALANCER: lb
-      ADMISSION_CONTROLLER: "true"
-      ADMISSION_CONTROLLER_UPDATES: "true"
-      ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      IS_RACE_BUILD: "true"
-
-
-    steps:
-      - run-qa-tests:
-          cluster-id: race-condition-tests
-          sensor-deploy-flavor: helm
-          determine-whether-to-run:
-            - *checkToRunSeparateRaceConditionTestPipe
-          use-websocket: true
-
   ###
   # Post-build jobs to handle built artifacts (like tag, scan and publish images)
   ###
@@ -3749,8 +3627,6 @@ workflows:
             - quay-stackrox-io-readwrite
             - quay-rhacs-eng-readwrite
             - quay-rhacs-eng-readonly
-      - build-race-condition-debug-image:
-          <<: *runOnAllTagsWithPushCtx
       - build-scale-monitoring-and-mock-server:
           <<: *runOnAllTagsWithPushCtx
       - provision-gke-postgres-api-e2e-tests:
@@ -3834,14 +3710,6 @@ workflows:
             - build-rhacs
             - build-operator
             - provision-openshift-4-6-operator-e2e-tests
-      - provision-race-condition-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - race-condition-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-race-condition-debug-image
-            - build-scale-monitoring-and-mock-server
-            - provision-race-condition-tests
       - roxctl-windows-test:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:

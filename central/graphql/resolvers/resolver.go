@@ -78,7 +78,7 @@ type Resolver struct {
 	ComplianceService             v1.ComplianceServiceServer
 	ComplianceManagementService   v1.ComplianceManagementServiceServer
 	ComplianceManager             complianceManager.ComplianceManager
-	clusterCVEEdgeDataStore       clusterCVEEdgeDataStore.DataStore
+	ClusterCVEEdgeDataStore       clusterCVEEdgeDataStore.DataStore
 	ComponentCVEEdgeDataStore     componentCVEEdgeDataStore.DataStore
 	CVEDataStore                  legacyImageCVEDataStore.DataStore
 	ImageCVEDataStore             imageCVEDataStore.DataStore
@@ -130,7 +130,7 @@ func New() *Resolver {
 		ComplianceManager:           complianceManager.Singleton(),
 		ComplianceService:           complianceService.Singleton(),
 		ClusterDataStore:            clusterDatastore.Singleton(),
-		clusterCVEEdgeDataStore:     clusterCVEEdgeDataStore.Singleton(),
+		ClusterCVEEdgeDataStore:     clusterCVEEdgeDataStore.Singleton(),
 		ComponentCVEEdgeDataStore:   componentCVEEdgeDataStore.Singleton(),
 		DeploymentDataStore:         deploymentDatastore.Singleton(),
 		PodDataStore:                podDatastore.Singleton(),

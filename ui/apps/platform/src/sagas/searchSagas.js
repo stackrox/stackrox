@@ -35,7 +35,6 @@ const getQuery = () => {
                     value: `${capitalize(key)}:`,
                 },
                 {
-                    className: 'Select-create-option-placeholder',
                     label: searchParams[key],
                     value: searchParams[key],
                 }
@@ -49,8 +48,8 @@ const getQuery = () => {
 function* getSearchOptions(setSearchModifiers, setSearchSuggestions, setSearchOptions, query = '') {
     try {
         const result = yield call(fetchOptions, query);
-        yield put(setSearchModifiers(result.options));
-        yield put(setSearchSuggestions(result.options));
+        yield put(setSearchModifiers(result));
+        yield put(setSearchSuggestions(result));
         const queryOptions = getQuery();
         if (queryOptions.length && setSearchOptions) {
             yield put(setSearchOptions(queryOptions));

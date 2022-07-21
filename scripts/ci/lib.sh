@@ -167,7 +167,7 @@ push_main_image_set() {
 
         local idx=0
         for image in "${main_image_set[@]}"; do
-            oc image mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
+            oc_image_mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
             (( idx++ )) || true
         done
     }
@@ -202,6 +202,103 @@ push_main_image_set() {
     done
 }
 
+push_operator_image_set() {
+    info "Pushing stackrox-operator, stackrox-operator-bundle and stackrox-operator-index images"
+
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_operator_image_set <push_context> <brand>"
+    fi
+
+    local push_context="$1"
+    local brand="$2"
+
+    local operator_image_set=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index")
+    if is_OPENSHIFT_CI; then
+        local operator_image_srcs=("$OPERATOR_IMAGE" "$OPERATOR_BUNDLE_IMAGE" "$OPERATOR_BUNDLE_INDEX_MAGE")
+        oc registry login
+    fi
+
+    _push_operator_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        local v
+        for image in "${operator_image_set[@]}"; do
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "${registry}/${image}:${v}${tag}" | cat
+        done
+    }
+
+    _tag_operator_image_set() {
+        local local_tag="$1"
+        local registry="$2"
+        local remote_tag="$3"
+
+        local v
+        for image in "${operator_image_set[@]}"; do
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${v}${remote_tag}"
+        done
+    }
+
+    _mirror_operator_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        local idx=0
+        local v
+        for image in "${operator_image_set[@]}"; do
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            oc image mirror "${operator_image_srcs[$idx]}" "${registry}/${image}:${v}${tag}"
+            (( idx++ )) || true
+        done
+    }
+
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        local destination_registries=("quay.io/stackrox-io")
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        local destination_registries=("quay.io/rhacs-eng")
+    else
+        die "$brand is not a supported brand"
+    fi
+
+    local tag
+    tag="$(make --quiet -C operator tag)"
+    for registry in "${destination_registries[@]}"; do
+        registry_rw_login "$registry"
+
+        if is_OPENSHIFT_CI; then
+            _mirror_operator_image_set "$registry" "$tag"
+        else
+            _tag_operator_image_set "$tag" "$registry" "$tag"
+            _push_operator_image_set "$registry" "$tag"
+        fi
+        if [[ "$push_context" == "merge-to-master" ]]; then
+            if is_OPENSHIFT_CI; then
+                _mirror_operator_image_set "$registry" "latest"
+            else
+                _tag_operator_image_set "$tag" "$registry" "latest"
+                _push_operator_image_set "$registry" "latest"
+            fi
+        fi
+    done
+}
+
 push_docs_image() {
     info "Pushing the docs image: $PIPELINE_DOCS_IMAGE"
 
@@ -217,8 +314,8 @@ push_docs_image() {
 
     for registry in "${registries[@]}"; do
         registry_rw_login "$registry"
-        oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
-        oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$(make --quiet tag)"
+        oc_image_mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
+        oc_image_mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$(make --quiet tag)"
     done
 }
 
@@ -233,7 +330,7 @@ push_race_condition_debug_image() {
 
     local registry="quay.io/rhacs-eng"
     registry_rw_login "$registry"
-    oc image mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet tag)-rcd"
+    oc_image_mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet tag)-rcd"
 }
 
 registry_rw_login() {
@@ -296,7 +393,7 @@ push_matching_collector_scanner_images() {
 
     _retag_or_mirror() {
         if is_OPENSHIFT_CI; then
-            oc image mirror "$1" "$2"
+            oc_image_mirror "$1" "$2"
         else
             "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
         fi
@@ -320,6 +417,10 @@ push_matching_collector_scanner_images() {
         _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
         _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
     done
+}
+
+oc_image_mirror() {
+    retry 5 true oc image mirror "$1" "$2"
 }
 
 poll_for_system_test_images() {
@@ -892,7 +993,7 @@ openshift_ci_import_creds() {
     done
 }
 
-openshift_ci_e2e_mods() {
+unset_namespace_env_var() {
     # NAMESPACE is injected by OpenShift CI for the cluster that is running the
     # tests but this can have side effects for stackrox tests due to its use as
     # the default namespace e.g. with helm.
@@ -900,6 +1001,10 @@ openshift_ci_e2e_mods() {
         export OPENSHIFT_CI_NAMESPACE="$NAMESPACE"
         unset NAMESPACE
     fi
+}
+
+openshift_ci_e2e_mods() {
+    unset_namespace_env_var
 
     # Similarly the incoming KUBECONFIG is best avoided.
     if [[ -n "${KUBECONFIG:-}" ]]; then
@@ -919,6 +1024,18 @@ openshift_ci_e2e_mods() {
         # shellcheck disable=SC1090
         source "$envfile"
     fi
+}
+
+operator_e2e_test_setup() {
+    # TODO(ROX-11901): pass the brand explicitly from the CI config file rather than hardcode here
+    registry_ro_login "quay.io/rhacs-eng"
+    export ROX_PRODUCT_BRANDING="RHACS_BRANDING"
+
+    # $NAMESPACE is set by OpenShift CI, but confuses `operator-sdk scorecard` which runs against
+    # a completely different cluster, where this namespace does not even exist.
+    # Note that even though unsetting the variable turns out not to be sufficient for `operator-sdk scorecard`
+    # (still gets the namespace from *somewhere*), we're keeping this here as it might affect other tools.
+    unset_namespace_env_var
 }
 
 handle_nightly_runs() {

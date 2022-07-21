@@ -10,13 +10,14 @@ export const LIST_PAGE_SIZE = 25;
 
 export const defaultCountKeyMap = {
     [entityTypes.COMPONENT]: 'componentCount',
-    [entityTypes.NODE_COMPONENT]: 'componentCount',
-    [entityTypes.IMAGE_COMPONENT]: 'componentCount',
+    [entityTypes.NODE_COMPONENT]: 'componentCount: nodeComponentCount',
+    [entityTypes.IMAGE_COMPONENT]: 'componentCount: imageComponentCount',
     [entityTypes.CVE]: 'vulnCount',
     [entityTypes.IMAGE_CVE]: 'vulnCount: imageVulnerabilityCount',
     [entityTypes.NODE_CVE]: 'vulnCount: nodeVulnerabilityCount',
     [entityTypes.CLUSTER_CVE]: 'vulnCount: clusterVulnerabilityCount',
     [entityTypes.K8S_CVE]: 'vulnCount: k8sVulnCount',
+    [entityTypes.CLUSTER]: 'clusterCount',
     [entityTypes.DEPLOYMENT]: 'deploymentCount',
     [entityTypes.NAMESPACE]: 'namespaceCount',
     [entityTypes.NODE]: 'nodeCount',
