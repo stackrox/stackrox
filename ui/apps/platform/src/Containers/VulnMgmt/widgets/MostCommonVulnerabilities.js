@@ -129,8 +129,9 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     const header = showVMUpdates
         ? 'Most Common Image Vulnerabilities'
         : 'Most Common Vulnerabilities';
+    const targetUrlType = showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE;
     const viewAllURL = workflowState
-        .pushList(entityTypes.CVE)
+        .pushList(targetUrlType)
         .setSort([
             { id: cveSortFields.DEPLOYMENT_COUNT, desc: true },
             { id: cveSortFields.CVSS_SCORE, desc: true },
