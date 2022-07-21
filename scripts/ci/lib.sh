@@ -989,7 +989,7 @@ openshift_ci_import_creds() {
     done
 }
 
-openshift_ci_e2e_mods() {
+unset_namespace_env_var() {
     # NAMESPACE is injected by OpenShift CI for the cluster that is running the
     # tests but this can have side effects for stackrox tests due to its use as
     # the default namespace e.g. with helm.
@@ -997,6 +997,10 @@ openshift_ci_e2e_mods() {
         export OPENSHIFT_CI_NAMESPACE="$NAMESPACE"
         unset NAMESPACE
     fi
+}
+
+openshift_ci_e2e_mods() {
+    unset_namespace_env_var
 
     # Similarly the incoming KUBECONFIG is best avoided.
     if [[ -n "${KUBECONFIG:-}" ]]; then
@@ -1016,6 +1020,16 @@ openshift_ci_e2e_mods() {
         # shellcheck disable=SC1090
         source "$envfile"
     fi
+}
+
+operator_e2e_test_setup() {
+    registry_ro_login "quay.io/rhacs-eng"
+
+    # $NAMESPACE is set by OpenShift CI, but confuses `operator-sdk scorecard` which runs against
+    # a completely different cluster, where this namespace does not even exist.
+    # Note that even though unsetting the variable turns out not to be sufficient for `operator-sdk scorecard`
+    # (still gets the namespace from *somewhere*), we're keeping this here as it might affect other tools.
+    unset_namespace_env_var
 }
 
 handle_nightly_runs() {
