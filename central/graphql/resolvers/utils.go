@@ -339,39 +339,6 @@ func getImageIDFromIfImageShaQuery(ctx context.Context, resolver *Resolver, args
 	return res[0].ID, nil
 }
 
-func getNodeIDFromQueryIfNodeIDFieldInQuery(ctx context.Context, resolver *Resolver, args RawQuery) (string, error) {
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return "", err
-	}
-
-	query, filtered := search.FilterQuery(query, func(bq *v1.BaseQuery) bool {
-		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if ok {
-			if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.NodeID.String()) {
-				return true
-			}
-		}
-		return false
-	})
-
-	if !filtered || query == search.EmptyQuery() {
-		return "", nil
-	}
-
-	res, err := resolver.NodeGlobalDataStore.Search(ctx, query)
-	if err != nil {
-		return "", err
-	}
-	if len(res) != 1 {
-		return "", errors.Errorf(
-			"received %d nodes in query response when 1 node was expected. Please check the query",
-			len(res))
-	}
-
-	return res[0].ID, nil
-}
-
 // V1RawQueryAsResolverQuery parse v1.RawQuery into inputtypes.RawQuery and inputtypes.Pagination queries used by graphQL resolvers.
 func V1RawQueryAsResolverQuery(rQ *v1.RawQuery) (RawQuery, PaginatedQuery) {
 	if rQ.GetPagination() == nil {
@@ -399,4 +366,37 @@ func logErrorOnQueryContainingField(query *v1.Query, label search.FieldLabel, re
 			log.Errorf("Unexpected field (%s) found in query to resolver (%s). Response maybe unexpected.", label.String(), resolver)
 		}
 	})
+}
+
+func imageComponentToNodeComponent(comp *storage.ImageComponent) (*storage.NodeComponent, error) {
+	if comp == nil {
+		return nil, nil
+	}
+	if comp.GetSource() != storage.SourceType_INFRASTRUCTURE {
+		return nil, errors.Errorf("incorrect component source type '%s', should be '%s'", comp.GetSource().String(), storage.SourceType_INFRASTRUCTURE)
+	}
+	nodeComp := &storage.NodeComponent{
+		Id:              comp.GetId(),
+		Name:            comp.GetName(),
+		Version:         comp.GetVersion(),
+		Priority:        comp.GetPriority(),
+		RiskScore:       comp.GetRiskScore(),
+		OperatingSystem: comp.GetOperatingSystem(),
+	}
+	if comp.GetSetTopCvss() != nil {
+		nodeComp.SetTopCvss = &storage.NodeComponent_TopCvss{TopCvss: comp.GetTopCvss()}
+	}
+	return nodeComp, nil
+}
+
+func imageComponentsToNodeComponents(comps []*storage.ImageComponent) ([]*storage.NodeComponent, error) {
+	ret := make([]*storage.NodeComponent, 0, len(comps))
+	for _, comp := range comps {
+		nodeComp, err := imageComponentToNodeComponent(comp)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, nodeComp)
+	}
+	return ret, nil
 }

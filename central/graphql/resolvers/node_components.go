@@ -83,10 +83,12 @@ func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (Node
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
+	res, err := resolver.wrapNodeComponent(ret, true, err)
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapNodeComponent(ret, true, err)
+	res.ctx = ctx
+	return res, nil
 }
 
 // NodeComponents returns node components that match the input query.
@@ -157,8 +159,14 @@ func queryWithNodeIDRegexFilter(q string) string {
 }
 
 func (resolver *nodeComponentResolver) withNodeComponentScope(ctx context.Context) context.Context {
+	if features.PostgresDatastore.Enabled() {
+		return scoped.Context(ctx, scoped.Scope{
+			Level: v1.SearchCategory_NODE_COMPONENTS,
+			ID:    resolver.data.GetId(),
+		})
+	}
 	return scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_NODE_COMPONENTS,
+		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    resolver.data.GetId(),
 	})
 }
@@ -184,9 +192,6 @@ func (resolver *nodeComponentResolver) FixedIn(ctx context.Context) string {
 // NodeComponentLastScanned is the last time the node component was scanned in a node.
 func (resolver *nodeComponentResolver) NodeComponentLastScanned(ctx context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeComponentLastScanned")
-	if err := readNodes(ctx); err != nil {
-		return nil, nil
-	}
 	nodeLoader, err := loaders.GetNodeLoader(ctx)
 	if err != nil {
 		return nil, err
@@ -215,13 +220,13 @@ func (resolver *nodeComponentResolver) NodeComponentLastScanned(ctx context.Cont
 }
 
 // License of the node component
-func (resolver *nodeComponentResolver) License(ctx context.Context) (*licenseResolver, error) {
+func (resolver *nodeComponentResolver) License(_ context.Context) (*licenseResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "License")
 	return nil, nil
 }
 
 // Location of the node component.
-func (resolver *nodeComponentResolver) Location(ctx context.Context, args RawQuery) (string, error) {
+func (resolver *nodeComponentResolver) Location(_ context.Context, _ RawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "Location")
 	return "Not Available", nil
 }
@@ -263,7 +268,7 @@ func (resolver *nodeComponentResolver) PlottedNodeVulnerabilities(ctx context.Co
 }
 
 // Source returns the source type of the node component
-func (resolver *nodeComponentResolver) Source(ctx context.Context) string {
+func (resolver *nodeComponentResolver) Source(_ context.Context) string {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "Source")
 	return storage.SourceType_INFRASTRUCTURE.String()
 }
@@ -271,10 +276,41 @@ func (resolver *nodeComponentResolver) Source(ctx context.Context) string {
 // TopNodeVulnerability returns the first node component vulnerability with the top CVSS score
 func (resolver *nodeComponentResolver) TopNodeVulnerability(ctx context.Context) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "TopNodeVulnerability")
+	if !features.PostgresDatastore.Enabled() {
+		query := resolver.nodeComponentQuery()
+		query.Pagination = &v1.QueryPagination{
+			SortOptions: []*v1.QuerySortOption{
+				{
+					Field:    search.CVSS.String(),
+					Reversed: true,
+				},
+				{
+					Field:    search.CVE.String(),
+					Reversed: true,
+				},
+			},
+			Limit:  1,
+			Offset: 0,
+		}
+
+		vulnLoader, err := loaders.GetCVELoader(ctx)
+		if err != nil {
+			return nil, err
+		}
+		vulns, err := vulnLoader.FromQuery(ctx, query)
+		if err != nil || len(vulns) == 0 {
+			return nil, err
+		} else if len(vulns) > 1 {
+			return nil, errors.New("multiple vulnerabilities matched for top node component vulnerability")
+		}
+
+		return resolver.root.wrapCVE(vulns[0], true, nil)
+	}
+
 	return resolver.root.TopNodeVulnerability(resolver.withNodeComponentScope(ctx), RawQuery{})
 }
 
 // UnusedVarSink represents a query sink
-func (resolver *nodeComponentResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (resolver *nodeComponentResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
