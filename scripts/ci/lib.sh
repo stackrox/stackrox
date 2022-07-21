@@ -1023,7 +1023,9 @@ openshift_ci_e2e_mods() {
 }
 
 operator_e2e_test_setup() {
+    # TODO(ROX-11901): pass the brand explicitly from the CI config file rather than hardcode here
     registry_ro_login "quay.io/rhacs-eng"
+    export ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 
     # $NAMESPACE is set by OpenShift CI, but confuses `operator-sdk scorecard` which runs against
     # a completely different cluster, where this namespace does not even exist.
