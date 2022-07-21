@@ -13,7 +13,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityContext }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const { isDarkMode } = useTheme();
     const workflowState = useContext(workflowStateContext);

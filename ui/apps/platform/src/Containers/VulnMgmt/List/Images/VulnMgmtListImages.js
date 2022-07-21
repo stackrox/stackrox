@@ -36,7 +36,7 @@ export const defaultImageSort = [
 ];
 
 export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagEnabled) {
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     return function getImageTableColumns(workflowState) {
         const tableColumns = [

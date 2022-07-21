@@ -20,7 +20,7 @@ function ImageTableCountLinks({
     isFrontendVMUpdatesEnabled = false,
 }: ImageTableCountLinksProps): ReactElement {
     // const { isFeatureFlagEnabled } = useFeatureFlags();
-    // const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    // const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const workflowState = useContext(workflowStateContext);
     const entityContext = workflowState.getEntityContext() as Record<ResourceType, string>;

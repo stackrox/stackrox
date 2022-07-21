@@ -201,7 +201,7 @@ export function getNodeTableColumns(showVMUpdates) {
 // TODO: set getNodes query to get real nodes list
 const VulnMgmtNodes = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const query = showVMUpdates ? nodeListQuery : nodeListUpdatedQuery;
 

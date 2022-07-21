@@ -8,7 +8,7 @@ describe('Entities single views', () => {
     withAuth();
 
     it('related entities tile links should unset search params upon navigation', () => {
-        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UDPATES');
+        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
 
         visitVulnerabilityManagementEntities('clusters');
 
