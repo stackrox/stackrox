@@ -550,6 +550,7 @@ func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 	for i, field := range extraSelectedFields {
 		bufferToScanRowInto[i+len(query.SelectedFields)+numFieldsForPrimaryKey] = mustAllocForDataType(field.FieldType)
 	}
+	recordIDIdxMap := make(map[string]int)
 	for rows.Next() {
 		if err := rows.Scan(bufferToScanRowInto...); err != nil {
 			return nil, err
@@ -565,11 +566,20 @@ func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 				idParts = append(idParts, valueFromStringPtrInterface(bufferToScanRowInto[i]))
 			}
 		}
-		result := searchPkg.Result{
-			ID: strings.Join(idParts, IDSeparator), // TODO: figure out what separator to use
+
+		id := IDFromPks(idParts)
+		idx, ok := recordIDIdxMap[id]
+		if !ok {
+			idx = len(searchResults)
+			recordIDIdxMap[id] = idx
+			searchResults = append(searchResults, searchPkg.Result{
+				ID:      IDFromPks(idParts), // TODO: figure out what separator to use
+				Matches: make(map[string][]string),
+			})
 		}
+		result := searchResults[idx]
+
 		if len(query.SelectedFields) > 0 {
-			result.Matches = make(map[string][]string)
 			for i, field := range query.SelectedFields {
 				returnedValue := bufferToScanRowInto[i+numFieldsForPrimaryKey]
 				if field.PostTransform != nil {
@@ -580,7 +590,7 @@ func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 				}
 			}
 		}
-		searchResults = append(searchResults, result)
+		searchResults[idx] = result
 	}
 	return searchResults, nil
 }

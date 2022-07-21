@@ -374,6 +374,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByComponent() {
 func (suite *NodePostgresDataStoreTestSuite) TestSortByComponent() {
 	ctx := sac.WithAllAccess(context.Background())
 	node := fixtures.GetNodeWithUniqueComponents()
+	converter.FillV2NodeVulnerabilities(node)
 	componentIDs := make([]string, 0, len(node.GetScan().GetComponents()))
 	for _, component := range node.GetScan().GetComponents() {
 		componentIDs = append(componentIDs,
@@ -411,6 +412,22 @@ func (suite *NodePostgresDataStoreTestSuite) TestSortByComponent() {
 	results, err = suite.componentDataStore.Search(ctx, query)
 	suite.NoError(err)
 	suite.Equal(componentIDs, pkgSearch.ResultsToIDs(results))
+
+	// Verify sorting by fields of different table works correctly.
+	results, err = suite.datastore.Search(ctx, query)
+	suite.NoError(err)
+	suite.Equal(1, len(results))
+
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field: pkgSearch.CVE.String(),
+			},
+		},
+	}
+	results, err = suite.componentDataStore.Search(ctx, query)
+	suite.NoError(err)
+	suite.Equal(len(componentIDs), len(results))
 }
 
 func (suite *NodePostgresDataStoreTestSuite) upsertTestNodes(ctx context.Context) {
