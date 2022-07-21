@@ -116,8 +116,41 @@ spec:
           name: etc-ssl
         - mountPath: /etc/pki/ca-trust/
           name: etc-pki-volume
-        - mountPath: /host
-          name: host-root-ro
+        - mountPath: /host/etc
+          name: etc-ro
+          readOnly: true
+        - mountPath: /host/proc
+          name: proc-ro
+          readOnly: true
+        - mountPath: /host/opt
+          name: opt-ro
+          readOnly: true
+        - mountPath: /host/run
+          name: run-ro
+          readOnly: true
+        - mountPath: /host/srv
+          name: srv-ro
+          readOnly: true
+        - mountPath: /host/sys
+          name: sys-ro
+          readOnly: true
+        - mountPath: /host/usr
+          name: usr-ro
+          readOnly: true
+        - mountPath: /host/var/lib/kubelet/kubeconfig
+          name: var-lib-kubelet-kubeconfig
+          readOnly: true
+        - mountPath: /host/var/lib/docker
+          name: var-lib-docker
+          readOnly: true
+        - mountPath: /host/var/lib/containers
+          name: var-lib-containers
+          readOnly: true
+        - mountPath: /host/var/log
+          name: var-log
+          readOnly: true
+        - mountPath: /host/var/run
+          name: var-run
           readOnly: true
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
@@ -144,6 +177,33 @@ spec:
       - hostPath:
           path: /dev
         name: dev-ro
+      - hostPath:
+          path: /opt
+        name: opt-ro
+      - hostPath:
+          path: /run
+        name: run-ro
+      - hostPath:
+          path: /srv
+        name: srv-ro
+      - hostPath:
+          path: /usr
+        name: usr-ro
+      - hostPath:
+          path: /var/lib/kubelet/kubeconfig
+        name: var-lib-kubelet-kubeconfig
+      - hostPath:
+          path: /var/lib/docker
+        name: var-lib-docker
+      - hostPath:
+          path: /var/lib/containers
+        name: var-lib-containers
+      - hostPath:
+          path: /var/log
+        name: var-log
+      - hostPath:
+          path: /var/run
+        name: var-run
       - name: certs
         secret:
           secretName: collector-tls
@@ -154,9 +214,6 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
-      - hostPath:
-          path: /
-        name: host-root-ro
       - name: etc-ssl
         emptyDir: {}
       - name: etc-pki-volume
