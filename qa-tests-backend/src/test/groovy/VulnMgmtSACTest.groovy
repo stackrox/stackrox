@@ -49,7 +49,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         count: imageVulnerabilityCount(query: \$query)
     }
 
-    fragment cveFields on EmbeddedVulnerability {
+    fragment cveFields on ImageVulnerability {
         cve
     }
     """
@@ -64,7 +64,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         count: nodeVulnerabilityCount(query: \$query)
     }
 
-    fragment cveFields on EmbeddedVulnerability {
+    fragment cveFields on NodeVulnerability {
         cve
     }
     """
@@ -111,7 +111,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         count: nodeComponentCount(query: \$query)
     }
 
-    fragment componentFields on EmbeddedImageScanComponent {
+    fragment componentFields on EmbeddedNodeScanComponent {
         name
         version
     }
