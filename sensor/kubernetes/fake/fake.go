@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	"math/rand"
 	"os"
 	"time"
 
@@ -102,6 +103,7 @@ func NewWorkloadManager() *WorkloadManager {
 	if err := yaml.Unmarshal(data, &workload); err != nil {
 		log.Panicf("could not unmarshal workload from file due to error (%v): %s", err, data)
 	}
+	rand.Seed(79903873873)
 
 	mgr := &WorkloadManager{
 		workload:            &workload,
