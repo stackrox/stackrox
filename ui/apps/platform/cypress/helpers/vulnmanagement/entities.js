@@ -33,7 +33,7 @@ if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
     opnamesForDashboard = opnamesForDashboard.filter(
         (opname) =>
             opname !== 'recentlyDetectedImageVulnerabilities' &&
-            opname !== 'topRiskiestImageVuln' &&
+            opname !== 'topRiskiestImageVulns' &&
             opname !== 'mostCommonImageVulnerabilities'
     );
 }
@@ -44,7 +44,6 @@ export function visitVulnerabilityManagementDashboardFromLeftNav() {
     });
 
     visitFromLeftNavExpandable('Vulnerability Management', 'Dashboard');
-    cy.log(`${opnamesForDashboard}`);
 
     cy.wait(opnamesForDashboard.map((opname) => `@${opname}`));
     cy.get('h1:contains("Vulnerability Management")');
