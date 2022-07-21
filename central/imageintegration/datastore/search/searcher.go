@@ -14,7 +14,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Searcher provides search functionality on existing pods
+// Searcher provides search functionality on existing image integrations
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)

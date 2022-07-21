@@ -22,6 +22,7 @@ import (
 	mockCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
 	clusterCVESearch "github.com/stackrox/rox/central/cve/cluster/datastore/search"
 	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
+
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/cve/matcher"
@@ -301,7 +302,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 		clusterPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB),
 		clusterHealthPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB),
 		clusterPostgres.NewIndexer(db), nil, s.mockNamespaces, nil, s.nodeDataStore, nil, nil,
-		s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil)
+		s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil, nil)
 	s.NoError(err)
 	s.clusterDataStore = clusterDataStore
 

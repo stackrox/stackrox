@@ -14,7 +14,7 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	imageintegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -93,7 +93,7 @@ type datastoreImpl struct {
 
 	lock sync.Mutex
 
-	imageIntegrationDataStore imageintegrationDataStore.DataStore
+	imageIntegrationDataStore imageIntegrationDataStore.DataStore
 }
 
 func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
@@ -158,7 +158,10 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 func (ds *datastoreImpl) removeImageIntegrationByCluster(ctx context.Context, cluster *storage.Cluster) {
 
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	log.Info(">>>> Image Integrations deletion: removeImageIntegrationByCluster")
+	log.Info(">>>> Image Integrations: " + q.String() + " " + q.GetBaseQuery().String())
 	imageIntegrations, err := ds.imageIntegrationDataStore.Search(ctx, q)
+	log.Infof(">>>>Image Integrations list size is %d", len(imageIntegrations))
 	if err != nil {
 		log.Errorf("failed to get image integrations for removed cluster %s: %v", cluster.GetId(), err)
 		return
@@ -535,6 +538,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		}
 	}
 
+	ds.removeImageIntegrationByCluster(ctx, cluster)
 	// Remove ranker record here since removal is not handled in risk store as no entry present for cluster
 	ds.clusterRanker.Remove(cluster.GetId())
 
@@ -563,7 +567,6 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	ds.removeClusterServiceAccounts(ctx, cluster)
 	ds.removeK8SRoles(ctx, cluster)
 	ds.removeRoleBindings(ctx, cluster)
-	ds.removeImageIntegrationByCluster(ctx, cluster)
 
 	// TODO: Apparently, cluster cves are only cleaned up at next cve fetch cycle.
 

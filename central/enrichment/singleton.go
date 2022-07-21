@@ -10,7 +10,7 @@ import (
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
-	imageintegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	imageIntegrationDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	signatureIntegrationDataStore "github.com/stackrox/rox/central/signatureintegration/datastore"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/suppressor"
@@ -32,7 +32,7 @@ var (
 	en                Enricher
 	cf                fetcher.OrchestratorIstioCVEManager
 	manager           Manager
-	ad                imageintegrationDataStore.DataStore
+	ad                imageIntegrationDS.DataStore
 	metadataCacheOnce sync.Once
 	metadataCache     expiringcache.Cache
 
@@ -55,7 +55,7 @@ func initialize() {
 		signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations)
 	ne = nodeEnricher.New(nodeCVESuppressor, metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
-	ad = imageintegrationDataStore.Singleton()
+	ad = imageIntegrationDS.Singleton()
 	cf = fetcher.SingletonManager()
 	manager = newManager(imageintegration.Set(), ne, cf)
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())

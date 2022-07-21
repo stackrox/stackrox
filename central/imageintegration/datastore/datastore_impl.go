@@ -17,12 +17,12 @@ var (
 )
 
 type datastoreImpl struct {
-	storage           store.Store
-	formattedSearcher search.Searcher
+	storage  store.Store
+	searcher search.Searcher
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return ds.formattedSearcher.Search(ctx, q)
+	return ds.searcher.Search(ctx, q)
 }
 
 // GetImageIntegration is pass-through to the underlying store.

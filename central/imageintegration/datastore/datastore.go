@@ -29,7 +29,7 @@ type DataStore interface {
 // New returns an instance of DataStore.
 func New(storage store.Store, searcher search.Searcher) DataStore {
 	return &datastoreImpl{
-		storage:           storage,
-		formattedSearcher: searcher,
+		storage:  storage,
+		searcher: searcher,
 	}
 }

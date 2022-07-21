@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/imageintegration/datastore/search"
-
 	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/imageintegration/store/bolt"
