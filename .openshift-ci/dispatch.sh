@@ -27,6 +27,9 @@ case "$ci_job" in
     gke-qa-e2e-tests|gke-nongroovy-e2e-tests|gke-upgrade-tests|gke-ui-e2e-tests)
         openshift_ci_e2e_mods
         ;;
+    openshift-*-operator-e2e-tests)
+        operator_e2e_test_setup
+        ;;
 esac
 
 if [[ "$ci_job" =~ e2e|upgrade ]]; then

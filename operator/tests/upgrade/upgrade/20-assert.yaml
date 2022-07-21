@@ -13,7 +13,7 @@ commands:
     # With 5 objects in the assert file, each attempt typically takes ~18 seconds (including the 1s sleep between attempts),
     # although it can occasionally take significantly longer, see https://github.com/kudobuilder/kuttl/issues/321
     # So we specify a timeout value of 16, aiming for under 5 minutes.
-    ${KUTTL:-kubectl-kuttl} assert --namespace $NAMESPACE --timeout 16 $assert_file
+    KUBECONFIG="${REAL_KUBECONFIG}" ${KUTTL:-kubectl-kuttl} assert --namespace $NAMESPACE --timeout 16 $assert_file
     rm $assert_file
 collectors:
 - type: pod
