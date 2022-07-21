@@ -24,7 +24,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 
 // TODO: remove once ROX_FRONTEND_VM_UPDATES is enabled
 const TOP_RISKIEST_IMAGES = gql`
-    query topRiskiestImages($query: String, $pagination: Pagination) {
+    query topRiskiestImagesOld($query: String, $pagination: Pagination) {
         results: images(query: $query, pagination: $pagination) {
             id
             name {
