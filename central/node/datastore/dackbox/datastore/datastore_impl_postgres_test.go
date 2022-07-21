@@ -11,6 +11,9 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
+	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
+	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
+	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/node/datastore/internal/search"
 	"github.com/stackrox/rox/central/node/datastore/internal/store/postgres"
 	nodeComponentDS "github.com/stackrox/rox/central/nodecomponent/datastore"
@@ -20,9 +23,12 @@ import (
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cve"
+	pkgCVE "github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -30,6 +36,7 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/scoped"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -49,6 +56,7 @@ type NodePostgresDataStoreTestSuite struct {
 	mockCtrl           *gomock.Controller
 	mockRisk           *mockRisks.MockDataStore
 	componentDataStore nodeComponentDS.DataStore
+	nodeCVEDataStore   nodeCVEDS.DataStore
 	envIsolator        *envisolator.EnvIsolator
 }
 
@@ -87,6 +95,13 @@ func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
 	componentIndexer := nodeComponentPostgres.NewIndexer(suite.db)
 	componentSearcher := nodeComponentSearch.New(componentStorage, componentIndexer)
 	suite.componentDataStore = nodeComponentDS.New(componentStorage, componentIndexer, componentSearcher, suite.mockRisk, ranking.NodeComponentRanker())
+
+	cveStorage := nodeCVEPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
+	cveIndexer := nodeCVEPostgres.NewIndexer(suite.db)
+	cveSearcher := nodeCVESearch.New(cveStorage, cveIndexer)
+	cveDataStore, err := nodeCVEDS.New(cveStorage, cveIndexer, cveSearcher, concurrency.NewKeyFence())
+	suite.NoError(err)
+	suite.nodeCVEDataStore = cveDataStore
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TearDownSuite() {
@@ -427,6 +442,160 @@ func (suite *NodePostgresDataStoreTestSuite) deleteTestNodes(ctx context.Context
 	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), "id1", storage.RiskSubjectType_NODE).Return(nil)
 	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), "id2", storage.RiskSubjectType_NODE).Return(nil)
 	suite.NoError(suite.datastore.DeleteNodes(ctx, "id1", "id2"))
+}
+
+func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
+	ctx := sac.WithAllAccess(context.Background())
+	testNode := fixtures.GetNodeWithUniqueComponents()
+	converter.MoveNodeVulnsToNewField(testNode)
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode))
+
+	storedNode, found, err := suite.datastore.GetNode(ctx, testNode.GetId())
+	suite.NoError(err)
+	suite.True(found)
+	for _, component := range testNode.GetScan().GetComponents() {
+		for _, cve := range component.GetVulnerabilities() {
+			cve.CveBaseInfo.CreatedAt = storedNode.GetLastUpdated()
+		}
+	}
+	testNode.Priority = 1
+	suite.Equal(testNode, storedNode)
+
+	// Verify that new scan with less components cleans up the old relations correctly.
+	testNode.Scan.ScanTime = types.TimestampNow()
+	testNode.Scan.Components = testNode.Scan.Components[:len(testNode.Scan.Components)-1]
+	cveIDsSet := set.NewStringSet()
+	for _, component := range testNode.GetScan().GetComponents() {
+		for _, cve := range component.GetVulnerabilities() {
+			cveIDsSet.Add(pkgCVE.ID(cve.GetCveBaseInfo().GetCve(), testNode.GetScan().GetOperatingSystem()))
+		}
+	}
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode))
+
+	// Verify node is built correctly.
+	storedNode, found, err = suite.datastore.GetNode(ctx, testNode.GetId())
+	suite.NoError(err)
+	suite.True(found)
+	suite.Equal(testNode, storedNode)
+
+	// Verify orphaned node components are removed.
+	count, err := suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(len(testNode.Scan.Components), count)
+
+	// Verify orphaned node vulnerabilities are removed.
+	results, err := suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.ElementsMatch(cveIDsSet.AsSlice(), pkgSearch.ResultsToIDs(results))
+
+	testNode2 := testNode.Clone()
+	testNode2.Id = "2"
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
+	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
+	suite.NoError(err)
+	suite.True(found)
+	testNode2.Priority = 1
+	suite.Equal(testNode2, storedNode)
+
+	// Verify that number of node components remains unchanged since both nodes have same components.
+	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(len(testNode.Scan.Components), count)
+
+	// Verify that number of node vulnerabilities remains unchanged since both nodes have same vulns.
+	results, err = suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.ElementsMatch(cveIDsSet.AsSlice(), pkgSearch.ResultsToIDs(results))
+
+	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), testNode.GetId(), gomock.Any()).Return(nil)
+	suite.NoError(suite.datastore.DeleteNodes(ctx, testNode.GetId()))
+
+	// Verify that second node is still constructed correctly.
+	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
+	suite.NoError(err)
+	suite.True(found)
+	suite.Equal(testNode2, storedNode)
+
+	// Set all components to contain same cve.
+	for _, component := range testNode2.GetScan().GetComponents() {
+		component.Vulnerabilities = []*storage.NodeVulnerability{
+			{CveBaseInfo: &storage.CVEInfo{Cve: "cve"}},
+		}
+	}
+	testNode2.Scan.ScanTime = types.TimestampNow()
+
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
+	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
+	suite.NoError(err)
+	suite.True(found)
+	for _, component := range testNode2.GetScan().GetComponents() {
+		// Components and Vulns are deduped, therefore, update testNode structure.
+		for _, cve := range component.GetVulnerabilities() {
+			cve.CveBaseInfo.CreatedAt = storedNode.GetLastUpdated()
+		}
+	}
+	suite.Equal(testNode2, storedNode)
+
+	// Verify orphaned node components are removed.
+	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(len(testNode2.Scan.Components), count)
+
+	// Verify orphaned node vulnerabilities are removed.
+	results, err = suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.ElementsMatch([]string{pkgCVE.ID("cve", "")}, pkgSearch.ResultsToIDs(results))
+
+	// Verify that new scan with less components cleans up the old relations correctly.
+	testNode2.Scan.ScanTime = types.TimestampNow()
+	testNode2.Scan.Components = testNode2.Scan.Components[:len(testNode2.Scan.Components)-1]
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
+
+	// Verify node is built correctly.
+	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
+	suite.NoError(err)
+	suite.True(found)
+	suite.Equal(testNode2, storedNode)
+
+	// Verify orphaned node components are removed.
+	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(len(testNode2.Scan.Components), count)
+
+	// Verify no vulnerability is removed since all vulns are still connected.
+	results, err = suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.ElementsMatch([]string{pkgCVE.ID("cve", "")}, pkgSearch.ResultsToIDs(results))
+
+	// Verify that new scan with no components and vulns cleans up the old relations correctly.
+	testNode2.Scan.ScanTime = types.TimestampNow()
+	testNode2.Scan.Components = nil
+	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
+
+	// Verify node is built correctly.
+	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
+	suite.NoError(err)
+	suite.True(found)
+	suite.Equal(testNode2, storedNode)
+
+	// Verify no components exist.
+	count, err = suite.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(0, count)
+
+	// Verify no vulnerabilities exist.
+	count, err = suite.nodeCVEDataStore.Count(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(0, count)
+
+	// Delete node.
+	suite.mockRisk.EXPECT().RemoveRisk(gomock.Any(), testNode2.GetId(), gomock.Any()).Return(nil)
+	suite.NoError(suite.datastore.DeleteNodes(ctx, testNode2.GetId()))
+
+	// Verify no node exist.
+	count, err = suite.datastore.Count(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(0, count)
 }
 
 func getTestNodeForPostgres(id, name string) *storage.Node {
