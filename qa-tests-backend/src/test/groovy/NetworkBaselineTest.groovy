@@ -112,15 +112,15 @@ class NetworkBaselineTest extends BaseSpecification {
     // `explicitMissingPeers` was introduced.
     // Check issues ROX-11142 and PR#2459 for more information.
     def validateBaseline(NetworkBaselineOuterClass.NetworkBaseline baseline, long beforeCreate,
-                         long justAfterCreate, List<Tuple2<String, Boolean>> expectedPeers, List<String> explicitMissingPeers) {
+                         long justAfterCreate, List<Tuple2<String, Boolean>> mustBeInBaseline, List<String> mustNotBeInBaseline) {
         assert baseline.getObservationPeriodEnd().getSeconds() > beforeCreate - CLOCK_SKEW_ALLOWANCE_SECONDS
         assert baseline.getObservationPeriodEnd().getSeconds() <
             justAfterCreate + EXPECTED_BASELINE_DURATION_SECONDS + CLOCK_SKEW_ALLOWANCE_SECONDS
         assert baseline.getForbiddenPeersCount() == 0
 
-        for (def i = 0; i < expectedPeers.size(); i++) {
-            def expectedPeerID = expectedPeers.get(i).getFirst()
-            def expectedPeerIngress = expectedPeers.get(i).getSecond()
+        for (def i = 0; i < mustBeInBaseline.size(); i++) {
+            def expectedPeerID = mustBeInBaseline.get(i).getFirst()
+            def expectedPeerIngress = mustBeInBaseline.get(i).getSecond()
             def actualPeer = baseline.getPeersList().find { it.getEntity().getInfo().getId() == expectedPeerID }
             assert actualPeer
             def entityInfo = actualPeer.getEntity().getInfo()
@@ -133,7 +133,7 @@ class NetworkBaselineTest extends BaseSpecification {
             assert properties.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
         }
 
-        for (def checkMissingId : explicitMissingPeers) {
+        for (def checkMissingId : mustNotBeInBaseline) {
             def actualPeer = baseline.getPeersList().find { it.getEntity().getInfo().getId() == checkMissingId }
             assert actualPeer == null
         }
