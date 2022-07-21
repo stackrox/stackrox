@@ -1,18 +1,18 @@
 deploymentWorkload:
 - deploymentType: Deployment
-  lifecycleDuration: 40m0s
+  lifecycleDuration: 45m0s
   numDeployments: 3000
   numLifecycles: 0
   podWorkload:
     containerWorkload:
       numImages: 0
-    lifecycleDuration: 20m0s
+    lifecycleDuration: 25m0s
     numContainers: 3
     numPods: 3
     processWorkload:
       alertRate: 0.003
       processInterval: 1m30s
-  updateInterval: 20m0s
+  updateInterval: 25m0s
 networkWorkload:
   batchSize: 100
   flowInterval: 2s
