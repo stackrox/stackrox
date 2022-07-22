@@ -98,7 +98,7 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.NODE]: {
         // @TODO: Uncomment this once we're using the new entity
         // children: [entityTypes.NODE_COMPONENT],
-        children: [entityTypes.COMPONENT],
+        children: [entityTypes.COMPONENT, entityTypes.NODE_COMPONENT],
         parents: [entityTypes.CLUSTER],
         matches: [entityTypes.CONTROL],
     },
@@ -121,7 +121,7 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.IMAGE]: {
         // @TODO: Uncomment this once we're using the new entity
         // children: [entityTypes.IMAGE_COMPONENT],
-        children: [entityTypes.COMPONENT],
+        children: [entityTypes.COMPONENT, entityTypes.IMAGE_COMPONENT],
         parents: [],
         matches: [entityTypes.DEPLOYMENT],
     },

@@ -10,6 +10,7 @@ import relationshipTypes from 'constants/relationshipTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import TileList from 'Components/TileList';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import filterEntityRelationship from 'Containers/VulnMgmt/VulnMgmt.utils/filterEntityRelationship';
 
 const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityContext }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -25,6 +26,9 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
     const countKeyMap = { ...defaultCountKeyMap, ...altCountKeyMap };
 
     const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
+        .filter((match) => {
+            return filterEntityRelationship(match, showVMUpdates);
+        })
         .map((matchEntity) => {
             // @TODO: Modify the actual relationship entities once ROX_FRONTEND_VM_UPDATES is in
             let newMatchEntity = matchEntity;
@@ -74,6 +78,9 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
             return matchObj.count && !entityContext[matchObj.entity];
         });
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
+        .filter((match) => {
+            return filterEntityRelationship(match, showVMUpdates);
+        })
         .map((containEntity) => {
             // @TODO: Modify the actual relationship entities once ROX_FRONTEND_VM_UPDATES is in
             let newContainEntity = containEntity;
@@ -140,7 +147,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
                         left: '-0.5rem',
                         width: 'calc(100% + 0.5rem)',
                     }}
-                    className={`mb-3 p-2  text-base rounded-l text-lg ${
+                    className={`mb-3 p-2 rounded-l text-lg ${
                         !isDarkMode
                             ? 'bg-primary-700 text-base-100'
                             : 'bg-tertiary-300 text-base-900'
