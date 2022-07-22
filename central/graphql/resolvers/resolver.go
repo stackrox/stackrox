@@ -170,6 +170,7 @@ func New() *Resolver {
 		resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()
 		resolver.NodeComponentCVEEdgeDataStore = nodeComponentCVEEdgeDataStore.Singleton()
 		resolver.NodeComponentDataStore = nodeComponentDataStore.Singleton()
+
 	} else {
 		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
 	}

@@ -19,7 +19,7 @@ const (
 )
 
 func TestNodeCVELoader(t *testing.T) {
-	suite.Run(t, new(CVELoaderTestSuite))
+	suite.Run(t, new(NodeCVELoaderTestSuite))
 }
 
 type NodeCVELoaderTestSuite struct {
