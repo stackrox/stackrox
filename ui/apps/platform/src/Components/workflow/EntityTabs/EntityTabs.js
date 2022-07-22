@@ -12,6 +12,7 @@ import {
 import relationshipTypes from 'constants/relationshipTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import filterEntityRelationship from 'Containers/VulnMgmt/VulnMgmt.utils/filterEntityRelationship';
 
 const EntityTabs = ({ entityType, activeTab }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -38,7 +39,11 @@ const EntityTabs = ({ entityType, activeTab }) => {
             relationshipTypes.CONTAINS,
             workflowState.useCase
         ),
-    ];
+    ]
+        // @TODO: Remove the following filter step once ROX_FRONTEND_VM_UPDATES is ON
+        .filter((match) => {
+            return filterEntityRelationship(showVMUpdates, match);
+        });
 
     if (!relationships) {
         return null;

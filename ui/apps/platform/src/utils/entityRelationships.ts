@@ -90,7 +90,7 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.CLUSTER]: {
         children: [entityTypes.NODE, entityTypes.NAMESPACE, entityTypes.ROLE],
         parents: [],
-        matches: [entityTypes.CONTROL],
+        matches: [entityTypes.CONTROL, entityTypes.CLUSTER_CVE],
         // TODO: add CVE entity type and filter by k8s accordingly
         // matches: [entityTypes.CONTROL, entityTypes.CVE],
         // extendedMatches: [entityTypes.POLICY]
