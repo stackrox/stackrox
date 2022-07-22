@@ -102,8 +102,7 @@ func (b *backend) Config() map[string]string {
 func (b *backend) LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
 	state := idputil.MakeState(b.id, clientState)
 
-	// baseRedirectURLPath does not include the hostname, take it from the
-	// request.
+	// Augment baseRedirectURLPath to a redirect URL with hostname, etc set.
 	redirectURL := dexconnector.MakeRedirectURI(ri, b.baseRedirectURLPath)
 
 	return b.openshiftConnector.LoginURL(defaultScopes, redirectURL.String(), state)
