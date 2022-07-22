@@ -19,8 +19,8 @@ type resourceEventHandlerImpl struct {
 	eventLock  *sync.Mutex
 	dispatcher resources.Dispatcher
 
-	output                chan<- *central.MsgFromSensor
-	treatCreatesAsUpdates *concurrency.Flag
+	output           chan<- *central.MsgFromSensor
+	syncingResources *concurrency.Flag
 
 	syncLock                   sync.Mutex
 	seenIDs                    map[types.UID]struct{}
@@ -30,8 +30,8 @@ type resourceEventHandlerImpl struct {
 
 func (h *resourceEventHandlerImpl) OnAdd(obj interface{}) {
 	// If we are listing the initial objects, then we treat them as updates so enforcement isn't done
-	if h.treatCreatesAsUpdates != nil && h.treatCreatesAsUpdates.Get() {
-		h.sendResourceEvent(obj, nil, central.ResourceAction_UPDATE_RESOURCE)
+	if h.syncingResources != nil && h.syncingResources.Get() {
+		h.sendResourceEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE)
 	} else {
 		h.sendResourceEvent(obj, nil, central.ResourceAction_CREATE_RESOURCE)
 	}

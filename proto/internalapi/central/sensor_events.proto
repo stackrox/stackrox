@@ -24,6 +24,7 @@ enum ResourceAction {
     CREATE_RESOURCE         = 1;
     REMOVE_RESOURCE         = 2;
     UPDATE_RESOURCE         = 3;
+    SYNC_RESOURCE           = 4;
 }
 
 // Event updates from sensor to central.

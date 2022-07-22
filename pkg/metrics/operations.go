@@ -34,6 +34,7 @@ const (
 	RemoveFlowsByDeployment
 
 	Search
+	Sync
 
 	Update
 	UpdateMany
