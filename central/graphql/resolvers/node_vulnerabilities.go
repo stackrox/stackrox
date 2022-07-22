@@ -350,7 +350,7 @@ func (resolver *nodeCVEResolver) LastScanned(ctx context.Context) (*graphql.Time
 		return nil, err
 	}
 
-	q := search.EmptyQuery()
+	q := resolver.getNodeCVEQuery()
 	q.Pagination = &v1.QueryPagination{
 		Limit:  1,
 		Offset: 0,
@@ -362,7 +362,7 @@ func (resolver *nodeCVEResolver) LastScanned(ctx context.Context) (*graphql.Time
 		},
 	}
 
-	nodes, err := nodeLoader.FromQuery(ctx, search.ConjunctionQuery(q, resolver.getNodeCVEQuery()))
+	nodes, err := nodeLoader.FromQuery(ctx, q)
 	if err != nil || len(nodes) == 0 {
 		return nil, err
 	} else if len(nodes) > 1 {
