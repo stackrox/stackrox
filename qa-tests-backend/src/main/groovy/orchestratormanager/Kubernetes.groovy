@@ -1816,7 +1816,7 @@ class Kubernetes implements OrchestratorMain {
      * The approach is based on the suggestion in https://stackoverflow.com/a/70188047/484050
      * Here are examples of channel contents for successful and unsuccessful command runs:
      * {"metadata":{},"status":"Success"}
-     * {"metadata":{},"status":"Failure","message":"command terminated with non-zero exit code: 
+     * {"metadata":{},"status":"Failure","message":"command terminated with non-zero exit code:
      *   Error executing in Docker Container: 7","reason":"NonZeroExitCode",
      *   "details":{"causes":[{"reason":"ExitCode","message":"7"}]}}
      */
