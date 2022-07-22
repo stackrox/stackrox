@@ -4,7 +4,6 @@ import groups.BAT
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import objects.Deployment
 import org.junit.experimental.categories.Category
-import org.junit.Assume
 import spock.lang.Unroll
 import util.Env
 

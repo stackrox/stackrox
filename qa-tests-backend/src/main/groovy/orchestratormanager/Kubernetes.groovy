@@ -1742,7 +1742,7 @@ class Kubernetes implements OrchestratorMain {
         }
 
         final CompletableFuture<Void> completion = new CompletableFuture<>()
-        final def listener = new ExecListener() {
+        final listener = new ExecListener() {
             @Override
             void onFailure(Throwable t, ExecListener.Response failureResponse) {
                 log.warn("Command failed with response {}", failureResponse, t)
@@ -1755,9 +1755,9 @@ class Kubernetes implements OrchestratorMain {
                 completion.complete(null)
             }
         }
-        final def outputStream = new ByteArrayOutputStream()
-        final def errorStream = new ByteArrayOutputStream()
-        final def execStatusChannel = new ByteArrayOutputStream()
+        final outputStream = new ByteArrayOutputStream()
+        final errorStream = new ByteArrayOutputStream()
+        final execStatusChannel = new ByteArrayOutputStream()
         ExecStatus execStatus = ExecStatus.UNKNOWN
         String execMessage = null
         final String[] splitCmd = CommandLine.parse(cmd).with {
@@ -1807,7 +1807,7 @@ class Kubernetes implements OrchestratorMain {
         SUCCESS,
         /** E.g. no-zero exit code */
         FAILURE,
-        TIMEOUT;
+        TIMEOUT
     }
 
     /**
@@ -1816,13 +1816,15 @@ class Kubernetes implements OrchestratorMain {
      * The approach is based on the suggestion in https://stackoverflow.com/a/70188047/484050
      * Here are examples of channel contents for successful and unsuccessful command runs:
      * {"metadata":{},"status":"Success"}
-     * {"metadata":{},"status":"Failure","message":"command terminated with non-zero exit code: Error executing in Docker Container: 7","reason":"NonZeroExitCode","details":{"causes":[{"reason":"ExitCode","message":"7"}]}}
+     * {"metadata":{},"status":"Failure","message":"command terminated with non-zero exit code: 
+     *   Error executing in Docker Container: 7","reason":"NonZeroExitCode",
+     *   "details":{"causes":[{"reason":"ExitCode","message":"7"}]}}
      */
     private static Tuple2<ExecStatus, String> parseExecStatus(String execStatusChannelContents) {
         ExecStatus status = ExecStatus.UNKNOWN
         String message = null
         try {
-            final Status parsedStatus = GSON.fromJson(execStatusChannelContents, Status.class)
+            final Status parsedStatus = GSON.fromJson(execStatusChannelContents, Status)
             switch (parsedStatus?.getStatus()) {
                 case "Success":
                     status = ExecStatus.SUCCESS
@@ -1925,10 +1927,11 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            Helpers.withK8sClientRetry(maxNumRetries,1) {
+            Helpers.withK8sClientRetry(maxNumRetries, 1) {
                 client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
                 int att = Helpers.getAttemptCount()
-                log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". Attempt " + att + " of " + maxNumRetries
+                log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". " +
+                          "Attempt " + att + " of " + maxNumRetries
             }
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
