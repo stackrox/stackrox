@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
