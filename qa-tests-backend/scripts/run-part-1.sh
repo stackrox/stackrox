@@ -26,10 +26,11 @@ test_part_1() {
 
     deploy_stackrox || {
         local exitstatus="$?"
-        echo "deploy_stackrox() failed, will skip part II tests"
+        echo "Debug: exitstatus recorded after deploy_stackrox() is $exitstatus, will skip part II tests"
         touch "$ROOT/SKIP_PART_II"
         exit "$exitstatus"
     }
+    echo "Debug: after deploy_stackrox()"
 
     deploy_default_psp
     deploy_webhook_server

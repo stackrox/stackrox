@@ -31,9 +31,11 @@ _deploy_stackrox() {
 deploy_stackrox() {
     _deploy_stackrox 2>&1 | tee "$TEST_ROOT/deployment_output.txt" || {
         local exitstatus="$?"
+        echo "Debug: exitstatus recorded after _deploy_stackrox() is $exitstatus"
         save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "$(tail -10 "$TEST_ROOT/deployment_output.txt")" || true
         exit "$exitstatus"
     }
+    echo "Debug: after _deploy_stackrox()"
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
