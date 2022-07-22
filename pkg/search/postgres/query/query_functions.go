@@ -12,7 +12,7 @@ import (
 type queryAndFieldContext struct {
 	qualifiedColumnName string
 	field               *pkgSearch.Field
-	dataType            walker.DataType
+	sqlDataType         walker.DataType
 
 	value          string
 	highlight      bool
@@ -26,7 +26,7 @@ func qeWithSelectFieldIfNeeded(ctx *queryAndFieldContext, whereClause *WhereClau
 	if ctx.highlight {
 		qe.SelectedFields = []SelectQueryField{{
 			SelectPath:    ctx.qualifiedColumnName,
-			FieldType:     ctx.dataType,
+			FieldType:     ctx.sqlDataType,
 			FieldPath:     ctx.field.FieldPath,
 			PostTransform: postTransformFunc,
 		}}
@@ -49,14 +49,14 @@ var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 	// Map is handled separately.
 }
 
-func matchFieldQuery(qualifiedColName string, dataType walker.DataType, field *pkgSearch.Field, value string, highlight bool, now time.Time, goesIntoHavingClause bool) (*QueryEntry, error) {
+func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field *pkgSearch.Field, value string, highlight bool, now time.Time, goesIntoHavingClause bool) (*QueryEntry, error) {
 	ctx := &queryAndFieldContext{
 		qualifiedColumnName: qualifiedColName,
 		field:               field,
 		highlight:           highlight,
 		value:               value,
 		now:                 now,
-		dataType:            dataType,
+		sqlDataType:         sqlDataType,
 	}
 
 	// Special case: wildcard
@@ -64,14 +64,14 @@ func matchFieldQuery(qualifiedColName string, dataType walker.DataType, field *p
 		return handleExistenceQueries(ctx), nil
 	}
 
-	if dataType == walker.Map {
+	if sqlDataType == walker.Map {
 		return newMapQuery(ctx)
 	}
 
 	trimmedValue, modifiers := pkgSearch.GetValueAndModifiersFromString(value)
 	ctx.value = trimmedValue
 	ctx.queryModifiers = modifiers
-	qe, err := datatypeToQueryFunc[dataType](ctx)
+	qe, err := datatypeToQueryFunc[sqlDataType](ctx)
 	if err != nil {
 		return nil, err
 	}

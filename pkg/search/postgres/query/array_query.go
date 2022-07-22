@@ -89,7 +89,7 @@ func queryOnArray(baseQueryFunc queryFunction, postTransformFuncGetter func(entr
 
 			entry.SelectedFields = []SelectQueryField{{
 				SelectPath:    ctx.qualifiedColumnName,
-				FieldType:     ctx.dataType,
+				FieldType:     ctx.sqlDataType,
 				FieldPath:     ctx.field.FieldPath,
 				PostTransform: postTransformFunc,
 			}}
