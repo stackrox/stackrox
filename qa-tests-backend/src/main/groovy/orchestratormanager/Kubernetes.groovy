@@ -760,17 +760,6 @@ class Kubernetes implements OrchestratorMain {
         return false
     }
 
-    def isKubeProxyPresent() {
-        return evaluateWithRetry(2, 3) {
-            PodList pods = client.pods().inAnyNamespace().list()
-            return pods.getItems().findAll {
-                it.getSpec().getContainers().find {
-                    it.getImage().contains("kube-proxy")
-                }
-            }
-        }
-    }
-
     def isKubeDashboardRunning() {
         return evaluateWithRetry(2, 3) {
             PodList pods = client.pods().inAnyNamespace().list()
