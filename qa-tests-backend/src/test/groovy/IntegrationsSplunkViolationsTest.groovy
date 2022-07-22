@@ -336,7 +336,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         }, 15)
 
         assert waitForAlertWithPolicyId(splunkDeployment.getDeployment().getName(),
-                                        "1b74ffdd-8e67-444c-9814-1c23863c8ccb")
+                "1b74ffdd-8e67-444c-9814-1c23863c8ccb")
     }
 
     private boolean waitForAlertWithPolicyId(String deploymentName, String policyId) {

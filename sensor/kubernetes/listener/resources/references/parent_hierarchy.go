@@ -10,6 +10,7 @@ import (
 // ParentHierarchy defines the interface for managing dependencies between deployments
 type ParentHierarchy interface {
 	Add(obj metav1.Object)
+	AddManually(objUID string, parentUID string)
 	Remove(id string)
 	IsValidChild(parent string, child metav1.Object) bool
 	TopLevelParents(child string) set.StringSet
@@ -44,6 +45,13 @@ func (p *parentHierarchy) Add(obj metav1.Object) {
 	defer p.lock.Unlock()
 
 	p.parents[string(obj.GetUID())] = parents
+}
+
+func (p *parentHierarchy) AddManually(objUID string, parentUID string) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	p.parents[objUID] = append(p.parents[objUID], parentUID)
 }
 
 func (p *parentHierarchy) Remove(id string) {

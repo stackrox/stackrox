@@ -1,6 +1,11 @@
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
+
 import groups.BAT
 import groups.RUNTIME
 import objects.Deployment
+import services.DeploymentService
+
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ProcessService
 import spock.lang.Unroll
@@ -78,6 +83,30 @@ class ProcessVisualizationTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
+    }
+
+    @Category([BAT, RUNTIME])
+    def "Verify process visualization on kube-proxy"() {
+        when:
+        "Check if kube-proxy is running"
+        def kubeProxyPods = orchestrator.getPodsByLabel("kube-system", ["component": "kube-proxy"])
+        // We only want to run this test if kube-proxy is running
+        Assume.assumeFalse(kubeProxyPods == null || kubeProxyPods.size() == 0)
+
+        then:
+        "Ensure it has processes"
+        def kubeProxyDeploymentsInRox = DeploymentService.listDeploymentsSearch(
+                SearchServiceOuterClass.RawQuery.newBuilder().
+                        setQuery("Namespace:kube-system+Deployment:static-kube-proxy-pods").
+                        build()
+        )
+        assert kubeProxyDeploymentsInRox.getDeploymentsList().size() == 1
+        def kubeProxyDeploymentID = kubeProxyDeploymentsInRox.getDeployments(0).getId()
+        def receivedProcessPaths = ProcessService.getUniqueProcessPaths(kubeProxyDeploymentID)
+        log.info "Received processes: ${receivedProcessPaths}"
+        // Avoid asserting on the specific process names since that might change across versions/distributions.
+        // The goal is to make sure we pick up processes from static pods.
+        assert receivedProcessPaths.size() > 0
     }
 
     @Category([BAT, RUNTIME])
