@@ -59,8 +59,7 @@ func GetPoliciesFromFile(fileName string) (policies []*storage.Policy, retError 
 func getPolicyFieldMap() (map[string]string, error) {
 	ret := make(map[string]string)
 	f := booleanpolicy.FieldMetadataSingleton()
-	err := f.ForEachFieldMetadata(func(m *booleanpolicy.MetadataAndQB) error {
-		fieldName := m.GetFieldName()
+	err := f.ForEachFieldMetadata(func(fieldName string, m *booleanpolicy.MetadataAndQB) error {
 		ret[strings.ReplaceAll(fieldName, " ", "")] = fieldName
 		return nil
 	})

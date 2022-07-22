@@ -59,7 +59,6 @@ const (
 
 // MetadataAndQB contains the policy field metadata
 type MetadataAndQB struct {
-	fieldName          string
 	operatorsForbidden bool
 	negationForbidden  bool
 	qb                 querybuilders.QueryBuilder
@@ -67,11 +66,6 @@ type MetadataAndQB struct {
 	contextFields      violationmessages.ContextQueryFields
 	eventSourceContext []storage.EventSource
 	fieldTypes         []RuntimeFieldType
-}
-
-// GetFieldName returns the policy field name
-func (m *MetadataAndQB) GetFieldName() string {
-	return m.fieldName
 }
 
 func (f *FieldMetadata) findField(fieldName string) (*MetadataAndQB, error) {
@@ -117,11 +111,10 @@ func (f *FieldMetadata) findFieldMetadata(fieldName string, config *validateConf
 	return field, nil
 }
 
-func newFieldMetadata(fieldName string, qb querybuilders.QueryBuilder, contextFields violationmessages.ContextQueryFields,
+func newFieldMetadata(qb querybuilders.QueryBuilder, contextFields violationmessages.ContextQueryFields,
 	valueRegex func(configuration *validateConfiguration) *regexp.Regexp, source []storage.EventSource,
 	fieldTypes []RuntimeFieldType, options ...option) *MetadataAndQB {
 	m := &MetadataAndQB{
-		fieldName:          fieldName,
 		qb:                 qb,
 		contextFields:      contextFields,
 		valueRegex:         valueRegex,
@@ -152,7 +145,7 @@ func (f *FieldMetadata) registerFieldMetadata(fieldName string, qb querybuilders
 	source []storage.EventSource, fieldTypes []RuntimeFieldType, options ...option) {
 	f.ensureFieldIsUnique(fieldName)
 
-	m := newFieldMetadata(fieldName, qb, contextFields, valueRegex, source, fieldTypes, options...)
+	m := newFieldMetadata(qb, contextFields, valueRegex, source, fieldTypes, options...)
 	f.fieldsToQB[fieldName] = m
 }
 
@@ -162,15 +155,15 @@ func (f *FieldMetadata) registerFieldMetadataConditionally(
 	conditionalRegexp func(*validateConfiguration) *regexp.Regexp,
 	source []storage.EventSource, fieldTypes []RuntimeFieldType, options ...option) {
 	f.ensureFieldIsUnique(fieldName)
-	f.fieldsToQB[fieldName] = newFieldMetadata(fieldName, qb, contextFields, conditionalRegexp, source, fieldTypes, options...)
+	f.fieldsToQB[fieldName] = newFieldMetadata(qb, contextFields, conditionalRegexp, source, fieldTypes, options...)
 
 }
 
 // ForEachFieldMetadata executes a given function for each field metadata
-func (f *FieldMetadata) ForEachFieldMetadata(execFunc func(*MetadataAndQB) error) error {
+func (f *FieldMetadata) ForEachFieldMetadata(execFunc func(string, *MetadataAndQB) error) error {
 	errorList := errorhelpers.NewErrorList("for each field metadata")
-	for _, field := range f.fieldsToQB {
-		if err := execFunc(field); err != nil {
+	for fieldName, field := range f.fieldsToQB {
+		if err := execFunc(fieldName, field); err != nil {
 			errorList.AddError(err)
 		}
 	}
