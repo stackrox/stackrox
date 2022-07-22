@@ -8,12 +8,14 @@ if [[ -z "$1" ]]; then
 fi
 
 if ! kubectl -n stackrox get deploy/central; then
-  ./launch_central.sh
+  $DIR/launch_central.sh
+  kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout 5m
 else
+  kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout 5m
   killpf 8000
   ./port-forward.sh 8000
+  sleep 5 # Allow port-forwards to initialize
 fi
-kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout 2m
 echo "Set retention settings"
 roxcurl v1/config -X PUT -d @config.json
 

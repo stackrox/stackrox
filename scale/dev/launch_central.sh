@@ -2,13 +2,16 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-$DIR/../../deploy/k8s/central.sh
-
-# This is purposefully kept as stackrox because this is where central should be run
-if ! kubectl -n stackrox get pvc/stackrox-db > /dev/null; then
-  >&2 echo "Running the scale workload requires a PVC"
-  exit 1
+export STORAGE=pvc
+export STORAGE_SIZE=100
+# This is GKE specific so we may need to be careful in the future
+if kubectl version -o json | jq .serverVersion.gitVersion | grep "gke" > /dev/null; then
+  echo "Setting storage class to faster"
+  export STORAGE_CLASS=faster
 fi
+
+# Launch Central
+$DIR/../../deploy/k8s/central.sh
 
 kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0  ROX_SCALE_TEST=true
 if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
