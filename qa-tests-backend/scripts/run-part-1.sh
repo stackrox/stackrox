@@ -24,11 +24,12 @@ test_part_1() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs
 
-    if ! deploy_stackrox; then
+    deploy_stackrox || {
+        local exitstatus="$?"
         echo "deploy_stackrox() failed, will skip part II tests"
         touch "$ROOT/SKIP_PART_II"
-        exit 1
-    fi
+        exit "$exitstatus"
+    }
 
     deploy_default_psp
     deploy_webhook_server
