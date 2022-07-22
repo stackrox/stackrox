@@ -238,7 +238,13 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 	ri := requestinfo.FromContext(ctx)
 	redirect_uri := MakeRedirectURI(&ri, ri.HTTPRequest.URL.Path)
 
-	// redirect_uri is set here to support the mulitple redirect URI case.
+	// Our service might be accessible via different routes and hence specify
+	// different redirect URIs in the login URL to authorization server. The
+	// latter must check that the redirect URI passed with the initial request
+	// equals the one passed during the code exchange. Hence we dynamically
+	// adjust the redirect URI in the oauth2 config here to the URL deduced
+	// from the request to us, which we expect to match the redirect URL we
+	// included in login URL earlier in the flow.
 	token, err := c.oauth2Config.Exchange(ctx, q.Get("code"),
 		oauth2.SetAuthURLParam("redirect_uri", redirect_uri.String()))
 
