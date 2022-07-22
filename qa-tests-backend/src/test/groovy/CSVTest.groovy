@@ -37,7 +37,7 @@ class CSVTest extends BaseSpecification {
       isFixable(query: \$scopeQuery)
       deploymentCount(query: \$query)
       imageCount(query: \$query)
-      componentCount(query: \$query)
+      imageComponentCount(query: \$query)
       __typename
     }
     """

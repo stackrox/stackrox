@@ -95,7 +95,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         count: imageComponentCount(query: \$query)
     }
 
-    fragment componentFields on EmbeddedImageScanComponent {
+    fragment componentFields on ImageComponent {
         name
         version
     }
@@ -111,7 +111,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         count: nodeComponentCount(query: \$query)
     }
 
-    fragment componentFields on EmbeddedNodeScanComponent {
+    fragment componentFields on NodeComponent {
         name
         version
     }
