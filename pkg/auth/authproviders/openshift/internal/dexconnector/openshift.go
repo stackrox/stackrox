@@ -40,6 +40,7 @@ import (
 //     verification                                                           //
 //   * add validation for connectivity to OAuth2 endpoints                    //
 //   * extract fetching user info into identity() function                    //
+//   * deduce redirect URI's host and scheme via MakeRedirectURI() function   //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -236,7 +237,7 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 	}
 
 	ri := requestinfo.FromContext(ctx)
-	redirect_uri := MakeRedirectURI(&ri, ri.HTTPRequest.URL.Path)
+	redirectURI := MakeRedirectURI(&ri, ri.HTTPRequest.URL.Path)
 
 	// Our service might be accessible via different routes and hence specify
 	// different redirect URIs in the login URL to authorization server. The
@@ -246,7 +247,7 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 	// from the request to us, which we expect to match the redirect URL we
 	// included in login URL earlier in the flow.
 	token, err := c.oauth2Config.Exchange(ctx, q.Get("code"),
-		oauth2.SetAuthURLParam("redirect_uri", redirect_uri.String()))
+		oauth2.SetAuthURLParam("redirect_uri", redirectURI.String()))
 
 	if err != nil {
 		return identity, errors.Wrap(err, "failed to get token")

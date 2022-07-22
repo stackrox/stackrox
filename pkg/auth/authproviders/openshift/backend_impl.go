@@ -103,9 +103,9 @@ func (b *backend) LoginURL(clientState string, ri *requestinfo.RequestInfo) (str
 	state := idputil.MakeState(b.id, clientState)
 
 	// Augment baseRedirectURLPath to a redirect URL with hostname, etc set.
-	redirectURL := dexconnector.MakeRedirectURI(ri, b.baseRedirectURLPath)
+	redirectURI := dexconnector.MakeRedirectURI(ri, b.baseRedirectURLPath)
 
-	return b.openshiftConnector.LoginURL(defaultScopes, redirectURL.String(), state)
+	return b.openshiftConnector.LoginURL(defaultScopes, redirectURI.String(), state)
 }
 
 func (b *backend) RefreshURL() string {
