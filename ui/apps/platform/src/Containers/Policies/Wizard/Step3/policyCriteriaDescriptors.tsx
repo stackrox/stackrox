@@ -274,7 +274,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         category: policyCriteriaCategories.IMAGE_REGISTRY,
         type: 'signaturePolicyCriteria',
         canBooleanLogic: true,
-        featureFlagDependency: 'ROX_VERIFY_IMAGE_SIGNATURE',
     },
     {
         label: 'Days since image was created',
