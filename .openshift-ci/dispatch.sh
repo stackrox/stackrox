@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+set -x
+echo "SHARED_DIR: ${SHARED_DIR:-}"
+ls -l "${SHARED_DIR:-}" || true
+echo > "${SHARED_DIR:-}/ttt" || true
+exit 1
+
 # The entrypoint for CI defined in https://github.com/openshift/release/tree/master/ci-operator/config/stackrox/stackrox
 # Imports secrets to env vars, gates the job based on context, changed files and PR labels and ultimately
 # hands off to the test/build script in *scripts/ci/jobs*.
