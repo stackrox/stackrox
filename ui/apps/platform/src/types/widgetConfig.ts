@@ -19,13 +19,13 @@ type WidgetConfigMap = Partial<Record<RouteId, WidgetConfig>>;
 export type RouteId = string;
 
 // Configuration read for a single instance of a widget.
-export type WidgetConfig = Partial<Record<string, ConfigOptionValue>>;
+export type WidgetConfig = Readonly<Partial<Record<string, ConfigOptionValue>>>;
 
 // A widget config is an object that can contain the following properties
-type ConfigOptionValue = OneOfValue | AnyOfValue | ToggleValue | ToggleValue[];
+type ConfigOptionValue = OneOfValue | AnyOfValue | ToggleValue | Readonly<ToggleValue[]>;
 // A simple, single string value. Used when the user can select exactly one option from a selection.
 type OneOfValue = string | number;
 // An array of selected options.
-type AnyOfValue = string[] | number[];
+type AnyOfValue = readonly string[] | readonly number[];
 // An editable value that can be toggled on or off.
-type ToggleValue = { enabled: boolean; value: number | string | boolean };
+type ToggleValue = Readonly<{ enabled: boolean; value: number | string | boolean }>;
