@@ -1098,7 +1098,7 @@ validate_expected_go_version() {
     info "Validating the expected go version against what was used to build roxctl"
 
     roxctl_go_version="$(roxctl version --json | jq '.GoVersion' -r)"
-    expected_go_version="$(cat EXPECTED_GO_VERSION)"
+    expected_go_version="$(head -n 1 EXPECTED_GO_VERSION)"
     if [[ "${roxctl_go_version}" != "${expected_go_version}" ]]; then
         echo "Got unexpected go version ${roxctl_go_version} (wanted ${expected_go_version})"
         exit 1

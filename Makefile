@@ -376,7 +376,7 @@ main-builder-image: build-volumes
 	@echo "+ $@"
 	$(SILENT)# Ensure that the go version in the image matches the expected version
 	# If the next line fails, you need to update the go version in rox-ci-image/images/stackrox-build.Dockerfile
-	grep -q "$(shell cat EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
+	grep -q "$(shell head -n 1 EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
 
 .PHONY: main-build
 main-build: build-prep main-build-dockerized
