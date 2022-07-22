@@ -35,7 +35,7 @@ func (resolver *Resolver) wrapPlottedNodeVulnerabilities(all []string, fixable i
 	}, nil
 }
 
-// PlottedNodeVulnerabilities
+// PlottedNodeVulnerabilities - returns node vulns
 func (resolver *Resolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	if !features.PostgresDatastore.Enabled() {
 		q := withNodeCveTypeFiltering(args.String())
