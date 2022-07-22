@@ -66,7 +66,7 @@ spec:
         volumeMounts:
         - mountPath: /host/var/run/docker.sock
           name: var-run
-          subPath: /var/run/docker.sock
+          subPath: var/run/docker.sock
           readOnly: true
         - mountPath: /host/proc
           name: proc-ro
@@ -78,7 +78,7 @@ spec:
           readOnly: true
         - mountPath: /host/usr/lib
           name: usr-ro
-          subPath: /usr/lib
+          subPath: usr/lib
           readOnly: true
         - mountPath: /host/sys
           name: sys-ro
