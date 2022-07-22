@@ -30,7 +30,6 @@ test_part_1() {
         touch "$ROOT/SKIP_PART_II"
         exit "$exitstatus"
     }
-    echo "Debug: after deploy_stackrox()"
 
     deploy_default_psp
     deploy_webhook_server
