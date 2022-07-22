@@ -37,3 +37,6 @@ ci-postgres-tests:
 - tools/generate-helpers/pg-table-bindings-wrapper
 ci-upgrade-tests:
 - pkg/defaults/policies/**/*
+ci-all-qa-tests:
+- COLLECTOR_VERSION
+- SCANNER_VERSION
