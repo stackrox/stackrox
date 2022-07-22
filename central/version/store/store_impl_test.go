@@ -40,7 +40,7 @@ func (suite *VersionStoreTestSuite) SetupTest() {
 		config, err := pgxpool.ParseConfig(source)
 		suite.Require().NoError(err)
 		suite.ctx = sac.WithAllAccess(context.Background())
-		pool, err := pgxpool.ConnectConfig(suite.ctx, config)
+		pool, _ := pgxpool.ConnectConfig(suite.ctx, config)
 		suite.pool = pool
 
 		suite.store = NewPostgres(pool)

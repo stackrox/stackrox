@@ -40,7 +40,7 @@ func (suite *EnsurerTestSuite) SetupTest() {
 		config, err := pgxpool.ParseConfig(source)
 		suite.Require().NoError(err)
 		ctx := sac.WithAllAccess(context.Background())
-		pool, err := pgxpool.ConnectConfig(ctx, config)
+		pool, _ := pgxpool.ConnectConfig(ctx, config)
 		suite.pool = pool
 
 		// Ensure we are starting fresh
