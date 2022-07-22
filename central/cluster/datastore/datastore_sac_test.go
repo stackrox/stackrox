@@ -106,7 +106,8 @@ func (s *clusterDatastoreSACSuite) deleteCluster(id string) {
 		return
 	}
 	doneSignal := concurrency.NewSignal()
-	s.datastore.RemoveCluster(s.testContexts[testutils.UnrestrictedReadWriteCtx], id, &doneSignal)
+	err = s.datastore.RemoveCluster(s.testContexts[testutils.UnrestrictedReadWriteCtx], id, &doneSignal)
+	s.NoError(err)
 	<-doneSignal.Done()
 }
 
