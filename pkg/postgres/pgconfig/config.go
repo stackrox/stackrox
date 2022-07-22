@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	// DBPasswordFile is the database password file
 	DBPasswordFile = "/run/secrets/stackrox.io/db-password/password"
 
 	activeSuffix = "_active"

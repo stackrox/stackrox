@@ -270,12 +270,12 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         [
             ["/bin/sh", "-c /bin/sleep 600"],
-            ["/bin/sleep", "600"]
+            ["/bin/sleep", "600"],
         ] | CENTOSDEPLOYMENT
 
         [
             ["/bin/sleep", "--coreutils-prog-shebang=sleep /bin/sleep 600"],
-            ["/bin/sh", "-c /bin/sleep 600"]
+            ["/bin/sh", "-c /bin/sleep 600"],
         ] | FEDORADEPLOYMENT
 
         // this is not a full selection of processes expected in the ELASTICDEPLOYMENT
@@ -295,7 +295,7 @@ class ProcessVisualizationTest extends BaseSpecification {
             ["/bin/chown", "-R elasticsearch:elasticsearch /usr/share/elasticsearch/data"],
             ["/bin/chown", "-R elasticsearch:elasticsearch /usr/share/elasticsearch/logs"],
             ["/sbin/ldconfig", "-p"],
-            ["/usr/bin/id", "-u"]
+            ["/usr/bin/id", "-u"],
         ] | ELASTICDEPLOYMENT
     }
 
