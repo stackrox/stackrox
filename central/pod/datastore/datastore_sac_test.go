@@ -5,20 +5,13 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/pod/index"
 	"github.com/stackrox/rox/central/pod/mappings"
-	"github.com/stackrox/rox/central/pod/store"
-	pgStore "github.com/stackrox/rox/central/pod/store/postgres"
-	rdbStore "github.com/stackrox/rox/central/pod/store/rocksdb"
-	mockProcessStore "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -41,12 +34,6 @@ type podDatastoreSACSuite struct {
 	engine *rocksdb.RocksDB
 	index  bleve.Index
 
-	storage store.Store
-	indexer index.Indexer
-	filter  filter.Filter
-
-	processStore *mockProcessStore.MockDataStore
-
 	testContexts map[string]context.Context
 	testPodIDs   []string
 }
@@ -54,36 +41,19 @@ type podDatastoreSACSuite struct {
 func (s *podDatastoreSACSuite) SetupSuite() {
 	var err error
 
-	s.processStore = mockProcessStore.NewMockDataStore(gomock.NewController(s.T()))
-	s.processStore.EXPECT().RemoveProcessIndicatorsByPod(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	s.filter = filter.NewFilter(5, []int{5, 4, 3, 2, 1})
-
 	if features.PostgresDatastore.Enabled() {
-		ctx := context.Background()
-		src := pgtest.GetConnectionString(s.T())
-		cfg, err := pgxpool.ParseConfig(src)
-		s.Require().NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
-		s.Require().NoError(err)
-		pgStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), src)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
-		s.indexer = pgStore.NewIndexer(s.pool)
-
-		s.datastore, err = NewPostgresDB(s.pool, s.processStore, s.filter)
+		pgtestbase := pgtest.ForT(s.T())
+		s.Require().NotNil(pgtestbase)
+		s.pool = pgtestbase.Pool
+		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
 		s.Require().NoError(err)
 	} else {
 		s.engine, err = rocksdb.NewTemp("podSACTest")
 		s.Require().NoError(err)
-		bleveIndex, err := globalindex.MemOnlyIndex()
+		s.index, err = globalindex.MemOnlyIndex()
 		s.Require().NoError(err)
-		s.index = bleveIndex
 
-		s.storage = rdbStore.New(s.engine)
-		s.indexer = index.New(s.index)
-
-		s.datastore, err = NewRocksDB(s.engine, s.index, s.processStore, s.filter)
+		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
 		s.Require().NoError(err)
 	}
 

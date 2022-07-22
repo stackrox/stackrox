@@ -7,12 +7,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
-	pgStore "github.com/stackrox/rox/central/rbac/k8srole/internal/store/postgres"
-	rdbStore "github.com/stackrox/rox/central/rbac/k8srole/internal/store/rocksdb"
 	k8sRoleMappings "github.com/stackrox/rox/central/rbac/k8srole/mappings"
-	k8sRoleSearch "github.com/stackrox/rox/central/rbac/k8srole/search"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -42,10 +37,6 @@ type k8sRoleSACSuite struct {
 	index      bleve.Index
 	optionsMap search.OptionsMap
 
-	storage store.Store
-	indexer index.Indexer
-	search  k8sRoleSearch.Searcher
-
 	testContexts   map[string]context.Context
 	testK8sRoleIDs []string
 }
@@ -54,32 +45,22 @@ func (s *k8sRoleSACSuite) SetupSuite() {
 	var err error
 
 	if features.PostgresDatastore.Enabled() {
-		ctx := context.Background()
-		src := pgtest.GetConnectionString(s.T())
-		cfg, err := pgxpool.ParseConfig(src)
+		pgtestbase := pgtest.ForT(s.T())
+		s.Require().NotNil(pgtestbase)
+		s.pool = pgtestbase.Pool
+		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
 		s.Require().NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
-		s.Require().NoError(err)
-		pgStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), src)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
-		s.indexer = pgStore.NewIndexer(s.pool)
 		s.optionsMap = schema.K8sRolesSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp("k8sRoleSACTest")
 		s.Require().NoError(err)
-		bleveIndex, err := globalindex.MemOnlyIndex()
+		s.index, err = globalindex.MemOnlyIndex()
 		s.Require().NoError(err)
-		s.index = bleveIndex
-		s.optionsMap = k8sRoleMappings.OptionsMap
-		s.storage = rdbStore.New(s.engine)
-		s.indexer = index.New(s.index)
-	}
 
-	s.search = k8sRoleSearch.New(s.storage, s.indexer)
-	s.datastore, err = New(s.storage, s.indexer, s.search)
-	s.Require().NoError(err)
+		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
+		s.Require().NoError(err)
+		s.optionsMap = k8sRoleMappings.OptionsMap
+	}
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.K8sRole)

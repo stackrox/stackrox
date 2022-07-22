@@ -5,17 +5,9 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/index/mappings"
-	"github.com/stackrox/rox/central/processbaseline/search"
-	"github.com/stackrox/rox/central/processbaseline/store"
-	pgStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
-	rdbStore "github.com/stackrox/rox/central/processbaseline/store/rocksdb"
-	processBaselineResultMock "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
-	processIndicatorMock "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -42,18 +34,11 @@ type processBaselineSACTestSuite struct {
 
 	pool *pgxpool.Pool
 
-	storage store.Store
-	indexer index.Indexer
-	search  search.Searcher
-
 	datastore DataStore
 
 	optionsMap searchPkg.OptionsMap
 
 	testContexts map[string]context.Context
-
-	processBaselineResultMock *processBaselineResultMock.MockDataStore
-	processIndicatorMock      *processIndicatorMock.MockDataStore
 
 	testProcessBaselineIDs []string
 }
@@ -61,38 +46,22 @@ type processBaselineSACTestSuite struct {
 func (s *processBaselineSACTestSuite) SetupSuite() {
 	var err error
 	if features.PostgresDatastore.Enabled() {
-		ctx := context.Background()
-		src := pgtest.GetConnectionString(s.T())
-		cfg, err := pgxpool.ParseConfig(src)
+		pgtestbase := pgtest.ForT(s.T())
+		s.Require().NotNil(pgtestbase)
+		s.pool = pgtestbase.Pool
+		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
 		s.Require().NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
-		s.Require().NoError(err)
-		pgStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), src)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
-		s.indexer = pgStore.NewIndexer(s.pool)
 		s.optionsMap = schema.ProcessBaselinesSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp("processBaselineSACTest")
 		s.Require().NoError(err)
-		bleveIndex, err := globalindex.MemOnlyIndex()
+		s.index, err = globalindex.MemOnlyIndex()
 		s.Require().NoError(err)
-		s.index = bleveIndex
 
-		s.storage, err = rdbStore.New(s.engine)
+		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
 		s.Require().NoError(err)
-		s.indexer = index.New(s.index)
 		s.optionsMap = mappings.OptionsMap
 	}
-
-	s.search, err = search.New(s.storage, s.indexer)
-	s.Require().NoError(err)
-
-	s.processIndicatorMock = processIndicatorMock.NewMockDataStore(gomock.NewController(s.T()))
-	s.processBaselineResultMock = processBaselineResultMock.NewMockDataStore(gomock.NewController(s.T()))
-
-	s.datastore = New(s.storage, s.indexer, s.search, s.processBaselineResultMock, s.processIndicatorMock)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.ProcessWhitelist)
@@ -229,9 +198,6 @@ func (s *processBaselineSACTestSuite) TestGetProcessBaseline() {
 
 func (s *processBaselineSACTestSuite) TestRemoveProcessBaseline() {
 	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
-
-	s.processBaselineResultMock.EXPECT().DeleteBaselineResults(gomock.Any(), gomock.Any()).Return(nil).
-		AnyTimes()
 
 	for name, c := range cases {
 		s.Run(name, func() {

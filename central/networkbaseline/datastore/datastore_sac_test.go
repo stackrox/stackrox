@@ -6,9 +6,6 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/networkbaseline/store"
-	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
-	rdbStore "github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -34,7 +31,6 @@ type networkBaselineDatastoreSACTestSuite struct {
 	suite.Suite
 	engine       *rocksdb.RocksDB
 	pool         *pgxpool.Pool
-	storage      store.Store
 	datastore    DataStore
 	testContexts map[string]context.Context
 	testNBIDs    []string
@@ -52,23 +48,18 @@ func (s *networkBaselineDatastoreSACTestSuite) SetupSuite() {
 	networkBaselineObj := "networkBaselineSACTest"
 
 	if features.PostgresDatastore.Enabled() {
-		ctx := context.Background()
-		source := pgtest.GetConnectionString(s.T())
-		config, err := pgxpool.ParseConfig(source)
-		s.NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(ctx, config)
-		s.NoError(err)
-		pgStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), source)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
+		pgtestbase := pgtest.ForT(s.T())
+		s.Require().NotNil(pgtestbase)
+		s.pool = pgtestbase.Pool
+		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
+		s.Require().NoError(err)
 	} else {
 		s.engine, err = rocksdb.NewTemp(networkBaselineObj)
 		s.NoError(err)
 
-		s.storage = rdbStore.New(s.engine)
+		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine)
+		s.Require().NoError(err)
 	}
-	s.datastore = newNetworkBaselineDataStore(s.storage)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkBaseline)
 }

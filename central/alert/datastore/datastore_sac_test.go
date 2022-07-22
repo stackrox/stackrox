@@ -6,13 +6,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/alert/datastore/internal/index"
-	"github.com/stackrox/rox/central/alert/datastore/internal/search"
-	"github.com/stackrox/rox/central/alert/datastore/internal/store"
-	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
-	rocksdbStore "github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
@@ -42,17 +36,12 @@ type alertDatastoreSACTestSuite struct {
 	suite.Suite
 
 	engine *rocksdb.RocksDB
-	index  *bleve.Index
+	index  bleve.Index
 
 	pool *pgxpool.Pool
 
-	storage    store.Store
-	indexer    index.Indexer
-	search     search.Searcher
 	optionsMap searchPkg.OptionsMap
 	datastore  DataStore
-
-	mockCtrl *gomock.Controller
 
 	testContexts map[string]context.Context
 
@@ -63,36 +52,23 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	alertObj := "alertSACTest"
 
-	s.mockCtrl = gomock.NewController(s.T())
 	if features.PostgresDatastore.Enabled() {
-		ctx := context.Background()
-		source := pgtest.GetConnectionString(s.T())
-		config, err := pgxpool.ParseConfig(source)
-		s.NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
-		s.NoError(err)
-		pgStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), source)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
-		s.indexer = pgStore.NewIndexWrapper(s.pool)
+		pgtestbase := pgtest.ForT(s.T())
+		s.Require().NotNil(pgtestbase)
+		s.pool = pgtestbase.Pool
+		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
+		s.Require().NoError(err)
 		s.optionsMap = schema.AlertsSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp(alertObj)
 		s.NoError(err)
-		var bleveindex bleve.Index
-		bleveindex, err = globalindex.TempInitializeIndices(alertObj)
-		s.index = &bleveindex
+		s.index, err = globalindex.TempInitializeIndices(alertObj)
 		s.NoError(err)
 
-		s.storage = rocksdbStore.New(s.engine)
-		s.indexer = index.New(*s.index)
+		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
+		s.Require().NoError(err)
 		s.optionsMap = mappings.OptionsMap
 	}
-	s.search = search.New(s.storage, s.indexer)
-
-	s.datastore, err = New(s.storage, s.indexer, s.search)
-	s.NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Alert)
 }

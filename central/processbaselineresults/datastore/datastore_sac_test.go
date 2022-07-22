@@ -5,9 +5,6 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store"
-	pgStore "github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/postgres"
-	rdbStore "github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -31,8 +28,6 @@ type processBaselineResultsDatastoreSACSuite struct {
 
 	pool *pgxpool.Pool
 
-	storage store.Store
-
 	datastore                  DataStore
 	testContexts               map[string]context.Context
 	testProcessBaselineResults []string
@@ -41,23 +36,18 @@ type processBaselineResultsDatastoreSACSuite struct {
 func (s *processBaselineResultsDatastoreSACSuite) SetupSuite() {
 	var err error
 	if features.PostgresDatastore.Enabled() {
-		ctx := context.Background()
-		src := pgtest.GetConnectionString(s.T())
-		cfg, err := pgxpool.ParseConfig(src)
+		pgtestbase := pgtest.ForT(s.T())
+		s.Require().NotNil(pgtestbase)
+		s.pool = pgtestbase.Pool
+		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
 		s.Require().NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
-		s.Require().NoError(err)
-		pgStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), src)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
 	} else {
 		s.engine, err = rocksdb.NewTemp("riskSACTest")
 		s.Require().NoError(err)
-		s.storage = rdbStore.New(s.engine)
-	}
 
-	s.datastore = New(s.storage)
+		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine)
+		s.Require().NoError(err)
+	}
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.ProcessWhitelist)

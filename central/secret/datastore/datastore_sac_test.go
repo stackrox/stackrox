@@ -8,12 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/secret/internal/index"
-	"github.com/stackrox/rox/central/secret/internal/store"
-	pgStore "github.com/stackrox/rox/central/secret/internal/store/postgres"
-	rdbStore "github.com/stackrox/rox/central/secret/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/secret/mappings"
-	"github.com/stackrox/rox/central/secret/search"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -37,13 +32,9 @@ type secretDatastoreSACTestSuite struct {
 	suite.Suite
 
 	engine *rocksdb.RocksDB
-	index  *bleve.Index
+	index  bleve.Index
 
 	pool *pgxpool.Pool
-
-	storage store.Store
-	indexer index.Indexer
-	search  search.Searcher
 
 	datastore DataStore
 
@@ -57,31 +48,20 @@ func (s *secretDatastoreSACTestSuite) SetupSuite() {
 	secretObj := "secretSACTest"
 
 	if features.PostgresDatastore.Enabled() {
-		ctx := context.Background()
-		source := pgtest.GetConnectionString(s.T())
-		config, err := pgxpool.ParseConfig(source)
-		s.NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(ctx, config)
-		s.NoError(err)
-		pgStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), source)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
-		s.indexer = pgStore.NewIndexer(s.pool)
+		pgtestbase := pgtest.ForT(s.T())
+		s.Require().NotNil(pgtestbase)
+		s.pool = pgtestbase.Pool
+		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
+		s.Require().NoError(err)
 	} else {
 		s.engine, err = rocksdb.NewTemp(secretObj)
 		s.NoError(err)
-		var bleveindex bleve.Index
-		bleveindex, err = globalindex.TempInitializeIndices(secretObj)
-		s.index = &bleveindex
+		s.index, err = globalindex.TempInitializeIndices(secretObj)
 		s.NoError(err)
 
-		s.storage = rdbStore.New(s.engine)
-		s.indexer = index.New(*s.index)
+		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
+		s.Require().NoError(err)
 	}
-	s.search = search.New(s.storage, s.indexer)
-	s.datastore, err = New(s.storage, s.indexer, s.search)
-	s.NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Secret)
 }
@@ -90,8 +70,8 @@ func (s *secretDatastoreSACTestSuite) TearDownSuite() {
 	if features.PostgresDatastore.Enabled() {
 		s.pool.Close()
 	} else {
-		err := rocksdb.CloseAndRemove(s.engine)
-		s.NoError(err)
+		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
+		s.Require().NoError(s.index.Close())
 	}
 }
 
