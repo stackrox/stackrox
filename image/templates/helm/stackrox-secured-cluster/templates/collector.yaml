@@ -65,7 +65,8 @@ spec:
           readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /host/var/run/docker.sock
-          name: var-run-docker-sock
+          name: var-run
+          subPath: /var/run/docker.sock
           readOnly: true
         - mountPath: /host/proc
           name: proc-ro
@@ -76,7 +77,8 @@ spec:
           name: etc-ro
           readOnly: true
         - mountPath: /host/usr/lib
-          name: usr-lib-ro
+          name: usr-ro
+          subPath: /usr/lib
           readOnly: true
         - mountPath: /host/sys
           name: sys-ro
@@ -157,9 +159,6 @@ spec:
           readOnly: true
       volumes:
       - hostPath:
-          path: /var/run/docker.sock
-        name: var-run-docker-sock
-      - hostPath:
           path: /proc
         name: proc-ro
       - emptyDir:
@@ -168,9 +167,6 @@ spec:
       - hostPath:
           path: /etc
         name: etc-ro
-      - hostPath:
-          path: /usr/lib
-        name: usr-lib-ro
       - hostPath:
           path: /sys/
         name: sys-ro
