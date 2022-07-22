@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+// GetCluster provides a filled cluster object for testing purposes.
 func GetCluster(name string) *storage.Cluster {
 	return &storage.Cluster{
 		Id:                         "",

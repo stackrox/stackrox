@@ -569,11 +569,11 @@ func (s *clusterDatastoreSACSuite) TestUpdateCluster() {
 	defer s.deleteCluster(clusterID)
 	s.Require().NoError(err)
 	oldCluster.Id = clusterID
-	oldApiEndpoint := oldCluster.GetCentralApiEndpoint()
-	newApiEndpoint := "some.central.endpoint:443"
+	oldAPIEndpoint := oldCluster.GetCentralApiEndpoint()
+	newAPIEndpoint := "some.central.endpoint:443"
 	newCluster := fixtures.GetCluster(testconsts.Cluster2)
 	newCluster.Id = clusterID
-	newCluster.CentralApiEndpoint = newApiEndpoint
+	newCluster.CentralApiEndpoint = newAPIEndpoint
 	newCluster.Priority = 1
 
 	cases := testutils.GenericClusterSACWriteTestCases(context.Background(), s.T(), "update", clusterID, "not"+clusterID, resources.Cluster)
@@ -589,13 +589,13 @@ func (s *clusterDatastoreSACSuite) TestUpdateCluster() {
 			s.NoError(postUpdateErr)
 			s.True(postUpdateFound)
 			if c.ExpectError {
-				s.Equal(oldApiEndpoint, preUpdateCluster.GetCentralApiEndpoint())
+				s.Equal(oldAPIEndpoint, preUpdateCluster.GetCentralApiEndpoint())
 				s.ErrorIs(updateErr, c.ExpectedError)
-				s.Equal(oldApiEndpoint, postUpdateCluster.GetCentralApiEndpoint())
+				s.Equal(oldAPIEndpoint, postUpdateCluster.GetCentralApiEndpoint())
 			} else {
-				s.Equal(oldApiEndpoint, preUpdateCluster.GetCentralApiEndpoint())
+				s.Equal(oldAPIEndpoint, preUpdateCluster.GetCentralApiEndpoint())
 				s.NoError(updateErr)
-				s.Equal(newApiEndpoint, postUpdateCluster.GetCentralApiEndpoint())
+				s.Equal(newAPIEndpoint, postUpdateCluster.GetCentralApiEndpoint())
 			}
 			// Revert to pre-test state
 			err := s.datastore.UpdateCluster(globalReadWriteCtx, oldCluster)
@@ -603,7 +603,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateCluster() {
 			fetchedCluster, found, err := s.datastore.GetCluster(globalReadWriteCtx, clusterID)
 			s.Require().NoError(err)
 			s.Require().True(found)
-			s.Require().Equal(oldApiEndpoint, fetchedCluster.GetCentralApiEndpoint())
+			s.Require().Equal(oldAPIEndpoint, fetchedCluster.GetCentralApiEndpoint())
 		})
 	}
 }
