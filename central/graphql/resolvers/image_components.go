@@ -100,10 +100,12 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
+	res, err := resolver.wrapImageComponent(ret, true, err)
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapImageComponent(ret, true, err)
+	res.ctx = ctx
+	return res, nil
 }
 
 // ImageComponents returns image components that match the input query.

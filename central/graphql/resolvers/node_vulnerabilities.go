@@ -220,7 +220,12 @@ func (resolver *Resolver) TopNodeVulnerability(ctx context.Context, args RawQuer
 		return nil, errors.New("multiple vulnerabilities matched for top node vulnerability")
 	}
 
-	return resolver.wrapNodeCVE(vulns[0], true, nil)
+	res, err := resolver.wrapNodeCVE(vulns[0], true, nil)
+	if err != nil {
+		return nil, err
+	}
+	res.ctx = ctx
+	return res, nil
 }
 
 /*

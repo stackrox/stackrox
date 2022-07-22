@@ -124,7 +124,6 @@ func (resolver *Resolver) imageComponentDataStoreQuery(ctx context.Context, args
 	} else if !exists {
 		return nil, errors.Errorf("component not found: %s", string(*args.ID))
 	}
-	// return resolver.wrapImageComponent(component, true, nil)
 	return component, err
 }
 
@@ -138,7 +137,6 @@ func (resolver *Resolver) imageComponentsLoaderQuery(ctx context.Context, query 
 	}
 
 	return componentLoader.FromQuery(ctx, query)
-	// return resolver.wrapImageComponents(componentLoader.FromQuery(ctx, query))
 }
 
 func (resolver *Resolver) componentCountV2(ctx context.Context, args RawQuery) (int32, error) {
