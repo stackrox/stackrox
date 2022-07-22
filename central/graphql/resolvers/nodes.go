@@ -338,13 +338,7 @@ func (resolver *nodeResolver) NodeComponents(ctx context.Context, args Paginated
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
-		return resolver.root.NodeComponents(resolver.withNodeScopeContext(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeComponents in Node does not support postgres yet")
+	return resolver.root.NodeComponents(resolver.withNodeScopeContext(ctx), args)
 }
 
 // NodeComponentCount returns the number of components in the node
@@ -353,13 +347,7 @@ func (resolver *nodeResolver) NodeComponentCount(ctx context.Context, args RawQu
 	if err := readNodes(ctx); err != nil {
 		return 0, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
-		return resolver.root.NodeComponentCount(resolver.withNodeScopeContext(ctx), RawQuery{Query: &query})
-	}
-	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeComponentCount in Node does not support postgres yet")
+	return resolver.root.NodeComponentCount(resolver.withNodeScopeContext(ctx), args)
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
@@ -383,34 +371,23 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 // TopNodeVulnerability returns the first node vulnerability with the top CVSS score.
 func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopNodeVulnerability")
-	if err := readNodes(ctx); err != nil {
-		return nil, err
-	}
-
-	query, err := resolver.getTopNodeCVEV1Query(args)
-	if err != nil {
-		return nil, err
-	}
 
 	if !features.PostgresDatastore.Enabled() {
+		if err := readNodes(ctx); err != nil {
+			return nil, err
+		}
+
+		query, err := resolver.getTopNodeCVEV1Query(args)
+		if err != nil {
+			return nil, err
+		}
 		vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, query)
 		if err != nil || vulnResolver == nil {
 			return nil, err
 		}
 		return vulnResolver, nil
 	}
-
-	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	vulns, err := vulnLoader.FromQuery(ctx, query)
-	if err != nil || len(vulns) == 0 {
-		return nil, err
-	} else if len(vulns) > 1 {
-		return nil, errors.New("multiple vulnerabilities matched for top node vulnerability")
-	}
-	return &nodeCVEResolver{root: resolver.root, data: vulns[0]}, nil
+	return resolver.root.TopNodeVulnerability(resolver.withNodeScopeContext(ctx), args)
 }
 
 func (resolver *nodeResolver) getTopNodeCVEV1Query(args RawQuery) (*v1.Query, error) {

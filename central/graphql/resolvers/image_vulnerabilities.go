@@ -247,7 +247,12 @@ func (resolver *Resolver) TopImageVulnerability(ctx context.Context, args RawQue
 		return nil, errors.New("TopImageVulnerability query returned more than one vulnerabilities")
 	}
 
-	return resolver.wrapImageCVE(topVuln[0], true, nil)
+	res, err := resolver.wrapImageCVE(topVuln[0], true, nil)
+	if err != nil {
+		return nil, err
+	}
+	res.ctx = ctx
+	return res, nil
 }
 
 /*
