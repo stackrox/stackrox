@@ -76,7 +76,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(ctx, event.GetAction(), role)
-	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
+	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
 		return s.runGeneralPipeline(ctx, event.GetAction(), role)
 	default:
 		return fmt.Errorf("event action '%s' for k8s role does not exist", event.GetAction())
