@@ -11,6 +11,8 @@ source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 
 _deploy_stackrox() {
+    tee_output_to_log "$TEST_ROOT/deployment_output.txt"
+
     deploy_central
 
     get_central_basic_auth_creds
@@ -24,10 +26,12 @@ _deploy_stackrox() {
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     sensor_wait
+
+    restore_output
 }
 
 deploy_stackrox() {
-    _deploy_stackrox 2>&1 | tee "$TEST_ROOT/deployment_output.txt" || {
+    _deploy_stackrox || {
         local exitstatus="$?"
         echo "Debug: exitstatus recorded after _deploy_stackrox() is $exitstatus"
         save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "$(tail -10 "$TEST_ROOT/deployment_output.txt")" || true
