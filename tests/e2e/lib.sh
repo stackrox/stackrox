@@ -128,11 +128,9 @@ get_central_basic_auth_creds() {
 
     local password
     password="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
-    export ROX_USERNAME=admin
-    export ROX_PASSWORD="$password"
 
-    ci_export "ROX_USERNAME" "$ROX_USERNAME"
-    ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
+    ci_export "ROX_USERNAME" "admin"
+    ci_export "ROX_PASSWORD" "$password"
 }
 
 setup_client_CA_auth_provider() {
