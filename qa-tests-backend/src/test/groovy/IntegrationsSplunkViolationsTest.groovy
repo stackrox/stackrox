@@ -303,7 +303,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
     def triggerProcessViolation(SplunkUtil.SplunkDeployment splunkDeployment) {
         orchestrator.execInContainer(splunkDeployment.deployment, "curl http://127.0.0.1:10248/ --max-time 2")
-        assert waitForAlertWithPolicyId(splunkDeployment.getDeployment().getName(), "86804b96-e87e-4eae-b56e-1718a8a55763")
+        assert waitForAlertWithPolicyId(splunkDeployment.getDeployment().getName(),
+                                        "86804b96-e87e-4eae-b56e-1718a8a55763")
     }
 
     def triggerNetworkFlowViolation(SplunkUtil.SplunkDeployment splunkDeployment, String centralService) {
@@ -334,7 +335,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                     .any { it.targetID != centralUid && it.getPort() == 443 }
         }, 15)
 
-        assert waitForAlertWithPolicyId(splunkDeployment.getDeployment().getName(), "1b74ffdd-8e67-444c-9814-1c23863c8ccb")
+        assert waitForAlertWithPolicyId(splunkDeployment.getDeployment().getName(),
+                "1b74ffdd-8e67-444c-9814-1c23863c8ccb")
     }
 
     private boolean waitForAlertWithPolicyId(String deploymentName, String policyId) {

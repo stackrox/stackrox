@@ -15,7 +15,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const EntityTabs = ({ entityType, activeTab }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const workflowState = useContext(workflowStateContext);
     function getTab(tabType) {

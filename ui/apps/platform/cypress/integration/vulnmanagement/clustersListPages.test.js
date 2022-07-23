@@ -15,7 +15,7 @@ describe('Clusters list Page and its single entity detail page, and sub list val
     withAuth();
 
     it('should display all the columns and links expected in clusters list page', () => {
-        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UDPATES');
+        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
 
         const columnsToCheck = usingVMUpdates
             ? [

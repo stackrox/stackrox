@@ -139,7 +139,7 @@ func (s *pipelineImpl) persistNamespace(ctx context.Context, action central.Reso
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
 		return s.namespaces.AddNamespace(ctx, ns)
-	case central.ResourceAction_UPDATE_RESOURCE:
+	case central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		return s.namespaces.UpdateNamespace(ctx, ns)
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.namespaces.RemoveNamespace(ctx, ns.GetId())

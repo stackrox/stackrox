@@ -14,7 +14,6 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -584,23 +583,13 @@ func (resolver *clusterResolver) ImageComponentCount(ctx context.Context, args R
 // NodeComponents returns the node components in the cluster.
 func (resolver *clusterResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponents")
-
-	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeComponents(resolver.withClusterScope(ctx), args)
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeComponents in Cluster does not support postgres yet")
+	return resolver.root.NodeComponents(resolver.withClusterScope(ctx), args)
 }
 
 // NodeComponentCount returns the number of node components in the cluster
 func (resolver *clusterResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponentCount")
-
-	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeComponentCount(resolver.withClusterScope(ctx), args)
-	}
-	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeComponentCount in Cluster does not support postgres yet")
+	return resolver.root.NodeComponentCount(resolver.withClusterScope(ctx), args)
 }
 
 func (resolver *clusterResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {

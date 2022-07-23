@@ -27,7 +27,7 @@ import { EntityComponentMap } from './UseCaseComponentMaps';
 const WorkflowEntityPageLayout = ({ location }) => {
     const { isDarkMode } = useTheme();
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const useCaseEntityMap = getUseCaseEntityMap();
     if (showVmUpdates) {

@@ -892,6 +892,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"snoozeStart: Time",
 		"snoozed: Boolean!",
 	}))
+	utils.Must(builder.AddType("NodeComponent", []string{
+		"id: ID!",
+		"name: String!",
+		"operatingSystem: String!",
+		"priority: Int!",
+		"riskScore: Float!",
+		"version: String!",
+	}))
 	utils.Must(builder.AddType("NodeScan", []string{
 		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
@@ -8143,6 +8151,60 @@ func (resolver *nodeCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time
 
 func (resolver *nodeCVEResolver) Snoozed(ctx context.Context) bool {
 	value := resolver.data.GetSnoozed()
+	return value
+}
+
+type nodeComponentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeComponent
+}
+
+func (resolver *Resolver) wrapNodeComponent(value *storage.NodeComponent, ok bool, err error) (*nodeComponentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeComponentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeComponents(values []*storage.NodeComponent, err error) ([]*nodeComponentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeComponentResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeComponentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeComponentResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *nodeComponentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *nodeComponentResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
+	return value
+}
+
+func (resolver *nodeComponentResolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	return int32(value)
+}
+
+func (resolver *nodeComponentResolver) RiskScore(ctx context.Context) float64 {
+	value := resolver.data.GetRiskScore()
+	return float64(value)
+}
+
+func (resolver *nodeComponentResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
 	return value
 }
 

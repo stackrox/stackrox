@@ -34,7 +34,7 @@ export const defaultDeploymentSort = [
 ];
 
 export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     return function getDeploymentTableColumns(workflowState) {
         // to determine whether to show the counts as links in the table when not in pure DEPLOYMENT state
@@ -269,7 +269,7 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
 
 const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const fragmentToUse = isFrontendVMUpdatesEnabled
         ? DEPLOYMENT_LIST_FRAGMENT_UPDATED
