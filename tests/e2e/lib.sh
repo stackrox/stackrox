@@ -121,7 +121,15 @@ get_central_basic_auth_creds() {
     require_environment "TEST_ROOT"
     require_environment "DEPLOY_DIR"
 
-    source "$TEST_ROOT/scripts/k8s/export-basic-auth-creds.sh" "$DEPLOY_DIR"
+    if [[ ! -f "${TEST_ROOT}/${DEPLOY_DIR}/central-deploy/password" ]]; then
+        info "Error: there is no deployment password - probably due to an early deployment failure"
+        return 1
+    fi
+
+    local password
+    password="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
+    export ROX_USERNAME=admin
+    export ROX_PASSWORD="$password"
 
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
