@@ -13,7 +13,7 @@ set -euo pipefail
 
 test_part_1() {
     info "Starting test (qa-tests-backend part I)"
-    echo "set at test_part_1: $(printf %s\\n "$-")"
+    echo "set at test_part_1: $-"
 
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
@@ -25,7 +25,7 @@ test_part_1() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs
 
-    echo "set before deploy_stackrox: $(printf %s\\n "$-")"
+    echo "set before deploy_stackrox: $-"
     deploy_stackrox || {
         local exitstatus="$?"
         echo "Debug: exitstatus recorded after deploy_stackrox() is $exitstatus, will skip part II tests"

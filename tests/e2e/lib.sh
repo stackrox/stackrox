@@ -12,9 +12,9 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 
 _deploy_stackrox() {
     export MAIN_IMAGE_TAG="3.71.x-119-noexisto"
-    echo "set before deploy_central: $(printf %s\\n "$-")"
+    echo "set before deploy_central: $-"
     deploy_central
-    echo "set after deploy_central: $(printf %s\\n "$-")"
+    echo "set after deploy_central: $-"
     set -euo pipefail # something in the deloy/ scripts clobbers set -e
 
     get_central_basic_auth_creds
@@ -82,9 +82,9 @@ deploy_central() {
     fi
 
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-    echo "set before central.sh: $(printf %s\\n "$-")"
+    echo "set before central.sh: $-"
     "$ROOT/${DEPLOY_DIR}/central.sh"
-    echo "set after central.sh: $(printf %s\\n "$-")"
+    echo "set after central.sh: $-"
 }
 
 deploy_sensor() {
