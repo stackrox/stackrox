@@ -13,6 +13,7 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 _deploy_stackrox() {
     tee_output_to_log "$TEST_ROOT/deployment_output.txt"
 
+    export MAIN_IMAGE_TAG="3.71.x-119-noexisto"
     deploy_central
 
     get_central_basic_auth_creds
