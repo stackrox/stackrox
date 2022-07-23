@@ -143,19 +143,6 @@ retry() {
     return 0
 }
 
-# tee_output_to_log(), restore_output() - log output to a file without creating
-# a subshell that can happen with `function | tee`
-
-tee_output_to_log() {
-    local transcript="${1:-/tmp/output}"
-    exec 20<&0 21>&1 22>&2
-    exec > >(tee -i "$transcript") 2>&1
-}
-
-restore_output() {
-    exec <&20 >&21 2>&22 20<&- 21>&- 22>&-
-}
-
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         usage
