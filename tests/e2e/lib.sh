@@ -15,7 +15,6 @@ _deploy_stackrox() {
     echo "set before deploy_central: $- ${BASH_SUBSHELL}"
     deploy_central
     echo "set after deploy_central: $- ${BASH_SUBSHELL}"
-    set -euo pipefail # something in the deloy/ scripts clobbers set -e
 
     get_central_basic_auth_creds
     wait_for_api
@@ -84,9 +83,7 @@ deploy_central() {
     fi
 
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-    echo "set before central.sh: $- ${BASH_SUBSHELL}"
     "$ROOT/${DEPLOY_DIR}/central.sh"
-    echo "set after central.sh: $- ${BASH_SUBSHELL}"
 }
 
 deploy_sensor() {
