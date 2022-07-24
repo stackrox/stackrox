@@ -217,7 +217,7 @@ const VulnMgmtNodeComponents = ({ selectedRowId, search, sort, page, data, total
     const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const query = gql`
-        query getComponents($query: String, $pagination: Pagination) {
+        query getImageComponents($query: String, $pagination: Pagination) {
             results: imageComponents(query: $query, pagination: $pagination) {
                 ...imageComponentFields
             }

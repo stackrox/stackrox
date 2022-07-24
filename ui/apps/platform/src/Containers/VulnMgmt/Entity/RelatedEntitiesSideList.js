@@ -27,8 +27,8 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
 
     const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
         // @TODO: Remove the following filter step once ROX_FRONTEND_VM_UPDATES is ON
-        .filter((match) => {
-            return filterEntityRelationship(showVMUpdates, match);
+        .filter((matchEntity) => {
+            return filterEntityRelationship(showVMUpdates, matchEntity);
         })
         .map((matchEntity) => {
             let countKeyToUse = countKeyMap[matchEntity];
@@ -60,8 +60,8 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
         });
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
         // @TODO: Remove the following filter step once ROX_FRONTEND_VM_UPDATES is ON
-        .filter((match) => {
-            return filterEntityRelationship(showVMUpdates, match);
+        .filter((containEntity) => {
+            return filterEntityRelationship(showVMUpdates, containEntity);
         })
         .map((containEntity) => {
             let countKeyToUse = countKeyMap[containEntity];

@@ -333,10 +333,10 @@ describe('Entities single views', () => {
         cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click();
         cy.wait('@deployment');
         // now, go the components for that deployment
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('deployments', 'COMPONENT')).as(
+        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('deployments', 'IMAGE_COMPONENT')).as(
             'deploymentsCOMPONENT'
         );
-        cy.get(selectors.componentTileLink).click();
+        cy.get(selectors.imageComponentTileLink).click();
         cy.wait('@deploymentsCOMPONENT');
         // click on the first component in that list
         cy.get(`[data-testid="side-panel"] ${selectors.tableRows}`, { timeout: 10000 })

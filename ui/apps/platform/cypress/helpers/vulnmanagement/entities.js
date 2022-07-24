@@ -67,6 +67,8 @@ export function visitVulnerabilityManagementDashboard() {
 export function visitVulnerabilityManagementEntities(entitiesKey, search = '') {
     cy.intercept('POST', api.graphql('searchOptions')).as('searchOptions');
     cy.intercept('POST', api.vulnMgmt.graphqlEntities(entitiesKey)).as(entitiesKey);
+    cy.log(entitiesKey);
+    cy.log(api.vulnMgmt.graphqlEntities(entitiesKey));
 
     visit(`${url.list[entitiesKey]}${search}`);
 

@@ -56,8 +56,10 @@ function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
             const col1 = col.toLowerCase();
             cy.log(`col1: ${col1}`);
             cy.log(`col1.includes('node'): ${col1.includes('node')}`);
-            if (col1.includes('image')) {
-                entitySelector = vulnManagementSelectors.imageTileLink;
+            if (col1.includes('image component')) {
+                entitySelector = vulnManagementSelectors.imageComponentTileLink;
+            } else if (col1.includes('node component')) {
+                entitySelector = vulnManagementSelectors.nodeComponentTileLink;
             } else if (col1.includes('deployment')) {
                 entitySelector = vulnManagementSelectors.deploymentTileLink;
             } else if (col1.includes('namespace')) {
@@ -68,6 +70,8 @@ function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
                 entitySelector = vulnManagementSelectors.cveTileLink;
             } else if (col1.includes('node')) {
                 entitySelector = vulnManagementSelectors.nodeTileLink;
+            } else if (col1.includes('image')) {
+                entitySelector = vulnManagementSelectors.imageTileLink;
             } else {
                 entitySelector = vulnManagementSelectors.getTileLink(col.toUpperCase());
             }
@@ -110,7 +114,7 @@ function validateCVETileLinksInSidePanel(parentUrl) {
             // not reusing a predefined selector below, because we had made this function so DRY,
             //   we created a false positive that was labyrinthine to track down
             //   see: https://engblog.nextdoor.com/how-to-dry-up-your-tests-without-making-mummies-of-them-7de79a8e3df1
-            cy.get('[data-testid="CVE-tile-link"]:contains("CVE")')
+            cy.get('[data-testid="tile-content"]:contains("CVE")')
                 .find(vulnManagementSelectors.tileLinkValue)
                 .contains('CVE');
             cy.get(vulnManagementSelectors.tileLinkText).contains(cveCount);
