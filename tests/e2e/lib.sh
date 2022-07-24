@@ -13,7 +13,9 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 _deploy_stackrox() {
     export MAIN_IMAGE_TAG="3.71.x-119-noexisto"
     echo "set before deploy_central: $- ${BASH_SUBSHELL}"
+    set -x
     deploy_central
+    set +x
     echo "set after deploy_central: $- ${BASH_SUBSHELL}"
 
     get_central_basic_auth_creds
