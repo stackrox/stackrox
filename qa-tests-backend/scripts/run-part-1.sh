@@ -32,7 +32,7 @@ test_part_1() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs
 
-    deploy_stackrox 
+    deploy_stackrox
 
     deploy_default_psp
     deploy_webhook_server

@@ -15,7 +15,7 @@ deploy_stackrox() {
         local exitstatus="$?"
         echo "Debug: deployment failure exitstatus: $exitstatus, will record a failure to junit logs"
         save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
-        return "$exitstatus"
+        exit "$exitstatus"
     }
     trap _catch_deployment_failure ERR
 
