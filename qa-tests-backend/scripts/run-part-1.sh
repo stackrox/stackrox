@@ -13,29 +13,32 @@ set -euo pipefail
 
 test_part_1() {
     info "Starting test (qa-tests-backend part I)"
-    echo "set at test_part_1: $- ${BASH_SUBSHELL}"
 
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
     export_test_environment
 
+    function _catch_deployment_failure {
+        local exitstatus="$?"
+        echo "Debug: deployment failure exitstatus: $exitstatus, will skip part II tests"
+        touch "$ROOT/SKIP_PART_II"
+        exit "$exitstatus"
+    }
+    trap _catch_deployment_failure EXIT
+
     setup_gcp
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
 
-    echo "set before deploy_stackrox: $- ${BASH_SUBSHELL}"
-    deploy_stackrox || {
-        local exitstatus="$?"
-        echo "Debug: exitstatus recorded after deploy_stackrox() is $exitstatus, will skip part II tests"
-        touch "$ROOT/SKIP_PART_II"
-        exit "$exitstatus"
-    }
+    deploy_stackrox 
 
     deploy_default_psp
     deploy_webhook_server
     get_ECR_docker_pull_password
+
+    trap - EXIT
 
     run_tests_part_1
 }

@@ -10,11 +10,17 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 
-_deploy_stackrox() {
+deploy_stackrox() {
+    function _catch_deployment_failure {
+        local exitstatus="$?"
+        echo "Debug: deployment failure exitstatus: $exitstatus, will record a failure to junit logs"
+        save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
+        return "$exitstatus"
+    }
+    trap _catch_deployment_failure ERR
+
     export MAIN_IMAGE_TAG="3.71.x-119-noexisto"
-    echo "set before deploy_central: $- ${BASH_SUBSHELL}"
     deploy_central
-    echo "set after deploy_central: $- ${BASH_SUBSHELL}"
 
     get_central_basic_auth_creds
     wait_for_api
@@ -27,17 +33,8 @@ _deploy_stackrox() {
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     sensor_wait
-}
 
-deploy_stackrox() {
-    echo "set before _deploy_stackrox: $- ${BASH_SUBSHELL}"
-    _deploy_stackrox || {
-        local exitstatus="$?"
-        echo "Debug: exitstatus recorded after _deploy_stackrox() is $exitstatus"
-        save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
-        return "$exitstatus"
-    }
-    echo "set after _deploy_stackrox: $- ${BASH_SUBSHELL}"
+    trap - ERR
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
