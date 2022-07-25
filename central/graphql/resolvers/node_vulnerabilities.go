@@ -27,6 +27,7 @@ func init() {
 				"nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!",
 				"nodeCount(query: String): Int!",
 				"nodes(query: String, pagination: Pagination): [Node!]!",
+				"operatingSystem: String!",
 			)),
 		schema.AddQuery("nodeVulnerability(id: ID): NodeVulnerability"),
 		schema.AddQuery("nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!"),
@@ -43,6 +44,7 @@ type NodeVulnerabilityResolver interface {
 	NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error)
 	NodeCount(ctx context.Context, args RawQuery) (int32, error)
 	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
+	OperatingSystem(ctx context.Context) string
 }
 
 // NodeVulnerability resolves a single vulnerability based on an id
