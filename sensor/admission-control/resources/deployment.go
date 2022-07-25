@@ -33,7 +33,9 @@ func (m *DeploymentStore) ProcessEvent(action central.ResourceAction, obj interf
 	defer m.mutex.Unlock()
 
 	switch action {
-	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
+	case central.ResourceAction_CREATE_RESOURCE:
+		fallthrough
+	case central.ResourceAction_UPDATE_RESOURCE:
 		depMap := m.deployments[deployment.GetNamespace()]
 		if depMap == nil {
 			depMap = make(map[string]*storage.Deployment)

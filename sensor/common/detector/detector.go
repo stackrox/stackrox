@@ -154,7 +154,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 				// Regardless if an UPDATE was processed before the create, we should try to enforce on the CREATE
 				d.enforcer.ProcessAlertResults(result.action, storage.LifecycleStage_DEPLOY, alertResults)
 				fallthrough
-			case central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
+			case central.ResourceAction_UPDATE_RESOURCE:
 				var isMostRecentUpdate bool
 				concurrency.WithRLock(&d.deploymentProcessingLock, func() {
 					value, exists := d.deploymentProcessingMap[alertResults.GetDeploymentId()]
@@ -440,7 +440,7 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 		d.deduper.addDeployment(deployment)
 		d.markDeploymentForProcessing(deployment.GetId())
 		go d.enricher.blockingScan(deployment, d.getNetworkPoliciesApplied(deployment), action)
-	case central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
+	case central.ResourceAction_UPDATE_RESOURCE:
 		// Check if the deployment has changes that require detection, which is more expensive than hashing
 		// If not, then just return
 		if !d.deduper.needsProcessing(deployment) {
