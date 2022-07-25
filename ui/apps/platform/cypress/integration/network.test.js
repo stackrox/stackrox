@@ -52,7 +52,7 @@ describe('Network page', () => {
         cy.get(networkPageSelectors.legend.deployments)
             .eq(0)
             .children()
-            .should('have.class', 'icon-node');
+            .should('have.attr', 'alt', 'deployment');
 
         cy.get(networkPageSelectors.legend.deployments)
             .eq(1)
@@ -61,12 +61,11 @@ describe('Network page', () => {
         cy.get(networkPageSelectors.legend.deployments)
             .eq(2)
             .children()
-            .children()
-            .should('have.class', 'icon-potential');
+            .should('have.attr', 'alt', 'deployment-allowed-connections');
         cy.get(networkPageSelectors.legend.deployments)
             .eq(3)
             .children()
-            .should('have.class', 'icon-node');
+            .should('have.attr', 'alt', 'non-isolated-deployment-allowed');
 
         cy.get(networkPageSelectors.legend.namespaces)
             .eq(0)
@@ -92,7 +91,7 @@ describe('Network page', () => {
         cy.get(networkPageSelectors.legend.connections)
             .eq(2)
             .children()
-            .should('have.class', 'icon-ingress-egress');
+            .should('have.attr', 'alt', 'namespace-egress-ingress');
     });
 
     it('should handle toggle click on simulator network policy button', () => {
