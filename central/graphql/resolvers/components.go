@@ -22,27 +22,28 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("EmbeddedImageScanComponent", []string{
-			"license: License",
+			"activeState(query: String): ActiveState",
+			"deploymentCount(query: String, scopeQuery: String): Int!",
+			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
+			"fixedIn: String!",
 			"id: ID!",
+			"imageCount(query: String, scopeQuery: String): Int!",
+			"images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!",
+			"lastScanned: Time",
+			"layerIndex: Int",
+			"license: License",
+			"location(query: String): String!",
 			"name: String!",
-			"version: String!",
+			"nodeCount(query: String, scopeQuery: String): Int!",
+			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
+			"priority: Int!",
+			"riskScore: Float!",
+			"source: String!",
 			"topVuln: EmbeddedVulnerability",
-			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!",
+			"version: String!",
 			"vulnCount(query: String, scopeQuery: String): Int!",
 			"vulnCounter(query: String): VulnerabilityCounter!",
-			"lastScanned: Time",
-			"images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!",
-			"imageCount(query: String, scopeQuery: String): Int!",
-			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
-			"deploymentCount(query: String, scopeQuery: String): Int!",
-			"activeState(query: String): ActiveState",
-			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
-			"nodeCount(query: String, scopeQuery: String): Int!",
-			"priority: Int!",
-			"source: String!",
-			"location(query: String): String!",
-			"riskScore: Float!",
-			"fixedIn: String!",
+			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!",
 		}),
 		schema.AddExtraResolver("ImageScan", `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
 		schema.AddExtraResolver("ImageScan", `componentCount(query: String): Int!`),
@@ -66,7 +67,7 @@ type ComponentResolver interface {
 	Priority(ctx context.Context) int32
 	Source(ctx context.Context) string
 	Location(ctx context.Context, args RawQuery) (string, error)
-	LayerIndex() *int32
+	LayerIndex() (*int32, error)
 	LastScanned(ctx context.Context) (*graphql.Time, error)
 	License(ctx context.Context) (*licenseResolver, error)
 	RiskScore(ctx context.Context) float64

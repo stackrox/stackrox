@@ -68,7 +68,7 @@ type ImageComponentResolver interface {
 	ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
 	ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error)
 	LastScanned(ctx context.Context) (*graphql.Time, error)
-	LayerIndex() *int32
+	LayerIndex() (*int32, error)
 	License(ctx context.Context) (*licenseResolver, error)
 	Location(ctx context.Context, args RawQuery) (string, error)
 	Name(ctx context.Context) string
@@ -411,8 +411,20 @@ func (resolver *imageComponentResolver) ID(_ context.Context) graphql.ID {
 	return graphql.ID(resolver.data.GetId())
 }
 
-func (resolver *imageComponentResolver) LayerIndex() *int32 {
-	return nil
+func (resolver *imageComponentResolver) LayerIndex() (*int32, error) {
+	scope, hasScope := scoped.GetScope(resolver.ctx)
+	if !hasScope || scope.Level != v1.SearchCategory_IMAGES {
+		return nil, nil
+	}
+	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, resolver.componentQuery())
+	if err != nil {
+		return nil, nil
+	}
+	if len(edges) == 0 || len(edges) > 1 {
+		return nil, errors.Errorf("Unexpected number of image-component edge matched for image %s and component %s. Expected 1 edge.", scope.ID, resolver.data.GetId())
+	}
+	layerIdx := edges[0].GetLayerIndex()
+	return &layerIdx, nil
 }
 
 func (resolver *imageComponentResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
