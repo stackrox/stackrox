@@ -134,8 +134,7 @@ class NetworkBaselineTest extends BaseSpecification {
         }
 
         for (def checkMissingId : mustNotBeInBaseline) {
-            def actualPeer = baseline.getPeersList().find { it.getEntity().getInfo().getId() == checkMissingId }
-            assert actualPeer == null
+            assert !baseline.getPeersList().any { it.getEntity().getInfo().getId() == checkMissingId }
         }
         return true
     }
