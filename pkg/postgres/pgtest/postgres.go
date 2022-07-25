@@ -24,6 +24,7 @@ type TestPostgres struct {
 	database string
 }
 
+// CreateADatabaseForT creates a postgres database for test
 func CreateADatabaseForT(t testing.TB) string {
 	suffix, err := random.GenerateString(5, random.AlphanumericCharacters)
 	require.NoError(t, err)
@@ -40,6 +41,7 @@ func CreateADatabaseForT(t testing.TB) string {
 	return database
 }
 
+// DropDatabase drops the named database
 func DropDatabase(t testing.TB, database string) {
 	// Bootstrap the test database by connecting to the default postgres database and running create
 	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName("postgres")

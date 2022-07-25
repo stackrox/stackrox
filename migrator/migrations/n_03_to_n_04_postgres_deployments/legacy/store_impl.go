@@ -269,6 +269,7 @@ func convertDeploymentToListDeployment(d *storage.Deployment) *storage.ListDeplo
 	}
 }
 
+// UpsertMany batches objects into the DB
 func (b *StoreImpl) UpsertMany(ctx context.Context, objs []*storage.Deployment) error {
 	for _, obj := range objs {
 		if err := b.Upsert(ctx, obj); err != nil {
