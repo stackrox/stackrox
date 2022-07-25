@@ -294,9 +294,10 @@ func testImageFlavorChartRepoSettings(s *deployerTestSuite, flavor defaults.Imag
 
 	fields, err := FieldsFromClusterAndRenderOpts(cluster, &flavor, RenderOptions{})
 	s.NoError(err)
+	s.NotEmpty(fields.ChartRepo.URL, "Chart Repo URL must not be empty")
+	s.NotEmpty(fields.ChartRepo.IconURL, "Chart Repo IconURL must not be empty")
 	s.Equal(flavor.ChartRepo.URL, fields.ChartRepo.URL, "ChartRepo URL does not match")
 	s.Equal(flavor.ChartRepo.IconURL, fields.ChartRepo.IconURL, "ChartRepo IconURL does not match")
-
 }
 
 func (s *deployerTestSuite) TestFieldsFromClusterAndRenderOpts() {
