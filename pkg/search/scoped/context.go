@@ -32,6 +32,20 @@ func Context(ctx context.Context, scope Scope) context.Context {
 	})
 }
 
+// GetAllScopes returns all the scopes in the scope chain from the input context as well as a boolean indicating if there was a Scope attached.
+func GetAllScopes(ctx context.Context) ([]Scope, bool) {
+	scope, found := GetScope(ctx)
+	if !found {
+		return nil, false
+	}
+	ret := []Scope{scope}
+	for scope.Parent != nil {
+		ret = append(ret, *scope.Parent)
+		scope = *scope.Parent
+	}
+	return ret, len(ret) > 0
+}
+
 // GetScope returns the Scope from the input context as well as a boolean indicating if there was a Scope attached.
 func GetScope(hasGraphContext context.Context) (Scope, bool) {
 	if hasGraphContext == nil {
