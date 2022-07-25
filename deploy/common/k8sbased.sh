@@ -531,6 +531,7 @@ function launch_sensor {
         namespace="$NAMESPACE_OVERRIDE"
         echo "Changing namespace to $NAMESPACE_OVERRIDE"
         ls $k8s_dir/sensor-deploy/*.yaml | while read file; do sed -i'.original' -e 's/namespace: stackrox/namespace: '"$NAMESPACE_OVERRIDE"'/g' $file; done
+        sed -itmp.bak 's/set -e//g' $k8s_dir/sensor-deploy/sensor.sh
       fi
 
       echo "Deploying Sensor..."
