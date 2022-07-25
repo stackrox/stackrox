@@ -21,6 +21,7 @@ var (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("EmbeddedImageScanComponent", []string{
 			"activeState(query: String): ActiveState",
 			"deploymentCount(query: String, scopeQuery: String): Int!",
@@ -67,7 +68,7 @@ type ComponentResolver interface {
 	Priority(ctx context.Context) int32
 	Source(ctx context.Context) string
 	Location(ctx context.Context, args RawQuery) (string, error)
-	LayerIndex() (*int32, error)
+	LayerIndex() (int32, error)
 	LastScanned(ctx context.Context) (*graphql.Time, error)
 	License(ctx context.Context) (*licenseResolver, error)
 	RiskScore(ctx context.Context) float64

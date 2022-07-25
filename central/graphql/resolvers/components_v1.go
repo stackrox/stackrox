@@ -113,13 +113,8 @@ func (eicr *EmbeddedImageScanComponentResolver) RiskScore(ctx context.Context) f
 }
 
 // LayerIndex is the index in the parent image.
-func (eicr *EmbeddedImageScanComponentResolver) LayerIndex() (*int32, error) {
-	w, ok := eicr.data.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
-	if !ok {
-		return nil, nil
-	}
-	v := w.LayerIndex
-	return &v, nil
+func (eicr *EmbeddedImageScanComponentResolver) LayerIndex() (int32, error) {
+	return eicr.data.GetLayerIndex(), nil
 }
 
 // LastScanned is the last time the component was scanned in an image.
