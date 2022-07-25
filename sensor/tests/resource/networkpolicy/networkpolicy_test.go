@@ -88,11 +88,6 @@ func (s *NetworkPolicySuite) Test_DeploymentShouldHaveViolation() {
 	})
 }
 
-// TODO:
-// - Deployment updated removes the violation
-// - Two deployments matching a network policy -> netpol update triggers two deployment updates
-// - Network policy matching one deployment, updates selector to match another -> every deployment is updated
-
 func getAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name string) []*central.MsgFromSensor {
 	var selected []*central.MsgFromSensor
 	for _, m := range messages {
