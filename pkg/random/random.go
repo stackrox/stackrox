@@ -13,6 +13,14 @@ const (
 	CaseInsensitiveAlpha = `abcdefghijklmnopqrstuvwxyz`
 )
 
+func MustGenerateString(num int, charSet string) string {
+	s, err := GenerateString(num, charSet)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
 // GenerateString generates a random string based on the passed number of characters and the character set
 func GenerateString(num int, charSet string) (string, error) {
 	var str string

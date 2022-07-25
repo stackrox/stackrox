@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "central";
 option java_package = "io.stackrox.proto.internalapi.central";
 
+import "storage/image.proto";
 
 import weak "google/api/annotations.proto";
 
@@ -73,5 +74,12 @@ service DevelopmentService {
             get: "/v1/internal/dev/reconciliationstats"
         };
 
+    }
+
+    rpc AddImage(storage.Image) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/internal/dev/image"
+            body: "*"
+        };
     }
 }

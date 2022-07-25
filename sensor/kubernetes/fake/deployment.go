@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -215,7 +216,12 @@ func getPod(replicaSet *appsv1.ReplicaSet) *corev1.Pod {
 
 func getContainer(workload ContainerWorkload) corev1.Container {
 	var imageName string
-	if workload.NumImages == 0 {
+	if workload.PreloadedImages != 0 {
+		digest := rand.Intn(workload.PreloadedImages)
+		img := fixtures.GetRandomImage()
+		img.ID = strconv.Itoa(digest)
+		imageName = img.FullName()
+	} else if workload.NumImages == 0 {
 		imageName = fixtures.GetRandomImage().FullName()
 	} else {
 		imageName = fixtures.GetRandomImageN(workload.NumImages).FullName()
