@@ -111,8 +111,11 @@ class NetworkBaselineTest extends BaseSpecification {
     // from this OpenShift connection in port 9537. To fix the issue, the split between `expectedPeers` and
     // `explicitMissingPeers` was introduced.
     // Check issues ROX-11142 and PR#2459 for more information.
-    def validateBaseline(NetworkBaselineOuterClass.NetworkBaseline baseline, long beforeCreate,
-                         long justAfterCreate, List<Tuple2<String, Boolean>> mustBeInBaseline, List<String> mustNotBeInBaseline) {
+    def validateBaseline(NetworkBaselineOuterClass.NetworkBaseline baseline,
+                         long beforeCreate,
+                         long justAfterCreate,
+                         List<Tuple2<String, Boolean>> mustBeInBaseline,
+                         List<String> mustNotBeInBaseline) {
         assert baseline.getObservationPeriodEnd().getSeconds() > beforeCreate - CLOCK_SKEW_ALLOWANCE_SECONDS
         assert baseline.getObservationPeriodEnd().getSeconds() <
             justAfterCreate + EXPECTED_BASELINE_DURATION_SECONDS + CLOCK_SKEW_ALLOWANCE_SECONDS
