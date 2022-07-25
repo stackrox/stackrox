@@ -187,6 +187,9 @@ class VulnMgmtSACTest extends BaseSpecification {
         assert baseVulnCallResult.hasNoErrors()
         def baseComponentCallResult = gqlService.Call(componentQuery, [query: baseQuery])
         assert baseComponentCallResult.hasNoErrors()
+        if (!baseComponentCallResult.hasNoErrors()) {
+            println(baseComponentCallResult)
+        }
 
         and:
         gqlService = new GraphQLService(getToken(roleName, roleName))
