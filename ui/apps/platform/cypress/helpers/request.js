@@ -59,3 +59,14 @@ export function waitForResponses(requestConfig) {
         cy.wait(aliases, waitOptions);
     }
 }
+
+/*
+ * Intercept requests before interaction and then wait for responses.
+ */
+export function interactAndWaitForResponses(interactionCallback, requestConfig, staticResponseMap) {
+    interceptRequests(requestConfig, staticResponseMap);
+
+    interactionCallback();
+
+    waitForResponses(requestConfig);
+}
