@@ -31,7 +31,7 @@ func init() {
 			"imageCount(query: String, scopeQuery: String): Int!",
 			"images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!",
 			"lastScanned: Time",
-			"layerIndex: Int",
+			"layerIndex: Int!",
 			"license: License",
 			"location(query: String): String!",
 			"name: String!",

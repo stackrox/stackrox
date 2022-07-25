@@ -37,7 +37,7 @@ func init() {
 			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
 			"lastScanned: Time",
-			"layerIndex: Int",
+			"layerIndex: Int!",
 			"location(query: String): String!",
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"topImageVulnerability: ImageVulnerability",
