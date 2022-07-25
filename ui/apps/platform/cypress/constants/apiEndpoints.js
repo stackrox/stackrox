@@ -222,6 +222,8 @@ const vulnMgmtEntityOp = {
 const vulnMgmtEntitiesOp = {
     clusters: 'getClusters',
     components: 'getComponents',
+    'image-components': 'getImageComponents',
+    'node-components': 'getNodeComponents',
     cves: 'getCves',
     'image-cves': 'getImageCves',
     'node-cves': 'getNodeCves',
