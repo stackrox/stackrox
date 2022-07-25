@@ -55,7 +55,8 @@ func TestBundleResourcesComplete(t *testing.T) {
 		CollectorSlimImageTag:    "1.2.3-slim",
 		CollectorFullImageTag:    "1.2.3",
 		ChartRepo: defaults.ChartRepo{
-			URL: "http://mirror.openshift.com/pub/rhacs/charts",
+			URL:     "http://mirror.openshift.com/pub/rhacs/charts",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
 		},
 		KubectlOutput: true,
 		FeatureFlags:  featureFlags,

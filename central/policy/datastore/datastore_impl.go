@@ -222,35 +222,6 @@ func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) erro
 	return ds.indexer.DeletePolicy(id)
 }
 
-func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) error {
-	if features.PostgresDatastore.Enabled() {
-		return nil
-	}
-	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	ds.policyMutex.Lock()
-	defer ds.policyMutex.Unlock()
-
-	return ds.storage.RenamePolicyCategory(request)
-}
-
-func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) error {
-	if features.PostgresDatastore.Enabled() {
-		return nil
-	}
-
-	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return ds.storage.DeletePolicyCategory(request)
-}
-
 func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*storage.Policy, overwrite bool) ([]*v1.ImportPolicyResponse, bool, error) {
 	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
 		return nil, false, err

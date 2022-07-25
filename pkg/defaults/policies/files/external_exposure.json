@@ -6,37 +6,37 @@
   "remediation": "Verify that service exposure outside of the cluster is required. If the service is only needed for intra-cluster communication, use service type ClusterIP.",
   "disabled": true,
   "categories": [
-      "DevOps Best Practices",
-      "Security Best Practices"
+    "DevOps Best Practices",
+    "Security Best Practices"
   ],
   "lifecycleStages": [
-      "DEPLOY"
+    "DEPLOY"
   ],
   "severity": "MEDIUM_SEVERITY",
   "policyVersion": "1.1",
   "policySections": [
-      {
-        "sectionName": "Policy Section 1",
-        "policyGroups": [
-          {
-              "fieldName": "Port Exposure Method",
-              "values": [
-                {
-                  "value": "ROUTE"
-                },
-                {
-                  "value": "EXTERNAL"
-                },
-                {
-                  "value": "NODE"
-                },
-                {
-                  "value": "HOST"
-                }
-              ]
-          }
-        ]
-      }
+    {
+      "sectionName": "Policy Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "Port Exposure Method",
+          "values": [
+            {
+              "value": "ROUTE"
+            },
+            {
+              "value": "EXTERNAL"
+            },
+            {
+              "value": "NODE"
+            },
+            {
+              "value": "HOST"
+            }
+          ]
+        }
+      ]
+    }
   ],
   "criteriaLocked": true,
   "mitreVectorsLocked": true,

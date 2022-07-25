@@ -6,7 +6,6 @@ import {
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
-import { hasFeatureFlag } from '../../helpers/features';
 import * as api from '../../constants/apiEndpoints';
 import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
 
@@ -34,12 +33,6 @@ function saveSignatureIntegration() {
 
 describe('Signature Integrations Test', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_VERIFY_IMAGE_SIGNATURE')) {
-            this.skip();
-        }
-    });
 
     const integrationName = generateNameWithDate('Signature Integration');
 

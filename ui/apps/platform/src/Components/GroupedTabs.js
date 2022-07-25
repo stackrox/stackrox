@@ -5,7 +5,7 @@ import { useTheme } from 'Containers/ThemeProvider';
 
 const Tab = ({ text, index, active, to }) => (
     <li
-        className={`hover:bg-primary-200 flex-grow ${
+        className={`hover:bg-primary-200 flex flex-grow items-center ${
             active ? 'bg-base-100 text-primary-700' : ''
         } ${index !== 0 ? 'border-l border-base-400' : ''}`}
     >

@@ -13,7 +13,7 @@ type ClusterDeletionProps = {
 
 function ClusterDeletion({ clusterRetentionInfo }: ClusterDeletionProps): ReactElement {
     if (clusterRetentionInfo === null) {
-        // Cluster does not have sensor status UNHEALTHY.
+        // Cluster does not have sensor status UNHEALTHY or cluster deletion is turned off.
         return <HealthStatusNotApplicable testId={testId} />;
     }
 
@@ -24,19 +24,23 @@ function ClusterDeletion({ clusterRetentionInfo }: ClusterDeletionProps): ReactE
         const { daysUntilDeletion } = clusterRetentionInfo;
         const healthStatus = getClusterDeletionStatus(daysUntilDeletion);
         const { bgColor, fgColor } = healthStatusStyles[healthStatus];
-        const text = daysUntilDeletion === 1 ? 'in 1 day' : `in ${daysUntilDeletion} days`;
+        /* eslint-disable no-nested-ternary */
+        const text =
+            daysUntilDeletion < 1
+                ? 'Imminent'
+                : daysUntilDeletion === 1
+                ? 'in 1 day'
+                : `in ${daysUntilDeletion} days`;
+        /* eslint-enable no-nested-ternary */
 
         return <span className={`${bgColor} ${fgColor} whitespace-nowrap`}>{text}</span>;
     }
 
-    // Cluster will not be deleted even if sensor status remains UNHEALTHY:
-    // because it has an ignore label, if true
-    // because system configuration is never delete, if false
+    // Cluster will not be deleted even if sensor status remains UNHEALTHY, because it has an ignore label.
     const { bgColor, fgColor } = healthStatusStyles.HEALTHY;
-    const { isExcluded } = clusterRetentionInfo;
-    const text = isExcluded ? 'Excluded from deletion' : 'Deletion is turned off';
-
-    return <span className={`${bgColor} ${fgColor} whitespace-nowrap`}>{text}</span>;
+    return (
+        <span className={`${bgColor} ${fgColor} whitespace-nowrap`}>Excluded from deletion</span>
+    );
 }
 
 export default ClusterDeletion;

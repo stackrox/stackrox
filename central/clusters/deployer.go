@@ -37,7 +37,7 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 		return nil, err
 	}
 
-	baseValues := getBaseMetaValues(c, imageFlavor.Versions, &opts)
+	baseValues := getBaseMetaValues(c, imageFlavor.Versions, imageFlavor.ChartRepo, &opts)
 	setMainOverride(mainImage, baseValues)
 	baseValues.EnablePodSecurityPolicies = !opts.DisablePodSecurityPolicies
 
@@ -126,7 +126,7 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 	}
 }
 
-func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *RenderOptions) *charts.MetaValues {
+func getBaseMetaValues(c *storage.Cluster, versions version.Versions, chartRepo defaults.ChartRepo, opts *RenderOptions) *charts.MetaValues {
 	envVars := make(map[string]string)
 	for _, feature := range features.Flags {
 		envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
@@ -146,11 +146,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *Rend
 
 		CollectionMethod: c.CollectionMethod.String(),
 
-		// Hardcoding RHACS charts repo for now.
-		// TODO: fill ChartRepo based on the current image flavor.
-		ChartRepo: defaults.ChartRepo{
-			URL: "http://mirror.openshift.com/pub/rhacs/charts",
-		},
+		ChartRepo: chartRepo,
 
 		TolerationsEnabled: !c.GetTolerationsConfig().GetDisabled(),
 		CreateUpgraderSA:   opts.CreateUpgraderSA,

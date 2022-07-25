@@ -5,7 +5,7 @@ import { List } from 'react-feather';
 
 import PanelButton from 'Components/PanelButton';
 import TopCvssLabel from 'Components/TopCvssLabel';
-import TableCountLink from 'Components/workflow/TableCountLink';
+import ImageTableCountLinks from 'Components/workflow/ImageTableCountLinks';
 import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
@@ -36,7 +36,7 @@ export const defaultImageSort = [
 ];
 
 export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagEnabled) {
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     return function getImageTableColumns(workflowState) {
         const tableColumns = [
@@ -55,14 +55,18 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 sortField: imageSortFields.NAME,
             },
             {
-                Header: `CVEs`,
-                entityType: entityTypes.CVE,
+                Header: isFrontendVMUpdatesEnabled ? 'Image CVEs' : 'CVEs',
+                entityType: isFrontendVMUpdatesEnabled ? entityTypes.IMAGE_CVE : entityTypes.CVE,
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
                     const { vulnCounter, id, scan, notes } = original;
 
-                    const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+                    const newState = workflowState
+                        .pushListItem(id)
+                        .pushList(
+                            isFrontendVMUpdatesEnabled ? entityTypes.IMAGE_CVE : entityTypes.CVE
+                        );
                     const url = newState.toUrl();
                     const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
@@ -176,44 +180,19 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 sortable: false,
             },
             {
-                Header: `Deployments`,
+                Header: `Entities`,
                 entityType: entityTypes.DEPLOYMENT,
                 headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={entityTypes.DEPLOYMENT}
-                        count={original.deploymentCount}
+                    <ImageTableCountLinks
+                        row={original}
                         textOnly={pdf}
-                        selectedRowId={original.id}
+                        isFrontendVMUpdatesEnabled={isFrontendVMUpdatesEnabled}
                     />
                 ),
-                id: imageSortFields.DEPLOYMENT_COUNT,
-                accessor: 'deploymentCount',
-                sortField: imageSortFields.DEPLOYMENT_COUNT,
-            },
-            {
-                Header: `Components`,
-                entityType: isFrontendVMUpdatesEnabled
-                    ? entityTypes.IMAGE_COMPONENT
-                    : entityTypes.COMPONENT,
-                headerClassName: `w-1/12 ${defaultHeaderClassName}`,
-                className: `w-1/12 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={
-                            isFrontendVMUpdatesEnabled
-                                ? entityTypes.IMAGE_COMPONENT
-                                : entityTypes.COMPONENT
-                        }
-                        count={original.componentCount}
-                        textOnly={pdf}
-                        selectedRowId={original.id}
-                    />
-                ),
-                id: imageSortFields.COMPONENT_COUNT,
-                accessor: 'componentCount',
-                sortField: imageSortFields.COMPONENT_COUNT,
+                accessor: 'entities',
+                sortable: false,
             },
             {
                 Header: `Risk Priority`,

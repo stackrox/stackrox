@@ -423,7 +423,7 @@ class Services extends BaseService {
         return disappearedFromStackRox
     }
 
-    static waitForDeployment(objects.Deployment deployment, int retries = 30, int interval = 2) {
+    static waitForDeployment(objects.Deployment deployment, int retries = 60, int interval = 2) {
         if (deployment.deploymentUid == null) {
             LOG.info "deploymentID for [${deployment.name}] is null, checking orchestrator directly for deployment ID"
             deployment.deploymentUid = OrchestratorType.orchestrator.getDeploymentId(deployment)

@@ -537,7 +537,7 @@ func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, 
 	}
 	if cve.ContainsClusterCVE(resolver.data.GetTypes()) {
 		query := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, true).ProtoQuery())
-		count, err := resolver.root.clusterCVEEdgeDataStore.Count(ctx, query)
+		count, err := resolver.root.ClusterCVEEdgeDataStore.Count(ctx, query)
 		if err != nil {
 			return false, err
 		}
@@ -748,23 +748,21 @@ func (resolver *cVEResolver) ImageComponentCount(ctx context.Context, args RawQu
 // NodeComponents are the node components that contain the CVE/Vulnerability.
 func (resolver *cVEResolver) NodeComponents(_ context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponents")
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
-		return resolver.root.NodeComponents(resolver.withVulnerabilityScope(resolver.ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("unexpected access to legacy component datastore with postgres enabled")
 	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeComponents in NodeVulnerability does not support postgres yet")
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+	return resolver.root.NodeComponents(resolver.withVulnerabilityScope(resolver.ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // NodeComponentCount is the number of node components that contain the CVE/Vulnerability.
 func (resolver *cVEResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponentCount")
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
-		return resolver.root.NodeComponentCount(resolver.withVulnerabilityScope(resolver.ctx), RawQuery{Query: &query})
+	if features.PostgresDatastore.Enabled() {
+		return 0, errors.New("unexpected access to legacy component datastore with postgres enabled")
 	}
-	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeComponentCount in NodeVulnerability does not support postgres yet")
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+	return resolver.root.NodeComponentCount(resolver.withVulnerabilityScope(resolver.ctx), RawQuery{Query: &query})
 }
 
 // Images are the images that contain the CVE/Vulnerability.
@@ -915,7 +913,7 @@ func (resolver *cVEResolver) getClusterFixedByVersion(_ context.Context) (string
 	}
 
 	edgeID := edges.EdgeID{ParentID: scope.ID, ChildID: resolver.data.GetId()}.ToString()
-	edge, found, err := resolver.root.clusterCVEEdgeDataStore.Get(resolver.ctx, edgeID)
+	edge, found, err := resolver.root.ClusterCVEEdgeDataStore.Get(resolver.ctx, edgeID)
 	if err != nil || !found {
 		return "", err
 	}

@@ -305,7 +305,7 @@ func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVu
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V2
 	}
 	embeddedCVE.VulnerabilityType = storage.EmbeddedVulnerability_IMAGE_VULNERABILITY
-	embeddedCVE.VulnerabilityTypes = append(embeddedCVE.VulnerabilityTypes, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	embeddedCVE.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 	return embeddedCVE
 }
 

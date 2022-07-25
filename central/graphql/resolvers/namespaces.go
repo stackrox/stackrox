@@ -400,6 +400,7 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQ
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.
 func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context, args RawQuery) (*PolicyCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "FailingPolicyCounter")
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
@@ -504,7 +505,7 @@ func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args Pag
 }
 
 func (resolver *namespaceResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageComponents")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageComponentCount")
 	return resolver.root.ImageComponentCount(resolver.namespaceScopeContext(ctx), args)
 }
 
@@ -721,7 +722,7 @@ func (resolver *namespaceResolver) getNamespaceRisk(ctx context.Context) (*stora
 }
 
 func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args RawQuery) (*graphql.Time, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Latest Violation")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "LatestViolation")
 
 	q, err := resolver.getNamespaceConjunctionQuery(args)
 	if err != nil {
@@ -732,6 +733,7 @@ func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args Raw
 }
 
 func (resolver *namespaceResolver) PlottedVulns(ctx context.Context, args PaginatedQuery) (*PlottedVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PlottedVulns")
 	if features.PostgresDatastore.Enabled() {
 		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
 	}
@@ -742,7 +744,7 @@ func (resolver *namespaceResolver) PlottedVulns(ctx context.Context, args Pagina
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *namespaceResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PlottedImageVulnerabilities")
-	return newPlottedImageVulnerabilitiesResolver(resolver.namespaceScopeContext(ctx), resolver.root, args)
+	return resolver.root.PlottedImageVulnerabilities(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

@@ -75,7 +75,6 @@ interface OrchestratorMain {
     //Containers
     def deleteContainer(String containerName, String namespace)
     def wasContainerKilled(String containerName, String namespace)
-    def isKubeProxyPresent()
     def isKubeDashboardRunning()
     String getContainerlogs(String ns, String podName, String containerName)
     def getStaticPodCount(String ns)

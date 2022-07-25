@@ -238,9 +238,7 @@ function DeferredCVEsTable({
                                         )}
                                     </Td>
                                     <Td dataLabel="Affected components">
-                                        <AffectedComponentsButton
-                                            components={row.imageComponents}
-                                        />
+                                        <AffectedComponentsButton components={row.components} />
                                     </Td>
                                     <Td dataLabel="Comments">
                                         {row.vulnerabilityRequest ? (

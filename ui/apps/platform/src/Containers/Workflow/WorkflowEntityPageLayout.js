@@ -27,15 +27,13 @@ import { EntityComponentMap } from './UseCaseComponentMaps';
 const WorkflowEntityPageLayout = ({ location }) => {
     const { isDarkMode } = useTheme();
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const useCaseEntityMap = getUseCaseEntityMap();
     if (showVmUpdates) {
         const newTypes = useCaseEntityMap['vulnerability-management'].filter(
             (entityType) => entityType !== entityTypes.COMPONENT
         );
-        newTypes.push(entityTypes.NODE_COMPONENT);
-        newTypes.push(entityTypes.IMAGE_COMPONENT);
         useCaseEntityMap['vulnerability-management'] = newTypes;
     }
 

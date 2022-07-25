@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
+import { withTextContent } from 'test-utils/queryUtils';
 import { violationsBasePath } from 'routePaths';
 import ViolationsByPolicySeverity, { mostRecentAlertsQuery } from './ViolationsByPolicySeverity';
 
@@ -77,8 +78,12 @@ describe('Violations by policy severity widget', () => {
     it('should display total violations in the title that match the sum of the individual tiles', async () => {
         setup();
 
-        // Find items on the screen that with text that contains -only- an integer
-        const tiles = await screen.findAllByText(/^\d+$/);
+        // Ensure the data has loaded
+        expect(await screen.findByText(withTextContent(/220 ?Low/))).toBeInTheDocument();
+
+        const tiles = await screen.findAllByText(
+            withTextContent(/^\d+ ?(Low|Medium|High|Critical)$/)
+        );
         expect(tiles).toHaveLength(4);
 
         let alertCount = 0;
@@ -87,9 +92,7 @@ describe('Violations by policy severity widget', () => {
         });
 
         expect(
-            await screen.findByRole('heading', {
-                name: `${alertCount} policy violations by severity`,
-            })
+            await screen.findByText(`${alertCount} policy violations by severity`)
         ).toBeInTheDocument();
     });
 
@@ -99,25 +102,24 @@ describe('Violations by policy severity widget', () => {
             utils: { history },
         } = setup();
 
-        expect(
-            await screen.findByRole('heading', { name: /policy violations by severity/g })
-        ).toBeInTheDocument();
+        // Ensure the data has loaded
+        expect(await screen.findByText(withTextContent(/220 ?Low/))).toBeInTheDocument();
 
         // Test the 'View all' violations link button
-        await user.click(await screen.findByRole('link', { name: 'View all' }));
+        await user.click(await screen.findByText('View all'));
         expect(history.location.pathname).toBe(`${violationsBasePath}`);
         expect(history.location.search).toContain('sortOption[field]=Severity');
 
         // Test links from the violation count tiles
-        await user.click(await screen.findByRole('link', { name: '220 Low' }));
+        await user.click(await screen.findByText('Low'));
         expect(history.location.pathname).toBe(`${violationsBasePath}`);
         expect(history.location.search).toContain('[Severity]=LOW_SEVERITY');
-        await user.click(await screen.findByRole('link', { name: '3 Critical' }));
+        await user.click(await screen.findByText('Critical'));
         expect(history.location.pathname).toBe(`${violationsBasePath}`);
         expect(history.location.search).toContain('[Severity]=CRITICAL_SEVERITY');
 
         // Test links from the 'most recent violations' section
-        await user.click(await screen.findByRole('link', { name: /ubuntu package manager/gi }));
+        await user.click(await screen.findByText(/ubuntu package manager/gi));
         expect(history.location.pathname).toBe(`${violationsBasePath}/${mockAlerts[0].id}`);
     });
 });

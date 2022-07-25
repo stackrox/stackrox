@@ -1,3 +1,6 @@
+// Semicolon on separate line following the strings prevents an extra changed line to add a string at the end.
+// However, add strings in alphabetical order to minimize merge conflicts when multiple people add strings.
+// prettier-ignore
 export type FeatureFlagEnvVar =
     | 'ROX_DECOMMISSIONED_CLUSTER_RETENTION'
     | 'ROX_ECR_AUTO_INTEGRATION'
@@ -5,5 +8,5 @@ export type FeatureFlagEnvVar =
     | 'ROX_NEW_POLICY_CATEGORIES'
     | 'ROX_SECURITY_METRICS_PHASE_ONE'
     | 'ROX_SYSTEM_HEALTH_PF'
-    | 'ROX_VERIFY_IMAGE_SIGNATURE'
-    | 'ROX_FRONTEND_VM_UDPATES';
+    | 'ROX_FRONTEND_VM_UPDATES'
+    ;

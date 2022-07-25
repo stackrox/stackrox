@@ -5,11 +5,20 @@ import (
 
 	"github.com/stackrox/rox/central/node/datastore/internal/store"
 	"github.com/stackrox/rox/central/node/index"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
+)
+
+var (
+	sacHelper = sac.ForResource(resources.Node).MustCreatePgSearchHelper()
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.
@@ -17,8 +26,15 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImplV2{
 		storage:  storage,
 		indexer:  indexer,
-		searcher: postgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(indexer)),
+		searcher: formatSearcherV2(indexer),
 	}
+}
+
+func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
+	safeSearcher := sacHelper.FilteredSearcher(unsafeSearcher)
+	scopedSafeSearcher := postgres.WithScoping(safeSearcher)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(scopedSafeSearcher, schema.NodesSchema.OptionsMap)
+	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
 }
 
 type searcherImplV2 struct {

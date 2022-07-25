@@ -4,7 +4,6 @@ import (
 	"context"
 
 	policyUtils "github.com/stackrox/rox/central/policy/utils"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults/policies"
@@ -70,9 +69,6 @@ type Store interface {
 
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
-
-	RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
-	DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)

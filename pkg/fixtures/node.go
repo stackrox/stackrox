@@ -23,7 +23,7 @@ func GetNode() *storage.Node {
 
 // GetNodeWithUniqueComponents returns a mock Node where each component is unique
 func GetNodeWithUniqueComponents() *storage.Node {
-	componentCount := 2
+	componentCount := 5
 	components := make([]*storage.EmbeddedNodeScanComponent, 0, componentCount)
 	for i := 0; i < componentCount; i++ {
 		components = append(components, &storage.EmbeddedNodeScanComponent{

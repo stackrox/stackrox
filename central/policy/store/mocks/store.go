@@ -9,7 +9,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -81,20 +80,6 @@ func (m *MockStore) DeleteMany(ctx context.Context, ids []string) error {
 func (mr *MockStoreMockRecorder) DeleteMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMany", reflect.TypeOf((*MockStore)(nil).DeleteMany), ctx, ids)
-}
-
-// DeletePolicyCategory mocks base method.
-func (m *MockStore) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeletePolicyCategory", request)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeletePolicyCategory indicates an expected call of DeletePolicyCategory.
-func (mr *MockStoreMockRecorder) DeletePolicyCategory(request interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicyCategory", reflect.TypeOf((*MockStore)(nil).DeletePolicyCategory), request)
 }
 
 // Get mocks base method.
@@ -172,20 +157,6 @@ func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.Polic
 func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
-}
-
-// RenamePolicyCategory mocks base method.
-func (m *MockStore) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RenamePolicyCategory", request)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RenamePolicyCategory indicates an expected call of RenamePolicyCategory.
-func (mr *MockStoreMockRecorder) RenamePolicyCategory(request interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenamePolicyCategory", reflect.TypeOf((*MockStore)(nil).RenamePolicyCategory), request)
 }
 
 // Upsert mocks base method.

@@ -14,6 +14,14 @@ func FillV2NodeVulnerabilities(node *storage.Node) {
 	}
 }
 
+// MoveNodeVulnsToNewField populates the Vulnerabilities (new) node scan component field from the Vulns (legacy) and clears Vulns field.
+func MoveNodeVulnsToNewField(node *storage.Node) {
+	FillV2NodeVulnerabilities(node)
+	for _, component := range node.GetScan().GetComponents() {
+		component.Vulns = nil
+	}
+}
+
 // EmbeddedVulnerabilityToNodeVulnerability converts a *storage.EmbeddedVulnerability object to a *storage.NodeVulnerability one.
 func EmbeddedVulnerabilityToNodeVulnerability(vuln *storage.EmbeddedVulnerability) *storage.NodeVulnerability {
 	return &storage.NodeVulnerability{

@@ -13,6 +13,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
@@ -94,9 +95,36 @@ var _ io.Writer = (*TraceWriterWithChannel)(nil)
 
 type TraceWriterWithChannel struct {
 	destinationChannel chan *central.SensorEvent
+	// mu mutex to avoid multiple goroutines writing at the same time
+	mu sync.Mutex
+	// enabled indicates whether the trace writer needs to write in the channel or not
+	enabled bool
 }
 
-func (tw *TraceWriterWithChannel) Write(b []byte) (int, error) {
+func (tw *TraceWriterWithChannel) close() {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	close(tw.destinationChannel)
+}
+
+func (tw *TraceWriterWithChannel) enable() {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	tw.enabled = true
+}
+
+func (tw *TraceWriterWithChannel) disable() {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	tw.enabled = false
+}
+
+func (tw *TraceWriterWithChannel) Write(b []byte) (nb int, retErr error) {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	if !tw.enabled {
+		return 0, nil
+	}
 	msg := resources.InformerK8sMsg{}
 	if err := json.Unmarshal(b, &msg); err != nil {
 		return 0, err
@@ -112,14 +140,13 @@ func (tw *TraceWriterWithChannel) Write(b []byte) (int, error) {
 }
 
 func (suite *ReplayEventsSuite) Test_ReplayEvents() {
-	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(suite.fakeCentral)
-	defer shutdownFakeServer()
+	conn, spyCentral, _ := createConnectionAndStartServer(suite.fakeCentral)
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
 	ackChannel := make(chan *central.SensorEvent)
-	defer close(ackChannel)
 	writer := &TraceWriterWithChannel{
 		destinationChannel: ackChannel,
+		enabled:            true,
 	}
 	// Depending on the size of the file the re-sync time may need to be increased.
 	// This is because we need to wait for the event outputs of each kubernetes event before sending the next.
@@ -137,7 +164,7 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 	}
 
 	go s.Start()
-	defer s.Stop()
+	defer writer.close()
 
 	spyCentral.ConnectionStarted.Wait()
 
@@ -153,10 +180,6 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 	for name, c := range cases {
 		suite.T().Run(name, func(t *testing.T) {
 			suite.fakeCentral.ClearReceivedBuffer()
-			receivedMessagesCh := make(chan *central.MsgFromSensor, 10)
-			suite.fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-				receivedMessagesCh <- msg
-			})
 			eventsReader := &k8s.TraceReader{
 				Source: c.k8sEventsFile,
 			}
@@ -170,6 +193,7 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 				Client:     suite.fakeClient,
 				Reader:     eventsReader,
 			}
+			writer.enable()
 			_, errCh := fm.CreateEvents(context.Background())
 			// Wait for all the events to be processed
 			err = <-errCh
@@ -187,6 +211,7 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 					}
 				}
 			}()
+			writer.disable()
 			// Wait for the re-sync to happen
 			time.Sleep(5 * resyncTime)
 			allEvents := suite.fakeCentral.GetAllMessages()

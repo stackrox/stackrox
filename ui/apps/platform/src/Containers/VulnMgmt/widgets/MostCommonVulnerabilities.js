@@ -72,7 +72,7 @@ const processData = (data, workflowState) => {
 
 const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
 
@@ -129,8 +129,9 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     const header = showVMUpdates
         ? 'Most Common Image Vulnerabilities'
         : 'Most Common Vulnerabilities';
+    const targetUrlType = showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE;
     const viewAllURL = workflowState
-        .pushList(entityTypes.CVE)
+        .pushList(targetUrlType)
         .setSort([
             { id: cveSortFields.DEPLOYMENT_COUNT, desc: true },
             { id: cveSortFields.CVSS_SCORE, desc: true },

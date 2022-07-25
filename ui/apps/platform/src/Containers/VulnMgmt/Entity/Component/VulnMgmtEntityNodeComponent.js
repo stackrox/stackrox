@@ -18,6 +18,7 @@ import {
 export const nodeComponentCountKeyMap = {
     ...defaultCountKeyMap,
     [entityTypes.CVE]: 'vulnCount: nodeVulnerabilityCount',
+    [entityTypes.NODE_CVE]: 'vulnCount: nodeVulnerabilityCount',
 };
 
 const VulnMgmtNodeComponent = ({
@@ -53,17 +54,17 @@ const VulnMgmtNodeComponent = ({
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getNodeComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
-            result: nodeComponent(id: $id) {
-                id
-                ${nodeComponentCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
-                ${listFieldName}(query: $query, scopeQuery: $scopeQuery, pagination: $pagination) { ...${fragmentName} }
-                unusedVarSink(query: $policyQuery)
-                unusedVarSink(query: $scopeQuery)
+            query getNodeComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+                result: nodeComponent(id: $id) {
+                    id
+                    ${nodeComponentCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
+                    ${listFieldName}(query: $query, scopeQuery: $scopeQuery, pagination: $pagination) { ...${fragmentName} }
+                    unusedVarSink(query: $policyQuery)
+                    unusedVarSink(query: $scopeQuery)
+                }
             }
-        }
-        ${fragment}
-    `;
+            ${fragment}
+        `;
     }
 
     const fullEntityContext = workflowState.getEntityContext();

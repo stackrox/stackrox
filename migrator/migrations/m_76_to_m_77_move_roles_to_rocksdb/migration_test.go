@@ -33,17 +33,17 @@ var (
 )
 
 func TestMigration(t *testing.T) {
-	suite.Run(t, new(clusterRocksDBMigrationTestSuite))
+	suite.Run(t, new(rolesRocksDBMigrationTestSuite))
 }
 
-type clusterRocksDBMigrationTestSuite struct {
+type rolesRocksDBMigrationTestSuite struct {
 	suite.Suite
 
 	db        *rocksdb.RocksDB
 	databases *dbTypes.Databases
 }
 
-func (suite *clusterRocksDBMigrationTestSuite) SetupTest() {
+func (suite *rolesRocksDBMigrationTestSuite) SetupTest() {
 	boltdb := testutils.DBForT(suite.T())
 	suite.NoError(boltdb.Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(rolesBucket); err != nil {
@@ -59,12 +59,12 @@ func (suite *clusterRocksDBMigrationTestSuite) SetupTest() {
 	suite.databases = &dbTypes.Databases{BoltDB: boltdb, RocksDB: rocksDB.DB}
 }
 
-func (suite *clusterRocksDBMigrationTestSuite) TearDownTest() {
+func (suite *rolesRocksDBMigrationTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.databases.BoltDB)
 	rocksdbtest.TearDownRocksDB(suite.db)
 }
 
-func (suite *clusterRocksDBMigrationTestSuite) TestRolesMigrationToRocksDB() {
+func (suite *rolesRocksDBMigrationTestSuite) TestRolesMigrationToRocksDB() {
 	boltDB := suite.databases.BoltDB
 	rocksDB := suite.databases.RocksDB
 

@@ -49,6 +49,35 @@ class UpgradeTest(BaseTest):
         )
 
 
+class OperatorE2eTest(BaseTest):
+    # TODO(ROX-11889): adjust these timeouts once we know average run times
+    DEPLOY_TIMEOUT_SEC = 40 * 60
+    UPGRADE_TEST_TIMEOUT_SEC = 50 * 60
+    E2E_TEST_TIMEOUT_SEC = 50 * 60
+    SCORECARD_TEST_TIMEOUT_SEC = 20 * 60
+
+    def run(self):
+        print("Deploying operator")
+        self.run_with_graceful_kill(
+            ["make", "-C", "operator", "kuttl", "deploy-previous-via-olm"], OperatorE2eTest.DEPLOY_TIMEOUT_SEC
+        )
+
+        print("Executing operator upgrade test")
+        self.run_with_graceful_kill(
+            ["make", "-C", "operator", "test-upgrade"], OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC
+        )
+
+        print("Executing operator e2e tests")
+        self.run_with_graceful_kill(
+            ["make", "-C", "operator", "test-e2e-deployed"], OperatorE2eTest.E2E_TEST_TIMEOUT_SEC
+        )
+
+        print("Executing Operator Bundle Scorecard tests")
+        self.run_with_graceful_kill(
+            ["./operator/scripts/retry.sh", "4", "2", "make", "-C", "operator", "bundle-test-image"], OperatorE2eTest.SCORECARD_TEST_TIMEOUT_SEC
+        )
+
+
 class QaE2eTestPart1(BaseTest):
     TEST_TIMEOUT = 240 * 60
 

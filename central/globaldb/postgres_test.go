@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -83,7 +84,7 @@ func (s *PostgresUtilitySuite) TestSourceParser() {
 
 	for _, c := range cases {
 		log.Info(c.name)
-		sourceMap, err := ParseSource(c.source)
+		sourceMap, err := pgconfig.ParseSource(c.source)
 		if c.err != nil && err != nil {
 			s.Equal(c.err.Error(), err.Error())
 		} else if c.err != nil || err != nil {

@@ -590,9 +590,9 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 		return
 	}
 
-	for _, clusterId := range clustersToPrune {
-		log.Infof("[Cluster Pruning] Removing cluster with ID %s", clusterId)
-		if err := g.clusters.RemoveCluster(pruningCtx, clusterId, nil); err != nil {
+	for _, clusterID := range clustersToPrune {
+		log.Infof("[Cluster Pruning] Removing cluster with ID %s", clusterID)
+		if err := g.clusters.RemoveCluster(pruningCtx, clusterID, nil); err != nil {
 			log.Error(err)
 			return
 		}
@@ -600,7 +600,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 }
 
 func (g *garbageCollectorImpl) checkIfClusterContainsCentral(cluster *storage.Cluster) (bool, error) {
-	//This query could be expensive, but it's a rare occurrence. It only happens if there is a cluster that has been unhealthy for a long time (configurable)
+	// This query could be expensive, but it's a rare occurrence. It only happens if there is a cluster that has been unhealthy for a long time (configurable)
 	query := search.NewQueryBuilder().
 		AddStrings(search.ClusterID, cluster.GetId()).
 		AddExactMatches(search.DeploymentName, "central")

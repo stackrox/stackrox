@@ -85,7 +85,7 @@ func (s *serviceImpl) PostPolicyCategory(ctx context.Context, request *v1.PostPo
 	return ToV1Proto(category), nil
 }
 
-func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.NewRenamePolicyCategoryRequest) (*v1.PolicyCategory, error) {
+func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*v1.PolicyCategory, error) {
 	if !validateName.MatchString(request.GetNewCategoryName()) {
 		return nil, errors.Wrap(errox.InvalidArgs, invalidNameErrString)
 	}
@@ -96,7 +96,7 @@ func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.NewR
 	return ToV1Proto(c), nil
 }
 
-func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.NewDeletePolicyCategoryRequest) (*v1.Empty, error) {
+func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) (*v1.Empty, error) {
 	return &v1.Empty{}, s.policyCategoriesDatastore.DeletePolicyCategory(ctx, request.GetId())
 
 }

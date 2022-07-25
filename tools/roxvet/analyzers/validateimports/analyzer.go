@@ -197,6 +197,8 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/logging",
 			"pkg/migrations",
 			"pkg/postgres/pgtest",
+			"pkg/postgres/pgadmin",
+			"pkg/postgres/pgconfig",
 			"pkg/postgres/pgutils",
 			"pkg/postgres/schema",
 			"pkg/process/id",
