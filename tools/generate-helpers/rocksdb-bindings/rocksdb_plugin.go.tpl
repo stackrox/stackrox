@@ -1,14 +1,11 @@
-
 package legacy
+
 import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
-	{{- if .Cache}}
-	"github.com/stackrox/rox/pkg/db/mapcache"
-	{{- end}}
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 )
@@ -47,17 +44,7 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 	{{- else}}
 	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, {{.TrackIndex}})
 	{{- end}}
-	{{- if not .Cache}}
 	return  &storeImpl{crud: baseCRUD}, nil
-	{{- else}}
-	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
-	if err != nil {
-		return nil, err
-	}
-	return &storeImpl{
-		crud: cacheCRUD,
-	}, nil
-	{{- end}}
 }
 
 // UpsertMany batches objects into the DB

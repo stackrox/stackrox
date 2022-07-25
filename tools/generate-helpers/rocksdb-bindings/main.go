@@ -13,7 +13,6 @@ import (
 )
 
 const storeFile = `
-
 package rocksdb
 
 import (

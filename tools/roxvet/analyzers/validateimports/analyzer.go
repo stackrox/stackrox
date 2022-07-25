@@ -196,7 +196,6 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/dackbox/raw",
 			"pkg/dackbox/sortedkeys",
 			"pkg/db",
-			"pkg/db/mapcache",
 			"pkg/env",
 			"pkg/features",
 			"pkg/fileutils",
