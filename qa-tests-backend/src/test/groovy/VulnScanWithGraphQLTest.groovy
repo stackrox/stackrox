@@ -9,7 +9,6 @@ import util.Env
 import util.Timer
 
 import org.junit.experimental.categories.Category
-import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Unroll
 
@@ -168,7 +167,8 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         "CVE-2017-18190" | "Linux" | STRUTS_DEP.getImage()
     }
 
-    private GraphQLService.Response waitForImagesTobeFetched(String cveId , String os, int retries = 30, int interval = 4) {
+    private GraphQLService.Response waitForImagesTobeFetched(String cveId, String os,
+     int retries = 30, int interval = 4) {
         Timer t = new Timer(retries, interval)
         def objId = cveId
         if (Env.CI_JOBNAME.contains("postgres")) {
