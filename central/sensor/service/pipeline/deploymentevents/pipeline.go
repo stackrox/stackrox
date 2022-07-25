@@ -179,7 +179,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 
 	incrementNetworkGraphEpoch := true
 	// Only need to get if it's an update call
-	if action == central.ResourceAction_UPDATE_RESOURCE {
+	if action == central.ResourceAction_UPDATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
 		oldDeployment, exists, err := s.deployments.GetDeployment(ctx, deployment.GetId())
 		if err != nil {
 			return err
