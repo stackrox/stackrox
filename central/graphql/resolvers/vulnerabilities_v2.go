@@ -1036,6 +1036,10 @@ func (resolver *cVEResolver) VulnerabilityState(ctx context.Context) string {
 	return storage.VulnerabilityState_OBSERVED.String()
 }
 
+func (resolver *cVEResolver) OperatingSystem(ctx context.Context) string {
+	return ""
+}
+
 func (resolver *cVEResolver) addScopeContext(query *v1.Query) (context.Context, *v1.Query) {
 	ctx := resolver.ctx
 	scope, ok := scoped.GetScope(ctx)
