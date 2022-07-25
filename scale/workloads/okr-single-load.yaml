@@ -6,6 +6,7 @@ deploymentWorkload:
   podWorkload:
     containerWorkload:
       numImages: 0
+      preloadedImages: 22150
     lifecycleDuration: 24h
     numContainers: 3
     numPods: 3
