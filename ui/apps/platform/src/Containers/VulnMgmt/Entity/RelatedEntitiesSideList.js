@@ -10,6 +10,7 @@ import relationshipTypes from 'constants/relationshipTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import TileList from 'Components/TileList';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import filterEntityRelationship from 'Containers/VulnMgmt/VulnMgmt.utils/filterEntityRelationship';
 
 const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityContext }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -25,39 +26,23 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
     const countKeyMap = { ...defaultCountKeyMap, ...altCountKeyMap };
 
     const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
+        // @TODO: Remove the following filter step once ROX_FRONTEND_VM_UPDATES is ON
+        .filter((matchEntity) => {
+            return filterEntityRelationship(showVMUpdates, matchEntity);
+        })
         .map((matchEntity) => {
-            // @TODO: Modify the actual relationship entities once ROX_FRONTEND_VM_UPDATES is in
-            let newMatchEntity = matchEntity;
+            let countKeyToUse = countKeyMap[matchEntity];
             if (
-                showVMUpdates &&
-                (entityType === 'NODE_COMPONENT' || entityType === 'NODE') &&
-                matchEntity === 'CVE'
-            ) {
-                newMatchEntity = 'NODE_CVE';
-            } else if (
-                showVMUpdates &&
-                (entityType === 'IMAGE_COMPONENT' || entityType === 'IMAGE') &&
-                matchEntity === 'CVE'
-            ) {
-                newMatchEntity = 'IMAGE_CVE';
-            } else if (showVMUpdates && entityType === 'NODE' && matchEntity === 'COMPONENT') {
-                newMatchEntity = 'NODE_COMPONENT';
-            } else if (showVMUpdates && entityType === 'IMAGE' && matchEntity === 'COMPONENT') {
-                newMatchEntity = 'IMAGE_COMPONENT';
-            }
-
-            let countKeyToUse = countKeyMap[newMatchEntity];
-            if (
-                countKeyMap[newMatchEntity].includes('imageComponentCount') ||
-                countKeyMap[newMatchEntity].includes('nodeComponentCount')
+                countKeyMap[matchEntity].includes('imageComponentCount') ||
+                countKeyMap[matchEntity].includes('nodeComponentCount')
             ) {
                 countKeyToUse = 'componentCount';
             }
             if (
-                countKeyMap[newMatchEntity].includes('imageVulnerabilityCount') ||
-                countKeyMap[newMatchEntity].includes('nodeVulnerabilityCount') ||
-                countKeyMap[newMatchEntity].includes('clusterVulnerabilityCount') ||
-                countKeyMap[newMatchEntity].includes('k8sVulnCount')
+                countKeyMap[matchEntity].includes('imageVulnerabilityCount') ||
+                countKeyMap[matchEntity].includes('nodeVulnerabilityCount') ||
+                countKeyMap[matchEntity].includes('clusterVulnerabilityCount') ||
+                countKeyMap[matchEntity].includes('k8sVulnCount')
             ) {
                 countKeyToUse = 'vulnCount';
             }
@@ -65,59 +50,43 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
 
             return {
                 count,
-                label: pluralize(newMatchEntity, count).replace('_', ' '),
-                entity: newMatchEntity,
-                url: workflowState.pushList(newMatchEntity).setSearch('').toUrl(),
+                label: pluralize(matchEntity, count).replace('_', ' '),
+                entity: matchEntity,
+                url: workflowState.pushList(matchEntity).setSearch('').toUrl(),
             };
         })
         .filter((matchObj) => {
             return matchObj.count && !entityContext[matchObj.entity];
         });
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
+        // @TODO: Remove the following filter step once ROX_FRONTEND_VM_UPDATES is ON
+        .filter((containEntity) => {
+            return filterEntityRelationship(showVMUpdates, containEntity);
+        })
         .map((containEntity) => {
-            // @TODO: Modify the actual relationship entities once ROX_FRONTEND_VM_UPDATES is in
-            let newContainEntity = containEntity;
+            let countKeyToUse = countKeyMap[containEntity];
             if (
-                showVMUpdates &&
-                (entityType === 'NODE_COMPONENT' || entityType === 'NODE') &&
-                containEntity === 'CVE'
-            ) {
-                newContainEntity = 'NODE_CVE';
-            } else if (
-                showVMUpdates &&
-                (entityType === 'IMAGE_COMPONENT' || entityType === 'IMAGE') &&
-                containEntity === 'CVE'
-            ) {
-                newContainEntity = 'IMAGE_CVE';
-            } else if (showVMUpdates && entityType === 'NODE' && containEntity === 'COMPONENT') {
-                newContainEntity = 'NODE_COMPONENT';
-            } else if (showVMUpdates && entityType === 'IMAGE' && containEntity === 'COMPONENT') {
-                newContainEntity = 'IMAGE_COMPONENT';
-            }
-
-            let countKeyToUse = countKeyMap[newContainEntity];
-            if (
-                countKeyMap[newContainEntity].includes('imageComponentCount') ||
-                countKeyMap[newContainEntity].includes('nodeComponentCount')
+                countKeyMap[containEntity].includes('imageComponentCount') ||
+                countKeyMap[containEntity].includes('nodeComponentCount')
             ) {
                 countKeyToUse = 'componentCount';
             }
             if (
-                countKeyMap[newContainEntity].includes('imageVulnerabilityCount') ||
-                countKeyMap[newContainEntity].includes('nodeVulnerabilityCount') ||
-                countKeyMap[newContainEntity].includes('clusterVulnerabilityCount') ||
-                countKeyMap[newContainEntity].includes('k8sVulnCount')
+                countKeyMap[containEntity].includes('imageVulnerabilityCount') ||
+                countKeyMap[containEntity].includes('nodeVulnerabilityCount') ||
+                countKeyMap[containEntity].includes('clusterVulnerabilityCount') ||
+                countKeyMap[containEntity].includes('k8sVulnCount')
             ) {
                 countKeyToUse = 'vulnCount';
             }
             const count = data[countKeyToUse];
 
-            const entityLabel = entityLabels[newContainEntity].toUpperCase();
+            const entityLabel = entityLabels[containEntity].toUpperCase();
             return {
                 count,
                 label: pluralize(entityLabel, count),
-                entity: newContainEntity,
-                url: workflowState.pushList(newContainEntity).setSearch('').toUrl(),
+                entity: containEntity,
+                url: workflowState.pushList(containEntity).setSearch('').toUrl(),
             };
         })
         .filter((containObj) => {
@@ -140,7 +109,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
                         left: '-0.5rem',
                         width: 'calc(100% + 0.5rem)',
                     }}
-                    className={`mb-3 p-2  text-base rounded-l text-lg ${
+                    className={`mb-3 p-2 rounded-l text-lg ${
                         !isDarkMode
                             ? 'bg-primary-700 text-base-100'
                             : 'bg-tertiary-300 text-base-900'

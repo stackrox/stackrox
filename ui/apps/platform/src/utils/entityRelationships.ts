@@ -90,7 +90,7 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.CLUSTER]: {
         children: [entityTypes.NODE, entityTypes.NAMESPACE, entityTypes.ROLE],
         parents: [],
-        matches: [entityTypes.CONTROL],
+        matches: [entityTypes.CONTROL, entityTypes.CLUSTER_CVE],
         // TODO: add CVE entity type and filter by k8s accordingly
         // matches: [entityTypes.CONTROL, entityTypes.CVE],
         // extendedMatches: [entityTypes.POLICY]
@@ -98,7 +98,7 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.NODE]: {
         // @TODO: Uncomment this once we're using the new entity
         // children: [entityTypes.NODE_COMPONENT],
-        children: [entityTypes.COMPONENT],
+        children: [entityTypes.COMPONENT, entityTypes.NODE_COMPONENT],
         parents: [entityTypes.CLUSTER],
         matches: [entityTypes.CONTROL],
     },
@@ -121,7 +121,7 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.IMAGE]: {
         // @TODO: Uncomment this once we're using the new entity
         // children: [entityTypes.IMAGE_COMPONENT],
-        children: [entityTypes.COMPONENT],
+        children: [entityTypes.COMPONENT, entityTypes.IMAGE_COMPONENT],
         parents: [],
         matches: [entityTypes.DEPLOYMENT],
     },
