@@ -85,9 +85,9 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 }
 
 func (s *imageFlavorTestSuite) TestChartRepoAndIcon() {
-	ossRepoUrl := "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/"
+	ossRepoURL := "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/"
 	ossRepoIcon := "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png"
-	acsRepoUrl := "https://mirror.openshift.com/pub/rhacs/charts"
+	acsRepoURL := "https://mirror.openshift.com/pub/rhacs/charts"
 	acsRepoIcon := "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png"
 
 	testCases := map[string]struct {
@@ -97,17 +97,17 @@ func (s *imageFlavorTestSuite) TestChartRepoAndIcon() {
 	}{
 		"development_build": {
 			isRelease:        []bool{false},
-			expectedRepoURL:  acsRepoUrl,
+			expectedRepoURL:  acsRepoURL,
 			expectedRepoIcon: acsRepoIcon,
 		},
 		"rhacs": {
 			isRelease:        []bool{false},
-			expectedRepoURL:  acsRepoUrl,
+			expectedRepoURL:  acsRepoURL,
 			expectedRepoIcon: acsRepoIcon,
 		},
 		"opensource": {
 			isRelease:        []bool{true, false},
-			expectedRepoURL:  ossRepoUrl,
+			expectedRepoURL:  ossRepoURL,
 			expectedRepoIcon: ossRepoIcon,
 		},
 	}
