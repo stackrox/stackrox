@@ -3,10 +3,12 @@ package datastore
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -18,10 +20,16 @@ var (
 
 type datastoreImpl struct {
 	storage  store.Store
+	indexer  index.Indexer
 	searcher search.Searcher
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	if ok, err := imageIntegrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
 	return ds.searcher.Search(ctx, q)
 }
 
@@ -71,6 +79,7 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 	}
 
 	integration.Id = uuid.NewV4().String()
+	ds.indexer.AddImageIntegration(integration)
 	return integration.Id, ds.storage.Upsert(ctx, integration)
 }
 
@@ -81,7 +90,7 @@ func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-
+	ds.indexer.AddImageIntegration(integration)
 	return ds.storage.Upsert(ctx, integration)
 }
 
@@ -92,6 +101,24 @@ func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) 
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-
+	ds.indexer.DeleteImageIntegration(id)
 	return ds.storage.Delete(ctx, id)
+}
+
+func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
+	iis, err := ds.storage.GetAll(ctx)
+	log.Infof("[STARTUP] Total number of Image Integrations is going to be indexed: %d", len(iis))
+	if err != nil {
+		return err
+	}
+	error := ds.indexer.AddImageIntegrations(iis)
+	if error == nil {
+		log.Infof("[STARTUP] Successfully indexed %d Image Integrations", len(iis))
+		return nil
+	}
+	return error
+
 }

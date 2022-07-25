@@ -24,7 +24,13 @@ type searcherImpl struct {
 }
 
 func (ds searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return ds.searcher.Search(ctx, q)
+	res, err := ds.searcher.Search(ctx, q)
+	if err != nil {
+		log.Error(">>>>Image integration search_impl Search error")
+		log.Error(err.Error())
+		return nil, err
+	}
+	return res, nil
 }
 
 func (ds searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/imageintegration/datastore/search"
+	"github.com/stackrox/rox/central/imageintegration/datastore/internal/search"
 	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/imageintegration/store/bolt"
@@ -26,6 +26,7 @@ var (
 
 func initializeDefaultIntegrations(ctx context.Context, storage store.Store) {
 	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
+	log.Infof(">>>> initializeDefaultIntegrations size: %d", len(integrations))
 	utils.CrashOnError(err)
 	if !env.OfflineModeEnv.BooleanSetting() && len(integrations) == 0 {
 		// Add default integrations
@@ -48,7 +49,7 @@ func initialize() {
 		indexer = index.New(globalindex.GetGlobalTmpIndex())
 	}
 	searcher := search.New(storage, indexer)
-	ad = New(storage, searcher)
+	ad = New(storage, indexer, searcher)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	initializeDefaultIntegrations(ctx, storage)

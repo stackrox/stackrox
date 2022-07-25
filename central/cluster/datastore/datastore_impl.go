@@ -72,19 +72,20 @@ type datastoreImpl struct {
 	notifier             notifierProcessor.Processor
 	searcher             search.Searcher
 
-	alertDataStore          alertDataStore.DataStore
-	namespaceDataStore      namespaceDataStore.DataStore
-	deploymentDataStore     deploymentDataStore.DataStore
-	nodeDataStore           nodeDataStore.GlobalDataStore
-	podDataStore            podDataStore.DataStore
-	secretsDataStore        secretDataStore.DataStore
-	netFlowsDataStore       netFlowDataStore.ClusterDataStore
-	netEntityDataStore      netEntityDataStore.EntityDataStore
-	serviceAccountDataStore serviceAccountDataStore.DataStore
-	roleDataStore           roleDataStore.DataStore
-	roleBindingDataStore    roleBindingDataStore.DataStore
-	cm                      connection.Manager
-	networkBaselineMgr      networkBaselineManager.Manager
+	alertDataStore            alertDataStore.DataStore
+	namespaceDataStore        namespaceDataStore.DataStore
+	imageIntegrationDataStore imageIntegrationDataStore.DataStore
+	deploymentDataStore       deploymentDataStore.DataStore
+	nodeDataStore             nodeDataStore.GlobalDataStore
+	podDataStore              podDataStore.DataStore
+	secretsDataStore          secretDataStore.DataStore
+	netFlowsDataStore         netFlowDataStore.ClusterDataStore
+	netEntityDataStore        netEntityDataStore.EntityDataStore
+	serviceAccountDataStore   serviceAccountDataStore.DataStore
+	roleDataStore             roleDataStore.DataStore
+	roleBindingDataStore      roleBindingDataStore.DataStore
+	cm                        connection.Manager
+	networkBaselineMgr        networkBaselineManager.Manager
 
 	clusterRanker *ranking.Ranker
 
@@ -92,8 +93,6 @@ type datastoreImpl struct {
 	nameToIDCache simplecache.Cache
 
 	lock sync.Mutex
-
-	imageIntegrationDataStore imageIntegrationDataStore.DataStore
 }
 
 func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
@@ -155,11 +154,11 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
-func (ds *datastoreImpl) removeImageIntegrationByCluster(ctx context.Context, cluster *storage.Cluster) {
+func (ds *datastoreImpl) removeClusterImageIntegrations(ctx context.Context, cluster *storage.Cluster) {
 
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
-	log.Info(">>>> Image Integrations deletion: removeImageIntegrationByCluster")
 	log.Info(">>>> Image Integrations: " + q.String() + " " + q.GetBaseQuery().String())
+
 	imageIntegrations, err := ds.imageIntegrationDataStore.Search(ctx, q)
 	log.Infof(">>>>Image Integrations list size is %d", len(imageIntegrations))
 	if err != nil {
@@ -537,8 +536,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 			}
 		}
 	}
-
-	ds.removeImageIntegrationByCluster(ctx, cluster)
+	ds.removeClusterImageIntegrations(ctx, cluster)
 	// Remove ranker record here since removal is not handled in risk store as no entry present for cluster
 	ds.clusterRanker.Remove(cluster.GetId())
 

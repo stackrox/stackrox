@@ -70,8 +70,8 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	suite.db = db
 	suite.store = boltStore.New(db)
 
-	//test searcher
-	suite.datastore = New(suite.store, nil)
+	// test searcher
+	suite.datastore = NewForTestOnly(suite.T(), suite.store, suite.indexer, nil)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {

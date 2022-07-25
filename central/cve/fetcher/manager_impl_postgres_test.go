@@ -22,7 +22,6 @@ import (
 	mockCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
 	clusterCVESearch "github.com/stackrox/rox/central/cve/cluster/datastore/search"
 	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
-
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/cve/matcher"
