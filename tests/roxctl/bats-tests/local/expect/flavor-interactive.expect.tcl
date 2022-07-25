@@ -94,7 +94,6 @@ expect {
   }
 }
 expect "Enter whether to run StackRox in offline mode, which avoids reaching out to the Internet*" { send "\n" }
-expect "Enter whether to enable telemetry*" { send "\n" }
 expect "Enter the deployment tool to use (kubectl, helm, helm-values)*:" { send "\n" }
 expect "Enter Istio version when deploying into an Istio-enabled cluster*:" { send "\n" }
 
