@@ -19,14 +19,6 @@ test_part_1() {
 
     export_test_environment
 
-    function _catch_deployment_failure {
-        local exitstatus="$?"
-        echo "Debug: deployment failure exitstatus: $exitstatus, will skip part II tests"
-        touch "$ROOT/SKIP_PART_II"
-        exit "$exitstatus"
-    }
-    trap _catch_deployment_failure EXIT
-
     setup_gcp
     setup_deployment_env false false
     remove_existing_stackrox_resources
@@ -37,8 +29,6 @@ test_part_1() {
     deploy_default_psp
     deploy_webhook_server
     get_ECR_docker_pull_password
-
-    trap - EXIT
 
     run_tests_part_1
 }

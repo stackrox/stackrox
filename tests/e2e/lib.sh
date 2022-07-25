@@ -7,18 +7,13 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
+# State
+STATE_DEPLOYED="/tmp/state_deployed"
+
 source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 
 deploy_stackrox() {
-    function _catch_deployment_failure {
-        local exitstatus="$?"
-        echo "Debug: deployment failure exitstatus: $exitstatus, will record a failure to junit logs"
-        save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
-        exit "$exitstatus"
-    }
-    trap _catch_deployment_failure ERR
-
     export MAIN_IMAGE_TAG="3.71.x-119-noexisto"
     deploy_central
 
@@ -34,7 +29,7 @@ deploy_stackrox() {
 
     sensor_wait
 
-    trap - ERR
+    touch "${STATE_DEPLOYED}"
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
@@ -415,6 +410,16 @@ db_backup_and_restore_test() {
     fi
 
     [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
+}
+
+handle_deployment_failure() {
+    info "Checking for deployment failure"
+
+    if [[ -f "${STATE_DEPLOYED}" ]]; then
+        return 0
+    fi
+
+    save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

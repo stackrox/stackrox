@@ -284,6 +284,7 @@ class FinalPost(StoreArtifacts):
             self.data_to_store.append(PostTestsConstants.QA_TEST_DEBUG_LOGS)
         if self._store_qa_spock_results:
             self.data_to_store.append(PostTestsConstants.QA_SPOCK_RESULTS)
+        self.handle_deployment_failure()
 
     def run(self, test_output_dirs=None):
         self.store_artifacts()
@@ -301,4 +302,13 @@ class FinalPost(StoreArtifacts):
         self.run_with_best_effort(
             ["scripts/ci/store-artifacts.sh", "make_artifacts_help"],
             timeout=PostTestsConstants.FIXUP_TIMEOUT,
+        )
+
+    def handle_deployment_failure(self):
+        self.run_with_best_effort(
+            [
+                "tests/e2e/lib.sh",
+                "handle_deployment_failure",
+            ],
+            timeout=PostTestsConstants.CHECK_TIMEOUT,
         )
