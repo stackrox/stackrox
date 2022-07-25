@@ -55,7 +55,7 @@ const VulnMgmtImage = ({
                 notes
                 ${
                     showVMUpdates
-                        ? 'vulnCount: imageVulnerabilityCount(query: $query)'
+                        ? 'imageVulnerabilityCount(query: $query)'
                         : 'vulnCount(query: $query)'
                 }
                 priority

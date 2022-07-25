@@ -53,6 +53,10 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const { metadata, scan, topVuln, priority, notes } = safeData;
     safeData.componentCount = scan?.components?.length || 0;
 
+    // TODO: replace this hack with feature flag selection of components or imageComponents,
+    //       after `layerIndex` is available on ImageComponent
+    safeData.imageComponentCount = scan?.components?.length || 0;
+
     const layers = metadata ? cloneDeep(metadata.v1.layers) : [];
     const fixableCves = [];
 
