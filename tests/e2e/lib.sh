@@ -406,14 +406,12 @@ db_backup_and_restore_test() {
     [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
 }
 
-handle_deployment_failure() {
+handle_e2e_progress_failures() {
     info "Checking for deployment failure"
 
-    if [[ -f "${STATE_DEPLOYED}" ]]; then
-        return 0
+    if [[ ! -f "${STATE_DEPLOYED}" ]]; then
+        save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
     fi
-
-    save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
