@@ -1,0 +1,17 @@
+{
+  "config": {
+    "publicConfig": null,
+    "privateConfig": {
+      "alertConfig": {
+        "resolvedDeployRetentionDurationDays": 1,
+        "deletedRuntimeRetentionDurationDays": 1,
+        "allRuntimeRetentionDurationDays": 1,
+        "attemptedDeployRetentionDurationDays": 1,
+        "attemptedRuntimeRetentionDurationDays": 1
+      },
+      "imageRetentionDurationDays": 7,
+      "expiredVulnReqRetentionDurationDays": 90,
+      "decommissionedClusterRetention": null
+    }
+  }
+}
