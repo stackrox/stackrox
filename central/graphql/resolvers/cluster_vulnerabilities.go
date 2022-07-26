@@ -22,6 +22,8 @@ func init() {
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("ClusterVulnerability",
 			append(commonVulnerabilitySubResolvers,
+				"clusterCount(query: String): Int!",
+				"clusters(query: String, pagination: Pagination): [Cluster!]!",
 				"vulnerabilityType: String!",
 				"vulnerabilityTypes: [String!]!",
 			)),
@@ -45,6 +47,8 @@ func init() {
 type ClusterVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
+	ClusterCount(ctx context.Context, args RawQuery) (int32, error)
+	Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error)
 	VulnerabilityType() string
 	VulnerabilityTypes() []string
 }
@@ -311,9 +315,15 @@ func withOpenShiftTypeFiltering(q string) string {
 }
 
 func (resolver *clusterCVEResolver) withClusterVulnerabilityScope(ctx context.Context) context.Context {
+	if features.PostgresDatastore.Enabled() {
+		return scoped.Context(ctx, scoped.Scope{
+			ID:    resolver.data.GetId(),
+			Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
+		})
+	}
 	return scoped.Context(ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
-		Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
+		Level: v1.SearchCategory_VULNERABILITIES,
 	})
 }
 
@@ -332,6 +342,26 @@ func (resolver *clusterCVEResolver) getClusterCVEQuery() *v1.Query {
 /*
 Sub Resolver Functions
 */
+
+// Clusters returns resolvers for clusters affected by cluster vulnerability.
+func (resolver *clusterCVEResolver) Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "Clusters")
+
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+	return resolver.root.Clusters(resolver.withClusterVulnerabilityScope(ctx), args)
+}
+
+// ClusterCount returns a number of clusters affected by cluster vulnerability.
+func (resolver *clusterCVEResolver) ClusterCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "ClusterCount")
+
+	if err := readClusters(ctx); err != nil {
+		return 0, err
+	}
+	return resolver.root.ClusterCount(resolver.withClusterVulnerabilityScope(ctx), args)
+}
 
 func (resolver *clusterCVEResolver) VulnerabilityType() string {
 	return resolver.data.GetType().String()
