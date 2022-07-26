@@ -184,7 +184,7 @@ metadata:
   name: stackrox:view-cluster
 # namespace-scoped resources follow
 ---
-# TODO(ROX-10964): find what creates this configmap and why it's not getting cleaned up
+# TODO(ROX-11020): find what creates this configmap and why it's not getting cleaned up
 #apiVersion: v1
 #kind: ConfigMap
 #metadata:

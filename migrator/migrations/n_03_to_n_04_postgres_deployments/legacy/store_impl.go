@@ -2,7 +2,6 @@ package legacy
 
 import (
 	"context"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
@@ -11,11 +10,9 @@ import (
 	deploymentDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/deployment"
 	imageDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/image"
 	namespaceDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/namespace"
-	"github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
-	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
 // StoreImpl provides an implementation of the Store interface using dackbox.
@@ -34,8 +31,6 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) *StoreImpl {
 
 // Count returns the number of deployments in dackbox.
 func (b *StoreImpl) Count(_ context.Context) (int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Deployment")
-
 	txn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return 0, err
@@ -52,8 +47,6 @@ func (b *StoreImpl) Count(_ context.Context) (int, error) {
 
 // GetIDs returns the keys of all deployments stored in RocksDB.
 func (b *StoreImpl) GetIDs(_ context.Context) ([]string, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
-
 	txn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, err
@@ -70,8 +63,6 @@ func (b *StoreImpl) GetIDs(_ context.Context) ([]string, error) {
 
 // GetListDeployment returns ListDeployment with given id.
 func (b *StoreImpl) GetListDeployment(ctx context.Context, id string) (deployment *storage.ListDeployment, exists bool, err error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ListDeployment")
-
 	txn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
@@ -88,8 +79,6 @@ func (b *StoreImpl) GetListDeployment(ctx context.Context, id string) (deploymen
 
 // GetManyListDeployments returns list deployments with the given ids.
 func (b *StoreImpl) GetManyListDeployments(_ context.Context, ids ...string) ([]*storage.ListDeployment, []int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
-
 	txn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, nil, err
@@ -118,8 +107,6 @@ func (b *StoreImpl) GetManyListDeployments(_ context.Context, ids ...string) ([]
 
 // Get returns deployment with given id.
 func (b *StoreImpl) Get(_ context.Context, id string) (deployment *storage.Deployment, exists bool, err error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Deployment")
-
 	txn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
@@ -136,8 +123,6 @@ func (b *StoreImpl) Get(_ context.Context, id string) (deployment *storage.Deplo
 
 // GetMany returns deployments with the given ids.
 func (b *StoreImpl) GetMany(_ context.Context, ids []string) ([]*storage.Deployment, []int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
-
 	txn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, nil, err
@@ -166,8 +151,6 @@ func (b *StoreImpl) GetMany(_ context.Context, ids []string) ([]*storage.Deploym
 
 // Upsert updates a deployment to dackbox.
 func (b *StoreImpl) Upsert(_ context.Context, deployment *storage.Deployment) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "Deployment")
-
 	var imageKeys [][]byte
 	for _, container := range deployment.GetContainers() {
 		imageKeys = append(imageKeys, imageDackBox.BucketHandler.GetKey(container.GetImage().GetId()))
@@ -215,8 +198,6 @@ func (b *StoreImpl) Upsert(_ context.Context, deployment *storage.Deployment) er
 
 // Delete deletes an deployment and it's list object counter-part.
 func (b *StoreImpl) Delete(_ context.Context, id string) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, "Deployment")
-
 	namespaceKey, allKeys := b.collectDeploymentKeys(id)
 	return b.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(allKeys...), func() error {
 		txn, err := b.dacky.NewTransaction()
@@ -288,6 +269,7 @@ func convertDeploymentToListDeployment(d *storage.Deployment) *storage.ListDeplo
 	}
 }
 
+// UpsertMany batches objects into the DB
 func (b *StoreImpl) UpsertMany(ctx context.Context, objs []*storage.Deployment) error {
 	for _, obj := range objs {
 		if err := b.Upsert(ctx, obj); err != nil {

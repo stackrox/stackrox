@@ -6,16 +6,15 @@ export type LoadBalancerType = 'NONE' | 'LOAD_BALANCER' | 'NODE_PORT' | 'ROUTE';
 
 export type DecommissionedClusterRetentionInfo =
     | {
-          // Cluster will not be deleted even if sensor status remains UNHEALTHY:
-          // because it has an ignore label, if true
-          // because system configuration is never delete, if false
+          // Cluster will not be deleted even if sensor status remains UNHEALTHY, because it has an ignore label.
+          // Therefore, if isExcluded property is present, then it has value true.
           isExcluded: boolean;
       }
     | {
           // Cluster will be deleted if sensor status remains UNHEALTHY for the number of days.
           daysUntilDeletion: number; // int32
       }
-    | null; // Cluster does not have sensor status UNHEALTHY.
+    | null; // Cluster does not have sensor status UNHEALTHY or cluster deletion is turned off.
 
 export type ClusterResponse = {
     cluster: Cluster;

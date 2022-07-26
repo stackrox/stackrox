@@ -1,10 +1,13 @@
 import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import {
     hasExpectedHeaderColumns,
     allChecksForEntities,
-    allCVECheck,
-    allFixableCheck,
+    // TODO: uncomment the following two imports once we are testing three types of CVEs for cluster
+    //       after feature flag for VM updates defaults to ON
+    // allCVECheck,
+    // allFixableCheck,
 } from '../../helpers/vmWorkflowUtils';
 import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
 
@@ -12,16 +15,33 @@ describe('Clusters list Page and its single entity detail page, and sub list val
     withAuth();
 
     it('should display all the columns and links expected in clusters list page', () => {
+        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
+
+        const columnsToCheck = usingVMUpdates
+            ? [
+                  'Cluster',
+                  'Image CVEs',
+                  'Node CVEs',
+                  'Platform CVEs',
+                  'K8S Version',
+                  'Entities',
+                  'Policy Status',
+                  'Latest Violation',
+                  'Risk Priority',
+              ]
+            : [
+                  'Cluster',
+                  'CVEs',
+                  'K8S Version',
+                  'Entities',
+                  'Policy Status',
+                  'Latest Violation',
+                  'Risk Priority',
+              ];
+
         visitVulnerabilityManagementEntities('clusters');
-        hasExpectedHeaderColumns([
-            'Cluster',
-            'CVEs',
-            'K8S Version',
-            'Entities',
-            'Policy Status',
-            'Latest Violation',
-            'Risk Priority',
-        ]);
+        hasExpectedHeaderColumns(columnsToCheck);
+
         cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
             // TODO: replace this helper function for individual entity columns
@@ -33,12 +53,14 @@ describe('Clusters list Page and its single entity detail page, and sub list val
             if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
                 allChecksForEntities(url.list.clusters, 'deployments');
             }
-            if (columnValue !== 'no cves' && columnValue.includes('cve')) {
-                allCVECheck(url.list.clusters);
-            }
-            if (columnValue.includes('fixable')) {
-                allFixableCheck(url.list.clusters);
-            }
+            // TODO: uncomment and update for three types of CVEs for cluster
+            //       after feature flag for VM updates defaults to ON
+            // if (columnValue !== 'no cves' && columnValue.includes('cve')) {
+            //     allCVECheck(url.list.clusters);
+            // }
+            // if (columnValue.includes('fixable')) {
+            //     allFixableCheck(url.list.clusters);
+            // }
         });
     });
 });

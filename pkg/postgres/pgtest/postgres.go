@@ -24,6 +24,7 @@ type TestPostgres struct {
 	database string
 }
 
+// CreateADatabaseForT creates a postgres database for test
 func CreateADatabaseForT(t testing.TB) string {
 	suffix, err := random.GenerateString(5, random.AlphanumericCharacters)
 	require.NoError(t, err)
@@ -40,6 +41,7 @@ func CreateADatabaseForT(t testing.TB) string {
 	return database
 }
 
+// DropDatabase drops the named database
 func DropDatabase(t testing.TB, database string) {
 	// Bootstrap the test database by connecting to the default postgres database and running create
 	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName("postgres")
@@ -93,17 +95,7 @@ func OpenGormDB(t testing.TB, source string) *gorm.DB {
 	return conn.OpenGormDB(t, source, false)
 }
 
-// OpenGormDBWithDisabledConstraints
-func OpenGormDBWithDisabledConstraints(t testing.TB, source string) *gorm.DB {
-	return conn.OpenGormDB(t, source, true)
-}
-
 // CloseGormDB closes connection to a Gorm DB
 func CloseGormDB(t testing.TB, db *gorm.DB) {
 	conn.CloseGormDB(t, db)
-}
-
-// CleanUpDB removes public schema together with all tables
-func CleanUpDB(ctx context.Context, t *testing.T, pool *pgxpool.Pool) {
-	conn.CleanUpDB(ctx, t, pool)
 }

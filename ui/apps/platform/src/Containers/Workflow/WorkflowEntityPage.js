@@ -23,6 +23,12 @@ const useCaseDefaultSorts = {
     [useCases.VULN_MANAGEMENT]: vulnMgmtDefaultSorts,
 };
 
+function removeGraphqlAlias(fieldName) {
+    const parts = fieldName?.split(':');
+
+    return parts ? parts[0] : '';
+}
+
 const WorkflowEntityPage = ({
     ListComponent,
     OverviewComponent,
@@ -91,7 +97,7 @@ const WorkflowEntityPage = ({
     const { result } = data;
 
     const listData = entityListType ? result[fieldName] : null;
-    const listCountKey = defaultCountKeyMap[entityListType];
+    const listCountKey = removeGraphqlAlias(defaultCountKeyMap[entityListType]);
     const totalResults = result[listCountKey];
     return entityListType ? (
         <ListComponent

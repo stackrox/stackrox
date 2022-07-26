@@ -78,9 +78,7 @@ describe('Violations by policy category widget', () => {
     it('should sort a policy violations by category widget by severity and volume of violations', async () => {
         const { user } = setup();
 
-        expect(
-            await screen.findByRole('heading', { name: /Policy violations by category/g })
-        ).toBeInTheDocument();
+        expect(await screen.findByText('Anomalous Activity')).toBeInTheDocument();
 
         // Default sorting should be by severity of critical and high Violations, with critical taking priority.
         await waitForAxisLinksToBe([
@@ -92,9 +90,9 @@ describe('Violations by policy category widget', () => {
         ]);
 
         // Switch to sort-by-volume, which orders the chart by total violations per category
-        await user.click(await screen.findByRole('button', { name: 'Options' }));
-        await user.click(await screen.findByRole('button', { name: 'Total' }));
-        await user.click(await screen.findByRole('button', { name: 'Options' }));
+        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByText('Total'));
+        await user.click(await screen.findByText('Options'));
 
         await waitForAxisLinksToBe([
             'Security Best Practices',
@@ -108,14 +106,12 @@ describe('Violations by policy category widget', () => {
     it('should allow toggling of severities for a policy violations by category widget', async () => {
         const { user } = setup();
 
-        expect(
-            await screen.findByRole('heading', { name: /Policy violations by category/g })
-        ).toBeInTheDocument();
+        expect(await screen.findByText('Anomalous Activity')).toBeInTheDocument();
 
         // Sort by volume, so that enabling lower severity bars changes the order of the chart
-        await user.click(await screen.findByRole('button', { name: 'Options' }));
-        await user.click(await screen.findByRole('button', { name: 'Total' }));
-        await user.click(await screen.findByRole('button', { name: 'Options' }));
+        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByText('Total'));
+        await user.click(await screen.findByText('Options'));
 
         // Toggle on low and medium violations, which are disabled by default
         await user.click(await screen.findByText('Low'));

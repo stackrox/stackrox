@@ -83,6 +83,7 @@ function ClusterSelect({
 
     return (
         <Select
+            toggleAriaLabel="Select clusters"
             variant={SelectVariant.checkbox}
             isOpen={isOpen}
             onToggle={onToggle}
@@ -92,6 +93,7 @@ function ClusterSelect({
             selections={currentSelection}
             isDisabled={isDisabled}
             maxHeight="50vh"
+            width={180}
             position="right"
             hasInlineFilter
         >

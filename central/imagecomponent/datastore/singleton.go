@@ -9,7 +9,7 @@ import (
 	globalDackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
-	"github.com/stackrox/rox/central/imagecomponent/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
 	"github.com/stackrox/rox/central/imagecomponent/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/imagecomponent/search"
@@ -42,8 +42,7 @@ func initialize() {
 		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 		searcher = search.NewV2(storage, indexer)
-		ad, err = New(nil, storage, indexer, searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
-		utils.CrashOnError(err)
+		ad = New(nil, storage, indexer, searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
 		return
 	}
 
@@ -63,8 +62,7 @@ func initialize() {
 		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()),
 		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
 
-	ad, err = New(globalDackbox.GetGlobalDackBox(), storage, indexer, searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
-	utils.CrashOnError(err)
+	ad = New(globalDackbox.GetGlobalDackBox(), storage, indexer, searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
 }
 
 // Singleton provides the interface for non-service external interaction.

@@ -14,6 +14,8 @@ func ActionToOperation(action central.ResourceAction) metrics.Op {
 		return metrics.Update
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return metrics.Remove
+	case central.ResourceAction_SYNC_RESOURCE:
+		return metrics.Sync
 	}
 	return 0
 }

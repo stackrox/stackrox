@@ -18,7 +18,7 @@ import spock.lang.IgnoreIf
 class SummaryTest extends BaseSpecification {
 
     @Category([BAT])
-    @IgnoreIf({System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
+    @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
         // https://issues.redhat.com/browse/ROX-6844
         Assume.assumeFalse(ClusterService.isOpenShift4())

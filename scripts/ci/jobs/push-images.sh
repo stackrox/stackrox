@@ -44,10 +44,17 @@ push_images() {
         push_context="merge-to-master"
     fi
 
+    # TODO(ROX-11889): make this unconditional once the openshift/release side is ready
+    if [[ -n "${OPERATOR_IMAGE:-}" ]]; then
+      push_operator_image_set "$push_context" "$brand"
+    fi
     push_main_image_set "$push_context" "$brand"
     push_matching_collector_scanner_images "$brand"
     if [[ -n "${PIPELINE_DOCS_IMAGE:-}" ]]; then
         push_docs_image
+    fi
+    if [[ -n "${MAIN_RCD_IMAGE:-}" ]]; then
+        push_race_condition_debug_image
     fi
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]]; then

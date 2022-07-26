@@ -1,13 +1,18 @@
 package store
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/version/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 )
@@ -17,6 +22,8 @@ var key = []byte("\x00")
 type storeImpl struct {
 	bucketRef bolthelper.BucketRef
 	rocksDB   *rocksdb.RocksDB
+
+	pgStore postgres.Store
 }
 
 func (s *storeImpl) getBoltVersion() (*storage.Version, error) {
@@ -61,6 +68,18 @@ func (s *storeImpl) getRocksDBVersion() (*storage.Version, error) {
 }
 
 func (s *storeImpl) GetVersion() (*storage.Version, error) {
+	if features.PostgresDatastore.Enabled() {
+		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Version)))
+		version, exists, err := s.pgStore.Get(ctx)
+		if err != nil || !exists {
+			return nil, err
+		}
+		return version, nil
+	}
+
 	boltVersion, err := s.getBoltVersion()
 	if err != nil {
 		return nil, err
@@ -83,10 +102,18 @@ func (s *storeImpl) GetVersion() (*storage.Version, error) {
 }
 
 func (s *storeImpl) UpdateVersion(version *storage.Version) error {
+	if features.PostgresDatastore.Enabled() {
+		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Version)))
+		return s.pgStore.Upsert(ctx, version)
+	}
 	bytes, err := proto.Marshal(version)
 	if err != nil {
 		return errors.Wrapf(err, "marshaling version %+v to proto", version)
 	}
+
 	err = s.bucketRef.Update(func(b *bolt.Bucket) error {
 		if err := b.Put(key, bytes); err != nil {
 			return errors.Wrap(err, "failed to insert")

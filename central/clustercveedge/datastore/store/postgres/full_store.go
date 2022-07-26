@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -15,6 +16,13 @@ import (
 func NewFullStore(db *pgxpool.Pool) store.Store {
 	return &fullStoreImpl{
 		Store: New(db),
+	}
+}
+
+// NewFullTestStore is used for testing.
+func NewFullTestStore(t *testing.T, store Store) store.Store {
+	return &fullStoreImpl{
+		Store: store,
 	}
 }
 

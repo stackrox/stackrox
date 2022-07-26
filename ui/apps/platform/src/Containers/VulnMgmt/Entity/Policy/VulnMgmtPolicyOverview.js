@@ -16,10 +16,11 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
-import { getDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
+import { getCurriedDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
 import { updatePolicyDisabledState } from 'services/PoliciesService';
 import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import BooleanPolicySection from 'Containers/Policies/Wizard/Step3/BooleanPolicyLogicSection';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getExcludedNamesByType } from 'utils/policyUtils';
 import { pluralizeHas } from 'utils/textUtils';
 import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
@@ -53,6 +54,7 @@ const emptyPolicy = {
 const noop = () => {};
 const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyPolicy, ...data };
@@ -212,6 +214,8 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
             />
         );
     } else {
+        const getDeploymentTableColumns = getCurriedDeploymentTableColumns(isFeatureFlagEnabled);
+
         policyFindingsContent = (
             <div className="pdf-page pdf-stretch pdf-new flex shadow rounded relativebg-base-100 mb-4 mx-4">
                 <TableWidget

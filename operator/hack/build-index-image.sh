@@ -2,9 +2,21 @@
 # Builds operator index image.
 
 set -eou pipefail
+# TODO(ROX-11889): Remove the -x once we gain some confidence (after 3.72 release?)
+set -x
 
 # Global script variables
-OPM_VERSION="1.21.0"
+# TODO(ROX-11889): This is a hacked version whose `render` subcommand can read contents of a bundle from a directory
+# TODO(ROX-11889): named like an image specification. This way we can build the bundle and index sources in the same step
+# TODO(ROX-11889): followed by a parallel build of the bundle and index images, without the need for an intermediate bundle
+# TODO(ROX-11889): image push. This is important in OpenShift CI, where the flow is "all images built first,
+# TODO(ROX-11889): followed by all images pushed together".
+# TODO(ROX-11889): Either upstream the hack or change the flow.
+OPM_VERSION="1.21.0-render-dir"
+# Normally the same as OPM_VERSION. Here we use the upstream version for serving the index,
+# since the render-dir hack only affects the build. This helps us avoid the hassle of hosting the OPM image.
+OPM_IMAGE_VERSION="1.21.0"
+OPM_ORG="porridge"
 YQ_VERSION="4.24.2"
 
 function usage() {
@@ -22,6 +34,7 @@ OPTION:
   --base-dir           Working directory for the script. Default: '.'
   --clean-output-dir   Delete '{base-dir}/build/index' directory.
   --use-http           Use plain HTTP for container image registries.
+  --skip-build         Skip the actual \"docker build\" command.
 " >&2
 }
 
@@ -36,6 +49,7 @@ INDEX_TAG=""
 BUNDLE_TAG=""
 REPLACED_VERSION=""
 BASE_DIR="."
+RUN_BUILD=1
 
 # Helpful for local development and testing
 CLEAN_OUTPUT_DIR=""
@@ -58,6 +72,8 @@ function read_arguments() {
                 CLEAN_OUTPUT_DIR="true";;
             "--use-http")
                 USE_HTTP="--use-http";;
+            "--skip-build")
+                RUN_BUILD=0;;
             *)
                 echo "Error: Unknown parameter: ${1}" >&2
                 usage_exit
@@ -87,7 +103,7 @@ function fetch_opm() {
   local -r arch=$(go env GOARCH) || true
 
   OPM="${BASE_DIR}/bin/opm-${OPM_VERSION}"
-  "${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from "https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/${os_name}-${arch}-opm"
+  "${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from "https://github.com/${OPM_ORG}/operator-registry/releases/download/v${OPM_VERSION}/${os_name}-${arch}-opm"
 }
 
 YQ="yq"
@@ -123,7 +139,7 @@ BUILD_INDEX_DIR="${BASE_DIR}/build/index/rhacs-operator-index"
 mkdir -p "${BUILD_INDEX_DIR}"
 
 # With "--binary-image", we are setting the exact base image version. By default, "latest" would be used.
-"${OPM}" generate dockerfile --binary-image "quay.io/operator-framework/opm:v${OPM_VERSION}" "${BUILD_INDEX_DIR}"
+"${OPM}" generate dockerfile --binary-image "quay.io/operator-framework/opm:v${OPM_IMAGE_VERSION}" "${BUILD_INDEX_DIR}"
 "${OPM}" render "${BASE_INDEX_TAG}" --output=yaml ${USE_HTTP} > "${BUILD_INDEX_DIR}/index.yaml"
 
 BUNDLE_VERSION="${BUNDLE_TAG##*:v}"
@@ -140,6 +156,11 @@ EOF
 "${YQ}" --inplace --prettyPrint "with(select(${YQ_FILTER_CHANNEL_DOCUMENT}); .entries += ${YQ_NEW_BUNDLE_ENTRY})" "${BUILD_INDEX_DIR}/index.yaml"
 "${OPM}" render "${BUNDLE_TAG}" --output=yaml ${USE_HTTP} >> "${BUILD_INDEX_DIR}/index.yaml"
 "${OPM}" validate "${BUILD_INDEX_DIR}"
-docker build --quiet --file "${BUILD_INDEX_DIR}.Dockerfile" --tag "${INDEX_TAG}" "${BUILD_INDEX_DIR}/.."
 
-echo "Index image ${INDEX_TAG} is successfully created."
+if (( RUN_BUILD )); then
+  docker build --quiet --file "${BUILD_INDEX_DIR}.Dockerfile" --tag "${INDEX_TAG}" "${BUILD_INDEX_DIR}/.."
+
+  echo "Index image ${INDEX_TAG} is successfully created."
+else
+  echo "Skipping 'docker build' of ${BUILD_INDEX_DIR} as requested."
+fi

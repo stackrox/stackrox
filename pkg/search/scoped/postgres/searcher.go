@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"strings"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -16,10 +15,10 @@ import (
 func WithScoping(searcher search.Searcher) search.Searcher {
 	return search.FuncSearcher{
 		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			scope, hasScope := scoped.GetScope(ctx)
+			scopes, hasScope := scoped.GetAllScopes(ctx)
 			if hasScope {
 				var err error
-				q, err = scopeQuery(q, scope)
+				q, err = scopeQuery(q, scopes)
 				if err != nil || q == nil {
 					return nil, err
 				}
@@ -27,10 +26,10 @@ func WithScoping(searcher search.Searcher) search.Searcher {
 			return searcher.Search(ctx, q)
 		},
 		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			scope, hasScope := scoped.GetScope(ctx)
+			scopes, hasScope := scoped.GetAllScopes(ctx)
 			if hasScope {
 				var err error
-				q, err = scopeQuery(q, scope)
+				q, err = scopeQuery(q, scopes)
 				if err != nil || q == nil {
 					return 0, err
 				}
@@ -40,23 +39,20 @@ func WithScoping(searcher search.Searcher) search.Searcher {
 	}
 }
 
-func scopeQuery(q *v1.Query, scope scoped.Scope) (*v1.Query, error) {
-	schema := mapping.GetTableFromCategory(scope.Level)
-	if schema == nil {
-		utils.Should(errors.Errorf("no schema registered for search category %s", scope.Level))
-		return q, nil
-	}
-
-	for _, f := range schema.Fields {
-		// We only support ID in scope.
-		if strings.ToLower(f.ColumnName) != "id" {
-			continue
+func scopeQuery(q *v1.Query, scopes []scoped.Scope) (*v1.Query, error) {
+	pagination := q.GetPagination()
+	q.Pagination = nil
+	conjuncts := []*v1.Query{q}
+	for _, scope := range scopes {
+		schema := mapping.GetTableFromCategory(scope.Level)
+		if schema == nil {
+			utils.Should(errors.Errorf("no schema registered for search category %s", scope.Level))
+			return q, nil
 		}
-		ret := search.ConjunctionQuery(q,
-			search.NewQueryBuilder().AddExactMatches(search.FieldLabel(f.Search.FieldName), scope.ID).ProtoQuery(),
-		)
-		ret.Pagination = q.Pagination
-		return ret, nil
+		idField := schema.ID()
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddExactMatches(search.FieldLabel(idField.Search.FieldName), scope.ID).ProtoQuery())
 	}
-	return q, nil
+	ret := search.ConjunctionQuery(conjuncts...)
+	ret.Pagination = pagination
+	return ret, nil
 }

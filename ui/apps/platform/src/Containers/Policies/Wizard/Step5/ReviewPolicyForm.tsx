@@ -46,11 +46,7 @@ function ReviewPolicyForm({
         setAlertsFromDryRun([]);
 
         startDryRun(getServerPolicy(values))
-            .then(({ data: { jobId } }) => {
-                /*
-                 * TODO after policiesSagas.js has been deleted:
-                 * Replace ({ data: { jobId } }) with (jobId) above.
-                 */
+            .then((jobId) => {
                 setIsValidOnServer(true);
                 setJobIdOfDryRun(jobId);
             })
@@ -67,11 +63,7 @@ function ReviewPolicyForm({
     useEffect(() => {
         if (jobIdOfDryRun) {
             checkDryRun(jobIdOfDryRun)
-                .then(({ data: { pending, result } }) => {
-                    /*
-                     * TODO after policiesSagas.js has been deleted:
-                     * Replace ({ data: { pending, result } }) with ({ pending, result }) above.
-                     */
+                .then(({ pending, result }) => {
                     if (pending) {
                         // To make another request, increment counterToCheckDryRun which is in useEffect dependencies.
                         setCounterToCheckDryRun((counter) => counter + 1);

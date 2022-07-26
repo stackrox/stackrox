@@ -50,7 +50,7 @@ type CVELoader interface {
 	FromIDs(ctx context.Context, ids []string) ([]*storage.CVE, error)
 	FromID(ctx context.Context, id string) (*storage.CVE, error)
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.CVE, error)
-
+	GetIDs(ctx context.Context, query *v1.Query) ([]string, error)
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
 	CountAll(ctx context.Context) (int32, error)
 }
@@ -99,6 +99,14 @@ func (idl *cveLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*st
 		return nil, err
 	}
 	return idl.FromIDs(ctx, search.ResultsToIDs(results))
+}
+
+func (idl *cveLoaderImpl) GetIDs(ctx context.Context, query *v1.Query) ([]string, error) {
+	results, err := idl.ds.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return search.ResultsToIDs(results), nil
 }
 
 func (idl *cveLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {

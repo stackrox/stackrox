@@ -18,7 +18,6 @@ export const types = {
     ),
     TOGGLE_GLOBAL_SEARCH_VIEW: 'globalsearch/TOGGLE_GLOBAL_SEARCH_VIEW',
     SET_GLOBAL_SEARCH_CATEGORY: 'globalsearch/SET_GLOBAL_SEARCH_CATEGORY',
-    PASSTHROUGH_GLOBAL_SEARCH_OPTIONS: 'globalsearch/PASSTHROUGH_GLOBAL_SEARCH_OPTIONS',
     ...searchTypes('global'),
 };
 
@@ -31,11 +30,6 @@ export const actions = {
     }),
     setGlobalSearchCategory: (category) => ({
         type: types.SET_GLOBAL_SEARCH_CATEGORY,
-        category,
-    }),
-    passthroughGlobalSearchOptions: (searchOptions, category) => ({
-        type: types.PASSTHROUGH_GLOBAL_SEARCH_OPTIONS,
-        searchOptions,
         category,
     }),
     ...getSearchActions('global'),
@@ -63,7 +57,10 @@ const globalSearchResults = (state = [], action) => {
 };
 
 const globalSearchCounts = (state = [], action) => {
-    if (action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.SUCCESS && !action.params.category) {
+    if (
+        action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.SUCCESS &&
+        action.params.category === 'SEARCH_UNSET'
+    ) {
         const counts = action.response.counts || [];
         return isEqual(counts, state) ? state : counts;
     }
@@ -74,7 +71,7 @@ const globalSearchCounts = (state = [], action) => {
     return state;
 };
 
-const globalSearchCategory = (state = '', action) => {
+const globalSearchCategory = (state = 'SEARCH_UNSET', action) => {
     if (action.type === types.SET_GLOBAL_SEARCH_CATEGORY) {
         const { category } = action;
         return isEqual(category, state) ? state : category;

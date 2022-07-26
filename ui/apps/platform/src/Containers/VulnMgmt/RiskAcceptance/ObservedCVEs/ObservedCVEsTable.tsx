@@ -279,9 +279,7 @@ function ObservedCVEsTable({
                                         <CVSSScoreLabel cvss={row.cvss} />
                                     </Td>
                                     <Td dataLabel="Affected components">
-                                        <AffectedComponentsButton
-                                            components={row.imageComponents}
-                                        />
+                                        <AffectedComponentsButton components={row.components} />
                                     </Td>
                                     <Td dataLabel="Discovered">
                                         <DateTimeFormat time={row.discoveredAtImage} />

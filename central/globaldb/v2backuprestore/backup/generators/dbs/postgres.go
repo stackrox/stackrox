@@ -6,9 +6,9 @@ import (
 	"os/exec"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 )
 
 var (
@@ -30,7 +30,7 @@ type PostgresBackup struct {
 
 // WriteTo writes a backup of Postgres to the writer
 func (bu *PostgresBackup) WriteTo(ctx context.Context, out io.Writer) error {
-	sourceMap, config, err := globaldb.GetPostgresConfig()
+	sourceMap, config, err := pgconfig.GetPostgresConfig()
 	if err != nil {
 		log.Fatalf("Could not parse postgres config: %v", err)
 		return err
@@ -39,7 +39,7 @@ func (bu *PostgresBackup) WriteTo(ctx context.Context, out io.Writer) error {
 	// Set the options for pg_dump from the connection config
 	options := []string{
 		"-d",
-		config.ConnConfig.Database,
+		pgconfig.GetActiveDB(),
 		"-Fc", // Custom format, compressed hopefully supports stdin to restore
 		"-v",
 	}

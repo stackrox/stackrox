@@ -13,7 +13,6 @@ import (
 )
 
 const storeFile = `
-
 package rocksdb
 
 import (
@@ -269,7 +268,6 @@ func main() {
 		if props.MigrationSeq == 0 {
 			return nil
 		}
-		buf.Truncate(0)
 		templateMap["Migration"] = migrationOptions{
 			Package: fmt.Sprintf("n%dton%d", props.MigrationSeq, props.MigrationSeq+1),
 		}

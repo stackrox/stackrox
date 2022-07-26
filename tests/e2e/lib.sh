@@ -7,6 +7,9 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
+# State
+STATE_DEPLOYED="/tmp/state_deployed"
+
 source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 
@@ -24,6 +27,8 @@ deploy_stackrox() {
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     sensor_wait
+
+    touch "${STATE_DEPLOYED}"
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
@@ -54,11 +59,11 @@ deploy_central() {
 
     # If we're running a nightly build or race condition check, then set CGO_CHECKS=true so that central is
     # deployed with strict checks
-    if is_nightly_run || pr_has_label ci-race-tests; then
+    if is_nightly_run || pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
         ci_export CGO_CHECKS "true"
     fi
 
-    if pr_has_label ci-race-tests; then
+    if pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
         ci_export IS_RACE_BUILD "true"
     fi
 
@@ -238,7 +243,7 @@ check_for_errors_in_stackrox_logs() {
     if [[ -n "$filtered" ]]; then
         # shellcheck disable=SC2086
         if ! scripts/ci/logcheck/check.sh $filtered; then
-            die "Found at least one suspicious log file entry."
+            die "ERROR: Found at least one suspicious log file entry."
         fi
     fi
 }
@@ -398,6 +403,14 @@ db_backup_and_restore_test() {
     fi
 
     [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
+}
+
+handle_e2e_progress_failures() {
+    info "Checking for deployment failure"
+
+    if [[ ! -f "${STATE_DEPLOYED}" ]]; then
+        save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

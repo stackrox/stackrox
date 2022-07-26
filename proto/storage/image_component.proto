@@ -13,7 +13,7 @@ message ImageComponent {
     string                         name             = 2 [(gogoproto.moretags) = 'search:"Component,store"'];
     string                         version          = 3 [(gogoproto.moretags) = 'search:"Component Version,store"'];
     License                        license          = 4;
-    int64                          priority         = 5;
+    int64                          priority         = 5 [(gogoproto.moretags) = 'search:"Component Risk Priority,hidden"'];
     SourceType                     source           = 6 [(gogoproto.moretags) = 'search:"Component Source,store"'];
     float                          risk_score       = 7 [(gogoproto.moretags) = 'search:"Component Risk Score,hidden"'];
     oneof set_top_cvss {

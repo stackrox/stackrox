@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/assert"
@@ -47,9 +48,14 @@ func TestLocation(t *testing.T) {
 		},
 	}
 
-	imageComponentEdgeDS.EXPECT().Get(gomock.Any(), edges.EdgeID{ParentID: "image1", ChildID: "comp1"}.ToString()).
-		Return(&storage.ImageComponentEdge{Location: "loc"}, true, nil)
-	loc, err = componentResolver.Location(context.Background(), RawQuery{})
+	if !features.PostgresDatastore.Enabled() {
+		imageComponentEdgeDS.EXPECT().Get(gomock.Any(), edges.EdgeID{ParentID: "image1", ChildID: "comp1"}.ToString()).
+			Return(&storage.ImageComponentEdge{Location: "loc"}, true, nil)
+	} else {
+		imageComponentEdgeDS.EXPECT().SearchRawEdges(gomock.Any(), search.NewQueryBuilder().AddExactMatches(search.ImageSHA, "image1").AddExactMatches(search.ComponentID, "comp1").ProtoQuery()).
+			Return([]*storage.ImageComponentEdge{{Location: "loc"}}, nil)
+	}
+	loc, err = componentResolver.Location(componentResolver.ctx, RawQuery{})
 	assert.NoError(t, err)
 	assert.Equal(t, "loc", loc)
 
@@ -66,9 +72,14 @@ func TestLocation(t *testing.T) {
 	}
 
 	query := "Deployment:dep"
-	imageComponentEdgeDS.EXPECT().Get(gomock.Any(), edges.EdgeID{ParentID: "image1", ChildID: "comp1"}.ToString()).
-		Return(&storage.ImageComponentEdge{Location: "loc"}, true, nil)
-	loc, err = componentResolver.Location(context.Background(), RawQuery{Query: &query})
+	if !features.PostgresDatastore.Enabled() {
+		imageComponentEdgeDS.EXPECT().Get(gomock.Any(), edges.EdgeID{ParentID: "image1", ChildID: "comp1"}.ToString()).
+			Return(&storage.ImageComponentEdge{Location: "loc"}, true, nil)
+	} else {
+		imageComponentEdgeDS.EXPECT().SearchRawEdges(gomock.Any(), search.NewQueryBuilder().AddExactMatches(search.ImageSHA, "image1").AddExactMatches(search.ComponentID, "comp1").ProtoQuery()).
+			Return([]*storage.ImageComponentEdge{{Location: "loc"}}, nil)
+	}
+	loc, err = componentResolver.Location(componentResolver.ctx, RawQuery{Query: &query})
 	assert.NoError(t, err)
 	assert.Equal(t, "loc", loc)
 
@@ -103,9 +114,14 @@ func TestLocation(t *testing.T) {
 	query = "Image Sha:image1"
 	imageDS.EXPECT().Search(gomock.Any(), search.NewQueryBuilder().AddStrings(search.ImageSHA, "image1").ProtoQuery()).
 		Return([]search.Result{{ID: "image1"}}, nil)
-	imageComponentEdgeDS.EXPECT().Get(gomock.Any(), edges.EdgeID{ParentID: "image1", ChildID: "comp1"}.ToString()).
-		Return(&storage.ImageComponentEdge{Location: "loc"}, true, nil)
-	loc, err = componentResolver.Location(context.Background(), RawQuery{Query: &query})
+	if !features.PostgresDatastore.Enabled() {
+		imageComponentEdgeDS.EXPECT().Get(gomock.Any(), edges.EdgeID{ParentID: "image1", ChildID: "comp1"}.ToString()).
+			Return(&storage.ImageComponentEdge{Location: "loc"}, true, nil)
+	} else {
+		imageComponentEdgeDS.EXPECT().SearchRawEdges(gomock.Any(), search.NewQueryBuilder().AddExactMatches(search.ImageSHA, "image1").AddExactMatches(search.ComponentID, "comp1").ProtoQuery()).
+			Return([]*storage.ImageComponentEdge{{Location: "loc"}}, nil)
+	}
+	loc, err = componentResolver.Location(componentResolver.ctx, RawQuery{Query: &query})
 	assert.NoError(t, err)
 	assert.Equal(t, "loc", loc)
 }

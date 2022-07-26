@@ -22,7 +22,6 @@ const IntegrationTilesPage = ({
     signatureIntegrations,
 }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isSignatureIntegrationEnabled = isFeatureFlagEnabled('ROX_VERIFY_IMAGE_SIGNATURE');
 
     function findIntegrations(source, type) {
         const typeLowerMatches = (integration) =>
@@ -103,14 +102,12 @@ const IntegrationTilesPage = ({
                 <IntegrationsSection headerName="Image Integrations" testId="image-integrations">
                     {imageIntegrationTiles}
                 </IntegrationsSection>
-                {isSignatureIntegrationEnabled && (
-                    <IntegrationsSection
-                        headerName="Signature Integrations"
-                        testId="signature-integrations"
-                    >
-                        {signatureTiles}
-                    </IntegrationsSection>
-                )}
+                <IntegrationsSection
+                    headerName="Signature Integrations"
+                    testId="signature-integrations"
+                >
+                    {signatureTiles}
+                </IntegrationsSection>
                 <IntegrationsSection
                     headerName="Notifier Integrations"
                     testId="notifier-integrations"

@@ -33,19 +33,10 @@ message PolicyCategoriesResponse {
     repeated string categories = 1;
 }
 
-message RenamePolicyCategoryRequest {
-    string old_category = 1;
-    string new_category = 2;
-}
-
 message EnableDisablePolicyNotificationRequest {
     string                     policy_id   = 1;
     repeated string            notifier_ids = 2;
     bool disable = 3;
-}
-
-message DeletePolicyCategoryRequest {
-    string category = 1;
 }
 
 message ListPoliciesResponse {
@@ -236,21 +227,6 @@ service PolicyService {
     rpc GetPolicyCategories (Empty) returns (PolicyCategoriesResponse) {
         option (google.api.http) = {
             get: "/v1/policyCategories"
-        };
-    }
-
-    // RenamePolicyCategory renames the given policy category.
-    rpc RenamePolicyCategory (RenamePolicyCategoryRequest) returns (Empty) {
-        option (google.api.http) = {
-            put: "/v1/policyCategories/{old_category}"
-            body: "*"
-        };
-    }
-
-    // DeletePolicyCategory removes the given policy category.
-    rpc DeletePolicyCategory (DeletePolicyCategoryRequest) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/policyCategories/{category}"
         };
     }
 

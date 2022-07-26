@@ -8,6 +8,7 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_103_to_m_104_networkpolicy_guidance"
 	_ "github.com/stackrox/rox/migrator/migrations/m_104_to_m_105_active_component"
 	_ "github.com/stackrox/rox/migrator/migrations/m_105_to_m_106_group_id"
+	_ "github.com/stackrox/rox/migrator/migrations/m_106_to_m_107_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/m_55_to_m_56_node_scanning_empty"
 	_ "github.com/stackrox/rox/migrator/migrations/m_56_to_m_57_compliance_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/m_57_to_m_58_update_run_secrets_volume_policy_regex"

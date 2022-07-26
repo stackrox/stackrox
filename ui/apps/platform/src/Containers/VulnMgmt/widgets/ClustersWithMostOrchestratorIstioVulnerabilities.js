@@ -203,7 +203,7 @@ const ClustersWithMostOrchestratorVulnerabilities = ({ entityContext, limit }) =
         },
     });
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     let content = <Loader />;
 

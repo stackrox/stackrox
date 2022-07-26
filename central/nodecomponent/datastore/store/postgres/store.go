@@ -87,12 +87,13 @@ func insertIntoNodeComponents(ctx context.Context, batch *pgx.Batch, obj *storag
 		obj.GetId(),
 		obj.GetName(),
 		obj.GetVersion(),
+		obj.GetPriority(),
 		obj.GetRiskScore(),
 		obj.GetTopCvss(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO node_components (Id, Name, Version, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO node_components (Id, Name, Version, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -115,6 +116,8 @@ func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs 
 		"name",
 
 		"version",
+
+		"priority",
 
 		"riskscore",
 
@@ -139,6 +142,8 @@ func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs 
 			obj.GetName(),
 
 			obj.GetVersion(),
+
+			obj.GetPriority(),
 
 			obj.GetRiskScore(),
 
@@ -217,7 +222,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NodeComponent) 
 			_, err := batchResults.Exec()
 			result = multierror.Append(result, err)
 		}
-		batchResults.Close()
+		if err := batchResults.Close(); err != nil {
+			return err
+		}
 		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
@@ -302,7 +309,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store

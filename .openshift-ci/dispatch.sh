@@ -27,10 +27,13 @@ case "$ci_job" in
     gke-qa-e2e-tests|gke-nongroovy-e2e-tests|gke-upgrade-tests|gke-ui-e2e-tests)
         openshift_ci_e2e_mods
         ;;
+    openshift-*-operator-e2e-tests)
+        operator_e2e_test_setup
+        ;;
 esac
 
 if [[ "$ci_job" =~ e2e|upgrade ]]; then
-    handle_nightly_roxctl_mismatch
+    handle_nightly_binary_version_mismatch
 fi
 
 export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
@@ -45,10 +48,7 @@ if [[ -f "$ROOT/scripts/ci/jobs/${ci_job}.sh" ]]; then
 elif [[ -f "$ROOT/scripts/ci/jobs/${ci_job//-/_}.py" ]]; then
     job_script="$ROOT/scripts/ci/jobs/${ci_job//-/_}.py"
 else
-    # For ease of initial integration this function does not fail when the
-    # job is unknown.
-    info "nothing to see here: ${ci_job}"
-    exit 0
+    die "ERROR: There is no job script for $ci_job"
 fi
 
 "${job_script}" "$@" &

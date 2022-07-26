@@ -99,7 +99,7 @@ func (m *orchestratorCVEManager) updateCVEs(embeddedCVEs []*storage.EmbeddedVuln
 			cve := utils.EmbeddedVulnerabilityToClusterCVE(cveType.ToStorageCVEType(), embeddedCVE)
 			newCVEs = append(newCVEs, converterV2.NewClusterCVEParts(cve, embeddedCVEToClusters[embeddedCVE.GetCve()], embeddedCVE.GetFixedBy()))
 		}
-		return m.updateCVEsPostgres(newCVEs, cveType)
+		return m.updateCVEsInPostgres(newCVEs, cveType)
 	}
 
 	var newCVEs []converter.ClusterCVEParts
@@ -111,7 +111,7 @@ func (m *orchestratorCVEManager) updateCVEs(embeddedCVEs []*storage.EmbeddedVuln
 	return m.updateCVEsInDB(newCVEs, cveType)
 }
 
-func (m *orchestratorCVEManager) updateCVEsPostgres(cves []converterV2.ClusterCVEParts, cveType utils.CVEType) error {
+func (m *orchestratorCVEManager) updateCVEsInPostgres(cves []converterV2.ClusterCVEParts, cveType utils.CVEType) error {
 	return m.clusterCVEDataStore.UpsertClusterCVEsInternal(allAccessCtx, cveType.ToStorageCVEType(), cves...)
 	// Reconciliation is performed in postgres store.
 }

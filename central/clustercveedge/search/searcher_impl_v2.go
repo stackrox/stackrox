@@ -6,11 +6,17 @@ import (
 	"github.com/stackrox/rox/central/clustercveedge/index"
 	"github.com/stackrox/rox/central/clustercveedge/store"
 	"github.com/stackrox/rox/central/cve/edgefields"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
+)
+
+var (
+	sacHelper = sac.ForResource(resources.Cluster).MustCreatePgSearchHelper()
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.
@@ -23,7 +29,7 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 }
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	scopedSearcher := postgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher))
+	scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(unsafeSearcher))
 	return edgefields.TransformFixableFields(scopedSearcher)
 }
 

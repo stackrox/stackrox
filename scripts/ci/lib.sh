@@ -106,7 +106,7 @@ get_central_debug_dump() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
 
-    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug dump --output-dir "${output_dir}"
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central debug dump --output-dir "${output_dir}"
     ls -l "${output_dir}"
 }
 
@@ -167,7 +167,7 @@ push_main_image_set() {
 
         local idx=0
         for image in "${main_image_set[@]}"; do
-            oc image mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
+            oc_image_mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
             (( idx++ )) || true
         done
     }
@@ -202,8 +202,105 @@ push_main_image_set() {
     done
 }
 
+push_operator_image_set() {
+    info "Pushing stackrox-operator, stackrox-operator-bundle and stackrox-operator-index images"
+
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_operator_image_set <push_context> <brand>"
+    fi
+
+    local push_context="$1"
+    local brand="$2"
+
+    local operator_image_set=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index")
+    if is_OPENSHIFT_CI; then
+        local operator_image_srcs=("$OPERATOR_IMAGE" "$OPERATOR_BUNDLE_IMAGE" "$OPERATOR_BUNDLE_INDEX_MAGE")
+        oc registry login
+    fi
+
+    _push_operator_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        local v
+        for image in "${operator_image_set[@]}"; do
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "${registry}/${image}:${v}${tag}" | cat
+        done
+    }
+
+    _tag_operator_image_set() {
+        local local_tag="$1"
+        local registry="$2"
+        local remote_tag="$3"
+
+        local v
+        for image in "${operator_image_set[@]}"; do
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${v}${remote_tag}"
+        done
+    }
+
+    _mirror_operator_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        local idx=0
+        local v
+        for image in "${operator_image_set[@]}"; do
+            if [[ "${image}" != "stackrox-operator" ]]; then
+                # Only the bundle and index image tags have the v prefix.
+                v="v"
+            else
+                v=""
+            fi
+            oc image mirror "${operator_image_srcs[$idx]}" "${registry}/${image}:${v}${tag}"
+            (( idx++ )) || true
+        done
+    }
+
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        local destination_registries=("quay.io/stackrox-io")
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        local destination_registries=("quay.io/rhacs-eng")
+    else
+        die "$brand is not a supported brand"
+    fi
+
+    local tag
+    tag="$(make --quiet -C operator tag)"
+    for registry in "${destination_registries[@]}"; do
+        registry_rw_login "$registry"
+
+        if is_OPENSHIFT_CI; then
+            _mirror_operator_image_set "$registry" "$tag"
+        else
+            _tag_operator_image_set "$tag" "$registry" "$tag"
+            _push_operator_image_set "$registry" "$tag"
+        fi
+        if [[ "$push_context" == "merge-to-master" ]]; then
+            if is_OPENSHIFT_CI; then
+                _mirror_operator_image_set "$registry" "latest"
+            else
+                _tag_operator_image_set "$tag" "$registry" "latest"
+                _push_operator_image_set "$registry" "latest"
+            fi
+        fi
+    done
+}
+
 push_docs_image() {
-    info "Pushing the docs image"
+    info "Pushing the docs image: $PIPELINE_DOCS_IMAGE"
 
     if ! is_OPENSHIFT_CI; then
         die "Only supported in OpenShift CI"
@@ -217,9 +314,23 @@ push_docs_image() {
 
     for registry in "${registries[@]}"; do
         registry_rw_login "$registry"
-        oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
-        oc image mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$(make --quiet tag)"
+        oc_image_mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$docs_tag"
+        oc_image_mirror "$PIPELINE_DOCS_IMAGE" "${registry}/docs:$(make --quiet tag)"
     done
+}
+
+push_race_condition_debug_image() {
+    info "Pushing the -race image: $MAIN_RCD_IMAGE"
+
+    if ! is_OPENSHIFT_CI; then
+        die "Only supported in OpenShift CI"
+    fi
+
+    oc registry login
+
+    local registry="quay.io/rhacs-eng"
+    registry_rw_login "$registry"
+    oc_image_mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet tag)-rcd"
 }
 
 registry_rw_login() {
@@ -282,7 +393,7 @@ push_matching_collector_scanner_images() {
 
     _retag_or_mirror() {
         if is_OPENSHIFT_CI; then
-            oc image mirror "$1" "$2"
+            oc_image_mirror "$1" "$2"
         else
             "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
         fi
@@ -306,6 +417,10 @@ push_matching_collector_scanner_images() {
         _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
         _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
     done
+}
+
+oc_image_mirror() {
+    retry 5 true oc image mirror "$1" "$2"
 }
 
 poll_for_system_test_images() {
@@ -578,9 +693,25 @@ pr_has_label() {
     pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
         info "Warning: checking for a label in a non PR context"
-        false
+        return 1
     fi
-    jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
+
+    if is_openshift_CI_rehearse_PR; then
+        pr_has_label_in_body "${expected_label}" "$pr_details"
+    else
+        jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
+    fi
+}
+
+pr_has_label_in_body() {
+    if [[ "$#" -ne 2 ]]; then
+        die "usage: pr_has_label_in_body <expected label> <pr details>"
+    fi
+
+    local expected_label="$1"
+    local pr_details="$2"
+
+    [[ "$(jq -r '.body' <<<"$pr_details")" =~ \/label:[[:space:]]*$expected_label ]]
 }
 
 # get_pr_details() from GitHub and display the result. Exits 1 if not run in CI in a PR context.
@@ -849,6 +980,9 @@ openshift_ci_mods() {
     info "Status after mods:"
     "$ROOT/status.sh" || true
 
+    STACKROX_BUILD_TAG=$(make --quiet tag)
+    export STACKROX_BUILD_TAG
+
     info "END OpenShift CI mods"
 }
 
@@ -859,7 +993,7 @@ openshift_ci_import_creds() {
     done
 }
 
-openshift_ci_e2e_mods() {
+unset_namespace_env_var() {
     # NAMESPACE is injected by OpenShift CI for the cluster that is running the
     # tests but this can have side effects for stackrox tests due to its use as
     # the default namespace e.g. with helm.
@@ -867,6 +1001,10 @@ openshift_ci_e2e_mods() {
         export OPENSHIFT_CI_NAMESPACE="$NAMESPACE"
         unset NAMESPACE
     fi
+}
+
+openshift_ci_e2e_mods() {
+    unset_namespace_env_var
 
     # Similarly the incoming KUBECONFIG is best avoided.
     if [[ -n "${KUBECONFIG:-}" ]]; then
@@ -886,6 +1024,18 @@ openshift_ci_e2e_mods() {
         # shellcheck disable=SC1090
         source "$envfile"
     fi
+}
+
+operator_e2e_test_setup() {
+    # TODO(ROX-11901): pass the brand explicitly from the CI config file rather than hardcode here
+    registry_ro_login "quay.io/rhacs-eng"
+    export ROX_PRODUCT_BRANDING="RHACS_BRANDING"
+
+    # $NAMESPACE is set by OpenShift CI, but confuses `operator-sdk scorecard` which runs against
+    # a completely different cluster, where this namespace does not even exist.
+    # Note that even though unsetting the variable turns out not to be sufficient for `operator-sdk scorecard`
+    # (still gets the namespace from *somewhere*), we're keeping this here as it might affect other tools.
+    unset_namespace_env_var
 }
 
 handle_nightly_runs() {
@@ -915,7 +1065,7 @@ handle_nightly_runs() {
     fi
 }
 
-handle_nightly_roxctl_mismatch() {
+handle_nightly_binary_version_mismatch() {
     if ! is_OPENSHIFT_CI; then
         die "Only for OpenShift CI"
     fi
@@ -934,11 +1084,11 @@ handle_nightly_roxctl_mismatch() {
         echo "JOB_NAME_SAFE: ${JOB_NAME_SAFE:-}"
     fi
 
-    info "Correcting roxctl version for nightly e2e tests"
+    info "Correcting binary versions for nightly e2e tests"
     echo "Current roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
 
     if ! [[ "$(roxctl version || true)" =~ nightly-$(date '+%Y%m%d') ]]; then
-        make cli-build
+        make cli-build upgrader
         install_built_roxctl_in_gopath
         echo "Replacement roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
     fi
@@ -1025,6 +1175,7 @@ send_slack_notice_for_failures_on_merge() {
 
     local commit_msg
     commit_msg=$(jq -r <<<"$commit_details" '.commit.message') || return 1
+    commit_msg="${commit_msg%%$'\n'*}" # use first line of commit msg
     local commit_url
     commit_url=$(jq -r <<<"$commit_details" '.html_url') || return 1
     local author
@@ -1033,23 +1184,23 @@ send_slack_notice_for_failures_on_merge() {
 
     local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
 
-    local body
-    body=$(cat <<_EOB_
+    # shellcheck disable=SC2016
+    local body='
 {
-    "text": "*Job Name:* $job_name",
+    "text": "*Job Name:* \($job_name)",
     "blocks": [
 		{
 			"type": "header",
 			"text": {
 				"type": "plain_text",
-				"text": "Prow job failure: $job_name"
+				"text": "Prow job failure: \($job_name)"
 			}
 		},
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Commit:* <$commit_url|$commit_msg>\n*Author:* $author\n*Log:* $log_url"
+                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author)\n*Log:* \($log_url)"
             }
         },
 		{
@@ -1057,10 +1208,38 @@ send_slack_notice_for_failures_on_merge() {
 		}
     ]
 }
-_EOB_
-    )
+'
 
-    echo "$body" | jq | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    echo "About to post:"
+    jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
+       --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body"
+
+    jq --null-input --arg job_name "$job_name" --arg commit_url "$commit_url" --arg commit_msg "$commit_msg" \
+       --arg repo "$repo" --arg author "$author" --arg log_url "$log_url" "$body" | \
+    curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+}
+
+save_junit_failure() {
+    if [[ "$#" -ne 3 ]]; then
+        die "missing args. usage: save_junit_failure <class> <description> <details>"
+    fi
+
+    if [[ -z "${ARTIFACT_DIR}" ]]; then
+        info "Warning: save_junit_failure() requires an ARTIFACT_DIR"
+        return
+    fi
+
+    local class="$1"
+    local description="$2"
+    local details="$3"
+
+    cat << EOF > "${ARTIFACT_DIR}/junit-${class}.xml"
+<testsuite name="${class}" tests="1" skipped="0" failures="1" errors="0">
+    <testcase name="${description}" classname="${class}">
+        <failure>${details}</failure>
+    </testcase>
+</testsuite>
+EOF
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

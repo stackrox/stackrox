@@ -81,7 +81,7 @@ const (
 
 func writeOutputInJSONFormat(messages []*central.MsgFromSensor, start, end time.Time, outfile string) {
 	dateFormat := "02.01.15 11:06:39"
-	data, err := json.Marshal(&sensorMessagesJSONOutput{
+	data, err := json.Marshal(&sensorMessageJSONOutput{
 		ScenarioStart:      start.Format(dateFormat),
 		ScenarioEnd:        end.Format(dateFormat),
 		MessagesFromSensor: messages,
@@ -290,7 +290,7 @@ func main() {
 	spyCentral.KillSwitch.Signal()
 }
 
-type sensorMessagesJSONOutput struct {
+type sensorMessageJSONOutput struct {
 	ScenarioStart      string                   `json:"scenario_start"`
 	ScenarioEnd        string                   `json:"scenario_end"`
 	MessagesFromSensor []*central.MsgFromSensor `json:"messages_from_sensor"`

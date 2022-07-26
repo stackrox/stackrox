@@ -1,8 +1,22 @@
 {{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
+{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
+{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
 {{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
+
+{{- $ := . }}
+{{- $pks := .Schema.PrimaryKeys }}
+
+{{- $singlePK := false }}
+{{- if eq (len $pks) 1 }}
+{{ $singlePK = index $pks 0 }}
+{{/*If there are multiple pks, then use the explicitly specified id column.*/}}
+{{- else if .Schema.ID.ColumnName}}
+{{ $singlePK = .Schema.ID }}
+{{- end }}
+{{ $inMigration := ne (index . "Migration") nil}}
 
 package postgres
 
@@ -75,10 +89,6 @@ type Store interface {
     GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
 {{- if not .JoinTable }}
     DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error
-{{- end }}
-{{- if eq .TrimmedType "Policy" }}
-    RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
-    DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
 {{- end }}
 {{- end }}
 
@@ -297,7 +307,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
 			_, err := batchResults.Exec()
 			result = multierror.Append(result, err)
 		}
-		batchResults.Close()
+		if err := batchResults.Close(); err != nil {
+			return err
+		}
 		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
@@ -479,7 +491,9 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     )
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store

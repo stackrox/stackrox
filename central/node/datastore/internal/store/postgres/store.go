@@ -150,16 +150,18 @@ func (s *storeImpl) insertIntoNodes(
 		return nil
 	}
 
+	// DO NOT CHANGE THE ORDER.
+	if err := copyFromNodeComponentEdges(ctx, tx, cloned.GetId(), parts.nodeComponentEdges...); err != nil {
+		return err
+	}
 	if err := copyFromNodeComponents(ctx, tx, parts.components...); err != nil {
 		return err
 	}
-	if err := copyFromNodeComponentEdges(ctx, tx, parts.nodeComponentEdges...); err != nil {
+
+	if err := copyFromNodeComponentCVEEdges(ctx, tx, parts.componentCVEEdges...); err != nil {
 		return err
 	}
-	if err := copyFromNodeCves(ctx, tx, iTime, parts.vulns...); err != nil {
-		return err
-	}
-	return copyFromNodeComponentCVEEdges(ctx, tx, parts.componentCVEEdges...)
+	return copyFromNodeCves(ctx, tx, iTime, parts.vulns...)
 }
 
 func getPartsAsSlice(parts *common.NodeParts) *nodePartsAsSlice {
@@ -216,6 +218,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 		"id",
 		"name",
 		"version",
+		"priority",
 		"riskscore",
 		"topcvss",
 		"serialized",
@@ -231,6 +234,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetVersion(),
+			obj.GetPriority(),
 			obj.GetRiskScore(),
 			obj.GetTopCvss(),
 			serialized,
@@ -259,10 +263,10 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 			inputRows = inputRows[:0]
 		}
 	}
-	return err
+	return removeOrphanedNodeComponent(ctx, tx)
 }
 
-func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponentEdge) error {
+func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string, objs ...*storage.NodeComponentEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
 	copyCols := []string{
@@ -272,12 +276,8 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage
 		"serialized",
 	}
 
-	if len(objs) == 0 {
-		return nil
-	}
-
-	// Copy does not upsert so have to delete first.
-	_, err = tx.Exec(ctx, "DELETE FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", objs[0].GetNodeId())
+	// Copy does not upsert so have to delete first. This also ensures newly orphaned component edges are removed.
+	_, err = tx.Exec(ctx, "DELETE FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", nodeID)
 	if err != nil {
 		return err
 	}
@@ -306,7 +306,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage
 			inputRows = inputRows[:0]
 		}
 	}
-	return err
+	return nil
 }
 
 func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
@@ -335,6 +335,9 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 		ids.Add(obj.GetId())
 	}
 	existingCVEs, err := getCVEs(ctx, tx, ids.AsSlice())
+	if err != nil {
+		return err
+	}
 
 	for idx, obj := range objs {
 		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
@@ -386,13 +389,13 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 			inputRows = inputRows[:0]
 		}
 	}
-	return err
+	return removeOrphanedNodeCVEs(ctx, tx)
 }
 
 func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
-	componentIDsToDelete := set.NewStringSet()
+	deletes := set.NewStringSet()
 	copyCols := []string{
 		"id",
 		"isfixable",
@@ -418,18 +421,18 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 		})
 
 		// Add the id to be deleted.
-		componentIDsToDelete.Add(obj.GetNodeComponentId())
+		deletes.Add(obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// Copy does not upsert so have to delete first.
-			_, err = tx.Exec(ctx, "DELETE FROM "+componentCVEEdgesTable+" WHERE nodecomponentid = ANY($1::text[])", componentIDsToDelete.AsSlice())
+			_, err = tx.Exec(ctx, "DELETE FROM "+componentCVEEdgesTable+" WHERE id = ANY($1::text[])", deletes.AsSlice())
 			if err != nil {
 				return err
 			}
 
 			// Clear the inserts for the next batch
-			componentIDsToDelete = nil
+			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{componentCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
 			if err != nil {
@@ -440,7 +443,24 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 			inputRows = inputRows[:0]
 		}
 	}
-	return err
+	// Due to referential constraint orphaned component-cve edges are removed when orphaned image components are removed.
+	return nil
+}
+
+func removeOrphanedNodeComponent(ctx context.Context, tx pgx.Tx) error {
+	_, err := tx.Exec(ctx, "DELETE FROM "+nodeComponentsTable+" WHERE not exists (select "+nodeComponentEdgesTable+".nodecomponentid from "+nodeComponentEdgesTable+" where "+nodeComponentsTable+".id = "+nodeComponentEdgesTable+".nodecomponentid)")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func removeOrphanedNodeCVEs(ctx context.Context, tx pgx.Tx) error {
+	_, err := tx.Exec(ctx, "DELETE FROM "+nodeCVEsTable+" WHERE not exists (select "+componentCVEEdgesTable+".nodecveid from "+componentCVEEdgesTable+" where "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bool, error) {
@@ -791,12 +811,12 @@ func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeID string
 	}
 
 	// Delete orphaned node components.
-	if _, err := tx.Exec(ctx, "delete from "+nodeComponentsTable+" where not exists (select "+nodeComponentEdgesTable+".nodecomponentid FROM "+nodeComponentEdgesTable+")"); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+nodeComponentsTable+" where not exists (select "+nodeComponentEdgesTable+".nodecomponentid FROM "+nodeComponentEdgesTable+" where "+nodeComponentEdgesTable+".nodecomponentid = "+nodeComponentsTable+".id)"); err != nil {
 		return err
 	}
 
 	// Delete orphaned cves.
-	if _, err := tx.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+componentCVEEdgesTable+".nodecveid FROM "+componentCVEEdgesTable+")"); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+componentCVEEdgesTable+".nodecveid FROM "+componentCVEEdgesTable+" where "+componentCVEEdgesTable+".nodecveid = "+nodeCVEsTable+".id)"); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)

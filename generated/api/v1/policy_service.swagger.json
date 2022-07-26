@@ -582,76 +582,6 @@
           "PolicyService"
         ]
       }
-    },
-    "/v1/policyCategories/{category}": {
-      "delete": {
-        "summary": "DeletePolicyCategory removes the given policy category.",
-        "operationId": "PolicyService_DeletePolicyCategory",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "category",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "PolicyService"
-        ]
-      }
-    },
-    "/v1/policyCategories/{oldCategory}": {
-      "put": {
-        "summary": "RenamePolicyCategory renames the given policy category.",
-        "operationId": "PolicyService_RenamePolicyCategory",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "oldCategory",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1RenamePolicyCategoryRequest"
-            }
-          }
-        ],
-        "tags": [
-          "PolicyService"
-        ]
-      }
     }
   },
   "definitions": {
@@ -1305,17 +1235,6 @@
         },
         "hasNestedFields": {
           "type": "boolean"
-        }
-      }
-    },
-    "v1RenamePolicyCategoryRequest": {
-      "type": "object",
-      "properties": {
-        "oldCategory": {
-          "type": "string"
-        },
-        "newCategory": {
-          "type": "string"
         }
       }
     },

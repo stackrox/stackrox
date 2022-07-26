@@ -4,11 +4,17 @@
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
+source "$ROOT/tests/e2e/lib.sh"
 
 set -euo pipefail
 
 run_tests_part_2() {
     info "QA Automation Platform Part 2"
+
+    if [[ ! -f "${STATE_DEPLOYED}" ]]; then
+        info "Skipping part 2 tests due to earlier failure"
+        exit 0
+    fi
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 

@@ -12,8 +12,11 @@ import (
 // Databases encapsulates all the different databases we are using
 // This struct helps avoid adding a new parameter when we switch DBs
 type Databases struct {
-	BoltDB     *bolt.DB
-	RocksDB    *gorocksdb.DB
+	BoltDB *bolt.DB
+
+	// TODO(cdu): deprecate this and change to use *rocksdb.RocksDB.
+	RocksDB *gorocksdb.DB
+
 	PkgRocksDB *rocksdb.RocksDB
 	GormDB     *gorm.DB
 	PostgresDB *pgxpool.Pool

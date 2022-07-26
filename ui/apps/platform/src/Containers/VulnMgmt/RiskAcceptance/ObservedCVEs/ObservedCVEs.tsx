@@ -44,7 +44,7 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
     });
 
     const itemCount = data?.image?.vulnCount || 0;
-    const rows = data?.image?.imageVulnerabilities || [];
+    const rows = data?.image?.vulns || [];
     const registry = data?.image?.name?.registry || '';
     const remote = data?.image?.name?.remote || '';
     const tag = data?.image?.name?.tag || '';

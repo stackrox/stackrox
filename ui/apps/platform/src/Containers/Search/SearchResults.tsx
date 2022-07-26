@@ -1,10 +1,10 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import capitalize from 'lodash/capitalize';
-import lowerCase from 'lodash/lowerCase';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import {
     Bullseye,
+    Button,
     Flex,
     FlexItem,
     Tabs,
@@ -17,27 +17,20 @@ import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-tab
 import { getUrlQueryStringForSearchFilter, searchOptionsToSearchFilter } from 'utils/searchUtils';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
+import { SearchCategory, SearchResult } from 'services/SearchService';
 import { SearchEntry } from 'types/search';
 import { SortDirection } from 'types/table';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
-import RelatedLink from './RelatedLink';
 
-type GlobalSearchResult = {
-    id: string;
-    name: string;
-    category: string;
-    fieldToMatch: Record<string, unknown>;
-    score: number;
-    location: string;
-};
+import searchCategoryDescriptorMap from './searchCategoryDescriptorMap';
 
 type SearchTab = {
     text: string;
-    category: string;
+    category: SearchCategory;
     disabled: boolean;
 };
 interface StateProps {
-    globalSearchResults: GlobalSearchResult[];
+    globalSearchResults: SearchResult[];
     globalSearchOptions: SearchEntry[];
     tabs: SearchTab[];
     defaultTab: SearchTab | null;
@@ -45,7 +38,6 @@ interface StateProps {
 
 interface DispatchProps {
     setGlobalSearchCategory: (category: string) => void;
-    passthroughGlobalSearchOptions: (searchOptions: SearchEntry[], category: string) => void;
 }
 
 interface PassedProps {
@@ -54,10 +46,10 @@ interface PassedProps {
 
 export type SearchResultsProps = StateProps & DispatchProps & PassedProps;
 
-const defaultTabs = [
+const defaultTabs: SearchTab[] = [
     {
         text: 'All',
-        category: '',
+        category: 'SEARCH_UNSET',
         disabled: false,
     },
     {
@@ -87,50 +79,6 @@ const defaultTabs = [
     },
 ];
 
-const mapping = {
-    IMAGES: {
-        filterOn: ['RISK', 'VIOLATIONS'],
-        viewOn: ['IMAGES'],
-        name: 'Image',
-    },
-    DEPLOYMENTS: {
-        filterOn: ['VIOLATIONS', 'NETWORK'],
-        viewOn: ['RISK'],
-        name: 'Deployment',
-    },
-    POLICIES: {
-        filterOn: ['VIOLATIONS'],
-        viewOn: ['POLICIES'],
-        name: 'Policy',
-    },
-    ALERTS: {
-        filterOn: [],
-        viewOn: ['VIOLATIONS'],
-        name: 'Policy',
-    },
-    SECRETS: {
-        filterOn: ['RISK'],
-        viewOn: ['SECRETS'],
-        name: 'Secret',
-    },
-};
-
-const filterOnMapping = {
-    RISK: 'DEPLOYMENTS',
-    VIOLATIONS: 'ALERTS',
-    NETWORK: 'NETWORK',
-};
-
-const getLink = (item: string, id?: string) => {
-    let link = '/main';
-    if (item === 'SECRETS') {
-        link = `${link}/configmanagement`;
-    } else if (item === 'IMAGES') {
-        link = `${link}/vulnerability-management`;
-    }
-    return `${link}/${lowerCase(item)}${id ? `/${id}` : ''}`;
-};
-
 const INITIAL_SORT_INDEX = 1; // Type column
 const INITIAL_SORT_DIRECTION = 'asc'; // A->Z
 
@@ -139,7 +87,6 @@ function SearchResults({
     globalSearchResults,
     globalSearchOptions,
     setGlobalSearchCategory,
-    passthroughGlobalSearchOptions,
     tabs,
     defaultTab = null,
 }: SearchResultsProps): ReactElement {
@@ -148,7 +95,7 @@ function SearchResults({
     // sort direction of the currently active column
     const [activeSortDirection, setActiveSortDirection] =
         useState<SortDirection>(INITIAL_SORT_DIRECTION);
-    const [sortedRows, setSortedRows] = useState<GlobalSearchResult[]>([]);
+    const [sortedRows, setSortedRows] = useState<SearchResult[]>([]);
 
     useEffect(() => {
         const newSortedResults = onSort(
@@ -160,10 +107,10 @@ function SearchResults({
     }, [globalSearchResults]);
 
     function onSort(
-        currentRows: GlobalSearchResult[],
+        currentRows: SearchResult[],
         index: number,
         direction: SortDirection
-    ): GlobalSearchResult[] {
+    ): SearchResult[] {
         setActiveSortIndex(index);
         setActiveSortDirection(direction);
         // sorts the rows
@@ -194,42 +141,6 @@ function SearchResults({
         const selectedTab = defaultTabs[eventKey];
         setGlobalSearchCategory(selectedTab.category);
     }
-
-    const amendSearchOptions = (searchCategory: string, name: string): SearchEntry[] => {
-        if (name) {
-            const searchModifier = `${mapping[searchCategory].name as string}:`;
-            return [
-                ...globalSearchOptions,
-                {
-                    value: searchModifier,
-                    label: searchModifier,
-                    type: 'categoryOption',
-                },
-                {
-                    value: name,
-                    label: name,
-                    className: 'Select-create-option-placeholder',
-                } as SearchEntry,
-            ];
-        }
-        return [...globalSearchOptions];
-    };
-
-    const onLinkHandler =
-        (searchCategory: string, category: string, toURL: string, name: string) => () => {
-            const searchOptions = amendSearchOptions(searchCategory, name);
-            passthroughGlobalSearchOptions(searchOptions, category);
-            onClose(toURL);
-        };
-
-    const onFilterLinkHandler =
-        (searchCategory: string, category: string, toURL: string, name: string) => () => {
-            const searchOptions = amendSearchOptions(searchCategory, name);
-            passthroughGlobalSearchOptions(searchOptions, category);
-            const searchFilter = searchOptionsToSearchFilter(searchOptions);
-            const queryString = getUrlQueryStringForSearchFilter(searchFilter);
-            onClose(`${toURL}?${queryString}`);
-        };
 
     const contents = sortedRows.length ? (
         <TableComposable aria-label="Matches" variant="compact" isStickyHeader>
@@ -286,68 +197,23 @@ function SearchResults({
                             <Td key="resourceType" dataLabel="Type" data-testid="resourceType">
                                 {capitalize(category)}
                             </Td>
-                            <Td
-                                key="resourceViewOn"
-                                dataLabel="View On:"
-                                data-testid="resourceViewOn"
-                            >
+                            <Td dataLabel="View On:">
                                 <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                                    {!mapping[category]?.viewOn ? (
-                                        <FlexItem key="na">
-                                            <RelatedLink data-testid="view-on-label-chip" id={id}>
-                                                N/A
-                                            </RelatedLink>
-                                        </FlexItem>
-                                    ) : (
-                                        mapping[category].viewOn.map((item) => (
-                                            <FlexItem key={item}>
-                                                <RelatedLink
-                                                    data-testid="view-on-label-chip"
-                                                    id={id}
-                                                    onClick={onLinkHandler(
-                                                        category,
-                                                        item,
-                                                        getLink(item, id),
-                                                        name
-                                                    )}
-                                                >
-                                                    {item}
-                                                </RelatedLink>
-                                            </FlexItem>
-                                        ))
-                                    )}
+                                    <ViewLinks
+                                        id={id}
+                                        onClose={onClose}
+                                        searchCategory={category}
+                                    />
                                 </Flex>
                             </Td>
-                            <Td
-                                key="resourceFilterOn"
-                                dataLabel="Filter On:"
-                                data-testid="resourceFilterOn"
-                            >
+                            <Td dataLabel="Filter On:">
                                 <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                                    {!mapping[category]?.filterOn ? (
-                                        <FlexItem key="na">
-                                            <RelatedLink data-testid="view-on-label-chip" id={id}>
-                                                N/A
-                                            </RelatedLink>
-                                        </FlexItem>
-                                    ) : (
-                                        mapping[category].filterOn.map((item) => (
-                                            <FlexItem key={item}>
-                                                <RelatedLink
-                                                    data-testid="filter-on-label-chip"
-                                                    id={id}
-                                                    onClick={onFilterLinkHandler(
-                                                        category,
-                                                        filterOnMapping[item],
-                                                        getLink(item),
-                                                        name
-                                                    )}
-                                                >
-                                                    {item}
-                                                </RelatedLink>
-                                            </FlexItem>
-                                        ))
-                                    )}
+                                    <FilterLinks
+                                        filterValue={name}
+                                        globalSearchOptions={globalSearchOptions}
+                                        onClose={onClose}
+                                        searchCategory={category}
+                                    />
                                 </Flex>
                             </Td>
                         </Tr>
@@ -369,7 +235,7 @@ function SearchResults({
                 <Tabs key="tab-bar" activeKey={activeTabKey} onSelect={onTabClick}>
                     {tabs.map((tab, index) => (
                         <Tab
-                            key={tab.category || tab.text}
+                            key={tab.category}
                             eventKey={index}
                             title={<TabTitleText>{tab.text}</TabTitleText>}
                         />
@@ -379,9 +245,9 @@ function SearchResults({
                     <TabContent
                         eventKey={index}
                         className="overflow-auto"
-                        id={tab.category || tab.text}
+                        id={tab.category}
                         aria-label={tab.text}
-                        key={tab.category || tab.text}
+                        key={tab.category}
                         hidden={index !== activeTabKey}
                     >
                         {contents}
@@ -430,6 +296,111 @@ const getTabs = createSelector(
     }
 );
 
+function NotApplicable(): ReactElement {
+    return (
+        <FlexItem>
+            <Button variant="tertiary" isSmall isDisabled>
+                N/A
+            </Button>
+        </FlexItem>
+    );
+}
+
+type ViewLinksProps = {
+    id: string;
+    onClose: (linkPath: string) => void;
+    searchCategory: SearchCategory;
+};
+
+function ViewLinks({ id, onClose, searchCategory }: ViewLinksProps): ReactElement {
+    const searchCategoryDescriptor = searchCategoryDescriptorMap[searchCategory];
+
+    if (searchCategoryDescriptor) {
+        const { viewOn } = searchCategoryDescriptor;
+
+        if (viewOn.length !== 0) {
+            return (
+                <>
+                    {viewOn.map(({ basePath, linkText }) => (
+                        <FlexItem key={linkText}>
+                            <Button
+                                variant="tertiary"
+                                isSmall
+                                onClick={() => {
+                                    onClose(id ? `${basePath}/${id}` : basePath);
+                                }}
+                            >
+                                {linkText}
+                            </Button>
+                        </FlexItem>
+                    ))}
+                </>
+            );
+        }
+    }
+
+    return <NotApplicable />;
+}
+
+type FilterLinksProps = {
+    filterValue: string;
+    globalSearchOptions: SearchEntry[];
+    onClose: (linkPath: string) => void;
+    searchCategory: SearchCategory;
+};
+
+function FilterLinks({
+    filterValue,
+    globalSearchOptions,
+    onClose,
+    searchCategory,
+}: FilterLinksProps): ReactElement {
+    const searchCategoryDescriptor = searchCategoryDescriptorMap[searchCategory];
+
+    if (searchCategoryDescriptor) {
+        const { filterCategory, filterOn } = searchCategoryDescriptor;
+
+        if (filterOn.length !== 0) {
+            const searchOptions: SearchEntry[] = filterValue
+                ? [
+                      ...globalSearchOptions,
+                      {
+                          value: filterCategory,
+                          label: filterCategory,
+                          type: 'categoryOption',
+                      },
+                      {
+                          value: filterValue,
+                          label: filterValue,
+                      },
+                  ]
+                : globalSearchOptions;
+            const searchFilter = searchOptionsToSearchFilter(searchOptions);
+            const queryString = getUrlQueryStringForSearchFilter(searchFilter);
+
+            return (
+                <>
+                    {filterOn.map(({ basePath, linkText }) => (
+                        <FlexItem key={linkText}>
+                            <Button
+                                variant="tertiary"
+                                isSmall
+                                onClick={() => {
+                                    onClose(`${basePath}?${queryString}`);
+                                }}
+                            >
+                                {linkText}
+                            </Button>
+                        </FlexItem>
+                    ))}
+                </>
+            );
+        }
+    }
+
+    return <NotApplicable />;
+}
+
 const getDefaultTab = createSelector(
     [selectors.getGlobalSearchCategory],
     (globalSearchCategory) => {
@@ -452,10 +423,6 @@ const mapDispatchToProps = (dispatch) => ({
         // TODO: type redux props
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         dispatch(globalSearchActions.setGlobalSearchCategory(category)),
-    passthroughGlobalSearchOptions: (searchOptions, category) =>
-        // TODO: type redux props
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        dispatch(globalSearchActions.passthroughGlobalSearchOptions(searchOptions, category)),
 });
 
 export default connect<StateProps, DispatchProps, PassedProps>(
