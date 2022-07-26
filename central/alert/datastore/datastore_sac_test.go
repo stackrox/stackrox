@@ -117,8 +117,7 @@ func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
 	s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
 	s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
 
-	testedVerb := "upsert"
-	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {

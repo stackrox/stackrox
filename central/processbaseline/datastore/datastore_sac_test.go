@@ -105,8 +105,7 @@ func (s *processBaselineSACTestSuite) deleteProcessBaseline(id string) {
 }
 
 func (s *processBaselineSACTestSuite) TestAddProcessBaseline() {
-	testedVerb := "add"
-	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbAdd)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -126,8 +125,7 @@ func (s *processBaselineSACTestSuite) TestAddProcessBaseline() {
 }
 
 func (s *processBaselineSACTestSuite) TestUpsertProcessBaseline() {
-	testedVerb := "upsert"
-	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -153,8 +151,7 @@ func (s *processBaselineSACTestSuite) TestUpdateProcessBaselineElements() {
 	s.Require().NoError(err)
 	s.testProcessBaselineIDs = append(s.testProcessBaselineIDs, processBaseline.GetId())
 
-	testedVerb := "update"
-	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpdate)
 
 	for name, c := range cases {
 		s.Run(name, func() {

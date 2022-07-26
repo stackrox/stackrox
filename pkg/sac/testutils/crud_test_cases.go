@@ -6,6 +6,13 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 )
 
+// Verbs for the Generic*SACUpsertTestCases functions.
+const (
+	VerbAdd    = "add"
+	VerbUpdate = "update"
+	VerbUpsert = "upsert"
+)
+
 // SACCrudTestCase is used within SAC tests. It describes the expected behaviour of a datastore CRUD function for
 // a given scoped context. The contexts are defined in the current package in the test_contexts.go file and
 // are referred to by their key in test cases.

@@ -201,8 +201,7 @@ func (s *networkPolicySACSuite) TestCountMatchingNetworkPolicies() {
 }
 
 func (s *networkPolicySACSuite) TestUpsertNetworkPolicy() {
-	testedVerb := "upsert"
-	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {

@@ -186,8 +186,7 @@ func (s *networkBaselineDatastoreSACTestSuite) TestWalkNetworkBaseline() {
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) TestUpsertNetworkBaselines() {
-	testedVerb := "upsert"
-	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {

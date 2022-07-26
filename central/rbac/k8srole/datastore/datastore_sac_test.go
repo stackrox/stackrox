@@ -101,8 +101,7 @@ func (s *k8sRoleSACSuite) deleteK8sRole(id string) {
 }
 
 func (s *k8sRoleSACSuite) TestUpsertRole() {
-	testedVerb := "upsert"
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {

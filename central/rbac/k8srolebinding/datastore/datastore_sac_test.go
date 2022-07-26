@@ -102,8 +102,7 @@ func (s *k8sRoleBindingSACSuite) deleteK8sRoleBinding(id string) {
 }
 
 func (s *k8sRoleBindingSACSuite) TestUpsertRoleBinding() {
-	testedVerb := "upsert"
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {

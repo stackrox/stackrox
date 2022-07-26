@@ -87,8 +87,7 @@ func (s *processBaselineResultsDatastoreSACSuite) deleteProcessBaselineResult(id
 }
 
 func (s *processBaselineResultsDatastoreSACSuite) TestUpsertBaselineResults() {
-	testedVerb := "upsert"
-	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {

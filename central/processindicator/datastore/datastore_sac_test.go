@@ -103,8 +103,7 @@ func (s *processIndicatorDatastoreSACSuite) deleteProcessIndicator(id string) {
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestAddProcessIndicators() {
-	testedVerb := "add"
-	cases := sacTestUtils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
+	cases := sacTestUtils.GenericGlobalSACUpsertTestCases(s.T(), sacTestUtils.VerbAdd)
 
 	for name, c := range cases {
 		s.Run(name, func() {

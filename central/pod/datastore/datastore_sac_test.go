@@ -94,8 +94,7 @@ func (s *podDatastoreSACSuite) deletePod(id string) {
 }
 
 func (s *podDatastoreSACSuite) TestUpsertPod() {
-	testedVerb := "upsert"
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {

@@ -100,8 +100,7 @@ func (s *secretDatastoreSACTestSuite) cleanupSecret(ID string) {
 }
 
 func (s *secretDatastoreSACTestSuite) TestUpsertSecret() {
-	testedVerb := "upsert"
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {
