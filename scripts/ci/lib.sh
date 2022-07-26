@@ -1219,6 +1219,29 @@ send_slack_notice_for_failures_on_merge() {
     curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
+save_junit_failure() {
+    if [[ "$#" -ne 3 ]]; then
+        die "missing args. usage: save_junit_failure <class> <description> <details>"
+    fi
+
+    if [[ -z "${ARTIFACT_DIR}" ]]; then
+        info "Warning: save_junit_failure() requires an ARTIFACT_DIR"
+        return
+    fi
+
+    local class="$1"
+    local description="$2"
+    local details="$3"
+
+    cat << EOF > "${ARTIFACT_DIR}/junit-${class}.xml"
+<testsuite name="${class}" tests="1" skipped="0" failures="1" errors="0">
+    <testcase name="${description}" classname="${class}">
+        <failure>${details}</failure>
+    </testcase>
+</testsuite>
+EOF
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         die "When invoked at the command line a method is required."

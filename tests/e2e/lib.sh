@@ -7,6 +7,9 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
+# State
+STATE_DEPLOYED="/tmp/state_deployed"
+
 source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 
@@ -24,6 +27,8 @@ deploy_stackrox() {
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     sensor_wait
+
+    touch "${STATE_DEPLOYED}"
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
@@ -398,6 +403,14 @@ db_backup_and_restore_test() {
     fi
 
     [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
+}
+
+handle_e2e_progress_failures() {
+    info "Checking for deployment failure"
+
+    if [[ ! -f "${STATE_DEPLOYED}" ]]; then
+        save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
