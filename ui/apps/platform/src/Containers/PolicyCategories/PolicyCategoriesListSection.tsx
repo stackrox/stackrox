@@ -57,15 +57,15 @@ function PolicyCategoriesListSection({
                 <FlexItem flex={{ default: 'flex_1' }}>
                     <PageSection isFilled variant="light" className="pf-u-h-100">
                         <Flex direction={{ default: 'column' }}>
-                            <Flex
-                                justifyContent={{ default: 'justifyContentSpaceBetween' }}
-                                fullWidth={{ default: 'fullWidth' }}
-                            >
-                                <Title headingLevel="h3">Categories</Title>
-                                <Title headingLevel="h3">
-                                    {filteredCategories.length} results found
-                                </Title>
-                            </Flex>
+                            <Title headingLevel="h2">
+                                <Flex
+                                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                                    fullWidth={{ default: 'fullWidth' }}
+                                >
+                                    <span>Categories</span>
+                                    <span>{filteredCategories.length} results found</span>
+                                </Flex>
+                            </Title>
                             <Flex
                                 justifyContent={{ default: 'justifyContentSpaceBetween' }}
                                 fullWidth={{ default: 'fullWidth' }}
