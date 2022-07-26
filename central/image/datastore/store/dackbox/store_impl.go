@@ -5,6 +5,7 @@ import (
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
 	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	cveUtil "github.com/stackrox/rox/central/cve/utils"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type storeImpl struct {
@@ -156,6 +158,11 @@ func (b *storeImpl) GetImageMetadata(_ context.Context, id string) (image *stora
 		return nil, false, err
 	}
 	return image, image != nil, err
+}
+
+func (b *storeImpl) GetManyImageMetadata(ctx context.Context, id []string) ([]*storage.Image, []int, error) {
+	utils.Must(errors.New("Unexpected call to GetManyImageMetadata when running on Postgres"))
+	return nil, nil, nil
 }
 
 // GetImagesBatch returns images with given ids.

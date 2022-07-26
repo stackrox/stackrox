@@ -14,8 +14,10 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.Image, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error)
-	// GetImageMetadata gets the image without scan/component data.
+
+	// GetImageMetadata and GetImageMetadata returns the image without scan/component data.
 	GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error)
+	GetManyImageMetadata(ctx context.Context, id []string) ([]*storage.Image, []int, error)
 
 	Upsert(ctx context.Context, image *storage.Image) error
 	Delete(ctx context.Context, id string) error
