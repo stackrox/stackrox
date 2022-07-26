@@ -14,13 +14,6 @@ import {
     getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
 
-// We want to override some values because the imageComponent object has different field names
-export const imageComponentCountKeyMap = {
-    ...defaultCountKeyMap,
-    [entityTypes.CVE]: 'vulnCount: imageVulnerabilityCount',
-    [entityTypes.IMAGE_CVE]: 'vulnCount: imageVulnerabilityCount',
-};
-
 const VulnMgmtEntityImageComponent = ({
     entityId,
     entityListType,
@@ -58,7 +51,7 @@ const VulnMgmtEntityImageComponent = ({
             query getComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
                 result: imageComponent(id: $id) {
                     id
-                    ${imageComponentCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
+                    ${defaultCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
                     ${listFieldName}(query: $query, scopeQuery: $scopeQuery, pagination: $pagination) { ...${fragmentName} }
                     unusedVarSink(query: $policyQuery)
                     unusedVarSink(query: $scopeQuery)
