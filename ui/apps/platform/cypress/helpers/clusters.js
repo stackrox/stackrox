@@ -2,6 +2,7 @@ import * as api from '../constants/apiEndpoints';
 import { clustersUrl, selectors } from '../constants/ClustersPage';
 
 import { visitFromLeftNavExpandable } from './nav';
+import { interactAndWaitForResponses } from './request';
 import { visit } from './visit';
 
 const routeMatcherMap = {
@@ -20,6 +21,16 @@ const routeMatcherMap = {
 };
 
 // Navigation
+
+/*
+ * Reach clusters by interaction from another container.
+ * For example, click View All button from System Health.
+ */
+export function reachClusters(interactionCallback, staticResponseMap) {
+    interactAndWaitForResponses(interactionCallback, { routeMatcherMap }, staticResponseMap);
+
+    cy.get(selectors.clustersListHeading).contains('Clusters');
+}
 
 export function visitClustersFromLeftNav() {
     visitFromLeftNavExpandable('Platform Configuration', 'Clusters', { routeMatcherMap });
