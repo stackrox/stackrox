@@ -206,19 +206,6 @@ func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
 	assert.Nil(t, result)
 }
 
-func TestSomething(t *testing.T) {
-	cimg, err := imgUtils.GenerateImageFromString("docker.io/danielrox/testingprivate:1.0.0")
-	require.NoError(t, err, "creating test image")
-	img := types.ToImage(cimg)
-
-	f := newCosignPublicKeySignatureFetcher()
-	reg := &mockRegistry{cfg: &registryTypes.Config{RegistryHostname: "docker.io", Username: "danielrox", Password: "v4LeM8WmUHyT$"}}
-
-	result, err := f.FetchSignatures(context.Background(), img, reg)
-	assert.NoError(t, err)
-	assert.Nil(t, result)
-}
-
 func TestIsMissingSignatureError(t *testing.T) {
 	notFoundErr := dockerRegistry.HttpStatusError{
 		Response: &http.Response{
