@@ -69,7 +69,6 @@ func init() {
 		schema.AddQuery("image(id: ID!): Image"),
 		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
 		schema.AddQuery("imageCount(query: String): Int!"),
-		schema.AddExtraResolver("EmbeddedImageScanComponent", "layerIndex: Int"),
 		schema.AddEnumType("ImageWatchStatus", imageWatchStatuses),
 	)
 }
