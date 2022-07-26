@@ -283,7 +283,7 @@ func (s *Schema) ID() Field {
 			return f
 		}
 	}
-	// If there is only one primary key, that is considered Id column by default even if not specified explicitly.
+	// If there is only one primary key, that is considered ID column by default even if not specified explicitly.
 	pks := s.PrimaryKeys()
 	if len(pks) == 1 {
 		return pks[0]

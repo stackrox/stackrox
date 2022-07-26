@@ -27,9 +27,7 @@ func (m *NamespaceStore) ProcessEvent(action central.ResourceAction, obj interfa
 	}
 
 	switch action {
-	case central.ResourceAction_CREATE_RESOURCE:
-		return
-	case central.ResourceAction_UPDATE_RESOURCE:
+	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		return
 	case central.ResourceAction_REMOVE_RESOURCE:
 		// Namespace remove event contains full namespace metadata.

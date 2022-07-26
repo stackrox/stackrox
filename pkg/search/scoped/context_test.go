@@ -53,3 +53,37 @@ func (s *scopedContextTestSuite) TestGetScopeAtLevel() {
 	s.Equal(false, hasDepScope)
 	s.Equal(Scope{}, deploymentScope)
 }
+
+func (s *scopedContextTestSuite) TestGetAllScopes() {
+	ctx := context.Background()
+	clusterScope := Scope{
+		ID:    "c1",
+		Level: v1.SearchCategory_CLUSTERS,
+	}
+	nsScope := Scope{
+		ID:    "n1",
+		Level: v1.SearchCategory_NAMESPACES,
+	}
+
+	clusterCtx := Context(ctx, clusterScope)
+	nsCtx := Context(clusterCtx, nsScope)
+
+	scopes, hasScope := GetAllScopes(ctx)
+	s.Equal(false, hasScope)
+	s.Nil(scopes)
+
+	scopes, hasScope = GetAllScopes(nsCtx)
+	s.Equal(true, hasScope)
+	nsScope.Parent = &clusterScope
+	s.ElementsMatch([]Scope{clusterScope, nsScope}, scopes)
+
+	deploymentScope := Scope{
+		ID:    "d1",
+		Level: v1.SearchCategory_DEPLOYMENTS,
+	}
+	depCtx := Context(nsCtx, deploymentScope)
+	scopes, hasScope = GetAllScopes(depCtx)
+	s.Equal(true, hasScope)
+	deploymentScope.Parent = &nsScope
+	s.ElementsMatch([]Scope{clusterScope, nsScope, deploymentScope}, scopes)
+}
