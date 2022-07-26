@@ -221,7 +221,7 @@ func getContainer(workload ContainerWorkload) corev1.Container {
 		suffix := rand.Intn(workload.PreloadedImages) + 1
 		valStr := strconv.Itoa(suffix)
 		if padding := 5 - len(valStr); padding != 0 {
-			valStr = strings.Repeat("0", padding)
+			valStr = strings.Repeat("0", padding) + valStr
 		}
 		img := fixtures.GetRandomImage()
 		img.ID = "sha256:7f689a2fedd0257fcb1ed3b1e66aa4ceff2ce53d98f0aac028343a52554" + valStr
