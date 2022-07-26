@@ -21,7 +21,7 @@ export const nodeComponentCountKeyMap = {
     [entityTypes.NODE_CVE]: 'vulnCount: nodeVulnerabilityCount',
 };
 
-const VulnMgmtNodeComponent = ({
+const VulnMgmtEntityNodeComponent = ({
     entityId,
     entityListType,
     search,
@@ -42,7 +42,7 @@ const VulnMgmtNodeComponent = ({
                 fixedIn
                 location(query: $scopeQuery)
                 priority
-                vulnCount: nodeVulnerabilityCount(query: $query, scopeQuery: $scopeQuery)
+                nodeVulnerabilityCount(query: $query, scopeQuery: $scopeQuery)
                 nodeCount(query: $query)
                 topVuln: topNodeVulnerability {
                     cvss
@@ -98,4 +98,4 @@ const VulnMgmtNodeComponent = ({
     );
 };
 
-export default VulnMgmtNodeComponent;
+export default VulnMgmtEntityNodeComponent;
