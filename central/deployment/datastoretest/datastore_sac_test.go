@@ -532,7 +532,8 @@ func (s *deploymentDatastoreSACSuite) setupSearchTest() {
 		if _, ok := pushedNamespaces[clusterID][namespaceName]; !ok {
 			namespace := fixtures.GetNamespace(clusterID, clusterID, namespaceName)
 			pushedNamespaces[clusterID][namespaceName] = namespace
-			s.namespaceStore.AddNamespace(sac.WithAllAccess(context.Background()), namespace)
+			err := s.namespaceStore.AddNamespace(sac.WithAllAccess(context.Background()), namespace)
+			s.NoError(err)
 			s.testNamespaceIDs = append(s.testNamespaceIDs, namespace.GetId())
 		}
 		d.NamespaceId = pushedNamespaces[clusterID][namespaceName].GetId()
