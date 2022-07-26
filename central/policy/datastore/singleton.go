@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/policy/store/boltdb"
 	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
 	policyUtils "github.com/stackrox/rox/central/policy/utils"
+	categoriesDS "github.com/stackrox/rox/central/policycategory/datastore"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
@@ -41,8 +42,9 @@ func initialize() {
 
 	clusterDatastore := clusterDS.Singleton()
 	notifierDatastore := notifierDS.Singleton()
+	categoriesDatastore := categoriesDS.Singleton()
 
-	ad = New(storage, indexer, searcher, clusterDatastore, notifierDatastore)
+	ad = New(storage, indexer, searcher, clusterDatastore, notifierDatastore, categoriesDatastore)
 }
 
 // Singleton provides the interface for non-service external interaction.
