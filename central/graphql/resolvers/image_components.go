@@ -46,10 +46,6 @@ func init() {
 		schema.AddQuery("imageComponent(id: ID): ImageComponent"),
 		schema.AddQuery("imageComponents(query: String, scopeQuery: String, pagination: Pagination): [ImageComponent!]!"),
 		schema.AddQuery("imageComponentCount(query: String): Int!"),
-
-		// TODO
-		schema.AddExtraResolver("ImageScan", `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
-		schema.AddExtraResolver("ImageScan", `componentCount(query: String): Int!`),
 	)
 }
 
@@ -328,6 +324,7 @@ func (resolver *imageComponentResolver) ImageVulnerabilities(ctx context.Context
 
 func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "LastScanned")
+	log.Infof("Context inside scan.ImageComponents.LastScanned : %v", ctx)
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return nil, err
