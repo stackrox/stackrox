@@ -28,7 +28,6 @@ function PolicyCategorySidePanel({
     const formik = useFormik({
         initialValues: selectedCategory,
         onSubmit: (values, { setSubmitting }) => {
-            console.log('onSumbit');
             setSubmitting(false);
             const { id, name } = values;
             renamePolicyCategory(id, name)
