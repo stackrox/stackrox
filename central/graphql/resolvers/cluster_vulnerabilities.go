@@ -47,6 +47,8 @@ func init() {
 type ClusterVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
+	ClusterCount(ctx context.Context, args RawQuery) (int32, error)
+	Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error)
 	VulnerabilityType() string
 	VulnerabilityTypes() []string
 }
