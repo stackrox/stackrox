@@ -48,6 +48,10 @@ jest.mock('Containers/Dashboard/PatternFly/hooks/useAlertGroups', () => {
     };
 });
 
+beforeEach(() => {
+    localStorage.clear();
+});
+
 const setup = () => {
     const user = userEvent.setup();
     const utils = renderWithRouter(<ViolationsByPolicyCategory />);
