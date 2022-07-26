@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
@@ -25,7 +24,7 @@ var (
 
 // FieldMetadata contains the policy criteria fields and their metadata
 type FieldMetadata struct {
-	fieldsToQB map[string]*MetadataAndQB
+	fieldsToQB map[string]*metadataAndQB
 }
 
 // FieldMetadataSingleton is a singleton which contains metadata about each policy criteria field
@@ -57,8 +56,7 @@ const (
 	KubeEvent = "kubeEvent"
 )
 
-// MetadataAndQB contains the policy field metadata
-type MetadataAndQB struct {
+type metadataAndQB struct {
 	operatorsForbidden bool
 	negationForbidden  bool
 	qb                 querybuilders.QueryBuilder
@@ -68,7 +66,7 @@ type MetadataAndQB struct {
 	fieldTypes         []RuntimeFieldType
 }
 
-func (f *FieldMetadata) findField(fieldName string) (*MetadataAndQB, error) {
+func (f *FieldMetadata) findField(fieldName string) (*metadataAndQB, error) {
 	field := f.fieldsToQB[fieldName]
 	if field == nil {
 		return nil, errNoSuchField
@@ -103,7 +101,7 @@ func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
 }
 
 // findFieldMetadata searches for a policy criteria field by name and returns the field metadata
-func (f *FieldMetadata) findFieldMetadata(fieldName string, config *validateConfiguration) (*MetadataAndQB, error) {
+func (f *FieldMetadata) findFieldMetadata(fieldName string, config *validateConfiguration) (*metadataAndQB, error) {
 	field := f.fieldsToQB[fieldName]
 	if field == nil {
 		return nil, errNoSuchField
@@ -113,8 +111,8 @@ func (f *FieldMetadata) findFieldMetadata(fieldName string, config *validateConf
 
 func newFieldMetadata(qb querybuilders.QueryBuilder, contextFields violationmessages.ContextQueryFields,
 	valueRegex func(configuration *validateConfiguration) *regexp.Regexp, source []storage.EventSource,
-	fieldTypes []RuntimeFieldType, options ...option) *MetadataAndQB {
-	m := &MetadataAndQB{
+	fieldTypes []RuntimeFieldType, options ...option) *metadataAndQB {
+	m := &metadataAndQB{
 		qb:                 qb,
 		contextFields:      contextFields,
 		valueRegex:         valueRegex,
@@ -159,20 +157,9 @@ func (f *FieldMetadata) registerFieldMetadataConditionally(
 
 }
 
-// ForEachFieldMetadata executes a given function for each field metadata
-func (f *FieldMetadata) ForEachFieldMetadata(execFunc func(string, *MetadataAndQB) error) error {
-	errorList := errorhelpers.NewErrorList("for each field metadata")
-	for fieldName, field := range f.fieldsToQB {
-		if err := execFunc(fieldName, field); err != nil {
-			errorList.AddError(err)
-		}
-	}
-	return errorList.ToError()
-}
-
 func initializeFieldMetadata() FieldMetadata {
 	f := FieldMetadata{
-		fieldsToQB: make(map[string]*MetadataAndQB),
+		fieldsToQB: make(map[string]*metadataAndQB),
 	}
 
 	f.registerFieldMetadata(fieldnames.AddCaps,
