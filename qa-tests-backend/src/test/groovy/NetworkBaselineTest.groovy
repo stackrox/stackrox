@@ -308,7 +308,6 @@ class NetworkBaselineTest extends BaseSpecification {
         )
         validateBaseline(postLockClientBaseline, beforeDeferredCreate, justAfterDeferredCreate,
             [], [])
-    }
 
         when:
         "Verify user get for non-existent baseline"
