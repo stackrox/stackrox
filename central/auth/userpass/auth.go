@@ -28,7 +28,7 @@ var (
 	log = logging.LoggerForModule()
 
 	// The auth provider ID used for basic auth. This is arbitrary, but should not be changed.
-	basicAuthProviderID = "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
+	BasicAuthProviderID = "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
 )
 
 // CreateManager creates and returns a manager for user/password authentication.
@@ -78,7 +78,7 @@ func RegisterAuthProviderOrPanic(ctx context.Context, mgr *basicAuthn.Manager, r
 	options := []authproviders.ProviderOption{
 		authproviders.WithType(basicAuthProvider.TypeName),
 		authproviders.WithName("Login with username/password"),
-		authproviders.WithID(basicAuthProviderID),
+		authproviders.WithID(BasicAuthProviderID),
 		authproviders.WithEnabled(true),
 		authproviders.WithActive(true),
 		authproviders.WithRoleMapper(mapper.AlwaysAdminRoleMapper()),
@@ -131,5 +131,5 @@ func IsLocalAdmin(id authn.Identity) bool {
 	if provider == nil {
 		return false
 	}
-	return provider.Type() == basicAuthProvider.TypeName && provider.ID() == basicAuthProviderID
+	return provider.Type() == basicAuthProvider.TypeName && provider.ID() == BasicAuthProviderID
 }

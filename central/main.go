@@ -17,7 +17,7 @@ import (
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
 	authProviderDS "github.com/stackrox/rox/central/authprovider/datastore"
-	authProviderService "github.com/stackrox/rox/central/authprovider/service"
+	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
 	"github.com/stackrox/rox/central/cli"
@@ -311,7 +311,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
 		authService.New(),
-		authProviderService.New(registry, groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
 		centralHealthService.Singleton(),
@@ -385,6 +384,13 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 	if features.NewPolicyCategories.Enabled() {
 		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
 	}
+
+	if env.ManagedCentral.BooleanSetting() {
+		servicesToRegister = append(servicesToRegister, authProviderSvc.NewWithBasicProviderDisabled(registry, groupDataStore.Singleton()))
+	} else {
+		servicesToRegister = append(servicesToRegister, authProviderSvc.New(registry, groupDataStore.Singleton()))
+	}
+
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
