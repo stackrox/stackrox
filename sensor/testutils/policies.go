@@ -12,7 +12,6 @@ import (
 
 // GetPoliciesFromFile reads a file containing storage.Policy. Return a slice of storage.Policy with the content of the file
 func GetPoliciesFromFile(fileName string) (policies []*storage.Policy, retError error) {
-	policiesMsg := &localSensor.LocalSensorPolicies{}
 	file, err := os.OpenFile(fileName, os.O_RDONLY, 0644)
 	if err != nil {
 		retError = fmt.Errorf("error opening %s: %w\n", fileName, err)
@@ -25,7 +24,8 @@ func GetPoliciesFromFile(fileName string) (policies []*storage.Policy, retError 
 		}
 		retError = errorList.ToError()
 	}()
-	if err := jsonpb.Unmarshal(file, policiesMsg); err != nil {
+	var policiesMsg localSensor.LocalSensorPolicies
+	if err := jsonpb.Unmarshal(file, &policiesMsg); err != nil {
 		errorList.AddStringf("error unmarshaling %s: %s\n", fileName, err)
 		return
 	}
