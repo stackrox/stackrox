@@ -32,18 +32,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
         })
         .map((matchEntity) => {
             let countKeyToUse = countKeyMap[matchEntity];
-            if (
-                countKeyMap[matchEntity].includes('imageComponentCount') ||
-                countKeyMap[matchEntity].includes('nodeComponentCount')
-            ) {
-                countKeyToUse = 'componentCount';
-            }
-            if (
-                countKeyMap[matchEntity].includes('imageVulnerabilityCount') ||
-                countKeyMap[matchEntity].includes('nodeVulnerabilityCount') ||
-                countKeyMap[matchEntity].includes('clusterVulnerabilityCount') ||
-                countKeyMap[matchEntity].includes('k8sVulnCount')
-            ) {
+            if (countKeyMap[matchEntity].includes('k8sVulnCount')) {
                 countKeyToUse = 'vulnCount';
             }
             const count = data[countKeyToUse];
@@ -65,18 +54,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
         })
         .map((containEntity) => {
             let countKeyToUse = countKeyMap[containEntity];
-            if (
-                countKeyMap[containEntity].includes('imageComponentCount') ||
-                countKeyMap[containEntity].includes('nodeComponentCount')
-            ) {
-                countKeyToUse = 'componentCount';
-            }
-            if (
-                countKeyMap[containEntity].includes('imageVulnerabilityCount') ||
-                countKeyMap[containEntity].includes('nodeVulnerabilityCount') ||
-                countKeyMap[containEntity].includes('clusterVulnerabilityCount') ||
-                countKeyMap[containEntity].includes('k8sVulnCount')
-            ) {
+            if (countKeyMap[containEntity].includes('k8sVulnCount')) {
                 countKeyToUse = 'vulnCount';
             }
             const count = data[countKeyToUse];

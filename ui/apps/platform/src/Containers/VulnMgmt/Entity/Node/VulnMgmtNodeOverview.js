@@ -68,6 +68,8 @@ const VulnMgmtNodeOverview = ({ data, entityContext }) => {
     } = safeData;
     safeData.componentCount = scan?.components?.length || 0;
 
+    safeData.nodeComponentCount = scan?.components?.length || 0;
+
     const metadataKeyValuePairs = [
         {
             key: 'Kubelet Version',
