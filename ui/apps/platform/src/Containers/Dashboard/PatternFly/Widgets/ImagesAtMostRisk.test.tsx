@@ -67,7 +67,7 @@ jest.mock('hooks/useResizeObserver', () => ({
 }));
 
 beforeEach(() => {
-    jest.resetModules();
+    localStorage.clear();
 });
 
 function setup() {
