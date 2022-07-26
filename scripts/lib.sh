@@ -76,6 +76,26 @@ is_linux() {
     uname -a | grep -i linux >/dev/null 2>&1
 }
 
+test_equals_non_silent() {
+  if [[ "$#" -lt 2 ]]; then
+    die "usage: test_equals_non_silent <arg1> <arg2>"
+  fi
+
+  if [[ "$1" != "$2" ]]; then
+    die "Comparison failed: \"$1\" != \"$2\""
+  fi
+}
+
+test_gt_non_silent() {
+  if [[ "$#" -lt 2 ]]; then
+    die "usage: test_gt_non_silent <arg1> <arg2>"
+  fi
+
+  if [[ "$1"  -le "$2" ]]; then
+    die "Comparison failed: \"$1\" <= \"$2\""
+  fi
+}
+
 require_environment() {
     if [[ "$#" -lt 1 ]]; then
         die "usage: require_environment NAME [reason]"
