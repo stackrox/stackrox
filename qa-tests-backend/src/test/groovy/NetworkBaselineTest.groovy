@@ -57,7 +57,8 @@ class NetworkBaselineTest extends BaseSpecification {
                 .setImage(NGINX_IMAGE)
                 .addLabel("app", BASELINED_USER_CLIENT_DEP_NAME)
                 .setCommand(["/bin/sh", "-c",])
-                .setArgs(["for i in \$(seq 1 10); do wget -S http://${USER_DEP_NAME}; sleep 1; done; sleep 1000" as String])
+                .setArgs(["for i in \$(seq 1 10); do wget -S http://${USER_DEP_NAME};" +
+                    "sleep 1; done; sleep 1000" as String])
 
     static final private ANOMALOUS_CLIENT_DEP = createAndRegisterDeployment()
         .setName(ANOMALOUS_CLIENT_DEP_NAME)
@@ -334,15 +335,16 @@ class NetworkBaselineTest extends BaseSpecification {
         assert userRequestedBaselinedClientDeploymentID != null
         log.info "Client deployment: ${userRequestedBaselinedClientDeploymentID}"
 
-        def clientDeployment = DEPLOYMENTS.find { it.name == BASELINED_USER_CLIENT_DEP_NAME }
-
         assert retryUntilTrue({
-            return NetworkGraphUtil.checkForEdge(userRequestedBaselinedClientDeploymentID, userReqBaselineServerDeploymentID)
-                    .any { it.targetID == userReqBaselineServerDeploymentID}
+            return NetworkGraphUtil.checkForEdge(
+                userRequestedBaselinedClientDeploymentID,
+                userReqBaselineServerDeploymentID)
+                    .any { it.targetID == userReqBaselineServerDeploymentID }
         }, 15)
 
         // Grab the network baseline for the client.
-        def userReqBaselinedClientBaseline = NetworkBaselineService.getNetworkBaseline(userRequestedBaselinedClientDeploymentID)
+        def userReqBaselinedClientBaseline =
+            NetworkBaselineService.getNetworkBaseline(userRequestedBaselinedClientDeploymentID)
         assert userReqBaselinedClientBaseline
 
         // Grab a fresh copy of the userReqServerBaseline after the client connection has been added.
