@@ -219,7 +219,7 @@ func getContainer(workload ContainerWorkload) corev1.Container {
 	if workload.PreloadedImages != 0 {
 		digest := rand.Intn(workload.PreloadedImages)
 		img := fixtures.GetRandomImage()
-		img.ID = strconv.Itoa(digest)
+		img.ID = "sha256:" + strconv.Itoa(digest)
 		imageName = img.FullName()
 	} else if workload.NumImages == 0 {
 		imageName = fixtures.GetRandomImage().FullName()
