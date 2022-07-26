@@ -58,13 +58,14 @@ func (s *namespaceDatastoreSACSuite) SetupSuite() {
 		s.Require().NoError(err)
 		s.optionsMap = schema.NamespacesSchema.OptionsMap
 	} else {
-		s.engine, err = rocksdb.NewTemp("riskSACTest")
+		s.engine, err = rocksdb.NewTemp("namespaceSACTest")
 		s.Require().NoError(err)
 		s.index, err = globalindex.MemOnlyIndex()
 		s.Require().NoError(err)
 		s.keyFence = concurrency.NewKeyFence()
 		s.indexQ = queue.NewWaitableQueue()
 		s.dacky, err = dackbox.NewRocksDBDackBox(s.engine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
+		s.Require().NoError(err)
 
 		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
 		s.Require().NoError(err)
