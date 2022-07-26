@@ -341,7 +341,7 @@ func (resolver *clusterCVEResolver) getClusterCVEQuery() *v1.Query {
 Sub Resolver Functions
 */
 
-// Clusters returns a clusters affected by cluster vulnerability.
+// Clusters returns resolvers for clusters affected by cluster vulnerability.
 func (resolver *clusterCVEResolver) Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "Clusters")
 
