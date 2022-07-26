@@ -1,84 +1,19 @@
-configureGit: &configureGit
-  run:
-    name: Configure git
-    command: |
-      git config user.email "roxbot@stackrox.com"
-      git config user.name "RoxBot"
+version: 2.1
 
-executors:
-  custom:
-    parameters:
-      resource_class:
-        type: string
-        default: medium
-    resource_class: << parameters.resource_class >>
-    docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.42
-        auth:
-          username: $QUAY_RHACS_ENG_RO_USERNAME
-          password: $QUAY_RHACS_ENG_RO_PASSWORD
-    working_directory: /go/src/github.com/stackrox/rox
+parameters:
+  run_it:
+    type: boolean
+    default: false
 
 jobs:
-  trigger-nightly-build:
-    executor: custom
-    resource_class: small
+  eol:
+    docker:
+    - image: cimg/base:2022.05
     steps:
-      - checkout
-
-      - *configureGit
-
-      - add_ssh_keys:
-          fingerprints:
-            - "b0:90:e9:6f:77:d5:fe:b6:8c:1a:a5:3f:a4:e3:41:e5"
-
-      - run:
-          name: Add SSH key of github.com
-          command: |
-            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-
-      - run:
-          name: Create a commit and tag for nightly build
-          command: |
-            # Add an empty commit to diverge from master
-            git commit --allow-empty -m "Nightly build $(date)"
-            NIGHTLY_TAG="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-$(date '+%Y%m%d')"
-            git tag "$NIGHTLY_TAG"
-            git push origin "$NIGHTLY_TAG"
-
-      - run:
-          name: Remove tags more than 3 days old
-          command: |
-            beforeDate=$(date --date=@$(($(date +'%s') - (3 * 24 * 60 * 60))) +'%Y%m%d')
-            echo "Anything prior to ${beforeDate} will be deleted"
-            tags=$(git tag --list '*nightly*')
-            for tag in $tags; do
-                echo "Considering nightly tag: ${tag}"
-                datePart="${tag##*-}"
-                echo "  date part: ${datePart}"
-                if [[ "${datePart}" =~ ^-?[0-9]+$ ]] && [ "${datePart}" -lt ${beforeDate} ]; then
-                    echo "  this tag is a candidate for deletion"
-                    git push --delete origin "${tag}"
-                else
-                    echo "  this tag is not a candidate for deletion"
-                fi
-            done
+    - run: echo "Null job to disable CCI"
 
 workflows:
-  version: 2
-
-  nightly:
-    triggers:
-      - schedule:
-          # still overnight from US PoV, but early enough for the early risers in Europe to not have to wait for the results
-          cron: "0 5 * * *"
-          filters:
-            branches:
-              only: master
-
+  eol:
+    when: << pipeline.parameters.run_it >>
     jobs:
-      - trigger-nightly-build:
-          filters:
-            branches:
-              only: master
-          context: quay-rhacs-eng-readonly
+      - eol
