@@ -37,7 +37,7 @@ func init() {
 			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
 			"lastScanned: Time",
-			"layerIndex: Int!",
+			"layerIndex: Int",
 			"location(query: String): String!",
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"topImageVulnerability: ImageVulnerability",
@@ -69,7 +69,7 @@ type ImageComponentResolver interface {
 	ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
 	ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error)
 	LastScanned(ctx context.Context) (*graphql.Time, error)
-	LayerIndex() (int32, error)
+	LayerIndex() (*int32, error)
 	License(ctx context.Context) (*licenseResolver, error)
 	Location(ctx context.Context, args RawQuery) (string, error)
 	Name(ctx context.Context) string
@@ -412,19 +412,25 @@ func (resolver *imageComponentResolver) ID(_ context.Context) graphql.ID {
 	return graphql.ID(resolver.data.GetId())
 }
 
-func (resolver *imageComponentResolver) LayerIndex() (int32, error) {
+func (resolver *imageComponentResolver) LayerIndex() (*int32, error) {
 	scope, hasScope := scoped.GetScope(resolver.ctx)
 	if !hasScope || scope.Level != v1.SearchCategory_IMAGES {
-		return 0, nil
+		return nil, nil
 	}
 	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, resolver.componentQuery())
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	if len(edges) == 0 || len(edges) > 1 {
-		return 0, errors.Errorf("Unexpected number of image-component edge matched for image %s and component %s. Expected 1 edge.", scope.ID, resolver.data.GetId())
+		return nil, errors.Errorf("Unexpected number of image-component edge matched for image %s and component %s. Expected 1 edge.", scope.ID, resolver.data.GetId())
 	}
-	return edges[0].GetLayerIndex(), nil
+
+	w, ok := edges[0].GetHasLayerIndex().(*storage.ImageComponentEdge_LayerIndex)
+	if !ok {
+		return nil, nil
+	}
+	v := w.LayerIndex
+	return &v, nil
 }
 
 func (resolver *imageComponentResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
