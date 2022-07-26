@@ -866,6 +866,28 @@ func (resolver *cVEResolver) NodeCount(ctx context.Context, args RawQuery) (int3
 	return nodeLoader.CountFromQuery(resolver.addScopeContext(query))
 }
 
+// Clusters returns resolvers for clusters affected by cluster vulnerability.
+func (resolver *cVEResolver) Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "Clusters")
+
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+	return resolver.root.Clusters(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+// ClusterCount returns a number of clusters affected by cluster vulnerability.
+func (resolver *cVEResolver) ClusterCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "ClusterCount")
+
+	if err := readClusters(ctx); err != nil {
+		return 0, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+	return resolver.root.ClusterCount(ctx, RawQuery{Query: &query})
+}
+
 // These return dummy values, as they should not be accessed from the top level vuln resolver, but the embedded
 // version instead.
 

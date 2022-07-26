@@ -105,6 +105,9 @@ type VulnerabilityResolver interface {
 	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
 	NodeCount(ctx context.Context, args RawQuery) (int32, error)
 
+	ClusterCount(ctx context.Context, args RawQuery) (int32, error)
+	Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error)
+
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 
 	Suppressed(ctx context.Context) bool
