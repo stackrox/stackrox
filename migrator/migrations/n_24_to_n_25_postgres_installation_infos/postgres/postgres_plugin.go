@@ -3,19 +3,15 @@ package postgres
 
 import (
 	"context"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -27,9 +23,8 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.InstallationInfosSchema
-	targetResource = permissions.ResourceMetadata{}
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.InstallationInfosSchema
 )
 
 type Store interface {
@@ -72,15 +67,6 @@ func insertIntoInstallationInfos(ctx context.Context, tx pgx.Tx, obj *storage.In
 }
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.InstallationInfo) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "InstallationInfo")
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	conn, release, err := s.acquireConn(ctx, ops.Get, "InstallationInfo")
 	if err != nil {
 		return err
@@ -110,15 +96,6 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.InstallationInfo) e
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context) (*storage.InstallationInfo, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "InstallationInfo")
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return nil, false, err
-	} else if !ok {
-		return nil, false, nil
-	}
-
 	conn, release, err := s.acquireConn(ctx, ops.Get, "InstallationInfo")
 	if err != nil {
 		return nil, false, err
@@ -139,7 +116,6 @@ func (s *storeImpl) Get(ctx context.Context) (*storage.InstallationInfo, bool, e
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -149,15 +125,6 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "InstallationInfo")
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "InstallationInfo")
 	if err != nil {
 		return err
