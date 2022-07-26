@@ -87,7 +87,7 @@ func (r *rocksdbStore) createKay() []byte {
 	tsAndRunIDPrefix := append(tsBytes, separatorAndRunID...)
 	stringsPrefix := getClusterStandardPrefixes("cluster", "standard")
 	key := append([]byte{}, stringsPrefix...)
-	key = append(stringsKey, tsAndRunIDPrefix...)
+	key = append(key, tsAndRunIDPrefix...)
 	return key
 }
 

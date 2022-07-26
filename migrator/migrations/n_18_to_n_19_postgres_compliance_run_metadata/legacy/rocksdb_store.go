@@ -80,7 +80,7 @@ func (k *keyMaker) getKeysForMetadata(metadata *storage.ComplianceRunMetadata) (
 	tsAndRunIDPrefix := append(tsBytes, separatorAndRunID...)
 
 	key := append([]byte{}, k.partialMetadataPrefix...)
-	key = append(metadataKey, tsAndRunIDPrefix...)
+	key = append(key, tsAndRunIDPrefix...)
 
 	return key, nil
 }
