@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "storage/policy.proto";
+
+package localSensor;
+
+message LocalSensorPolicies {
+  repeated storage.Policy policies = 1;
+}
+
