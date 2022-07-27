@@ -26,7 +26,7 @@ describe('Config Management Violation Tags', () => {
         cy.wait(['@getTags', '@tagsAutocomplete']);
 
         const tag = randomstring.generate(7);
-        cy.get(selectors.sidePanel1.violationTags.input).type(`${tag}{enter}{downArrow}{enter}`);
+        cy.get(selectors.sidePanel1.violationTags.input).type(`${tag}{enter}`);
         cy.wait(['@getTags', '@tagsAutocomplete']);
         cy.get(`${selectors.sidePanel1.violationTags.values}:contains("${tag}")`).should('exist');
     });
