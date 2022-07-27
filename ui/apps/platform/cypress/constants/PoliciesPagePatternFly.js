@@ -23,7 +23,7 @@ export const selectors = {
     page: {
         actionsToggleButton: 'button.pf-c-dropdown__toggle:contains("Actions")',
         actionsItemButton:
-            'button.pf-c-dropdown__toggle:contains("Actions") + ul li button[role="menuitem"]',
+            'button.pf-c-dropdown__toggle:contains("Actions") + ul li[role="menuitem"] button',
     },
     toast: {
         title: 'ul.pf-c-alert-group .pf-c-alert__title',
