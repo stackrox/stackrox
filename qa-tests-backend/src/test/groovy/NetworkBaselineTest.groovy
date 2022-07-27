@@ -126,8 +126,6 @@ class NetworkBaselineTest extends BaseSpecification {
                          long justAfterCreate,
                          List<Tuple2<String, Boolean>> mustBeInBaseline,
                          List<String> mustNotBeInBaseline) {
-        log.info "Validate Baseline"
-        log.info "Baseline: ${baseline} expecting to find the following peers ${expectedPeers}"
         assert baseline.getObservationPeriodEnd().getSeconds() > beforeCreate - CLOCK_SKEW_ALLOWANCE_SECONDS
         assert baseline.getObservationPeriodEnd().getSeconds() <
             justAfterCreate + EXPECTED_BASELINE_DURATION_SECONDS + CLOCK_SKEW_ALLOWANCE_SECONDS
