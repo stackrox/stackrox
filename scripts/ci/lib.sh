@@ -567,7 +567,7 @@ mark_collector_release() {
     info "Create a branch for the PR"
 
     collector_version="$(cat COLLECTOR_VERSION)"
-    cd /tmp/collector || exit
+    pushd /tmp/collector || exit
     gitbot(){
         git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" \
             -c "url.https://${GITHUB_TOKEN}:x-oauth-basic@github.com/.insteadOf=https://github.com/" \
@@ -599,6 +599,7 @@ mark_collector_release() {
     export CIRCLE_PULL_REQUEST="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
     export GITHUB_TOKEN_FOR_PRS="${GITHUB_TOKEN}"
     /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
+    popd
 }
 
 is_tagged() {
