@@ -3,6 +3,9 @@ package resolvers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -24,11 +27,17 @@ func init() {
 	)
 }
 
-func (resolver *imageScanResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
-	log.Infof("Context inside scan.ImageComponents : %v", ctx)
-	return resolver.root.ImageComponents(ctx, args)
+func (resolver *imageScanResolver) ImageComponents(_ context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+	scope, ok := scoped.GetScope(resolver.ctx)
+	if !ok {
+		return nil, errors.New("ImageScan.ImageComponents called without scope")
+	} else if scope.Level != v1.SearchCategory_IMAGES {
+		return nil, errors.New("ImageScan.ImageComponents called with improper scope context")
+	}
+
+	return resolver.root.ImageComponents(resolver.ctx, args)
 }
 
-func (resolver *imageScanResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	return resolver.root.ImageComponentCount(ctx, args)
+func (resolver *imageScanResolver) ImageComponentCount(_ context.Context, args RawQuery) (int32, error) {
+	return resolver.root.ImageComponentCount(resolver.ctx, args)
 }

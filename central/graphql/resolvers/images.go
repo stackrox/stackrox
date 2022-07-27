@@ -407,10 +407,9 @@ func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, 
 func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
 	resolver.ensureData(ctx)
 	res, err := resolver.root.wrapImageScan(resolver.data.GetScan(), true, nil)
-	if err != nil {
+	if err != nil || res == nil {
 		return nil, err
 	}
-	log.Infof("ImageScan resolver: %v", res)
 	res.ctx = resolver.imageScopeContext(ctx)
 	return res, nil
 }

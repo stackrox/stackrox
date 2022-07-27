@@ -215,17 +215,28 @@ func getDeploymentIDFromQuery(q *v1.Query) string {
 }
 
 func getDeploymentScope(scopeQuery *v1.Query, contexts ...context.Context) string {
-	var deploymentID string
 	for _, ctx := range contexts {
-		deploymentID = deploymentctx.FromContext(ctx)
-		if deploymentID != "" {
+		if scope, ok := scoped.GetScope(ctx); ok && scope.Level == v1.SearchCategory_DEPLOYMENTS {
+			return scope.ID
+		} else if deploymentID := deploymentctx.FromContext(ctx); deploymentID != "" {
 			return deploymentID
 		}
 	}
 	if scopeQuery != nil {
-		deploymentID = getDeploymentIDFromQuery(scopeQuery)
+		return getDeploymentIDFromQuery(scopeQuery)
 	}
-	return deploymentID
+	return ""
+}
+
+func getImageIDFromScope(contexts ...context.Context) string {
+	for _, ctx := range contexts {
+		if scope, ok := scoped.GetScope(ctx); ok {
+			if scope.Level == v1.SearchCategory_IMAGES {
+				return scope.ID
+			}
+		}
+	}
+	return ""
 }
 
 func queryWithImageIDRegexFilter(q string) string {
@@ -324,7 +335,12 @@ func (resolver *imageComponentResolver) ImageVulnerabilities(ctx context.Context
 
 func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "LastScanned")
-	log.Infof("Context inside scan.ImageComponents.LastScanned : %v", ctx)
+
+	scope, ok := scoped.GetScope(resolver.ctx)
+	if ok && scope.Level == v1.SearchCategory_IMAGES {
+		ctx = resolver.ctx
+	}
+
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return nil, err
@@ -355,11 +371,9 @@ func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graph
 // Location returns the location of the component.
 func (resolver *imageComponentResolver) Location(ctx context.Context, args RawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Location")
-	var imageID string
-	scope, hasScope := scoped.GetScope(ctx)
-	if hasScope && scope.Level == v1.SearchCategory_IMAGES {
-		imageID = scope.ID
-	} else {
+	imageID := getImageIDFromScope(ctx, resolver.ctx)
+
+	if imageID == "" {
 		var err error
 		imageID, err = getImageIDFromIfImageShaQuery(ctx, resolver.root, args)
 		if err != nil {
