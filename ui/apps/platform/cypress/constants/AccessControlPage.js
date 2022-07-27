@@ -109,6 +109,15 @@ export const selectors = scopeSelectors('main', {
             },
         }),
 
+        minimumAccessRole: scopeSelectors('form', {
+            selectMinimumAccessRole: `${getFormGroupControlForLabel(
+                'Minimum access role'
+            )} .pf-c-select button`,
+            selectMinimumAccessRoleItem: `${getFormGroupControlForLabel(
+                'Minimum access role'
+            )} .pf-c-select button + ul button`,
+        }),
+
         role: scopeSelectors('#role-form', {
             getRadioPermissionSetForName: (name) =>
                 `.pf-c-form__group-label:contains("Permission set") + .pf-c-form__group-control tr:contains("${name}") input[type="radio"]`,

@@ -29,7 +29,7 @@ export const getGroupsWithDefault = (groups, authProviderId, roleName, defaultGr
                 authProviderId: defaultGroup.props.authProviderId,
                 id: defaultGroup.props.id,
             },
-            roleName: defaultGroup.roleName,
+            roleName,
         });
         return groupsWithDefault;
     }
