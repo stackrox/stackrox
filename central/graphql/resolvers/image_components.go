@@ -338,6 +338,7 @@ func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graph
 
 	scope, ok := scoped.GetScope(resolver.ctx)
 	if ok && scope.Level == v1.SearchCategory_IMAGES {
+		log.Infof("Has Image scope")
 		ctx = resolver.ctx
 	}
 
@@ -346,7 +347,7 @@ func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graph
 		return nil, err
 	}
 
-	q := search.EmptyQuery()
+	q := resolver.componentQuery()
 	q.Pagination = &v1.QueryPagination{
 		Limit:  1,
 		Offset: 0,
@@ -358,7 +359,7 @@ func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graph
 		},
 	}
 
-	images, err := imageLoader.FromQuery(resolver.withImageComponentScope(ctx), q)
+	images, err := imageLoader.FromQuery(ctx, q)
 	if err != nil || len(images) == 0 {
 		return nil, err
 	} else if len(images) > 1 {
