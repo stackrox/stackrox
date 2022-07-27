@@ -157,10 +157,8 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 func (ds *datastoreImpl) removeClusterImageIntegrations(ctx context.Context, cluster *storage.Cluster) {
 
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
-	log.Info(">>>> Image Integrations: " + q.String() + " " + q.GetBaseQuery().String())
 
 	imageIntegrations, err := ds.imageIntegrationDataStore.Search(ctx, q)
-	log.Infof(">>>>Image Integrations list size is %d", len(imageIntegrations))
 	if err != nil {
 		log.Errorf("failed to get image integrations for removed cluster %s: %v", cluster.GetId(), err)
 		return

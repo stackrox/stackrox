@@ -5,12 +5,11 @@ import (
 
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/imageintegration/datastore/internal/search"
 	"github.com/stackrox/rox/central/imageintegration/index"
+	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/imageintegration/store/bolt"
 	"github.com/stackrox/rox/central/imageintegration/store/postgres"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
@@ -24,11 +23,11 @@ var (
 	ad DataStore
 )
 
-func initializeDefaultIntegrations(ctx context.Context, storage store.Store) {
-	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
-	log.Infof(">>>> initializeDefaultIntegrations size: %d", len(integrations))
+func initializeDefaultIntegrations(storage store.Store) {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	iis, err := storage.GetAll(ctx)
 	utils.CrashOnError(err)
-	if !env.OfflineModeEnv.BooleanSetting() && len(integrations) == 0 {
+	if !env.OfflineModeEnv.BooleanSetting() && len(iis) == 0 {
 		// Add default integrations
 		for _, ii := range store.DefaultImageIntegrations {
 			utils.Must(storage.Upsert(ctx, ii))
@@ -48,11 +47,9 @@ func initialize() {
 		storage = bolt.New(globaldb.GetGlobalDB())
 		indexer = index.New(globalindex.GetGlobalTmpIndex())
 	}
+	initializeDefaultIntegrations(storage)
 	searcher := search.New(storage, indexer)
 	ad = New(storage, indexer, searcher)
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	initializeDefaultIntegrations(ctx, storage)
 }
 
 // Singleton provides the interface for non-service external interaction.
