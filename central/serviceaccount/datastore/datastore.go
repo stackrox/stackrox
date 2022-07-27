@@ -5,10 +5,12 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store/postgres"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/serviceaccount/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -56,15 +58,20 @@ func NewForTestOnly(t *testing.T, db *pkgRocksDB.RocksDB, bleveIndex bleve.Index
 	testutils.MustBeInTest(t)
 	saStore := rocksdb.New(db)
 	indexer := index.New(bleveIndex)
+	searcher := search.New(saStore, indexer)
 
-	d := &datastoreImpl{
-		storage:  saStore,
-		indexer:  indexer,
-		searcher: search.New(saStore, indexer),
-	}
+	return New(saStore, indexer, searcher)
+}
 
-	if err := d.buildIndex(context.TODO()); err != nil {
-		return nil, errors.Wrap(err, "failed to build index from existing store")
-	}
-	return d, nil
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgres.New(pool)
+	indexer := postgres.NewIndexer(pool)
+	searcher := search.New(dbstore, indexer)
+	return New(dbstore, indexer, searcher)
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *pkgRocksDB.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
+	return NewForTestOnly(t, rocksengine, bleveIndex)
 }

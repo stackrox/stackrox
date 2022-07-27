@@ -6,9 +6,6 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/networkbaseline/store"
-	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
-	rdbStore "github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -34,7 +31,6 @@ type networkBaselineDatastoreSACTestSuite struct {
 	suite.Suite
 	engine       *rocksdb.RocksDB
 	pool         *pgxpool.Pool
-	storage      store.Store
 	datastore    DataStore
 	testContexts map[string]context.Context
 	testNBIDs    []string
@@ -52,23 +48,18 @@ func (s *networkBaselineDatastoreSACTestSuite) SetupSuite() {
 	networkBaselineObj := "networkBaselineSACTest"
 
 	if features.PostgresDatastore.Enabled() {
-		ctx := context.Background()
-		source := pgtest.GetConnectionString(s.T())
-		config, err := pgxpool.ParseConfig(source)
-		s.NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(ctx, config)
-		s.NoError(err)
-		pgStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), source)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
+		pgtestbase := pgtest.ForT(s.T())
+		s.Require().NotNil(pgtestbase)
+		s.pool = pgtestbase.Pool
+		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
+		s.Require().NoError(err)
 	} else {
 		s.engine, err = rocksdb.NewTemp(networkBaselineObj)
 		s.NoError(err)
 
-		s.storage = rdbStore.New(s.engine)
+		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine)
+		s.Require().NoError(err)
 	}
-	s.datastore = newNetworkBaselineDataStore(s.storage)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkBaseline)
 }
@@ -110,52 +101,15 @@ func (s *networkBaselineDatastoreSACTestSuite) TestGetNetworkBaseline() {
 	s.testNBIDs = append(s.testNBIDs, testNB.GetDeploymentId())
 	s.NoError(err)
 
-	cases := map[string]crudTest{
-		"(full) read-only can read": {
-			scopeKey:    testutils.UnrestrictedReadCtx,
-			expectFound: true,
-		},
-		"full read-write can read": {
-			scopeKey:    testutils.UnrestrictedReadCtx,
-			expectFound: true,
-		},
-		"full read-write on wrong cluster cannot read": {
-			scopeKey:    testutils.Cluster1ReadWriteCtx,
-			expectFound: false,
-		},
-		"read-write on wrong cluster and wrong namespace cannot read": {
-			scopeKey:    testutils.Cluster1NamespaceAReadWriteCtx,
-			expectFound: false,
-		},
-		"read-write on wrong cluster and matching namespace cannot read": {
-			scopeKey:    testutils.Cluster1NamespaceBReadWriteCtx,
-			expectFound: false,
-		},
-		"read-write on right cluster but wrong namespaces cannot read": {
-			scopeKey:    testutils.Cluster2NamespacesACReadWriteCtx,
-			expectFound: false,
-		},
-		"full read-write on right cluster can read": {
-			scopeKey:    testutils.Cluster2ReadWriteCtx,
-			expectFound: true,
-		},
-		"read-write on the right cluster and namespace can read": {
-			scopeKey:    testutils.Cluster2NamespaceBReadWriteCtx,
-			expectFound: true,
-		},
-		"read-write on the right cluster and at least the right namespace can read": {
-			scopeKey:    testutils.Cluster2NamespacesABReadWriteCtx,
-			expectFound: true,
-		},
-	}
+	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			readNetworkBaseline, found, getErr := s.datastore.GetNetworkBaseline(ctx, testNB.GetDeploymentId())
 			s.NoError(getErr)
-			s.Equal(c.expectFound, found)
-			if c.expectFound {
+			s.Equal(c.ExpectedFound, found)
+			if c.ExpectedFound {
 				s.Equal(testNB, readNetworkBaseline)
 			} else {
 				s.Nil(readNetworkBaseline)
@@ -232,162 +186,55 @@ func (s *networkBaselineDatastoreSACTestSuite) TestWalkNetworkBaseline() {
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) TestUpsertNetworkBaselines() {
-	cases := map[string]crudTest{
-		"(full) read-only cannot upsert": {
-			scopeKey:      testutils.UnrestrictedReadCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write can upsert": {
-			scopeKey:      testutils.UnrestrictedReadWriteCtx,
-			expectedError: nil,
-		},
-		"full read-write on wrong cluster cannot upsert": {
-			scopeKey:      testutils.Cluster1ReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and wrong namespace cannot upsert": {
-			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace cannot upsert": {
-			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on right cluster but wrong namespaces cannot upsert": {
-			scopeKey:      testutils.Cluster2NamespacesACReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write on right cluster can upsert": {
-			scopeKey:      testutils.Cluster2ReadWriteCtx,
-			expectedError: nil,
-		},
-		"read-write on the right cluster and namespace can upsert": {
-			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
-			expectedError: nil,
-		},
-		"read-write on the right cluster and at least the right namespace can upsert": {
-			scopeKey:      testutils.Cluster2NamespacesABReadWriteCtx,
-			expectedError: nil,
-		},
-	}
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			testNB := fixtures.GetScopedNetworkBaseline(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			s.testNBIDs = append(s.testNBIDs, testNB.GetDeploymentId())
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			err := s.datastore.UpsertNetworkBaselines(ctx, []*storage.NetworkBaseline{testNB})
-			s.Equal(c.expectedError, err)
+			s.Equal(c.ExpectedError, err)
 
 			_, ok, err := s.datastore.GetNetworkBaseline(ctx, testNB.GetDeploymentId())
 			s.NoError(err)
-			s.Equal(c.expectedError == nil, ok, "The resource must exist if Upsert succeeded, or not otherwise")
+			s.Equal(c.ExpectedError == nil, ok, "The resource must exist if Upsert succeeded, or not otherwise")
 		})
 	}
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) TestDeleteNetworkBaseline() {
-	cases := map[string]crudTest{
-		"(full) read-only cannot remove": {
-			scopeKey:      testutils.UnrestrictedReadCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write can remove": {
-			scopeKey:      testutils.UnrestrictedReadWriteCtx,
-			expectedError: nil,
-		},
-		"full read-write on wrong cluster cannot remove": {
-			scopeKey:      testutils.Cluster1ReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and wrong namespace cannot remove": {
-			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace cannot remove": {
-			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on right cluster but wrong namespaces cannot remove": {
-			scopeKey:      testutils.Cluster2NamespacesACReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write on right cluster can remove": {
-			scopeKey:      testutils.Cluster2ReadWriteCtx,
-			expectedError: nil,
-		},
-		"read-write on the right cluster and namespace can remove": {
-			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
-			expectedError: nil,
-		},
-		"read-write on the right cluster and at least the right namespace can remove": {
-			scopeKey:      testutils.Cluster2NamespacesABReadWriteCtx,
-			expectedError: nil,
-		},
-	}
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			testNB := fixtures.GetScopedNetworkBaseline(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			s.testNBIDs = append(s.testNBIDs, testNB.GetDeploymentId())
 			s.NoError(s.datastore.UpsertNetworkBaselines(s.testContexts[testutils.UnrestrictedReadWriteCtx], []*storage.NetworkBaseline{testNB}))
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			err := s.datastore.DeleteNetworkBaseline(ctx, testNB.GetDeploymentId())
-			s.Equal(c.expectedError, err)
+			s.Equal(c.ExpectedError, err)
 			_, ok, err := s.datastore.GetNetworkBaseline(s.testContexts[testutils.UnrestrictedReadWriteCtx], testNB.GetDeploymentId())
 			s.NoError(err)
-			s.Equal(c.expectedError != nil, ok, "The resource must still exist if Delete failed, or not otherwise")
+			s.Equal(c.ExpectedError != nil, ok, "The resource must still exist if Delete failed, or not otherwise")
 		})
 	}
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) TestDeleteNetworkBaselines() {
-	cases := map[string]crudTest{
-		"(full) read-only cannot remove": {
-			scopeKey:      testutils.UnrestrictedReadCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write can remove": {
-			scopeKey: testutils.UnrestrictedReadWriteCtx,
-		},
-		"full read-write on wrong cluster cannot remove": {
-			scopeKey:      testutils.Cluster1ReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and wrong namespace cannot remove": {
-			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace cannot remove": {
-			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on right cluster but wrong namespaces cannot remove": {
-			scopeKey:      testutils.Cluster2NamespacesACReadWriteCtx,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write on right cluster can remove": {
-			scopeKey: testutils.Cluster2ReadWriteCtx,
-		},
-		"read-write on the right cluster and namespace can remove": {
-			scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
-		},
-		"read-write on the right cluster and at least the right namespace can remove": {
-			scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
-		},
-	}
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			testNB := fixtures.GetScopedNetworkBaseline(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			s.testNBIDs = append(s.testNBIDs, testNB.GetDeploymentId())
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			var err error
 			err = s.datastore.UpsertNetworkBaselines(s.testContexts[testutils.UnrestrictedReadWriteCtx], []*storage.NetworkBaseline{testNB})
 			defer s.cleanupNetworkBaseline(testNB.GetDeploymentId())
 			s.NoError(err)
 			err = s.datastore.DeleteNetworkBaselines(ctx, []string{testNB.GetDeploymentId()})
-			s.Equal(c.expectedError, err)
+			s.Equal(c.ExpectedError, err)
 		})
 	}
 
