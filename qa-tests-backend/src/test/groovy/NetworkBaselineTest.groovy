@@ -329,7 +329,7 @@ class NetworkBaselineTest extends BaseSpecification {
         batchCreate([BASELINED_USER_CLIENT_DEP])
         def justAfterClientDeploymentCreate = System.currentTimeSeconds()
 
-        userRequestedBaselinedClientDeploymentID = BASELINED_USER_CLIENT_DEP.deploymentUid
+        def userRequestedBaselinedClientDeploymentID = BASELINED_USER_CLIENT_DEP.deploymentUid
         assert userRequestedBaselinedClientDeploymentID != null
         log.info "Client deployment: ${userRequestedBaselinedClientDeploymentID}"
 
