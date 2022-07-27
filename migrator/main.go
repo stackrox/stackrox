@@ -125,7 +125,7 @@ func upgrade(conf *config.Config) error {
 
 	err = runner.Run(&types.Databases{
 		BoltDB:  boltDB,
-		RocksDB: rocksdb.DB,
+		RocksDB: rocksdb,
 		GormDB:  gormDB,
 	})
 	if err != nil {

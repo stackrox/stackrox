@@ -1,12 +1,10 @@
 package conn
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
@@ -57,12 +55,4 @@ func CloseGormDB(t testing.TB, db *gorm.DB) {
 	if err == nil {
 		_ = genericDB.Close()
 	}
-}
-
-// CleanUpDB removes public schema together with all tables
-func CleanUpDB(ctx context.Context, t *testing.T, pool *pgxpool.Pool) {
-	_, err := pool.Exec(ctx, "DROP SCHEMA public CASCADE")
-	require.NoError(t, err)
-	_, err = pool.Exec(ctx, "CREATE SCHEMA public")
-	require.NoError(t, err)
 }
