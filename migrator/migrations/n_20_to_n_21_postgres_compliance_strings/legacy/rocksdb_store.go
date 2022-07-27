@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/logging"
@@ -28,7 +27,6 @@ var (
 
 // New returns a compliance results store that is backed by RocksDB.
 func New(db *rocksdb.RocksDB) (Store, error) {
-	globaldb.RegisterBucket(resultsBucketName, "ComplianceRunResults")
 	return &rocksdbStore{
 		db: db,
 	}, nil
