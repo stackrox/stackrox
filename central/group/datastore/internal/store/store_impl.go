@@ -138,13 +138,13 @@ func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 func addInTransaction(tx *bolt.Tx, group *storage.Group) error {
 	id := group.GetProps().GetId()
 
-	// Check whether the to-be-added group is a default group, ensure that it does not yet exist.
-	defaultGrp, err := checkDefaultGroupForProps(tx, group.GetProps())
+	defaultGrp, err := getDefaultGroupForProps(tx, group.GetProps())
 	if err != nil {
 		return err
 	}
 
-	if defaultGrp != nil && defaultGrp.GetProps().GetId() != id {
+	// Check whether the to-be-added group is a default group, ensure that it does not yet exist.
+	if defaultGrp != nil {
 		return errox.AlreadyExists.Newf("a default group already exists for auth provider %q",
 			group.GetProps().GetAuthProviderId())
 	}
@@ -166,8 +166,7 @@ func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
 	id := group.GetProps().GetId()
 	buc := tx.Bucket(groupsBucket)
 
-	// Check whether the to-be-added group is a default group, ensure that it does not yet exist.
-	defaultGrp, err := checkDefaultGroupForProps(tx, group.GetProps())
+	defaultGrp, err := getDefaultGroupForProps(tx, group.GetProps())
 	if err != nil {
 		return err
 	}
@@ -295,11 +294,11 @@ func getPossibleGroupProperties(authProviderID string, attributes map[string][]s
 	return
 }
 
-// checkDefaultGroupForProps will check whether the given properties are a default group and, if they are, search the
-// store for the given auth provider ID, checking whether a default group already exists.
-// If the properties do not indicate a default group or the default group does not yet exist, it will return false.
-// Otherwise, it will return true.
-func checkDefaultGroupForProps(tx *bolt.Tx, props *storage.GroupProperties) (*storage.Group, error) {
+// getDefaultGroupForProps will check if the given properties are a default group and, if they are, search the
+// store for the given auth provider ID, and return the default group if it exists.
+// If the properties do not indicate a default group or the default group does not yet exist, it will return nil.
+// Otherwise, it will return the default group.
+func getDefaultGroupForProps(tx *bolt.Tx, props *storage.GroupProperties) (*storage.Group, error) {
 	// 1. Short-circuit if the props do not indicate a default group. A default group only has the auth provider ID
 	// field set.
 	if !isDefaultGroup(props) {
