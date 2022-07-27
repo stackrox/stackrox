@@ -45,6 +45,7 @@ func init() {
 			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
+			"scan: ImageScan",
 			"topImageVulnerability(query: String): ImageVulnerability",
 			"unusedVarSink(query: String): Int",
 			"watchStatus: ImageWatchStatus!",
@@ -401,6 +402,16 @@ func (resolver *imageResolver) PlottedVulns(ctx context.Context, args RawQuery) 
 func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "PlottedImageVulnerabilities")
 	return resolver.root.PlottedImageVulnerabilities(resolver.imageScopeContext(ctx), args)
+}
+
+func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
+	resolver.ensureData(ctx)
+	res, err := resolver.root.wrapImageScan(resolver.data.GetScan(), true, nil)
+	if err != nil || res == nil {
+		return nil, err
+	}
+	res.ctx = resolver.imageScopeContext(ctx)
+	return res, nil
 }
 
 func (resolver *imageResolver) WatchStatus(ctx context.Context) (string, error) {

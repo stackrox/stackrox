@@ -46,8 +46,6 @@ func init() {
 			"vulnCounter(query: String): VulnerabilityCounter!",
 			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!",
 		}),
-		schema.AddExtraResolver("ImageScan", `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
-		schema.AddExtraResolver("ImageScan", `componentCount(query: String): Int!`),
 		schema.AddQuery("component(id: ID): EmbeddedImageScanComponent"+
 			"@deprecated(reason: \"use 'imageComponent' or 'nodeComponent'\")"),
 		schema.AddQuery("components(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"+

@@ -75,6 +75,10 @@ var (
 		},
 		SkipFields: []generator.TypeAndField{
 			{
+				ParentType: reflect.TypeOf(storage.Image{}),
+				FieldName:  "Scan",
+			},
+			{
 				ParentType: reflect.TypeOf(storage.ImageScan{}),
 				FieldName:  "Components",
 			},
