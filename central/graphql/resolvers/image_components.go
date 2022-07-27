@@ -333,14 +333,9 @@ func (resolver *imageComponentResolver) ImageVulnerabilities(ctx context.Context
 	return resolver.root.ImageVulnerabilities(resolver.withImageComponentScope(ctx), args)
 }
 
-func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
+func (resolver *imageComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "LastScanned")
-
-	scope, ok := scoped.GetScope(resolver.ctx)
-	if ok && scope.Level == v1.SearchCategory_IMAGES {
-		log.Infof("Has Image scope")
-		ctx = resolver.ctx
-	}
+	ctx := resolver.ctx
 
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
