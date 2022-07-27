@@ -111,8 +111,7 @@ func (s *namespaceDatastoreSACSuite) deleteNamespace(id string) {
 }
 
 func (s *namespaceDatastoreSACSuite) TestAddNamespace() {
-	testedVerb := "add"
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbAdd)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -329,8 +328,7 @@ func (s *namespaceDatastoreSACSuite) TestRemoveNamespace() {
 }
 
 func (s *namespaceDatastoreSACSuite) TestUpdateNamespace() {
-	testedVerb := "update"
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbUpdate)
 
 	for name, c := range cases {
 		s.Run(name, func() {
