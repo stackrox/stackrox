@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/imageintegration/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -15,6 +17,7 @@ var (
 		Field:    search.ClusterID.String(),
 		Reversed: false,
 	}
+	imageIntegrationSAC = sac.ForResource(resources.ImageIntegration)
 )
 
 // searcherImpl provides an intermediary implementation layer for PodStorage.
@@ -24,16 +27,18 @@ type searcherImpl struct {
 }
 
 func (ds searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	res, err := ds.searcher.Search(ctx, q)
-	if err != nil {
-		log.Error(">>>>Image integration search_impl Search error")
-		log.Error(err.Error())
+	if ok, err := imageIntegrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
-	return res, nil
+
+	return ds.searcher.Search(ctx, q)
 }
 
 func (ds searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	if ok, err := imageIntegrationSAC.ReadAllowed(ctx); err != nil || !ok {
+		return 0, err
+	}
+
 	return ds.searcher.Count(ctx, q)
 }
 

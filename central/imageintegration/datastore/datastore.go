@@ -34,9 +34,9 @@ type DataStore interface {
 // New returns an instance of DataStore.
 func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
-		storage:  storage,
-		indexer:  indexer,
-		searcher: searcher,
+		storage:           storage,
+		indexer:           indexer,
+		formattedSearcher: searcher,
 	}
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -55,9 +55,9 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) D
 func NewForTestOnly(t *testing.T, storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
 	testutils.MustBeInTest(t)
 	ds := &datastoreImpl{
-		storage:  storage,
-		indexer:  indexer,
-		searcher: searcher,
+		storage:           storage,
+		indexer:           indexer,
+		formattedSearcher: searcher,
 	}
 	return ds
 }

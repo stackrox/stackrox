@@ -20,6 +20,8 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sac"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
@@ -198,7 +200,12 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if !shouldInsert {
 		return nil
 	}
-
+	deleteRelatedCtx := sac.WithAllAccess(context.Background())
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterID).ProtoQuery()
+	iis, ett := s.datastore.Search(deleteRelatedCtx, q)
+	if ett != nil {
+		log.Infof(">>>>>>>>> Testing ii search: ii list size is: %d", len(iis))
+	}
 	// Update or create.
 	if integrationToUpdate == nil {
 		if _, err := s.datastore.AddImageIntegration(ctx, imageIntegration); err != nil {

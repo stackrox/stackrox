@@ -60,6 +60,7 @@ func initialize() {
 	manager = newManager(imageintegration.Set(), ne, cf)
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
+	log.Infof(">>>> initializeDefaultIntegrations size enrichment: %d", len(integrations))
 	if err != nil {
 		log.Errorf("unable to use previous integrations: %s", err)
 		return
