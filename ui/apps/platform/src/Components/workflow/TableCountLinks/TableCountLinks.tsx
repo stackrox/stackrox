@@ -11,6 +11,7 @@ type TableCountLinksProps = {
         imageCount: number;
         componentCount: number;
         nodeCount?: number;
+        clusterCount?: number;
         id: string;
     };
     textOnly: boolean;
@@ -20,7 +21,14 @@ function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement 
     const workflowState = useContext(workflowStateContext);
     const entityType = workflowState.getCurrentEntityType();
     const entityContext = workflowState.getEntityContext() as Record<ResourceType, string>;
-    const { deploymentCount, imageCount, componentCount, nodeCount = 0, id } = row;
+    const {
+        deploymentCount,
+        imageCount,
+        componentCount,
+        nodeCount = 0,
+        clusterCount = 0,
+        id,
+    } = row;
 
     // TODO: refactor check for vulnerability types in follow-up PR
     const isLegacyVuln = entityType === entityTypes.CVE;
@@ -84,6 +92,14 @@ function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement 
                 <TableCountLink
                     entityType={resourceTypes.NODE_COMPONENT}
                     count={componentCount}
+                    textOnly={textOnly}
+                    selectedRowId={id}
+                />
+            )}
+            {isClusterVuln && !entityContext[resourceTypes.CLUSTER] && (
+                <TableCountLink
+                    entityType={resourceTypes.CLUSTER}
+                    count={clusterCount}
                     textOnly={textOnly}
                     selectedRowId={id}
                 />

@@ -138,7 +138,7 @@ const VulnMgmtNodeOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Node Findings">
-                    <div className="flex pdf-page pdf-stretch pdf-new shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                    <div className="flex pdf-page pdf-stretch pdf-new shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
                         <TableWidgetFixableCves
                             workflowState={workflowState}
                             entityContext={entityContext}
