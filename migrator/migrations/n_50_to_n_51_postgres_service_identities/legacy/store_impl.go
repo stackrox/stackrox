@@ -1,14 +1,14 @@
-package bolt
+// This file was originally generated with
+// //go:generate cp ../../../../central/serviceidentities/internal/store/bolt/store_impl.go .
+
+package legacy
 
 import (
 	"context"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -28,7 +28,6 @@ type storeImpl struct {
 
 // GetAll retrieves serviceIdentities from Bolt.
 func (b *storeImpl) GetAll(_ context.Context) ([]*storage.ServiceIdentity, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ServiceIdentity")
 	var serviceIdentities []*storage.ServiceIdentity
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(serviceIdentityBucket))
@@ -58,6 +57,5 @@ func (b *storeImpl) upsertServiceIdentity(serviceIdentity *storage.ServiceIdenti
 
 // Upsert adds a serviceIdentity to bolt
 func (b *storeImpl) Upsert(_ context.Context, serviceIdentity *storage.ServiceIdentity) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "ServiceIdentity")
 	return b.upsertServiceIdentity(serviceIdentity)
 }

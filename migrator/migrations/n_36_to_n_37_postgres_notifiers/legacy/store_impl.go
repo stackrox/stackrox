@@ -1,16 +1,15 @@
-package bolt
+// This file was originally generated with
+// //go:generate cp ../../../../central/notifier/datastore/internal/store/bolt/store_impl.go .
+
+package legacy
 
 import (
 	"context"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/dberrors"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	bolt "go.etcd.io/bbolt"
 )
@@ -31,31 +30,8 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) getNotifier(id string, bucket *bolt.Bucket) (notifier *storage.Notifier, exists bool, err error) {
-	notifier = new(storage.Notifier)
-	val := bucket.Get([]byte(id))
-	if val == nil {
-		return
-	}
-	exists = true
-	err = proto.Unmarshal(val, notifier)
-	return
-}
-
-// Get returns notifier with given id.
-func (b *storeImpl) Get(_ context.Context, id string) (notifier *storage.Notifier, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Notifier")
-	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(notifierBucket)
-		notifier, exists, err = b.getNotifier(id, bucket)
-		return err
-	})
-	return
-}
-
 // GetAll retrieves all notifiers from bolt
 func (b *storeImpl) GetAll(_ context.Context) ([]*storage.Notifier, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Notifier")
 	var notifiers []*storage.Notifier
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(notifierBucket)
@@ -87,21 +63,8 @@ func updateUniqueCheck(tx *bolt.Tx, notifier *storage.Notifier) error {
 	return nil
 }
 
-func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Exists, "Notifier")
-
-	var exists bool
-	err := b.View(func(tx *bolt.Tx) error {
-		exists = tx.Bucket(notifierBucket).Get([]byte(id)) != nil
-		return nil
-	})
-	return exists, err
-}
-
 // Upsert upserts a notifier to bolt
 func (b *storeImpl) Upsert(_ context.Context, notifier *storage.Notifier) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "Notifier")
-
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(notifierBucket)
 		if bolthelper.Exists(bucket, notifier.GetId()) {
@@ -122,20 +85,4 @@ func (b *storeImpl) Upsert(_ context.Context, notifier *storage.Notifier) error 
 		return bucket.Put([]byte(notifier.GetId()), bytes)
 	})
 	return err
-}
-
-// Delete removes a notifier.
-func (b *storeImpl) Delete(_ context.Context, id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Notifier")
-	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(notifierBucket)
-		key := []byte(id)
-		if exists := b.Get(key) != nil; !exists {
-			return dberrors.ErrNotFound{Type: "Notifier", ID: string(key)}
-		}
-		if err := secondarykey.RemoveUniqueKey(tx, notifierBucket, id); err != nil {
-			return err
-		}
-		return b.Delete(key)
-	})
 }

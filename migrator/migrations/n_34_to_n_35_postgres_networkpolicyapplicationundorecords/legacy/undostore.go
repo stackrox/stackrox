@@ -1,16 +1,14 @@
-package bolt
+// This file was originally generated with
+// //go:generate cp ../../../../central/networkpolicies/datastore/internal/undostore/bolt/undostore.go .
+
+package legacy
 
 import (
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/logging"
 	bolt "go.etcd.io/bbolt"
 )
 
 var undoBucket = []byte("networkpolicies-undo")
-
-var (
-	log = logging.LoggerForModule()
-)
 
 // New returns a new UndoStore instance using the provided bolt DB instance.
 func New(db *bolt.DB) *undoStore {

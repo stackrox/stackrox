@@ -1,4 +1,7 @@
-package bolt
+// This file was originally generated with
+// //go:generate cp ../../../../central/imageintegration/store/bolt/store.go .
+
+package legacy
 
 import (
 	"context"
@@ -21,8 +24,6 @@ func New(db *bolt.DB) *storeImpl {
 
 // Store provides storage functionality for alerts.
 type Store interface {
-	Get(ctx context.Context, id string) (*storage.ImageIntegration, bool, error)
 	GetAll(ctx context.Context) ([]*storage.ImageIntegration, error)
 	Upsert(ctx context.Context, integration *storage.ImageIntegration) error
-	Delete(ctx context.Context, id string) error
 }

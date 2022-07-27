@@ -1,4 +1,7 @@
-package bolt
+// This file was originally generated with
+// //go:generate cp ../../../../central/externalbackups/internal/store/bolt/store_impl.go .
+
+package legacy
 
 import (
 	"context"
@@ -46,20 +49,7 @@ func (s *storeImpl) GetAll(_ context.Context) ([]*storage.ExternalBackup, error)
 	return backups, nil
 }
 
-func (s *storeImpl) Get(_ context.Context, id string) (*storage.ExternalBackup, bool, error) {
-	value, err := s.crud.Read(id)
-	if err != nil || value == nil {
-		return nil, false, err
-	}
-	return value.(*storage.ExternalBackup), true, nil
-}
-
 func (s *storeImpl) Upsert(_ context.Context, backup *storage.ExternalBackup) error {
 	_, _, err := s.crud.Upsert(backup)
-	return err
-}
-
-func (s *storeImpl) Delete(_ context.Context, id string) error {
-	_, _, err := s.crud.Delete(id)
 	return err
 }
