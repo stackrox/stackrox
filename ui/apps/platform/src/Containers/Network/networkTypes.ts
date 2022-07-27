@@ -84,7 +84,6 @@ export type Edge = {
         targetNodeNamespace?: string;
         isActive: boolean;
         isAllowed: boolean;
-        isDisallowed?: boolean;
         portsAndProtocols: PortsAndProtocols[];
         traffic: 'bidirectional' | 'ingress' | 'egress';
         type: 'deployment' | 'external';
