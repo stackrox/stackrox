@@ -6,11 +6,13 @@ export type CategoryFilter = 'Default categories' | 'Custom categories';
 type PolicyCategoriesFilterSelectProps = {
     selectedFilters: CategoryFilter[];
     setSelectedFilters: (selectedFilters: CategoryFilter[]) => void;
+    isDisabled: boolean;
 };
 
 function PolicyCategoriesFilterSelect({
     selectedFilters,
     setSelectedFilters,
+    isDisabled,
 }: PolicyCategoriesFilterSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -30,6 +32,7 @@ function PolicyCategoriesFilterSelect({
             isOpen={isOpen}
             selections={selectedFilters}
             isCheckboxSelectionBadgeHidden
+            isDisabled={isDisabled}
             placeholderText={
                 selectedFilters.length === 1 ? selectedFilters[0] : 'Show all categories'
             }
