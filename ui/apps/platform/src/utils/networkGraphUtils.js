@@ -259,7 +259,6 @@ export const getNamespaceEdges = ({
     networkNodeMap,
 }) => {
     const visitedNodeLinks = {};
-    const disallowedNamespaceLinks = {};
     const activeNamespaceLinks = {};
     const namespaceLinks = {};
     const highlightedNodeId = (hoveredNode || selectedNode)?.id;
@@ -293,7 +292,6 @@ export const getNamespaceEdges = ({
             targetNS,
             isActive,
             isAllowed,
-            isDisallowed,
             isExternal,
             simulatedStatus,
         }) => {
@@ -304,10 +302,6 @@ export const getNamespaceEdges = ({
             // keep track of which namespace links are active
             if (isActive) {
                 activeNamespaceLinks[namespaceLinkKey] = true;
-            }
-            // keep track of which namespace links are disallowed
-            if (isDisallowed) {
-                disallowedNamespaceLinks[namespaceLinkKey] = true;
             }
 
             const portsAndProtocols = getPortsAndProtocolsByLink(nodeLinkKey, isEgress);
@@ -387,14 +381,12 @@ export const getNamespaceEdges = ({
 
         const isNamespaceActive = activeNamespaceLinks[namespaceLinkKey];
         const isNamespaceEdgeActive = filterState !== filterModes.allowed && isNamespaceActive;
-        const isNamespaceEdgeDisallowed = disallowedNamespaceLinks[namespaceLinkKey];
         // this is to show the directionality of the external entities/CIDR block edges
         const isExternalEdge = (hoveredNode || selectedNode) && isExternal;
 
         const classes = getClasses({
             namespace: true,
             active: isNamespaceEdgeActive,
-            disallowed: isNamespaceEdgeActive && isNamespaceEdgeDisallowed,
             hovered: isHoveredEdge,
             unidirectional: numUnidirectionalLinks > 0,
             bidirectional: numBidirectionalLinks > 0,
@@ -447,7 +439,6 @@ const getLinkMetadata = (link, isSourceNode) => {
         targetType,
         isActive,
         isAllowed,
-        isDisallowed,
         simulatedStatus,
     } = link;
     // destination node info needed for network flow tab
@@ -468,7 +459,6 @@ const getLinkMetadata = (link, isSourceNode) => {
         targetNodeNamespace,
         isActive,
         isAllowed,
-        isDisallowed,
         simulatedStatus,
     };
 };
@@ -563,7 +553,6 @@ export const getEdgesFromNode = ({
             target,
             targetNS,
             isActive,
-            isDisallowed,
             isBetweenNonIsolated,
             simulatedStatus,
         } = link;
@@ -604,8 +593,6 @@ export const getEdgesFromNode = ({
                 active: !inAllowedFilterState && isActive,
                 // only hide edge when it's bw nonisolated and is not active
                 nonIsolated: isBetweenNonIsolated && (!isActive || inAllowedFilterState),
-                // an edge is disallowed when it is active but is not allowed
-                disallowed: !inAllowedFilterState && isDisallowed,
             };
 
             // if the edge is between two deployments in the same namespace
@@ -999,14 +986,16 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
             !isAdjacent && (selectedNode || hoveredNode) && !isHovered && !isSelected;
 
         const isNonIsolated = getIsNonIsolatedNode(datum);
+        // Historical note: isDisallowed was added in rox#2070 and then disabled in rox#2747
+        /*
         const isDisallowed =
             filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
+        */
         const isExternallyConnected = externallyConnected && filterState !== filterModes.allowed;
         const classes = getClasses({
             active: datum.isActive,
             selected: isSelected,
             deployment: true,
-            disallowed: isDisallowed,
             hovered: isHovered,
             background: isBackground,
             nonIsolated: isNonIsolated,

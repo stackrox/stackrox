@@ -2,7 +2,6 @@ import React, { useState, ReactElement } from 'react';
 import * as Icon from 'react-feather';
 
 import LegendTile from 'Components/LegendTile';
-import { UIfeatureFlags } from 'utils/featureFlags';
 
 function LegendContent({ toggleLegend }: { toggleLegend: (value) => void }): ReactElement {
     return (
@@ -31,13 +30,6 @@ function LegendContent({ toggleLegend }: { toggleLegend: (value) => void }): Rea
                         tooltip="Non-isolated deployment (all connections allowed)"
                         type="font"
                     />
-                    {UIfeatureFlags.SHOW_DISALLOWED_CONNECTIONS && (
-                        <LegendTile
-                            name="disallowed-deployment"
-                            tooltip="Disallowed deployment (no connections allowed)"
-                            type="font"
-                        />
-                    )}
                 </div>
                 <div className="flex border-b border-base-400" data-testid="namespace-legend">
                     <LegendTile name="namespace" tooltip="Namespace" type="svg" />
@@ -51,24 +43,10 @@ function LegendContent({ toggleLegend }: { toggleLegend: (value) => void }): Rea
                         tooltip="Namespace connection"
                         type="svg"
                     />
-                    {UIfeatureFlags.SHOW_DISALLOWED_CONNECTIONS && (
-                        <LegendTile
-                            name="namespace-disallowed-connection"
-                            tooltip="Active but disallowed namespace connection"
-                            type="svg"
-                        />
-                    )}
                 </div>
                 <div className="flex border-b border-base-400" data-testid="connection-legend">
                     <LegendTile name="active-connection" tooltip="Active connection" type="svg" />
                     <LegendTile name="allowed-connection" tooltip="Allowed connection" type="svg" />
-                    {UIfeatureFlags.SHOW_DISALLOWED_CONNECTIONS && (
-                        <LegendTile
-                            name="disallowed-connection"
-                            tooltip="Active but disallowed connection"
-                            type="svg"
-                        />
-                    )}
                     <LegendTile
                         name="namespace-egress-ingress"
                         tooltip="Namespace external egress/ingress traffic"

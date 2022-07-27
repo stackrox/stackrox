@@ -210,13 +210,6 @@ const styles = [
         },
     },
     {
-        selector: 'node.disallowed',
-        style: {
-            ...deploymentStyle,
-            'background-color': COLORS.disallowed,
-        },
-    },
-    {
         selector: 'node.hovered',
         style: {
             opacity: 1,
@@ -360,16 +353,6 @@ const styles = [
         style: {
             'line-style': 'solid',
             'z-compound-depth': 'top',
-        },
-    },
-    {
-        selector: 'edge.disallowed',
-        style: {
-            'line-style': 'solid',
-            'line-color': COLORS.disallowed,
-            'z-compound-depth': 'top',
-            color: COLORS.disallowed,
-            'text-border-color': COLORS.disallowed,
         },
     },
     {
