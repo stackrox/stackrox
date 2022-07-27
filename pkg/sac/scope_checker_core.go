@@ -3,7 +3,6 @@ package sac
 import (
 	"context"
 
-	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
@@ -44,20 +43,4 @@ type ScopeCheckerCore interface {
 	// EffectiveAccessScope returns effective access scope for given principal stored in context.
 	// If checker is not at resource level then it returns an error.
 	EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error)
-}
-
-// NewRootScopeCheckerCore returns a ScopeCheckerCore with a root AccessScope
-func NewRootScopeCheckerCore(reqTracker ScopeRequestTracker) ScopeCheckerCore {
-	return NewScopeCheckerCore(payload.AccessScope{}, reqTracker)
-}
-
-// NewScopeCheckerCore returns a new ScopeCheckerCore for a given scope
-func NewScopeCheckerCore(currentScope payload.AccessScope, reqTracker ScopeRequestTracker) ScopeCheckerCore {
-	scc := &ScopeCheckerCoreImpl{
-		children:     make(map[ScopeKey]ScopeCheckerCore),
-		currentScope: currentScope,
-		reqTracker:   reqTracker,
-		state:        int32(Unknown),
-	}
-	return scc
 }
