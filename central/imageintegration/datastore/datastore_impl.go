@@ -80,6 +80,7 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 
 	integration.Id = uuid.NewV4().String()
 	ds.indexer.AddImageIntegration(integration)
+	log.Info(">>>> Added a image integration")
 	return integration.Id, ds.storage.Upsert(ctx, integration)
 }
 
@@ -91,6 +92,7 @@ func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration
 		return sac.ErrResourceAccessDenied
 	}
 	ds.indexer.AddImageIntegration(integration)
+	log.Info(">>>> Added a image integration")
 	return ds.storage.Upsert(ctx, integration)
 }
 
