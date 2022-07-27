@@ -116,9 +116,26 @@ function getCountsBySeverity(groups: AlertGroup[]): CountsBySeverity {
     return result;
 }
 
-function linkForViolationsCategory(category: string, searchFilter: SearchFilter) {
+function linkForViolationsCategory(
+    category: string,
+    searchFilter: SearchFilter,
+    lifecycle: LifecycleOption,
+    hiddenSeverities: Set<PolicySeverity>
+) {
+    const search: SearchFilter = {
+        ...searchFilter,
+        Category: category,
+    };
+
+    if (lifecycle !== 'ALL') {
+        search['Lifecycle Stage'] = lifecycle;
+    }
+    if (hiddenSeverities.size > 0) {
+        search.Severity = severitiesLowToCritical.filter((s) => !hiddenSeverities.has(s));
+    }
+
     const queryString = getQueryString({
-        s: { ...searchFilter, Category: category },
+        s: search,
         sortOption: { field: 'Severity', direction: 'desc' },
     });
     return `${violationsBasePath}${queryString}`;
@@ -129,6 +146,7 @@ type SortTypeOption = 'Severity' | 'Total';
 type ViolationsByPolicyCategoryChartProps = {
     alertGroups: AlertGroup[];
     sortType: SortTypeOption;
+    lifecycle: LifecycleOption;
     searchFilter: SearchFilter;
     hiddenSeverities: Set<PolicySeverity>;
     setHiddenSeverities: (severities: Set<PolicySeverity>) => Promise<Config>;
@@ -150,6 +168,7 @@ const chartTheme = patternflySeverityTheme;
 function ViolationsByPolicyCategoryChart({
     alertGroups,
     sortType,
+    lifecycle,
     hiddenSeverities,
     setHiddenSeverities,
     searchFilter,
@@ -159,8 +178,9 @@ function ViolationsByPolicyCategoryChart({
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
     const labelLinkCallback = useCallback(
-        ({ text }: ChartLabelProps) => linkForViolationsCategory(String(text), searchFilter),
-        [searchFilter]
+        ({ text }: ChartLabelProps) =>
+            linkForViolationsCategory(String(text), searchFilter, lifecycle, hiddenSeverities),
+        [searchFilter, lifecycle, hiddenSeverities]
     );
 
     const filteredAlertGroups = zeroOutFilteredSeverities(alertGroups, hiddenSeverities);
@@ -190,7 +210,12 @@ function ViolationsByPolicyCategoryChart({
                 events={[
                     navigateOnClickEvent(history, (targetProps) => {
                         const category = targetProps?.datum?.xName;
-                        return linkForViolationsCategory(category, searchFilter);
+                        return linkForViolationsCategory(
+                            category,
+                            searchFilter,
+                            lifecycle,
+                            hiddenSeverities
+                        );
                     }),
                 ]}
             />
@@ -375,6 +400,7 @@ function ViolationsByPolicyCategory() {
                 <ViolationsByPolicyCategoryChart
                     alertGroups={alertGroups}
                     sortType={sortType}
+                    lifecycle={lifecycle}
                     searchFilter={searchFilter}
                     hiddenSeverities={hiddenSeveritySet}
                     setHiddenSeverities={onHiddenSeverityUpdate}
