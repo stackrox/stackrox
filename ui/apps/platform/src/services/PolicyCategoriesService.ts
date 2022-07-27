@@ -1,14 +1,7 @@
+import { PolicyCategory } from 'types/policy.proto';
 import axios from './instance';
 
 const policyCategoriesUrl = '/v1/policycategories';
-
-export type PolicyCategory = {
-    id: string;
-    // central/policycategory/service/service_impl.go
-    // policy category must have a name between 5 and 128 characters long with no new lines or dollar signs
-    name: string;
-    isDefault: boolean;
-};
 
 export function getPolicyCategory(id: string): Promise<PolicyCategory> {
     return axios

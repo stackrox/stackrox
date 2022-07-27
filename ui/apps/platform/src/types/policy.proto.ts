@@ -154,6 +154,8 @@ export type PolicyMitreAttackVector = {
 
 export type PolicyCategory = {
     id: string;
+    // central/policycategory/service/service_impl.go
+    // policy category must have a name between 5 and 128 characters long with no new lines or dollar signs
     name: string;
     isDefault: boolean;
 };

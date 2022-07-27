@@ -1,33 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { PageSection, Title, Flex, TextInput } from '@patternfly/react-core';
+import { PageSection, Divider, Title, Flex, FlexItem, TextInput } from '@patternfly/react-core';
 
+import { PolicyCategory } from 'types/policy.proto';
 import PolicyCategoriesList from './PolicyCategoriesList';
 import PolicyCategoriesFilterSelect, { CategoryFilter } from './PolicyCategoriesFilterSelect';
+import PolicyCategorySidePanel from './PolicyCategorySidePanel';
 
 type PolicyCategoriesListSectionProps = {
-    // TODO: change once proto goes in
-    // policyCategories: {
-    //     id: string;
-    //     name: string;
-    //     isDefault: boolean;
-    // }[];
-    policyCategories: string[];
+    policyCategories: {
+        id: string;
+        name: string;
+        isDefault: boolean;
+    }[];
+    addToast: (message) => void;
 };
 
-function PolicyCategoriesListSection({ policyCategories }: PolicyCategoriesListSectionProps) {
-    // TODO: to remove once proto is in
-    const allPolicyCategories = policyCategories.map((category) => ({
-        id: category,
-        name: category,
-        isDefault: true,
-    }));
-    const customPolicyCategories = allPolicyCategories.filter(({ isDefault }) => !isDefault);
-    const defaultPolicyCategories = allPolicyCategories.filter(({ isDefault }) => isDefault);
+function PolicyCategoriesListSection({
+    policyCategories,
+    addToast,
+}: PolicyCategoriesListSectionProps) {
+    const [selectedCategory, setSelectedCategory] = useState<PolicyCategory>();
+    const customPolicyCategories = policyCategories.filter(({ isDefault }) => !isDefault);
+    const defaultPolicyCategories = policyCategories.filter(({ isDefault }) => isDefault);
     const [selectedFilters, setSelectedFilters] = useState<CategoryFilter[]>([
         'Default categories',
         'Custom categories',
     ]);
-    let currentPolicyCategories = allPolicyCategories;
+    let currentPolicyCategories = policyCategories;
     if (selectedFilters.length === 1) {
         if (selectedFilters[0] === 'Default categories') {
             currentPolicyCategories = defaultPolicyCategories;
@@ -49,39 +48,68 @@ function PolicyCategoriesListSection({ policyCategories }: PolicyCategoriesListS
     }, [filterTerm, selectedFilters]);
 
     return (
-        <PageSection isFilled id="policy-categories-list-section">
-            <PageSection isFilled variant="light">
-                <Flex direction={{ default: 'column' }}>
-                    <Flex
-                        justifyContent={{ default: 'justifyContentSpaceBetween' }}
-                        fullWidth={{ default: 'fullWidth' }}
-                    >
-                        <Title headingLevel="h3">Categories</Title>
-                        <Title headingLevel="h3">{filteredCategories.length} results found</Title>
-                    </Flex>
-                    <Flex
-                        justifyContent={{ default: 'justifyContentSpaceBetween' }}
-                        fullWidth={{ default: 'fullWidth' }}
-                        flexWrap={{ default: 'nowrap' }}
-                    >
-                        <TextInput
-                            onChange={setFilterTerm}
-                            type="text"
-                            value={filterTerm}
-                            placeholder="Filter by category name..."
-                            id="policy-categories-filter-input"
-                        />
-                        <PolicyCategoriesFilterSelect
-                            selectedFilters={selectedFilters}
-                            setSelectedFilters={setSelectedFilters}
-                        />
-                    </Flex>
-                    {filteredCategories.length > 0 && (
-                        <PolicyCategoriesList policyCategories={filteredCategories} />
-                    )}
-                    {filteredCategories.length === 0 && <div>No policy categories found.</div>}
-                </Flex>
-            </PageSection>
+        <PageSection id="policy-categories-list-section">
+            <Flex
+                spaceItems={{ default: 'spaceItemsNone' }}
+                alignItems={{ default: 'alignItemsStretch' }}
+                className="pf-u-h-100"
+            >
+                <FlexItem flex={{ default: 'flex_1' }}>
+                    <PageSection isFilled variant="light" className="pf-u-h-100">
+                        <Flex direction={{ default: 'column' }}>
+                            <Title headingLevel="h2">
+                                <Flex
+                                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                                    fullWidth={{ default: 'fullWidth' }}
+                                >
+                                    <span>Categories</span>
+                                    <span>{filteredCategories.length} results found</span>
+                                </Flex>
+                            </Title>
+                            <Flex
+                                justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                                fullWidth={{ default: 'fullWidth' }}
+                                flexWrap={{ default: 'nowrap' }}
+                            >
+                                <TextInput
+                                    onChange={setFilterTerm}
+                                    type="text"
+                                    value={filterTerm}
+                                    placeholder="Filter by category name..."
+                                    id="policy-categories-filter-input"
+                                    isDisabled={!!selectedCategory}
+                                />
+                                <PolicyCategoriesFilterSelect
+                                    selectedFilters={selectedFilters}
+                                    setSelectedFilters={setSelectedFilters}
+                                    isDisabled={!!selectedCategory}
+                                />
+                            </Flex>
+                            {filteredCategories.length > 0 && (
+                                <PolicyCategoriesList
+                                    policyCategories={filteredCategories}
+                                    setSelectedCategory={setSelectedCategory}
+                                />
+                            )}
+                            {filteredCategories.length === 0 && (
+                                <div>No policy categories found.</div>
+                            )}
+                        </Flex>
+                    </PageSection>
+                </FlexItem>
+                {selectedCategory && (
+                    <>
+                        <Divider component="div" isVertical />
+                        <FlexItem flex={{ default: 'flex_1' }}>
+                            <PolicyCategorySidePanel
+                                selectedCategory={selectedCategory}
+                                setSelectedCategory={setSelectedCategory}
+                                addToast={addToast}
+                            />
+                        </FlexItem>
+                    </>
+                )}
+            </Flex>
         </PageSection>
     );
 }
