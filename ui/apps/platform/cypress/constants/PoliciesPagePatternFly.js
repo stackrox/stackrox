@@ -8,8 +8,7 @@ export const selectors = {
         importButton: 'button:contains("Import policy")',
         searchInput: '.react-select__input > input',
         bulkActionsDropdownButton: 'button:contains("Bulk actions")',
-        bulkActionsDropdownItem:
-            'button:contains("Bulk actions") + ul[role="menu"] li[role="menuitem"]',
+        bulkActionsDropdownItem: 'button:contains("Bulk actions") + ul[role="menu"] li',
         reassessButton: 'button:contains("Reassess all")',
         policyLink: 'td[data-label="Policy"] a',
         statusCell: 'td[data-label="Status"]',
@@ -17,14 +16,14 @@ export const selectors = {
         lifecycleCell: 'td[data-label="Lifecycle"]',
         selectCheckbox: '.pf-c-table__check input[type="checkbox"]',
         actionsToggleButton: 'td.pf-c-table__action button.pf-c-dropdown__toggle',
-        actionsItemButton: 'td.pf-c-table__action ul li[role="menuitem"] button',
+        actionsItemButton: 'td.pf-c-table__action ul li button[role="menuitem"]',
         firstRow: '[data-testid="policies-table"] tbody tr:nth(0)',
         rows: '[data-testid="policies-table"] tbody tr',
     },
     page: {
         actionsToggleButton: 'button.pf-c-dropdown__toggle:contains("Actions")',
         actionsItemButton:
-            'button.pf-c-dropdown__toggle:contains("Actions") + ul li[role="menuitem"] button',
+            'button.pf-c-dropdown__toggle:contains("Actions") + ul li button[role="menuitem"]',
     },
     toast: {
         title: 'ul.pf-c-alert-group .pf-c-alert__title',
