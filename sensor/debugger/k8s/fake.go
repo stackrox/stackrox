@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -77,6 +78,8 @@ type FakeEventsManager struct {
 	clientMap map[string]func(string) interface{}
 	// resourceMap map with the k8s resources
 	resourceMap map[string]interface{}
+	// resourceListMap map with the k8s resource Lists
+	resourceListMap map[string]func(reflect.Value, func(string) error) error
 }
 
 const (
@@ -215,6 +218,188 @@ func (f *FakeEventsManager) Init() {
 		statefulSetKind:           &appsv1.StatefulSet{},
 		cronJobKind:               &batchv1.CronJob{},
 		podKind:                   &corev1.Pod{},
+	}
+	f.resourceListMap = map[string]func(reflect.Value, func(string) error) error{
+		namespaceKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*corev1.NamespaceList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		clusterRoleKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*rbacv1.ClusterRoleList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		clusterRoleBindingKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*rbacv1.ClusterRoleBindingList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		nodeKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*corev1.NodeList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		secretKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*corev1.SecretList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		serviceAccountsKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*corev1.ServiceAccountList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		roleKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*rbacv1.RoleList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		roleBindingKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*rbacv1.RoleBindingList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		networkPolicyKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*networkingv1.NetworkPolicyList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		serviceKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*corev1.ServiceList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		jobKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*batchv1.JobList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		replicaSetKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*appsv1.ReplicaSetList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		replicationControllerKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*corev1.ReplicationControllerList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		daemonSetKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*appsv1.DaemonSetList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		deploymentKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*appsv1.DeploymentList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		statefulSetKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*appsv1.StatefulSetList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		cronJobKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*batchv1.CronJobList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
+		podKind: func(obj reflect.Value, f func(string) error) error {
+			list := obj.Interface().(*corev1.PodList)
+			errorList := errorhelpers.NewErrorList("resource list function")
+			for _, it := range list.Items {
+				if err := f(it.GetName()); err != nil {
+					errorList.AddError(err)
+				}
+			}
+			return errorList.ToError()
+		},
 	}
 }
 
@@ -434,6 +619,68 @@ func (f *FakeEventsManager) waitOnMode(events []string) error {
 		}
 	}
 	return nil
+}
+
+// execFuncToAllResourcesOfKind executes a given function to all resources of a given kind
+func (f *FakeEventsManager) execFuncToAllResourcesOfKind(kind string, client reflect.Value, execFunc func(string) error) error {
+	returnVals := client.MethodByName("List").Call([]reflect.Value{
+		reflect.ValueOf(context.Background()),
+		reflect.ValueOf(metav1.ListOptions{}),
+	})
+
+	if len(returnVals) != 2 {
+		return fmt.Errorf("expected 2 values from %s. Received: %d", "List", len(returnVals))
+	}
+	errInt := returnVals[len(returnVals)-1].Interface()
+	if errInt != nil {
+		return errInt.(error)
+	}
+	resFunc, ok := f.resourceListMap[kind]
+	if !ok {
+		return fmt.Errorf("kind %s not found", kind)
+	}
+	err := resFunc(returnVals[0], execFunc)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteAllResources deletes all resources in the cluster
+func (f *FakeEventsManager) DeleteAllResources() error {
+	errorList := errorhelpers.NewErrorList("delete all resources")
+	namespaceClientFunc, ok := f.clientMap[namespaceKind]
+	if !ok {
+		errorList.AddStringf("kind %s not found", namespaceKind)
+	}
+	cl := reflect.ValueOf(namespaceClientFunc(""))
+	var namespaces []string
+	if err := f.execFuncToAllResourcesOfKind(namespaceKind, cl, func(name string) error {
+		namespaces = append(namespaces, name)
+		return nil
+	}); err != nil {
+		errorList.AddError(err)
+	}
+	for kind, clFunc := range f.clientMap {
+		for _, ns := range namespaces {
+			cl = reflect.ValueOf(clFunc(ns))
+			if err := f.execFuncToAllResourcesOfKind(kind, cl, func(name string) error {
+				retVals := runOp(removeAction, cl, reflect.ValueOf(name))
+				if len(retVals) == 0 {
+					return fmt.Errorf("expected 1 or 2 values from %s. Received: %d", removeAction, len(retVals))
+				}
+				errI := retVals[len(retVals)-1].Interface()
+				if errI == nil {
+					return nil
+				}
+				return errI.(error)
+			}); err != nil {
+				errorList.AddError(err)
+			}
+		}
+	}
+	return errorList.ToError()
 }
 
 // isEventInSlice checks whether a SensorEvent is in a slice of events or not
