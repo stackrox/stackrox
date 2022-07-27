@@ -828,6 +828,9 @@ openshift_ci_import_creds() {
     for cred in /tmp/secret/**/[A-Z]*; do
         export "$(basename "$cred")"="$(cat "$cred")"
     done
+    for cred in /tmp/vault/**/[A-Z]*; do
+        export "$(basename "$cred")"="$(cat "$cred")"
+    done
 }
 
 create_hold_trap() {
