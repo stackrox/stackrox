@@ -61,10 +61,7 @@ const mocks = [
     },
 ];
 
-jest.mock('hooks/useResizeObserver', () => ({
-    __esModule: true,
-    default: jest.fn().mockImplementation(jest.fn),
-}));
+jest.mock('hooks/useResizeObserver');
 
 beforeEach(() => {
     localStorage.clear();
