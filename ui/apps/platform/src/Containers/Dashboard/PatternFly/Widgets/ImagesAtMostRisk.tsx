@@ -54,7 +54,7 @@ export const imagesQuery = gql`
                 fullName
             }
             priority
-            vulnCounter {
+            imageVulnerabilityCounter {
                 important {
                     total
                     fixable

@@ -13,13 +13,13 @@ function makeMockImage(
     remote: string,
     fullName: string,
     priority: number,
-    vulnCounter: VulnCounts
+    imageVulnerabilityCounter: VulnCounts
 ) {
     return {
         id,
         name: { remote, fullName },
         priority,
-        vulnCounter,
+        imageVulnerabilityCounter,
     };
 }
 
