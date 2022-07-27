@@ -33,8 +33,6 @@ roxctl/helm/derivelocalvalues/testdata/k8s-resources/*.yaml
 scale/image/fixtures/scrape.json
 scale/mocksensor/image_names.go
 sensor/tests/replay/data/policies.json
-sensor/tests/replay/data/safety-net-central-out.bin
-sensor/tests/replay/data/safety-net-k8s-trace.jsonl
 sensor/tests/replay/data/safety-net-alerts-central-out.bin
 sensor/tests/replay/data/safety-net-alerts-k8s-trace.jsonl
 sensor/tests/replay/data/safety-net-resources-central-out.bin
