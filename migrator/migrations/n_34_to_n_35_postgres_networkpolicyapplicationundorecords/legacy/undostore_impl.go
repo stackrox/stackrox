@@ -1,14 +1,14 @@
-package bolt
+// This file was originally generated with
+// //go:generate cp ../../../../central/networkpolicies/datastore/internal/undostore/bolt/undostore_impl.go .
+
+package legacy
 
 import (
 	"context"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -18,7 +18,6 @@ type undoStore struct {
 
 // Get returns network policy with given id.
 func (s *undoStore) Get(_ context.Context, clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "NetworkPolicyApplicationUndoRecord")
 	clusterKey := []byte(clusterID)
 	exists := false
 	var record storage.NetworkPolicyApplicationUndoRecord
@@ -45,8 +44,6 @@ func (s *undoStore) Get(_ context.Context, clusterID string) (*storage.NetworkPo
 }
 
 func (s *undoStore) Upsert(ctx context.Context, record *storage.NetworkPolicyApplicationUndoRecord) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "NetworkPolicyApplicationUndoRecord")
-
 	serialized, err := proto.Marshal(record)
 	if err != nil {
 		return errors.Wrap(err, "serializing record")

@@ -7,6 +7,7 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import {
     vulMgmtPolicyQuery,
     getScopeQuery,
@@ -26,6 +27,9 @@ const VulmMgmtEntityCluster = ({
     setRefreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const overviewQuery = gql`
         query getCluster($id: ID!, $policyQuery: String) {
@@ -62,8 +66,20 @@ const VulmMgmtEntityCluster = ({
                 namespaceCount
                 deploymentCount
                 imageCount
+                ${
+                    showVMUpdates
+                        ? `
+                imageComponentCount
+                nodeComponentCount
+                imageVulnerabilityCount
+                nodeVulnerabilityCount
+                clusterVulnerabilityCount
+                `
+                        : `
                 componentCount
                 vulnCount
+                `
+                }
             }
         }
     `;

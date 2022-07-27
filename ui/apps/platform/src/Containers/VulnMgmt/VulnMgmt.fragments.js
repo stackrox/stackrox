@@ -220,7 +220,7 @@ export const IMAGE_CVE_DETAIL_FRAGMENT = gql`
                 imageId
             }
         }
-        componentCount: imageComponentCount(query: $query)
+        imageComponentCount(query: $query)
         deploymentCount(query: $query)
         discoveredAtImage(query: $query)
         imageCount(query: $query)
@@ -258,7 +258,7 @@ export const NODE_CVE_DETAIL_FRAGMENT = gql`
                 vector
             }
         }
-        componentCount: nodeComponentCount(query: $query)
+        nodeComponentCount(query: $query)
         nodeCount(query: $query)
     }
 `;

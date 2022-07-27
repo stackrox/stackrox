@@ -275,6 +275,28 @@ func (evr *EmbeddedVulnerabilityResolver) NodeCount(ctx context.Context, args Ra
 	return nodeLoader.CountFromQuery(ctx, query)
 }
 
+// Clusters returns resolvers for clusters affected by cluster vulnerability.
+func (evr *EmbeddedVulnerabilityResolver) Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "Clusters")
+
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), evr.vulnRawQuery())
+	return evr.root.Clusters(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+// ClusterCount returns a number of clusters affected by cluster vulnerability.
+func (evr *EmbeddedVulnerabilityResolver) ClusterCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "ClusterCount")
+
+	if err := readClusters(ctx); err != nil {
+		return 0, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), evr.vulnRawQuery())
+	return evr.root.ClusterCount(ctx, RawQuery{Query: &query})
+}
+
 func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, cve *schema.NVDCVEFeedJSON10DefCVEItem, ct utils.CVEType) (int, int, error) {
 	clusters, err := resolver.ClusterDataStore.GetClusters(ctx)
 	if err != nil {

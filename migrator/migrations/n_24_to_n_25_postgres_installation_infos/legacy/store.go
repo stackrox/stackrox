@@ -1,4 +1,7 @@
-package bolt
+// This file was originally generated with
+// //go:generate cp ../../../../central/installation/store/store.go .
+
+package legacy
 
 import (
 	"context"

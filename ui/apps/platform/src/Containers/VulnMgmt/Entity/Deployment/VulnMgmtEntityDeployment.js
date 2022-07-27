@@ -9,6 +9,7 @@ import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import { VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -27,6 +28,9 @@ const VulmMgmtDeployment = ({
     setRefreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const overviewQuery = gql`
         query getDeployment($id: ID!, $policyQuery: String, $scopeQuery: String) {
@@ -64,8 +68,17 @@ const VulmMgmtDeployment = ({
                 type
                 created
                 imageCount
+                ${
+                    showVMUpdates
+                        ? `
+                imageComponentCount
+                imageVulnerabilityCount
+                `
+                        : `
                 componentCount
                 vulnCount
+                `
+                }
             }
         }
     `;

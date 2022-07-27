@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
+import { mockChartsWithoutAnimation } from 'test-utils/mocks/@patternfly/react-charts';
 import AgingImages, { imageCountQuery } from './AgingImages';
 
 const range0 = '30';
@@ -39,22 +40,11 @@ const mocks = [
     },
 ];
 
-jest.mock('@patternfly/react-charts', () => {
-    const { Chart, ...rest } = jest.requireActual('@patternfly/react-charts');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return {
-        ...rest,
-        Chart: (props) => <Chart {...props} animate={undefined} />,
-    };
-});
-
-jest.mock('hooks/useResizeObserver', () => ({
-    __esModule: true,
-    default: jest.fn().mockImplementation(jest.fn),
-}));
+jest.mock('@patternfly/react-charts', () => mockChartsWithoutAnimation);
+jest.mock('hooks/useResizeObserver');
 
 beforeEach(() => {
-    jest.resetModules();
+    localStorage.clear();
 });
 
 const setup = () => {

@@ -57,7 +57,7 @@ const VulmMgmtNode = ({
                     key
                     value
                 }
-                ${showVMUpdates ? 'vulnCount: nodeVulnerabilityCount' : 'vulnCount'}
+                ${showVMUpdates ? 'nodeVulnerabilityCount' : 'vulnCount'}
                 notes
                 scan {
                     scanTime

@@ -34,10 +34,7 @@ const mocks = [
     },
 ];
 
-jest.mock('hooks/useResizeObserver', () => ({
-    __esModule: true,
-    default: jest.fn().mockImplementation(jest.fn),
-}));
+jest.mock('hooks/useResizeObserver');
 
 // Mock the hook that handles the data fetching of alert counts
 jest.mock('Containers/Dashboard/PatternFly/hooks/useAlertGroups', () => ({

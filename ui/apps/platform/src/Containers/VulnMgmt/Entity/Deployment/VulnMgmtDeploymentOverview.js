@@ -105,7 +105,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         );
     } else {
         deploymentFindingsContent = (
-            <div className="flex pdf-page pdf-stretch pdf-new rounded relative rounded mb-4 ml-4 mr-4">
+            <div className="flex pdf-page pdf-stretch pdf-new relative rounded mb-4 ml-4 mr-4">
                 <BinderTabs>
                     <Tab title="Policies">
                         <TableWidget

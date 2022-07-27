@@ -1,3 +1,6 @@
+// This file was originally generated with
+// //go:generate cp ../../../../central/compliance/datastore/internal/store/rocksdb/rocksdb_store.go .
+
 package legacy
 
 import (
@@ -5,10 +8,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dbhelper"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -22,13 +23,10 @@ var (
 	resultsBucketName = []byte("compliance-run-results")
 
 	stringsKey = dbhelper.GetBucketKey(resultsBucketName, []byte("strings"))
-
-	log = logging.LoggerForModule()
 )
 
 // New returns a compliance results store that is backed by RocksDB.
 func New(db *rocksdb.RocksDB) (Store, error) {
-	globaldb.RegisterBucket(resultsBucketName, "ComplianceRunResults")
 	return &rocksdbStore{
 		db: db,
 	}, nil
@@ -87,7 +85,7 @@ func (r *rocksdbStore) createKay() []byte {
 	tsAndRunIDPrefix := append(tsBytes, separatorAndRunID...)
 	stringsPrefix := getClusterStandardPrefixes("cluster", "standard")
 	key := append([]byte{}, stringsPrefix...)
-	key = append(stringsKey, tsAndRunIDPrefix...)
+	key = append(key, tsAndRunIDPrefix...)
 	return key
 }
 

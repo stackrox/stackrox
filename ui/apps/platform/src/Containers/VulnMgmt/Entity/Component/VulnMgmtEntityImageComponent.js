@@ -14,14 +14,7 @@ import {
     getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
 
-// We want to override some values because the imageComponent object has different field names
-export const imageComponentCountKeyMap = {
-    ...defaultCountKeyMap,
-    [entityTypes.CVE]: 'vulnCount: imageVulnerabilityCount',
-    [entityTypes.IMAGE_CVE]: 'vulnCount: imageVulnerabilityCount',
-};
-
-const VulnMgmtImageComponent = ({
+const VulnMgmtEntityImageComponent = ({
     entityId,
     entityListType,
     search,
@@ -34,7 +27,7 @@ const VulnMgmtImageComponent = ({
     const workflowState = useContext(workflowStateContext);
 
     const overviewQuery = gql`
-        query getComponent($id: ID!, $query: String, $scopeQuery: String) {
+        query getImageComponent($id: ID!, $query: String, $scopeQuery: String) {
             result: imageComponent(id: $id) {
                 id
                 name
@@ -42,7 +35,8 @@ const VulnMgmtImageComponent = ({
                 fixedIn
                 location(query: $scopeQuery)
                 priority
-                vulnCount: imageVulnerabilityCount(query: $query, scopeQuery: $scopeQuery)
+                deploymentCount(query: $query)
+                imageVulnerabilityCount(query: $query, scopeQuery: $scopeQuery)
                 imageCount(query: $query)
                 topVuln: topImageVulnerability {
                     cvss
@@ -57,7 +51,7 @@ const VulnMgmtImageComponent = ({
             query getComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
                 result: imageComponent(id: $id) {
                     id
-                    ${imageComponentCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
+                    ${defaultCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
                     ${listFieldName}(query: $query, scopeQuery: $scopeQuery, pagination: $pagination) { ...${fragmentName} }
                     unusedVarSink(query: $policyQuery)
                     unusedVarSink(query: $scopeQuery)
@@ -98,4 +92,4 @@ const VulnMgmtImageComponent = ({
     );
 };
 
-export default VulnMgmtImageComponent;
+export default VulnMgmtEntityImageComponent;

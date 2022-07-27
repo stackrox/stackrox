@@ -1,6 +1,7 @@
 import { clustersUrl } from '../../constants/ClustersPage';
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
+import { reachClusters } from '../../helpers/clusters';
 import { setClock, visitSystemHealth } from '../../helpers/systemHealth';
 
 function visitSystemHealthWithClustersFixtureFilteredByNames(fixturePath, clusterNames) {
@@ -19,9 +20,10 @@ describe('System Health Clusters without fixture', () => {
     it('should go to Clusters via click View All', () => {
         visitSystemHealth();
 
-        cy.get(selectors.clusters.viewAllButton).click();
+        reachClusters(() => {
+            cy.get(selectors.clusters.viewAllButton).click();
+        });
         cy.location('pathname').should('eq', clustersUrl);
-        cy.get('h1:contains("Clusters")');
     });
 });
 

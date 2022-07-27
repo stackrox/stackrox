@@ -1,14 +1,14 @@
-package bolt
+// This file was originally generated with
+// //go:generate cp ../../../../central/sensorupgradeconfig/datastore/internal/store/bolt/store.go store_impl.go
+
+package legacy
 
 import (
 	"context"
-	"time"
 
 	proto "github.com/gogo/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	metrics "github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
 	singletonstore "github.com/stackrox/rox/pkg/bolthelper/singletonstore"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	bbolt "go.etcd.io/bbolt"
 )
 
@@ -28,7 +28,6 @@ type store struct {
 }
 
 func (s *store) Get(_ context.Context) (*storage.SensorUpgradeConfig, bool, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "SensorUpgradeConfig")
 	msg, err := s.underlying.Get()
 	if err != nil {
 		return nil, false, err
@@ -40,6 +39,5 @@ func (s *store) Get(_ context.Context) (*storage.SensorUpgradeConfig, bool, erro
 }
 
 func (s *store) Upsert(_ context.Context, sensorupgradeconfig *storage.SensorUpgradeConfig) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "SensorUpgradeConfig")
 	return s.underlying.Upsert(sensorupgradeconfig)
 }

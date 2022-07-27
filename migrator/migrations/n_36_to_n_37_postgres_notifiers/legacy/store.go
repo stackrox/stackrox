@@ -1,4 +1,7 @@
-package bolt
+// This file was originally generated with
+// //go:generate cp ../../../../central/notifier/datastore/internal/store/store.go  .
+
+package legacy
 
 import (
 	"context"
@@ -6,11 +9,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// Store provides storage functionality for alerts.
+// Store provides storage functionality for notifies
 type Store interface {
-	Get(ctx context.Context, id string) (*storage.Notifier, bool, error)
 	GetAll(ctx context.Context) ([]*storage.Notifier, error)
-	Exists(ctx context.Context, id string) (bool, error)
 	Upsert(ctx context.Context, obj *storage.Notifier) error
-	Delete(ctx context.Context, id string) error
 }

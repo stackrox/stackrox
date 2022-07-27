@@ -2,11 +2,16 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkbaseline/store"
+	"github.com/stackrox/rox/central/networkbaseline/store/postgres"
+	"github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -24,6 +29,18 @@ func newNetworkBaselineDataStore(storage store.Store) DataStore {
 		storage: storage,
 	}
 	return ds
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgres.New(pool)
+	return newNetworkBaselineDataStore(dbstore), nil
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
+	dbstore := rocksdb.New(rocksengine)
+	return newNetworkBaselineDataStore(dbstore), nil
 }
 
 func (ds *dataStoreImpl) GetNetworkBaseline(

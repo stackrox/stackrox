@@ -1,3 +1,6 @@
+// This file was originally generated with
+// //go:generate cp ../../../../central/compliance/datastore/internal/store/rocksdb/rocksdb_store.go .
+
 package legacy
 
 import (
@@ -8,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dbhelper"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -22,8 +24,6 @@ var (
 	resultsBucketName = []byte("compliance-run-results")
 
 	metadataKey = dbhelper.GetBucketKey(resultsBucketName, []byte("metadata"))
-
-	log = logging.LoggerForModule()
 )
 
 // New returns a compliance metadata store that is backed by RocksDB.
@@ -80,7 +80,7 @@ func (k *keyMaker) getKeysForMetadata(metadata *storage.ComplianceRunMetadata) (
 	tsAndRunIDPrefix := append(tsBytes, separatorAndRunID...)
 
 	key := append([]byte{}, k.partialMetadataPrefix...)
-	key = append(metadataKey, tsAndRunIDPrefix...)
+	key = append(key, tsAndRunIDPrefix...)
 
 	return key, nil
 }

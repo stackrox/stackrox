@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     Flex,
     FlexItem,
@@ -22,6 +23,7 @@ import { sortBy } from 'lodash';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useURLSearch from 'hooks/useURLSearch';
+import useWidgetConfig from 'hooks/useWidgetConfig';
 import { SearchFilter } from 'types/search';
 
 import {
@@ -118,10 +120,17 @@ type AggregationResult = {
 
 type SortBy = 'asc' | 'desc';
 
+const defaultConfig = { sortDataBy: 'asc' } as const;
+
 function ComplianceLevelsByStandard() {
     const { isOpen: isOptionsOpen, onToggle: toggleOptionsOpen } = useSelectToggle();
     const { searchFilter } = useURLSearch();
-    const [sortDataBy, setSortDataBy] = useState<SortBy>('asc');
+    const { pathname } = useLocation();
+    const [{ sortDataBy }, updateConfig] = useWidgetConfig<{ sortDataBy: SortBy }>(
+        'ComplianceLevelsByStandard',
+        pathname,
+        defaultConfig
+    );
 
     const where = getRequestQueryStringForSearchFilter({
         // We always need to include some value for Cluster, otherwise aggregation will be performed at the namespace level
@@ -173,13 +182,13 @@ function ComplianceLevelsByStandard() {
                                             text="Ascending"
                                             buttonId={`${fieldIdPrefix}-sort-by-asc`}
                                             isSelected={sortDataBy === 'asc'}
-                                            onChange={() => setSortDataBy('asc')}
+                                            onChange={() => updateConfig({ sortDataBy: 'asc' })}
                                         />
                                         <ToggleGroupItem
                                             text="Descending"
                                             buttonId={`${fieldIdPrefix}-sort-by-desc`}
                                             isSelected={sortDataBy === 'desc'}
-                                            onChange={() => setSortDataBy('desc')}
+                                            onChange={() => updateConfig({ sortDataBy: 'desc' })}
                                         />
                                     </ToggleGroup>
                                 </FormGroup>
