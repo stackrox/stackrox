@@ -32,8 +32,6 @@ func init() {
 			"priority: Int!",
 			"riskScore: Float!",
 		}),
-		schema.AddExtraResolver("NodeScan", `components(query: String, pagination: Pagination): [EmbeddedNodeScanComponent!]!`),
-		schema.AddExtraResolver("NodeScan", `componentCount(query: String): Int!`),
 		schema.AddExtraResolver("EmbeddedNodeScanComponent", `unusedVarSink(query: String): Int`),
 		schema.AddExtraResolver("EmbeddedNodeScanComponent", "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
