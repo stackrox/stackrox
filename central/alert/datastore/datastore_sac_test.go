@@ -6,13 +6,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/alert/datastore/internal/index"
-	"github.com/stackrox/rox/central/alert/datastore/internal/search"
-	"github.com/stackrox/rox/central/alert/datastore/internal/store"
-	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
-	rocksdbStore "github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
@@ -42,17 +36,12 @@ type alertDatastoreSACTestSuite struct {
 	suite.Suite
 
 	engine *rocksdb.RocksDB
-	index  *bleve.Index
+	index  bleve.Index
 
 	pool *pgxpool.Pool
 
-	storage    store.Store
-	indexer    index.Indexer
-	search     search.Searcher
 	optionsMap searchPkg.OptionsMap
 	datastore  DataStore
-
-	mockCtrl *gomock.Controller
 
 	testContexts map[string]context.Context
 
@@ -63,36 +52,23 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	alertObj := "alertSACTest"
 
-	s.mockCtrl = gomock.NewController(s.T())
 	if features.PostgresDatastore.Enabled() {
-		ctx := context.Background()
-		source := pgtest.GetConnectionString(s.T())
-		config, err := pgxpool.ParseConfig(source)
-		s.NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
-		s.NoError(err)
-		pgStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), source)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
-		s.indexer = pgStore.NewIndexWrapper(s.pool)
+		pgtestbase := pgtest.ForT(s.T())
+		s.Require().NotNil(pgtestbase)
+		s.pool = pgtestbase.Pool
+		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
+		s.Require().NoError(err)
 		s.optionsMap = schema.AlertsSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp(alertObj)
 		s.NoError(err)
-		var bleveindex bleve.Index
-		bleveindex, err = globalindex.TempInitializeIndices(alertObj)
-		s.index = &bleveindex
+		s.index, err = globalindex.TempInitializeIndices(alertObj)
 		s.NoError(err)
 
-		s.storage = rocksdbStore.New(s.engine)
-		s.indexer = index.New(*s.index)
+		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
+		s.Require().NoError(err)
 		s.optionsMap = mappings.OptionsMap
 	}
-	s.search = search.New(s.storage, s.indexer)
-
-	s.datastore, err = New(s.storage, s.indexer, s.search)
-	s.NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Alert)
 }
@@ -141,71 +117,25 @@ func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
 	s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
 	s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
 
-	cases := map[string]crudTest{
-		"(full) read-only cannot upsert": {
-			scopeKey:      testutils.UnrestrictedReadCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write can upsert": {
-			scopeKey:      testutils.UnrestrictedReadWriteCtx,
-			expectError:   false,
-			expectedError: nil,
-		},
-		"full read-write on wrong cluster cannot upsert": {
-			scopeKey:      testutils.Cluster1ReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and wrong namespace name cannot upsert": {
-			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace name cannot upsert": {
-			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on right cluster but wrong namespaces cannot upsert": {
-			scopeKey:      testutils.Cluster2NamespacesACReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write on right cluster can upsert": {
-			scopeKey:      testutils.Cluster2ReadWriteCtx,
-			expectError:   false,
-			expectedError: nil,
-		},
-		"read-write on the right cluster and namespace can upsert": {
-			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
-			expectError:   false,
-			expectedError: nil,
-		},
-		"read-write on the right cluster and at least the right namespace can upsert": {
-			scopeKey:      testutils.Cluster2NamespacesABReadWriteCtx,
-			expectError:   false,
-			expectedError: nil,
-		},
-	}
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			var err error
 			err = s.datastore.UpsertAlert(ctx, alert1)
 			defer s.cleanupAlert(alert1.Id)
-			if !c.expectError {
+			if !c.ExpectError {
 				s.NoError(err)
 			} else {
-				s.Equal(c.expectedError, err)
+				s.Equal(c.ExpectedError, err)
 			}
 			err = s.datastore.UpsertAlert(ctx, alert2)
 			defer s.cleanupAlert(alert2.Id)
-			if !c.expectError {
+			if !c.ExpectError {
 				s.NoError(err)
 			} else {
-				s.Equal(c.expectedError, err)
+				s.Equal(c.ExpectedError, err)
 			}
 		})
 	}
@@ -306,51 +236,14 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 	s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
 	s.NoError(err)
 
-	cases := map[string]crudTest{
-		"(full) read-only can read": {
-			scopeKey:      testutils.UnrestrictedReadCtx,
-			expectedFound: true,
-		},
-		"full read-write can read": {
-			scopeKey:      testutils.UnrestrictedReadWriteCtx,
-			expectedFound: true,
-		},
-		"full read-write on wrong cluster cannot read": {
-			scopeKey:      testutils.Cluster1ReadWriteCtx,
-			expectedFound: false,
-		},
-		"read-write on wrong cluster and wrong namespace name cannot read": {
-			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
-			expectedFound: false,
-		},
-		"read-write on wrong cluster and matching namespace name cannot read": {
-			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
-			expectedFound: false,
-		},
-		"read-write on right cluster but wrong namespaces cannot read": {
-			scopeKey:      testutils.Cluster2NamespacesACReadWriteCtx,
-			expectedFound: false,
-		},
-		"full read-write on right cluster can read": {
-			scopeKey:      testutils.Cluster2ReadWriteCtx,
-			expectedFound: true,
-		},
-		"read-write on the right cluster and namespace can read": {
-			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
-			expectedFound: true,
-		},
-		"read-write on the right cluster and at least the right namespace can read": {
-			scopeKey:      testutils.Cluster2NamespacesABReadWriteCtx,
-			expectedFound: true,
-		},
-	}
+	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			readAlert1, found1, err1 := s.datastore.GetAlert(ctx, alert1.GetId())
 			s.NoError(err1)
-			if c.expectedFound {
+			if c.ExpectedFound {
 				s.True(found1)
 				s.Equal(*alert1, *readAlert1)
 			} else {
@@ -359,7 +252,7 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 			}
 			readAlert2, found2, err2 := s.datastore.GetAlert(ctx, alert2.GetId())
 			s.NoError(err2)
-			if c.expectedFound {
+			if c.ExpectedFound {
 				s.True(found2)
 				s.Equal(*alert2, *readAlert2)
 			} else {
@@ -377,52 +270,7 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 // full access scope on the alert resource are allowed to delete alerts
 
 func (s *alertDatastoreSACTestSuite) TestDeleteAlert() {
-
-	cases := map[string]crudTest{
-		"(full) read-only cannot delete": {
-			scopeKey:      testutils.UnrestrictedReadCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write can delete": {
-			scopeKey: testutils.UnrestrictedReadWriteCtx,
-		},
-		"full read-write on wrong cluster cannot delete": {
-			scopeKey:      testutils.Cluster1ReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and wrong namespace name cannot delete": {
-			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on wrong cluster and matching namespace name cannot delete": {
-			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on right cluster but wrong namespaces cannot delete": {
-			scopeKey:      testutils.Cluster2NamespacesACReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"full read-write on right cluster cannot delete": {
-			scopeKey:      testutils.Cluster2ReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on the right cluster and namespace cannot delete": {
-			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-		"read-write on the right cluster and at least the right namespace cannot delete": {
-			scopeKey:      testutils.Cluster2NamespacesABReadWriteCtx,
-			expectError:   true,
-			expectedError: sac.ErrResourceAccessDenied,
-		},
-	}
+	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -438,18 +286,18 @@ func (s *alertDatastoreSACTestSuite) TestDeleteAlert() {
 			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
 			s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
 			s.NoError(err)
-			ctx := s.testContexts[c.scopeKey]
+			ctx := s.testContexts[c.ScopeKey]
 			err1 := s.datastore.DeleteAlerts(ctx, alert1.GetId())
-			if c.expectError {
+			if c.ExpectError {
 				s.Error(err1)
-				s.ErrorIs(c.expectedError, err1)
+				s.ErrorIs(c.ExpectedError, err1)
 			} else {
 				s.NoError(err1)
 			}
 			err2 := s.datastore.DeleteAlerts(ctx, alert1.GetId(), alert2.GetId())
-			if c.expectError {
+			if c.ExpectError {
 				s.Error(err2)
-				s.ErrorIs(c.expectedError, err2)
+				s.ErrorIs(c.ExpectedError, err2)
 			} else {
 				s.NoError(err2)
 			}
