@@ -33,7 +33,7 @@ function addTagToTheFirstProcessInDeployment(deploymentName, tag) {
     openDeployment(deploymentName);
     unfoldFirstProcessCard();
 
-    cy.get(selectors.sidePanel.firstProcessCard.tags.input).type(`${tag}{enter}{downArrow}{enter}`);
+    cy.get(selectors.sidePanel.firstProcessCard.tags.input).type(`${tag}{enter}`);
     cy.wait(['@getTags', '@tagsAutocomplete']);
 }
 
@@ -54,9 +54,7 @@ describe(
             const tag = randomstring.generate(7);
             addTagToTheFirstProcessInDeployment('central', tag);
             // do it again to check that no duplicate tags can be added
-            cy.get(selectors.sidePanel.firstProcessCard.tags.input).type(
-                `${tag}{enter}{downArrow}{enter}`
-            );
+            cy.get(selectors.sidePanel.firstProcessCard.tags.input).type(`${tag}{enter}`);
 
             // pressing {enter} won't save the tag, only one would be displayed as tag chip
             cy.get(selectors.sidePanel.firstProcessCard.tags.values)
