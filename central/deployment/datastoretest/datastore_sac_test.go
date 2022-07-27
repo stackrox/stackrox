@@ -190,37 +190,6 @@ func (s *deploymentDatastoreSACSuite) waitForIndexing() {
 	}
 }
 
-func (s *deploymentDatastoreSACSuite) TestUpsertDeployment() {
-	testedVerb := "upsert"
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
-
-	for name, c := range cases {
-		s.Run(name, func() {
-			deployment := fixtures.GetScopedDeployment(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
-			deployment.Priority = 1
-			s.testDeploymentIDs = append(s.testDeploymentIDs, deploymentIDs{
-				clusterID:    deployment.GetClusterId(),
-				deploymentID: deployment.GetId(),
-			})
-			ctx := s.testContexts[c.ScopeKey]
-			err := s.datastore.UpsertDeployment(ctx, deployment)
-			defer s.deleteDeployment(deployment.GetClusterId(), deployment.GetId())
-			fetched, found, getErr := s.datastore.GetDeployment(s.testContexts[testutils.UnrestrictedReadCtx], deployment.GetId())
-			s.NoError(getErr)
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
-				s.False(found)
-				s.Nil(fetched)
-			} else {
-				s.NoError(err)
-				s.True(found)
-				s.Equal(*deployment, *fetched)
-			}
-		})
-	}
-}
-
 func (s *deploymentDatastoreSACSuite) pushDeploymentToStore(clusterID string, namespaceName string) *storage.Deployment {
 	var err error
 	globalReadWriteCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
@@ -236,29 +205,6 @@ func (s *deploymentDatastoreSACSuite) pushDeploymentToStore(clusterID string, na
 		deploymentID: deployment.GetId(),
 	})
 	return deployment
-}
-
-func (s *deploymentDatastoreSACSuite) TestGetDeployment() {
-	deployment := s.pushDeploymentToStore(testconsts.Cluster2, testconsts.NamespaceB)
-	deployment.Priority = 1
-
-	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
-
-	for name, c := range cases {
-		s.Run(name, func() {
-			ctx := s.testContexts[c.ScopeKey]
-			res, found, err := s.datastore.GetDeployment(ctx, deployment.GetId())
-			s.Require().NoError(err)
-			if c.ExpectedFound {
-				s.Require().True(found)
-				s.Require().NotNil(res)
-				s.Equal(*deployment, *res)
-			} else {
-				s.False(found)
-				s.Nil(res)
-			}
-		})
-	}
 }
 
 type multipleDeploymentReadTestCase struct {
@@ -344,6 +290,86 @@ func (s *deploymentDatastoreSACSuite) setupMultipleDeploymentReadTest() ([]strin
 			ScopeKey:              testutils.MixedClusterAndNamespaceReadCtx,
 			ExpectedDeploymentIDs: []string{deploymentID1, deploymentID2, deploymentID3},
 		},
+	}
+}
+
+func (s *deploymentDatastoreSACSuite) setupSearchTest() {
+	deployments := fixtures.GetSACTestStorageDeploymentSet(fixtures.GetScopedDeployment)
+	pushedNamespaces := make(map[string]map[string]*storage.NamespaceMetadata, 0)
+	for _, d := range deployments {
+		clusterID := d.GetClusterId()
+		namespaceName := d.GetNamespace()
+		if _, ok := pushedNamespaces[clusterID]; !ok {
+			pushedNamespaces[clusterID] = make(map[string]*storage.NamespaceMetadata, 0)
+		}
+		if _, ok := pushedNamespaces[clusterID][namespaceName]; !ok {
+			namespace := fixtures.GetNamespace(clusterID, clusterID, namespaceName)
+			pushedNamespaces[clusterID][namespaceName] = namespace
+			err := s.namespaceStore.AddNamespace(sac.WithAllAccess(context.Background()), namespace)
+			s.NoError(err)
+			s.testNamespaceIDs = append(s.testNamespaceIDs, namespace.GetId())
+		}
+		d.NamespaceId = pushedNamespaces[clusterID][namespaceName].GetId()
+		err := s.datastore.UpsertDeployment(s.testContexts[testutils.UnrestrictedReadWriteCtx], d)
+		s.Require().NoError(err)
+		s.testDeploymentIDs = append(s.testDeploymentIDs, deploymentIDs{
+			clusterID:    clusterID,
+			deploymentID: d.GetId(),
+		})
+	}
+	s.waitForIndexing()
+}
+
+func (s *deploymentDatastoreSACSuite) TestUpsertDeployment() {
+	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbUpsert)
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			deployment := fixtures.GetScopedDeployment(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+			deployment.Priority = 1
+			s.testDeploymentIDs = append(s.testDeploymentIDs, deploymentIDs{
+				clusterID:    deployment.GetClusterId(),
+				deploymentID: deployment.GetId(),
+			})
+			ctx := s.testContexts[c.ScopeKey]
+			err := s.datastore.UpsertDeployment(ctx, deployment)
+			defer s.deleteDeployment(deployment.GetClusterId(), deployment.GetId())
+			fetched, found, getErr := s.datastore.GetDeployment(s.testContexts[testutils.UnrestrictedReadCtx], deployment.GetId())
+			s.NoError(getErr)
+			if c.ExpectError {
+				s.Require().Error(err)
+				s.ErrorIs(err, c.ExpectedError)
+				s.False(found)
+				s.Nil(fetched)
+			} else {
+				s.NoError(err)
+				s.True(found)
+				s.Equal(*deployment, *fetched)
+			}
+		})
+	}
+}
+
+func (s *deploymentDatastoreSACSuite) TestGetDeployment() {
+	deployment := s.pushDeploymentToStore(testconsts.Cluster2, testconsts.NamespaceB)
+	deployment.Priority = 1
+
+	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+			res, found, err := s.datastore.GetDeployment(ctx, deployment.GetId())
+			s.Require().NoError(err)
+			if c.ExpectedFound {
+				s.Require().True(found)
+				s.Require().NotNil(res)
+				s.Equal(*deployment, *res)
+			} else {
+				s.False(found)
+				s.Nil(res)
+			}
+		})
 	}
 }
 
@@ -518,33 +544,6 @@ func (s *deploymentDatastoreSACSuite) TestRemoveDeployment() {
 			}
 		})
 	}
-}
-
-func (s *deploymentDatastoreSACSuite) setupSearchTest() {
-	deployments := fixtures.GetSACTestStorageDeploymentSet(fixtures.GetScopedDeployment)
-	pushedNamespaces := make(map[string]map[string]*storage.NamespaceMetadata, 0)
-	for _, d := range deployments {
-		clusterID := d.GetClusterId()
-		namespaceName := d.GetNamespace()
-		if _, ok := pushedNamespaces[clusterID]; !ok {
-			pushedNamespaces[clusterID] = make(map[string]*storage.NamespaceMetadata, 0)
-		}
-		if _, ok := pushedNamespaces[clusterID][namespaceName]; !ok {
-			namespace := fixtures.GetNamespace(clusterID, clusterID, namespaceName)
-			pushedNamespaces[clusterID][namespaceName] = namespace
-			err := s.namespaceStore.AddNamespace(sac.WithAllAccess(context.Background()), namespace)
-			s.NoError(err)
-			s.testNamespaceIDs = append(s.testNamespaceIDs, namespace.GetId())
-		}
-		d.NamespaceId = pushedNamespaces[clusterID][namespaceName].GetId()
-		err := s.datastore.UpsertDeployment(s.testContexts[testutils.UnrestrictedReadWriteCtx], d)
-		s.Require().NoError(err)
-		s.testDeploymentIDs = append(s.testDeploymentIDs, deploymentIDs{
-			clusterID:    clusterID,
-			deploymentID: d.GetId(),
-		})
-	}
-	s.waitForIndexing()
 }
 
 func (s *deploymentDatastoreSACSuite) runTestCount(testCase testutils.SACSearchTestCase) {
