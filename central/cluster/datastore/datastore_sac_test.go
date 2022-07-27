@@ -247,8 +247,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 }
 
 func (s *clusterDatastoreSACSuite) TestAddCluster() {
-	testedVerb := "add"
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testedVerb)
+	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbAdd)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -577,7 +576,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateCluster() {
 	newCluster.CentralApiEndpoint = newAPIEndpoint
 	newCluster.Priority = 1
 
-	cases := testutils.GenericClusterSACWriteTestCases(context.Background(), s.T(), "update", clusterID, "not"+clusterID, resources.Cluster)
+	cases := testutils.GenericClusterSACWriteTestCases(context.Background(), s.T(), testutils.VerbUpdate, clusterID, "not"+clusterID, resources.Cluster)
 
 	for name, c := range cases {
 		s.Run(name, func() {
