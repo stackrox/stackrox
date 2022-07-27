@@ -1,3 +1,6 @@
+// This file was originally generated with
+// //go:generate  cp ../../../../central/activecomponent/datastore/internal/store/postgres/store.go store_impl.go
+
 package legacy
 
 import (

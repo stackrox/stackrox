@@ -1,3 +1,6 @@
+// This file was originally generated with
+// //go:generate  cp ../../../../central/activecomponent/datastore/internal/store/store.go .
+
 package legacy
 
 import (
@@ -8,10 +11,7 @@ import (
 
 // Store provides storage functionality for active component.
 type Store interface {
-	Exists(ctx context.Context, id string) (bool, error)
-	Get(ctx context.Context, id string) (*storage.ActiveComponent, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ActiveComponent, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	UpsertMany(ctx context.Context, activeComponents []*storage.ActiveComponent) error
-	DeleteMany(ctx context.Context, ids []string) error
 }
