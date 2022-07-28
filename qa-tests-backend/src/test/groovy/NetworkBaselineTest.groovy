@@ -322,7 +322,10 @@ class NetworkBaselineTest extends BaseSpecification {
         // Get the server baseline to simulate a user asking for a baseline prior to
         // observation ending.  This will generate a baseline at the time of request
         // instead of after observation.
-        assert NetworkBaselineService.getNetworkBaseline(userReqBaselineServerDeploymentID)
+        def userReqServerBaseline = NetworkBaselineService.getNetworkBaseline(userReqBaselineServerDeploymentID)
+        // Ensure the baseline is STILL in the observation window
+        def now = System.currentTimeSeconds()
+        assert userReqServerBaseline.getObservationPeriodEnd().getSeconds() > now
 
         // Add a client deployment
         def beforeClientDeploymentCreate = System.currentTimeSeconds()
@@ -346,7 +349,7 @@ class NetworkBaselineTest extends BaseSpecification {
         assert userReqBaselinedClientBaseline
 
         // Grab a fresh copy of the userReqServerBaseline after the client connection has been added.
-        def userReqServerBaseline = NetworkBaselineService.getNetworkBaseline(userReqBaselineServerDeploymentID)
+        userReqServerBaseline = NetworkBaselineService.getNetworkBaseline(userReqBaselineServerDeploymentID)
 
         log.info "Server Baseline: ${userReqServerBaseline}"
         log.info "Client Baseline: ${userReqBaselinedClientBaseline}"
