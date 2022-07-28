@@ -222,6 +222,7 @@ func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
 	}
 }
 
+// CentralConfig allows tests to inject ACS policies in the tests
 type CentralConfig struct {
 	InitialSystemPolicies []*storage.Policy
 }
