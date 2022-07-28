@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	serviceAuthn "github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -160,7 +159,7 @@ func (s *Sensor) Start() {
 	}
 
 	// Enable endpoint to retrieve vulnerability definitions if local image scanning is enabled.
-	if features.LocalImageScanning.Enabled() && env.LocalImageScanningEnabled.BooleanSetting() {
+	if env.LocalImageScanningEnabled.BooleanSetting() {
 		route, err := newScannerDefinitionsRoute(s.centralEndpoint)
 		if err != nil {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))

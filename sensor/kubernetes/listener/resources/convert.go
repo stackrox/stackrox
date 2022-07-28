@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containers"
-	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
@@ -330,9 +329,7 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 			if image.GetId() != "" {
 				// Use the image ID from the pod's ContainerStatus.
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-				if features.LocalImageScanning.Enabled() {
-					image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
-				}
+				image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
 				continue
 			}
 
@@ -351,9 +348,7 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 			if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
 				image.Id = digest
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-				if features.LocalImageScanning.Enabled() {
-					image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
-				}
+				image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
 			}
 		}
 	}

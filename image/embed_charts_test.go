@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
@@ -99,24 +98,14 @@ func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlagValuesOnR
 // secured cluster.
 func (s *embedTestSuite) TestLoadSecuredClusterScanner() {
 	testCases := map[string]struct {
-		kubectlOutput                 bool
-		enableLocalScannerFeatureFlag bool
-		expectScannerFilesExist       bool
+		kubectlOutput           bool
+		expectScannerFilesExist bool
 	}{
-		"with feature flag is disabled should not contain scanner manifests": {
-			enableLocalScannerFeatureFlag: false,
-			expectScannerFilesExist:       false,
+
+		"contains scanner manifests ": {
+			expectScannerFilesExist: true,
 		},
-		"with feature flag enabled contains scanner manifests ": {
-			enableLocalScannerFeatureFlag: true,
-			expectScannerFilesExist:       true,
-		},
-		"in kubectl output and feature flag enabled does not contain scanner manifests": {
-			kubectlOutput:                 true,
-			enableLocalScannerFeatureFlag: true,
-			expectScannerFilesExist:       false,
-		},
-		"in kubectl output contains scanner manifests": {
+		"in kubectl output does not contain scanner manifests": {
 			kubectlOutput:           true,
 			expectScannerFilesExist: false,
 		},
@@ -126,7 +115,6 @@ func (s *embedTestSuite) TestLoadSecuredClusterScanner() {
 		s.Run(name, func() {
 			metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
 			metaVals.KubectlOutput = testCase.kubectlOutput
-			metaVals.FeatureFlags[features.LocalImageScanning.EnvVar()] = testCase.enableLocalScannerFeatureFlag
 
 			loadedChart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
 			s.Require().NoError(err)
