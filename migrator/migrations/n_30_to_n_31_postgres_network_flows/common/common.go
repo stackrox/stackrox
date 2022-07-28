@@ -16,7 +16,6 @@ const (
 )
 
 var (
-	idSeparator  = []byte(":")
 	keySeperator = []byte("\x00")
 )
 
@@ -31,12 +30,6 @@ func GetClusterIDFromKey(key []byte) ([]byte, error) {
 // FlowStoreKeyPrefix returns the prefix for a specific flow store
 func FlowStoreKeyPrefix(clusterID string) []byte {
 	return []byte(fmt.Sprintf("%s\x00%s\x00", GlobalPrefix, clusterID))
-}
-
-// GetDeploymentIDsFromKey take in an id []byte and return the deployments in the id
-func GetDeploymentIDsFromKey(id []byte) ([]byte, []byte) {
-	bytesSlices := bytes.Split(id, idSeparator)
-	return bytesSlices[1], bytesSlices[3]
 }
 
 // GetID converts *storage.NetworkFlowProperties into a []byte

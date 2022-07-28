@@ -1,15 +1,15 @@
+// This file was originally generated with
+// //go:generate cp ../../../../central/logimbue/store/bolt/store_impl.go .
+
 package legacy
 
 import (
 	"context"
 	"encoding/binary"
-	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/uuid"
 	bolt "go.etcd.io/bbolt"
 )
@@ -30,8 +30,6 @@ type storeImpl struct {
 
 // GetAll returns all of the logs stored in the DB.
 func (b *storeImpl) GetAll(_ context.Context) ([]*storage.LogImbue, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Logs")
-
 	var logs []*storage.LogImbue
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(logsBucket).Cursor()
@@ -57,7 +55,6 @@ func (b *storeImpl) GetAll(_ context.Context) ([]*storage.LogImbue, error) {
 
 // Upsert adds a log to bolt.
 func (b *storeImpl) Upsert(_ context.Context, log *storage.LogImbue) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Logs")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(logsBucket)
 

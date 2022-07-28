@@ -1,3 +1,6 @@
+// This file was originally generated with
+// //go:generate cp ../../../../central/networkgraph/flow/datastore/internal/store/rocksdb/flow_impl.go .
+
 package legacy
 
 import (
@@ -11,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/common"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -42,47 +44,6 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 	return flows, ts, err
 }
 
-func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
-	if err := s.db.IncRocksDBInProgressOps(); err != nil {
-		return nil, types.Timestamp{}, err
-	}
-	defer s.db.DecRocksDBInProgressOps()
-
-	flows, ts, err = s.readFlows(pred, since)
-
-	return flows, ts, err
-}
-
-func (s *flowStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
-	if err := s.db.IncRocksDBInProgressOps(); err != nil {
-		return nil, err
-	}
-	defer s.db.DecRocksDBInProgressOps()
-
-	// Function to match flows referencing the deployment ID passed in.
-	pred := func(props *storage.NetworkFlowProperties) bool {
-		srcEnt := props.GetSrcEntity()
-		dstEnt := props.GetDstEntity()
-
-		// Exclude all flows having both external endpoints. Although if one endpoint is an invisible external source,
-		// we still want to show the flow given that the other endpoint is visible, however, attribute it to INTERNET.
-		if networkgraph.AllExternal(srcEnt, dstEnt) {
-			return false
-		}
-
-		srcMatch := srcEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && srcEnt.GetId() == deploymentID
-		dstMatch := dstEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && dstEnt.GetId() == deploymentID
-
-		return srcMatch || dstMatch
-	}
-
-	flows, _, err := s.readFlows(pred, nil)
-
-	return flows, err
-}
-
 // UpsertFlows updates an flow to the store, adding it if not already present.
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdatedTS timestamp.MicroTS) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.UpsertAll, "NetworkFlow")
@@ -108,91 +69,6 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 			return err
 		}
 		batch.Put(k, v)
-	}
-	return s.db.Write(writeOptions, batch)
-}
-
-// RemoveFlow removes an flow from the store if it is present.
-func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
-	if err := s.db.IncRocksDBInProgressOps(); err != nil {
-		return err
-	}
-	defer s.db.DecRocksDBInProgressOps()
-
-	id := s.getID(props)
-
-	return s.db.Delete(writeOptions, id)
-}
-
-func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
-	if err := s.db.IncRocksDBInProgressOps(); err != nil {
-		return err
-	}
-	defer s.db.DecRocksDBInProgressOps()
-
-	batch := gorocksdb.NewWriteBatch()
-	defer batch.Destroy()
-
-	idBytes := []byte(id)
-	err := generic.DefaultForEachOverKeySet(s.db, s.keyPrefix, true, func(k []byte) error {
-		if bytes.Equal(k, updatedTSKey) {
-			return nil
-		}
-		srcID, dstID := common.GetDeploymentIDsFromKey(k)
-		if bytes.Equal(idBytes, srcID) || bytes.Equal(idBytes, dstID) {
-			batch.Delete(s.getFullKey(k))
-			return nil
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	return s.db.Write(writeOptions, batch)
-}
-
-func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlow")
-
-	if err := s.db.IncRocksDBInProgressOps(); err != nil {
-		return err
-	}
-	defer s.db.DecRocksDBInProgressOps()
-
-	batch := gorocksdb.NewWriteBatch()
-	defer batch.Destroy()
-
-	err := generic.DefaultForEachOverKeySet(s.db, s.keyPrefix, true, func(k []byte) error {
-		if bytes.Equal(k, updatedTSKey) {
-			return nil
-		}
-		props, err := common.ParseID(k)
-		if err != nil {
-			return err
-		}
-		if keyMatchFn != nil && !keyMatchFn(props) {
-			return nil
-		}
-		// No need to read the flow if valueMatchFn is nil
-		if valueMatchFn != nil {
-			flow, err := s.readFlow(s.getFullKey(k))
-			if err != nil {
-				return err
-			}
-			if flow == nil {
-				return nil
-			}
-			if !valueMatchFn(flow) {
-				return nil
-			}
-		}
-		batch.Delete(s.getFullKey(k))
-		return nil
-	})
-	if err != nil {
-		return err
 	}
 	return s.db.Write(writeOptions, batch)
 }
@@ -240,22 +116,4 @@ func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool
 	})
 
 	return
-}
-
-// Static helper functions.
-/////////////////////////
-func (s *flowStoreImpl) readFlow(id []byte) (flow *storage.NetworkFlow, err error) {
-	slice, err := s.db.Get(readOptions, id)
-	if err != nil {
-		return nil, err
-	}
-	if !slice.Exists() {
-		return nil, nil
-	}
-	defer slice.Free()
-	flow = new(storage.NetworkFlow)
-	if err := proto.Unmarshal(slice.Data(), flow); err != nil {
-		return nil, err
-	}
-	return flow, nil
 }
