@@ -367,7 +367,7 @@ func (s *GraphQueriesTestSuite) TestShortCircuit() {
 	})
 }
 
-func (s *GraphQueriesTestSuite) TestDerived() {
+func (s *GraphQueriesTestSuite) TestDerivedPagination() {
 	s.runTestCases([]graphQueryTestCase{
 		{
 			desc:              "one-hop count",
@@ -444,6 +444,35 @@ func (s *GraphQueriesTestSuite) TestSubGraphSearch() {
 			desc:              "query out-of-scope parent from child1p4",
 			queriedType:       "testchild1p4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestParent4ID: {"r/.*4"}},
+			expectedResultIDs: []string{},
+		},
+	})
+}
+
+func (s *GraphQueriesTestSuite) TestDerived() {
+	s.runTestCases([]graphQueryTestCase{
+		{
+			desc:        "one-hop count",
+			queriedType: "testgrandparent",
+			queryStrings: map[search.FieldLabel][]string{
+				search.TestParent1Count: {">1"},
+			},
+			expectedResultIDs: []string{"1"},
+		},
+		{
+			desc:        "two-hop count",
+			queriedType: "testgrandparent",
+			queryStrings: map[search.FieldLabel][]string{
+				search.TestChild1Count: {">1"},
+			},
+			expectedResultIDs: []string{"1", "2"},
+		},
+		{
+			desc:        "two-hop count again",
+			queriedType: "testgrandparent",
+			queryStrings: map[search.FieldLabel][]string{
+				search.TestChild1Count: {">5"},
+			},
 			expectedResultIDs: []string{},
 		},
 	})
