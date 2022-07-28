@@ -81,3 +81,12 @@ class GKECluster:
     def sigint_handler(self, signum, frame):
         print("Tearing down the cluster due to SIGINT", signum, frame)
         self.teardown()
+
+
+class AutomationFlavorsCluster:
+    def provision(self):
+        os.environ["KUBECONFIG"] = os.environ["SHARED_DIR"] + "/kubeconfig"
+        return self
+
+    def teardown(self):
+        pass
