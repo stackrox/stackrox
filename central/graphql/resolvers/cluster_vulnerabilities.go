@@ -57,7 +57,7 @@ type ClusterVulnerabilityResolver interface {
 func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterVulnerability")
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.vulnerabilityV2(ctx, args)
+		return resolver.clusterVulnerabilityV2(ctx, args)
 	}
 
 	// check permissions
@@ -199,7 +199,7 @@ func (resolver *Resolver) ClusterVulnerabilityCounter(ctx context.Context, args 
 func (resolver *Resolver) K8sClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sClusterVulnerability")
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.vulnerabilityV2(ctx, args)
+		return resolver.clusterVulnerabilityV2(ctx, args)
 	}
 	return resolver.ClusterVulnerability(ctx, args)
 }
@@ -228,7 +228,7 @@ func (resolver *Resolver) K8sClusterVulnerabilityCount(ctx context.Context, args
 func (resolver *Resolver) IstioClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioClusterVulnerability")
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.vulnerabilityV2(ctx, args)
+		return resolver.clusterVulnerabilityV2(ctx, args)
 	}
 	return resolver.ClusterVulnerability(ctx, args)
 }
@@ -257,7 +257,7 @@ func (resolver *Resolver) IstioClusterVulnerabilityCount(ctx context.Context, ar
 func (resolver *Resolver) OpenShiftClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftClusterVulnerability")
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.vulnerabilityV2(ctx, args)
+		return resolver.clusterVulnerabilityV2(ctx, args)
 	}
 	return resolver.ClusterVulnerability(ctx, args)
 }
