@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 
-	indexer "github.com/stackrox/rox/central/imageintegration/index"
+	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,9 +22,10 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.
-func New(storage store.Store, indexer indexer.Indexer) Searcher {
+func New(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImpl{
 		storage:  storage,
+		indexer:  indexer,
 		searcher: formatSearcher(indexer),
 	}
 }

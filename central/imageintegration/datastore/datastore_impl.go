@@ -25,11 +25,6 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	if ok, err := imageIntegrationSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, nil
-	}
 	return ds.formattedSearcher.Search(ctx, q)
 }
 
@@ -77,9 +72,11 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 	} else if !ok {
 		return "", sac.ErrResourceAccessDenied
 	}
-
+	error := ds.indexer.AddImageIntegration(integration)
+	if error != nil {
+		return "", error
+	}
 	integration.Id = uuid.NewV4().String()
-	ds.indexer.AddImageIntegration(integration)
 	return integration.Id, ds.storage.Upsert(ctx, integration)
 }
 
@@ -110,7 +107,7 @@ func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 		return nil
 	}
 	iis, err := ds.storage.GetAll(ctx)
-	log.Infof("[STARTUP] Total number of Image Integrations is going to be indexed: %d", len(iis))
+	log.Infof("[STARTUP] Found %d Image Integrations to be indexed", len(iis))
 	if err != nil {
 		return err
 	}

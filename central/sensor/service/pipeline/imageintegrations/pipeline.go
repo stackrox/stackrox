@@ -200,16 +200,20 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if !shouldInsert {
 		return nil
 	}
-	deleteRelatedCtx := sac.WithAllAccess(context.Background())
-	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterID).ProtoQuery()
-	iis, ett := s.datastore.Search(deleteRelatedCtx, q)
-	if ett != nil {
-		log.Infof(">>>>>>>>> Testing ii search: ii list size is: %d", len(iis))
-	}
 	// Update or create.
 	if integrationToUpdate == nil {
 		if _, err := s.datastore.AddImageIntegration(ctx, imageIntegration); err != nil {
 			return errors.Wrap(err, "adding integration")
+		}
+		//deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		//	sac.AllowFixedScopes(
+		//		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		//		sac.ResourceScopeKeys(resources.ImageIntegration)))
+		ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+		q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterID).ProtoQuery()
+		iis, ett := s.datastore.Search(ctx, q)
+		if ett == nil {
+			log.Infof(">>>>>>>>> Testing ii search: ii list size is: %d", len(iis))
 		}
 		if err := s.integrationManager.Upsert(imageIntegration); err != nil {
 			return errors.Wrap(err, "notifying of image integration update")
@@ -219,6 +223,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		// So we can assume the other credentials were valid up to this point.
 		// Also, they will eventually be picked up within an hour.
 		s.enrichAndDetectLoop.ShortCircuit()
+
 		return nil
 	}
 
