@@ -30,7 +30,6 @@ func init() {
 			"activeState(query: String): ActiveState",
 			"deploymentCount(query: String, scopeQuery: String): Int!",
 			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
-			"fixedIn: String! @deprecated(reason: \"use 'fixedBy'\")",
 			"imageCount(query: String, scopeQuery: String): Int!",
 			"images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!",
 			"imageVulnerabilityCount(query: String, scopeQuery: String): Int!",
@@ -42,6 +41,9 @@ func init() {
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"topImageVulnerability: ImageVulnerability",
 			"unusedVarSink(query: String): Int",
+
+			// deprecated functions
+			"fixedIn: String! @deprecated(reason: \"use 'fixedBy'\")",
 		}),
 		schema.AddQuery("imageComponent(id: ID): ImageComponent"),
 		schema.AddQuery("imageComponents(query: String, scopeQuery: String, pagination: Pagination): [ImageComponent!]!"),
@@ -56,9 +58,8 @@ type ImageComponentResolver interface {
 	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
-	FixedIn(ctx context.Context) string
 	FixedBy(ctx context.Context) string
-	ID(ctx context.Context) graphql.ID
+	Id(ctx context.Context) graphql.ID
 	ImageCount(ctx context.Context, args RawQuery) (int32, error)
 	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
 	ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error)
@@ -77,6 +78,11 @@ type ImageComponentResolver interface {
 	TopImageVulnerability(ctx context.Context) (ImageVulnerabilityResolver, error)
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 	Version(ctx context.Context) string
+
+	// deprecated functions
+
+	FixedIn(ctx context.Context) string
+	ID(ctx context.Context) graphql.ID
 }
 
 // ImageComponent returns an image component based on an input id (name:version)
