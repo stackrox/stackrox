@@ -104,7 +104,7 @@ class AutomationFlavorsCluster:
 
         print("Nodes:")
         subprocess.run(
-            ["kubectl", "get" "nodes", "-o", "wide"],
+            ["kubectl", "get", "nodes", "-o", "wide"],
             check=True,
             timeout=AutomationFlavorsCluster.KUBECTL_TIMEOUT,
         )
