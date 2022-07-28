@@ -198,9 +198,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action ce
 			if err != nil {
 				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 			}
-		}
-
-		if !fromDefaultSA {
+		} else {
 			ii := DockerConfigToImageIntegration(registry, dce)
 			sensorEvents = append(sensorEvents, &central.SensorEvent{
 				// Only update is supported at this time.
