@@ -2,7 +2,6 @@ package legacy
 
 import (
 	"context"
-	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
 	cveUtil "github.com/stackrox/rox/central/cve/utils"
@@ -15,13 +14,11 @@ import (
 	imageCVEEdgeDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/imagecveedge"
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/common"
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/store"
-	"github.com/stackrox/rox/migrator/migrations/postgreshelper/metrics"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/images/types"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -42,8 +39,6 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, noUpdateTimestam
 
 // ListImage returns ListImage with given id.
 func (b *storeImpl) ListImage(_ context.Context, id string) (image *storage.ListImage, exists bool, err error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ListImage")
-
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
@@ -79,8 +74,6 @@ func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 
 // GetImages returns all images regardless of request
 func (b *storeImpl) GetImages(_ context.Context) ([]*storage.Image, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Image")
-
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, err
@@ -108,8 +101,6 @@ func (b *storeImpl) GetImages(_ context.Context) ([]*storage.Image, error) {
 
 // Count returns the number of images currently stored in the DB.
 func (b *storeImpl) Count(_ context.Context) (int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Image")
-
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return 0, err
@@ -126,8 +117,6 @@ func (b *storeImpl) Count(_ context.Context) (int, error) {
 
 // Get returns image with given id.
 func (b *storeImpl) Get(_ context.Context, id string) (image *storage.Image, exists bool, err error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Image")
-
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
@@ -159,8 +148,6 @@ func (b *storeImpl) GetIDs(_ context.Context) ([]string, error) {
 
 // GetImageMetadata returns an image with given id without component/CVE data.
 func (b *storeImpl) GetImageMetadata(_ context.Context, id string) (image *storage.Image, exists bool, err error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
-
 	txn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
@@ -176,8 +163,6 @@ func (b *storeImpl) GetImageMetadata(_ context.Context, id string) (image *stora
 
 // GetImagesBatch returns images with given ids.
 func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Image, []int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Image")
-
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, nil, err
@@ -202,8 +187,6 @@ func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Image, 
 
 // Upsert writes and image to the DB, overwriting previous data.
 func (b *storeImpl) Upsert(_ context.Context, image *storage.Image) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "Image")
-
 	iTime := protoTypes.TimestampNow()
 	if !b.noUpdateTimestamps {
 		image.LastUpdated = iTime
@@ -276,8 +259,6 @@ func (b *storeImpl) isUpdated(image *storage.Image) (bool, bool, error) {
 
 // Delete deletes an image and all its data.
 func (b *storeImpl) Delete(_ context.Context, id string) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, "Image")
-
 	keyTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return err
@@ -679,8 +660,6 @@ func (b *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 }
 
 func (b *storeImpl) UpdateVulnState(_ context.Context, cve string, images []string, state storage.VulnerabilityState) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.UpdateMany, "ImageCVEEdge")
-
 	edgeIDs := getEdgeIDs(cve, images...)
 	graphKeys := gatherKeysForEdge(cve, images...)
 	// Lock nodes in the graph and update the image-cve edge in the db.

@@ -3,8 +3,8 @@ package common
 import (
 	"sort"
 
-	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
+	converter "github.com/stackrox/rox/migrator/migrations/cvehelper"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 )
 

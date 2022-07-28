@@ -246,7 +246,6 @@ func TestSplitAndMergeImage(t *testing.T) {
 	}
 
 	splitActual := Split(image, true)
-	assert.Equal(t, splitExpected.ImageCVEEdges, splitActual.ImageCVEEdges)
 	assert.Equal(t, splitExpected, splitActual)
 
 	// Need to add first occurrence edges as otherwise they will be filtered out
