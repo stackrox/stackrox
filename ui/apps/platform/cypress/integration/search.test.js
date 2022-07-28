@@ -48,11 +48,16 @@ describe('Global Search Modal', () => {
         cy.get(`${selectors.tab}:contains("Secrets")`).should('not.have.class', 'pf-m-current');
     });
 
-    it('Should filter search results', () => {
+    it('Should display counts of search results on tabs', () => {
         visitSearch();
         searchWithFixture([['Cluster:', 'remote']], 'search/globalSearchResults.json');
 
-        cy.get(selectors.globalSearchResults.header).should('have.text', '4 search results');
+        cy.get(`${selectors.tab}:contains("All") ${selectors.count}:contains("4")`);
+        cy.get(`${selectors.tab}:contains("Violations") ${selectors.count}:contains("1")`);
+        cy.get(`${selectors.tab}:contains("Policies") ${selectors.count}:contains("1")`);
+        cy.get(`${selectors.tab}:contains("Deployments") ${selectors.count}:contains("1")`);
+        cy.get(`${selectors.tab}:contains("Images") ${selectors.count}:contains("1")`);
+        cy.get(`${selectors.tab}:contains("Secrets") ${selectors.count}:contains("0")`);
     });
 
     it('Should send you to the Violations page', () => {
