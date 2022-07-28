@@ -194,6 +194,8 @@ function getListFieldName(entityType, listType, useCase) {
 
 function getFragmentName(entityType, listType) {
     switch (listType) {
+        case entityTypes.CLUSTER:
+            return 'clusterFields';
         case entityTypes.IMAGE:
             return 'imageFields';
         case entityTypes.NODE:

@@ -265,6 +265,7 @@ export const NODE_CVE_DETAIL_FRAGMENT = gql`
 
 export const CLUSTER_CVE_DETAIL_FRAGMENT = gql`
     fragment cveFields on ClusterVulnerability {
+        clusterCount(query: $query)
         createdAt
         cve
         cvss
@@ -361,6 +362,7 @@ export const IMAGE_CVE_LIST_FRAGMENT = gql`
 
 export const CLUSTER_CVE_LIST_FRAGMENT = gql`
     fragment clusterCVEFields on ClusterVulnerability {
+        clusterCount(query: $query)
         createdAt
         cve
         cvss
