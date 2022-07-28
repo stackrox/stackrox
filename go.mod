@@ -46,9 +46,9 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/certificate-transparency-go v1.1.3
+	github.com/google/gnostic v0.5.7-v3refs
 	github.com/google/go-cmp v0.5.8
 	github.com/google/go-containerregistry v0.9.0
-	github.com/googleapis/gnostic v0.5.5
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
@@ -126,7 +126,7 @@ require (
 	k8s.io/apimachinery v0.24.3
 	k8s.io/apiserver v0.23.4
 	k8s.io/client-go v0.24.3
-	k8s.io/kubectl v0.23.1
+	k8s.io/kubectl v0.24.3
 	k8s.io/kubelet v0.22.11
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/controller-runtime v0.11.1
