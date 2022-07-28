@@ -1,3 +1,6 @@
+// This file was originally generated with
+// //go:generate cp ../../../central/cve/converter/utils/convert_utils.go
+
 package cvehelper
 
 import (

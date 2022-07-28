@@ -1,3 +1,6 @@
+// This file was originally generated with
+// //go:generate cp ../../../../central/image/datastore/store/postgres/store.go store_impl.go
+
 package postgres
 
 import (
@@ -11,12 +14,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/common/v2"
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/store"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
-	"gorm.io/gorm"
 )
 
 const (
@@ -37,11 +38,6 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
-)
-
-var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.ImagesSchema
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -593,16 +589,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	return count, nil
 }
 
-// Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
-	}
-	return exists, nil
-}
-
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, error) {
 	conn, release, err := s.acquireConn(ctx)
@@ -823,40 +809,6 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 	return idToCVEMap, nil
 }
 
-// Delete removes the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, id string) error {
-	conn, release, err := s.acquireConn(ctx)
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	return s.deleteImageTree(ctx, tx, id)
-}
-
-func (s *storeImpl) deleteImageTree(ctx context.Context, tx pgx.Tx, imageID string) error {
-	// Delete from image table.
-	if _, err := tx.Exec(ctx, "delete from "+imagesTable+" where Id = $1", imageID); err != nil {
-		return err
-	}
-
-	// Delete orphaned image components.
-	if _, err := tx.Exec(ctx, "delete from "+imageComponentsTable+" where not exists (select "+imageComponentEdgesTable+".imagecomponentid FROM "+imageComponentEdgesTable+")"); err != nil {
-		return err
-	}
-
-	// Delete orphaned cves.
-	if _, err := tx.Exec(ctx, "delete from "+imageCVEsTable+" where not exists (select "+componentCVEEdgesTable+".imagecveid FROM "+componentCVEEdgesTable+")"); err != nil {
-		return err
-	}
-	return tx.Commit(ctx)
-}
-
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	rows, err := s.db.Query(ctx, getImageIDsStmt)
@@ -912,138 +864,4 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 		}
 	}
 	return elems, missingIndices, nil
-}
-
-//// Used for testing
-
-func dropTableImages(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images CASCADE")
-	dropTableImagesLayers(ctx, db)
-	dropTableImageComponents(ctx, db)
-	dropTableImageCVEs(ctx, db)
-	dropTableImageCVEEdges(ctx, db)
-	dropTableComponentCVEEdges(ctx, db)
-	dropTableImageComponentEdges(ctx, db)
-}
-
-func dropTableImagesLayers(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images_Layers CASCADE")
-}
-
-func dropTableImageComponents(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentsTable+" CASCADE")
-}
-
-func dropTableImageCVEs(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageCVEsTable+" CASCADE")
-}
-
-func dropTableImageCVEEdges(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageCVEEdgesTable+" CASCADE")
-}
-
-func dropTableComponentCVEEdges(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+componentCVEEdgesTable+" CASCADE")
-}
-
-func dropTableImageComponentEdges(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentEdgesTable+" CASCADE")
-}
-
-// Destroy drops image table.
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableImages(ctx, db)
-}
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) store.Store {
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImagesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentsStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCvesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentEdgesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentCveEdgesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCveEdgesStmt)
-	return New(db, noUpdateTimestamps)
-}
-
-//// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
-}
-
-// GetImageMetadata gets the image without scan/component data.
-func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
-	conn, release, err := s.acquireConn(ctx)
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
-
-	row := conn.QueryRow(ctx, getImageMetaStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	var msg storage.Image
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
-}
-
-func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
-	conn, release, err := s.acquireConn(ctx)
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	cveIDs, err := func() ([]string, error) {
-		rows, err := s.db.Query(ctx, "select id from "+imageCVEsTable+" where cvebaseinfo_cve = $1", cve)
-		if err != nil {
-			return nil, pgutils.ErrNilIfNoRows(err)
-		}
-
-		defer rows.Close()
-		var ids []string
-
-		for rows.Next() {
-			var id string
-			if err := rows.Scan(&id); err != nil {
-				return nil, err
-			}
-			ids = append(ids, id)
-		}
-		return ids, nil
-	}()
-	if err != nil {
-		return err
-	}
-
-	if len(imageIDs) == 0 || len(cveIDs) == 0 {
-		return nil
-	}
-
-	query := "update " + imageCVEEdgesTable + " set state = $1 where imagecveid = ANY($2::text[]) AND imageid = ANY($3::text[])"
-	_, err = tx.Exec(ctx, query, state, cveIDs, imageIDs)
-	if err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-	return tx.Commit(ctx)
 }

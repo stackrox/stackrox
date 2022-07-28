@@ -90,7 +90,7 @@ func (s *postgresMigrationSuite) TestImageMigration() {
 						Vulns: []*storage.EmbeddedVulnerability{},
 					},
 					{
-						Name:    "comp1",
+						Name:    "comp2",
 						Version: "ver2",
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 							LayerIndex: 3,
@@ -112,7 +112,7 @@ func (s *postgresMigrationSuite) TestImageMigration() {
 						},
 					},
 					{
-						Name:    "comp2",
+						Name:    "comp3",
 						Version: "ver1",
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 							LayerIndex: 2,
