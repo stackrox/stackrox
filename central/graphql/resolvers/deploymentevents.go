@@ -43,7 +43,6 @@ func init() {
 			"uid: Int!",
 			"parentName: String",
 			"parentUid: Int!",
-			"whitelisted: Boolean!", // TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
 			"inBaseline: Boolean!",
 		}, "DeploymentEvent"),
 		schema.AddType("PolicyViolationEvent", []string{
@@ -199,12 +198,6 @@ func (resolver *ProcessActivityEventResolver) ParentName() *string {
 // If ParentName is null, then ParentUID will always be -1.
 func (resolver *ProcessActivityEventResolver) ParentUID() int32 {
 	return resolver.parentUID
-}
-
-// Whitelisted returns true if this process is in baseline.
-// TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
-func (resolver *ProcessActivityEventResolver) Whitelisted() bool {
-	return resolver.InBaseline()
 }
 
 // InBaseline returns true if this process is in baseline.

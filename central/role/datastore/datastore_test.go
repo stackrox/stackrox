@@ -23,11 +23,6 @@ import (
 
 func TestAllDefaultRolesAreCovered(t *testing.T) {
 	// Merge the roles for vuln reporting into the defaults
-	// TODO: Remove once the feature is released
-	for r, a := range vulnReportingDefaultRoles {
-		defaultRoles[r] = a
-	}
-
 	assert.Len(t, defaultRoles, len(role.DefaultRoleNames))
 	for r := range defaultRoles {
 		assert.Contains(t, role.DefaultRoleNames, r)

@@ -47,7 +47,6 @@ func (n *namespaceGatherer) Gather(ctx context.Context, clusterID string) ([]*da
 			ID:             namespace.GetId(),
 			Name:           name,
 			NumDeployments: len(deployments),
-			// TODO: Fill out churn metrics once they are implemented
 		})
 	}
 	return namespaceList, errList.ErrorStrings()

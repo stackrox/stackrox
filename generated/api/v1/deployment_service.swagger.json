@@ -324,12 +324,6 @@
         "deployment": {
           "$ref": "#/definitions/storageListDeployment"
         },
-        "whitelistStatuses": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageContainerNameAndBaselineStatus"
-          }
-        },
         "baselineStatuses": {
           "type": "array",
           "items": {

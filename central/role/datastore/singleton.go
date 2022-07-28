@@ -48,10 +48,6 @@ func Singleton() DataStore {
 		// Which role format is used is determined solely by the feature flag.
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
 
-		for r, a := range vulnReportingDefaultRoles {
-			defaultRoles[r] = a
-		}
-
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -132,9 +128,6 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.Modify(resources.VulnerabilityManagementRequests),
 		},
 	},
-}
-
-var vulnReportingDefaultRoles = map[string]roleAttributes{
 	rolePkg.VulnReporter: {
 		idSuffix:    "vulnreporter",
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",

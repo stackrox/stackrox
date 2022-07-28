@@ -45,7 +45,6 @@ func Singleton() CVEUnsuppressLoop {
 
 	once.Do(func() {
 		if features.PostgresDatastore.Enabled() {
-			// TODO: Attach cluster CVE store.
 			loop = NewLoop(imageCVEDataStore.Singleton(), nodeCVEDataStore.Singleton(), clusterCVEDataStore.Singleton())
 		} else {
 			loop = NewLoop(legacyImageCVEDataStore.Singleton())

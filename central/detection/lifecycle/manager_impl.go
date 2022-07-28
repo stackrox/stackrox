@@ -244,7 +244,6 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		Namespace:     baselineKey.namespace,
 	}
 
-	// TODO joseph what to do if exclusions ("baseline" in the old non-inclusive language) doesn't exist?  Always create for now?
 	baseline, exists, err := m.baselines.GetProcessBaseline(lifecycleMgrCtx, key)
 	if err != nil {
 		return false, err
