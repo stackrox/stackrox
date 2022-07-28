@@ -1,4 +1,7 @@
-package dackbox
+// This file was originally generated with
+// //go:generate cp ../../../../central/cve/store/dackbox/store_impl.go .
+
+package legacy
 
 import (
 	"context"
@@ -78,7 +81,23 @@ func (b *storeImpl) Get(ctx context.Context, id string) (cve *storage.CVE, exist
 	return msg.(*storage.CVE), true, err
 }
 
-func (b *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
+func (b *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ClusterCVE, []int, error) {
+	cves, missing, err := b.getMany(ctx, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	clusterCVEs := make([]*storage.ClusterCVE, 0, len(cves))
+	for _, cve := range cves {
+		clusterCVEs = append(clusterCVEs, convertCVEToClusterCVE(cve))
+	}
+	return clusterCVEs, missing, nil
+}
+
+func convert2(cve *storage.ClusterCVE) *storage.CVE {
+	return &storage.CVE{}
+}
+
+func (b *storeImpl) getMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "CVE")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -150,7 +169,11 @@ func (b *storeImpl) Upsert(ctx context.Context, cves ...*storage.CVE) error {
 	})
 }
 
-func (b *storeImpl) UpsertMany(ctx context.Context, cves []*storage.CVE) error {
+func (b *storeImpl) UpsertMany(ctx context.Context, clusterCves []*storage.ClusterCVE) error {
+	cves := make([]*storage.CVE, 0, len(clusterCves))
+	for _, clusterCve := range clusterCves {
+		cves = append(cves, convert2(clusterCve))
+	}
 	return b.Upsert(ctx, cves...)
 }
 
@@ -216,4 +239,63 @@ func (b *storeImpl) deleteNoBatch(ids ...string) error {
 		return err
 	}
 	return nil
+}
+
+func convertCVEToClusterCVE(cve *storage.CVE) *storage.ClusterCVE {
+	return &storage.ClusterCVE{
+		Id: cve.GetId(),
+		CveBaseInfo: &storage.CVEInfo{
+			Cve:          cve.GetId(),
+			Summary:      cve.GetSummary(),
+			Link:         cve.GetLink(),
+			PublishedOn:  cve.GetPublishedOn(),
+			CreatedAt:    cve.GetCreatedAt(),
+			LastModified: cve.GetLastModified(),
+			// ScoreVersion:         cve.GetScoreVersion(),
+			CvssV2: cve.GetCvssV2(),
+			CvssV3: cve.GetCvssV3(),
+			// References:           cve.GetReferences(),
+		},
+		Cvss:         cve.GetCvss(),
+		Severity:     cve.GetSeverity(),
+		ImpactScore:  cve.GetImpactScore(),
+		Snoozed:      cve.GetSuppressed(),
+		SnoozeStart:  cve.GetSuppressActivation(),
+		SnoozeExpiry: cve.GetSuppressExpiry(),
+		Type:         cve.GetType(),
+	}
+}
+
+func convertClusterCVeToCVE(clusterCVE *storage.ClusterCVE) *storage.CVE {
+	baseInfo := clusterCVE.GetCveBaseInfo()
+	distroSpecific := map[string]*storage.CVE_DistroSpecific{
+		"os": {
+			Severity:     clusterCVE.GetSeverity(),
+			Cvss:         clusterCVE.GetCvss(),
+			ScoreVersion: clusterCVE.GetScoreVersion,
+			CvssV2:       baseInfo.GetCvssV2(),
+			CvssV3:       baseInfo.GetCvssV3(),
+		},
+	}
+	return &storage.CVE{
+		Id:                 clusterCVE.GetId(),
+		Cvss:               clusterCVE.GetCvss(),
+		ImpactScore:        clusterCVE.GetImpactScore(),
+		Type:               clusterCVE.GetType(),
+		Types:              []storage.CVE_CVEType{clusterCVE.GetType()},
+		Summary:            baseInfo.GetSummary(),
+		Link:               baseInfo.GetLink(),
+		PublishedOn:        baseInfo.GetPublishedOn(),
+		CreatedAt:          baseInfo.GetCreatedAt(),
+		LastModified:       baseInfo.GetLastModified(),
+		References:         baseInfo.GetReferences(),
+		ScoreVersion:       baseInfo.GetScoreVersion(),
+		CvssV2:             baseInfo.GetCvssV2(),
+		CvssV3:             baseInfo.GetCvssV3(),
+		Suppressed:         clusterCVE.GetSnoozed(),
+		SuppressActivation: clusterCVE.GetSnoozeStart(),
+		SuppressExpiry:     clusterCVE.GetSnoozeExpiry(),
+		DistroSpecifics:    distroSpecific,
+		Severity:           clusterCVE.GetSeverity(),
+	}
 }

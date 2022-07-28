@@ -21,8 +21,8 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNum() + 9,
-		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum()) + 10},
+		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 9,
+		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 10},
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.New(rawDackbox.GetGlobalDackBox(), rawDackbox.GetKeyFence())
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
@@ -42,8 +42,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var clusterCves []*storage.ClusterCVE
-	var err error
-	walk(ctx, legacyStore, func(obj *storage.ClusterCVE) error {
+	err := walk(ctx, legacyStore, func(obj *storage.ClusterCVE) error {
 		clusterCves = append(clusterCves, obj)
 		if len(clusterCves) == batchSize {
 			if err := store.UpsertMany(ctx, clusterCves); err != nil {
@@ -54,6 +53,9 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	if len(clusterCves) > 0 {
 		if err = store.UpsertMany(ctx, clusterCves); err != nil {
 			log.WriteToStderrf("failed to persist cluster_cves to store %v", err)
@@ -65,31 +67,6 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 
 func walk(ctx context.Context, s legacy.Store, fn func(obj *storage.ClusterCVE) error) error {
 	return store_walk(ctx, s, fn)
-}
-
-func convert(cve *storage.CVE) *storage.ClusterCVE {
-	return &storage.ClusterCVE{
-		Id: cve.GetId(),
-		CveBaseInfo: &storage.CVEInfo{
-			Cve:                  cve.GetId(),
-			Summary:              cve.GetSummary(),
-			Link:                 cve.GetLink(),
-			PublishedOn:          cve.GetPublishedOn(),
-			CreatedAt:            cve.GetCreatedAt(),
-			LastModified:         cve.GetLastModified(),
-			// ScoreVersion:         cve.GetScoreVersion(),
-			CvssV2:               cve.GetCvssV2(),
-			CvssV3:               cve.GetCvssV3(),
-			// References:           cve.GetReferences(),
-		},
-		Cvss:                 cve.GetCvss(),
-		Severity:             cve.GetSeverity(),
-		ImpactScore:          cve.GetImpactScore(),
-		Snoozed:              cve.GetSuppressed(),
-		SnoozeStart:          cve.GetSuppressActivation(),
-		SnoozeExpiry:         cve.GetSuppressExpiry(),
-		Type:                 cve.GetType(),
-	}
 }
 
 func store_walk(ctx context.Context, s legacy.Store, fn func(obj *storage.ClusterCVE) error) error {
@@ -109,7 +86,7 @@ func store_walk(ctx context.Context, s legacy.Store, fn func(obj *storage.Cluste
 			return err
 		}
 		for _, obj := range objs {
-			if err = fn(convert(obj)); err != nil {
+			if err = fn(obj); err != nil {
 				return err
 			}
 		}
