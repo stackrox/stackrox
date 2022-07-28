@@ -65,11 +65,10 @@ func (suite *NetworkPolicySuite) Test_FilterForDeployment() {
 			expectedPoliciesMatched: 2,
 		},
 		"No Match: NW policies shall not match against the deployment label even if 0 pods match": {
-			deploymentLabels:      map[string]string{"app": "central", "env": "prod"},
-			specPodTemplateLabels: map[string]string{"app": "sensor", "env": "dev"},
+			deploymentLabels:      map[string]string{"app": "central-deployment", "env": "prod"},
+			specPodTemplateLabels: map[string]string{"app": "central-pod", "env": "prod"},
 			netpolSelectors: []map[string]string{
-				{"app": "central"},
-				{"env": "prod"},
+				{"app": "central-deployment", "env": "prod"},
 			},
 			expectedPoliciesMatched: 0,
 		},
