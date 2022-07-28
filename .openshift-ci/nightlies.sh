@@ -60,6 +60,10 @@ main() {
 
     # Push
 
+    gitbot push origin "$nightly_tag" || {
+        die "Could not push"
+    }
+
     gitbot push --force || {
         die "Could not push"
     }
