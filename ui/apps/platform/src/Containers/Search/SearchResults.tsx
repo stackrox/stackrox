@@ -62,15 +62,16 @@ const tabs: SearchTab[] = [
 
 const INITIAL_SORT_INDEX = 1; // Type column
 const INITIAL_SORT_DIRECTION = 'asc'; // A->Z
+
 interface StateProps {
-    globalSearchCategory: SearchCategory;
-    globalSearchCounts: SearchCategoryCount[];
-    globalSearchResults: SearchResult[];
-    globalSearchOptions: SearchEntry[];
+    searchCategory: SearchCategory;
+    searchCounts: SearchCategoryCount[];
+    searchResults: SearchResult[];
+    searchOptions: SearchEntry[];
 }
 
 interface DispatchProps {
-    setGlobalSearchCategory: (category: string) => void;
+    setSearchCategory: (category: string) => void;
 }
 
 interface PassedProps {
@@ -81,11 +82,11 @@ export type SearchResultsProps = StateProps & DispatchProps & PassedProps;
 
 function SearchResults({
     onClose,
-    globalSearchCategory,
-    globalSearchCounts,
-    globalSearchResults,
-    globalSearchOptions,
-    setGlobalSearchCategory,
+    searchCategory,
+    searchCounts,
+    searchOptions,
+    searchResults,
+    setSearchCategory,
 }: SearchResultsProps): ReactElement {
     // index of the currently active column
     const [activeSortIndex, setActiveSortIndex] = useState(INITIAL_SORT_INDEX);
@@ -95,13 +96,9 @@ function SearchResults({
     const [sortedRows, setSortedRows] = useState<SearchResult[]>([]);
 
     useEffect(() => {
-        const newSortedResults = onSort(
-            [...globalSearchResults],
-            INITIAL_SORT_INDEX,
-            INITIAL_SORT_DIRECTION
-        );
+        const newSortedResults = onSort(searchResults, INITIAL_SORT_INDEX, INITIAL_SORT_DIRECTION);
         setSortedRows(newSortedResults);
-    }, [globalSearchResults]);
+    }, [searchResults]);
 
     function onSort(
         currentRows: SearchResult[],
@@ -111,7 +108,7 @@ function SearchResults({
         setActiveSortIndex(index);
         setActiveSortDirection(direction);
         // sorts the rows
-        const updatedRows = currentRows.sort((a, b) => {
+        const updatedRows = [...currentRows].sort((a, b) => {
             if (index === 0) {
                 // sort on first column, name
                 if (direction === 'asc') {
@@ -135,10 +132,10 @@ function SearchResults({
     }
 
     function onTabClick(_event, eventKey) {
-        setGlobalSearchCategory(eventKey);
+        setSearchCategory(eventKey);
     }
 
-    if (globalSearchOptions.length === 0) {
+    if (searchOptions.length === 0) {
         return (
             <Bullseye>
                 <EmptyStateTemplate title="Search all data" headingLevel="h1">
@@ -149,14 +146,14 @@ function SearchResults({
     }
 
     /*
-     * Replace globalSearchCounts.reduce(…) with globalSearchResults.length after future improvement:
+     * Replace searchCounts.reduce(…) with searchResults.length after future improvement:
      * replace redundant requests for each selected tab categories
      * with filtering of the response for all categories
      */
     function getTabCategoryCount(tabCategory: TabCategory) {
         return tabCategory === 'SEARCH_UNSET'
-            ? globalSearchCounts.reduce((total, { count }) => total + Number(count), 0)
-            : globalSearchCounts.find(({ category }) => category === tabCategory)?.count ?? 0;
+            ? searchCounts.reduce((total, { count }) => total + Number(count), 0)
+            : searchCounts.find(({ category }) => category === tabCategory)?.count ?? 0;
     }
 
     /* eslint-disable no-nested-ternary */
@@ -166,7 +163,7 @@ function SearchResults({
                 Search
             </Title>
             <section className="h-full">
-                <Tabs activeKey={globalSearchCategory} onSelect={onTabClick}>
+                <Tabs activeKey={searchCategory} onSelect={onTabClick}>
                     {tabs.map(({ tabCategory, text }) => (
                         <Tab
                             key={tabCategory}
@@ -191,9 +188,9 @@ function SearchResults({
                         id={tabCategory}
                         aria-label={text}
                         key={tabCategory}
-                        hidden={tabCategory !== globalSearchCategory}
+                        hidden={tabCategory !== searchCategory}
                     >
-                        {tabCategory !== globalSearchCategory ? null : sortedRows.length === 0 ? (
+                        {tabCategory !== searchCategory ? null : sortedRows.length === 0 ? (
                             <EmptyStateTemplate
                                 title="No results with your chosen filters for the type"
                                 headingLevel="h2"
@@ -204,9 +201,9 @@ function SearchResults({
                             <SearchResultsTable
                                 activeSortDirection={activeSortDirection}
                                 activeSortIndex={activeSortIndex}
-                                globalSearchOptions={globalSearchOptions}
                                 handleHeaderClick={handleHeaderClick}
                                 onClose={onClose}
+                                searchOptions={searchOptions}
                                 searchResults={sortedRows}
                             />
                         )}
@@ -221,18 +218,18 @@ function SearchResults({
 type SearchResultsTableProps = {
     activeSortDirection: 'asc' | 'desc';
     activeSortIndex: number;
-    globalSearchOptions: SearchEntry[];
     handleHeaderClick: (_event, index, direction) => void;
     onClose: (toURL: string) => void;
+    searchOptions: SearchEntry[];
     searchResults: SearchResult[];
 };
 
 function SearchResultsTable({
     activeSortDirection,
     activeSortIndex,
-    globalSearchOptions,
     handleHeaderClick,
     onClose,
+    searchOptions,
     searchResults,
 }: SearchResultsTableProps): ReactElement {
     return (
@@ -298,7 +295,7 @@ function SearchResultsTable({
                                 <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                                     <FilterLinks
                                         filterValue={name}
-                                        globalSearchOptions={globalSearchOptions}
+                                        globalSearchOptions={searchOptions}
                                         onClose={onClose}
                                         searchCategory={category}
                                     />
@@ -418,24 +415,19 @@ function FilterLinks({
 }
 
 const mapStateToProps = createStructuredSelector({
-    globalSearchCategory: selectors.getGlobalSearchCategory,
-    globalSearchCounts: selectors.getGlobalSearchCounts,
-    globalSearchResults: selectors.getGlobalSearchResults,
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    globalSearchOptions: selectors.getGlobalSearchOptions,
+    searchCategory: selectors.getGlobalSearchCategory,
+    searchCounts: selectors.getGlobalSearchCounts,
+    searchResults: selectors.getGlobalSearchResults,
+    searchOptions: selectors.getGlobalSearchOptions,
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    setGlobalSearchCategory: (category) =>
-        // TODO: type redux props
+    setSearchCategory: (category) =>
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         dispatch(globalSearchActions.setGlobalSearchCategory(category)),
 });
 
 export default connect<StateProps, DispatchProps, PassedProps>(
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     mapStateToProps,
     mapDispatchToProps
 )(SearchResults);
