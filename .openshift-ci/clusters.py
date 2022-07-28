@@ -84,6 +84,8 @@ class GKECluster:
 
 
 class AutomationFlavorsCluster:
+    KUBECTL_TIMEOUT = 5 * 60
+
     def provision(self):
         if "SHARED_DIR" not in os.environ:
             raise RuntimeError("Error: there is no SHARED_DIR defined")
@@ -97,6 +99,15 @@ class AutomationFlavorsCluster:
             )
 
         os.environ["KUBECONFIG"] = kubeconfig
+
+        print(f"Using kubeconfig from {kubeconfig}")
+
+        print("Nodes:")
+        subprocess.run(
+            ["kubectl", "get" "nodes", "-o", "wide"],
+            check=True,
+            timeout=AutomationFlavorsCluster.KUBECTL_TIMEOUT,
+        )
 
         return self
 
