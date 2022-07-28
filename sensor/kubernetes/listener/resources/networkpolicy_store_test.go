@@ -109,7 +109,10 @@ func TestNetworkPoliciesStoreDelete(t *testing.T) {
 				if expectedID == "" && got != nil {
 					t.Errorf("Expected to not find ID but found %s", got.GetId())
 				} else {
-					assert.Equal(t, expectedID, got.GetId())
+					assert.NotNil(t, got)
+					if got != nil {
+						assert.Equal(t, expectedID, got.GetId())
+					}
 				}
 			}
 		})

@@ -113,7 +113,11 @@ func BenchmarkUpsert_Update(b *testing.B) {
 				oldPolicy = v
 				break
 			}
-			newPolicy := newNPDummy(oldPolicy.GetId(), defaultNS, selectors[labelIdx])
+			id := uuid.NewV4().String()
+			if oldPolicy != nil {
+				id = oldPolicy.GetId()
+			}
+			newPolicy := newNPDummy(id, defaultNS, selectors[labelIdx])
 			b.Run(fmt.Sprintf("L=%d-N=10^%d", numLabels, scale), func(b *testing.B) {
 				for i := 0; i < b.N; i++ {
 					s.Upsert(newPolicy)
