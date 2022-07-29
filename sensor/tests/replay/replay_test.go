@@ -329,8 +329,9 @@ func getAlerts(messages []*central.MsgFromSensor) map[string]map[string]*storage
 		event := msg.GetEvent()
 		if event.GetAlertResults() != nil {
 			if event.GetAlertResults().GetDeploymentId() != "" {
-				alerts := make(map[string]*storage.Alert)
-				for _, a := range event.GetAlertResults().GetAlerts() {
+				alertResults := event.GetAlertResults().GetAlerts()
+				alerts := make(map[string]*storage.Alert, len(alertResults))
+				for _, a := range alertResults {
 					alerts[a.GetPolicy().GetId()] = a
 				}
 				events[event.GetAlertResults().GetDeploymentId()] = alerts
