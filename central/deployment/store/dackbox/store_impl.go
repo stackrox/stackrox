@@ -12,8 +12,8 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	namespaceDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
