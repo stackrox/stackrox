@@ -1,5 +1,8 @@
 // import react-testing-library extensions once for all tests, as recommended at https://github.com/testing-library/jest-dom#usage
 import '@testing-library/jest-dom/extend-expect';
+import { disableFragmentWarnings } from '@apollo/client';
+
+disableFragmentWarnings();
 
 /**
  * Fix for test error "matchMedia not present, legacy browsers require a polyfill"
