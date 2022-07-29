@@ -94,29 +94,6 @@ install_built_roxctl_in_gopath() {
     cp "$roxctl" "$GOPATH/bin/roxctl"
 }
 
-setup_bin_from_image() {
-    info "Populating bin/ with binaries from an image"
-
-    if ! is_linux; then
-        die "Only linux is supported"
-    fi
-
-    local REPO=rhacs-eng
-    local main_image_tag="${MAIN_IMAGE_TAG:-$(make --quiet tag)}"
-    local main_image_repo="${MAIN_IMAGE_REPO:-quay.io/$REPO/main}"
-
-    require_environment QUAY_RHACS_ENG_RO_USERNAME
-    require_environment QUAY_RHACS_ENG_RO_PASSWORD
-    docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
-
-    local container_id
-    container_id=$(docker create "${main_image_repo}:${main_image_tag}")
-    mkdir -p "$SCRIPTS_ROOT/bin/linux"
-    docker cp "$container_id:/assets/downloads/cli/roxctl-linux" "$SCRIPTS_ROOT/bin/linux/roxctl"
-    docker cp "$container_id:/stackrox/bin/sensor-upgrader" "$SCRIPTS_ROOT/bin/linux/upgrader"
-    chmod 0755 "$SCRIPTS_ROOT/bin/linux/roxctl" "$SCRIPTS_ROOT/bin/linux/upgrader"
-}
-
 get_central_debug_dump() {
     info "Getting a central debug dump"
 
