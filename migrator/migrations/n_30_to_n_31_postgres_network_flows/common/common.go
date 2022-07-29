@@ -19,6 +19,7 @@ var (
 	keySeperator = []byte("\x00")
 )
 
+// GetClusterIDFromKey gets cluster id from key
 func GetClusterIDFromKey(key []byte) ([]byte, error) {
 	parts := bytes.Split(key, keySeperator)
 	if len(parts) < 2 || string(parts[0]) != GlobalPrefix {

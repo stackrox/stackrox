@@ -48,14 +48,13 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore store.Store) er
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.ImageComponentEdgesSchema.Table)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.ImageComponentCveEdgesSchema.Table)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
-	walk(ctx, legacyStore, func(obj *storage.Image) error {
+	return walk(ctx, legacyStore, func(obj *storage.Image) error {
 		if err := store.Upsert(ctx, obj); err != nil {
 			log.WriteToStderrf("failed to persist images to store %v", err)
 			return err
 		}
 		return nil
 	})
-	return nil
 }
 
 func walk(ctx context.Context, legacyStore store.Store, fn func(obj *storage.Image) error) error {

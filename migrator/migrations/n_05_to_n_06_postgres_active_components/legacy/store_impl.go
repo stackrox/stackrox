@@ -5,19 +5,16 @@ package legacy
 
 import (
 	"context"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
-	acDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
-	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	acDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/activecomponent"
+	deploymentDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/deployment"
+	componentDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/imagecomponent"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
-	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
 const (
@@ -60,8 +57,6 @@ func (s *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 }
 
 func (s *storeImpl) Get(_ context.Context, id string) (*storage.ActiveComponent, bool, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ActiveComponent")
-
 	dackTxn, err := s.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
@@ -77,8 +72,6 @@ func (s *storeImpl) Get(_ context.Context, id string) (*storage.ActiveComponent,
 }
 
 func (s *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.ActiveComponent, []int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "ActiveComponent")
-
 	dackTxn, err := s.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, nil, err
@@ -123,7 +116,6 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 }
 
 func (s *storeImpl) UpsertMany(_ context.Context, updates []*storage.ActiveComponent) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.UpsertAll, "ActiveComponent")
 	batch := batcher.New(len(updates), batchSize)
 	for {
 		start, end, ok := batch.Next()
@@ -163,8 +155,6 @@ func (s *storeImpl) upsertActiveComponents(acs []*storage.ActiveComponent) error
 }
 
 func (s *storeImpl) DeleteMany(_ context.Context, ids []string) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "ActiveComponent")
-
 	keysToDelete := acDackBox.BucketHandler.GetKeys(ids...)
 	keysToLock := concurrency.DiscreteKeySet(keysToDelete...)
 	return s.keyFence.DoStatusWithLock(keysToLock, func() error {

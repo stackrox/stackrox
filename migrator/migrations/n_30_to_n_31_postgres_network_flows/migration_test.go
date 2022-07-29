@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/timestamp"
-
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -67,7 +66,7 @@ func (s *postgresMigrationSuite) TearDownTest() {
 
 func (s *postgresMigrationSuite) populateStore(clusterStore store.ClusterStore, clusterID string) (store.FlowStore, []*storage.NetworkFlow) {
 	var flows []*storage.NetworkFlow
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 30; i++ {
 		flow := &storage.NetworkFlow{}
 		s.NoError(testutils.FullInit(flow, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		flow.LastSeenTimestamp = types.TimestampNow()
@@ -79,7 +78,7 @@ func (s *postgresMigrationSuite) populateStore(clusterStore store.ClusterStore, 
 	return flowStore, flows
 }
 
-func (s *postgresMigrationSuite) verify(flowStore pgStore.FlowStore, flows []*storage.NetworkFlow) {
+func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*storage.NetworkFlow) {
 	fetched, _, err := flowStore.GetAllFlows(s.ctx, &types.Timestamp{})
 	s.NoError(err)
 	s.Len(fetched, len(flows))

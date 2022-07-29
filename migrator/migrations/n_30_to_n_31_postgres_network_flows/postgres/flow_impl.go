@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -68,13 +69,14 @@ var (
 	batchSize = 10000
 )
 
+/*
 type FlowStore interface {
 	// GetAllFlows The methods below are the ones that match the flow interface which is what we probably have to match.
 	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
 	// UpsertFlows Same as other Upserts but it takes in a time
 	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
 }
-
+*/
 type flowStoreImpl struct {
 	db        *pgxpool.Pool
 	clusterID string
@@ -151,7 +153,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, clusterID string) FlowStore {
+func New(db *pgxpool.Pool, clusterID string) store.FlowStore {
 	return &flowStoreImpl{
 		db:        db,
 		clusterID: clusterID,
