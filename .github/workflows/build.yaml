@@ -4,52 +4,18 @@ on:
     types:
     - opened
     - synchronize
+    - labeled
 
 env:
-  ORG_TOKEN_FOR_GITHUB: ${{ secrets.ORG_TOKEN_FOR_GITHUB }}
-  QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-  QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+  ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
 jobs:
 
-  pre-create-tag:
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.32-9-g5151fd607d
-      credentials:
-        username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Job Preamble
-        uses: ./.github/actions/job-preamble
-        with:
-          get_CI_TAG: "false"
-
-      - name: Create a consistent tag for CI workflow
-        run: |
-            make --quiet tag | tee CI_TAG_TMP
-            mv CI_TAG_TMP CI_TAG
-            # check for a valid tag - when 'make --quiet tag' fails it can output a newline and exit with 0
-            (( $(stat -c%s CI_TAG) > 1 )) || { echo "An invalid tag was created:"; cat CI_TAG; exit 1; }
-
-      - uses: actions/upload-artifact@v3
-        with: 
-          name: CI_TAG
-          path: CI_TAG
-
   pre-build-ui:
+    if: ${{ github.event.label.name == 'turbo-build' }}
     runs-on: ubuntu-latest
-    needs: pre-create-tag
     container:
-      image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.32-9-g5151fd607d
-      credentials:
-        username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -77,13 +43,10 @@ jobs:
             ui/monorepo.lock
 
   pre-build-cli:
+    if: ${{ github.event.label.name == 'turbo-build' }}
     runs-on: ubuntu-latest
-    needs: pre-create-tag
     container:
-      image: quay.io/rhacs-eng/apollo-ci:stackrox-build-0.3.32-9-g5151fd607d
-      credentials:
-        username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -105,13 +68,10 @@ jobs:
           path: cli-build.tgz
 
   pre-build-go-binaries:
+    if: ${{ github.event.label.name == 'turbo-build' }}
     runs-on: ubuntu-latest
-    needs: pre-create-tag
     container:
-      image: quay.io/rhacs-eng/apollo-ci:stackrox-build-0.3.32-9-g5151fd607d
-      credentials:
-        username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -133,13 +93,10 @@ jobs:
           path: go-binaries-build.tgz
 
   pre-build-docs:
+    if: ${{ github.event.label.name == 'turbo-build' }}
     runs-on: ubuntu-latest
-    needs: pre-create-tag
     container:
-      image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.32-9-g5151fd607d
-      credentials:
-        username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -161,7 +118,8 @@ jobs:
           path: |
             image/docs
 
-  build:
+  build-and-push:
+    if: ${{ github.event.label.name == 'turbo-build' }}
     runs-on: ubuntu-latest
     needs: 
       - pre-build-ui
@@ -169,15 +127,12 @@ jobs:
       - pre-build-go-binaries
       - pre-build-docs
     container:
-      image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.32-9-g5151fd607d
-      credentials:
-        username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
       env:
-        DOCKER_IO_PUSH_USERNAME: ${{ secrets.DOCKER_IO_PUSH_USERNAME }}
-        DOCKER_IO_PUSH_PASSWORD: ${{ secrets.DOCKER_IO_PUSH_PASSWORD }}
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -190,10 +145,6 @@ jobs:
       - name: Checkout submodules
         run: |
             git submodule update --init
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: CI_TAG
 
       - uses: actions/download-artifact@v3
         with:
@@ -223,15 +174,15 @@ jobs:
 
       - uses: ./.github/actions/cache-ui-dependencies
 
-      - name: Docker login
-      # (needed for docs pull)
-        run: |
-            docker login -u "${{ env.QUAY_RHACS_ENG_RO_USERNAME }}" --password-stdin quay.io <<<"${{ env.QUAY_RHACS_ENG_RO_PASSWORD }}"
+      # - name: Docker login
+      # # (needed for docs pull)
+      #   run: |
+      #       docker login -u "${{ env.QUAY_RHACS_ENG_RO_USERNAME }}" --password-stdin quay.io <<<"${{ env.QUAY_RHACS_ENG_RO_PASSWORD }}"
 
       - name: Generate OSS notice
         run: make ossls-notice
 
-      - name: Build main image
+      - name: Build main images
         run: make docker-build-main-image
 
       - name: Check debugger presence in the main image
@@ -240,40 +191,12 @@ jobs:
       - name: Build roxctl image
         run: make docker-build-roxctl-image
 
-      - name: Push main and roxctl images
+      - name: Push images
         run: |
             source ./scripts/ci/lib.sh
-            push_main_and_roxctl_images "${GITHUB_HEAD_REF}"
+            push_main_image_set "${GITHUB_HEAD_REF}" "${{ env.ROX_PRODUCT_BRANDING }}"
 
       - name: Push matching collector and scanner images
         run: |
             source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images
-
-  hand-off-to-circle-ci:
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    env:
-      CIRCLECI_TOKEN: ${{ secrets.CIRCLE_TOKEN_ROXBOT }}
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: CI_TAG
-
-      - name: Trigger Circle CI
-        run: |
-          curl -X POST \
-              --header 'Content-Type: application/json' \
-              --header "Circle-Token: ${{ env.CIRCLECI_TOKEN }}" \
-              https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline \
-              -d @- << __EOD__
-          {
-            "branch": "${GITHUB_HEAD_REF}",
-            "parameters": {
-              "trigger_on_demand": true,
-              "workflow_name": "e2e-tests",
-              "tag": "$(cat CI_TAG)"
-            }
-          }
-          __EOD__
+            push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}"

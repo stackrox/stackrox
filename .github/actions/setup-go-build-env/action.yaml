@@ -5,6 +5,7 @@ runs:
   steps:
     - name: PR labels
       uses: joerick/pr-labels-action@v1.0.6
+
     - name: Setup Go build environment
       run: |
         if [[ -n "$GITHUB_PR_LABEL_CI_RELEASE_BUILD" ]]; then

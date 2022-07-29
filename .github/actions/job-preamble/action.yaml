@@ -1,10 +1,5 @@
 name: Job Preamble
-description: Perform common setup steps that most jobs need
-inputs:
-  get_CI_TAG: 
-    description: Get the CI_TAG artifact
-    required: true
-    default: "true"
+description: Perform common setup steps that many jobs need
 runs:
   using: composite
   steps:
@@ -12,19 +7,6 @@ runs:
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
-
-    - name: Get access to private repos for go modules
-      run: |
-        source ./scripts/lib.sh
-        require_environment ORG_TOKEN_FOR_GITHUB
-        git config --global "url.https://${ORG_TOKEN_FOR_GITHUB}:x-oauth-basic@github.com/.insteadOf" https://github.com/
-      shell: bash
-
-    - name: Restore CI_TAG
-      if: ${{ inputs.get_CI_TAG == 'true' }}
-      uses: actions/download-artifact@v3
-      with:
-        name: CI_TAG
 
     - name: Setup Go build env
       uses: ./.github/actions/setup-go-build-env
