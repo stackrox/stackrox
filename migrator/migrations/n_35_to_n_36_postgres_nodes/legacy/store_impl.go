@@ -4,8 +4,8 @@ import (
 	"context"
 
 	protoTypes "github.com/gogo/protobuf/types"
-	cveUtil "github.com/stackrox/rox/central/cve/utils"
 	"github.com/stackrox/rox/generated/storage"
+	cveUtil "github.com/stackrox/rox/migrator/migrations/cvehelper"
 	clusterDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/cluster"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/componentcveedge"
 	cveDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/cve"
@@ -18,11 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/set"
-)
-
-const (
-	typ          = "Node"
-	metadataType = "NodeMetadata"
 )
 
 type storeImpl struct {
@@ -102,7 +97,7 @@ func (b *storeImpl) GetNodeMetadata(_ context.Context, id string) (*storage.Node
 	return node, node != nil, err
 }
 
-// GetNodesBatch returns nodes with given ids.
+// GetMany returns nodes with given ids.
 func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Node, []int, error) {
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {

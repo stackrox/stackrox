@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"testing"
 
 	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
@@ -19,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
-	"gorm.io/gorm"
 )
 
 const (
@@ -45,17 +43,8 @@ var (
 // Store provides storage functionality for full nodes.
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.Node, bool, error)
 	Upsert(ctx context.Context, obj *storage.Node) error
-	Delete(ctx context.Context, id string) error
-	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
-	// GetNodeMetadata gets the node without scan/component data.
-	GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error)
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -702,39 +691,6 @@ func (s *storeImpl) acquireConn(ctx context.Context) (*pgxpool.Conn, func(), err
 	return conn, conn.Release, nil
 }
 
-// Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, id string) error {
-	conn, release, err := s.acquireConn(ctx)
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil
-	}
-	return s.deleteNodeTree(ctx, tx, id)
-}
-
-func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeID string) error {
-	// Delete from node table.
-	if _, err := tx.Exec(ctx, "delete from "+nodesTable+" where Id = $1", nodeID); err != nil {
-		return err
-	}
-
-	// Delete orphaned node components.
-	if _, err := tx.Exec(ctx, "delete from "+nodeComponentsTable+" where not exists (select "+nodeComponentEdgesTable+".nodecomponentid FROM "+nodeComponentEdgesTable+")"); err != nil {
-		return err
-	}
-
-	// Delete orphaned cves.
-	if _, err := tx.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+componentCVEEdgesTable+".nodecveid FROM "+componentCVEEdgesTable+")"); err != nil {
-		return err
-	}
-	return tx.Commit(ctx)
-}
-
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	var sacQueryFilter *v1.Query
@@ -810,65 +766,6 @@ func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.No
 		return nil, false, err
 	}
 	return &msg, true, nil
-}
-
-//// Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, t *testing.T, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableClustersStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeCvesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentEdgesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsCvesEdgesStmt)
-	return New(db, noUpdateTimestamps)
-}
-
-func dropTableNodes(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes CASCADE")
-	dropTableNodesTaints(ctx, db)
-	dropTableNodesComponents(ctx, db)
-	dropTableNodeCVEs(ctx, db)
-	dropTableNodeComponentEdges(ctx, db)
-	dropTableComponentCVEEdges(ctx, db)
-}
-
-func dropTableNodesTaints(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes_taints CASCADE")
-}
-
-func dropTableNodesComponents(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentsTable+" CASCADE")
-}
-
-func dropTableNodeCVEs(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeCVEsTable+" CASCADE")
-}
-
-func dropTableComponentCVEEdges(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+componentCVEEdgesTable+" CASCADE")
-}
-
-func dropTableNodeComponentEdges(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentEdgesTable+" CASCADE")
-}
-
-// Destroy drops all node tree tables.
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableNodes(ctx, db)
-}
-
-//// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
 }
 
 func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
