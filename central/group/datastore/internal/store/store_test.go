@@ -567,4 +567,21 @@ func (s *GroupStoreTestSuite) TestDefaultGroup() {
 	updatedDefaultGroup, err := s.sto.Get(defaultGroup.GetProps())
 	s.NoError(err)
 	s.Equal(defaultGroup, updatedDefaultGroup)
+
+	// 5. Update the default group to a non-default group.
+	// Fetch the group by its properties.
+	storedDefaultGroup, err := s.sto.Get(defaultGroup.GetProps())
+	s.NoError(err)
+	// Update the properties to make it a non-default group.
+	storedDefaultGroup.Props.Key = "email"
+	storedDefaultGroup.Props.Value = "test@example.com"
+	err = s.sto.Update(storedDefaultGroup)
+	s.NoError(err)
+	// Ensure the updated group matches.
+	updatedDefaultGroup, err = s.sto.Get(defaultGroup.GetProps())
+	s.NoError(err)
+	s.Equal(storedDefaultGroup, updatedDefaultGroup)
+	// Adding the initial default group should now work, as we have made the existing default group a non-default group.
+	defaultGroup.Props.Id = "new-id"
+	s.NoError(s.sto.Add(defaultGroup))
 }
