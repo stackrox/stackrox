@@ -177,7 +177,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 			return false, errors.Wrap(err, "error getting label selector")
 		}
 
-	// Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
+	// Pods don't have the abstractions that higher level objects have, so we maintain their lifecycle independently
 	case *v1.Pod:
 		if o.Status.Phase == v1.PodSucceeded || o.Status.Phase == v1.PodFailed {
 			*action = central.ResourceAction_REMOVE_RESOURCE
