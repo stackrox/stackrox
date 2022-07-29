@@ -176,7 +176,7 @@ jobs:
       - name: Docker login
       # (needed for docs pull)
         run: |
-            docker login -u "${{ env.QUAY_RHACS_ENG_RO_USERNAME }}" --password-stdin quay.io <<<"${{ env.QUAY_RHACS_ENG_RO_PASSWORD }}"
+            docker login -u "${{ env.QUAY_RHACS_ENG_RW_USERNAME }}" --password-stdin quay.io <<<"${{ env.QUAY_RHACS_ENG_RW_PASSWORD }}"
 
       - name: Generate OSS notice
         run: make ossls-notice
