@@ -479,7 +479,7 @@ func getNameFromObjectMeta(obj reflect.Value) (string, error) {
 		return "", errors.New("resource does not have the method GetName")
 	}
 	returnVals := getNameFn.Call([]reflect.Value{})
-	if len(returnVals) == 0 {
+	if len(returnVals) != 1 {
 		return "", errors.New("call to GetName should return one parameter")
 	}
 	return returnVals[0].String(), nil
