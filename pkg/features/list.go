@@ -24,9 +24,6 @@ var (
 	// PoliciesPatternFly enables the PatternFly version of Policies. (used in the front-end app only)
 	PoliciesPatternFly = registerFeature("Enable PatternFly version of Policies", "ROX_POLICIES_PATTERNFLY", true)
 
-	// ImageSignatureVerification enables image signature verification.
-	ImageSignatureVerification = registerFeature("Enable Image Signature Verification workflow", "ROX_VERIFY_IMAGE_SIGNATURE", true)
-
 	// PostgresDatastore enables Postgres datastore.
 	PostgresDatastore = registerFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", false)
 

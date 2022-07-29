@@ -540,6 +540,8 @@ func (s *GroupStoreTestSuite) TestDefaultGroup() {
 	err := s.sto.Add(defaultGroup)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
+	// Reset the ID.
+	defaultGroup.GetProps().Id = "some-id"
 
 	// 3. Updating the initially existing group to make it a default group should fail.
 	// Fetch the group by its properties.
@@ -552,4 +554,34 @@ func (s *GroupStoreTestSuite) TestDefaultGroup() {
 	err = s.sto.Update(initialGroup)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
+
+	// 4. Updating the default group's role should work.
+	// Fetch the group by its properties.
+	defaultGroup, err = s.sto.Get(defaultGroup.GetProps())
+	s.NoError(err)
+	// Update the role name, this should not yield any errors.
+	defaultGroup.RoleName = "non-admin"
+	err = s.sto.Update(defaultGroup)
+	s.NoError(err)
+	// Ensure the updated default group has the correct role name set.
+	updatedDefaultGroup, err := s.sto.Get(defaultGroup.GetProps())
+	s.NoError(err)
+	s.Equal(defaultGroup, updatedDefaultGroup)
+
+	// 5. Update the default group to a non-default group.
+	// Fetch the group by its properties.
+	storedDefaultGroup, err := s.sto.Get(defaultGroup.GetProps())
+	s.NoError(err)
+	// Update the properties to make it a non-default group.
+	storedDefaultGroup.Props.Key = "email"
+	storedDefaultGroup.Props.Value = "test@example.com"
+	err = s.sto.Update(storedDefaultGroup)
+	s.NoError(err)
+	// Ensure the updated group matches.
+	updatedDefaultGroup, err = s.sto.Get(defaultGroup.GetProps())
+	s.NoError(err)
+	s.Equal(storedDefaultGroup, updatedDefaultGroup)
+	// Adding the initial default group should now work, as we have made the existing default group a non-default group.
+	defaultGroup.Props.Id = "new-id"
+	s.NoError(s.sto.Add(defaultGroup))
 }

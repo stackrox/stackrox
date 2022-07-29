@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
@@ -117,10 +116,6 @@ func (e *enricherImpl) enrichWithVulnerabilities(scannerName string, dataSource 
 }
 
 func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, image *storage.Image) (EnrichmentResult, error) {
-	if !features.ImageSignatureVerification.Enabled() {
-		return EnrichmentResult{}, errors.New("the image signature verification feature is not enabled")
-	}
-
 	updated, err := e.enrichWithSignatureVerificationData(ctx, EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly}, image)
 
 	return EnrichmentResult{
@@ -173,25 +168,25 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	}
 	updated = updated || scanResult != ScanNotDone
 
-	if features.ImageSignatureVerification.Enabled() {
-		didUpdateSignature, err := e.enrichWithSignature(ctx, enrichContext, image)
-		errorList.AddError(err)
-		if len(image.GetSignature().GetSignatures()) == 0 {
-			imageNoteSet[storage.Image_MISSING_SIGNATURE] = struct{}{}
-		} else {
-			delete(imageNoteSet, storage.Image_MISSING_SIGNATURE)
-		}
-		updated = updated || didUpdateSignature
-
-		didUpdateSigVerificationData, err := e.enrichWithSignatureVerificationData(ctx, enrichContext, image)
-		errorList.AddError(err)
-		if len(image.GetSignatureVerificationData().GetResults()) == 0 {
-			imageNoteSet[storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA] = struct{}{}
-		} else {
-			delete(imageNoteSet, storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA)
-		}
-		updated = updated || didUpdateSigVerificationData
+	didUpdateSignature, err := e.enrichWithSignature(ctx, enrichContext, image)
+	errorList.AddError(err)
+	if len(image.GetSignature().GetSignatures()) == 0 {
+		imageNoteSet[storage.Image_MISSING_SIGNATURE] = struct{}{}
+	} else {
+		delete(imageNoteSet, storage.Image_MISSING_SIGNATURE)
 	}
+	updated = updated || didUpdateSignature
+
+	didUpdateSigVerificationData, err := e.enrichWithSignatureVerificationData(ctx, enrichContext, image)
+	errorList.AddError(err)
+	if len(image.GetSignatureVerificationData().GetResults()) == 0 {
+		imageNoteSet[storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA] = struct{}{}
+	} else {
+		delete(imageNoteSet, storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA)
+	}
+
+	updated = updated || didUpdateSigVerificationData
+
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 
