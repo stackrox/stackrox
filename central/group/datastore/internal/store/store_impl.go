@@ -15,7 +15,7 @@ type storeImpl struct {
 }
 
 // Get returns a group matching the given properties if it exists from the store.
-func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err error) {
+func (s *storeImpl) Get(props *storage.GroupProperties) (group *storage.Group, err error) {
 	if props.GetId() == "" {
 		return s.getByProps(props)
 	}
@@ -28,7 +28,7 @@ func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err
 		var err error
 		var marshalledGroup storage.Group
 		err = proto.Unmarshal(v, &marshalledGroup)
-		grp = &marshalledGroup
+		group = &marshalledGroup
 		return err
 	})
 	return
@@ -37,19 +37,19 @@ func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err
 // getByProps returns a group matching the given properties if it exists from the store.
 // If more than one group is found matching the properties, an error will be returned.
 // TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
-func (s *storeImpl) getByProps(props *storage.GroupProperties) (grp *storage.Group, err error) {
+func (s *storeImpl) getByProps(props *storage.GroupProperties) (group *storage.Group, err error) {
 	err = s.db.View(func(tx *bolt.Tx) error {
-		grp, err := getByPropsInTransaction(tx, props)
+		group, err = getByPropsInTransaction(tx, props)
 		if err != nil {
 			return err
 		}
 		// If no groups are found, return nil, mimicking the behavior of Get().
-		if grp == nil {
+		if group == nil {
 			return nil
 		}
 		return nil
 	})
-	return grp, err
+	return group, err
 }
 
 func (s *storeImpl) GetFiltered(filter func(*storage.GroupProperties) bool) (groups []*storage.Group, err error) {
@@ -61,24 +61,24 @@ func (s *storeImpl) GetFiltered(filter func(*storage.GroupProperties) bool) (gro
 }
 
 // GetAll return all groups currently in the store.
-func (s *storeImpl) GetAll() (grps []*storage.Group, err error) {
+func (s *storeImpl) GetAll() (groups []*storage.Group, err error) {
 	return s.GetFiltered(nil)
 }
 
 // Walk is an optimization that allows to search through the datastore and find
 // groups that apply to a user within a single transaction.
-func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) (grps []*storage.Group, err error) {
+func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) (groups []*storage.Group, err error) {
 	// Which groups to search for based on the auth provider and attributes.
 	toSearch := getPossibleGroupProperties(authProviderID, attributes)
 
 	// Search for groups in the list.
 	err = s.db.View(func(tx *bolt.Tx) error {
 		for _, check := range toSearch {
-			grpss, err := filterByPropsInTransaction(tx, check)
+			filteredGroups, err := filterByPropsInTransaction(tx, check)
 			if err != nil {
 				return err
 			}
-			grps = append(grps, grpss...)
+			groups = append(groups, filteredGroups...)
 		}
 		return nil
 	})
@@ -138,13 +138,13 @@ func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 func addInTransaction(tx *bolt.Tx, group *storage.Group) error {
 	id := group.GetProps().GetId()
 
-	// Check whether the to-be-added group is a default group, ensure that it does not yet exist.
-	defaultGroupExists, err := checkDefaultGroupForProps(tx, group.GetProps())
+	defaultGroup, err := getDefaultGroupForProps(tx, group.GetProps())
 	if err != nil {
 		return err
 	}
 
-	if defaultGroupExists {
+	// Check whether the to-be-added group is a default group, ensure that it does not yet exist.
+	if defaultGroup != nil {
 		return errox.AlreadyExists.Newf("a default group already exists for auth provider %q",
 			group.GetProps().GetAuthProviderId())
 	}
@@ -166,13 +166,13 @@ func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
 	id := group.GetProps().GetId()
 	buc := tx.Bucket(groupsBucket)
 
-	// Check whether the to-be-added group is a default group, ensure that it does not yet exist.
-	defaultGroupExists, err := checkDefaultGroupForProps(tx, group.GetProps())
+	defaultGroup, err := getDefaultGroupForProps(tx, group.GetProps())
 	if err != nil {
 		return err
 	}
 
-	if defaultGroupExists {
+	// Only disallow update of a default group if it does not update the existing default group, if there is any.
+	if defaultGroup != nil && defaultGroup.GetProps().GetId() != id {
 		return errox.AlreadyExists.Newf("a default group already exists for auth provider %q",
 			group.GetProps().GetAuthProviderId())
 	}
@@ -184,15 +184,15 @@ func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
 			return errox.NotFound.Newf("group config for %q does not exist", id)
 		}
 	} else {
-		grp, err := getByPropsInTransaction(tx, group.GetProps())
+		group, err := getByPropsInTransaction(tx, group.GetProps())
 		if err != nil {
 			return err
 		}
-		if grp == nil {
+		if group == nil {
 			return errox.NotFound.Newf("group config for (auth provider id=%s, key=%s, value=%s) does not exist",
 				group.GetProps().GetAuthProviderId(), group.GetProps().GetKey(), group.GetProps().GetValue())
 		}
-		id = grp.GetProps().GetId()
+		id = group.GetProps().GetId()
 	}
 
 	bytes, err := proto.Marshal(group)
@@ -214,15 +214,15 @@ func removeInTransaction(tx *bolt.Tx, props *storage.GroupProperties) error {
 			return errox.NotFound.Newf("group config for %q does not exist", id)
 		}
 	} else {
-		grp, err := getByPropsInTransaction(tx, props)
+		group, err := getByPropsInTransaction(tx, props)
 		if err != nil {
 			return err
 		}
-		if grp == nil {
+		if group == nil {
 			return errox.NotFound.Newf("group config for (auth provider id=%s, key=%s, value=%s) does not exist",
 				props.GetAuthProviderId(), props.GetKey(), props.GetValue())
 		}
-		id = grp.GetProps().GetId()
+		id = group.GetProps().GetId()
 	}
 
 	return buc.Delete([]byte(id))
@@ -232,13 +232,13 @@ func filterInTransaction(tx *bolt.Tx, filter func(*storage.GroupProperties) bool
 	buc := tx.Bucket(groupsBucket)
 
 	err = buc.ForEach(func(k, v []byte) error {
-		var grp storage.Group
-		err := proto.Unmarshal(v, &grp)
+		var group storage.Group
+		err := proto.Unmarshal(v, &group)
 		if err != nil {
 			return err
 		}
-		if filter == nil || filter(grp.GetProps()) {
-			grps = append(grps, &grp)
+		if filter == nil || filter(group.GetProps()) {
+			grps = append(grps, &group)
 		}
 		return nil
 	})
@@ -246,7 +246,7 @@ func filterInTransaction(tx *bolt.Tx, filter func(*storage.GroupProperties) bool
 }
 
 func filterByPropsInTransaction(tx *bolt.Tx, props *storage.GroupProperties) ([]*storage.Group, error) {
-	grps, err := filterInTransaction(tx, func(stored *storage.GroupProperties) bool {
+	groups, err := filterInTransaction(tx, func(stored *storage.GroupProperties) bool {
 		if props.GetAuthProviderId() != stored.GetAuthProviderId() ||
 			props.GetKey() != stored.GetKey() ||
 			props.GetValue() != stored.GetValue() {
@@ -257,25 +257,25 @@ func filterByPropsInTransaction(tx *bolt.Tx, props *storage.GroupProperties) ([]
 	if err != nil {
 		return nil, err
 	}
-	return grps, nil
+	return groups, nil
 }
 
 func getByPropsInTransaction(tx *bolt.Tx, props *storage.GroupProperties) (*storage.Group, error) {
-	grps, err := filterByPropsInTransaction(tx, props)
+	groups, err := filterByPropsInTransaction(tx, props)
 	if err != nil {
 		return nil, err
 	}
-	if len(grps) == 0 {
+	if len(groups) == 0 {
 		return nil, nil
 	}
 
-	if len(grps) > 1 {
+	if len(groups) > 1 {
 		return nil, errox.InvalidArgs.Newf("multiple groups found for properties (auth provider id=%s, key=%s, "+
 			"value=%s), provide an ID to retrieve a group unambiguously",
 			props.GetAuthProviderId(), props.GetKey(), props.GetValue())
 	}
 
-	return grps[0], nil
+	return groups[0], nil
 }
 
 // When given an auth provider and attributes, we will look for all keys and
@@ -294,24 +294,19 @@ func getPossibleGroupProperties(authProviderID string, attributes map[string][]s
 	return
 }
 
-// checkDefaultGroupForProps will check whether the given properties are a default group and, if they are, search the
-// store for the given auth provider ID, checking whether a default group already exists.
-// If the properties do not indicate a default group or the default group does not yet exist, it will return false.
-// Otherwise, it will return true.
-func checkDefaultGroupForProps(tx *bolt.Tx, props *storage.GroupProperties) (bool, error) {
+// getDefaultGroupForProps will check if the given properties are a default group and, if they are, search the
+// store for the given auth provider ID, and return the default group if it exists.
+// If the properties do not indicate a default group or the default group does not yet exist, it will return nil.
+// Otherwise, it will return the default group.
+func getDefaultGroupForProps(tx *bolt.Tx, props *storage.GroupProperties) (*storage.Group, error) {
 	// 1. Short-circuit if the props do not indicate a default group. A default group only has the auth provider ID
 	// field set.
 	if !isDefaultGroup(props) {
-		return false, nil
+		return nil, nil
 	}
 
 	// 2. Filter for the default group.
-	grp, err := getByPropsInTransaction(tx, &storage.GroupProperties{AuthProviderId: props.GetAuthProviderId()})
-	if err != nil {
-		return false, err
-	}
-	defaultGroupExists := grp != nil
-	return defaultGroupExists, nil
+	return getByPropsInTransaction(tx, &storage.GroupProperties{AuthProviderId: props.GetAuthProviderId()})
 }
 
 // isDefaultGroup will check whether the given properties are a default group.
