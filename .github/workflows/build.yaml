@@ -174,10 +174,10 @@ jobs:
 
       - uses: ./.github/actions/cache-ui-dependencies
 
-      # - name: Docker login
-      # # (needed for docs pull)
-      #   run: |
-      #       docker login -u "${{ env.QUAY_RHACS_ENG_RO_USERNAME }}" --password-stdin quay.io <<<"${{ env.QUAY_RHACS_ENG_RO_PASSWORD }}"
+      - name: Docker login
+      # (needed for docs pull)
+        run: |
+            docker login -u "${{ env.QUAY_RHACS_ENG_RO_USERNAME }}" --password-stdin quay.io <<<"${{ env.QUAY_RHACS_ENG_RO_PASSWORD }}"
 
       - name: Generate OSS notice
         run: make ossls-notice
