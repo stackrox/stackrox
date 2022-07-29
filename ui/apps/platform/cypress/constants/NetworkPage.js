@@ -20,9 +20,9 @@ export const selectors = {
     simulatorSuccessMessage: 'div[data-testid="message-body"]:contains("Policies processed")',
     panels: networkPanels,
     legend: {
-        deployments: '[data-testid="deployment-legend"] li',
-        namespaces: '[data-testid="namespace-legend"] li',
-        connections: '[data-testid="connection-legend"] li',
+        deployments: '[data-testid="deployment-legend"]',
+        namespaces: '[data-testid="namespace-legend"]',
+        connections: '[data-testid="connection-legend"]',
     },
     namespaces: {
         all: 'g.container > rect',
