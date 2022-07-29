@@ -81,3 +81,35 @@ class GKECluster:
     def sigint_handler(self, signum, frame):
         print("Tearing down the cluster due to SIGINT", signum, frame)
         self.teardown()
+
+
+class AutomationFlavorsCluster:
+    KUBECTL_TIMEOUT = 5 * 60
+
+    def provision(self):
+        if "SHARED_DIR" not in os.environ:
+            raise RuntimeError("Error: there is no SHARED_DIR defined")
+
+        kubeconfig = os.environ["SHARED_DIR"] + "/kubeconfig"
+
+        if not os.path.exists(kubeconfig):
+            raise RuntimeError(
+                f"Error: {kubeconfig} does not exist, "
+                + "this is expected from an automation-flavors cluster create"
+            )
+
+        os.environ["KUBECONFIG"] = kubeconfig
+
+        print(f"Using kubeconfig from {kubeconfig}")
+
+        print("Nodes:")
+        subprocess.run(
+            ["kubectl", "get", "nodes", "-o", "wide"],
+            check=True,
+            timeout=AutomationFlavorsCluster.KUBECTL_TIMEOUT,
+        )
+
+        return self
+
+    def teardown(self):
+        pass

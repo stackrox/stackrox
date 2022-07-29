@@ -59,22 +59,34 @@ class OperatorE2eTest(BaseTest):
     def run(self):
         print("Deploying operator")
         self.run_with_graceful_kill(
-            ["make", "-C", "operator", "kuttl", "deploy-previous-via-olm"], OperatorE2eTest.DEPLOY_TIMEOUT_SEC
+            ["make", "-C", "operator", "kuttl", "deploy-previous-via-olm"],
+            OperatorE2eTest.DEPLOY_TIMEOUT_SEC,
         )
 
         print("Executing operator upgrade test")
         self.run_with_graceful_kill(
-            ["make", "-C", "operator", "test-upgrade"], OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC
+            ["make", "-C", "operator", "test-upgrade"],
+            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
         )
 
         print("Executing operator e2e tests")
         self.run_with_graceful_kill(
-            ["make", "-C", "operator", "test-e2e-deployed"], OperatorE2eTest.E2E_TEST_TIMEOUT_SEC
+            ["make", "-C", "operator", "test-e2e-deployed"],
+            OperatorE2eTest.E2E_TEST_TIMEOUT_SEC,
         )
 
         print("Executing Operator Bundle Scorecard tests")
         self.run_with_graceful_kill(
-            ["./operator/scripts/retry.sh", "4", "2", "make", "-C", "operator", "bundle-test-image"], OperatorE2eTest.SCORECARD_TEST_TIMEOUT_SEC
+            [
+                "./operator/scripts/retry.sh",
+                "4",
+                "2",
+                "make",
+                "-C",
+                "operator",
+                "bundle-test-image",
+            ],
+            OperatorE2eTest.SCORECARD_TEST_TIMEOUT_SEC,
         )
 
 
