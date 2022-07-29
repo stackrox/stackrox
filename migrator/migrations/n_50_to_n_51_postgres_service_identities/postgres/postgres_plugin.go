@@ -48,6 +48,7 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.ServiceIdentity) error
 	UpsertMany(ctx context.Context, objs []*storage.ServiceIdentity) error
 	Delete(ctx context.Context, serialStr string) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ServiceIdentity, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
@@ -293,6 +294,19 @@ func (s *storeImpl) Delete(ctx context.Context, serialStr string) error {
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(serialStr).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+}
+
+// DeleteByQuery removes the objects based on the passed query
+func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
 	)
 
 	return postgres.RunDeleteRequestForSchema(schema, q, s.db)

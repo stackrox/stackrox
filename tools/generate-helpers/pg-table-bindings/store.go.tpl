@@ -85,6 +85,7 @@ type Store interface {
     Upsert(ctx context.Context, obj *{{.Type}}) error
     UpsertMany(ctx context.Context, objs []*{{.Type}}) error
     Delete(ctx context.Context, {{template "paramList" $pks}}) error
+    DeleteByQuery(ctx context.Context, q *v1.Query) error
 {{- end }}
 
 {{- if $singlePK }}
@@ -632,6 +633,55 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
         search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- end}}
     {{- end}}
+    )
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+}
+{{- end}}
+
+
+{{- if not .JoinTable }}
+// DeleteByQuery removes the objects based on the passed query
+func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+    {{- if not $inMigration}}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
+    {{- end}}{{/* if not .inMigration */}}
+
+    var sacQueryFilter *v1.Query
+    {{- if not $inMigration}}
+    {{- if .PermissionChecker }}
+    if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+    {{- if .Obj.IsClusterScope }}
+    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    {{- else}}
+    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    {{- end }}
+	if err != nil {
+		return err
+	}
+    {{- end }}
+    {{- end}}{{/* if not .inMigration */}}
+
+    q := search.ConjunctionQuery(
+        sacQueryFilter,
+        query,
     )
 
 	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
