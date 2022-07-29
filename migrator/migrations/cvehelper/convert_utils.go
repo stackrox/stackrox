@@ -344,10 +344,10 @@ func protoToEmbeddedVulnType(protoCVEType storage.CVE_CVEType) storage.EmbeddedV
 }
 
 // EmbeddedCVEToProtoCVE converts *storage.EmbeddedVulnerability object to *storage.CVE object
-func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *storage.CVE {
+func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability, postgresEnabled bool) *storage.CVE {
 	ret := &storage.CVE{
 		Type:               embeddedVulnTypeToProtoType(from.GetVulnerabilityType()),
-		Id:                 cve.ID(from.GetCve(), os),
+		Id:                 from.GetCve(),
 		Cvss:               from.GetCvss(),
 		Summary:            from.GetSummary(),
 		Link:               from.GetLink(),
@@ -358,6 +358,9 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 		Suppressed:         from.GetSuppressed(),
 		SuppressActivation: from.GetSuppressActivation(),
 		SuppressExpiry:     from.GetSuppressExpiry(),
+	}
+	if postgresEnabled {
+		ret.Id = ID(ret.Id, os)
 	}
 	if ret.CvssV3 != nil {
 		ret.ScoreVersion = storage.CVE_V3
@@ -471,6 +474,7 @@ func NodeVulnerabilityToNodeCVE(os string, from *storage.NodeVulnerability) *sto
 	return ret
 }
 
+/*
 // EmbeddedCVEsToProtoCVEs converts *storage.EmbeddedVulnerability to *storage.CVE
 func EmbeddedCVEsToProtoCVEs(os string, froms ...*storage.EmbeddedVulnerability) []*storage.CVE {
 	ret := make([]*storage.CVE, 0, len(froms))
@@ -479,6 +483,7 @@ func EmbeddedCVEsToProtoCVEs(os string, froms ...*storage.EmbeddedVulnerability)
 	}
 	return ret
 }
+*/
 
 func embeddedVulnTypeToProtoType(protoCVEType storage.EmbeddedVulnerability_VulnerabilityType) storage.CVE_CVEType {
 	switch protoCVEType {

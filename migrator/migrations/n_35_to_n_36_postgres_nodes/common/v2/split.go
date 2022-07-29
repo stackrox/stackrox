@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
+	converter "github.com/stackrox/rox/migrator/migrations/cvehelper"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"

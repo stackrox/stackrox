@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
+	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
@@ -43,26 +44,7 @@ func convert(node *storage.Node) {
 		vulns := component.GetVulns()
 		nodeVulns := make([]*storage.NodeVulnerability, 0, len(vulns))
 		for _, vuln := range vulns {
-			nodeVulns = append(nodeVulns, &storage.NodeVulnerability{
-				CveBaseInfo:          &storage.CVEInfo{
-					Cve:                  vuln.GetCve(),
-					Summary:              vuln.GetSummary(),
-					Link:                 vuln.GetLink(),
-					PublishedOn:          vuln.GetPublishedOn(),
-					CreatedAt: node.GetLastUpdated(),
-					LastModified:         vuln.GetLastModified(),
-					// ScoreVersion:         vuln.GetScoreVersion(),
-					CvssV2:               vuln.GetCvssV2(),
-					CvssV3:               vuln.GetCvssV3(),
-					// References:           vuln.,
-				},
-				Cvss:                 vuln.GetCvss(),
-				Severity:             vuln.GetSeverity(),
-				// SetFixedBy:           vuln.GetSetFixedBy(),
-				Snoozed:              vuln.GetSuppressed(),
-				SnoozeStart:          vuln.GetSuppressActivation(),
-				SnoozeExpiry:         vuln.GetSuppressExpiry(),
-			})
+			nodeVulns = append(nodeVulns, nodeConverter.EmbeddedVulnerabilityToNodeVulnerability(vuln))
 		}
 		component.Vulnerabilities = nodeVulns
 		component.Vulns = nil
@@ -73,12 +55,12 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB, true)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.NodesSchema.Table)
+	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.NodeCvesSchema.Table)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.NodeComponentsSchema.Table)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.NodeComponentEdgesSchema.Table)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, pkgSchema.NodeComponentsCvesEdgesSchema.Table)
-	// rocksDB false getall false
 	return walk(ctx, legacyStore, func(obj *storage.Node) error {
-		convert(obj)
+		nodeConverter.FillV2NodeVulnerabilities(obj)
 		if err := store.Upsert(ctx, obj); err != nil {
 			log.WriteToStderrf("failed to persist nodes to store %v", err)
 			return err

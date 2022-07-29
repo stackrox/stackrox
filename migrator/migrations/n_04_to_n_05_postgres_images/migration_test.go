@@ -12,7 +12,6 @@ import (
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -63,7 +62,6 @@ func (s *postgresMigrationSuite) TestImageMigration() {
 	dacky, err := dackbox.NewRocksDBDackBox(s.legacyDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	s.NoError(err)
 	legacyStore := legacy.New(dacky, concurrency.NewKeyFence(), false)
-	s.NoError(err)
 
 	// Prepare data and write to legacy DB
 	images := []*storage.Image{
@@ -175,10 +173,6 @@ func (s *postgresMigrationSuite) TestImageMigration() {
 			s.Len(fetchedComponent.GetVulns(), len(component.GetVulns()))
 			for vi, vuln := range component.GetVulns() {
 				fetchedVuln := fetchedComponent.GetVulns()[vi]
-				oldCVE, os := cve.IDToParts(fetchedVuln.GetCve())
-				s.Equal(scan.GetOperatingSystem(), os)
-				s.Equal(vuln.Cve, oldCVE)
-				vuln.Cve = fetchedVuln.Cve
 				fetchedVuln.FirstImageOccurrence = nil
 				fetchedVuln.FirstSystemOccurrence = nil
 				s.Equal(vuln, fetchedVuln)

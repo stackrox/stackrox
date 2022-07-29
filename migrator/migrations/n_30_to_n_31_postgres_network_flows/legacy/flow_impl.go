@@ -6,14 +6,11 @@ package legacy
 import (
 	"bytes"
 	"context"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/common"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -34,7 +31,6 @@ var (
 
 // GetAllFlows returns all the flows in the store.
 func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return nil, types.Timestamp{}, err
 	}
@@ -46,7 +42,6 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 
 // UpsertFlows updates an flow to the store, adding it if not already present.
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdatedTS timestamp.MicroTS) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.UpsertAll, "NetworkFlow")
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return err
 	}

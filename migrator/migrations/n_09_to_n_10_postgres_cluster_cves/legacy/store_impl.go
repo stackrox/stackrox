@@ -5,16 +5,13 @@ package legacy
 
 import (
 	"context"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	vulnDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/cve"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
 const batchSize = 100
@@ -48,8 +45,6 @@ func (b *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (b *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "CVE")
-
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return 0, err
@@ -65,8 +60,6 @@ func (b *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 func (b *storeImpl) Get(ctx context.Context, id string) (cve *storage.CVE, exists bool, err error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "CVE")
-
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
@@ -98,8 +91,6 @@ func convert2(cve *storage.ClusterCVE) *storage.CVE {
 }
 
 func (b *storeImpl) getMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "CVE")
-
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, nil, err
@@ -145,8 +136,6 @@ func (b *storeImpl) GetIDs(_ context.Context) ([]string, error) {
 }
 
 func (b *storeImpl) Upsert(ctx context.Context, cves ...*storage.CVE) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "CVE")
-
 	keysToUpsert := make([][]byte, 0, len(cves))
 	for _, vuln := range cves {
 		keysToUpsert = append(keysToUpsert, vulnDackBox.KeyFunc(vuln))
@@ -198,8 +187,6 @@ func (b *storeImpl) upsertNoBatch(cves ...*storage.CVE) error {
 }
 
 func (b *storeImpl) Delete(ctx context.Context, ids ...string) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "CVE")
-
 	keysToUpsert := make([][]byte, 0, len(ids))
 	for _, id := range ids {
 		keysToUpsert = append(keysToUpsert, vulnDackBox.BucketHandler.GetKey(id))

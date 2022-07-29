@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
+	converter "github.com/stackrox/rox/migrator/migrations/cvehelper"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/set"
@@ -51,7 +51,7 @@ func splitCVEs(os string, component *ComponentParts, embedded *storage.EmbeddedN
 	addedCVEs := set.NewStringSet()
 	ret := make([]*CVEParts, 0, len(cves))
 	for _, cve := range cves {
-		generatedCVE := converter.EmbeddedCVEToProtoCVE(os, cve)
+		generatedCVE := converter.EmbeddedCVEToProtoCVE(os, cve, false)
 		if !addedCVEs.Add(generatedCVE.GetId()) {
 			continue
 		}

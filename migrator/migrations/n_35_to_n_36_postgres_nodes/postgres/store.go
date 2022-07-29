@@ -3,24 +3,18 @@ package postgres
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/common/v2"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
@@ -44,9 +38,8 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NodesSchema
-	targetResource = resources.Node
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.NodesSchema
 )
 
 // Store provides storage functionality for full nodes.
@@ -451,7 +444,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bo
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 	iTime := protoTypes.TimestampNow()
-	conn, release, err := s.acquireConn(ctx, ops.Upsert, "Node")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
 	}
@@ -491,8 +484,6 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
 
 // Upsert upserts node into the store.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Node")
-
 	return s.upsert(ctx, obj)
 }
 
@@ -538,39 +529,13 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID s
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Node")
-
 	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return 0, err
-	}
-	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
-
-	if err != nil {
-		return 0, err
-	}
-
 	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Node")
-
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return false, err
-	}
-	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return false, err
-	}
-
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
@@ -582,9 +547,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Node, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Node")
-
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Node")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -669,8 +632,6 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 }
 
 func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentEdge")
-
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", nodeID)
 	if err != nil {
 		return nil, err
@@ -692,8 +653,6 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 }
 
 func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponent")
-
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentsTable+" WHERE id = ANY($1::text[])", componentIDs)
 	if err != nil {
 		return nil, err
@@ -715,8 +674,6 @@ func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (m
 }
 
 func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentCVERelations")
-
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+componentCVEEdgesTable+" WHERE nodecomponentid = ANY($1::text[])", componentIDs)
 	if err != nil {
 		return nil, err
@@ -737,8 +694,7 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 	return componentIDToEdgesMap, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
+func (s *storeImpl) acquireConn(ctx context.Context) (*pgxpool.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -748,9 +704,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Node")
-
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "Node")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
 	}
@@ -783,18 +737,8 @@ func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeID string
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NodeIDs")
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, err
-	}
 	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
@@ -810,9 +754,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Node")
-
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Node")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -851,9 +793,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Node,
 
 // GetNodeMetadata gets the node without scan/component data.
 func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeMetadata")
-
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeMetadata")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -932,8 +872,6 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 }
 
 func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVEs")
-
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeCVEsTable+" WHERE id = ANY($1::text[])", cveIDs)
 	if err != nil {
 		return nil, err

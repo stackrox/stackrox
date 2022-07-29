@@ -2,24 +2,21 @@ package legacy
 
 import (
 	"context"
-	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
-	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
-	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
-	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	cveUtil "github.com/stackrox/rox/central/cve/utils"
-	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	"github.com/stackrox/rox/central/metrics"
-	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
-	nodeComponentEdgeDackBox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
 	"github.com/stackrox/rox/generated/storage"
+	clusterDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/cluster"
+	componentCVEEdgeDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/componentcveedge"
+	cveDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/cve"
+	componentDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/imagecomponent"
+	nodeDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/node"
+	nodeComponentEdgeDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/nodecomponentedge"
 	"github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/common"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -59,10 +56,8 @@ func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-// CountNodes returns the number of nodes currently stored in the DB.
+// Count returns the number of nodes currently stored in the DB.
 func (b *storeImpl) Count(_ context.Context) (int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, typ)
-
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return 0, err
@@ -77,10 +72,8 @@ func (b *storeImpl) Count(_ context.Context) (int, error) {
 	return count, nil
 }
 
-// GetNode returns the node with given id.
+// Get returns the node with given id.
 func (b *storeImpl) Get(_ context.Context, id string) (*storage.Node, bool, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, typ)
-
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
@@ -96,8 +89,6 @@ func (b *storeImpl) Get(_ context.Context, id string) (*storage.Node, bool, erro
 
 // GetNodeMetadata returns the node with the given id without component/CVE data.
 func (b *storeImpl) GetNodeMetadata(_ context.Context, id string) (*storage.Node, bool, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, metadataType)
-
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
@@ -113,8 +104,6 @@ func (b *storeImpl) GetNodeMetadata(_ context.Context, id string) (*storage.Node
 
 // GetNodesBatch returns nodes with given ids.
 func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Node, []int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, typ)
-
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, nil, err
@@ -139,8 +128,6 @@ func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Node, [
 
 // Upsert writes a node to the DB, overwriting previous data.
 func (b *storeImpl) Upsert(_ context.Context, node *storage.Node) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, typ)
-
 	iTime := protoTypes.TimestampNow()
 	if !b.noUpdateTimestamps {
 		node.LastUpdated = iTime
@@ -234,8 +221,6 @@ func (b *storeImpl) toUpsert(node *storage.Node) (*storage.Node, bool, bool, err
 
 // Delete deletes a node and all its data.
 func (b *storeImpl) Delete(_ context.Context, id string) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, typ)
-
 	keyTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return err

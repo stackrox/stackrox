@@ -11,10 +11,8 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -161,7 +159,7 @@ func New(db *pgxpool.Pool, clusterID string) FlowStore {
 }
 
 func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFlow) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
 	}
@@ -185,7 +183,7 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFl
 }
 
 func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
 	}
@@ -213,14 +211,10 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 }
 
 func (s *flowStoreImpl) Upsert(ctx context.Context, obj *storage.NetworkFlow) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NetworkFlow")
-
 	return s.upsert(ctx, obj)
 }
 
 func (s *flowStoreImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkFlow) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
-
 	// for small batches, simply write them 1 at a time.
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -230,8 +224,6 @@ func (s *flowStoreImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkF
 }
 
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
-
 	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
 	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
 	if len(flows) < batchAfter {
@@ -243,8 +235,6 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 
 // Count returns the number of objects in the store
 func (s *flowStoreImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "NetworkFlow")
-
 	row := s.db.QueryRow(ctx, countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
@@ -255,8 +245,6 @@ func (s *flowStoreImpl) Count(ctx context.Context) (int, error) {
 
 // Exists returns if the id exists in the store
 func (s *flowStoreImpl) Exists(ctx context.Context, propsSrcEntityType storage.NetworkEntityInfo_Type, propsSrcEntityID string, propsDstEntityType storage.NetworkEntityInfo_Type, propsDstEntityID string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkFlow")
-
 	row := s.db.QueryRow(ctx, existsStmt, propsSrcEntityType, propsSrcEntityID, propsDstEntityType, propsDstEntityID, propsDstPort, propsL4Protocol, s.clusterID)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -267,9 +255,7 @@ func (s *flowStoreImpl) Exists(ctx context.Context, propsSrcEntityType storage.N
 
 // Get returns the object, if it exists from the store
 func (s *flowStoreImpl) Get(ctx context.Context, propsSrcEntityType storage.NetworkEntityInfo_Type, propsSrcEntityID string, propsDstEntityType storage.NetworkEntityInfo_Type, propsDstEntityID string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) (*storage.NetworkFlow, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
-
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -291,8 +277,7 @@ func (s *flowStoreImpl) Get(ctx context.Context, propsSrcEntityType storage.Netw
 	return flows[0], true, nil
 }
 
-func (s *flowStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
+func (s *flowStoreImpl) acquireConn(ctx context.Context) (*pgxpool.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -351,9 +336,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 
 // Delete removes the specified ID from the store
 func (s *flowStoreImpl) Delete(ctx context.Context, propsSrcEntityType storage.NetworkEntityInfo_Type, propsSrcEntityID string, propsDstEntityType storage.NetworkEntityInfo_Type, propsDstEntityID string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
-
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
 	}
@@ -418,9 +401,7 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveFlowsByDeployment, "NetworkFlow")
-
-	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
 	}
@@ -447,8 +428,6 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
 func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
-
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
