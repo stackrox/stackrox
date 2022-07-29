@@ -1,3 +1,6 @@
+// This file was originally generated with
+// //go:generate cp ../../../../central/node/datastore/internal/store/postgres/store.go store_impl.go
+
 package postgres
 
 import (
@@ -10,11 +13,10 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	"github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/common/v2"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -36,7 +38,7 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
+	log    = loghelper.LogWrapper{}
 	schema = pkgSchema.NodesSchema
 )
 
@@ -522,18 +524,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
-// Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
-	var sacQueryFilter *v1.Query
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
-}
-
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Node, bool, error) {
 	conn, release, err := s.acquireConn(ctx)
@@ -689,62 +679,6 @@ func (s *storeImpl) acquireConn(ctx context.Context) (*pgxpool.Conn, func(), err
 		return nil, nil, err
 	}
 	return conn, conn.Release, nil
-}
-
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	var sacQueryFilter *v1.Query
-
-	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]string, 0, len(result))
-	for _, entry := range result {
-		ids = append(ids, entry.ID)
-	}
-
-	return ids, nil
-}
-
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error) {
-	conn, release, err := s.acquireConn(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	resultsByID := make(map[string]*storage.Node)
-	for _, id := range ids {
-		msg, found, err := s.getFullNode(ctx, tx, id)
-		if err != nil {
-			return nil, nil, err
-		}
-		if !found {
-			continue
-		}
-		resultsByID[msg.GetId()] = msg
-	}
-
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.Node, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
 }
 
 // GetNodeMetadata gets the node without scan/component data.

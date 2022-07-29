@@ -24,11 +24,11 @@ func mergeComponents(parts *NodeParts, node *storage.Node) {
 		// Parse the IDs of the edge.
 		nodeComponentEdgeID, err := edges.FromString(cp.Edge.GetId())
 		if err != nil {
-			log.Error(err)
+			log.WriteToStderrf("%v", err)
 			continue
 		}
 		if nodeComponentEdgeID.ParentID != node.GetId() {
-			log.Error("node to component edge does not match node")
+			log.WriteToStderr("node to component edge does not match node")
 			continue
 		}
 

@@ -25,12 +25,12 @@ func mergeComponents(parts *NodeParts, node *storage.Node) {
 	for _, cp := range parts.Children {
 		parts := postgres.IDToParts(cp.Edge.GetId())
 		if len(parts) == 0 {
-			log.Error("node to component edge does not have primary keys")
+			log.WriteToStderr("node to component edge does not have primary keys")
 			continue
 		}
 		nodeID := parts[0]
 		if nodeID != node.GetId() {
-			log.Error("node to component edge does not match node")
+			log.WriteToStderrf("node to component edge does not match node")
 			continue
 		}
 

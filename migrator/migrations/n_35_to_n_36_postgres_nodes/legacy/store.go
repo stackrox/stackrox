@@ -1,3 +1,6 @@
+// This file was originally generated with
+// //go:generate cp ../../../../central/node/datastore/internal/store/store.go .
+
 package legacy
 
 import (

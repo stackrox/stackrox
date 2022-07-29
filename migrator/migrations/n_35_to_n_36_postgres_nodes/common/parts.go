@@ -2,11 +2,11 @@ package common
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/migrator/migrations/loghelper"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = loghelper.LogWrapper{}
 )
 
 // NodeParts represents the pieces of data in an node.
