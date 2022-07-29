@@ -46,6 +46,9 @@ export function getDefaultGroup({ authProviderId, roleName }) {
  * @returns {Promise<Object, Error>}
  */
 export function deleteRuleGroup(data) {
-    const { key, authProviderId, value } = data.props;
-    return axios.delete(`${url}?authProviderId=${authProviderId}&key=${key}&value=${value}`, {});
+    const { key, authProviderId, value, id } = data.props;
+    return axios.delete(
+        `${url}?authProviderId=${authProviderId}&key=${key}&value=${value}&id=${id}`,
+        {}
+    );
 }
