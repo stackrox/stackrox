@@ -98,7 +98,6 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	}
 
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(features.ImageSignatureVerification.EnvVar(), "true")
 	suite.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
 }
 
@@ -2145,11 +2144,6 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
-
-	if !features.ImageSignatureVerification.Enabled() {
-		return
-	}
-
 	const (
 		verifier0  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000001"
 		verifier1  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002"

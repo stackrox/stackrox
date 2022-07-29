@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -352,8 +351,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// enrichment pipeline to ensure we do not return stale data. Only do this when the image signature verification
 		// feature is enabled. If no verification result is given, we can assume that the image doesn't have any
 		// signatures associated with it.
-		if exists && features.ImageSignatureVerification.Enabled() &&
-			len(existingImg.GetSignatureVerificationData().GetResults()) > 0 {
+		if exists && len(existingImg.GetSignatureVerificationData().GetResults()) > 0 {
 			// For now, all verification results within the signature verification data will have approximately the same
 			// time, their margin being ns.
 			verificationTime := existingImg.GetSignatureVerificationData().GetResults()[0].GetVerificationTime()
@@ -385,7 +383,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		}
 	}
 
-	if features.ImageSignatureVerification.Enabled() && forceSigVerificationUpdate {
+	if forceSigVerificationUpdate {
 		if _, err := s.enricher.EnrichWithSignatureVerificationData(ctx, img); err != nil {
 			return nil, err
 		}
