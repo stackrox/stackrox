@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 // All resource types that we want to define (for the purposes of enforcing
@@ -107,8 +106,8 @@ var (
 		permissions.GlobalScope, Administration)
 	ServiceIdentity = newDeprecatedResourceMetadata("ServiceIdentity",
 		permissions.GlobalScope, Administration)
-	SignatureIntegration = newDeprecatedResourceMetadataWithFeatureFlag("SignatureIntegration",
-		permissions.GlobalScope, Integration, features.ImageSignatureVerification)
+	SignatureIntegration = newDeprecatedResourceMetadata("SignatureIntegration",
+		permissions.GlobalScope, Integration)
 	User = newDeprecatedResourceMetadata("User", permissions.GlobalScope, Access)
 
 	// Internal Resources.
@@ -158,6 +157,8 @@ func newResourceMetadataWithFeatureFlag(name permissions.Resource, scope permiss
 }
 */
 
+/*
+Commented for now, uncomment in case you need to register a deprecated resource guarded behind a feature flag.
 func newDeprecatedResourceMetadataWithFeatureFlag(name permissions.Resource, scope permissions.ResourceScope,
 	replacingResourceMD permissions.ResourceMetadata, flag features.FeatureFlag) permissions.ResourceMetadata {
 	md := permissions.ResourceMetadata{
@@ -172,6 +173,7 @@ func newDeprecatedResourceMetadataWithFeatureFlag(name permissions.Resource, sco
 	}
 	return md
 }
+*/
 
 func newInternalResourceMetadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
 	md := permissions.ResourceMetadata{
