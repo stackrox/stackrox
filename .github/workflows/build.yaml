@@ -18,9 +18,10 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
@@ -46,9 +47,10 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -71,9 +73,10 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -106,9 +109,10 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -147,9 +151,10 @@ jobs:
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Checkout submodules
         run: |
