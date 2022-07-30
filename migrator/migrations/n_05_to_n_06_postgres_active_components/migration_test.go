@@ -15,18 +15,17 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
+
 
 func TestMigration(t *testing.T) {
 	suite.Run(t, new(postgresMigrationSuite))
@@ -66,11 +65,20 @@ func (s *postgresMigrationSuite) TearDownTest() {
 	s.postgresDB.Teardown(s.T())
 }
 
+var (
+	deploymentID = "depA"
+	componentName = "bash"
+	os = []string{"rhel:8", "debian:10"}
+	versions = []string{"v1", "v2"}
+)
+
 func (s *postgresMigrationSuite) TestActiveComponentMigration() {
-	deploymentID := "depA"
-	componentName := "bash"
-	os := []string{"rhel:8", "debian:10"}
-	versions := []string{"v1", "v2"}
+	newStore := pgStore.New(s.postgresDB.Pool)
+	dacky, err := dackbox.NewRocksDBDackBox(s.legacyDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
+	s.NoError(err)
+	legacyStore := legacy.New(dacky, concurrency.NewKeyFence())
+
+	// Prepare data and write to legacy DB
 	images := []*pkgSchema.Images{
 		{
 			Id: "image1",
@@ -89,6 +97,8 @@ func (s *postgresMigrationSuite) TestActiveComponentMigration() {
 			ScanOperatingSystem: os[1],
 		},
 	}
+	s.populateImages(images)
+
 	components := []*storage.ImageComponent{
 		{
 			Name: componentName,
@@ -111,17 +121,10 @@ func (s *postgresMigrationSuite) TestActiveComponentMigration() {
 			OperatingSystem: os[1],
 		},
 	}
-
-	s.populateImages(images)
 	for _, c := range components {
 		c.Id = edges.EdgeID{ParentID: c.Name, ChildID: c.Version}.ToString()
 	}
-	newStore := pgStore.New(s.postgresDB.Pool)
-	dacky, err := dackbox.NewRocksDBDackBox(s.legacyDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
-	s.NoError(err)
-	legacyStore := legacy.New(dacky, concurrency.NewKeyFence())
 
-	// Prepare data and write to legacy DB
 	activeComponents := []*storage.ActiveComponent{
 		{
 			DeploymentId: deploymentID,
@@ -172,13 +175,16 @@ func (s *postgresMigrationSuite) TestActiveComponentMigration() {
 		ac.Id = edges.EdgeID{ParentID: ac.GetDeploymentId(), ChildID: ac.GetComponentId()}.ToString()
 	}
 
-
 	s.NoError(legacyStore.UpsertMany(s.ctx, activeComponents))
 
 	// Move
 	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
 
 	// Verify
+	s.verify(newStore, images)
+}
+
+func (s *postgresMigrationSuite) verify(newStore pgStore.Store, images []*pkgSchema.Images) {
 	count, err := newStore.Count(s.ctx)
 	s.NoError(err)
 	s.Equal(4, count)
@@ -207,29 +213,4 @@ func (s *postgresMigrationSuite) populateImages(images []*pkgSchema.Images) {
 	pkgSchema.ApplySchemaForTable(s.ctx, s.postgresDB.GetGormDB(), pkgSchema.ImagesSchema.Table)
 	imageTable := s.postgresDB.GetGormDB().Table(pkgSchema.ImagesSchema.Table).Model(pkgSchema.CreateTableImagesStmt.GormModel)
 	s.NoError(imageTable.Create(images).Error)
-}
-
-func (s *postgresMigrationSuite) TestKnentMigration() {
-	pkgSchema.ApplySchemaForTable(s.ctx, s.postgresDB.GetGormDB(), pkgSchema.ImagesSchema.Table)
-	imageTable := s.postgresDB.GetGormDB().Table(pkgSchema.ImagesSchema.Table).Model(pkgSchema.CreateTableImagesStmt.GormModel)
-	images := make([]*pkgSchema.Images, 0, 10)
-	for i := 0; i < 10; i++ {
-		image := &pkgSchema.Images{}
-		s.NoError(testutils.FullInit(image, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		images = append(images, image)
-	}
-	result := imageTable.Create(images)
-	s.NoError(result.Error)
-	s.Equal(int64(10), result.RowsAffected)
-	a := make([]ImageIDAndOs, 2)
-	m := make(map[string]string, 13)
-	result = imageTable.FindInBatches(&a, 2, func(_ *gorm.DB, batch int) error {
-		for _, sub := range a {
-			m[sub.Id] = sub.ScanOperatingSystem
-		}
-		return nil
-	})
-	s.Equal(int64(10), result.RowsAffected)
-	s.NoError(result.Error)
-	s.NotEmpty(a[0].Id)
 }
