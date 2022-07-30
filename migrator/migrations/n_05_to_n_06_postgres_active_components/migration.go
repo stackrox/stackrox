@@ -32,18 +32,40 @@ var (
 			return nil
 		},
 	}
-	batchSize = 10000
+	batchSize = 3000
 	schema    = pkgSchema.ActiveComponentsSchema
 	log       = loghelper.LogWrapper{}
 )
 
+type ImageIDAndOs struct {
+	Id                  string `gorm:"column:id;type:varchar;primaryKey"`
+	ScanOperatingSystem string `gorm:"column:scan_operatingsystem;type:varchar"`
+}
+
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
+	imageTable := gormDB.Table(pkgSchema.ImagesSchema.Table).Model(pkgSchema.CreateTableImagesStmt.GormModel)
+	imageBuf := make([]ImageIDAndOs, batchSize)
+	var imageCount int64
+	if err := imageTable.Count(&imageCount).Error; err != nil {
+		return err
+	}
+	imageToOsMap := make(map[string]string, imageCount)
+	result := imageTable.FindInBatches(&imageBuf, 2, func(_ *gorm.DB, batch int) error {
+		for _, sub := range imageBuf {
+			imageToOsMap[sub.Id] = sub.ScanOperatingSystem
+		}
+		return nil
+	})
+	if result.Error != nil {
+		return nil
+	}
+	log.WriteToStderrf("Found %d images", result.RowsAffected)
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
 	var activeComponents []*storage.ActiveComponent
 	err := walk(ctx, legacyStore, func(obj *storage.ActiveComponent) error {
-		activeComponents = append(activeComponents, obj)
+		activeComponents = append(activeComponents, convertActiveVuln(imageToOsMap, obj)...)
 		if len(activeComponents) == batchSize {
 			if err := store.UpsertMany(ctx, activeComponents); err != nil {
 				log.WriteToStderrf("failed to persist active_components to store %v", err)

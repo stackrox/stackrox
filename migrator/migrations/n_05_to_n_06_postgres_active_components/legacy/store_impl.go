@@ -41,36 +41,6 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) Store {
 	}
 }
 
-func (s *storeImpl) Exists(_ context.Context, id string) (bool, error) {
-	dackTxn, err := s.dacky.NewReadOnlyTransaction()
-	if err != nil {
-		return false, err
-	}
-	defer dackTxn.Discard()
-
-	exists, err := s.reader.ExistsIn(acDackBox.BucketHandler.GetKey(id), dackTxn)
-	if err != nil {
-		return false, err
-	}
-
-	return exists, nil
-}
-
-func (s *storeImpl) Get(_ context.Context, id string) (*storage.ActiveComponent, bool, error) {
-	dackTxn, err := s.dacky.NewReadOnlyTransaction()
-	if err != nil {
-		return nil, false, err
-	}
-	defer dackTxn.Discard()
-
-	msg, err := s.reader.ReadIn(acDackBox.BucketHandler.GetKey(id), dackTxn)
-	if err != nil || msg == nil {
-		return nil, false, err
-	}
-
-	return msg.(*storage.ActiveComponent), msg != nil, err
-}
-
 func (s *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.ActiveComponent, []int, error) {
 	dackTxn, err := s.dacky.NewReadOnlyTransaction()
 	if err != nil {
@@ -152,42 +122,6 @@ func (s *storeImpl) upsertActiveComponents(acs []*storage.ActiveComponent) error
 		}
 		return txn.Commit()
 	})
-}
-
-func (s *storeImpl) DeleteMany(_ context.Context, ids []string) error {
-	keysToDelete := acDackBox.BucketHandler.GetKeys(ids...)
-	keysToLock := concurrency.DiscreteKeySet(keysToDelete...)
-	return s.keyFence.DoStatusWithLock(keysToLock, func() error {
-		batch := batcher.New(len(keysToDelete), batchSize)
-		for {
-			start, end, ok := batch.Next()
-			if !ok {
-				break
-			}
-
-			if err := s.deleteNoBatch(keysToDelete[start:end]...); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-func (s *storeImpl) deleteNoBatch(keys ...[]byte) error {
-	dackTxn, err := s.dacky.NewTransaction()
-	if err != nil {
-		return err
-	}
-	defer dackTxn.Discard()
-
-	for _, key := range keys {
-		err := acDackBox.Deleter.DeleteIn(key, dackTxn)
-		if err != nil {
-			return err
-		}
-	}
-
-	return dackTxn.Commit()
 }
 
 func gatherKeysForUpsert(acs []*storage.ActiveComponent) [][]byte {
