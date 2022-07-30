@@ -4,6 +4,7 @@ on:
     types:
     - opened
     - synchronize
+    - labeled
 
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
