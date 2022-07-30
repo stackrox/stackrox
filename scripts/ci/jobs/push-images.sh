@@ -44,7 +44,9 @@ push_images() {
         push_context="merge-to-master"
     fi
 
-    if ! (is_in_PR_context && pr_has_label "turbo-build" && [[ "$brand" == "RHACS_BRANDING" ]]); then
+    if is_OPENSHIFT_CI && is_in_PR_context && pr_has_label "turbo-build" && [[ "$brand" == "RHACS_BRANDING" ]]; then
+        info "Images were built and pushed elsewhere, skipping it here."
+    else
         push_main_image_set "$push_context" "$brand"
         push_matching_collector_scanner_images "$brand"
     fi
