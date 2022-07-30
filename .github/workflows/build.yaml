@@ -204,6 +204,8 @@ jobs:
             push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}"
 
       - name: Comment on the PR
+        env:
+          GITHUB_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
         run: |
             source ./scripts/ci/lib.sh
             add_build_comment_to_pr
