@@ -24,7 +24,7 @@ jobs:
 
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
-      - uses: ./.github/actions/cache-ui-dependencies
+      # - uses: ./.github/actions/cache-ui-dependencies
 
       - name: Fetch UI deps
         run: make -C ui deps
@@ -50,8 +50,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+      # - name: Cache Go dependencies
+      #   uses: ./.github/actions/cache-go-dependencies
 
       - name: Build CLI
         run: make cli
@@ -75,8 +75,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+      # - name: Cache Go dependencies
+      #   uses: ./.github/actions/cache-go-dependencies
 
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.6
@@ -110,8 +110,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+      # - name: Cache Go dependencies
+      #   uses: ./.github/actions/cache-go-dependencies
 
       - name: Resolve mods for protos
         run: go mod tidy
@@ -181,7 +181,7 @@ jobs:
           name: docs-build
           path: image/docs
 
-      - uses: ./.github/actions/cache-ui-dependencies
+      # - uses: ./.github/actions/cache-ui-dependencies
 
       - name: Docker login
       # (needed for docs ensure_image.sh initial pull with RHACS_BRANDING)
