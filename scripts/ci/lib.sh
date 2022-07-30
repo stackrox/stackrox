@@ -753,6 +753,10 @@ get_pr_details() {
             exit 2
         fi
         [[ "${pull_request}" == "null" ]] && _not_a_PR
+    elif is_GITHUB_ACTIONS; then
+        pull_request="$(jq -r .pull_request.number "${GITHUB_EVENT_PATH}")" || _not_a_PR
+        org="${GITHUB_REPOSITORY_OWNER}"
+        repo="${GITHUB_REPOSITORY#*/}"
     else
         echo "Expect Circle or OpenShift CI"
         exit 2
