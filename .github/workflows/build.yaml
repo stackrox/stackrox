@@ -24,7 +24,7 @@ jobs:
 
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
-      # - uses: ./.github/actions/cache-ui-dependencies
+      - uses: ./.github/actions/cache-ui-dependencies
 
       - name: Fetch UI deps
         run: make -C ui deps
@@ -181,15 +181,16 @@ jobs:
           name: docs-build
           path: image/docs
 
-      # - uses: ./.github/actions/cache-ui-dependencies
-
-      - name: Docker login
-      # (needed for docs ensure_image.sh initial pull with RHACS_BRANDING)
-        run: |
-            docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
+      # needed to restore node_modules for ossls-nostice
+      - uses: ./.github/actions/cache-ui-dependencies
 
       - name: Generate OSS notice
         run: make ossls-notice
+
+      # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
+      - name: Docker login
+        run: |
+            docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
 
       - name: Build main images
         run: make docker-build-main-image
