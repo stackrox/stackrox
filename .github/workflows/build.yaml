@@ -206,4 +206,4 @@ jobs:
       - name: Comment on the PR
         run: |
             source ./scripts/ci/lib.sh
-            comment_on_pr
+            add_build_comment_to_pr

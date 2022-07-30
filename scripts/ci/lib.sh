@@ -1246,6 +1246,34 @@ save_junit_failure() {
 EOF
 }
 
+add_build_comment_to_pr() {
+    info "Adding a comment with the build tag to the PR"
+
+    # hub-comment is tied to Circle CI env
+    local url
+    url=$(get_pr_details | jq -r '.html_url')
+    export CIRCLE_PULL_REQUEST="$url"
+
+    local sha
+    sha=$(get_pr_details | jq -r '.head.sha')
+    sha=${sha:0:7}
+    export _SHA="$sha"
+
+    local tag
+    tag=$(make tag)
+    export _TAG="$tag"
+
+    local tmpfile
+    tmpfile=$(mktemp)
+    cat > "$tmpfile" <<- EOT
+Images are ready for the commit at {{.Env._SHA}}.
+
+To use with deploy scripts, first \`export MAIN_IMAGE_TAG={{.Env._TAG}}\`.
+EOT
+
+    hub-comment -type build -template-file "$tmpfile"
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         die "When invoked at the command line a method is required."

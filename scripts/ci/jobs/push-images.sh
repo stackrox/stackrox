@@ -62,49 +62,8 @@ push_images() {
     fi
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        comment_on_pr
+        add_build_comment_to_pr
     fi
-}
-
-comment_on_pr() {
-    info "Adding a comment with the build tag to the PR"
-
-    # TODO(RS-509) - remove this when hub-comment is added to rox-ci-image
-    if ! command -v "hub-comment" >/dev/null 2>&1; then
-        wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
-        chmod +x ./hub-comment_linux_amd64
-        hub_comment() {
-            ./hub-comment_linux_amd64 "$@"
-        }
-    else
-        hub_comment() {
-            hub-comment "$@"
-        }
-    fi
-
-    # hub-comment is tied to Circle CI env
-    local url
-    url=$(get_pr_details | jq -r '.html_url')
-    export CIRCLE_PULL_REQUEST="$url"
-
-    local sha
-    sha=$(get_pr_details | jq -r '.head.sha')
-    sha=${sha:0:7}
-    export _SHA="$sha"
-
-    local tag
-    tag=$(make tag)
-    export _TAG="$tag"
-
-    local tmpfile
-    tmpfile=$(mktemp)
-    cat > "$tmpfile" <<- EOT
-Images are ready for the commit at {{.Env._SHA}}.
-
-To use with deploy scripts, first \`export MAIN_IMAGE_TAG={{.Env._TAG}}\`.
-EOT
-
-    hub_comment -type build -template-file "$tmpfile"
 }
 
 slack_build_notice() {
