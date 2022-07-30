@@ -131,7 +131,7 @@ slack_build_notice() {
             webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
         fi
     elif is_nightly_run; then
-        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*stackrox*nightly*"
+        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*stackrox*night*"
         if is_in_PR_context && pr_has_label "simulate-nightly-run"; then
             # send to #slack-test when testing nightlies
             webhook_url="${SLACK_MAIN_WEBHOOK}"
