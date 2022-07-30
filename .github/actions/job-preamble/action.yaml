@@ -8,9 +8,6 @@ runs:
       with:
         fetch-depth: 0
 
-    - name: Setup Go build env
-      uses: ./.github/actions/setup-go-build-env
-
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
