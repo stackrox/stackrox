@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -17,6 +18,8 @@ var (
 
 type dataStoreImpl struct {
 	storage store.Store
+
+	lock sync.RWMutex
 }
 
 func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
@@ -26,7 +29,13 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 		return nil, nil
 	}
 
-	return ds.storage.Get(props)
+	// TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
+	if props.GetId() == "" {
+		return ds.getByProps(ctx, props)
+	}
+
+	group, _, err := ds.storage.Get(ctx, props.GetId())
+	return group, err
 }
 
 func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
@@ -36,7 +45,7 @@ func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
 		return nil, nil
 	}
 
-	return ds.storage.GetAll()
+	return ds.storage.GetAll(ctx)
 }
 
 func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.GroupProperties) bool) ([]*storage.Group, error) {
@@ -46,9 +55,19 @@ func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.G
 		return nil, nil
 	}
 
-	return ds.storage.GetFiltered(filter)
+	var groups []*storage.Group
+	err := ds.storage.Walk(ctx, func(g *storage.Group) error {
+		if filter == nil || filter(g.GetProps()) {
+			groups = append(groups, g)
+		}
+		return nil
+	})
+
+	return groups, err
 }
 
+// Walk is an optimization that allows to search through the datastore and find
+// groups that apply to a user within a single transaction.
 func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attributes map[string][]string) ([]*storage.Group, error) {
 	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
@@ -56,7 +75,19 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attrib
 		return nil, nil
 	}
 
-	return ds.storage.Walk(authProviderID, attributes)
+	// Search through the datastore and find all groups that apply to a user within a single transaction.
+	toSearch := getPossibleGroupProperties(authProviderID, attributes)
+	var groups []*storage.Group
+	err := ds.storage.Walk(ctx, func(group *storage.Group) error {
+		for _, check := range toSearch {
+			if propertiesMatch(group.GetProps(), check) {
+				groups = append(groups, group)
+			}
+		}
+		return nil
+	})
+
+	return groups, err
 }
 
 func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
@@ -70,18 +101,26 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 		return errox.InvalidArgs.CausedBy(err)
 	}
 
-	if group.GetProps().GetId() != "" {
-		return errox.InvalidArgs.Newf("id should be empty but %q was provided", group.GetProps().GetId())
+	if err := setGroupIdForNewGroup(group); err != nil {
+		return err
 	}
 
-	if group.GetProps() != nil {
-		group.GetProps().Id = GenerateGroupID()
-	} else {
-		// Theoretically should never happen, as the auth provider ID is required to be set.
-		group.Props = &storage.GroupProperties{Id: GenerateGroupID()}
+	// Lock to ensure synchronization between the get and upsert
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	defaultGroup, err := ds.getDefaultGroupForProps(ctx, group.GetProps())
+	if err != nil {
+		return err
 	}
 
-	return ds.storage.Add(group)
+	// Check whether the to-be-added group is a default group, ensure that it does not yet exist.
+	if defaultGroup != nil {
+		return errox.AlreadyExists.Newf("a default group already exists for auth provider %q",
+			group.GetProps().GetAuthProviderId())
+	}
+
+	return ds.storage.Upsert(ctx, group)
 }
 
 func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error {
@@ -95,7 +134,33 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error
 		return errox.InvalidArgs.CausedBy(err)
 	}
 
-	return ds.storage.Update(group)
+	// Lock to ensure synchronization between the get and upsert
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
+	// can be removed and groups shall only be retrievable via their id.
+	if group.GetProps().GetId() == "" {
+		id, err := ds.findPropsIdByProps(ctx, group.GetProps())
+		if err != nil {
+			return err
+		}
+		// Use the id of the retrieved group to update
+		group.GetProps().Id = id
+	}
+
+	defaultGroup, err := ds.getDefaultGroupForProps(ctx, group.GetProps())
+	if err != nil {
+		return err
+	}
+
+	// Only disallow update of a default group if it does not update the existing default group, if there is any.
+	if defaultGroup != nil && defaultGroup.GetProps().GetId() != group.GetProps().Id {
+		return errox.AlreadyExists.Newf("a default group already exists for auth provider %q",
+			group.GetProps().GetAuthProviderId())
+	}
+
+	return ds.storage.Upsert(ctx, group)
 }
 
 func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group) error {
@@ -105,29 +170,94 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 		return sac.ErrResourceAccessDenied
 	}
 
-	for _, grp := range append(remove, update...) {
-		if err := ValidateGroup(grp); err != nil {
+	// Lock to ensure that all mutations happen as one
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	for _, group := range add {
+		if err := ValidateGroup(group); err != nil {
 			return errox.InvalidArgs.CausedBy(err)
+		}
+
+		if err := setGroupIdForNewGroup(group); err != nil {
+			return err
+		}
+
+		defaultGroup, err := ds.getDefaultGroupForProps(ctx, group.GetProps())
+		if err != nil {
+			return err
+		}
+
+		// Check whether the to-be-added group is a default group, ensure that it does not yet exist.
+		if defaultGroup != nil {
+			return errox.AlreadyExists.Newf("a default group already exists for auth provider %q",
+				group.GetProps().GetAuthProviderId())
+		}
+	}
+	if len(add) > 0 {
+		if err := ds.storage.UpsertMany(ctx, add); err != nil {
+			return err
 		}
 	}
 
-	for _, grp := range add {
-		if err := ValidateGroup(grp); err != nil {
+	for _, group := range update {
+		if err := ValidateGroup(group); err != nil {
 			return errox.InvalidArgs.CausedBy(err)
 		}
 
-		if grp.GetProps().GetId() != "" {
-			return errox.InvalidArgs.Newf("id should be empty but %q was provided", grp.GetProps().GetId())
+		// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
+		// can be removed and groups shall only be retrievable via their id.
+		if group.GetProps().GetId() == "" {
+			id, err := ds.findPropsIdByProps(ctx, group.GetProps())
+			if err != nil {
+				return err
+			}
+			// Use the id of the retrieved group to update
+			group.GetProps().Id = id
 		}
-		if grp.GetProps() != nil {
-			grp.GetProps().Id = GenerateGroupID()
-		} else {
-			// Theoretically should never happen, as the auth provider ID is required to be set.
-			grp.Props = &storage.GroupProperties{Id: GenerateGroupID()}
+
+		defaultGroup, err := ds.getDefaultGroupForProps(ctx, group.GetProps())
+		if err != nil {
+			return err
+		}
+
+		// Only disallow update of a default group if it does not update the existing default group, if there is any.
+		if defaultGroup != nil && defaultGroup.GetProps().GetId() != group.GetProps().Id {
+			return errox.AlreadyExists.Newf("a default group already exists for auth provider %q",
+				group.GetProps().GetAuthProviderId())
+		}
+	}
+	if len(update) > 0 {
+		if err := ds.storage.UpsertMany(ctx, update); err != nil {
+			return err
 		}
 	}
 
-	return ds.storage.Mutate(remove, update, add)
+	var idsToRemove []string
+	for _, group := range remove {
+		if err := ValidateGroup(group); err != nil {
+			return errox.InvalidArgs.CausedBy(err)
+		}
+		propsId := group.GetProps().GetId()
+		// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
+		// can be removed and groups shall only be retrievable via their id.
+		if propsId == "" {
+			id, err := ds.findPropsIdByProps(ctx, group.GetProps())
+			if err != nil {
+				return err
+			}
+			// Use the id of the retrieved group to delete
+			propsId = id
+		}
+		idsToRemove = append(idsToRemove, propsId)
+	}
+	if len(remove) > 0 {
+		if err := ds.storage.DeleteMany(ctx, idsToRemove); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupProperties) error {
@@ -141,7 +271,24 @@ func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupPropert
 		return errox.InvalidArgs.CausedBy(err)
 	}
 
-	return ds.storage.Remove(props)
+	// Lock to ensure synchronization between the get and delete
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	propsId := props.GetId()
+
+	// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
+	// can be removed and groups shall only be retrievable via their id.
+	if propsId == "" {
+		id, err := ds.findPropsIdByProps(ctx, props)
+		if err != nil {
+			return err
+		}
+		// Use the id of the retrieved group to delete
+		propsId = id
+	}
+
+	return ds.storage.Delete(ctx, propsId)
 }
 
 func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string) error {
@@ -152,4 +299,102 @@ func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authPr
 		return errors.Wrap(err, "collecting associated groups")
 	}
 	return ds.Mutate(ctx, groups, nil, nil)
+}
+
+// Helpers
+//////////
+
+func setGroupIdForNewGroup(group *storage.Group) error {
+	if group.GetProps().GetId() != "" {
+		return errox.InvalidArgs.Newf("id should be empty but %q was provided", group.GetProps().GetId())
+	}
+	if group.GetProps() != nil {
+		group.GetProps().Id = GenerateGroupID()
+	} else {
+		// Theoretically should never happen, as the auth provider ID is required to be set.
+		group.Props = &storage.GroupProperties{Id: GenerateGroupID()}
+	}
+	return nil
+}
+
+func propertiesMatch(props *storage.GroupProperties, expected *storage.GroupProperties) bool {
+	return expected.GetAuthProviderId() == props.GetAuthProviderId() &&
+		expected.GetKey() == props.GetKey() &&
+		expected.GetValue() == props.GetValue()
+}
+
+// When given an auth provider and attributes, we will look for all keys and
+// key/value pairs that exist in the datastore for the given auth provider.
+func getPossibleGroupProperties(authProviderID string, attributes map[string][]string) (props []*storage.GroupProperties) {
+	// Need to consider no key.
+	props = append(props, &storage.GroupProperties{AuthProviderId: authProviderID})
+	for key, values := range attributes {
+		// Need to consider key with no value
+		props = append(props, &storage.GroupProperties{AuthProviderId: authProviderID, Key: key})
+		// Consider all Key/Value pairs present.
+		for _, value := range values {
+			props = append(props, &storage.GroupProperties{AuthProviderId: authProviderID, Key: key, Value: value})
+		}
+	}
+	return
+}
+
+// isDefaultGroup will check whether the given properties are a default group.
+// A default group won't have the key and value fields set, only the auth provider ID field.
+func isDefaultGroup(props *storage.GroupProperties) bool {
+	return props.GetKey() == "" && props.GetValue() == ""
+}
+
+// getByProps returns a group matching the given properties if it exists from the store.
+// If more than one group is found matching the properties, an error will be returned.
+// TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
+func (ds *dataStoreImpl) getByProps(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
+	groups, err := ds.GetFiltered(ctx, func(p *storage.GroupProperties) bool {
+		return propertiesMatch(p, props)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	if len(groups) == 0 {
+		return nil, nil
+	}
+
+	if len(groups) > 1 {
+		return nil, errox.InvalidArgs.Newf("multiple groups found for properties (auth provider id=%s, key=%s, "+
+			"value=%s), provide an ID to retrieve a group unambiguously",
+			props.GetAuthProviderId(), props.GetKey(), props.GetValue())
+	}
+
+	return groups[0], nil
+}
+
+// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
+// can be removed and groups shall only be retrievable via their id.
+func (ds *dataStoreImpl) findPropsIdByProps(ctx context.Context, props *storage.GroupProperties) (string, error) {
+	group, err := ds.getByProps(ctx, props)
+	if err != nil {
+		return "", err
+	}
+	if group == nil {
+		return "", errox.NotFound.Newf("group config for (auth provider id=%s, key=%s, value=%s) does not exist",
+			props.GetAuthProviderId(), props.GetKey(), props.GetValue())
+	}
+
+	return group.GetProps().GetId(), nil
+}
+
+// getDefaultGroupForProps will check if the given properties are a default group and, if they are, search the
+// store for the given auth provider ID, and return the default group if it exists.
+// If the properties do not indicate a default group or the default group does not yet exist, it will return nil.
+// Otherwise, it will return the default group.
+func (ds *dataStoreImpl) getDefaultGroupForProps(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
+	// 1. Short-circuit if the props do not indicate a default group. A default group only has the auth provider ID
+	// field set.
+	if !isDefaultGroup(props) {
+		return nil, nil
+	}
+
+	// 2. Filter for the default group.
+	return ds.getByProps(ctx, &storage.GroupProperties{AuthProviderId: props.GetAuthProviderId()})
 }
