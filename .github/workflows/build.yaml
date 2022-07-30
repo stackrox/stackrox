@@ -22,12 +22,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # - name: Cache Go dependencies
-      #   uses: ./.github/actions/cache-go-dependencies
-
-      # - name: Resolve mods for protos
-      #   run: go mod tidy
-
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
       - uses: ./.github/actions/cache-ui-dependencies
@@ -59,9 +53,6 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      # - name: Resolve mods for protos
-      #   run: go mod tidy
-
       - name: Build CLI
         run: make cli
 
@@ -86,9 +77,6 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
-
-      # - name: Resolve mods for protos
-      #   run: go mod tidy
 
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.6
@@ -122,11 +110,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      # - name: Cache Go dependencies
-      #   uses: ./.github/actions/cache-go-dependencies
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
 
-      # - name: Resolve mods for protos
-      #   run: go mod tidy
+      - name: Resolve mods for protos
+        run: go mod tidy
 
       - name: Generate the swagger docs
         run: |
