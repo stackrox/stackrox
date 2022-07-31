@@ -52,7 +52,7 @@ var (
 		allowlist   set.StringSet
 	}{
 		"io/ioutil": {
-			replacement: "https://golang.org/doc/go1.16#ioutil",
+			replacement: "https://golang.org/doc/go1.18#ioutil",
 		},
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",

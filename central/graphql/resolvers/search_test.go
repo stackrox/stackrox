@@ -72,7 +72,8 @@ func TestSearchCategories(t *testing.T) {
 		case v1.SearchCategory_COMPLIANCE:
 			continue
 		default:
-			assert.True(t, searchFuncs[category] != nil, "search category %s does not have a search func", category.String())
+			_, ok := searchFuncs[category]
+			assert.True(t, ok, "search category %s does not have a search func", category.String())
 		}
 	}
 }

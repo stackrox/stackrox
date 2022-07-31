@@ -412,7 +412,7 @@ func handlePolicyStoreErrorList(policyError *boltdb.PolicyStoreErrorList) []*v1.
 }
 
 // SIDE EFFECTS, THE ORIGINAL OBJECTS WILL BE MODIFIED IN PLACE
-func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Context, importPolicies ...*storage.Policy) (set.IntSet, error) {
+func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Context, importPolicies ...*storage.Policy) (set.Set[int], error) {
 	// pre-load all clusters.  There should be a manageable number.
 	clusterList, err := ds.clusterDatastore.GetClusters(ctx)
 	if err != nil {
@@ -424,7 +424,7 @@ func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Cont
 	}
 
 	notifierCache := make(map[string]bool)
-	changedIndices := set.NewIntSet()
+	changedIndices := set.NewSet[int]()
 	for i, policy := range importPolicies {
 		modified := false
 		var scopes []*storage.Scope

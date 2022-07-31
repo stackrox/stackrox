@@ -10,7 +10,7 @@ import (
 
 var (
 	// WellKnownNamespaces is a set of known namespaces used to sanitize Namespace telemetry
-	WellKnownNamespaces = set.NewFrozenStringSet("stackrox", "default", "kube-system", "kube-public", "kube-node-lease")
+	WellKnownNamespaces = set.NewFrozenSet("stackrox", "default", "kube-system", "kube-public", "kube-node-lease")
 )
 
 // GetProviderString returns a string based on the cluster provider or an empty string for an unrecognized provider

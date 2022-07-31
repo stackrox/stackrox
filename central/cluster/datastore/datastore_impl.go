@@ -507,7 +507,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 
 func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster, done *concurrency.Signal) {
 	// Terminate the cluster connection to prevent new data from being stored.
-	if ds.cm != nil {
+	if ds.cm != (connection.Manager)(nil) {
 		if conn := ds.cm.GetConnection(cluster.GetId()); conn != nil {
 			conn.Terminate(errors.New("cluster was deleted"))
 			if !concurrency.WaitWithTimeout(conn.Stopped(), connectionTerminationTimeout) {
