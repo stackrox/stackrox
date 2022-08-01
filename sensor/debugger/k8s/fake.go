@@ -452,16 +452,15 @@ func (f *FakeEventsManager) forEachResource(client reflect.Value, execFunc func(
 		return errInt.(error)
 	}
 
-	errorList := errorhelpers.NewErrorList("for each resource")
 	items := reflect.Indirect(returnVals[0]).FieldByName("Items")
 	if !items.IsValid() {
-		errorList.AddError(errors.New("invalid kind: missing `Items` property"))
-	} else {
-		for i := 0; i < items.Len(); i++ {
-			resource := items.Index(i)
-			if err := execFunc(resource); err != nil {
-				errorList.AddError(err)
-			}
+		return errors.New("invalid kind: missing `Items` property")
+	}
+	errorList := errorhelpers.NewErrorList("for each resource")
+	for i := 0; i < items.Len(); i++ {
+		resource := items.Index(i)
+		if err := execFunc(resource); err != nil {
+			errorList.AddError(err)
 		}
 	}
 	return errorList.ToError()
@@ -473,8 +472,7 @@ func getNameFromObjectMeta(obj reflect.Value) (string, error) {
 	if !objMeta.IsValid() {
 		return "", errors.New("resource does not have the ObjectMeta field")
 	}
-	objMetaPtr := objMeta.Addr()
-	getNameFn := objMetaPtr.MethodByName("GetName")
+	getNameFn := objMeta.Addr().MethodByName("GetName")
 	if !getNameFn.IsValid() {
 		return "", errors.New("resource does not have the method GetName")
 	}
@@ -538,7 +536,7 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 					return err
 				}
 				retVals := runOp(removeAction, cl, reflect.ValueOf(name))
-				if len(retVals) == 0 {
+				if len(retVals) < 1 || len(retVals) > 2 {
 					return fmt.Errorf("expected 1 or 2 values from %s. Received: %d", removeAction, len(retVals))
 				}
 				errI := retVals[len(retVals)-1].Interface()
