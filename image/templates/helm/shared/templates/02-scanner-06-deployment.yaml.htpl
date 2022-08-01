@@ -73,15 +73,11 @@ spec:
                     operator: DoesNotExist
       containers:
       - name: scanner
-        [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
         {{ if eq ._rox.scanner.mode "slim" -}}
         image: {{ ._rox.scanner.slimImage.fullRef | quote }}
         {{ else }}
         image: {{ ._rox.scanner.image.fullRef | quote }}
         {{ end -}}
-        [< else ->]
-        image: {{ ._rox.scanner.image.fullRef | quote }}
-        [< end ->]
         env:
         - name: POD_NAME
           valueFrom:
@@ -244,15 +240,11 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
           {{ if eq ._rox.scanner.mode "slim" -}}
           image: {{ ._rox.scanner.slimDBImage.fullRef | quote }}
           {{ else -}}
           image: {{ ._rox.scanner.dbImage.fullRef | quote }}
           {{ end -}}
-          [< else ->]
-          image: {{ ._rox.scanner.dbImage.fullRef | quote }}
-          [< end ->]
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
@@ -267,15 +259,11 @@ spec:
               readOnly: true
       containers:
       - name: db
-        [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
         {{ if eq ._rox.scanner.mode "slim" -}}
         image: {{ ._rox.scanner.slimDBImage.fullRef | quote }}
         {{ else -}}
         image: {{ ._rox.scanner.dbImage.fullRef | quote }}
         {{ end -}}
-        [< else ->]
-        image: {{ ._rox.scanner.dbImage.fullRef | quote }}
-        [< end ->]
         env:
           {{- include "srox.envVars" (list . "deployment" "scanner-db" "db") | nindent 10 }}
         ports:

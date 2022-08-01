@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	testingUtils "github.com/stackrox/rox/operator/pkg/values/testing"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -98,7 +97,6 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 }
 
 func (s *TranslationTestSuite) TestTranslate() {
-	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
 	t := s.T()
 
 	type args struct {
@@ -555,10 +553,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 			delete(got["meta"].(map[string]interface{}), "configFingerprintOverride")
 			if len(got["meta"].(map[string]interface{})) == 0 {
 				delete(got, "meta")
-			}
-
-			if !features.LocalImageScanning.Enabled() {
-				delete(wantAsValues, "scanner")
 			}
 
 			assert.Equal(t, wantAsValues, got)

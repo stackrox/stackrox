@@ -21,7 +21,7 @@ templates/*
 feature-flag-values.yaml
 [< end >]
 *.swp
-[< if or .KubectlOutput (not .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING) >]
+[< if .KubectlOutput >]
 templates/*scanner*
 internal/scanner-config-shape.yaml
 config-templates/scanner/
