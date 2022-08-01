@@ -156,6 +156,11 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	} else if action == central.ResourceAction_REMOVE_RESOURCE {
 		sh.serviceStore.removeService(svc)
 	}
+	// If OnNamespaceDelete is called before we need to get the selector from the received object
+	if sel == nil {
+		wrap := wrapService(svc)
+		sel = wrap.selector
+	}
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
