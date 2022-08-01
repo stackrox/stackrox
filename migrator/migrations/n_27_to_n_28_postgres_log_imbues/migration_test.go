@@ -15,18 +15,13 @@ import (
 	legacy "github.com/stackrox/rox/migrator/migrations/n_27_to_n_28_postgres_log_imbues/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_27_to_n_28_postgres_log_imbues/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
-	"github.com/stackrox/rox/pkg/protoutils"
-
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/sac"
-
 	"github.com/stackrox/rox/pkg/features"
-
+	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
-
 	"github.com/stretchr/testify/suite"
-
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -96,6 +91,7 @@ func (s *postgresMigrationSuite) TestLogImbueMigration() {
 	})
 
 	fetched, err := newStore.GetAll(s.ctx)
+	s.NoError(err)
 	sort.SliceStable(fetched, func(i, j int) bool {
 		return protoutils.After(fetched[j].GetTimestamp(), fetched[i].GetTimestamp())
 	})

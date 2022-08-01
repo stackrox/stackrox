@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search/postgres"
-
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/features"
