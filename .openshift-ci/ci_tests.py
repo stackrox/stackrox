@@ -55,6 +55,7 @@ class OperatorE2eTest(BaseTest):
     UPGRADE_TEST_TIMEOUT_SEC = 50 * 60
     E2E_TEST_TIMEOUT_SEC = 50 * 60
     SCORECARD_TEST_TIMEOUT_SEC = 20 * 60
+    ARTIFACTS_TIMEOUT = 3 * 60
 
     def __init__(self):
         self.test_outputs = [
@@ -72,13 +73,29 @@ class OperatorE2eTest(BaseTest):
         print("Executing operator upgrade test")
         self.run_with_graceful_kill(
             ["make", "-C", "operator", "test-upgrade"],
-            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
+            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC
+        )
+
+        print("Storing test-upgrade results in JUnit format")
+        self.run_with_graceful_kill(
+            ["scripts/ci/store-artifacts.sh", "store_test_results",
+             "operator/build/kuttl-test-artifacts",
+             "operator-test-results-upgrade"],
+            OperatorE2eTest.ARTIFACTS_TIMEOUT
         )
 
         print("Executing operator e2e tests")
         self.run_with_graceful_kill(
             ["make", "-C", "operator", "test-e2e-deployed"],
             OperatorE2eTest.E2E_TEST_TIMEOUT_SEC,
+        )
+
+        print("Storing test-e2e-deployed results in JUnit format")
+        self.run_with_graceful_kill(
+            ["scripts/ci/store-artifacts.sh", "store_test_results",
+             "operator/build/kuttl-test-artifacts",
+             "operator-test-results-e2e-deployed"],
+            OperatorE2eTest.ARTIFACTS_TIMEOUT
         )
 
         print("Executing Operator Bundle Scorecard tests")
