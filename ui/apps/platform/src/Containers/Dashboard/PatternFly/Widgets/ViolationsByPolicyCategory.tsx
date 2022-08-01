@@ -22,19 +22,9 @@ import useWidgetConfig from 'hooks/useWidgetConfig';
 import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 import NoDataEmptyState from './NoDataEmptyState';
-import ViolationsByPolicyCategoryChart, {
-    LifecycleOption,
-} from './ViolationsByPolicyCategoryChart';
-
-type SortTypeOption = 'Severity' | 'Total';
+import ViolationsByPolicyCategoryChart, { Config } from './ViolationsByPolicyCategoryChart';
 
 const fieldIdPrefix = 'policy-category-violations';
-
-type Config = {
-    sortType: SortTypeOption;
-    lifecycle: LifecycleOption;
-    hiddenSeverities: Readonly<PolicySeverity[]>;
-};
 
 const defaultHiddenSeverities = ['MEDIUM_SEVERITY', 'LOW_SEVERITY'] as const;
 

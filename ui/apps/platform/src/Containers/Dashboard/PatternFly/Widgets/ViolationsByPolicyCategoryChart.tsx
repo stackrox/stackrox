@@ -73,8 +73,6 @@ function sortBySeverity(groups: AlertGroup[]) {
     ]);
 }
 
-export type LifecycleOption = 'ALL' | Exclude<LifecycleStage, 'BUILD'>;
-
 type CountsBySeverity = Record<PolicySeverity, Record<string, number>>;
 
 function getCountsBySeverity(groups: AlertGroup[]): CountsBySeverity {
@@ -124,15 +122,6 @@ function linkForViolationsCategory(
     return `${violationsBasePath}${queryString}`;
 }
 
-type ViolationsByPolicyCategoryChartProps = {
-    alertGroups: AlertGroup[];
-    sortType: SortTypeOption;
-    lifecycle: LifecycleOption;
-    searchFilter: SearchFilter;
-    hiddenSeverities: Set<PolicySeverity>;
-    setHiddenSeverities: (severities: Set<PolicySeverity>) => Promise<Config>;
-};
-
 function tooltipForCategory(
     category: string,
     countsBySeverity: CountsBySeverity,
@@ -145,6 +134,26 @@ function tooltipForCategory(
 }
 
 const chartTheme = patternflySeverityTheme;
+
+type SortTypeOption = 'Severity' | 'Total';
+
+type LifecycleOption = 'ALL' | Exclude<LifecycleStage, 'BUILD'>;
+
+export type Config = {
+    sortType: SortTypeOption;
+    lifecycle: LifecycleOption;
+    hiddenSeverities: Readonly<PolicySeverity[]>;
+};
+
+type ViolationsByPolicyCategoryChartProps = {
+    alertGroups: AlertGroup[];
+    sortType: SortTypeOption;
+    lifecycle: LifecycleOption;
+    searchFilter: SearchFilter;
+    hiddenSeverities: Set<PolicySeverity>;
+    setHiddenSeverities: (severities: Set<PolicySeverity>) => Promise<Config>;
+};
+
 function ViolationsByPolicyCategoryChart({
     alertGroups,
     sortType,
