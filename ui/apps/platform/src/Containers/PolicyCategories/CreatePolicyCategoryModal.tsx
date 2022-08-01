@@ -20,6 +20,7 @@ type CreatePolicyCategoryModalType = {
     onClose: () => void;
     addToast: (toast) => void;
     refreshPolicyCategories: () => void;
+    setSelectedCategory: (category: PolicyCategory) => void;
 };
 
 const emptyPolicyCategory = {
@@ -33,6 +34,7 @@ function CreatePolicyCategoryModal({
     onClose,
     addToast,
     refreshPolicyCategories,
+    setSelectedCategory,
 }: CreatePolicyCategoryModalType) {
     const formik = useFormik({
         initialValues: emptyPolicyCategory as PolicyCategory,
@@ -48,10 +50,12 @@ function CreatePolicyCategoryModal({
                 })
                 .finally(() => {
                     setSubmitting(false);
+                    setSelectedCategory(values);
                     resetForm();
                     onClose();
                 });
         },
+        validateOnMount: true,
         validationSchema: yup.object().shape({
             name: yup
                 .string()
@@ -61,7 +65,7 @@ function CreatePolicyCategoryModal({
         }),
     });
 
-    const { values, handleChange, handleSubmit, resetForm, dirty } = formik;
+    const { values, handleChange, handleSubmit, resetForm, isValid } = formik;
 
     function onChange(_value, event) {
         handleChange(event);
@@ -106,7 +110,7 @@ function CreatePolicyCategoryModal({
                     key="create"
                     variant="primary"
                     onClick={() => handleSubmit()}
-                    isDisabled={!dirty}
+                    isDisabled={!isValid}
                     type="submit"
                 >
                     Create
