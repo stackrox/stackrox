@@ -545,13 +545,13 @@ func (s *GroupStoreTestSuite) TestDefaultGroup() {
 
 	// 3. Updating the initially existing group to make it a default group should fail.
 	// Fetch the group by its properties.
-	initialGroup, err = s.sto.Get(initialGroup.GetProps())
+	updatedInitialGroups, err := s.sto.Get(initialGroup.GetProps())
 	s.NoError(err)
 	// Unset Key / Value fields, making it a default group.
-	initialGroup.GetProps().Key = ""
-	initialGroup.GetProps().Value = ""
+	updatedInitialGroups.GetProps().Key = ""
+	updatedInitialGroups.GetProps().Value = ""
 	// Ensure a "AlreadyExists" error is yielded when trying to update the group.
-	err = s.sto.Update(initialGroup)
+	err = s.sto.Update(updatedInitialGroups)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 
@@ -584,4 +584,16 @@ func (s *GroupStoreTestSuite) TestDefaultGroup() {
 	// Adding the initial default group should now work, as we have made the existing default group a non-default group.
 	defaultGroup.Props.Id = "new-id"
 	s.NoError(s.sto.Add(defaultGroup))
+
+	// 6. Updating the initially existing group to make it a default group without setting an ID should work.
+	updateInitialToDefaultGroup, err := s.sto.Get(initialGroup.GetProps())
+	s.NoError(err)
+	// Unset Key / Value fields, making it a default group.
+	updateInitialToDefaultGroup.GetProps().Key = ""
+	updateInitialToDefaultGroup.GetProps().Value = ""
+	// Unset the ID to fetch the group by its properties.
+	updateInitialToDefaultGroup.GetProps().Id = ""
+	err = s.sto.Update(updateInitialToDefaultGroup)
+	s.NoError(err)
+
 }

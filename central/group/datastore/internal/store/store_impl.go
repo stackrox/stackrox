@@ -166,17 +166,6 @@ func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
 	id := group.GetProps().GetId()
 	buc := tx.Bucket(groupsBucket)
 
-	defaultGroup, err := getDefaultGroupForProps(tx, group.GetProps())
-	if err != nil {
-		return err
-	}
-
-	// Only disallow update of a default group if it does not update the existing default group, if there is any.
-	if defaultGroup != nil && defaultGroup.GetProps().GetId() != id {
-		return errox.AlreadyExists.Newf("a default group already exists for auth provider %q",
-			group.GetProps().GetAuthProviderId())
-	}
-
 	// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
 	// can be removed and groups shall only be retrievable via their id.
 	if id != "" {
@@ -193,6 +182,17 @@ func updateInTransaction(tx *bolt.Tx, group *storage.Group) error {
 				group.GetProps().GetAuthProviderId(), group.GetProps().GetKey(), group.GetProps().GetValue())
 		}
 		id = group.GetProps().GetId()
+	}
+
+	defaultGroup, err := getDefaultGroupForProps(tx, group.GetProps())
+	if err != nil {
+		return err
+	}
+
+	// Only disallow update of a default group if it does not update the existing default group, if there is any.
+	if defaultGroup != nil && defaultGroup.GetProps().GetId() != id {
+		return errox.AlreadyExists.Newf("a default group already exists for auth provider %q",
+			group.GetProps().GetAuthProviderId())
 	}
 
 	bytes, err := proto.Marshal(group)
