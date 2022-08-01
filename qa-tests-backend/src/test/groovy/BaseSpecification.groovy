@@ -104,6 +104,7 @@ class BaseSpecification extends Specification {
                 LOG.info "isEKS: ${ClusterService.isEKS()}"
                 LOG.info "isOpenShift3: ${ClusterService.isOpenShift3()}"
                 LOG.info "isOpenShift4: ${ClusterService.isOpenShift4()}"
+                LOG.info "Full cluster deets: ${ClusterService.getCluster().toString()}"
             }
             catch (Exception ex) {
                 LOG.info "Cannot connect to central : ${ex.message}"
