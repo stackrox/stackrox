@@ -58,8 +58,7 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
 
         "node"       | "" | null | ""
 
-        // TODO: re-activate once fixed against postgres
-        //"image"      | "Image:main" | null | "deployments"
+        "image"      | "Image:main" | null | "deployments"
 
         "secret"     | "Secret:scanner-db-password" | null | "deployments"
 

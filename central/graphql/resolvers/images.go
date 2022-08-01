@@ -89,6 +89,13 @@ func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]*i
 	if err != nil {
 		return nil, err
 	}
+	log.Error("fetching images from graphQL")
+	imgs, err := imageLoader.FromQuery(ctx, q)
+	if err != nil {
+		log.Errorf("Error fetching images: %v", err)
+		return nil, err
+	}
+	log.Errorf("fetched %d images", len(imgs))
 	return resolver.wrapImages(imageLoader.FromQuery(ctx, q))
 }
 
