@@ -240,6 +240,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Resolve mods for protos
+        run: go mod tidy
+
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.6
 
