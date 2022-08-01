@@ -187,12 +187,6 @@ ca:
     {{- index .SecretsBase64Map "ca-key.pem" | b64dec | nindent 4 }}
 {{- end }}
 
-{{- if ne (index .SecretsBase64Map "central-license") "" }}
-# StackRox license key
-licenseKey: | 
-  {{- index .SecretsBase64Map "central-license" | b64dec | nindent 2 }}
-{{- end }}
-
 # Configuration secrets for the Central deployment
 central:
   {{- if ne (index .SecretsBase64Map "htpasswd") "" }}

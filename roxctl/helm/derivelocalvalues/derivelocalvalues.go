@@ -183,7 +183,6 @@ func helmValuesForCentralServices(ctx context.Context, namespace string, k8s k8s
 // Implementation for command `helm derive-local-values`.
 func derivePrivateLocalValuesForCentralServices(ctx context.Context, namespace string, k8s k8sObjectDescription) (map[string]interface{}, error) {
 	m := map[string]interface{}{
-		"licenseKey": k8s.lookupSecretStringP(ctx, "central-license", "license.lic"),
 		"env": map[string]interface{}{
 			"proxyConfig": k8s.lookupSecretStringP(ctx, "proxy-config", "config.yaml"),
 		},
@@ -266,8 +265,6 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 				"false") == "true",
 		},
 		"central": map[string]interface{}{
-			"disableTelemetry": k8s.evaluateToString(ctx, "deployment", "central",
-				`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_INIT_TELEMETRY_ENABLED")].value}`, "true") == "false",
 			"config":          k8s.evaluateToStringP(ctx, "configmap", "central-config", `{.data['central-config\.yaml']}`),
 			"endpointsConfig": k8s.evaluateToStringP(ctx, "configmap", "central-endpoints", `{.data['endpoints\.yaml']}`),
 			"nodeSelector":    k8s.evaluateToObject(ctx, "deployment", "central", `{.spec.template.spec.nodeSelector}`, nil),
@@ -345,7 +342,7 @@ func retrieveCustomLabels(labels map[string]interface{}) map[string]interface{} 
 }
 
 func retrieveCustomEnvVars(envVars map[string]interface{}) map[string]interface{} {
-	return filterMap(envVars, []string{"ROX_OFFLINE_MODE", "ROX_INIT_TELEMETRY_ENABLED"})
+	return filterMap(envVars, []string{"ROX_OFFLINE_MODE"})
 }
 
 func printWarnings(logger logger.Logger, warnings []string) {
