@@ -384,6 +384,49 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 cy.get(selectors.step3.policyCriteria.value.numberInput).should('have.value', '10');
             });
         });
+
+        describe('table modal', () => {
+            beforeEach(() => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('trusted image signers')`
+                );
+            });
+
+            it('should populate table modal select and respect changed values on save', () => {
+                cy.get(selectors.step3.policyCriteria.value.tableModal.textInput).should(
+                    'have.value',
+                    'Add trusted image signers'
+                );
+                cy.get(selectors.step3.policyCriteria.value.tableModal.openButton).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.saveBtn).should(
+                    'be.disabled'
+                );
+                cy.get(selectors.step3.policyCriteria.value.tableModal.firstRowCheckbox).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.saveBtn).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.textInput).should(
+                    'have.value',
+                    'Selected 1 trusted image signers'
+                );
+            });
+
+            it('should populate table modal select and not change values on cancel', () => {
+                cy.get(selectors.step3.policyCriteria.value.tableModal.openButton).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.firstRowCheckbox).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.cancelBtn).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.textInput).should(
+                    'have.value',
+                    'Add trusted image signers'
+                );
+            });
+
+            it('should go to link when table row is clicked', () => {
+                cy.get(selectors.step3.policyCriteria.value.tableModal.openButton).click();
+                cy.get(selectors.step3.policyCriteria.value.tableModal.firstRow).click();
+                cy.location('pathname').should('contain', 'signatureIntegrations');
+            });
+        });
     });
 
     describe('Existing values', () => {

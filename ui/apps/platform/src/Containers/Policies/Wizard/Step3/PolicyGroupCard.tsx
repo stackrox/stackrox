@@ -145,7 +145,7 @@ function PolicyGroupCard({
                     })}
                     {/* this is because there can't be multiple boolean values */}
                     {!readOnly &&
-                        descriptor.type !== 'signaturePolicyCriteria' &&
+                        descriptor.type !== 'tableModal' &&
                         descriptor.type !== 'radioGroup' &&
                         descriptor.type !== 'radioGroupString' && (
                             <Flex
