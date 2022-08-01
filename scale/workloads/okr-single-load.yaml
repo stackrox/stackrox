@@ -1,11 +1,12 @@
 deploymentWorkload:
 - deploymentType: Deployment
   lifecycleDuration: 24h
-  numDeployments: 10000
+  numDeployments: 25000
   numLifecycles: 0
   podWorkload:
     containerWorkload:
       numImages: 0
+      preloadedImages: 22150
     lifecycleDuration: 24h
     numContainers: 3
     numPods: 3

@@ -29,7 +29,8 @@ type NetworkPolicyWorkload struct {
 
 // ContainerWorkload defines the workloads for the container within the Pod
 type ContainerWorkload struct {
-	NumImages int `yaml:"numImages"`
+	NumImages       int `yaml:"numImages"`
+	PreloadedImages int `yaml:"preloadedImages"`
 }
 
 // ProcessWorkload defines the rate of process generation

@@ -11,8 +11,10 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -28,6 +30,7 @@ var (
 
 type serviceImpl struct {
 	sensorConnectionManager connection.Manager
+	image                   imageDatastore.DataStore
 	client                  http.Client
 }
 
@@ -98,14 +101,22 @@ func (s *serviceImpl) RandomData(ctx context.Context, req *central.RandomDataReq
 }
 
 // New creates a new Service.
-func New(sensorConnectionManager connection.Manager) Service {
+func New(sensorConnectionManager connection.Manager, imageDataStore imageDatastore.DataStore) Service {
 	return &serviceImpl{
 		sensorConnectionManager: sensorConnectionManager,
+		image:                   imageDataStore,
 		client: http.Client{
 			Timeout:   20 * time.Second,
 			Transport: proxy.RoundTripper(),
 		},
 	}
+}
+
+func (s *serviceImpl) AddImage(ctx context.Context, image *storage.Image) (*central.Empty, error) {
+	if err := s.image.UpsertImage(ctx, image); err != nil {
+		return nil, err
+	}
+	return &central.Empty{}, nil
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
