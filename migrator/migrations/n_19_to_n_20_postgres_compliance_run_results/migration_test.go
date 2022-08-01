@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestMigration(t *testing.T) {
@@ -68,10 +67,6 @@ func (s *postgresMigrationSuite) TestComplianceRunResultsMigration() {
 
 	// Prepare data and write to legacy DB
 	var complianceRunResultss []*storage.ComplianceRunResults
-	batchSize = 48
-	rocksWriteBatch := gorocksdb.NewWriteBatch()
-	defer rocksWriteBatch.Destroy()
-
 	for i := 0; i < 200; i++ {
 		complianceRunResults := &storage.ComplianceRunResults{}
 		s.NoError(testutils.FullInit(complianceRunResults, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

@@ -70,7 +70,6 @@ func (s *postgresMigrationSuite) TestAuthProviderMigration() {
 
 	// Prepare data and write to legacy DB
 	var authProviders []*storage.AuthProvider
-
 	for i := 0; i < 200; i++ {
 		authProvider := &storage.AuthProvider{}
 		s.NoError(testutils.FullInit(authProvider, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

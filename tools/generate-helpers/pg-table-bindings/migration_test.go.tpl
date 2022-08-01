@@ -99,12 +99,6 @@ func (s *postgresMigrationSuite) Test{{.TrimmedType}}Migration() {
 	s.NoError(legacyStore.Upsert(s.ctx, {{$name}}))
 	{{- else}}{{/* non-singleton store*/}}
 	var {{$name}}s []*{{.Type}}
-	{{- if $rocksDB}}
-	batchSize = 48
-	rocksWriteBatch := gorocksdb.NewWriteBatch()
-	defer rocksWriteBatch.Destroy()
-	{{- end}}
-
 	for i := 0; i < 200; i++ {
 		{{$name}} := &{{.Type}}{}
 		s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

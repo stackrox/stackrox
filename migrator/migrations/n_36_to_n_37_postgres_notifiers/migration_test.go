@@ -70,7 +70,6 @@ func (s *postgresMigrationSuite) TestNotifierMigration() {
 
 	// Prepare data and write to legacy DB
 	var notifiers []*storage.Notifier
-
 	for i := 0; i < 200; i++ {
 		notifier := &storage.Notifier{}
 		s.NoError(testutils.FullInit(notifier, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

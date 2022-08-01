@@ -70,7 +70,6 @@ func (s *postgresMigrationSuite) TestExternalBackupMigration() {
 
 	// Prepare data and write to legacy DB
 	var externalBackups []*storage.ExternalBackup
-
 	for i := 0; i < 200; i++ {
 		externalBackup := &storage.ExternalBackup{}
 		s.NoError(testutils.FullInit(externalBackup, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
