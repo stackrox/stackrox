@@ -56,7 +56,11 @@ export function getImagesQuery(useUpdatedVmResolver: boolean) {
                 fullName
             }
             priority
-            ${true ? 'imageVulnerabilityCounter' : 'imageVulnerabilityCounter: vulnCounter'} {
+            ${
+                useUpdatedVmResolver
+                    ? 'imageVulnerabilityCounter'
+                    : 'imageVulnerabilityCounter: vulnCounter'
+            } {
                 important {
                     total
                     fixable
