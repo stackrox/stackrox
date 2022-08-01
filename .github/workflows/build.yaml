@@ -132,7 +132,7 @@ jobs:
           path: |
             image/docs
 
-  build-and-push:
+  build-and-push-main:
     if: contains(github.event.pull_request.labels.*.name, 'turbo-build')
     runs-on: ubuntu-latest
     needs: 
@@ -222,3 +222,57 @@ jobs:
         run: |
             source ./scripts/ci/lib.sh
             add_build_comment_to_pr
+
+  build-and-push-operator:
+    if: contains(github.event.pull_request.labels.*.name, 'turbo-build')
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
+      env:
+        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: PR labels
+        uses: joerick/pr-labels-action@v1.0.6
+
+      - name: Setup Go build environment
+        run: |
+          if [[ -n "$GITHUB_PR_LABEL_CI_RELEASE_BUILD" ]]; then
+            cci-export GOTAGS release
+          fi
+          echo "GOTAGS: ${GOTAGS:-}"
+
+      - name: Build Operator Bundle image
+        run: |
+          make -C operator/ bundle bundle-build
+
+      - name: Build Operator image
+        run: make -C operator/ build docker-build
+
+      - name: Check that Operator image is runnable
+        run: docker run --rm stackrox/stackrox-operator:$(make --quiet -C operator tag) --help
+
+      - name: Push images
+        run: |
+          make -C operator/ docker-push docker-push-bundle | cat
+
+      # Index image can only be built once bundle was pushed
+      - name: Build index
+        run: |
+          make -C operator/ index-build
+
+      - name: Push index image
+        run: |
+          make -C operator/ docker-push-index | cat
+
+      - name: Build and push images for quay.io
+        run: |
+          IMAGE_REPO=quay.io/rhacs-eng make -C operator/ everything

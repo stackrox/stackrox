@@ -58,7 +58,11 @@ push_images() {
     fi
     # TODO(ROX-11889): make this unconditional once the openshift/release side is ready
     if [[ -n "${OPERATOR_IMAGE:-}" ]]; then
-        push_operator_image_set "$push_context" "$brand"
+        if is_OPENSHIFT_CI && is_in_PR_context && pr_has_label "turbo-build"; then
+            info "Operator images were built and pushed elsewhere, skipping it here."
+        else
+            push_operator_image_set "$push_context" "$brand"
+        fi
     fi
 
     if is_in_PR_context && [[ "$brand" == "STACKROX_BRANDING" ]]; then
