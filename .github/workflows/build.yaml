@@ -280,7 +280,3 @@ jobs:
       - name: Push index image
         run: |
           make -C operator/ docker-push-index | cat
-
-      - name: Build and push images for quay.io
-        run: |
-          IMAGE_REPO=quay.io/rhacs-eng make -C operator/ everything
