@@ -19,7 +19,7 @@ function PolicyCategoriesList({
     return (
         <SimpleList onSelect={() => {}}>
             {policyCategories.map((category) => {
-                const { id, name } = category;
+                const { id, name, isDefault } = category;
                 return (
                     <SimpleListItem
                         key={id}
@@ -27,7 +27,7 @@ function PolicyCategoriesList({
                             setSelectedCategory(category);
                         }}
                         isActive={false}
-                        // componentProps={{ disabled: isDefault }}
+                        componentProps={{ disabled: isDefault }}
                     >
                         {name}
                     </SimpleListItem>

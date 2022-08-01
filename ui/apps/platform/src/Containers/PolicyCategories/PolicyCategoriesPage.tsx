@@ -21,13 +21,15 @@ import { PolicyCategory } from 'types/policy.proto';
 import { getPolicyCategories } from 'services/PolicyCategoriesService';
 import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
 import PolicyCategoriesListSection from './PolicyCategoriesListSection';
+import CreatePolicyCategoryModal from './CreatePolicyCategoryModal';
 
 function PolicyCategoriesPage(): React.ReactElement {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
-    // TODO switch type once new API is in
     const [policyCategories, setPolicyCategories] = useState<PolicyCategory[]>([]);
     const { toasts, addToast, removeToast } = useToasts();
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<PolicyCategory>();
 
     let listContent = (
         <PageSection variant="light" isFilled id="policies-table-loading">
@@ -49,14 +51,20 @@ function PolicyCategoriesPage(): React.ReactElement {
 
     if (!isLoading && !errorMessage) {
         listContent = (
-            <PolicyCategoriesListSection policyCategories={policyCategories} addToast={addToast} />
+            <PolicyCategoriesListSection
+                policyCategories={policyCategories}
+                addToast={addToast}
+                setSelectedCategory={setSelectedCategory}
+                selectedCategory={selectedCategory}
+            />
         );
     }
 
-    useEffect(() => {
-        setIsLoading(true);
+    function refreshPolicyCategories() {
+        console.log('refreshPolicyCategories');
         getPolicyCategories()
             .then((categories) => {
+                console.log(categories);
                 setPolicyCategories(categories);
                 setErrorMessage('');
             })
@@ -65,6 +73,11 @@ function PolicyCategoriesPage(): React.ReactElement {
                 setErrorMessage(getAxiosErrorMessage(error));
             })
             .finally(() => setIsLoading(false));
+    }
+
+    useEffect(() => {
+        setIsLoading(true);
+        refreshPolicyCategories();
     }, []);
 
     return (
@@ -81,7 +94,11 @@ function PolicyCategoriesPage(): React.ReactElement {
                         </ToolbarItem>
                         <ToolbarItem alignment={{ default: 'alignRight' }}>
                             <Flex>
-                                <Button variant="primary" onClick={() => {}}>
+                                <Button
+                                    variant="primary"
+                                    onClick={() => setIsCreateModalOpen(true)}
+                                    isDisabled={isCreateModalOpen || !!selectedCategory}
+                                >
                                     Create category
                                 </Button>
                             </Flex>
@@ -111,6 +128,12 @@ function PolicyCategoriesPage(): React.ReactElement {
                     </Alert>
                 ))}
             </AlertGroup>
+            <CreatePolicyCategoryModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                refreshPolicyCategories={refreshPolicyCategories}
+                addToast={addToast}
+            />
         </>
     );
 }
