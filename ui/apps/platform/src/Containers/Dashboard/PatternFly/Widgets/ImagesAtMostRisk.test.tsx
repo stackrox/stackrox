@@ -6,7 +6,7 @@ import '@testing-library/jest-dom/extend-expect';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
 import { vulnManagementImagesPath, vulnManagementPath } from 'routePaths';
-import ImagesAtMostRisk, { imagesQuery } from './ImagesAtMostRisk';
+import ImagesAtMostRisk, { getImagesQuery } from './ImagesAtMostRisk';
 
 function makeMockImage(
     id: string,
@@ -48,7 +48,9 @@ const mockImages = [1, 2, 3, 4, 5, 6].map((n) =>
 const mocks = [
     {
         request: {
-            query: imagesQuery,
+            // The component for this uses a feature flag to swap sub-resolvers, so treat it as
+            // disabled here until the feature flag is enabled in the production release.
+            query: getImagesQuery(false),
             variables: {
                 query: '',
             },
@@ -62,6 +64,12 @@ const mocks = [
 ];
 
 jest.mock('hooks/useResizeObserver');
+jest.mock('hooks/useFeatureFlags', () => ({
+    __esModule: true,
+    default: () => ({
+        isFeatureFlagEnabled: jest.fn(),
+    }),
+}));
 
 beforeEach(() => {
     localStorage.clear();

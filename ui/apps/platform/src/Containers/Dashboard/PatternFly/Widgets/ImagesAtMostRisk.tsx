@@ -15,6 +15,7 @@ import {
 } from '@patternfly/react-core';
 
 import { vulnManagementImagesPath } from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLSearch from 'hooks/useURLSearch';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useWidgetConfig from 'hooks/useWidgetConfig';
@@ -42,7 +43,8 @@ function getViewAllLink(searchFilter: SearchFilter) {
     return `${vulnManagementImagesPath}${queryString}`;
 }
 
-export const imagesQuery = gql`
+export function getImagesQuery(useUpdatedVmResolver: boolean) {
+    return gql`
     query getImages($query: String) {
         images(
             query: $query
@@ -54,7 +56,7 @@ export const imagesQuery = gql`
                 fullName
             }
             priority
-            imageVulnerabilityCounter {
+            ${true ? 'imageVulnerabilityCounter' : 'imageVulnerabilityCounter: vulnCounter'} {
                 important {
                     total
                     fixable
@@ -67,6 +69,7 @@ export const imagesQuery = gql`
         }
     }
 `;
+}
 
 // If no resource scope is applied and the user selects "Active images" only, we
 // can use the wildcard query `Namespace:*` to return images part of any namespace i.e. active
@@ -103,7 +106,10 @@ function ImagesAtMostRisk() {
         defaultConfig
     );
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
     const variables = getQueryVariables(searchFilter, imageStatus);
+    const imagesQuery = getImagesQuery(isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES'));
     const { data, previousData, loading, error } = useQuery<ImageData>(imagesQuery, {
         variables,
     });
