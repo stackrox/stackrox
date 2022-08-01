@@ -114,7 +114,7 @@ func (cfg *helmOutputCommand) outputHelmChart() error {
 	}
 
 	// Load and render template files.
-	renderedChartFiles, err := templateImage.LoadAndInstantiateChartTemplate(cfg.chartTemplatePathPrefix, chartMetaValues)
+	renderedChartFiles, err := templateImage.LoadAndInstantiateChartTemplate(cfg.chartTemplatePathPrefix, chartMetaValues, "")
 	if err != nil {
 		return errors.Wrapf(err, "loading and instantiating %s helmtpl", cfg.chartName)
 	}
