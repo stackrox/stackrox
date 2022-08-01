@@ -231,8 +231,6 @@ jobs:
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -255,6 +253,10 @@ jobs:
             cci-export GOTAGS release
           fi
           echo "GOTAGS: ${GOTAGS:-}"
+
+      - name: Docker login
+        run: |
+            docker login -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RW_PASSWORD}"
 
       - name: Build Operator Bundle image
         run: |
