@@ -35,7 +35,7 @@ func LoadRestoreStream(fileReader io.Reader) error {
 	restoreDB := getRestoreDBName()
 
 	// Now recreate the DB
-	err = pgadmin.CreateDB(sourceMap, dbConfig, pgadmin.AdminDB, restoreDB)
+	err = pgadmin.CreateDB(sourceMap, dbConfig, pgadmin.EmptyDB, restoreDB)
 	if err != nil {
 		return errors.Wrap(err, "Could not create restore database")
 	}

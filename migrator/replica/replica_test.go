@@ -5,10 +5,18 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/migrator/replica/metadata"
+	"github.com/stackrox/rox/migrator/replica/postgres"
+	"github.com/stackrox/rox/migrator/replica/rocksdb"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -99,7 +107,9 @@ func doTestReplicaMigration(t *testing.T) {
 	// Test normal upgrade
 	for _, c := range testCases {
 		t.Run(c.description, func(t *testing.T) {
+			log.Infof("Test = %q", c.description)
 			mock := createAndRunCentral(t, c.fromVersion)
+
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
 			mock.enableRollBack(c.enableRollback)
@@ -112,11 +122,20 @@ func doTestReplicaMigration(t *testing.T) {
 }
 
 func createAndRunCentral(t *testing.T, ver *versionPair) *mockCentral {
-	mock := createCentral(t)
+	var mock *mockCentral
+	if features.PostgresDatastore.Enabled() {
+		mock = createCentralPostgres(t)
+	} else {
+		mock = createCentral(t)
+	}
 	mock.setVersion = setVersion
 	mock.setVersion(t, ver)
 	mock.runMigrator("", "")
-	mock.runCentral()
+	if features.PostgresDatastore.Enabled() {
+		mock.runCentralPostgres()
+	} else {
+		mock.runCentral()
+	}
 	return mock
 }
 
@@ -194,6 +213,7 @@ func doTestReplicaMigrationFailureAndReentry(t *testing.T) {
 			c.description = c.description + " with reboot"
 		}
 		t.Run(c.description, func(t *testing.T) {
+			log.Infof("Test = %q", c.description)
 			mock := createAndRunCentral(t, c.fromVersion)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
@@ -274,6 +294,7 @@ func TestReplicaRestore(t *testing.T) {
 		}
 
 		t.Run(c.description, func(t *testing.T) {
+			log.Infof("Test = %q", c.description)
 			mock := createAndRunCentral(t, &preHistoryVer)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
@@ -303,6 +324,12 @@ func doTestForceRollbackFailure(t *testing.T) {
 	if buildinfo.ReleaseBuild {
 		return
 	}
+	var forceRollbackReplica string
+	if features.PostgresDatastore.Enabled() {
+		forceRollbackReplica = postgres.CurrentReplica
+	} else {
+		forceRollbackReplica = rocksdb.CurrentReplica
+	}
 	testCases := []struct {
 		description          string
 		rollbackEnabled      bool
@@ -316,28 +343,28 @@ func doTestForceRollbackFailure(t *testing.T) {
 			rollbackEnabled:      false,
 			withPrevious:         false,
 			forceRollback:        "",
-			expectedErrorMessage: errNoPrevious,
+			expectedErrorMessage: metadata.ErrNoPrevious,
 		},
 		{
 			description:          "Rollback disabled with force rollback without previous",
 			rollbackEnabled:      false,
 			withPrevious:         false,
 			forceRollback:        currVer.version,
-			expectedErrorMessage: errNoPrevious,
+			expectedErrorMessage: metadata.ErrNoPrevious,
 		},
 		{
 			description:          "Rollback disabled without force rollback with previous",
 			rollbackEnabled:      false,
 			withPrevious:         true,
 			forceRollback:        "",
-			expectedErrorMessage: errForceUpgradeDisabled,
+			expectedErrorMessage: metadata.ErrForceUpgradeDisabled,
 		},
 		{
 			description:          "Rollback disabled with force rollback with wrong previous replica",
 			rollbackEnabled:      false,
 			withPrevious:         true,
 			forceRollback:        currVer.version,
-			expectedErrorMessage: fmt.Sprintf(errPreviousMismatchWithVersions, preVer.version, currVer.version),
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrPreviousMismatchWithVersions, preVer.version, currVer.version),
 			wrongVersion:         true,
 		},
 		{
@@ -345,14 +372,14 @@ func doTestForceRollbackFailure(t *testing.T) {
 			rollbackEnabled:      true,
 			withPrevious:         false,
 			forceRollback:        "",
-			expectedErrorMessage: errNoPrevious,
+			expectedErrorMessage: metadata.ErrNoPrevious,
 		},
 		{
 			description:          "Rollback enabled with force rollback without previous",
 			rollbackEnabled:      true,
 			withPrevious:         false,
-			forceRollback:        currentReplica,
-			expectedErrorMessage: errNoPrevious,
+			forceRollback:        forceRollbackReplica,
+			expectedErrorMessage: metadata.ErrNoPrevious,
 		},
 		{
 			description:          "Rollback enabled with force rollback with previous",
@@ -366,19 +393,20 @@ func doTestForceRollbackFailure(t *testing.T) {
 			rollbackEnabled:      true,
 			withPrevious:         true,
 			forceRollback:        "",
-			expectedErrorMessage: errForceUpgradeDisabled,
+			expectedErrorMessage: metadata.ErrForceUpgradeDisabled,
 		},
 		{
 			description:          "Rollback enabled with force rollback with wrong previous replica",
 			rollbackEnabled:      true,
 			withPrevious:         true,
 			forceRollback:        currVer.version,
-			expectedErrorMessage: fmt.Sprintf(errPreviousMismatchWithVersions, preVer.version, currVer.version),
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrPreviousMismatchWithVersions, preVer.version, currVer.version),
 			wrongVersion:         true,
 		},
 	}
 	for _, c := range testCases {
 		t.Run(c.description, func(t *testing.T) {
+			log.Infof("Test = %q", c.description)
 			ver := &currVer
 			if c.wrongVersion {
 				ver = &preVer
@@ -390,13 +418,31 @@ func doTestForceRollbackFailure(t *testing.T) {
 			// Force rollback
 			mock.enableRollBack(c.rollbackEnabled)
 			setVersion(t, &currVer)
-			_, err := Scan(mock.mountPath, c.forceRollback)
-			if c.expectedErrorMessage != "" {
-				assert.EqualError(t, err, c.expectedErrorMessage)
+			if features.PostgresDatastore.Enabled() {
+				source := pgtest.GetConnectionString(t)
+				sourceMap, _ := pgconfig.ParseSource(source)
+				config, err := pgxpool.ParseConfig(source)
+				require.NoError(t, err)
+
+				dbm := postgres.New(c.forceRollback, config, sourceMap)
+				err = dbm.Scan()
+				if c.expectedErrorMessage != "" {
+					assert.EqualError(t, err, c.expectedErrorMessage)
+				} else {
+					assert.NoError(t, err)
+					mock.rollbackCentral(&currVer, "", c.forceRollback)
+				}
 			} else {
-				assert.NoError(t, err)
-				mock.rollbackCentral(&currVer, "", c.forceRollback)
+				dbm := rocksdb.New(mock.mountPath, c.forceRollback)
+				err := dbm.Scan()
+				if c.expectedErrorMessage != "" {
+					assert.EqualError(t, err, c.expectedErrorMessage)
+				} else {
+					assert.NoError(t, err)
+					mock.rollbackCentral(&currVer, "", c.forceRollback)
+				}
 			}
+
 		})
 	}
 }
@@ -475,6 +521,7 @@ func doTestRollback(t *testing.T) {
 		if reboot {
 			c.description = c.description + " with reboot"
 		}
+		log.Infof("Test = %q", c.description)
 
 		t.Run(c.description, func(t *testing.T) {
 			mock := createAndRunCentral(t, c.toVersion)
@@ -522,6 +569,7 @@ func TestRacingConditionInPersist(t *testing.T) {
 	for _, c := range testCases {
 		run := func(desc string, breakpoint string) {
 			t.Run(desc, func(t *testing.T) {
+				log.Infof("Test = %q", c.description)
 				mock := createAndRunCentral(t, &preVer)
 				defer mock.destroyCentral()
 				mock.enableRollBack(true)

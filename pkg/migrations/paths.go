@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/migrations/internal"
 	"github.com/stackrox/rox/pkg/utils"
@@ -26,6 +27,22 @@ func DBMountPath() string {
 // databases and other migration related contents.
 func CurrentPath() string {
 	return filepath.Join(internal.DBMountPath, Current)
+}
+
+// CurrentReplica - returns the current replica
+func CurrentReplica() string {
+	if features.PostgresDatastore.Enabled() {
+		return "central_active"
+	}
+	return Current
+}
+
+// BackupReplica - returns the backup replica
+func BackupReplica() string {
+	if features.PostgresDatastore.Enabled() {
+		return "central_backup"
+	}
+	return PreviousReplica
 }
 
 // SafeRemoveDBWithSymbolicLink removes databases in path if it exists, it protects current database and remove only the databases that is not in use.
