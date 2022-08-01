@@ -36,17 +36,17 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockStore) Delete(ctx context.Context, propsId string) error {
+func (m *MockStore) Delete(ctx context.Context, propsID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, propsId)
+	ret := m.ctrl.Call(m, "Delete", ctx, propsID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockStoreMockRecorder) Delete(ctx, propsId interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Delete(ctx, propsID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), ctx, propsId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), ctx, propsID)
 }
 
 // DeleteMany mocks base method.
@@ -64,9 +64,9 @@ func (mr *MockStoreMockRecorder) DeleteMany(ctx, ids interface{}) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(ctx context.Context, propsId string) (*storage.Group, bool, error) {
+func (m *MockStore) Get(ctx context.Context, propsID string) (*storage.Group, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, propsId)
+	ret := m.ctrl.Call(m, "Get", ctx, propsID)
 	ret0, _ := ret[0].(*storage.Group)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -74,9 +74,9 @@ func (m *MockStore) Get(ctx context.Context, propsId string) (*storage.Group, bo
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockStoreMockRecorder) Get(ctx, propsId interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Get(ctx, propsID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, propsId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, propsID)
 }
 
 // GetAll mocks base method.

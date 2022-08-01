@@ -174,7 +174,6 @@ func (s *GroupStoreTestSuite) TestUpsertMany() {
 		s.Equal(a, full)
 	}
 
-	//var toUpdate []*storage.Group
 	for _, g := range groups {
 		g.RoleName = g.GetRoleName() + "-updated"
 	}

@@ -22,7 +22,7 @@ func New(db *bolt.DB) store.Store {
 }
 
 // We use custom serialization for speed since this store will need to be 'Walked'
-// to find all of the roles that apply to a given user.
+// to find all the roles that apply to a given user.
 type storeImpl struct {
 	db *bolt.DB
 }
@@ -39,10 +39,10 @@ func (s *storeImpl) getGroup(id string, bucket *bolt.Bucket) (group *storage.Gro
 }
 
 // Get returns a group matching the given properties if it exists from the store.
-func (s *storeImpl) Get(_ context.Context, propsId string) (group *storage.Group, exists bool, err error) {
+func (s *storeImpl) Get(_ context.Context, propsID string) (group *storage.Group, exists bool, err error) {
 	err = s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
-		group, exists, err = s.getGroup(propsId, buc)
+		group, exists, err = s.getGroup(propsID, buc)
 		return err
 	})
 	return
@@ -93,12 +93,12 @@ func (s *storeImpl) UpsertMany(_ context.Context, groups []*storage.Group) error
 	})
 }
 
-// Delete removes the group with the specified propsId.
+// Delete removes the group with the specified propsID.
 // Returns an error if no such group exists.
-func (s *storeImpl) Delete(_ context.Context, propsId string) error {
+func (s *storeImpl) Delete(_ context.Context, propsID string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
-		return deleteInTransaction(buc, propsId)
+		return deleteInTransaction(buc, propsID)
 	})
 }
 
@@ -107,8 +107,8 @@ func (s *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
 
-		for _, propsId := range ids {
-			if err := deleteInTransaction(buc, propsId); err != nil {
+		for _, propsID := range ids {
+			if err := deleteInTransaction(buc, propsID); err != nil {
 				return err
 			}
 		}
@@ -128,11 +128,11 @@ func upsertInTransaction(bucket *bolt.Bucket, group *storage.Group) error {
 	return bucket.Put([]byte(group.GetProps().GetId()), bytes)
 }
 
-func deleteInTransaction(bucket *bolt.Bucket, propsId string) error {
-	key := []byte(propsId)
+func deleteInTransaction(bucket *bolt.Bucket, propsID string) error {
+	key := []byte(propsID)
 
 	if bucket.Get(key) == nil {
-		return errox.NotFound.Newf("group config for %q does not exist", propsId)
+		return errox.NotFound.Newf("group config for %q does not exist", propsID)
 	}
 
 	return bucket.Delete(key)

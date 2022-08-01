@@ -101,7 +101,7 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 		return errox.InvalidArgs.CausedBy(err)
 	}
 
-	if err := setGroupIdForNewGroup(group); err != nil {
+	if err := setGroupIDForNewGroup(group); err != nil {
 		return err
 	}
 
@@ -141,7 +141,7 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error
 	// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
 	// can be removed and groups shall only be retrievable via their id.
 	if group.GetProps().GetId() == "" {
-		id, err := ds.findPropsIdByProps(ctx, group.GetProps())
+		id, err := ds.findPropsIDByProps(ctx, group.GetProps())
 		if err != nil {
 			return err
 		}
@@ -179,7 +179,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 			return errox.InvalidArgs.CausedBy(err)
 		}
 
-		if err := setGroupIdForNewGroup(group); err != nil {
+		if err := setGroupIDForNewGroup(group); err != nil {
 			return err
 		}
 
@@ -208,7 +208,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 		// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
 		// can be removed and groups shall only be retrievable via their id.
 		if group.GetProps().GetId() == "" {
-			id, err := ds.findPropsIdByProps(ctx, group.GetProps())
+			id, err := ds.findPropsIDByProps(ctx, group.GetProps())
 			if err != nil {
 				return err
 			}
@@ -238,18 +238,18 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 		if err := ValidateGroup(group); err != nil {
 			return errox.InvalidArgs.CausedBy(err)
 		}
-		propsId := group.GetProps().GetId()
+		propsID := group.GetProps().GetId()
 		// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
 		// can be removed and groups shall only be retrievable via their id.
-		if propsId == "" {
-			id, err := ds.findPropsIdByProps(ctx, group.GetProps())
+		if propsID == "" {
+			id, err := ds.findPropsIDByProps(ctx, group.GetProps())
 			if err != nil {
 				return err
 			}
 			// Use the id of the retrieved group to delete
-			propsId = id
+			propsID = id
 		}
-		idsToRemove = append(idsToRemove, propsId)
+		idsToRemove = append(idsToRemove, propsID)
 	}
 	if len(remove) > 0 {
 		if err := ds.storage.DeleteMany(ctx, idsToRemove); err != nil {
@@ -275,20 +275,20 @@ func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupPropert
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	propsId := props.GetId()
+	propsID := props.GetId()
 
 	// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
 	// can be removed and groups shall only be retrievable via their id.
-	if propsId == "" {
-		id, err := ds.findPropsIdByProps(ctx, props)
+	if propsID == "" {
+		id, err := ds.findPropsIDByProps(ctx, props)
 		if err != nil {
 			return err
 		}
 		// Use the id of the retrieved group to delete
-		propsId = id
+		propsID = id
 	}
 
-	return ds.storage.Delete(ctx, propsId)
+	return ds.storage.Delete(ctx, propsID)
 }
 
 func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string) error {
@@ -304,7 +304,7 @@ func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authPr
 // Helpers
 //////////
 
-func setGroupIdForNewGroup(group *storage.Group) error {
+func setGroupIDForNewGroup(group *storage.Group) error {
 	if group.GetProps().GetId() != "" {
 		return errox.InvalidArgs.Newf("id should be empty but %q was provided", group.GetProps().GetId())
 	}
@@ -371,7 +371,7 @@ func (ds *dataStoreImpl) getByProps(ctx context.Context, props *storage.GroupPro
 
 // TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
 // can be removed and groups shall only be retrievable via their id.
-func (ds *dataStoreImpl) findPropsIdByProps(ctx context.Context, props *storage.GroupProperties) (string, error) {
+func (ds *dataStoreImpl) findPropsIDByProps(ctx context.Context, props *storage.GroupProperties) (string, error) {
 	group, err := ds.getByProps(ctx, props)
 	if err != nil {
 		return "", err
