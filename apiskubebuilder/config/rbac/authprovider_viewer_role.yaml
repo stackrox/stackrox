@@ -1,0 +1,20 @@
+# permissions for end users to view authproviders.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: authprovider-viewer-role
+rules:
+- apiGroups:
+  - authprovider.central.stackrox.io
+  resources:
+  - authproviders
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - authprovider.central.stackrox.io
+  resources:
+  - authproviders/status
+  verbs:
+  - get
