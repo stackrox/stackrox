@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/utils"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -14,7 +14,7 @@ import (
 
 // NewFakeClientBuilder returns a new fake client builder with registered custom resources
 func NewFakeClientBuilder(t *testing.T, objects ...ctrlClient.Object) *fake.ClientBuilder {
-	testutils.MustBeInTest(t)
+	utils.MustBeInTest(t)
 	scheme := runtime.NewScheme()
 	require.NoError(t, platform.AddToScheme(scheme))
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))

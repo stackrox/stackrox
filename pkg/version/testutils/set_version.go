@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/internal"
 )
@@ -19,19 +19,19 @@ import (
 // by build constraints.
 // To make this more explicit, we require passing a testing.T to this version.
 func SetMainVersion(t *testing.T, version string) {
-	testutils.MustBeInTest(t)
+	utils.MustBeInTest(t)
 	internal.MainVersion = version
 }
 
 // SetExampleVersion sets the version to the example, only intended for usage in testing.
 func SetExampleVersion(t *testing.T) {
-	testutils.MustBeInTest(t)
+	utils.MustBeInTest(t)
 	SetVersion(t, GetExampleVersion(t))
 }
 
 // SetVersion sets the version, only intended for usage in testing.
 func SetVersion(t *testing.T, version version.Versions) {
-	testutils.MustBeInTest(t)
+	utils.MustBeInTest(t)
 	internal.MainVersion = version.MainVersion
 	internal.ScannerVersion = version.ScannerVersion
 	internal.CollectorVersion = version.CollectorVersion
@@ -40,7 +40,7 @@ func SetVersion(t *testing.T, version version.Versions) {
 
 // GetExampleVersion returns an example version, only intended for usage in testing.
 func GetExampleVersion(t *testing.T) version.Versions {
-	testutils.MustBeInTest(t)
+	utils.MustBeInTest(t)
 	return version.Versions{
 		BuildDate:        time.Unix(0, 0),
 		CollectorVersion: "99.9.9",

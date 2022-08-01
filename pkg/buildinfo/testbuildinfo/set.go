@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/buildinfo/internal/timestamp"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/utils"
 )
 
 // TestBuildTimestampRestorer restores previous build timestamp settings.
@@ -25,7 +25,7 @@ func (r *TestBuildTimestampRestorer) Restore() {
 // SetForTest sets the build timestamp to now if it is not currently set. This is exclusively intended to be used
 // in test settings.
 func SetForTest(t *testing.T) *TestBuildTimestampRestorer {
-	testutils.MustBeInTest(t)
+	utils.MustBeInTest(t)
 	if timestamp.BuildTimestampParsingErr == nil {
 		return nil // we have a valid build timestamp
 	}
