@@ -44,7 +44,7 @@ function PolicyCategoriesListSection({
             )
         );
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterTerm, selectedFilters]);
+    }, [filterTerm, selectedFilters, policyCategories]);
 
     return (
         <PageSection id="policy-categories-list-section">

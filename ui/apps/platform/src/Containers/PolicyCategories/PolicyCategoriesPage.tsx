@@ -61,10 +61,8 @@ function PolicyCategoriesPage(): React.ReactElement {
     }
 
     function refreshPolicyCategories() {
-        console.log('refreshPolicyCategories');
         getPolicyCategories()
             .then((categories) => {
-                console.log(categories);
                 setPolicyCategories(categories);
                 setErrorMessage('');
             })
