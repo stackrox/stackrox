@@ -102,7 +102,8 @@ func (s *embedTestSuite) TestLoadSecuredClusterScanner() {
 		expectScannerFilesExist bool
 	}{
 
-		"contains scanner manifests ": {
+		"contains scanner manifests": {
+			kubectlOutput:           false,
 			expectScannerFilesExist: true,
 		},
 		"in kubectl output does not contain scanner manifests": {
