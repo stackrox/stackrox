@@ -70,25 +70,7 @@ export const validationSchema = yup.object().shape({
                 .required('A server address is required')
                 .matches(validHostnameRegex, 'Must be a valid server address'),
             username: yup.string().trim().required('A username is required'),
-            password: yup
-                .string()
-                .test(
-                    'password-test',
-                    'A password is required',
-                    (value, context: yup.TestContext) => {
-                        const requirePasswordField =
-                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                            // @ts-ignore
-                            context?.from[2]?.value?.updatePassword || false;
-
-                        if (!requirePasswordField) {
-                            return true;
-                        }
-
-                        const trimmedValue = value?.trim();
-                        return !!trimmedValue;
-                    }
-                ),
+            password: yup.string(),
             from: yup.string(),
             sender: yup
                 .string()
