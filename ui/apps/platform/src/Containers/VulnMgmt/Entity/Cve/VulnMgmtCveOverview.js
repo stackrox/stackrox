@@ -49,6 +49,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         lastModified,
         scoreVersion,
         vulnerabilityTypes,
+        operatingSystem,
     } = safeData;
 
     const linkToMoreInfo = isValidURL(link) ? (

@@ -201,6 +201,14 @@ export function getComponentTableColumns(showVMUpdates) {
                 accessor: 'priority',
                 sortField: componentSortFields.PRIORITY,
             },
+            {
+                Header: `Operating System`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${defaultColumnClassName}`,
+                id: componentSortFields.OPERATING_SYSTEM,
+                accessor: 'operatingSystem',
+                sortField: componentSortFields.OPERATING_SYSTEM,
+            },
         ];
 
         const componentColumnsBasedOnContext = getFilteredComponentColumns(
