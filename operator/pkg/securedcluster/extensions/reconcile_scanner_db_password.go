@@ -8,7 +8,6 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/scanner"
-	"github.com/stackrox/rox/pkg/features"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -30,11 +29,6 @@ func ReconcileLocalScannerDBPasswordExtension(client ctrlClient.Client) extensio
 }
 
 func reconcile(ctx context.Context, s *platform.SecuredCluster, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
-	// Disable scanner db reconciler if feature flag is not enabled
-	if !features.LocalImageScanning.Enabled() {
-		return nil
-	}
-
 	config, err := scanner.AutoSenseLocalScannerConfig(ctx, client, *s)
 	if err != nil {
 		return err

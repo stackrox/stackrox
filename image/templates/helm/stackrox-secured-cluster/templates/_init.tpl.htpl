@@ -39,7 +39,7 @@
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
 
 {{/* Only merge scanner config shapes if feature flag is enabled and kubectl output is disabled */}}
-[< if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+[< if (not .KubectlOutput) ->]
   {{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
   {{ $_ := include "srox.mergeInto" (list $rox $configShape $configShapeScanner) }}
 [< else >]
@@ -230,7 +230,7 @@
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ ._rox.image.main) }}
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
-[< if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+[< if (not .KubectlOutput) ->]
 {{ include "srox.configureImage" (list $ ._rox.image.scanner) }}
 [<- end >]
 
@@ -243,7 +243,7 @@
   {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
 {{- end }}
 
-[< if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+[< if (not .KubectlOutput) ->]
 {{/*
    Local scanner setup.
   */}}
