@@ -1,4 +1,5 @@
 import React from 'react';
+import * as yup from 'yup';
 import {
     Modal,
     ModalVariant,
@@ -35,26 +36,40 @@ function CreatePolicyCategoryModal({
 }: CreatePolicyCategoryModalType) {
     const formik = useFormik({
         initialValues: emptyPolicyCategory as PolicyCategory,
-        onSubmit: (values, { setSubmitting }) => {
+        onSubmit: (values, { setSubmitting, resetForm }) => {
             setSubmitting(false);
             postPolicyCategory(values)
                 .then(() => {
                     setTimeout(refreshPolicyCategories, 200);
+                    addToast('Successfully added category');
                 })
                 .catch((error) => {
                     addToast(error.message);
                 })
                 .finally(() => {
                     setSubmitting(false);
+                    resetForm();
                     onClose();
                 });
         },
+        validationSchema: yup.object().shape({
+            name: yup
+                .string()
+                .min(5, 'Policy category name must be at least 5 characters long')
+                .max(128, 'Policy category name must be less than 128 characters long')
+                .required(),
+        }),
     });
 
-    const { values, handleChange, handleSubmit } = formik;
+    const { values, handleChange, handleSubmit, resetForm, dirty } = formik;
 
     function onChange(_value, event) {
         handleChange(event);
+    }
+
+    function onCancel() {
+        resetForm();
+        onClose();
     }
 
     return (
@@ -62,16 +77,16 @@ function CreatePolicyCategoryModal({
             title="Create category"
             isOpen={isOpen}
             variant={ModalVariant.small}
-            onClose={onClose}
+            onClose={onCancel}
             data-testid="create-category-modal"
             aria-label="Create category"
             hasNoBodyWrapper
         >
             <ModalBoxBody>
                 <FormikProvider value={formik}>
-                    <Form>
+                    <Form onSubmit={handleSubmit}>
                         <FormGroup
-                            fieldId="policy-category-name"
+                            fieldId="name"
                             label="Category name"
                             isRequired
                             helperText="Provide a descriptive and unique category name."
@@ -91,11 +106,12 @@ function CreatePolicyCategoryModal({
                     key="create"
                     variant="primary"
                     onClick={() => handleSubmit()}
-                    // isDisabled={}
+                    isDisabled={!dirty}
+                    type="submit"
                 >
                     Create
                 </Button>
-                <Button key="cancel" variant="link" onClick={onClose}>
+                <Button key="cancel" variant="link" onClick={onCancel}>
                     Cancel
                 </Button>
             </ModalBoxFooter>
