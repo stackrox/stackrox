@@ -680,6 +680,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), true),
 			Compression:   true,
 		})
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/vm/node/export/csv",
+			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment), permissions.View(resources.Node)),
+			ServerHandler: csv.CVECSVHandler(),
+			Compression:   true,
+		})
 	} else {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/db/backup",
