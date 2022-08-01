@@ -27,4 +27,7 @@ const (
 
 	// LocalScannerCredentialsRefresh identifies the capability to maintain the Local scanner TLS credentials refreshed.
 	LocalScannerCredentialsRefresh SensorCapability = "LocalScannerCredentialsRefresh"
+
+	// ContinueSync identifies the capability to continue from where sync left off
+	ContinueSync SensorCapability = "ContinueSync"
 )

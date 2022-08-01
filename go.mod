@@ -23,6 +23,7 @@ require (
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
 	github.com/cloudflare/cfssl v1.6.1
+	github.com/cockroachdb/pebble v0.0.0-20220729140737-245afda9c39f // indirect
 	github.com/containers/image/v5 v5.20.0
 	github.com/coreos/go-oidc/v3 v3.2.0
 	github.com/coreos/go-systemd/v22 v22.3.2
@@ -55,7 +56,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/go-version v1.5.0
+	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgtype v1.11.0
