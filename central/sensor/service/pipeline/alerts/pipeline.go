@@ -10,6 +10,7 @@ import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	pipelineMetrics "github.com/stackrox/rox/central/sensor/service/pipeline/metrics"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
@@ -70,6 +71,10 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		}
 
 		return nil
+	}
+
+	for _, alert := range alertResults.GetAlerts() {
+		pipelineMetrics.IncTotalAlertsReceived(msg.GetEvent().GetAction(), alertResults.GetStage(), alert.GetPolicy().GetId())
 	}
 
 	for _, a := range alertResults.GetAlerts() {
