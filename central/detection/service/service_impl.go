@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
+	"github.com/stackrox/rox/pkg/protoutils"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	coreV1 "k8s.io/api/core/v1"
@@ -149,11 +150,15 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 			}
 		}
 	}
+	log.Info(protoutils.NewWrapper(img))
 	utils.FilterSuppressedCVEsNoClone(img)
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(req.GetPolicyCategories())
 	alerts, err := s.buildTimeDetector.Detect(img, filter)
 	if err != nil {
 		return nil, err
+	}
+	for _, a := range alerts {
+		log.Info(protoutils.NewWrapper(a))
 	}
 	unusedCategories := getUnusedCategories()
 	if len(unusedCategories) > 0 {
