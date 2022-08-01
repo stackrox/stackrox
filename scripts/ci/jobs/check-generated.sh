@@ -34,6 +34,8 @@ generated_files-are-up-to-date
 # shellcheck disable=SC2016
 echo 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
 function check-operator-generated-files-up-to-date() {
+    echo 'Checking consistency between EXPECTED_GO_VERSION file and Go version in operator Dockerfile'
+    make -C operator/ check-expected-go-version
     make -C operator/ generate
     make -C operator/ manifests
     echo 'Checking for diffs after making generate and manifests...'
