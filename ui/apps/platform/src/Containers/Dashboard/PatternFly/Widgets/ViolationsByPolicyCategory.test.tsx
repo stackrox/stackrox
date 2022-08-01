@@ -6,8 +6,6 @@ import '@testing-library/jest-dom/extend-expect';
 import renderWithRouter from 'test-utils/renderWithRouter';
 import ViolationsByPolicyCategory from 'Containers/Dashboard/PatternFly/Widgets/ViolationsByPolicyCategory';
 
-jest.setTimeout(10000);
-
 jest.mock('@patternfly/react-charts', () => {
     const { Chart, ...rest } = jest.requireActual('@patternfly/react-charts');
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
