@@ -360,7 +360,7 @@ func (m *mockCentral) verifyMigrationVersionPostgres(replica string, ver *versio
 
 func (m *mockCentral) getReplicaVersion(replica string) (*migrations.MigrationVersion, error) {
 	var pool *pgxpool.Pool
-	if replica == migrations.CurrentReplica() {
+	if replica == migrations.GetCurrentReplica() {
 		pool = m.tp.Pool
 	} else {
 		pool = pgtest.ForTCustomPool(m.t, replica)

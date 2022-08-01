@@ -250,7 +250,7 @@ func main() {
 			log.Errorf("Unable to get Postgres DB config: %v", err)
 		}
 
-		err = pgadmin.DropDB(sourceMap, config, migrations.BackupReplica())
+		err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupReplica())
 		if err != nil {
 			log.Errorf("Failed to remove backup DB: %v", err)
 		}
@@ -259,7 +259,7 @@ func main() {
 
 	} else {
 		// Now that we verified that the DB can be loaded, remove the .backup directory
-		if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.BackupReplica())); err != nil {
+		if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupReplica())); err != nil {
 			log.Errorf("Failed to remove backup DB: %v", err)
 		}
 
