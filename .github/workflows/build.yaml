@@ -264,7 +264,7 @@ jobs:
         run: make -C operator/ build docker-build
 
       - name: Check that Operator image is runnable
-        run: docker run --rm stackrox/stackrox-operator:$(make --quiet -C operator tag) --help
+        run: docker run --rm quay.io/rhacs-eng/stackrox-operator:$(make --quiet -C operator tag) --help
 
       - name: Push images
         run: |
