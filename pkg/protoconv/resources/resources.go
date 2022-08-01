@@ -296,11 +296,7 @@ func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
 }
 
 func (w *DeploymentWrap) populateServiceAccount(podSpec v1.PodSpec) {
-	if podSpec.ServiceAccountName == "" {
-		w.ServiceAccount = "default"
-	} else {
-		w.ServiceAccount = podSpec.ServiceAccountName
-	}
+	w.ServiceAccount = stringutils.OrDefault(podSpec.ServiceAccountName, "default")
 }
 
 func (w *DeploymentWrap) populateAutomountServiceAccountToken(podSpec v1.PodSpec) {

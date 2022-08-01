@@ -27,3 +27,10 @@ type NetworkPolicyStore interface {
 	Find(namespace string, labels map[string]string) map[string]*storage.NetworkPolicy
 	Delete(ID, ns string)
 }
+
+//go:generate mockgen-wrapper
+type ServiceAccountStore interface {
+	Add(sa *storage.ServiceAccount)
+	Remove(sa *storage.ServiceAccount)
+	GetImagePullSecrets(namespace, name string) []string
+}

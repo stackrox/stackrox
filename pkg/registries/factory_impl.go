@@ -13,11 +13,11 @@ type factoryImpl struct {
 
 type registryWithDataSource struct {
 	types.Registry
-	datasource *storage.DataSource
+	source *storage.ImageIntegration
 }
 
-func (r *registryWithDataSource) DataSource() *storage.DataSource {
-	return r.datasource
+func (r *registryWithDataSource) Source() *storage.ImageIntegration {
+	return r.source
 }
 
 func (e *factoryImpl) CreateRegistry(source *storage.ImageIntegration) (types.ImageRegistry, error) {
@@ -32,9 +32,6 @@ func (e *factoryImpl) CreateRegistry(source *storage.ImageIntegration) (types.Im
 
 	return &registryWithDataSource{
 		Registry: integration,
-		datasource: &storage.DataSource{
-			Id:   source.GetId(),
-			Name: source.GetName(),
-		},
+		source:   source,
 	}, nil
 }

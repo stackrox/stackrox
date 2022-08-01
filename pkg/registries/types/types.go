@@ -27,7 +27,7 @@ type Registry interface {
 // integration formed the interface
 type ImageRegistry interface {
 	Registry
-	DataSource() *storage.DataSource
+	Source() *storage.ImageIntegration
 }
 
 // DockerfileInstructionSet are the set of acceptable keywords in a Dockerfile

@@ -8,15 +8,19 @@ import (
 )
 
 // serviceAccountDispatcher handles service account events
-type serviceAccountDispatcher struct{}
+type serviceAccountDispatcher struct {
+	serviceAccountStore *ServiceAccountStore
+}
 
 // newServiceAccountDispatcher creates and returns a new service account dispatcher.
-func newServiceAccountDispatcher() *serviceAccountDispatcher {
-	return &serviceAccountDispatcher{}
+func newServiceAccountDispatcher(serviceAccountStore *ServiceAccountStore) *serviceAccountDispatcher {
+	return &serviceAccountDispatcher{
+		serviceAccountStore: serviceAccountStore,
+	}
 }
 
 // ProcessEvent processes a service account resource event, and returns the sensor events to emit in response.
-func (*serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
 	serviceAccount := obj.(*v1.ServiceAccount)
 
 	var serviceAccountSecrets []string
@@ -47,6 +51,12 @@ func (*serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action central
 	if serviceAccount.AutomountServiceAccountToken != nil {
 		sa.ServiceAccount.AutomountToken = *serviceAccount.AutomountServiceAccountToken
 	}
+	switch action {
+	case central.ResourceAction_REMOVE_RESOURCE:
+		s.serviceAccountStore.Remove(sa.ServiceAccount)
+	default:
+		s.serviceAccountStore.Add(sa.ServiceAccount)
+	}
 
 	return []*central.SensorEvent{
 		{
@@ -55,5 +65,4 @@ func (*serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action central
 			Resource: sa,
 		},
 	}
-
 }

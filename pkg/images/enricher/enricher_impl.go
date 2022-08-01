@@ -269,8 +269,8 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 
 			if currentRegistryErrors >= consecutiveErrorThreshold { // update health
 				e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-					Id:            registry.DataSource().Id,
-					Name:          registry.DataSource().Name,
+					Id:            registry.Source().GetId(),
+					Name:          registry.Source().GetName(),
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
 					LastTimestamp: timestamp.TimestampNow(),
@@ -294,8 +294,8 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 				})
 			}
 			e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-				Id:            registry.DataSource().Id,
-				Name:          registry.DataSource().Name,
+				Id:            registry.Source().GetId(),
+				Name:          registry.Source().GetName(),
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
 				LastTimestamp: timestamp.TimestampNow(),
@@ -319,6 +319,13 @@ func getRef(image *storage.Image) string {
 	return image.GetName().GetFullName()
 }
 
+func imageIntegrationToDataSource(i *storage.ImageIntegration) *storage.DataSource {
+	return &storage.DataSource{
+		Id:   i.GetId(),
+		Name: i.GetName(),
+	}
+}
+
 func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *storage.Image, registry registryTypes.ImageRegistry) (bool, error) {
 	if !registry.Match(image.GetName()) {
 		return false, nil
@@ -333,7 +340,7 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *stora
 	if err != nil {
 		return false, errors.Wrapf(err, "getting metadata from registry: %q", registry.Name())
 	}
-	metadata.DataSource = registry.DataSource()
+	metadata.DataSource = imageIntegrationToDataSource(registry.Source())
 	metadata.Version = metadataVersion
 	image.Metadata = metadata
 
@@ -580,12 +587,12 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		return false, errors.Wrapf(err, "checking registry for image %q", imgName)
 	}
 
-	registrySet, err := e.getRegistriesForContext(enrichmentContext)
+	registries, err := e.getRegistriesForContext(enrichmentContext)
 	if err != nil {
 		return false, errors.Wrap(err, "getting registries for context")
 	}
 
-	matchingRegistries, err := getMatchingRegistries(registrySet.GetAll(), img)
+	matchingRegistries, err := getMatchingRegistries(registries, img)
 	if err != nil {
 		// Do not return an error for internal images when no integration is found.
 		if enrichmentContext.Internal {
@@ -649,32 +656,32 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 }
 
 func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registryTypes.ImageRegistry, error) {
-	registrySet := e.integrations.RegistrySet()
+	registries := e.integrations.RegistrySet().GetAll()
 	if ctx.Internal {
-		registries := registrySet.GetAll()
 		if ctx.Source == nil {
 			return registries, nil
 		}
 		filteredRegistries := registries[:0]
 		for _, registry := range registries {
-			registry.DataSource()
+			integration := registry.Source()
+			if integration.GetSource().GetClusterId() != ctx.Source.ClusterID {
+				continue
+			}
+			if integration.GetSource().GetNamespace() != ctx.Source.Namespace {
+				continue
+			}
+			if !ctx.Source.ImagePullSecrets.Contains(integration.GetSource().GetName()) {
+				continue
+			}
+			filteredRegistries = append(filteredRegistries, registry)
 		}
-
 	}
 
-	if ctx.Source != nil {
-
-		for registry := range registrySet.GetAll() {
-
-		}
-
-	}
-
-	if registrySet.IsEmpty() {
+	if len(registries) == 0 {
 		return nil, errox.NotFound.CausedBy("no image registries are integrated: please add an image integration")
 	}
 
-	return registrySet, nil
+	return registries, nil
 }
 
 func getMatchingRegistries(registries []registryTypes.ImageRegistry,

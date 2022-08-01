@@ -13,10 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/scan"
+	"github.com/stackrox/rox/sensor/common/store"
 	"google.golang.org/grpc/status"
 )
 
@@ -40,8 +42,9 @@ type enricher struct {
 	imageSvc       v1.ImageServiceClient
 	scanResultChan chan scanResult
 
-	imageCache expiringcache.Cache
-	stopSig    concurrency.Signal
+	serviceAccountStore store.ServiceAccountStore
+	imageCache          expiringcache.Cache
+	stopSig             concurrency.Signal
 }
 
 type cacheValue struct {
@@ -131,12 +134,12 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	c.image = scannedImage.GetImage()
 }
 
-func newEnricher(cache expiringcache.Cache) *enricher {
+func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore) *enricher {
 	return &enricher{
-		scanResultChan: make(chan scanResult),
-
-		imageCache: cache,
-		stopSig:    concurrency.NewSignal(),
+		scanResultChan:      make(chan scanResult),
+		serviceAccountStore: serviceAccountStore,
+		imageCache:          cache,
+		stopSig:             concurrency.NewSignal(),
 	}
 }
 
@@ -197,13 +200,16 @@ func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, req *scan
 
 func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	imageChan := make(chan imageChanResult, len(deployment.GetContainers()))
+
+	pullSecretSet := set.NewStringSet(e.serviceAccountStore.GetImagePullSecrets(deployment.GetNamespace(), deployment.GetServiceAccount())...)
+	pullSecretSet.AddAll(deployment.GetImagePullSecrets()...)
 	for idx, container := range deployment.GetContainers() {
 		e.runImageScanAsync(imageChan, &scanImageRequest{
 			containerIdx:   idx,
 			containerImage: container.GetImage(),
 			clusterID:      clusterid.Get(),
 			namespace:      deployment.GetNamespace(),
-			pullSecrets:    deployment.GetImagePullSecrets(),
+			pullSecrets:    pullSecretSet.AsSlice(),
 		})
 	}
 	images := make([]*storage.Image, len(deployment.GetContainers()))

@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/sync/semaphore"
@@ -234,7 +235,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		source = &enricher.RequestSource{
 			ClusterID:        request.GetClusterId(),
 			Namespace:        request.GetNamespace(),
-			ImagePullSecrets: request.GetPullSecrets(),
+			ImagePullSecrets: set.NewStringSet(request.GetPullSecrets()...),
 		}
 	}
 

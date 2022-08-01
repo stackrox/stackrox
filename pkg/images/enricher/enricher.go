@@ -12,6 +12,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/signatures"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
@@ -45,7 +46,7 @@ func (f FetchOption) forceRefetchCachedValues() bool {
 type RequestSource struct {
 	ClusterID        string
 	Namespace        string
-	ImagePullSecrets []string
+	ImagePullSecrets set.StringSet
 }
 
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments

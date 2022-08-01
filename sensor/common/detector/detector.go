@@ -54,7 +54,7 @@ type Detector interface {
 
 // New returns a new detector
 func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
-	deploymentStore store.DeploymentStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents,
+	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents,
 	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore) Detector {
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),
@@ -64,7 +64,8 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
 
-		enricher:            newEnricher(cache),
+		enricher:            newEnricher(cache, serviceAccountStore),
+		serviceAccountStore: serviceAccountStore,
 		deploymentStore:     deploymentStore,
 		extSrcsStore:        externalsrcs.StoreInstance(),
 		baselineEval:        baseline.NewBaselineEvaluator(),
@@ -100,6 +101,7 @@ type detectorImpl struct {
 
 	enricher            *enricher
 	deploymentStore     store.DeploymentStore
+	serviceAccountStore store.ServiceAccountStore
 	extSrcsStore        externalsrcs.Store
 	baselineEval        baseline.Evaluator
 	networkbaselineEval networkBaselineEval.Evaluator

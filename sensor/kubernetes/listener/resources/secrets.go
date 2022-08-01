@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/rhel"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -133,6 +134,15 @@ func newSecretDispatcher(regStore *registry.Store) *secretDispatcher {
 	}
 }
 
+func derivedID(secret *v1.Secret, registry string) (string, error) {
+	rootUUID, err := uuid.FromString(string(secret.UID))
+	if err != nil {
+		return "", errors.Wrapf(err, "converting %q to uuid", secret.UID)
+	}
+	id := uuid.NewV5(rootUUID, registry).String()
+	return id, nil
+}
+
 // DockerConfigToImageIntegration creates an image integration for a given
 // registry URL and docker config.
 func DockerConfigToImageIntegration(secret *v1.Secret, registry string, dce config.DockerConfigEntry) (*storage.ImageIntegration, error) {
@@ -141,12 +151,10 @@ func DockerConfigToImageIntegration(secret *v1.Secret, registry string, dce conf
 		registryType = rhel.RedHatRegistryType
 	}
 
-	rootUUID, err := uuid.FromString(string(secret.UID))
+	id, err := derivedID(secret, registry)
 	if err != nil {
 		return nil, errors.Wrapf(err, "converting %q to uuid", secret.UID)
 	}
-
-	id := uuid.NewV5(rootUUID, registry).String()
 	return &storage.ImageIntegration{
 		Id:         id,
 		Type:       registryType,
@@ -196,6 +204,23 @@ func getDockerConfigFromSecret(secret *v1.Secret) *config.DockerConfig {
 	return &dockerConfig
 }
 
+func idSetFromSecret(secret *v1.Secret) (set.StringSet, error) {
+	dockerConfigPtr := getDockerConfigFromSecret(secret)
+	if dockerConfigPtr == nil {
+		return nil, nil
+	}
+	dockerConfig := *dockerConfigPtr
+	registrySet := set.NewStringSet()
+	for reg := range dockerConfig {
+		id, err := derivedID(secret, reg)
+		if err != nil {
+			return nil, err
+		}
+		registrySet.Add(id)
+	}
+	return registrySet, nil
+}
+
 func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret, action central.ResourceAction) []*central.SensorEvent {
 	dockerConfigPtr := getDockerConfigFromSecret(secret)
 	if dockerConfigPtr == nil {
@@ -210,6 +235,8 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	// In OpenShift, the default service account also contains credentials for the
 	// OpenShift Container Registry, which is an internal image registry.
 	fromDefaultSA := secret.GetAnnotations()[saAnnotation] == defaultSA
+
+	newIntegrationSet := set.NewStringSet()
 	for registry, dce := range dockerConfig {
 		if fromDefaultSA {
 			// Store the registry credentials so Sensor can reach it.
@@ -229,6 +256,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 						ImageIntegration: ii,
 					},
 				})
+				newIntegrationSet.Add(ii.GetId())
 			}
 		}
 
@@ -236,6 +264,23 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			Name:     registry,
 			Username: dce.Username,
 		})
+	}
+	// Compute diff between old and new secret to automatically clean up delete secrets
+	oldIntegrations, err := idSetFromSecret(oldSecret)
+	if err != nil {
+		log.Errorf("error getting ids from old secret: %v", err)
+	} else {
+		for id := range oldIntegrations.Difference(newIntegrationSet) {
+			sensorEvents = append(sensorEvents, &central.SensorEvent{
+				Id:     id,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_ImageIntegration{
+					ImageIntegration: &storage.ImageIntegration{
+						Id: id,
+					},
+				},
+			})
+		}
 	}
 
 	protoSecret := getProtoSecret(secret)
