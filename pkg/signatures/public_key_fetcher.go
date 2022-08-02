@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"golang.org/x/time/rate"
 )
 
@@ -124,15 +125,17 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 // Note: This takes into account the definition of the transport.Error, you can find more here:
 // https://github.com/google/go-containerregistry/blob/f1fa40b162a1601a863364e8a2f63bbb9e4ff36e/pkg/v1/remote/transport/error.go#L90
 func makeTransientErrorRetryable(err error) error {
+	var transportErr *transport.Error
+	var urlError *url.Error
 	// We don't expect any transient errors that are coming from cosign at the moment.
-	if transportErr, ok := err.(*transport.Error); ok && transportErr.Temporary() {
-		return retry.MakeRetryable(err)
+	if errors.As(err, &transportErr) && transportErr.Temporary() {
+		return retry.MakeRetryable(transportErr)
 	}
 
-	// We need to check for url.Error as well, since heroku-client will return those.
-	if urlErr := errToURLError(err); urlErr != nil && urlErr.Temporary() {
-		return retry.MakeRetryable(err)
+	if errors.As(err, &urlError) && urlError.Temporary() {
+		return retry.MakeRetryable(urlError)
 	}
+
 	return err
 }
 
@@ -182,55 +185,34 @@ func isMissingSignatureError(err error) bool {
 	// http.StatusNotFound we will indicate that no signatures are available.
 	// Cosign ref:
 	// https://github.com/sigstore/cosign/blob/b1024041754c8171375bf1a8411d86436c654b95/pkg/oci/remote/signatures.go#L35-L40
-	if registryErr := errToRegistryError(err); registryErr != nil && registryErr.Response != nil &&
-		registryErr.Response.StatusCode == http.StatusNotFound {
-		return true
-	}
-
-	if transportErr, ok := err.(*transport.Error); ok && transportErr.StatusCode == http.StatusNotFound {
-		return true
-	}
-	return false
+	return checkIfErrorContainsCode(err, http.StatusNotFound)
 }
 
 // isUnauthorizedError is checking whether the returned error indicates that there was a http.StatusUnauthorized was
 // returned during fetching of signatures.
 func isUnauthorizedError(err error) bool {
-	if transportErr, ok := err.(*transport.Error); ok {
-		return transportErr.StatusCode == http.StatusUnauthorized ||
-			transportErr.StatusCode == http.StatusForbidden
+	return checkIfErrorContainsCode(err, http.StatusUnauthorized, http.StatusForbidden)
+}
+
+// checkIfErrorContainsCode will try retrieve a http.StatusCode from the given error by casting the error to either
+// transport.Error or registry.HttpStatusError and check whether the code is contained within a given list of codes.
+// In case the error is matching one of these types and the code is contained within the given codes, true will be
+// returned.
+// If the error is not matching any of these types or the code is not contained in the given codes, false will be
+// returned.
+func checkIfErrorContainsCode(err error, codes ...int) bool {
+	var transportErr *transport.Error
+	var statusError *dockerRegistry.HttpStatusError
+
+	// Transport error is returned by go-containerregistry for any errors occurred post authentication.
+	if errors.As(err, &transportErr) {
+		return sliceutils.IntFind(codes, transportErr.StatusCode) != -1
 	}
 
-	if registryErr := errToRegistryError(err); registryErr != nil && registryErr.Response != nil {
-		return registryErr.Response.StatusCode == http.StatusUnauthorized ||
-			registryErr.Response.StatusCode == http.StatusForbidden
+	// HttpStatusError is returned by heroku-client for any errors occurred during authentication.
+	if errors.As(err, &statusError) && statusError.Response != nil {
+		return sliceutils.IntFind(codes, statusError.Response.StatusCode) != -1
 	}
 
 	return false
-}
-
-// errToURLError is a helper for casting an error to a url.Error.
-func errToURLError(err error) *url.Error {
-	causeErr := errors.Cause(err)
-	if urlErr, ok := causeErr.(*url.Error); ok {
-		return urlErr
-	}
-	unwrapErr := errors.Unwrap(err)
-	if urlErr, ok := unwrapErr.(*url.Error); ok {
-		return urlErr
-	}
-	return nil
-}
-
-// errToRegistryError is a helper for casting an error to a registry.HttpStatusError.
-func errToRegistryError(err error) *dockerRegistry.HttpStatusError {
-	urlErr := errToURLError(err)
-	if urlErr == nil || urlErr.Err == nil {
-		return nil
-	}
-
-	if registryErr, ok := urlErr.Err.(*dockerRegistry.HttpStatusError); ok {
-		return registryErr
-	}
-	return nil
 }
