@@ -1,11 +1,14 @@
 package resolvers
 
 import (
+	"testing"
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stretchr/testify/require"
 )
 
 func testImages() []*storage.Image {
@@ -50,10 +53,12 @@ func testImages() []*storage.Image {
 						Version: "1.0",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve: "cve-2019-1",
+								Cve:  "cve-2019-1",
+								Cvss: 4,
 							},
 							{
-								Cve: "cve-2019-2",
+								Cve:  "cve-2019-2",
+								Cvss: 3,
 							},
 						},
 					},
@@ -77,6 +82,7 @@ func testImages() []*storage.Image {
 								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "1.1",
 								},
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -85,10 +91,12 @@ func testImages() []*storage.Image {
 						Version: "1.0",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve: "cve-2019-1",
+								Cve:      "cve-2019-1",
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 							},
 							{
-								Cve: "cve-2019-2",
+								Cve:      "cve-2019-2",
+								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -97,10 +105,12 @@ func testImages() []*storage.Image {
 						Version: "1.0",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve: "cve-2017-1",
+								Cve:      "cve-2017-1",
+								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 							},
 							{
-								Cve: "cve-2017-2",
+								Cve:      "cve-2017-2",
+								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -109,4 +119,17 @@ func testImages() []*storage.Image {
 			},
 		},
 	}
+}
+
+func checkVulnerabilityCounter(t *testing.T, resolver *VulnerabilityCounterResolver, total, fixable, critical, important, moderate, low int32) {
+	require.Equal(t, total, resolver.All(nil).Total(nil))
+	require.Equal(t, fixable, resolver.All(nil).Fixable(nil))
+	require.Equal(t, critical, resolver.Critical(nil).Total(nil))
+	require.Equal(t, important, resolver.Important(nil).Total(nil))
+	require.Equal(t, moderate, resolver.Moderate(nil).Total(nil))
+	require.Equal(t, low, resolver.Low(nil).Total(nil))
+}
+
+func getFixableRawQuery(fixable bool) (string, error) {
+	return search.NewQueryBuilder().AddBools(search.Fixable, fixable).RawQuery()
 }
