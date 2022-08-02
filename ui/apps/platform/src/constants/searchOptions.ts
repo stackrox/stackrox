@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 export const CLIENT_SIDE_SEARCH_OPTIONS = {
     COMPLIANCE: {
         STATE: 'Compliance State',

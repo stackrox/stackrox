@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 export function checkForPermissionErrorMessage(error: Error, defaultMessage?: string): string {
     if (typeof error?.message === 'string') {
         if (error.message.includes('403') || error.message.includes('not authorized')) {

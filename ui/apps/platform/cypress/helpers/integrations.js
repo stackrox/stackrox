@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import * as api from '../constants/apiEndpoints';
 
 export function visitIntegrationsUrl(url) {

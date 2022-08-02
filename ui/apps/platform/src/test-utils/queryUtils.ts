@@ -33,7 +33,6 @@ const regexMatcher = (element: Element, term: RegExp) => term.test(element?.text
  * @param term The search term to match
  * @return A MatcherFunction to run against the document tree
  */
-// eslint-disable-next-line import/prefer-default-export
 export function withTextContent(term: string | RegExp): MatcherFunction {
     return typeof term === 'string'
         ? (_content, element) => isDeepestElementMatch(element, term, stringMatcher)
