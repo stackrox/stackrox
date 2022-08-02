@@ -55,6 +55,7 @@ class OperatorE2eTest(BaseTest):
     UPGRADE_TEST_TIMEOUT_SEC = 50 * 60
     E2E_TEST_TIMEOUT_SEC = 50 * 60
     SCORECARD_TEST_TIMEOUT_SEC = 20 * 60
+    ARTIFACTS_TIMEOUT = 3 * 60
 
     TEST_OUTPUT_DIRS = ["/go/src/github.com/stackrox/stackrox/operator/build/kuttl-test-artifacts",
                         "operator/build/kuttl-test-artifacts"]
@@ -96,6 +97,13 @@ class OperatorE2eTest(BaseTest):
                 "bundle-test-image",
             ],
             OperatorE2eTest.SCORECARD_TEST_TIMEOUT_SEC,
+        )
+
+        self.run_with_graceful_kill(
+            ["scripts/ci/store-artifacts.sh", "store_test_results",
+             "/go/src/github.com/stackrox/stackrox/operator/build/kuttl-test-artifacts",
+             "operator-test-results"],
+            OperatorE2eTest.ARTIFACTS_TIMEOUT
         )
 
 
