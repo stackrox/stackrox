@@ -300,7 +300,6 @@ check-expected-go-version:
 docker-build: check-expected-go-version test smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
 		-t ${IMG} \
-		--ssh default=${SSH_AUTH_SOCK} \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		-f Dockerfile \
 		..
