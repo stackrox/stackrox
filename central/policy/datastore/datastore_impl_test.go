@@ -12,10 +12,12 @@ import (
 	indexMocks "github.com/stackrox/rox/central/policy/index/mocks"
 	"github.com/stackrox/rox/central/policy/store/boltdb"
 	storeMocks "github.com/stackrox/rox/central/policy/store/mocks"
+	categoriesMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,14 +28,20 @@ func TestPolicyDatastore(t *testing.T) {
 type PolicyDatastoreTestSuite struct {
 	suite.Suite
 
-	mockCtrl          *gomock.Controller
-	store             *storeMocks.MockStore
-	indexer           *indexMocks.MockIndexer
-	datastore         DataStore
-	clusterDatastore  *clusterMocks.MockDataStore
-	notifierDatastore *notifierMocks.MockDataStore
+	mockCtrl            *gomock.Controller
+	store               *storeMocks.MockStore
+	indexer             *indexMocks.MockIndexer
+	datastore           DataStore
+	clusterDatastore    *clusterMocks.MockDataStore
+	notifierDatastore   *notifierMocks.MockDataStore
+	categoriesDatastore *categoriesMocks.MockDataStore
+	envIsolator         *envisolator.EnvIsolator
 
 	ctx context.Context
+}
+
+func (s *PolicyDatastoreTestSuite) SetupSuite() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *PolicyDatastoreTestSuite) SetupTest() {
@@ -43,14 +51,16 @@ func (s *PolicyDatastoreTestSuite) SetupTest() {
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.clusterDatastore = clusterMocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
+	s.categoriesDatastore = categoriesMocks.NewMockDataStore(s.mockCtrl)
 
-	s.datastore = newWithoutDefaults(s.store, s.indexer, nil, s.clusterDatastore, s.notifierDatastore)
+	s.datastore = newWithoutDefaults(s.store, s.indexer, nil, s.clusterDatastore, s.notifierDatastore, s.categoriesDatastore)
 
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
 func (s *PolicyDatastoreTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
+	s.envIsolator.RestoreAll()
 }
 
 func (s *PolicyDatastoreTestSuite) testImportSuccessResponse(expectedPolicy *storage.Policy, resp *v1.ImportPolicyResponse) {
@@ -73,23 +83,43 @@ func (s *PolicyDatastoreTestSuite) testImportFailResponse(expectedPolicy *storag
 }
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
-	policy := &storage.Policy{
-		Name:     "policy-to-import",
-		Id:       "import-1",
-		SORTName: "policy-to-import",
-	}
+	s.envIsolator.Setenv("ROX_NEW_POLICY_CATEGORIES", "true")
 
+	policy := &storage.Policy{
+		Name:       "policy-to-import",
+		Id:         "import-1",
+		SORTName:   "policy-to-import",
+		Categories: []string{"category-1", "category-2"},
+	}
+	policyWithCategoryIDs := &storage.Policy{
+		Name:        "policy-to-import",
+		Id:          "import-1",
+		SORTName:    "policy-to-import",
+		Categories:  []string{"category-1", "category-2"},
+		CategoryIds: []string{"1", "2"},
+	}
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
+	s.categoriesDatastore.EXPECT().GetAllPolicyCategories(s.ctx).Return([]*storage.PolicyCategory{
+		{
+			Id:        "1",
+			Name:      "Category-1",
+			IsDefault: false,
+		},
+	}, nil).AnyTimes()
+	s.categoriesDatastore.EXPECT().AddPolicyCategory(s.ctx, gomock.Any()).Return(&storage.PolicyCategory{
+		Id:        "2",
+		Name:      "Category-2",
+		IsDefault: false,
+	}, nil)
 	s.store.EXPECT().Get(s.ctx, policy.GetId()).Return(nil, false, nil)
 	s.store.EXPECT().GetAll(s.ctx).Return(nil, nil)
-	s.store.EXPECT().Upsert(s.ctx, policy).Return(nil)
-	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
+	s.store.EXPECT().Upsert(s.ctx, policyWithCategoryIDs).Return(nil)
+	s.indexer.EXPECT().AddPolicy(policyWithCategoryIDs).Return(nil)
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 1)
-
-	s.testImportSuccessResponse(policy, responses[0])
+	s.testImportSuccessResponse(policyWithCategoryIDs, responses[0])
 }
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {

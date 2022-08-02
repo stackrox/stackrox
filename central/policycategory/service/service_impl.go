@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -19,6 +20,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -86,6 +89,14 @@ func (s *serviceImpl) PostPolicyCategory(ctx context.Context, request *v1.PostPo
 }
 
 func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*v1.PolicyCategory, error) {
+	// Category names need to be persisted within the policy proto for rocksdb searching to work.
+	// If a category is allowed to be renamed, policies will have stale references and searching will yield
+	// incorrect results.
+	// Come postgres, only category ids will be persisted in the policy proto and searching will work via joins
+	// to the policy category tables. At that point, renames will be supported.
+	if !features.PostgresDatastore.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "renaming a policy category not supported")
+	}
 	if !validateName.MatchString(request.GetNewCategoryName()) {
 		return nil, errors.Wrap(errox.InvalidArgs, invalidNameErrString)
 	}

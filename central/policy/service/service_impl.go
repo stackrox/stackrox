@@ -17,6 +17,7 @@ import (
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
 	policyUtils "github.com/stackrox/rox/central/policy/utils"
+	categoryDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -99,6 +100,7 @@ var (
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
 	policies          datastore.DataStore
+	categories        categoryDataStore.DataStore
 	clusters          clusterDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
 	networkPolicies   networkPolicyDS.DataStore
@@ -737,6 +739,15 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 	for _, policy := range policyList {
 		removeInternal(policy)
 	}
+
+	if features.NewPolicyCategories.Enabled() {
+		err := s.replaceWithCategoryNames(ctx, policyList)
+		if err != nil {
+			statusMsg := status.New(codes.Internal, "Some category ids could not be replaced with names")
+			return nil, statusMsg.Err()
+		}
+	}
+
 	return &storage.ExportPoliciesResponse{
 		Policies: policyList,
 	}, nil
@@ -761,6 +772,26 @@ func (s *serviceImpl) convertAndValidateForImport(p *storage.Policy) error {
 
 	return nil
 
+}
+
+func (s *serviceImpl) replaceWithCategoryNames(ctx context.Context, policyList []*storage.Policy) error {
+	categories, err := s.categories.GetAllPolicyCategories(ctx)
+	if err != nil {
+		return err
+	}
+	categoryIDNameMap := make(map[string]string, len(categories))
+	for _, c := range categories {
+		categoryIDNameMap[c.GetId()] = c.GetName()
+	}
+
+	for _, p := range policyList {
+		categoryNames := make([]string, len(p.GetCategories()))
+		for _, id := range p.GetCategories() {
+			categoryNames = append(categoryNames, categoryIDNameMap[id])
+		}
+		p.Categories = categoryNames
+	}
+	return nil
 }
 
 func (s *serviceImpl) ImportPolicies(ctx context.Context, request *v1.ImportPoliciesRequest) (*v1.ImportPoliciesResponse, error) {

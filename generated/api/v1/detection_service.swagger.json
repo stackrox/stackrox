@@ -1059,6 +1059,12 @@
             "type": "string"
           }
         },
+        "categoryIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "lifecycleStages": {
           "type": "array",
           "items": {
@@ -1139,7 +1145,8 @@
           "type": "boolean",
           "description": "Read-only field. Indicates the policy is a default policy if true and a custom policy if false."
         }
-      }
+      },
+      "title": "Next tag: 28"
     },
     "storagePolicyGroup": {
       "type": "object",

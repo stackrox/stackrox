@@ -12,6 +12,10 @@ import "storage/policy.proto";
 
 package v1;
 
+message Policy {
+
+}
+
 message DryRunResponse {
     message Alert {
         string deployment          = 1;

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	errorsPkg "github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/central/policy/store/boltdb"
 	"github.com/stackrox/rox/central/policy/utils"
+	categoriesDS "github.com/stackrox/rox/central/policycategory/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -42,8 +44,9 @@ type datastoreImpl struct {
 	searcher    search.Searcher
 	policyMutex sync.Mutex
 
-	clusterDatastore  clusterDS.DataStore
-	notifierDatastore notifierDS.DataStore
+	clusterDatastore    clusterDS.DataStore
+	notifierDatastore   notifierDS.DataStore
+	categoriesDatastore categoriesDS.DataStore
 }
 
 func (ds *datastoreImpl) buildIndex() error {
@@ -91,6 +94,14 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 	if err != nil || !exists {
 		return nil, false, err
 	}
+
+	if features.NewPolicyCategories.Enabled() {
+		policies, err := ds.addCategoryNames(ctx, []*storage.Policy{policy})
+		if err != nil {
+			return nil, true, err
+		}
+		return policies[0], true, nil
+	}
 	return policy, true, nil
 }
 
@@ -103,6 +114,10 @@ func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*stor
 	if err != nil {
 		return nil, nil, err
 	}
+	policies, err = ds.addCategoryNames(ctx, policies)
+	if err != nil {
+		return nil, nil, err
+	}
 	return policies, missingIndices, nil
 }
 
@@ -112,6 +127,10 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 	}
 
 	policies, err := ds.storage.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	policies, err = ds.addCategoryNames(ctx, policies)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +148,12 @@ func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*sto
 		return nil, false, err
 	}
 
-	for _, p := range policies {
+	updatedPolicies, err := ds.addCategoryNames(ctx, policies)
+	if err != nil {
+		return nil, false, err
+	}
+
+	for _, p := range updatedPolicies {
 		if p.GetName() == name {
 			return p, true, nil
 		}
@@ -164,10 +188,22 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	if ds.policyNameIsNotUnique(policyNameIDMap, policy.GetName()) {
 		return "", fmt.Errorf("Could not add policy due to name validation, policy with name %s already exists", policy.GetName())
 	}
+
+	// category validation, passed in category names must already exist,
+	// will not create a new category inline here, in case it doesn't already exist
+	// add category IDs before storing
+	if features.NewPolicyCategories.Enabled() {
+		invalidCategories, err := ds.validateCategoriesAndAddCategorIds(ctx, policy)
+		if err != nil {
+			return "", errorsPkg.Wrap(err, "validating categories")
+		}
+		if len(invalidCategories) != 0 {
+			return "", fmt.Errorf("Could not add policy due to category validation failure, one or more categories: '%s' do not exist", strings.Join(invalidCategories, ","))
+		}
+	}
 	utils.FillSortHelperFields(policy)
 	// Any policy added after startup must be marked custom policy.
 	markPoliciesAsCustom(policy)
-
 	// No need to lock here because nobody can update the policy
 	// until this function returns and they receive the id.
 	err = ds.storage.Upsert(ctx, policy)
@@ -193,8 +229,22 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 
 	utils.FillSortHelperFields(policy)
 
+	if features.NewPolicyCategories.Enabled() {
+		// category validation, passed in category names must already exist,
+		// will not create a new category inline here, in case it doesn't already exist
+		// replace category names with IDs before storing
+		// for searching to work in rocksdb, need to continue storing category names :(
+		invalidCategories, err := ds.validateCategoriesAndAddCategorIds(ctx, policy)
+		if err != nil {
+			return errorsPkg.Wrap(err, "validating categories")
+		}
+		if len(invalidCategories) != 0 {
+			return fmt.Errorf("Could not add policy due to category validation failure, one or more categories: '%s' do not exist", strings.Join(invalidCategories, ","))
+		}
+	}
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
+
 	if err := ds.storage.Upsert(ctx, policy); err != nil {
 		return err
 	}
@@ -315,6 +365,13 @@ func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Polic
 			result.Errors = importErrors
 			return result
 		}
+
+		policy, err = ds.importCategories(ctx, policy)
+		if err != nil {
+			result.Errors = getImportErrorsFromError(err)
+			return result
+		}
+
 		err = ds.storage.Upsert(ctx, policy)
 	}
 	if err != nil {
@@ -409,6 +466,95 @@ func handlePolicyStoreErrorList(policyError *boltdb.PolicyStoreErrorList) []*v1.
 		})
 	}
 	return errList
+}
+
+// SIDE EFFECTS, THE ORIGINAL OBJECTS WILL BE MODIFIED IN PLACE
+func (ds *datastoreImpl) validateCategoriesAndAddCategorIds(ctx context.Context, policy *storage.Policy) ([]string, error) {
+	if !features.NewPolicyCategories.Enabled() {
+		return nil, nil
+	}
+	categories, err := ds.categoriesDatastore.GetAllPolicyCategories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	categoryNameIDMap := make(map[string]string, len(categories))
+	for _, c := range categories {
+		categoryNameIDMap[c.GetName()] = c.GetId()
+	}
+
+	categoryIDs := make([]string, len(policy.GetCategories()))
+	invalidCategories := make([]string, 0)
+	for _, name := range policy.GetCategories() {
+		if categoryNameIDMap[name] == "" {
+			invalidCategories = append(invalidCategories, name)
+		}
+		categoryIDs = append(categoryIDs, categoryNameIDMap[name])
+	}
+	policy.CategoryIds = categoryIDs
+
+	return invalidCategories, nil
+}
+
+func (ds *datastoreImpl) importCategories(ctx context.Context, policy *storage.Policy) (*storage.Policy, error) {
+	if !features.NewPolicyCategories.Enabled() {
+		return policy, nil
+	}
+	var categoryIDs []string
+	categories, err := ds.categoriesDatastore.GetAllPolicyCategories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	categoryNameIDMap := make(map[string]string, len(categories))
+	for _, c := range categories {
+		categoryNameIDMap[c.GetName()] = c.GetId()
+	}
+	for _, cname := range policy.GetCategories() {
+		if categoryNameIDMap[strings.Title(cname)] == "" {
+			c, err := ds.categoriesDatastore.AddPolicyCategory(ctx, &storage.PolicyCategory{
+				Id:        uuid.NewV4().String(),
+				Name:      strings.Title(cname),
+				IsDefault: false,
+			})
+
+			if err != nil {
+				return nil, err
+			}
+			categoryIDs = append(categoryIDs, c.GetId())
+		} else {
+			categoryIDs = append(categoryIDs, categoryNameIDMap[strings.Title(cname)])
+		}
+	}
+
+	policy.CategoryIds = categoryIDs
+	return policy, nil
+}
+
+// SIDE EFFECTS, THE ORIGINAL OBJECTS WILL BE MODIFIED IN PLACE
+func (ds *datastoreImpl) addCategoryNames(ctx context.Context, policies []*storage.Policy) ([]*storage.Policy, error) {
+	if !features.NewPolicyCategories.Enabled() {
+		return policies, nil
+	}
+
+	categories, err := ds.categoriesDatastore.GetAllPolicyCategories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	categoryIDNameMap := make(map[string]string, len(categories))
+	for _, c := range categories {
+		categoryIDNameMap[c.GetId()] = c.GetName()
+	}
+
+	for _, p := range policies {
+		categoryNames := make([]string, len(p.GetCategoryIds()))
+		for _, id := range p.GetCategoryIds() {
+			if categoryIDNameMap[id] == "" {
+				continue
+			}
+			categoryNames = append(categoryNames, categoryIDNameMap[id])
+		}
+		p.Categories = categoryNames
+	}
+	return policies, nil
 }
 
 // SIDE EFFECTS, THE ORIGINAL OBJECTS WILL BE MODIFIED IN PLACE

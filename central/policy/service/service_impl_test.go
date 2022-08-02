@@ -11,6 +11,7 @@ import (
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
+	categoriesMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -48,6 +49,7 @@ func (t *testDeploymentMatcher) RemoveNotifier(_ string) error {
 type PolicyServiceTestSuite struct {
 	suite.Suite
 	policies              *mocks.MockDataStore
+	categories            *categoriesMocks.MockDataStore
 	clusters              *clusterMocks.MockDataStore
 	mitreVectorStore      *mitreMocks.MockMitreAttackReadOnlyDataStore
 	mockBuildTimePolicies *detectionMocks.MockPolicySet
@@ -66,7 +68,7 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.policies = mocks.NewMockDataStore(s.mockCtrl)
-
+	s.categories = categoriesMocks.NewMockDataStore(s.mockCtrl)
 	s.clusters = clusterMocks.NewMockDataStore(s.mockCtrl)
 
 	s.mockBuildTimePolicies = detectionMocks.NewMockPolicySet(s.mockCtrl)
@@ -76,6 +78,7 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 
 	s.tested = New(
 		s.policies,
+		s.categories,
 		s.clusters,
 		nil,
 		nil,

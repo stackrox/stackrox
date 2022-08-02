@@ -12,6 +12,7 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
+	categoryDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -31,6 +32,7 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(policies datastore.DataStore,
+	categories categoryDataStore.DataStore,
 	clusters clusterDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
 	networkPolicies networkPolicyDS.DataStore,
@@ -46,6 +48,7 @@ func New(policies datastore.DataStore,
 	backgroundTaskManager.Start()
 	return &serviceImpl{
 		policies:          policies,
+		categories:        categories,
 		clusters:          clusters,
 		deployments:       deployments,
 		reprocessor:       reprocessor,

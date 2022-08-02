@@ -11,6 +11,7 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
+	categoryDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
@@ -24,6 +25,7 @@ var (
 
 func initialize() {
 	as = New(datastore.Singleton(),
+		categoryDataStore.Singleton(),
 		clusterDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
 		networkPolicyDS.Singleton(),

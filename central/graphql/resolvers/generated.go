@@ -968,6 +968,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Policy", []string{
 		"categories: [String!]!",
+		"categoryIds: [String!]!",
 		"criteriaLocked: Boolean!",
 		"description: String!",
 		"disabled: Boolean!",
@@ -8711,6 +8712,11 @@ func (resolver *Resolver) wrapPolicies(values []*storage.Policy, err error) ([]*
 
 func (resolver *policyResolver) Categories(ctx context.Context) []string {
 	value := resolver.data.GetCategories()
+	return value
+}
+
+func (resolver *policyResolver) CategoryIds(ctx context.Context) []string {
+	value := resolver.data.GetCategoryIds()
 	return value
 }
 
