@@ -48,6 +48,7 @@ func init() {
 		&storage.PermissionSet{}:                                resources.Role,
 		&storage.Pod{}:                                          resources.Deployment,
 		&storage.PolicyCategory{}:                               resources.Policy,
+		&storage.PolicyCategoryEdge{}:                           resources.Policy,
 		&storage.ProcessBaselineResults{}:                       resources.ProcessWhitelist,
 		&storage.ProcessBaseline{}:                              resources.ProcessWhitelist,
 		&storage.ProcessIndicator{}:                             resources.Indicator,
