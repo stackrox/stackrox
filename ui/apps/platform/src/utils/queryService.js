@@ -70,9 +70,14 @@ function entityContextToQueryObject(entityContext) {
         const entityQueryObj = {};
         if (key === entityTypes.IMAGE) {
             entityQueryObj[`${key} SHA`] = entityContext[key];
-        } else if (key === entityTypes.COMPONENT) {
+        } else if (
+            key === entityTypes.COMPONENT ||
+            key === entityTypes.IMAGE_COMPONENT ||
+            key === entityTypes.NODE_COMPONENT
+        ) {
             const parsedComponentID = entityContext[key].split(':').map(decodeBase64);
-            [entityQueryObj[`${key}`], entityQueryObj[`${key} VERSION`]] = parsedComponentID;
+            // eslint-disable-next-line dot-notation
+            [entityQueryObj['COMPONENT'], entityQueryObj[`COMPONENT VERSION`]] = parsedComponentID;
         } else if (key === entityTypes.CVE) {
             entityQueryObj[key] = entityContext[key];
         } else {

@@ -16,6 +16,7 @@ import {
     cvssSeverityColorLegend,
 } from 'constants/severityColors';
 import { getScopeQuery } from 'Containers/VulnMgmt/Entity/VulnMgmtPolicyQueryUtil';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const CVES_QUERY = gql`
     query getCvesByCVSS($query: String, $scopeQuery: String) {
@@ -28,10 +29,58 @@ const CVES_QUERY = gql`
     }
 `;
 
+const IMAGE_CVES_QUERY = gql`
+    query getImageCvesByCVSS($query: String, $scopeQuery: String) {
+        results: imageVulnerabilities(query: $query, scopeQuery: $scopeQuery) {
+            cve
+            cvss
+            severity
+            summary
+        }
+    }
+`;
+
+const NODE_CVES_QUERY = gql`
+    query getNodeCvesByCVSS($query: String, $scopeQuery: String) {
+        results: nodeVulnerabilities(query: $query, scopeQuery: $scopeQuery) {
+            cve
+            cvss
+            severity
+            summary
+        }
+    }
+`;
+
+const CLUSTER_CVES_QUERY = gql`
+    query getClusterCvesByCVSS($query: String, $scopeQuery: String) {
+        results: clusterVulnerabilities(query: $query, scopeQuery: $scopeQuery) {
+            cve
+            cvss
+            severity
+            summary
+        }
+    }
+`;
+
 const vulnerabilitySeveritySuffix = '_VULNERABILITY_SEVERITY';
 
 const CvesByCvssScore = ({ entityContext, parentContext }) => {
-    const { loading, data = {} } = useQuery(CVES_QUERY, {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+
+    let queryToUse = CVES_QUERY;
+
+    if (showVMUpdates) {
+        if (entityContext[entityTypes.CLUSTER]) {
+            queryToUse = CLUSTER_CVES_QUERY;
+        } else if (entityContext[entityTypes.NODE] || entityContext[entityTypes.NODE_COMPONENT]) {
+            queryToUse = NODE_CVES_QUERY;
+        } else {
+            queryToUse = IMAGE_CVES_QUERY;
+        }
+    }
+
+    const { loading, data = {} } = useQuery(queryToUse, {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
             scopeQuery: getScopeQuery(parentContext),
