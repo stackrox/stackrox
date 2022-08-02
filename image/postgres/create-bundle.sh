@@ -32,7 +32,6 @@ chmod -R 755 "${bundle_root}"
 arch="x86_64"
 if [[ $(uname -m) == "arm64" ]]; then
   arch="aarch64"
-  gpg_check="--nogpgcheck"
 fi
 postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
 postgres_major="14"
@@ -41,17 +40,14 @@ gpg_check=""
 
 if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
     dnf install --disablerepo='*' -y "${postgres_repo_url}"
-    postgres_minor="$(dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} ${gpg_check} -y "postgresql${postgres_major}-devel.${arch}" | tail -n 1 | awk '{print $2}').${arch}"
+    postgres_minor="$(dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y "postgresql${postgres_major}-devel.${arch}" | tail -n 1 | awk '{print $2}').${arch}"
     echo "PG minor version: ${postgres_minor}"
 else
     build_dir="$(mktemp -d)"
-#    echo registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
-#    echo dnf install --disablerepo='*' -y "${postgres_repo_url}"
-#    echo dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
     docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
 FROM registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
 RUN dnf install --disablerepo='*' -y "${postgres_repo_url}"
-ENTRYPOINT dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} ${gpg_check} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
+ENTRYPOINT dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
 EOF
     postgres_minor="$(docker run --rm postgres-minor-image).${arch}"
     rm -rf "${build_dir}"
