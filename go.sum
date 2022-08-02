@@ -2561,8 +2561,8 @@ github.com/rs/zerolog v1.15.0/go.mod h1:xYTKnLHcpfU2225ny5qZjxnj9NvkumZYjJHlAThC
 github.com/rubenv/sql-migrate v0.0.0-20200616145509-8d140a17f351/go.mod h1:DCgfY80j8GYL7MLEfvcpSFvjD0L5yZq/aZUJmhZklyg=
 github.com/rubenv/sql-migrate v0.0.0-20210614095031-55d5740dbbcc h1:BD7uZqkN8CpjJtN/tScAKiccBikU4dlqe/gNrkRaPY4=
 github.com/rubenv/sql-migrate v0.0.0-20210614095031-55d5740dbbcc/go.mod h1:HFLT6i9iR4QBOF5rdCyjddC9t59ArqWJV2xx+jwcCMo=
-github.com/russellhaering/gosaml2 v0.7.0 h1:gMHBQVGFOAHd7lXC0hoYXg3BcR80+4XgTxVMwTV1aLg=
-github.com/russellhaering/gosaml2 v0.7.0/go.mod h1:byViER/1YPUa0Puj9ROZblpoq2jsE7h/CJmitzX0geU=
+github.com/russellhaering/gosaml2 v0.8.0 h1:rm1Gc09/UoEsKGTSFvg8VCHJLY3wrP4BWjC+1ov0qCo=
+github.com/russellhaering/gosaml2 v0.8.0/go.mod h1:byViER/1YPUa0Puj9ROZblpoq2jsE7h/CJmitzX0geU=
 github.com/russellhaering/goxmldsig v1.2.0 h1:Y6GTTc9Un5hCxSzVz4UIWQ/zuVwDvzJk80guqzwx6Vg=
 github.com/russellhaering/goxmldsig v1.2.0/go.mod h1:gM4MDENBQf7M+V824SGfyIUVFWydB7n0KkEubVJl+Tw=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
