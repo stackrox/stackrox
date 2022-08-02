@@ -161,7 +161,7 @@ func (b *storeImpl) GetImageMetadata(_ context.Context, id string) (image *stora
 }
 
 func (b *storeImpl) GetManyImageMetadata(ctx context.Context, id []string) ([]*storage.Image, []int, error) {
-	utils.Must(errors.New("Unexpected call to GetManyImageMetadata when running on Postgres"))
+	utils.Must(errors.New("Unexpected call to GetManyImageMetadata in Dackbox when running on Postgres"))
 	return nil, nil, nil
 }
 
