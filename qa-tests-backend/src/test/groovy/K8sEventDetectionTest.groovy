@@ -5,10 +5,11 @@ import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Deployment
 import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.AlertService
 import services.PolicyService
+
+import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Unroll
 import util.Env
@@ -121,11 +122,11 @@ class K8sEventDetectionTest extends BaseSpecification {
     @Retry(count = 0)
     @Unroll
     @Category([BAT, RUNTIME, K8sEvents])
+    // K8s event detection is currently not supported on OpenShift.
+    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify k8s exec detection into #execIntoDeploymentNames with addl groups #additionalPolicyGroups"() {
         when:
         "Create the deployments, modify the policy, exec into them"
-        // K8s event detection is currently not supported on OpenShift.
-        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
 
         def originalPolicy = Services.getPolicyByName(CLONED_KUBECTL_EXEC_POLICY_NAME)
         assert originalPolicy != null && originalPolicy.getName() == CLONED_KUBECTL_EXEC_POLICY_NAME
