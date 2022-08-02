@@ -52,6 +52,7 @@ type quay struct {
 }
 
 func newScanner(protoImageIntegration *storage.ImageIntegration) (*quay, error) {
+	log.Errorf("New scanner from integration %q", protoImageIntegration)
 	quayConfig, ok := protoImageIntegration.IntegrationConfig.(*storage.ImageIntegration_Quay)
 	if !ok {
 		return nil, errors.New("Quay config must be specified")
