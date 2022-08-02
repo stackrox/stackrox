@@ -7,11 +7,13 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/audit"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	cveMocks "github.com/stackrox/rox/central/cve/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
+	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
@@ -39,7 +41,7 @@ type CVEScopingTestSuite struct {
 	componentDataStore  *componentMocks.MockDataStore
 	cveDataStore        *cveMocks.MockDataStore
 	resolver            *resolvers.Resolver
-	handler             *handlerImpl
+	handler             *HandlerImpl
 }
 
 func (suite *CVEScopingTestSuite) SetupTest() {
@@ -66,7 +68,7 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 		AuditLogger:             audit.New(notifierMock),
 	}
 
-	suite.handler = newHandler(suite.resolver)
+	suite.handler = newTestHandler(suite.resolver)
 
 	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 }
@@ -90,7 +92,7 @@ func (suite *CVEScopingTestSuite) TestSingleResourceQuery() {
 		Level: v1.SearchCategory_IMAGES,
 		ID:    imgSha,
 	})
-	actual, err := suite.handler.getScopeContext(suite.ctx, query)
+	actual, err := suite.handler.GetScopeContext(suite.ctx, query)
 	suite.NoError(err)
 	suite.Equal(expected, actual)
 }
@@ -112,7 +114,7 @@ func (suite *CVEScopingTestSuite) TestMultipleResourceQuery() {
 		ID:    imgSha,
 	})
 	// Lowest resource scope should be applied.
-	actual, err := suite.handler.getScopeContext(suite.ctx, query)
+	actual, err := suite.handler.GetScopeContext(suite.ctx, query)
 	suite.NoError(err)
 	suite.Equal(expected, actual)
 }
@@ -129,7 +131,7 @@ func (suite *CVEScopingTestSuite) TestMultipleMatchesQuery() {
 		Return([]search.Result{{ID: "img1"}, {ID: "img2"}}, nil)
 
 	// No scope should be applied.
-	actual, err := suite.handler.getScopeContext(suite.ctx, query)
+	actual, err := suite.handler.GetScopeContext(suite.ctx, query)
 	suite.NoError(err)
 	suite.Equal(suite.ctx, actual)
 }
@@ -145,7 +147,22 @@ func (suite *CVEScopingTestSuite) TestNoReScope() {
 		Level: v1.SearchCategory_DEPLOYMENTS,
 		ID:    "dep",
 	})
-	actual, err := suite.handler.getScopeContext(expected, query)
+	actual, err := suite.handler.GetScopeContext(expected, query)
 	suite.NoError(err)
 	suite.Equal(expected, actual)
+}
+
+func newTestHandler(resolver *resolvers.Resolver) *HandlerImpl {
+	return NewCSVHandler(
+		resolver,
+		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
+		[]*SearchWrapper{
+			NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS, componentMappings.OptionsMap, resolver.ImageComponentDataStore),
+			NewSearchWrapper(v1.SearchCategory_IMAGES, ImageOnlyOptionsMap, resolver.ImageDataStore),
+			NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
+			NewSearchWrapper(v1.SearchCategory_NAMESPACES, NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
+			NewSearchWrapper(v1.SearchCategory_NODES, NodeOnlyOptionsMap, resolver.NodeGlobalDataStore),
+			NewSearchWrapper(v1.SearchCategory_CLUSTERS, clusterMappings.OptionsMap, resolver.ClusterDataStore),
+		},
+	)
 }
