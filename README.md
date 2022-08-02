@@ -19,8 +19,10 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
 
 ## Table of contents
 
-* [Quick Installation via Helm](#quick-installation-via-helm)
-    + [First use](#first-use)
+* [Installation via Helm](#installation-via-helm)
+    + [Quick Installation](#quick-installation)
+        - [First use](#first-use)
+    + [Manual Helm Installation](#manual-helm-installation)
 * [Manual Deployment](#manual-deployment)
 * [Development](#development)
     + [Quickstart](#quickstart)
@@ -34,9 +36,41 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
     + [How to Deploy](#how-to-deploy)
 * [Generating portable installers](#generating-portable-installers)
 
-## Quick Installation via Helm
+## Installation via Helm
+
+### Quick Installation
 
 StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
+Then run the helm quick install script or proceed to section [Manual Helm Installation](#manual-helm-installation) for configuration options.
+```sh
+./scripts/quick-helm-install.sh 
+```
+The script will add the stackrox helm repository, generate an admin password, install stackrox-central-services, create an init bundle for shared secrets, and finally create one secured cluster.
+If you wish to create more secured clusters you may do so using
+```sh
+helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+  -f stackrox-init-bundle.yaml \
+  --set clusterName="$CLUSTER_NAME"
+```
+
+#### First use
+
+Follow these steps to get to StackRox UI
+
+1. Setup port forward to central:
+```sh
+kubectl -n stackrox port-forward deploy/central 8000:8443
+```
+
+2. Open <https://localhost:8000> in your browser.
+
+3. If a certificate warning is displayed, you can accept the warnings to install the default self-signed certificate. To configure custom certificates, see the section on "Adding Custom Certificates" in <https://docs.openshift.com/acs/configuration/add-custom-certificates.html>.
+
+4. Log in as `admin` using the password in `STACKROX_ADMIN_PASSWORD`
+
+### Manual Helm Installation
+
+To install StackRox using Helm you must have Helm on your system. To install `helm` CLI, follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
 First, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
 ```sh
 helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
@@ -101,21 +135,6 @@ helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-sec
 To further customize your Helm installation consult these documents:
 * <https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html>
 * <https://docs.openshift.com/acs/installing/installing_helm/install-helm-customization.html>
-
-### First use
-
-Follow these steps to get to StackRox UI
-
-1.Setup port forward to central:
-```
-kubectl -n stackrox port-forward deploy/central 8000:8443
-```
-
-2.Open <https://localhost:8000> in your browser.
-
-3.If a certificate warning is displayed, you can accept the warnings to install the default self-signed certificate. To configure custom certificates, see the section on "Adding Custom Certificates" in <https://docs.openshift.com/acs/configuration/add-custom-certificates.html>.
-
-4.Log in as `admin` using the password in `stackrox-admin-password.txt`
 
 ## Manual Deployment
 
