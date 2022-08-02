@@ -45,3 +45,11 @@ func getNodeWithComponents(components []*storage.EmbeddedNodeScanComponent) *sto
 		},
 	}
 }
+
+// GetScopedNode returns a mock Node belonging to the input scope.
+func GetScopedNode(ID string, clusterID string) *storage.Node {
+	return &storage.Node{
+		Id:        ID,
+		ClusterId: clusterID,
+	}
+}
