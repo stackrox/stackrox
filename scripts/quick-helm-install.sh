@@ -5,7 +5,7 @@ echo "Adding the stackrox/helm-charts/opensource repository to Helm."
 
 helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
 
-echo "Generating stackrox-admin-password.txt"
+echo "Generating STACKROX_ADMIN_PASSWORD"
 
 STACKROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 
@@ -30,5 +30,8 @@ helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-sec
 echo "You can add more secured clusters on different kube contexts using the following command:
 helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \\
   -f stackrox-init-bundle.yaml \\
-  --set clusterName=\"\$CLUSTER_NAME\""
+  --set clusterName=\"\$CLUSTER_NAME\"
+
+STACKROX_ADMIN_PASSWORD = $STACKROX_ADMIN_PASSWORD
+Above is your automatically generated stackrox admin password. Please store it securely, as you will need it during further configuration"
 
