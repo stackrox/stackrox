@@ -7,6 +7,8 @@ import renderWithRouter from 'test-utils/renderWithRouter';
 import { mockChartsWithoutAnimation } from 'test-utils/mocks/@patternfly/react-charts';
 import ViolationsByPolicyCategory from 'Containers/Dashboard/PatternFly/Widgets/ViolationsByPolicyCategory';
 
+jest.setTimeout(10000);
+
 jest.mock('@patternfly/react-charts', () => mockChartsWithoutAnimation);
 jest.mock('hooks/useResizeObserver');
 
