@@ -7,11 +7,14 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 )
 
 // Run runs the migrator.
 func Run(databases *types.Databases) error {
+	log.WriteToStderr("In runner.Run")
+
 	dbSeqNum, err := getCurrentSeqNum(databases)
 	if err != nil {
 		return errors.Wrap(err, "getting current seq num")
@@ -39,11 +42,16 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 		if !ok {
 			return fmt.Errorf("no migration found starting at %d", startingSeqNum)
 		}
-		err := migration.Run(databases)
-		if err != nil {
-			return errors.Wrapf(err, "error running migration starting at %d", startingSeqNum)
+
+		// TODO: ROX-10700 -- turn off migrations until Postgres updates complete.
+		if !features.PostgresDatastore.Enabled() {
+			err := migration.Run(databases)
+			if err != nil {
+				return errors.Wrapf(err, "error running migration starting at %d", startingSeqNum)
+			}
 		}
-		err = updateVersion(databases, &migration.VersionAfter)
+
+		err := updateVersion(databases, &migration.VersionAfter)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update version after migration %d", startingSeqNum)
 		}

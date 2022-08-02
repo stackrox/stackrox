@@ -7,7 +7,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 )
@@ -44,8 +47,8 @@ func getCurrentSeqNumBolt(db *bolt.DB) (int, error) {
 	return int(version.GetSeqNum()), nil
 }
 
-// GetCurrentSeqNumRocksDB returns the current seq-num found in the rocks DB.
-func GetCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
+// getCurrentSeqNumRocksDB returns the current seq-num found in the rocks DB.
+func getCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
 	var version storage.Version
 
 	opts := gorocksdb.NewDefaultReadOptions()
@@ -62,12 +65,21 @@ func GetCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
 }
 
 func getCurrentSeqNum(databases *types.Databases) (int, error) {
+	if features.PostgresDatastore.Enabled() {
+		migVer, err := migrations.ReadVersion(databases.PostgresDB)
+		if err != nil {
+			return 0, errors.Wrap(err, "getting current postgres sequence number")
+		}
+
+		return migVer.SeqNum, nil
+	}
+
 	boltSeqNum, err := getCurrentSeqNumBolt(databases.BoltDB)
 	if err != nil {
 		return 0, errors.Wrap(err, "getting current bolt sequence number")
 	}
 
-	writeHeavySeqNum, err := GetCurrentSeqNumRocksDB(databases.RocksDB)
+	writeHeavySeqNum, err := getCurrentSeqNumRocksDB(databases.RocksDB)
 	if err != nil {
 		return 0, errors.Wrap(err, "getting current rocksdb sequence number")
 	}
@@ -88,6 +100,12 @@ func updateRocksDB(db *gorocksdb.DB, versionBytes []byte) error {
 }
 
 func updateVersion(databases *types.Databases, newVersion *storage.Version) error {
+	if features.PostgresDatastore.Enabled() {
+		log.WriteToStderrf("migration update version, what DB %q", databases.PostgresDB.Config().ConnConfig.Database)
+		migrations.SetVersion(databases.PostgresDB, newVersion)
+		return nil
+	}
+
 	versionBytes, err := proto.Marshal(newVersion)
 	if err != nil {
 		return errors.Wrap(err, "marshalling version")

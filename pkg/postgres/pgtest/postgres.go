@@ -30,27 +30,51 @@ func CreateADatabaseForT(t testing.TB) string {
 	require.NoError(t, err)
 
 	database := strings.ToLower(strings.ReplaceAll(t.Name(), "/", "_") + suffix)
-	// Bootstrap the test database by connecting to the default postgres database and running create
-	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName("postgres")
-	db, err := sql.Open("postgres", sourceWithPostgresDatabase)
-	require.NoError(t, err)
 
-	_, err = db.Exec("CREATE DATABASE " + database)
-	require.NoError(t, err)
-	require.NoError(t, db.Close())
 	return database
 }
 
-// DropDatabase drops the named database
-func DropDatabase(t testing.TB, database string) {
+// CreateDatabase - creates a database for testing
+func CreateDatabase(t testing.TB, database string) error {
 	// Bootstrap the test database by connecting to the default postgres database and running create
 	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName("postgres")
+
 	db, err := sql.Open("postgres", sourceWithPostgresDatabase)
 	require.NoError(t, err)
 
-	_, err = db.Exec("DROP DATABASE " + database)
+	// Checks to see if DB already exists
+	existsStmt := "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1)"
+
+	row := db.QueryRow(existsStmt, database)
+	var exists bool
+	if err := row.Scan(&exists); err != nil {
+		exists = false
+	}
+
+	// Only create the test DB if it does not exist
+	if !exists {
+		_, err = db.Exec("CREATE DATABASE " + database)
+		if err != nil {
+			return err
+		}
+	}
 	require.NoError(t, err)
 	require.NoError(t, db.Close())
+
+	return nil
+}
+
+// DropDatabase - drops the database specified from the testing scope
+func DropDatabase(t testing.TB, database string) {
+	// Bootstrap the test database by connecting to the default postgres database and running delete
+	if database != "postgres" {
+		sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName("postgres")
+		db, err := sql.Open("postgres", sourceWithPostgresDatabase)
+		require.NoError(t, err)
+
+		_, _ = db.Exec("DROP DATABASE " + database)
+		require.NoError(t, db.Close())
+	}
 }
 
 // ForT creates and returns a Postgres for the test
@@ -59,7 +83,8 @@ func ForT(t testing.TB) *TestPostgres {
 	database := CreateADatabaseForT(t)
 
 	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(database)
-	ctx := context.Background()
+
+	require.NoError(t, CreateDatabase(t, database))
 
 	// Create all the tables for the database
 	gormDB := OpenGormDB(t, sourceWithDatabase)
@@ -67,8 +92,7 @@ func ForT(t testing.TB) *TestPostgres {
 	CloseGormDB(t, gormDB)
 
 	// initialize pool to be used
-	pool, err := pgxpool.Connect(ctx, sourceWithDatabase)
-	require.NoError(t, err)
+	pool := ForTCustomPool(t, database)
 
 	return &TestPostgres{
 		Pool:     pool,
@@ -76,12 +100,44 @@ func ForT(t testing.TB) *TestPostgres {
 	}
 }
 
+// ForTCustomDB - creates and returns a Postgres for the test.  This is used primarily in testing migrations,
+// so we do not want to run Gorm to create the schemas as the replica management will do that.
+func ForTCustomDB(t testing.TB, dbName string) *TestPostgres {
+	database := strings.ToLower(dbName)
+
+	// Bootstrap the test database by connecting to the default postgres database and running create
+	err := CreateDatabase(t, database)
+	require.NoError(t, err)
+
+	// initialize pool to be used
+	pool := ForTCustomPool(t, dbName)
+
+	return &TestPostgres{
+		Pool:     pool,
+		database: database,
+	}
+}
+
+// ForTCustomPool - gets a connection pool to a specific database.
+func ForTCustomPool(t testing.TB, dbName string) *pgxpool.Pool {
+	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(dbName)
+	ctx := context.Background()
+
+	// initialize pool to be used
+	pool, err := pgxpool.Connect(ctx, sourceWithDatabase)
+	require.NoError(t, err)
+
+	return pool
+}
+
 // Teardown tears down a Postgres instance used in tests
 func (tp *TestPostgres) Teardown(t testing.TB) {
 	if tp == nil {
 		return
 	}
+	tp.Pool.Close()
 	tp.Close()
+
 	DropDatabase(t, tp.database)
 }
 
