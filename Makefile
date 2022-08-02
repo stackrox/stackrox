@@ -68,6 +68,7 @@ UNAME_M := $(shell uname -m)
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 ifeq ($(UNAME_S),Darwin)
 ifeq ($(UNAME_M),arm64)
+	# TODO(ROX-12064) build these images in the CI pipeline
 	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.44-arm64
 endif
 endif

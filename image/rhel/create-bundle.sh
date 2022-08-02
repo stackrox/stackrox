@@ -98,9 +98,9 @@ fi
 mkdir -p "${bundle_root}/go/bin"
 if [[ "$DEBUG_BUILD" == "yes" ]]; then
   if [[ "$OSTYPE" != "linux-gnu"* ]]; then
-    GOBIN= GOOS=linux GOARCH=${goarch} GOPATH="${bundle_root}/go" go install github.com/go-delve/delve/cmd/dlv@latest
-    mv "$bundle_root"/go/bin/linux_${goarch}/dlv "$bundle_root"/go/bin/dlv
-    rm -r "$bundle_root"/go/bin/linux_${goarch}
+    GOBIN= GOOS=linux GOARCH="${goarch}" GOPATH="${bundle_root}/go" go install github.com/go-delve/delve/cmd/dlv@latest
+    mv "${bundle_root}/go/bin/linux_${goarch}/dlv" "${bundle_root}/go/bin/dlv"
+    rm -r "${bundle_root}/go/bin/linux_${goarch}"
   else
     GOBIN="${bundle_root}/go/bin" go install github.com/go-delve/delve/cmd/dlv@latest
   fi
