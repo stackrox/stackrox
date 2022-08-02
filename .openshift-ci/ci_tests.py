@@ -99,6 +99,7 @@ class OperatorE2eTest(BaseTest):
             OperatorE2eTest.SCORECARD_TEST_TIMEOUT_SEC,
         )
 
+        print("Storing test artifacts")
         self.run_with_graceful_kill(
             ["scripts/ci/store-artifacts.sh", "store_test_results",
              "/go/src/github.com/stackrox/stackrox/operator/build/kuttl-test-artifacts",
