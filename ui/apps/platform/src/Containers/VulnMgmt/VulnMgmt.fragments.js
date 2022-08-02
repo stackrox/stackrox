@@ -408,6 +408,7 @@ export const NODE_CVE_LIST_FRAGMENT = gql`
         suppressed
         componentCount: nodeComponentCount
         nodeCount
+        operatingSystem
     }
 `;
 
@@ -435,6 +436,7 @@ export const VULN_IMAGE_CVE_LIST_FRAGMENT = gql`
         componentCount: imageComponentCount
         imageCount
         deploymentCount
+        operatingSystem
     }
 `;
 
@@ -753,6 +755,7 @@ export const VULN_NODE_COMPONENT_LIST_FRAGMENT = gql`
         }
         nodeCount(query: $query)
         priority
+        operatingSystem
     }
 `;
 
@@ -793,6 +796,7 @@ export const VULN_IMAGE_COMPONENT_LIST_FRAGMENT = gql`
         imageCount(query: $query)
         deploymentCount(query: $query)
         priority
+        operatingSystem
     }
 `;
 
