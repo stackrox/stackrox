@@ -139,7 +139,7 @@ $(GENNY_BIN): deps
 GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN): deps
 	@echo "+ $@"
-	$(SILENT)cd tools/test/ && go install github.com/jstemmer/go-junit-report
+	$(SILENT)cd tools/test/ && go install github.com/jstemmer/go-junit-report/v2
 
 PROTOLOCK_BIN := $(GOBIN)/protolock
 $(PROTOLOCK_BIN): deps
