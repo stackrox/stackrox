@@ -55,6 +55,7 @@ class OperatorE2eTest(BaseTest):
     UPGRADE_TEST_TIMEOUT_SEC = 50 * 60
     E2E_TEST_TIMEOUT_SEC = 50 * 60
     SCORECARD_TEST_TIMEOUT_SEC = 20 * 60
+    ARTIFACTS_TIMEOUT = 3 * 60
 
     def run(self):
         print("Deploying operator")
@@ -66,7 +67,7 @@ class OperatorE2eTest(BaseTest):
         print("Executing operator upgrade test")
         self.run_with_graceful_kill(
             ["make", "-C", "operator", "test-upgrade"],
-            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
+            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC
         )
 
         print("Executing operator e2e tests")
@@ -87,6 +88,14 @@ class OperatorE2eTest(BaseTest):
                 "bundle-test-image",
             ],
             OperatorE2eTest.SCORECARD_TEST_TIMEOUT_SEC,
+        )
+
+        print("Storing test artifacts")
+        self.run_with_graceful_kill(
+            ["scripts/ci/store-artifacts.sh", "store_test_results",
+             "/go/src/github.com/stackrox/stackrox/operator/build/kuttl-test-artifacts",
+             "operator-test-results"],
+            OperatorE2eTest.ARTIFACTS_TIMEOUT
         )
 
 
