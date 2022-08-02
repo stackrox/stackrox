@@ -41,6 +41,7 @@ function PolicyCategorySidePanel({
                     setSubmitting(false);
                 });
         },
+        enableReinitialize: true,
     });
 
     const { values, handleChange, dirty, handleSubmit } = formik;

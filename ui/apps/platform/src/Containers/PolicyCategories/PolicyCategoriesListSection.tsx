@@ -7,19 +7,18 @@ import PolicyCategoriesFilterSelect, { CategoryFilter } from './PolicyCategories
 import PolicyCategorySidePanel from './PolicyCategorySidePanel';
 
 type PolicyCategoriesListSectionProps = {
-    policyCategories: {
-        id: string;
-        name: string;
-        isDefault: boolean;
-    }[];
+    policyCategories: PolicyCategory[];
     addToast: (message) => void;
+    selectedCategory: PolicyCategory | undefined;
+    setSelectedCategory: (category) => void;
 };
 
 function PolicyCategoriesListSection({
     policyCategories,
     addToast,
+    selectedCategory,
+    setSelectedCategory,
 }: PolicyCategoriesListSectionProps) {
-    const [selectedCategory, setSelectedCategory] = useState<PolicyCategory>();
     const customPolicyCategories = policyCategories.filter(({ isDefault }) => !isDefault);
     const defaultPolicyCategories = policyCategories.filter(({ isDefault }) => isDefault);
     const [selectedFilters, setSelectedFilters] = useState<CategoryFilter[]>([
@@ -45,7 +44,7 @@ function PolicyCategoriesListSection({
             )
         );
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterTerm, selectedFilters]);
+    }, [filterTerm, selectedFilters, policyCategories]);
 
     return (
         <PageSection id="policy-categories-list-section">
