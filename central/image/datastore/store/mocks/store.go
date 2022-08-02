@@ -161,6 +161,22 @@ func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
+// GetManyImageMetadata mocks base method.
+func (m *MockStore) GetManyImageMetadata(ctx context.Context, id []string) ([]*storage.Image, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetManyImageMetadata", ctx, id)
+	ret0, _ := ret[0].([]*storage.Image)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetManyImageMetadata indicates an expected call of GetManyImageMetadata.
+func (mr *MockStoreMockRecorder) GetManyImageMetadata(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyImageMetadata", reflect.TypeOf((*MockStore)(nil).GetManyImageMetadata), ctx, id)
+}
+
 // UpdateVulnState mocks base method.
 func (m *MockStore) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
 	m.ctrl.T.Helper()
