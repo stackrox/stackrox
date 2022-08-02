@@ -246,8 +246,6 @@ github.com/GeertJohan/go.rice v1.0.2/go.mod h1:af5vUNlDNkCjOZeSGFgIJxDje9qdjsO6h
 github.com/GoogleCloudPlatform/cloudsql-proxy v0.0.0-20191009163259-e802c2cb94ae/go.mod h1:mjwGPas4yKduTyubHvD1Atl9r1rUq8DfVy+gkVvZ+oo=
 github.com/GoogleCloudPlatform/cloudsql-proxy v1.27.0/go.mod h1:bn9iHmAjogMoIPkqBGyJ9R1m9cXGCjBE/cuhBs3oEsQ=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
-github.com/Maddosaurus/cluster-topology-analyzer v1.2.1-0.20220624115524-e492fc3525d2 h1:WBEBNQ8fKGdFgVCGTxPtwu7FxanqNkQIFnqdSfBSpdc=
-github.com/Maddosaurus/cluster-topology-analyzer v1.2.1-0.20220624115524-e492fc3525d2/go.mod h1:B43Sc/eB1vanoHbUXWeLWylyhAqtEN/8vGenZWoDpNg=
 github.com/MakeNowJust/heredoc v0.0.0-20170808103936-bb23615498cd h1:sjQovDkwrZp8u+gxLtPgKGjk5hCxuy2hrRejBTA9xFU=
 github.com/MakeNowJust/heredoc v0.0.0-20170808103936-bb23615498cd/go.mod h1:64YHyfSL2R96J44Nlwm39UHepQbyR5q10x7iYa1ks2E=
 github.com/Masterminds/goutils v1.1.0/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
@@ -2265,6 +2263,8 @@ github.com/nishanths/predeclared v0.0.0-20200524104333-86fad755b4d3/go.mod h1:nt
 github.com/nishanths/predeclared v0.2.1/go.mod h1:HvkGJcA3naj4lOwnFXFDkFxVtSqQMB9sbB1usJ+xjQE=
 github.com/nkovacs/streamquote v0.0.0-20170412213628-49af9bddb229/go.mod h1:0aYXnNPJ8l7uZxf45rWW1a/uME32OF0rhiYGNQ2oF2E=
 github.com/nkovacs/streamquote v1.0.0/go.mod h1:BN+NaZ2CmdKqUuTUXUEm9j95B2TRbpOWpxbJYzzgUsc=
+github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220802140408-c0ab819afba6 h1:HY77DOtDx0IFR9gQ6/qIHlk2xswANPfTc2R9cnc/LOk=
+github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220802140408-c0ab819afba6/go.mod h1:Rhk1AmdvZAqWXV5v7llf+gQ8Ufwp41mn/56AQWgVPac=
 github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
 github.com/oklog/oklog v0.3.2/go.mod h1:FCV+B7mhrz4o+ueLpx+KqkyXRGMWOYEvfiXtdGtbWGs=

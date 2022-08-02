@@ -71,7 +71,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/sys/mount v0.3.0 // indirect
-	github.com/np-guard/cluster-topology-analyzer v0.0.0-00010101000000-000000000000
+	github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220802140408-c0ab819afba6
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
@@ -208,5 +208,3 @@ exclude k8s.io/client-go v12.0.0+incompatible
 exclude github.com/openshift/client-go v3.9.0+incompatible
 
 replace helm.sh/helm/v3 => github.com/porridge/helm/v3 v3.7.3-0.20220719213745-59a08440474d
-
-replace github.com/np-guard/cluster-topology-analyzer => github.com/Maddosaurus/cluster-topology-analyzer v1.2.1-0.20220624115524-e492fc3525d2
