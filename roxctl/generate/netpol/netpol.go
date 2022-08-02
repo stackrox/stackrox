@@ -1,4 +1,4 @@
-package generate
+package netpol
 
 import (
 	"github.com/spf13/cobra"
@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/printer"
 )
 
-type netpolGenerateCommand struct {
+type generateNetpolCommand struct {
 	// Properties that are bound to cobra flags.
 	offline    bool
 	folderPath string
@@ -19,21 +19,21 @@ type netpolGenerateCommand struct {
 
 // Command defines the central command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
-	netpolGenerateCmd := &netpolGenerateCommand{env: cliEnvironment}
+	generateNetpolCmd := &generateNetpolCommand{env: cliEnvironment}
 	c := &cobra.Command{
-		Use: "generate <folder-path>",
+		Use: "netpol <folder-path>",
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := validate(args); err != nil {
 				return err
 			}
-			if err := netpolGenerateCmd.construct(args); err != nil {
+			if err := generateNetpolCmd.construct(args); err != nil {
 				return err
 			}
-			return netpolGenerateCmd.generateNetpol()
+			return generateNetpolCmd.generateNetpol()
 		},
 	}
 
-	c.Flags().BoolVarP(&netpolGenerateCmd.offline, "offline", "", false, "whether to connect to a central instace for additional information")
+	c.Flags().BoolVarP(&generateNetpolCmd.offline, "offline", "", false, "whether to connect to a central instace for additional information")
 	return c
 }
 
@@ -47,7 +47,7 @@ func validate(args []string) error {
 	return nil
 }
 
-func (cmd *netpolGenerateCommand) construct(args []string) error {
+func (cmd *generateNetpolCommand) construct(args []string) error {
 	cmd.folderPath = args[0]
 	return nil
 }

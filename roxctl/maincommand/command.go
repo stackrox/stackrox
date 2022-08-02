@@ -15,10 +15,10 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/completion"
 	"github.com/stackrox/rox/roxctl/deployment"
+	"github.com/stackrox/rox/roxctl/generate"
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
-	"github.com/stackrox/rox/roxctl/netpol"
 	"github.com/stackrox/rox/roxctl/scanner"
 	"github.com/stackrox/rox/roxctl/sensor"
 )
@@ -72,7 +72,7 @@ func Command() *cobra.Command {
 		scanner.Command(cliEnvironment),
 		sensor.Command(cliEnvironment),
 		helm.Command(cliEnvironment),
-		netpol.Command(cliEnvironment),
+		generate.Command(cliEnvironment),
 		versionCommand(cliEnvironment),
 		completion.Command(cliEnvironment),
 	)

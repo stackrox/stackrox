@@ -1,4 +1,4 @@
-package generate
+package netpol
 
 import (
 	"github.com/np-guard/cluster-topology-analyzer/pkg/controller"
@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 )
 
-func (cmd *netpolGenerateCommand) generateNetpol() error {
+func (cmd *generateNetpolCommand) generateNetpol() error {
 	recommendedNetpols, err := controller.PoliciesFromFolderPath(cmd.folderPath)
 	if err != nil {
 		return errors.Errorf("Error synthesizing policies from folder: %v", err)
