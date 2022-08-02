@@ -39,6 +39,7 @@ import (
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
+	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
 	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
@@ -683,7 +684,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/vm/node/export/csv",
 			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment), permissions.View(resources.Node)),
-			ServerHandler: csv.CVECSVHandler(),
+			ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
 			Compression:   true,
 		})
 	} else {
