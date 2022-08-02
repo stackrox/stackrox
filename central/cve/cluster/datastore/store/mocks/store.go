@@ -112,23 +112,23 @@ func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
-// UpsertClusterCVEParts mocks base method.
-func (m *MockStore) UpsertClusterCVEParts(ctx context.Context, cveType storage.CVE_CVEType, cvePartsArr ...converter.ClusterCVEParts) error {
+// ReconcileClusterCVEParts mocks base method.
+func (m *MockStore) ReconcileClusterCVEParts(ctx context.Context, cveType storage.CVE_CVEType, cvePartsArr ...converter.ClusterCVEParts) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, cveType}
 	for _, a := range cvePartsArr {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "UpsertClusterCVEParts", varargs...)
+	ret := m.ctrl.Call(m, "ReconcileClusterCVEParts", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpsertClusterCVEParts indicates an expected call of UpsertClusterCVEParts.
-func (mr *MockStoreMockRecorder) UpsertClusterCVEParts(ctx, cveType interface{}, cvePartsArr ...interface{}) *gomock.Call {
+// ReconcileClusterCVEParts indicates an expected call of ReconcileClusterCVEParts.
+func (mr *MockStoreMockRecorder) ReconcileClusterCVEParts(ctx, cveType interface{}, cvePartsArr ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, cveType}, cvePartsArr...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertClusterCVEParts", reflect.TypeOf((*MockStore)(nil).UpsertClusterCVEParts), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileClusterCVEParts", reflect.TypeOf((*MockStore)(nil).ReconcileClusterCVEParts), varargs...)
 }
 
 // UpsertMany mocks base method.

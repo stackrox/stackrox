@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -17,6 +18,11 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+const (
+	clusterCVEsTable    = pkgSchema.ClusterCvesTableName
+	clusterCVEEdgeTable = pkgSchema.ClusterCveEdgesTableName
 )
 
 // NewFullStore augments the generated store with upsert and delete cluster cves functions.
@@ -42,7 +48,7 @@ type fullStoreImpl struct {
 }
 
 func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, clusterID string) error {
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "ClusterCVE")
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "ClusterCVEs")
 	if err != nil {
 		return err
 	}
@@ -53,19 +59,29 @@ func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, cluster
 		return err
 	}
 
-	_, err = tx.Exec(ctx, "DELETE FROM "+pkgSchema.ClusterCveEdgesTableName+" WHERE clusterid = $1", clusterID)
+	_, err = tx.Exec(ctx, "DELETE FROM "+clusterCVEEdgeTable+" WHERE clusterid = $1", clusterID)
 	if err != nil {
 		return err
 	}
+	edges, err := getClusterCVEEdgeIDs(ctx, tx, storage.CVE_ISTIO_CVE, []string{"pqr"})
+	if err != nil {
+		return err
+	}
+	fmt.Println(len(edges))
 
-	_, err = tx.Exec(ctx, "DELETE FROM "+pkgSchema.ClusterCvesTableName+" WHERE not exists (select "+pkgSchema.ClusterCveEdgesTableName+".cveid from "+pkgSchema.ClusterCveEdgesTableName+")", clusterID)
+	_, err = tx.Exec(ctx, "DELETE FROM "+clusterCVEsTable+" WHERE not exists (select "+clusterCVEEdgeTable+".cveid from "+clusterCVEEdgeTable+" where "+clusterCVEEdgeTable+".cveid = "+clusterCVEsTable+".id)")
 	if err != nil {
 		return err
 	}
-	return nil
+	cves, err := getCVEs(ctx, tx, []string{"a"})
+	if err != nil {
+		return err
+	}
+	fmt.Println(len(cves))
+	return tx.Commit(ctx)
 }
 
-func (s *fullStoreImpl) UpsertClusterCVEParts(ctx context.Context, cveType storage.CVE_CVEType, cvePartsArr ...converter.ClusterCVEParts) error {
+func (s *fullStoreImpl) ReconcileClusterCVEParts(ctx context.Context, cveType storage.CVE_CVEType, cvePartsArr ...converter.ClusterCVEParts) error {
 	iTime := protoTypes.TimestampNow()
 
 	cves := make([]*storage.ClusterCVE, 0, len(cvePartsArr))
@@ -90,27 +106,18 @@ func (s *fullStoreImpl) UpsertClusterCVEParts(ctx context.Context, cveType stora
 		return err
 	}
 
-	if err := removeEdgesAndCVEsForClusters(ctx, tx, cveType, impactedClusterIDs); err != nil {
+	if err := copyFromClusterCVEEdges(ctx, tx, cveType, impactedClusterIDs, edges...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
 		return err
 	}
-
 	if err := copyFromCVEs(ctx, tx, iTime, cves...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
 		return err
 	}
-
-	if err := copyFromClusterCVEEdges(ctx, tx, edges...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-
 	return tx.Commit(ctx)
 }
 
@@ -140,6 +147,9 @@ func copyFromCVEs(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, o
 		ids.Add(obj.GetId())
 	}
 	existingCVEs, err := getCVEs(ctx, tx, ids.AsSlice())
+	if err != nil {
+		return err
+	}
 
 	for idx, obj := range objs {
 		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
@@ -193,10 +203,10 @@ func copyFromCVEs(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, o
 			inputRows = inputRows[:0]
 		}
 	}
-	return err
+	return removeOrphanedClusterCVEs(ctx, tx)
 }
 
-func copyFromClusterCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.ClusterCVEEdge) error {
+func copyFromClusterCVEEdges(ctx context.Context, tx pgx.Tx, cveType storage.CVE_CVEType, clusters []string, objs ...*storage.ClusterCVEEdge) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -209,13 +219,16 @@ func copyFromClusterCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.Cl
 		"serialized",
 	}
 
-	if len(objs) == 0 {
-		return nil
+	oldEdges, err := getClusterCVEEdgeIDs(ctx, tx, cveType, clusters)
+	if err != nil {
+		return err
 	}
 
 	deletes := set.NewStringSet()
 
 	for idx, obj := range objs {
+		oldEdges.Remove(obj.GetId())
+
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
 			return marshalErr
@@ -253,7 +266,7 @@ func copyFromClusterCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.Cl
 			inputRows = inputRows[:0]
 		}
 	}
-	return err
+	return removeOrphanedImageCVEEdges(ctx, tx, oldEdges.AsSlice())
 }
 
 func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.ClusterCVE, error) {
@@ -280,13 +293,41 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 	return idToCVEMap, nil
 }
 
-func removeEdgesAndCVEsForClusters(ctx context.Context, tx pgx.Tx, cveType storage.CVE_CVEType, clusterIDs []string) error {
-	_, err := tx.Exec(ctx, "DELETE FROM "+pkgSchema.ClusterCveEdgesTableName+" WHERE clusterid = ANY($1::text[]) and cveid in (select id from "+pkgSchema.ClusterCvesTableName+" where type = $2)", clusterIDs, cveType)
+func getClusterCVEEdgeIDs(ctx context.Context, tx pgx.Tx, cveType storage.CVE_CVEType, clusterIDs []string) (set.StringSet, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ClusterCVEEdges")
+
+	rows, err := tx.Query(ctx, "select id FROM "+clusterCVEEdgeTable+" WHERE clusterid = ANY($1::text[]) and cveid in (select id from "+clusterCVEsTable+" where type = $2)", clusterIDs, cveType)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return set.NewStringSet(ids...), nil
+}
+
+func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, orphanedEdgeIDs []string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterCVEEdges")
+
+	_, err := tx.Exec(ctx, "DELETE FROM "+clusterCVEEdgeTable+" WHERE id = ANY($1::text[])", orphanedEdgeIDs)
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	if _, err := tx.Exec(ctx, "delete from "+pkgSchema.ClusterCvesTableName+" where not exists (select "+pkgSchema.ClusterCveEdgesTableName+".cveid FROM "+pkgSchema.ClusterCveEdgesTableName+" where "+pkgSchema.ClusterCvesTableName+".id = "+pkgSchema.ClusterCveEdgesTableName+".cveid)"); err != nil {
+func removeOrphanedClusterCVEs(ctx context.Context, tx pgx.Tx) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterCVEs")
+
+	_, err := tx.Exec(ctx, "DELETE FROM "+clusterCVEsTable+" WHERE not exists (select "+clusterCVEEdgeTable+".cveid from "+clusterCVEEdgeTable+" where "+clusterCVEsTable+".id = "+clusterCVEEdgeTable+".cveid)")
+	if err != nil {
 		return err
 	}
 	return nil
