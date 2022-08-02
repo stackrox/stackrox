@@ -57,15 +57,7 @@ class OperatorE2eTest(BaseTest):
     SCORECARD_TEST_TIMEOUT_SEC = 20 * 60
     ARTIFACTS_TIMEOUT = 3 * 60
 
-    TEST_OUTPUT_DIRS = ["/go/src/github.com/stackrox/stackrox/operator/build/kuttl-test-artifacts",
-                        "operator/build/kuttl-test-artifacts"]
-
     def run(self):
-        def set_dirs_after_start():
-            # let post test know where logs are
-            print("operator: set_dirs_after_start")
-            self.test_output_dirs = OperatorE2eTest.TEST_OUTPUT_DIRS
-
         print("Deploying operator")
         self.run_with_graceful_kill(
             ["make", "-C", "operator", "kuttl", "deploy-previous-via-olm"],
@@ -75,8 +67,7 @@ class OperatorE2eTest(BaseTest):
         print("Executing operator upgrade test")
         self.run_with_graceful_kill(
             ["make", "-C", "operator", "test-upgrade"],
-            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
-            post_start_hook=set_dirs_after_start()
+            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC
         )
 
         print("Executing operator e2e tests")
