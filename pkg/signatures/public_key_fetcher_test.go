@@ -218,7 +218,9 @@ func TestIsMissingSignatureError(t *testing.T) {
 		},
 	}
 
-	emptyResponseErr := dockerRegistry.HttpStatusError{}
+	emptyResponseErr := dockerRegistry.HttpStatusError{
+		Response: &http.Response{},
+	}
 
 	cases := map[string]struct {
 		err              error
@@ -244,11 +246,21 @@ func TestIsMissingSignatureError(t *testing.T) {
 				Err: &unauthorizedErr,
 			}, "something went wrong"),
 		},
+		"status error with status code not found should indicate missing signature": {
+			err:              &notFoundErr,
+			missingSignature: true,
+		},
+		"status error without response should not indicate missing signature": {
+			err: &emptyResponseErr,
+		},
+		"status error with status code unauthorized should not indicate missing signature": {
+			err: &unauthorizedErr,
+		},
 		"wrapped registry error with status code not found should indicate missing signature": {
 			err:              fmt.Errorf("something went wrong %w", &url.Error{Err: &notFoundErr}),
 			missingSignature: true,
 		},
-		"wraooed registry error with status code unauthorized should not indicate missing signature": {
+		"wrapped registry error with status code unauthorized should not indicate missing signature": {
 			err: fmt.Errorf("something went wrong %w", &url.Error{Err: &unauthorizedErr}),
 		},
 		"transport error with status code unauthorized should not indicate missing signature": {
@@ -319,6 +331,17 @@ func TestIsUnauthorizedError(t *testing.T) {
 			}, "something went wrong"),
 			unauthorizedError: true,
 		},
+		"status error without response should not indicate unauthorized error": {
+			err: &emptyResponseErr,
+		},
+		"status error with status code unauthorized should indicate unauthorized error": {
+			err:               &unauthorizedErr,
+			unauthorizedError: true,
+		},
+		"status error with status code forbidden should indicate unauthorized error": {
+			err:               &forbiddenErr,
+			unauthorizedError: true,
+		},
 		"transport error with status code unauthorized should indicate unauthorized error": {
 			err: &transport.Error{
 				StatusCode: http.StatusUnauthorized,
@@ -336,7 +359,7 @@ func TestIsUnauthorizedError(t *testing.T) {
 			},
 			unauthorizedError: true,
 		},
-		"neither transport nor registry error": {
+		"neither transport nor registry error should not indicate unauthorized error": {
 			err: errors.New("some random error"),
 		},
 	}
