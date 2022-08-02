@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/roxctl/generate/netpol"
 )
 
-// Command defines the collector command tree
+// Command defines the generate command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "generate",

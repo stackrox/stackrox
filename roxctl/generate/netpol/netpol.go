@@ -17,7 +17,7 @@ type generateNetpolCommand struct {
 	printer printer.ObjectPrinter
 }
 
-// Command defines the central command tree
+// Command defines the netpol command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	generateNetpolCmd := &generateNetpolCommand{env: cliEnvironment}
 	c := &cobra.Command{
@@ -33,7 +33,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.Flags().BoolVarP(&generateNetpolCmd.offline, "offline", "", false, "whether to connect to a central instace for additional information")
+	c.Flags().BoolVar(&generateNetpolCmd.offline, "offline", false, "whether to connect to a central instace for additional information")
 	return c
 }
 

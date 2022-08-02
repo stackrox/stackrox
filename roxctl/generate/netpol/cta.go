@@ -9,13 +9,13 @@ import (
 func (cmd *generateNetpolCommand) generateNetpol() error {
 	recommendedNetpols, err := controller.PoliciesFromFolderPath(cmd.folderPath)
 	if err != nil {
-		return errors.Errorf("Error synthesizing policies from folder: %v", err)
+		return errors.Wrap(err, "Error synthesizing policies from folder")
 	}
 
 	for _, netpol := range recommendedNetpols {
 		yamlPolicy, err := networkpolicy.KubernetesNetworkPolicyWrap{NetworkPolicy: netpol}.ToYaml()
 		if err != nil {
-			return errors.Errorf("Error converting YAML into Network Policies: %v", err)
+			return errors.Wrap(err, "Error converting YAML into Network Policy")
 		}
 		cmd.env.Logger().PrintfLn("---\n\n%s", yamlPolicy)
 	}
