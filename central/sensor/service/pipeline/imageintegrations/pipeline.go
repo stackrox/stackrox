@@ -201,17 +201,17 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return nil
 	}
 	// Update or create.
+	cctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	if integrationToUpdate == nil {
 		if _, err := s.datastore.AddImageIntegration(ctx, imageIntegration); err != nil {
 			return errors.Wrap(err, "adding integration")
+		} else {
+			results, _ := s.datastore.Search(ctx, pkgSearch.EmptyQuery())
+			log.Infof(">>>>>>>>> Testing ii search search all: %d", len(results))
 		}
-		//deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		//	sac.AllowFixedScopes(
-		//		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		//		sac.ResourceScopeKeys(resources.ImageIntegration)))
-		ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+
 		q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterID).ProtoQuery()
-		iis, ett := s.datastore.Search(ctx, q)
+		iis, ett := s.datastore.Search(cctx, q)
 		if ett == nil {
 			log.Infof(">>>>>>>>> Testing ii search: ii list size is: %d", len(iis))
 		}

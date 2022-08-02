@@ -26,14 +26,12 @@ var (
 func initializeDefaultIntegrations(storage store.Store) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	iis, err := storage.GetAll(ctx)
-	log.Infof(">>>> initializeDefaultIntegrations initial size: %d", len(iis))
 	utils.CrashOnError(err)
 	if !env.OfflineModeEnv.BooleanSetting() && len(iis) == 0 {
 		// Add default integrations
 		for _, ii := range store.DefaultImageIntegrations {
 			utils.Must(storage.Upsert(ctx, ii))
 		}
-		log.Infof(">>>> initializeDefaultIntegrations successfully indexed size: %d", len(store.DefaultImageIntegrations))
 	}
 }
 

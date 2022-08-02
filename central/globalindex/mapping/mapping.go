@@ -18,6 +18,7 @@ import (
 	imageComponentMapping "github.com/stackrox/rox/central/imagecomponent/mappings"
 	imageComponentEdgeMapping "github.com/stackrox/rox/central/imagecomponentedge/mappings"
 	imageCVEEdgeMapping "github.com/stackrox/rox/central/imagecveedge/mappings"
+	imageIntegrationMapping "github.com/stackrox/rox/central/imageintegration/index/mappings"
 	namespaceMapping "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeMapping "github.com/stackrox/rox/central/node/index/mappings"
 	nodeComponentEdgeMapping "github.com/stackrox/rox/central/nodecomponentedge/mappings"
@@ -161,6 +162,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_IMAGE_VULN_EDGE:       imageCVEEdgeMapping.OptionsMap,
 		v1.SearchCategory_NODE_COMPONENT_EDGE:   nodeComponentEdgeMappings.OptionsMap,
 		v1.SearchCategory_VULN_REQUEST:          vulnReqMapping.OptionsMap,
+		v1.SearchCategory_IMAGE_INTEGRATIONS:    imageIntegrationMapping.OptionsMap,
 	}
 
 	return entityOptionsMap
