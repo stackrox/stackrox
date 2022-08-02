@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
-	"github.com/stackrox/rox/pkg/sac"
 )
 
 // With returns an authorizer that only authorizes users/tokens
@@ -41,28 +40,6 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 func (p *permissionChecker) collectPermissions(pc *[]permissions.ResourceWithAccess) error {
 	*pc = append(*pc, p.requiredPermissions...)
 	return permissioncheck.ErrPermissionCheckOnly
-}
-
-func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootSC sac.ScopeChecker) error {
-	globalScopes := make([][]sac.ScopeKey, 0)
-	for _, perm := range p.requiredPermissions {
-		if !perm.Resource.PerformLegacyAuthForSAC() {
-			continue
-		}
-		globalScopes = append(globalScopes, []sac.ScopeKey{
-			sac.AccessModeScopeKey(perm.Access),
-			sac.ResourceScopeKey(perm.Resource.GetResource()),
-		})
-	}
-
-	allowed, err := rootSC.AllAllowed(ctx, globalScopes)
-	if err != nil {
-		return err
-	}
-	if !allowed {
-		return errox.NotAuthorized.CausedBy("scoped access")
-	}
-	return nil
 }
 
 func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access) error {

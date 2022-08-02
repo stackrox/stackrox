@@ -94,13 +94,6 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			err: errox.NoCredentials,
 		},
 		{
-			name: "built-in global scoped authz check permissions",
-			requiredPermissions: []permissions.ResourceWithAccess{{
-				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
-			}},
-			ctx: sac.WithNoAccess(ctx),
-		},
-		{
 			name: "built-in global scoped authz check permissions but nil permissions in ID",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
