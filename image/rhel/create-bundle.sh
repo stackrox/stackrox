@@ -2,7 +2,7 @@
 # Creates a scripts directory and a tgz bundle of binaries and data files
 # needed for main-rhel
 
-set -euox pipefail
+set -euo pipefail
 
 die() {
     echo >&2 "$@"
