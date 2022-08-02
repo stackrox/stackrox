@@ -41,6 +41,7 @@ type DataStore interface {
 	CountImages(ctx context.Context) (int, error)
 	GetImage(ctx context.Context, sha string) (*storage.Image, bool, error)
 	GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error)
+	GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, error)
 	GetImagesBatch(ctx context.Context, shas []string) ([]*storage.Image, error)
 
 	UpsertImage(ctx context.Context, image *storage.Image) error
