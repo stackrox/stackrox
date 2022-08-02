@@ -36,7 +36,6 @@ fi
 postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
 postgres_major="14"
 pg_rhel_version="8.5"
-gpg_check=""
 
 if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
     dnf install --disablerepo='*' -y "${postgres_repo_url}"
