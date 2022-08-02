@@ -94,6 +94,7 @@ func (c *csvResults) addRow(row nodeCveRow) {
 	c.AddValue(value)
 }
 
+// NodeCVECSVHandler returns handler to handle NodeCve csv export requests
 func NodeCVECSVHandler() http.HandlerFunc {
 	once.Do(initialize)
 

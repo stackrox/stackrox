@@ -22,10 +22,14 @@ import (
 )
 
 var (
+	// DeploymentOnlyOptionsMap is OptionsMap containing deployment only fields
 	DeploymentOnlyOptionsMap search.OptionsMap
-	ImageOnlyOptionsMap      search.OptionsMap
-	NodeOnlyOptionsMap       search.OptionsMap
-	NamespaceOnlyOptionsMap  search.OptionsMap
+	// ImageOnlyOptionsMap is OptionsMap containing image only fields
+	ImageOnlyOptionsMap search.OptionsMap
+	// NodeOnlyOptionsMap is OptionsMap containing node only fields
+	NodeOnlyOptionsMap search.OptionsMap
+	// NamespaceOnlyOptionsMap is OptionsMap namespace only fields
+	NamespaceOnlyOptionsMap search.OptionsMap
 )
 
 func init() {
@@ -94,6 +98,7 @@ type SearchWrapper struct {
 	searcher   search.Searcher
 }
 
+// NewSearchWrapper creates SearchWrapper instance
 func NewSearchWrapper(category v1.SearchCategory, optionsMap search.OptionsMap, searcher search.Searcher) *SearchWrapper {
 	return &SearchWrapper{
 		category:   category,
@@ -108,6 +113,7 @@ type HandlerImpl struct {
 	searchWrappers []*SearchWrapper
 }
 
+// NewCSVHandler creates HandlerImpl instance
 func NewCSVHandler(resolver *resolvers.Resolver, searchWrappers []*SearchWrapper) *HandlerImpl {
 	return &HandlerImpl{
 		resolver:       resolver,
@@ -131,6 +137,7 @@ func (h *HandlerImpl) GetSearchWrappers() []*SearchWrapper {
 	return h.searchWrappers
 }
 
+// GetScopeContext returns the context containing exactly matching scope from the given query
 func (h *HandlerImpl) GetScopeContext(ctx context.Context, query *v1.Query) (context.Context, error) {
 	if h == nil {
 		return nil, errors.New("Handler for CSV export is nil")
