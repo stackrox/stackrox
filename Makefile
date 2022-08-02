@@ -40,8 +40,6 @@ ROX_IMAGE_FLAVOR ?= $(shell \
 	  echo "development_build"; \
 	fi)
 
-BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
-
 DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
 ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
 	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
@@ -65,6 +63,15 @@ DEBUG_BUILD ?= no
 # The latter is painfully slow on Mac OS X with Docker Desktop, so we default to using a
 # standalone volume in that case, and to bind mounting otherwise.
 UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+
+BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
+ifeq ($(UNAME_S),Darwin)
+ifeq ($(UNAME_M),arm64)
+	# TODO(ROX-12064) build these images in the CI pipeline
+	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.44-arm64
+endif
+endif
 
 ifeq ($(UNAME_S),Darwin)
 BIND_GOCACHE ?= 0
