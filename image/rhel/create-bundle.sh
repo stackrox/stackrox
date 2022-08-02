@@ -89,11 +89,10 @@ cp -pr "${INPUT_ROOT}/THIRD_PARTY_NOTICES"  "${bundle_root}/"
 cp -pr "${INPUT_ROOT}/ui/build/"*           "${bundle_root}/ui/"
 
 arch="x86_64"
-goarch=$arch
+goarch="amd64"
 if [[ $(uname -m) == "arm64" ]]; then
   arch="aarch64"
   goarch="arm64"
-  gpg_check="--nogpgcheck"
 fi
 
 mkdir -p "${bundle_root}/go/bin"
