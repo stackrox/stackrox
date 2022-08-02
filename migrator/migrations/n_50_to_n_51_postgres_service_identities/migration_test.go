@@ -70,7 +70,6 @@ func (s *postgresMigrationSuite) TestServiceIdentityMigration() {
 
 	// Prepare data and write to legacy DB
 	var serviceIdentitys []*storage.ServiceIdentity
-
 	for i := 0; i < 200; i++ {
 		serviceIdentity := &storage.ServiceIdentity{}
 		s.NoError(testutils.FullInit(serviceIdentity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
