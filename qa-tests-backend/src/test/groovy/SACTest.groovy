@@ -229,7 +229,6 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify that only namespace #sacResource is visible when using SAC"() {
         when:
         "Create test API token with a built-in role"
