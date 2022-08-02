@@ -15,11 +15,11 @@ func ValidateSACSearchResultDistribution(s *suite.Suite, expected, obtained map[
 	s.Equal(len(expected), len(obtained), "unexpected cluster count in result")
 	for clusterID, clusterMap := range expected {
 		_, clusterFound := obtained[clusterID]
-		s.True(clusterFound)
+		s.Truef(clusterFound, "Cluster %s not found in results", clusterID)
 		if clusterFound {
 			for namespace, count := range clusterMap {
 				_, namespaceFound := obtained[clusterID][namespace]
-				s.True(namespaceFound)
+				s.True(namespaceFound, "Namespace %s not found in cluster %s results", namespace, clusterID)
 				s.Equalf(count, obtained[clusterID][namespace], "unexpected count for cluster %s and namespace %s", clusterID, namespace)
 			}
 		}
