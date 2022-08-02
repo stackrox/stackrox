@@ -12,7 +12,7 @@ type netpolGenerateCommand struct {
 	offline    bool
 	folderPath string
 
-	//injected or constructed values
+	// injected or constructed values
 	env     environment.Environment
 	printer printer.ObjectPrinter
 }

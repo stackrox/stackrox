@@ -208,4 +208,5 @@ exclude k8s.io/client-go v12.0.0+incompatible
 exclude github.com/openshift/client-go v3.9.0+incompatible
 
 replace helm.sh/helm/v3 => github.com/porridge/helm/v3 v3.7.3-0.20220719213745-59a08440474d
+
 replace github.com/np-guard/cluster-topology-analyzer => github.com/Maddosaurus/cluster-topology-analyzer v1.2.1-0.20220624115524-e492fc3525d2
