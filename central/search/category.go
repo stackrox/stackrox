@@ -22,6 +22,7 @@ func GetGlobalSearchCategories() set.V1SearchCategorySet {
 		v1.SearchCategory_ROLES,
 		v1.SearchCategory_ROLEBINDINGS,
 		v1.SearchCategory_SUBJECTS,
+		v1.SearchCategory_IMAGE_INTEGRATIONS,
 	)
 
 	if features.NewPolicyCategories.Enabled() {

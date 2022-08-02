@@ -81,10 +81,11 @@ func insertIntoImageIntegrations(ctx context.Context, batch *pgx.Batch, obj *sto
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
+		obj.GetClusterId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_integrations (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_integrations (Id, Name, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -106,6 +107,8 @@ func (s *storeImpl) copyFromImageIntegrations(ctx context.Context, tx pgx.Tx, ob
 
 		"name",
 
+		"clusterid",
+
 		"serialized",
 	}
 
@@ -123,6 +126,8 @@ func (s *storeImpl) copyFromImageIntegrations(ctx context.Context, tx pgx.Tx, ob
 			obj.GetId(),
 
 			obj.GetName(),
+
+			obj.GetClusterId(),
 
 			serialized,
 		})

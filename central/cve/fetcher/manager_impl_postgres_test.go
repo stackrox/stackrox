@@ -301,7 +301,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 		clusterPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB),
 		clusterHealthPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB),
 		clusterPostgres.NewIndexer(db), nil, s.mockNamespaces, nil, s.nodeDataStore, nil, nil,
-		s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil)
+		s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil, nil)
 	s.NoError(err)
 	s.clusterDataStore = clusterDataStore
 

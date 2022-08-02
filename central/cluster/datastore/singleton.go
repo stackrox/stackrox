@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	globalDackBox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
+	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -76,7 +77,8 @@ func initialize() {
 		notifierProcessor.Singleton(),
 		dackbox,
 		ranking.ClusterRanker(),
-		networkBaselineManager.Singleton())
+		networkBaselineManager.Singleton(),
+		imageIntegrationDataStore.Singleton())
 
 	utils.CrashOnError(err)
 }

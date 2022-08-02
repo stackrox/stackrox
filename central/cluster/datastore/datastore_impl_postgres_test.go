@@ -83,7 +83,7 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 
 	s.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	s.netEntities.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-	clusterDS, err := New(clusterPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), clusterHealthPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), clusterPostgres.NewIndexer(s.db), nil, ds, nil, s.nodeDataStore, nil, nil, s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil)
+	clusterDS, err := New(clusterPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), clusterHealthPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), clusterPostgres.NewIndexer(s.db), nil, ds, nil, s.nodeDataStore, nil, nil, s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil, nil)
 	s.NoError(err)
 	s.clusterDatastore = clusterDS
 }

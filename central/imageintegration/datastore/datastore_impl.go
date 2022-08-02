@@ -3,11 +3,14 @@ package datastore
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -16,7 +19,13 @@ var (
 )
 
 type datastoreImpl struct {
-	storage store.Store
+	storage           store.Store
+	indexer           index.Indexer
+	formattedSearcher search.Searcher
+}
+
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return ds.formattedSearcher.Search(ctx, q)
 }
 
 // GetImageIntegration is pass-through to the underlying store.
@@ -63,7 +72,10 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 	} else if !ok {
 		return "", sac.ErrResourceAccessDenied
 	}
-
+	error := ds.indexer.AddImageIntegration(integration)
+	if error != nil {
+		return "", error
+	}
 	integration.Id = uuid.NewV4().String()
 	return integration.Id, ds.storage.Upsert(ctx, integration)
 }
@@ -75,7 +87,7 @@ func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-
+	ds.indexer.AddImageIntegration(integration)
 	return ds.storage.Upsert(ctx, integration)
 }
 
@@ -86,6 +98,24 @@ func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) 
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-
+	ds.indexer.DeleteImageIntegration(id)
 	return ds.storage.Delete(ctx, id)
+}
+
+func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
+	iis, err := ds.storage.GetAll(ctx)
+	log.Infof("[STARTUP] Found %d Image Integrations to be indexed", len(iis))
+	if err != nil {
+		return err
+	}
+	error := ds.indexer.AddImageIntegrations(iis)
+	if error == nil {
+		log.Infof("[STARTUP] Successfully indexed %d Image Integrations", len(iis))
+		return nil
+	}
+	return error
+
 }
