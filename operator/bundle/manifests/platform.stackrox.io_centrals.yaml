@@ -204,6 +204,40 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  resources2:
+                    default:
+                      limits:
+                        cpu: 500m
+                        memory: 1Gi
+                      requests:
+                        cpu: 100m
+                        memory: 256Mi
+                    description: ResourceRequirements describes the compute resource
+                      requirements.
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
                   tolerations:
                     description: If you want this component to only run on specific
                       nodes, you can configure tolerations of tainted nodes.
@@ -530,6 +564,14 @@ spec:
                         type: array
                     type: object
                   db:
+                    default:
+                      resources:
+                        limits:
+                          cpu: 100m
+                          memory: 128Mi
+                        requests:
+                          cpu: 10m
+                          memory: 32Mi
                     description: Settings pertaining to the database used by the Red
                       Hat Advanced Cluster Security Scanner.
                     properties:

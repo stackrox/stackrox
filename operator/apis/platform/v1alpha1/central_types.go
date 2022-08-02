@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
@@ -117,6 +118,10 @@ type CentralComponentSpec struct {
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
+
+	// +optional
+	// +kubebuilder:default={limits: {cpu: "500m", memory: "1Gi"}, requests: {cpu: "100m", memory: "256Mi"}}
+	Resources2 corev1.ResourceRequirements `json:"resources2,omitempty"`
 }
 
 // GetHostPath returns Central's configured host path
@@ -314,6 +319,8 @@ type ScannerComponentSpec struct {
 
 	// Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="DB",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
+	// +optional
+	// +kubebuilder:default:={resources: {limits: {cpu: "100m", memory: "128Mi"}, requests: {cpu: "10m", memory: "32Mi"}}}
 	DB *DeploymentSpec `json:"db,omitempty"`
 }
 
