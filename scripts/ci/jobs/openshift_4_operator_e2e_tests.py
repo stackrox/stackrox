@@ -10,5 +10,5 @@ from pre_tests import PreSystemTests
 
 ClusterTestRunner(
     pre_test=PreSystemTests(),
-    test=OperatorE2eTest(),
+    test=OperatorE2eTest()
 ).run()
