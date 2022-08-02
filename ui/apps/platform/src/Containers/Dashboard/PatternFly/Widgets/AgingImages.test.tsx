@@ -8,6 +8,8 @@ import renderWithRouter from 'test-utils/renderWithRouter';
 import { mockChartsWithoutAnimation } from 'test-utils/mocks/@patternfly/react-charts';
 import AgingImages, { imageCountQuery } from './AgingImages';
 
+jest.setTimeout(10000);
+
 const range0 = '30';
 const range1 = '90';
 const range2 = '180';

@@ -11,6 +11,8 @@ import entityTypes, { standardEntityTypes } from 'constants/entityTypes';
 import { complianceBasePath, urlEntityListTypes } from 'routePaths';
 import ComplianceLevelsByStandard from './ComplianceLevelsByStandard';
 
+jest.setTimeout(10000);
+
 const mocks = [
     {
         request: {
