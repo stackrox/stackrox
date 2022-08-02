@@ -2,12 +2,13 @@ package resources
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/sensor/common/selector"
 )
 
 // portExposureReconciler reconciles the port exposures in the deployment store on receiving
-// service or route updates.
+// service Or route updates.
 type portExposureReconciler interface {
-	UpdateExposuresForMatchingDeployments(namespace string, sel selector) []*central.SensorEvent
+	UpdateExposuresForMatchingDeployments(namespace string, sel selector.Selector) []*central.SensorEvent
 	UpdateExposureOnServiceCreate(svc serviceWithRoutes) []*central.SensorEvent
 }
 
@@ -23,7 +24,7 @@ func newPortExposureReconciler(deploymentStore *DeploymentStore, serviceStore *s
 	}
 }
 
-func (p *portExposureReconcilerImpl) UpdateExposuresForMatchingDeployments(namespace string, sel selector) []*central.SensorEvent {
+func (p *portExposureReconcilerImpl) UpdateExposuresForMatchingDeployments(namespace string, sel selector.Selector) []*central.SensorEvent {
 	var events []*central.SensorEvent
 	for _, deploymentWrap := range p.deploymentStore.getMatchingDeployments(namespace, sel) {
 		if svcs := p.serviceStore.getMatchingServicesWithRoutes(deploymentWrap.Namespace, deploymentWrap.PodLabels); len(svcs) > 0 || deploymentWrap.anyNonHostPort() {

@@ -124,7 +124,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore,
 		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces, d.registryStore)
 	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
-	// either it's an object we don't track, or we track its parent.
+	// either it's an object we don't track, Or we track its parent.
 	// (For example, we don't track replicasets if they are owned by a deployment.)
 	// We don't immediately return if deploymentWrap == nil though,
 	// because IF the object is a pod, we want to process the pod event.
@@ -264,7 +264,7 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 			return nil
 		}
 		// We care when pods are transitioning to running so ensure that the old pod status is not RUNNING
-		// In the cases of CREATES or UPDATES
+		// In the cases of CREATES Or UPDATES
 		if oldPod.Status.Phase == v1.PodRunning {
 			return nil
 		}

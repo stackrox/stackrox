@@ -9,6 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	resources "github.com/stackrox/rox/sensor/common/selector"
 )
 
 // MockDeploymentStore is a mock of DeploymentStore interface.
@@ -60,6 +61,20 @@ func (m *MockDeploymentStore) GetAll() []*storage.Deployment {
 func (mr *MockDeploymentStoreMockRecorder) GetAll() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockDeploymentStore)(nil).GetAll))
+}
+
+// GetMatchingDeployments mocks base method.
+func (m *MockDeploymentStore) GetMatchingDeployments(namespace string, sel resources.Selector) []*storage.Deployment {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMatchingDeployments", namespace, sel)
+	ret0, _ := ret[0].([]*storage.Deployment)
+	return ret0
+}
+
+// GetMatchingDeployments indicates an expected call of GetMatchingDeployments.
+func (mr *MockDeploymentStoreMockRecorder) GetMatchingDeployments(namespace, sel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchingDeployments", reflect.TypeOf((*MockDeploymentStore)(nil).GetMatchingDeployments), namespace, sel)
 }
 
 // MockPodStore is a mock of PodStore interface.

@@ -86,12 +86,12 @@ func init() {
 // Notation used in naming of benchmark scenarios
 //- N = number of elements (network policies) in the store
 //- K = number of labels in a deployment (passed to the Find function)
-//- L = number of label selector terms in a network policy
+//- L = number of label Selector terms in a network policy
 
 func BenchmarkFind(b *testing.B) {
 	for labelIdx, numLabels := range casesLabels {
 		for _, scale := range casesScale {
-			s := newNetworkPoliciesStore()
+			s := NewNetworkPolicyStore()
 			populateStore(s, int64(math.Pow(10, float64(scale))), scale, allLabels16, allValues16)
 			b.Run(fmt.Sprintf("K=%d-N=10^%d", numLabels, scale), func(b *testing.B) {
 				for i := 0; i < b.N; i++ {
@@ -105,7 +105,7 @@ func BenchmarkFind(b *testing.B) {
 func BenchmarkUpsert_Update(b *testing.B) {
 	for labelIdx, numLabels := range casesLabels {
 		for _, scale := range casesScale {
-			s := newNetworkPoliciesStore()
+			s := NewNetworkPolicyStore()
 			populateStore(s, int64(math.Pow(10, float64(scale))), scale, allLabels16, allValues16)
 			// find random existing policy
 			var oldPolicy *storage.NetworkPolicy
@@ -126,7 +126,7 @@ func BenchmarkUpsert_Update(b *testing.B) {
 func BenchmarkUpsert_Add(b *testing.B) {
 	for labelIdx, numLabels := range casesLabels {
 		for _, scale := range casesScale {
-			s := newNetworkPoliciesStore()
+			s := NewNetworkPolicyStore()
 			populateStore(s, int64(math.Pow(10, float64(scale))), scale, allLabels16, allValues16)
 			b.Run(fmt.Sprintf("L=%d-N=10^%d", numLabels, scale), func(b *testing.B) {
 				b.ResetTimer()

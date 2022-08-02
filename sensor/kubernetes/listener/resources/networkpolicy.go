@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
 	networkingV1 "k8s.io/api/networking/v1"
 )
@@ -57,16 +58,16 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 	}
 }
 
-func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selector {
-	newsel := createSelector(np.GetSpec().GetPodSelector().GetMatchLabels(), emptyMatchesEverything())
+func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selector.Selector {
+	newsel := selector.CreateSelector(np.GetSpec().GetPodSelector().GetMatchLabels(), selector.EmptyMatchesEverything())
 	if oldNp != nil {
-		oldsel := createSelector(oldNp.GetSpec().GetPodSelector().GetMatchLabels(), emptyMatchesEverything())
-		return or(oldsel, newsel)
+		oldsel := selector.CreateSelector(oldNp.GetSpec().GetPodSelector().GetMatchLabels(), selector.EmptyMatchesEverything())
+		return selector.Or(oldsel, newsel)
 	}
 	return newsel
 }
 
-func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel selector) {
+func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel selector.Selector) {
 	deployments := h.deploymentStore.getMatchingDeployments(np.GetNamespace(), sel)
 	idsRequireReprocessing := make([]string, 0, len(deployments))
 	for _, deploymentWrap := range deployments {

@@ -3,6 +3,7 @@ package resources
 import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/selector"
 	v1 "k8s.io/api/core/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -137,7 +138,7 @@ func (ss *serviceStore) getMatchingServicesWithRoutes(namespace string, labels m
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
 	for _, entry := range ss.services[namespace] {
-		if entry.selector.Matches(createLabelsWithLen(labelSet)) {
+		if entry.selector.Matches(selector.CreateLabelsWithLen(labelSet)) {
 			svcWithRoutes := serviceWithRoutes{
 				serviceWrap: entry,
 				routes:      ss.routesByServiceMetadata[namespace][entry.Name],
