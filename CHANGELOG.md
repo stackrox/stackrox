@@ -9,6 +9,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Removed Features
 - ROX-11784: The `RenamePolicyCategory` and `DeletePolicyCategory` methods in the
   `v1/policycategories` endpoint have been removed.
+- ROX-11524: Previously deprecated `AuthPlugin` feature has been removed.
 ### Deprecated Features
 ### Technical Changes
 - ROX-11181: Any clusters that have been unhealthy (defined as central being unable to reach sensor running on those clusters) for a period of time will be automatically removed. By default, it will remove if it's been unhealthy for 90 days, however that can be configured in the System Configuration page or using the cluster API.

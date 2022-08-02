@@ -25,10 +25,9 @@ const stateSelector = createStructuredSelector<{
 });
 
 // TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
-const replacedResourceMapping = new Map([
+const replacedResourceMapping = new Map<ResourceName, string>([
     ['AllComments', 'Administration'],
     ['APIToken', 'Integration'],
-    ['AuthPlugin', 'Access'],
     ['AuthProvider', 'Access'],
     ['BackupPlugins', 'Integration'],
     ['ComplianceRuns', 'Compliance'],
