@@ -90,11 +90,6 @@ class StoreArtifacts(RunWithBestEffortMixin):
                         self.artifact_destination_prefix, os.path.basename(source)
                     )
                 )
-            try:
-                print(os.listdir(source))
-            except Exception as e:
-                print("error listing source")
-                print(e)
             self.run_with_best_effort(
                 args,
                 timeout=PostTestsConstants.STORE_TIMEOUT,
