@@ -187,7 +187,6 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 			}
 		}
 	}
-	// TODO(@khushboo): ROX-7252: Modify this validation once migration to account for new policy field event source is in
 	return nil
 }
 

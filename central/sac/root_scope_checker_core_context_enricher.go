@@ -155,7 +155,6 @@ func idToPrincipalAndCacheKey(id authn.Identity) (*payload.Principal, string, er
 func idToPrincipal(id authn.Identity) *payload.Principal {
 	externalAuthProvider := id.ExternalAuthProvider()
 	var authProvider payload.AuthProviderInfo
-	// TODO joseph do something here for, e.g., API tokens
 	if externalAuthProvider == nil {
 		authProvider = payload.AuthProviderInfo{
 			Type: "",

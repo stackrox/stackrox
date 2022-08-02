@@ -22,7 +22,6 @@ func init() {
 	if features.PostgresDatastore.Enabled() {
 		return
 	}
-	// TODO: [ROX-11257, ROX-11258, ROX-11259] Replace this cve loader.
 	RegisterTypeFactory(reflect.TypeOf(storage.CVE{}), func() interface{} {
 		return NewCVELoader(legacyImageCVEDataStore.Singleton())
 	})
