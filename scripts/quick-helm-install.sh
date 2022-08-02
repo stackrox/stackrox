@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 echo "Adding the stackrox/helm-charts/opensource repository to Helm."
 
@@ -7,8 +7,7 @@ helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/ma
 
 echo "Generating stackrox-admin-password.txt"
 
-openssl rand -base64 20 | tr -d '/=+' > stackrox-admin-password.txt
-STACKROX_ADMIN_PASSWORD=`cat stackrox-admin-password.txt`
+STACKROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 
 echo "Installing stackrox-central-services"
 
@@ -28,7 +27,7 @@ helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-sec
   -f stackrox-init-bundle.yaml \
   --set clusterName="First-Secured-Cluster"
 
-echo "You can add more secured clusters using the following command:
+echo "You can add more secured clusters on different kube contexts using the following command:
 helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \\
   -f stackrox-init-bundle.yaml \\
   --set clusterName=\"\$CLUSTER_NAME\""

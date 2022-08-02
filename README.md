@@ -41,7 +41,7 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
 ### Quick Installation
 
 StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
-Then simply run the helm quick install script (or proceed to section [Manual Helm Installation](#manual-helm-installation) for configuration options)
+Then run the helm quick install script or proceed to section [Manual Helm Installation](#manual-helm-installation) for configuration options.
 ```sh
 ./scripts/quick-helm-install.sh 
 ```
@@ -57,20 +57,20 @@ helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-sec
 
 Follow these steps to get to StackRox UI
 
-1.Setup port forward to central:
+1. Setup port forward to central:
 ```sh
 kubectl -n stackrox port-forward deploy/central 8000:8443
 ```
 
-2.Open <https://localhost:8000> in your browser.
+2. Open <https://localhost:8000> in your browser.
 
-3.If a certificate warning is displayed, you can accept the warnings to install the default self-signed certificate. To configure custom certificates, see the section on "Adding Custom Certificates" in <https://docs.openshift.com/acs/configuration/add-custom-certificates.html>.
+3. If a certificate warning is displayed, you can accept the warnings to install the default self-signed certificate. To configure custom certificates, see the section on "Adding Custom Certificates" in <https://docs.openshift.com/acs/configuration/add-custom-certificates.html>.
 
-4.Log in as `admin` using the password in `stackrox-admin-password.txt`
+4. Log in as `admin` using the password in `STACKROX_ADMIN_PASSWORD`
 
 ### Manual Helm Installation
 
-In order to install StackRox via Helm you will first need to follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
+To install StackRox using Helm you must have Helm on your system. To install `helm` CLI, follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
 First, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
 ```sh
 helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
