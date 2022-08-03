@@ -12,12 +12,17 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
@@ -44,8 +49,9 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.ImagesSchema
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.ImagesSchema
+	targetResource = resources.Image
 )
 
 type imagePartsAsSlice struct {
@@ -545,7 +551,7 @@ func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, orphanedEdgeIDs
 }
 
 func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, bool, error) {
-	oldImage, found, err := s.Get(ctx, image.GetId())
+	oldImage, found, err := s.GetImageMetadata(ctx, image.GetId())
 	if err != nil {
 		return false, false, err
 	}
@@ -1035,7 +1041,7 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
 
-// GetImageMetadata gets the image without scan/component data.
+// GetImageMetadata returns the image without scan/component data.
 func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
@@ -1056,6 +1062,64 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 		return nil, false, err
 	}
 	return &msg, true, nil
+}
+
+// GetManyImageMetadata returns images without scan/component data.
+func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
+
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	sacQueryFilter, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			missingIndices := make([]int, 0, len(ids))
+			for i := range ids {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	resultsByID := make(map[string]*storage.Image)
+	for _, data := range rows {
+		msg := &storage.Image{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, nil, err
+		}
+		resultsByID[msg.GetId()] = msg
+	}
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.Image, 0, len(resultsByID))
+	for i, id := range ids {
+		if result, ok := resultsByID[id]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
 }
 
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {

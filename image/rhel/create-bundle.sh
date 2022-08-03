@@ -88,12 +88,19 @@ cp -p "${INPUT_ROOT}/bin/admission-control" "${bundle_root}/stackrox/bin/"
 cp -pr "${INPUT_ROOT}/THIRD_PARTY_NOTICES"  "${bundle_root}/"
 cp -pr "${INPUT_ROOT}/ui/build/"*           "${bundle_root}/ui/"
 
+arch="x86_64"
+goarch="amd64"
+if [[ $(uname -m) == "arm64" ]]; then
+  arch="aarch64"
+  goarch="arm64"
+fi
+
 mkdir -p "${bundle_root}/go/bin"
 if [[ "$DEBUG_BUILD" == "yes" ]]; then
   if [[ "$OSTYPE" != "linux-gnu"* ]]; then
-    GOBIN= GOOS=linux GOARCH=amd64 GOPATH="${bundle_root}/go" go install github.com/go-delve/delve/cmd/dlv@latest
-    mv "$bundle_root"/go/bin/linux_amd64/dlv "$bundle_root"/go/bin/dlv
-    rm -r "$bundle_root"/go/bin/linux_amd64
+    GOBIN= GOOS=linux GOARCH="${goarch}" GOPATH="${bundle_root}/go" go install github.com/go-delve/delve/cmd/dlv@latest
+    mv "${bundle_root}/go/bin/linux_${goarch}/dlv" "${bundle_root}/go/bin/dlv"
+    rm -r "${bundle_root}/go/bin/linux_${goarch}"
   else
     GOBIN="${bundle_root}/go/bin" go install github.com/go-delve/delve/cmd/dlv@latest
   fi
@@ -109,8 +116,8 @@ else
 fi
 
 # Install all the required compression packages for RocksDB to compile
-rpm_base_url="http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages"
-rpm_suffix="el8.x86_64.rpm"
+rpm_base_url="http://mirror.centos.org/centos/8-stream/BaseOS/${arch}/os/Packages"
+rpm_suffix="el8.${arch}.rpm"
 
 curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_suffix}"
 
@@ -118,8 +125,8 @@ curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_
 # Get postgres RPMs directly
 postgres_major="14"
 pg_rhel_version="8.5"
-postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-x86_64"
-postgres_minor="14.2-1PGDG.rhel8.x86_64"
+postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-${arch}"
+postgres_minor="14.2-1PGDG.rhel8.${arch}"
 
 curl -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"

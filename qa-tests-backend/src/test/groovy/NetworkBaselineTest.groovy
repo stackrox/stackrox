@@ -6,10 +6,9 @@ import io.stackrox.proto.storage.NetworkFlowOuterClass
 import objects.Deployment
 import org.junit.experimental.categories.Category
 import services.NetworkBaselineService
-import spock.lang.Ignore
 import spock.lang.Retry
-import spock.lang.Unroll
 import util.NetworkGraphUtil
+import util.Timer
 
 @Retry(count = 0)
 class NetworkBaselineTest extends BaseSpecification {
@@ -58,9 +57,8 @@ class NetworkBaselineTest extends BaseSpecification {
                 .setImage(NGINX_IMAGE)
                 .addLabel("app", BASELINED_USER_CLIENT_DEP_NAME)
                 .setCommand(["/bin/sh", "-c",])
-                .setArgs(
-                    ["for i in \$(seq 1 10); do wget -S http://${USER_DEP_NAME}; sleep 1; done; sleep 1000" as String]
-                )
+                .setArgs(["for i in \$(seq 1 10); do wget -S http://${USER_DEP_NAME};" +
+                    "sleep 1; done; sleep 1000" as String])
 
     static final private ANOMALOUS_CLIENT_DEP = createAndRegisterDeployment()
         .setName(ANOMALOUS_CLIENT_DEP_NAME)
@@ -100,6 +98,18 @@ class NetworkBaselineTest extends BaseSpecification {
         for (Deployment deployment : deployments) {
             assert Services.waitForDeployment(deployment)
         }
+    }
+
+    // returns whether true condition was achieved
+    boolean retryUntilTrue(Closure<Boolean> closure, int retries) {
+        Timer timer = new Timer(retries, 10)
+        while (timer.IsValid()) {
+            def result = closure()
+            if (result) {
+                return true
+            }
+        }
+        return false
     }
 
     // validateBaseline checks that `expectedPeers` are present in the baseline and `explicitMissingPeers` are not.
@@ -143,12 +153,12 @@ class NetworkBaselineTest extends BaseSpecification {
     }
 
     def cleanup() {
+        log.info "Deleting the deployments."
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
     }
 
-    @Unroll
     @Category(NetworkBaseline)
     def "Verify network baseline functionality"() {
         when:
@@ -297,59 +307,61 @@ class NetworkBaselineTest extends BaseSpecification {
         )
         validateBaseline(postLockClientBaseline, beforeDeferredCreate, justAfterDeferredCreate,
             [], [])
-    }
 
-    @Unroll
-    // TODO: ROX-11126
-    @Ignore
-    @Category(NetworkBaseline)
-    def "Verify user get for non-existent baseline"() {
         when:
-        "Create initial set of deployments, wait for baseline to populate"
-        def beforeDeploymentCreate = System.currentTimeSeconds()
-        batchCreate([USER_DEP, BASELINED_USER_CLIENT_DEP])
-        def justAfterDeploymentCreate = System.currentTimeSeconds()
+        "Verify user get for non-existent baseline"
+        def beforeUserServiceDeploymentCreate = System.currentTimeSeconds()
+        batchCreate([USER_DEP])
+        def justAfterUserServiceDeploymentCreate = System.currentTimeSeconds()
 
-        def serverDeploymentID = USER_DEP.deploymentUid
-        assert serverDeploymentID != null
+        def userReqBaselineServerDeploymentID = USER_DEP.deploymentUid
+        assert userReqBaselineServerDeploymentID != null
 
-        def baselinedClientDeploymentID = BASELINED_USER_CLIENT_DEP.deploymentUid
-        assert baselinedClientDeploymentID != null
+        log.info "Deployment IDs Server: ${userReqBaselineServerDeploymentID}"
 
-        log.info "Deployment IDs Server: ${serverDeploymentID}, " +
-                    "Baselined client: ${baselinedClientDeploymentID}"
+        // Get the server baseline to simulate a user asking for a baseline prior to
+        // observation ending.  This will generate a baseline at the time of request
+        // instead of after observation.
+        def userReqServerBaseline = NetworkBaselineService.getNetworkBaseline(userReqBaselineServerDeploymentID)
+        // Ensure the baseline is STILL in the observation window
+        def now = System.currentTimeSeconds()
+        assert userReqServerBaseline.getObservationPeriodEnd().getSeconds() > now
 
-        def serverBaseline = NetworkBaselineService.getNetworkBaseline(serverDeploymentID)
-        log.info "Requested Baseline: ${serverBaseline}"
-        assert serverBaseline
+        // Add a client deployment
+        def beforeClientDeploymentCreate = System.currentTimeSeconds()
+        batchCreate([BASELINED_USER_CLIENT_DEP])
+        def justAfterClientDeploymentCreate = System.currentTimeSeconds()
 
-        def baselinedClientBaseline = NetworkBaselineService.getNetworkBaseline(baselinedClientDeploymentID)
-        assert baselinedClientBaseline
+        def userRequestedBaselinedClientDeploymentID = BASELINED_USER_CLIENT_DEP.deploymentUid
+        assert userRequestedBaselinedClientDeploymentID != null
+        log.info "Client deployment: ${userRequestedBaselinedClientDeploymentID}"
 
-        assert NetworkGraphUtil.checkForEdge(baselinedClientDeploymentID, serverDeploymentID, null, 180)
+        assert retryUntilTrue({
+            return NetworkGraphUtil.checkForEdge(
+                userRequestedBaselinedClientDeploymentID,
+                userReqBaselineServerDeploymentID)
+                    .any { it.targetID == userReqBaselineServerDeploymentID }
+        }, 15)
 
-        // Waiting on it to come out of observation.
-        serverBaseline = evaluateWithRetry(30, 4) {
-            def baseline = NetworkBaselineService.getNetworkBaseline(serverDeploymentID)
-            def now = System.currentTimeSeconds()
-            if (baseline.getPeersCount() == 0 && baseline.getObservationPeriodEnd().getSeconds() > now) {
-                throw new RuntimeException(
-                    "No peers in baseline for deployment ${serverDeploymentID} yet. Baseline is ${baseline}"
-                )
-            }
-            return baseline
-        }
+        // Grab the network baseline for the client.
+        def userReqBaselinedClientBaseline =
+            NetworkBaselineService.getNetworkBaseline(userRequestedBaselinedClientDeploymentID)
+        assert userReqBaselinedClientBaseline
 
-        baselinedClientBaseline = NetworkBaselineService.getNetworkBaseline(baselinedClientDeploymentID)
+        // Grab a fresh copy of the userReqServerBaseline after the client connection has been added.
+        userReqServerBaseline = NetworkBaselineService.getNetworkBaseline(userReqBaselineServerDeploymentID)
+
+        log.info "Server Baseline: ${userReqServerBaseline}"
+        log.info "Client Baseline: ${userReqBaselinedClientBaseline}"
 
         then:
         "Validate user requested server baseline"
         // The client->server connection should be baselined since the client as the
         // connection occurred during the observation window.
-        validateBaseline(serverBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
-            [new Tuple2<String, Boolean>(baselinedClientDeploymentID, true)], [])
-        validateBaseline(baselinedClientBaseline, beforeDeploymentCreate, justAfterDeploymentCreate,
-            [new Tuple2<String, Boolean>(serverDeploymentID, false)], []
+        validateBaseline(userReqServerBaseline, beforeUserServiceDeploymentCreate, justAfterUserServiceDeploymentCreate,
+            [new Tuple2<String, Boolean>(userRequestedBaselinedClientDeploymentID, true)], [])
+        validateBaseline(userReqBaselinedClientBaseline, beforeClientDeploymentCreate, justAfterClientDeploymentCreate,
+            [new Tuple2<String, Boolean>(userReqBaselineServerDeploymentID, false)], []
         )
     }
 }

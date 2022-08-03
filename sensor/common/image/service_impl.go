@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
@@ -62,7 +61,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 	req.Image.IsClusterLocal = s.registryStore.HasRegistryForImage(req.GetImage().GetName())
 
 	// Ask Central to scan the image if the image is not internal.
-	if !features.LocalImageScanning.Enabled() || !req.GetImage().GetIsClusterLocal() {
+	if !req.GetImage().GetIsClusterLocal() {
 		scanResp, err := s.centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 			Image:      req.GetImage(),
 			CachedOnly: !req.GetScanInline(),

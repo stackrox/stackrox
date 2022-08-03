@@ -86,7 +86,7 @@ func (tp *TestPostgres) Teardown(t testing.TB) {
 }
 
 // GetConnectionString returns a connection string for integration testing with Postgres
-func GetConnectionString(_ *testing.T) string {
+func GetConnectionString(_ testing.TB) string {
 	return conn.GetConnectionStringWithDatabaseName(env.GetString("POSTGRES_DB", "postgres"))
 }
 

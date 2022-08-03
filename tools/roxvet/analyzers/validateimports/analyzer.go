@@ -258,7 +258,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	}
 
 	if validImportRoot == "sensor/tests" {
-		allowedPackages = append(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger")
+		allowedPackages = append(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger", "sensor/testutils")
 	}
 
 	for _, imp := range imports {

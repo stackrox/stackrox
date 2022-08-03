@@ -107,7 +107,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
     return (
         <WorkflowEntityPage
             entityId={entityId}
-            entityType={entityTypes.CVE}
+            entityType={cveType}
             entityListType={entityListType}
             useCase={useCases.VULN_MANAGEMENT}
             ListComponent={VulnMgmtList}

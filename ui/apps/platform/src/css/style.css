@@ -8,21 +8,6 @@
   font-style: normal;
 }
 
-[class^="icon-"], [class*=" icon-"] {
-  /* use !important to prevent issues with browser extensions that change fonts */
-  font-family: 'stackrox' !important;
-  speak: none;
-  font-style: normal;
-  font-weight: normal;
-  font-variant: normal;
-  text-transform: none;
-  line-height: 1;
-
-  /* Better Font Rendering =========== */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 .ReactModal__Content,
 #main-page-container > div > :not(.pf-c-page__main-section) {
   font-family: Open Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
@@ -37,14 +22,4 @@
  */
 #root {
   background-color: #151515;
-}
-
-.icon-potential:before {
-  content: "\e900";
-}
-.icon-ingress-egress:before {
-  content: "\e901";
-}
-.icon-node:before {
-  content: "\e902";
 }

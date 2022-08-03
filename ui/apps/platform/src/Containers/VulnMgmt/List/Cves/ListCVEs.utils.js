@@ -22,9 +22,8 @@ export function getFilteredCVEColumns(columns, workflowState) {
 
     // No need to show entities in the node component or cluster context.
     const shouldKeepEntitiesColumn =
-        (!workflowState.isPrecedingSingle(entityTypes.COMPONENT) ||
-            !workflowState.getSingleAncestorOfType(entityTypes.NODE)) &&
-        currentEntityType !== entityTypes.CLUSTER_CVE;
+        !workflowState.isPrecedingSingle(entityTypes.COMPONENT) ||
+        !workflowState.getSingleAncestorOfType(entityTypes.NODE);
 
     // TODO: remove this temporary conditional check, after generic CVE list is removed
     const shouldKeepCveType = currentEntityType === entityTypes.CVE;

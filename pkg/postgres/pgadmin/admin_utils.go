@@ -85,13 +85,15 @@ func RenameDB(adminPool *pgxpool.Pool, originalDB, newDB string) error {
 // CheckIfDBExists - checks to see if a restore database exists
 func CheckIfDBExists(config *pgxpool.Config, dbName string) bool {
 	log.Infof("CheckIfDBExists - %q", dbName)
-	ctx, cancel := context.WithTimeout(context.Background(), postgresQueryTimeout)
-	defer cancel()
 
 	// Connect to different database for admin functions
 	connectPool := GetAdminPool(config)
 	// Close the admin connection pool
 	defer connectPool.Close()
+
+	// Create a context with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), postgresQueryTimeout)
+	defer cancel()
 
 	existsStmt := "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1)"
 

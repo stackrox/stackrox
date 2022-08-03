@@ -203,7 +203,7 @@ const VulnMgmtNodes = ({ selectedRowId, search, sort, page, data, totalResults }
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
-    const query = showVMUpdates ? nodeListQuery : nodeListUpdatedQuery;
+    const query = showVMUpdates ? nodeListUpdatedQuery : nodeListQuery;
 
     const tableSort = sort || defaultNodeSort;
     const queryOptions = {

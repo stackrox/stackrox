@@ -8,6 +8,7 @@ import MessageCentered from 'Components/MessageCentered';
 import PageNotFound from 'Components/PageNotFound';
 import { useTheme } from 'Containers/ThemeProvider';
 import queryService from 'utils/queryService';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import { LIST_PAGE_SIZE, defaultCountKeyMap } from 'constants/workflowPages.constants';
 import useCases from 'constants/useCaseTypes';
@@ -46,6 +47,10 @@ const WorkflowEntityPage = ({
     setRefreshTrigger,
 }) => {
     const { isDarkMode } = useTheme();
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+
     const enhancedQueryOptions =
         queryOptions && queryOptions.variables ? queryOptions : { variables: {} };
     let query = overviewQuery;
@@ -63,7 +68,8 @@ const WorkflowEntityPage = ({
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityType,
             entityListType,
-            useCase
+            useCase,
+            showVMUpdates
         );
         fieldName = listFieldName;
         query = getListQuery(listFieldName, fragmentName, fragment);

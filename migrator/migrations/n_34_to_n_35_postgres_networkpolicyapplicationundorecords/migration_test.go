@@ -70,7 +70,6 @@ func (s *postgresMigrationSuite) TestNetworkPolicyApplicationUndoRecordMigration
 
 	// Prepare data and write to legacy DB
 	var networkPolicyApplicationUndoRecords []*storage.NetworkPolicyApplicationUndoRecord
-
 	for i := 0; i < 200; i++ {
 		networkPolicyApplicationUndoRecord := &storage.NetworkPolicyApplicationUndoRecord{}
 		s.NoError(testutils.FullInit(networkPolicyApplicationUndoRecord, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

@@ -368,11 +368,7 @@ func (resolver *clusterCVEResolver) VulnerabilityType() string {
 }
 
 func (resolver *clusterCVEResolver) VulnerabilityTypes() []string {
-	ret := make([]string, 0, len(storage.CVE_CVEType_name))
-	for _, t := range storage.CVE_CVEType_name {
-		ret = append(ret, t)
-	}
-	return ret
+	return []string{resolver.data.GetType().String()}
 }
 
 func (resolver *clusterCVEResolver) EnvImpact(ctx context.Context) (float64, error) {

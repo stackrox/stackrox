@@ -29,23 +29,26 @@ chmod -R 755 "${bundle_root}"
 
 # =============================================================================
 # Get latest postgres minor version
-
-postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+arch="x86_64"
+if [[ $(uname -m) == "arm64" ]]; then
+  arch="aarch64"
+fi
+postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
 postgres_major="14"
 pg_rhel_version="8.5"
 
 if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
     dnf install --disablerepo='*' -y "${postgres_repo_url}"
-    postgres_minor="$(dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y "postgresql${postgres_major}-devel.x86_64" | tail -n 1 | awk '{print $2}').x86_64"
+    postgres_minor="$(dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y "postgresql${postgres_major}-devel.${arch}" | tail -n 1 | awk '{print $2}').${arch}"
     echo "PG minor version: ${postgres_minor}"
 else
     build_dir="$(mktemp -d)"
     docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
 FROM registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
 RUN dnf install --disablerepo='*' -y "${postgres_repo_url}"
-ENTRYPOINT dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.x86_64 | tail -n 1 | awk '{print \$2}'
+ENTRYPOINT dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
 EOF
-    postgres_minor="$(docker run --rm postgres-minor-image).x86_64"
+    postgres_minor="$(docker run --rm postgres-minor-image).${arch}"
     rm -rf "${build_dir}"
 fi
 
@@ -58,7 +61,8 @@ fi
 cp -p "${INPUT_ROOT}"/*.conf "${bundle_root}/etc/"
 
 # Get postgres RPMs directly
-postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-x86_64"
+postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-${arch}"
+
 curl -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
 curl -sS --fail -o "${bundle_root}/postgres-server.rpm" \

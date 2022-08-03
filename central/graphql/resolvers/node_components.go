@@ -191,9 +191,9 @@ func (resolver *nodeComponentResolver) FixedIn(ctx context.Context) string {
 }
 
 // NodeComponentLastScanned is the last time the node component was scanned in a node.
-func (resolver *nodeComponentResolver) NodeComponentLastScanned(ctx context.Context) (*graphql.Time, error) {
+func (resolver *nodeComponentResolver) NodeComponentLastScanned(_ context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeComponentLastScanned")
-	nodeLoader, err := loaders.GetNodeLoader(ctx)
+	nodeLoader, err := loaders.GetNodeLoader(resolver.ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func (resolver *nodeComponentResolver) NodeComponentLastScanned(ctx context.Cont
 		},
 	}
 
-	nodes, err := nodeLoader.FromQuery(ctx, componentQuery)
+	nodes, err := nodeLoader.FromQuery(resolver.ctx, componentQuery)
 	if err != nil || len(nodes) == 0 {
 		return nil, err
 	} else if len(nodes) > 1 {

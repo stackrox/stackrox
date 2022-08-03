@@ -75,12 +75,20 @@ var (
 		},
 		SkipFields: []generator.TypeAndField{
 			{
+				ParentType: reflect.TypeOf(storage.Image{}),
+				FieldName:  "Scan",
+			},
+			{
 				ParentType: reflect.TypeOf(storage.ImageScan{}),
 				FieldName:  "Components",
 			},
 			{
 				ParentType: reflect.TypeOf(storage.NodeScan{}),
 				FieldName:  "Components",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.Node{}),
+				FieldName:  "Scan",
 			},
 			// TODO(ROX-6194): Remove this entirely after the deprecation cycle started with the 55.0 release.
 			{

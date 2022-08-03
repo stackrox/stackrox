@@ -258,7 +258,15 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
             it('should display all the columns and links expected in cves list page', () => {
                 visitVulnerabilityManagementEntities('cluster-cves');
                 hasExpectedHeaderColumns(
-                    ['CVE', 'Fixable', 'CVSS Score', 'Env. Impact', 'Impact Score', 'Published'],
+                    [
+                        'CVE',
+                        'Fixable',
+                        'CVSS Score',
+                        'Env. Impact',
+                        'Impact Score',
+                        'Entities',
+                        'Published',
+                    ],
                     1 // skip 1 additional column to account for checkbox column
                 );
                 cy.get(selectors.tableBodyColumn).each(($el) => {

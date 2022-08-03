@@ -7,10 +7,10 @@ go 1.16
 require github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581
 
 require (
-	cloud.google.com/go/compute v1.6.1
+	cloud.google.com/go/compute v1.7.0
 	cloud.google.com/go/containeranalysis v0.3.0
-	cloud.google.com/go/storage v1.22.1
-	github.com/BurntSushi/toml v1.0.0
+	cloud.google.com/go/storage v1.24.0
+	github.com/BurntSushi/toml v1.2.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/NYTimes/gziphandler v1.1.1
@@ -71,6 +71,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/sys/mount v0.3.0 // indirect
+	github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220802140408-c0ab819afba6
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
@@ -83,18 +84,18 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.35.0
-	github.com/russellhaering/gosaml2 v0.7.0
+	github.com/russellhaering/gosaml2 v0.8.0
 	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/sergi/go-diff v1.2.0
 	github.com/sigstore/cosign v1.8.1-0.20220530190726-3a43ddc93914
 	github.com/sigstore/sigstore v1.2.1-0.20220528141235-6d98e7d59dee
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.0
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
 	github.com/tkuchiki/go-timezone v0.2.2
@@ -104,15 +105,15 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
-	golang.org/x/net v0.0.0-20220607020251-c690dde0001d
-	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb
+	golang.org/x/net v0.0.0-20220617184016-355a448f1bc9
+	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
-	golang.org/x/sys v0.0.0-20220610221304-9f5ed59c137d
+	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.11
 	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.84.0
-	google.golang.org/genproto v0.0.0-20220608133413-ed9918b62aac
+	google.golang.org/api v0.85.0
+	google.golang.org/genproto v0.0.0-20220617124728-180714bec0ad
 	google.golang.org/grpc v1.47.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5

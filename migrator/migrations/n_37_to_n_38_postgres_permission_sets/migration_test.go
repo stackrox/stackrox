@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestMigration(t *testing.T) {
@@ -68,10 +67,6 @@ func (s *postgresMigrationSuite) TestPermissionSetMigration() {
 
 	// Prepare data and write to legacy DB
 	var permissionSets []*storage.PermissionSet
-	batchSize = 48
-	rocksWriteBatch := gorocksdb.NewWriteBatch()
-	defer rocksWriteBatch.Destroy()
-
 	for i := 0; i < 200; i++ {
 		permissionSet := &storage.PermissionSet{}
 		s.NoError(testutils.FullInit(permissionSet, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

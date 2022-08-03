@@ -7,8 +7,6 @@
 # dropped (e.g. 3.0.61.1 -> 3.61.1) and development version ".x" is changed to ".0" (e.g. 3.0.61.x-123 -> 3.0.61.0-123).
 VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g' | sed -E 's@^3.0.([[:digit:]]+\.[[:digit:]]+)(-)?@3.\1\2@g')
 
-GO_VERSION ?= $(shell cat ../EXPECTED_GO_VERSION | sed 's/go//')
-
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
@@ -293,11 +291,15 @@ smuggled-status-sh:
 		"$${smuggled_status_sh}" ;\
 	)
 
-docker-build: test smuggled-status-sh ## Build docker image with the operator.
+.PHONY: check-expected-go-version
+check-expected-go-version:
+	$(SILENT)expected=$$(head -n 1 ../EXPECTED_GO_VERSION | sed 's/go//'); \
+	actual=$$(grep '^FROM golang' Dockerfile | awk '{print $$2}' | cut -d: -f2); \
+	[ "$${expected}" = "$${actual}" ] || { echo "../EXPECTED_GO_VERSION $${expected}, Dockerfile $${actual}; please update to match"; exit 1; }
+
+docker-build: check-expected-go-version test smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
-		--build-arg "GO_VERSION=${GO_VERSION}" \
 		-t ${IMG} \
-		--ssh default=${SSH_AUTH_SOCK} \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		-f Dockerfile \
 		..

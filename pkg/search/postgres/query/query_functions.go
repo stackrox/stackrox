@@ -12,7 +12,7 @@ import (
 type queryAndFieldContext struct {
 	qualifiedColumnName string
 	field               *pkgSearch.Field
-	dbField             *walker.Field
+	sqlDataType         walker.DataType
 
 	value          string
 	highlight      bool
@@ -26,7 +26,7 @@ func qeWithSelectFieldIfNeeded(ctx *queryAndFieldContext, whereClause *WhereClau
 	if ctx.highlight {
 		qe.SelectedFields = []SelectQueryField{{
 			SelectPath:    ctx.qualifiedColumnName,
-			FieldType:     ctx.dbField.DataType,
+			FieldType:     ctx.sqlDataType,
 			FieldPath:     ctx.field.FieldPath,
 			PostTransform: postTransformFunc,
 		}}
@@ -49,16 +49,14 @@ var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 	// Map is handled separately.
 }
 
-func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string, highlight bool, now time.Time) (*QueryEntry, error) {
-	qualifiedColName := dbField.Schema.Table + "." + dbField.ColumnName
-
+func matchFieldQuery(qualifiedColName string, sqlDataType walker.DataType, field *pkgSearch.Field, value string, highlight bool, now time.Time, goesIntoHavingClause bool) (*QueryEntry, error) {
 	ctx := &queryAndFieldContext{
 		qualifiedColumnName: qualifiedColName,
 		field:               field,
-		dbField:             dbField,
 		highlight:           highlight,
 		value:               value,
 		now:                 now,
+		sqlDataType:         sqlDataType,
 	}
 
 	// Special case: wildcard
@@ -66,14 +64,23 @@ func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string
 		return handleExistenceQueries(ctx), nil
 	}
 
-	if dbField.DataType == walker.Map {
+	if sqlDataType == walker.Map {
 		return newMapQuery(ctx)
 	}
 
 	trimmedValue, modifiers := pkgSearch.GetValueAndModifiersFromString(value)
 	ctx.value = trimmedValue
 	ctx.queryModifiers = modifiers
-	return datatypeToQueryFunc[dbField.DataType](ctx)
+	qe, err := datatypeToQueryFunc[sqlDataType](ctx)
+	if err != nil {
+		return nil, err
+	}
+	if goesIntoHavingClause {
+		having := qe.Where
+		qe.Having = &having
+		qe.Where = WhereClause{}
+	}
+	return qe, nil
 }
 
 func handleExistenceQueries(ctx *queryAndFieldContext) *QueryEntry {

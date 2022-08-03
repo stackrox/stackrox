@@ -753,6 +753,10 @@ get_pr_details() {
             exit 2
         fi
         [[ "${pull_request}" == "null" ]] && _not_a_PR
+    elif is_GITHUB_ACTIONS; then
+        pull_request="$(jq -r .pull_request.number "${GITHUB_EVENT_PATH}")" || _not_a_PR
+        org="${GITHUB_REPOSITORY_OWNER}"
+        repo="${GITHUB_REPOSITORY#*/}"
     else
         echo "Expect Circle or OpenShift CI"
         exit 2
@@ -992,6 +996,9 @@ openshift_ci_import_creds() {
     for cred in /tmp/secret/**/[A-Z]*; do
         export "$(basename "$cred")"="$(cat "$cred")"
     done
+    for cred in /tmp/vault/**/[A-Z]*; do
+        export "$(basename "$cred")"="$(cat "$cred")"
+    done
 }
 
 unset_namespace_env_var() {
@@ -1099,7 +1106,7 @@ validate_expected_go_version() {
     info "Validating the expected go version against what was used to build roxctl"
 
     roxctl_go_version="$(roxctl version --json | jq '.GoVersion' -r)"
-    expected_go_version="$(cat EXPECTED_GO_VERSION)"
+    expected_go_version="$(head -n 1 EXPECTED_GO_VERSION)"
     if [[ "${roxctl_go_version}" != "${expected_go_version}" ]]; then
         echo "Got unexpected go version ${roxctl_go_version} (wanted ${expected_go_version})"
         exit 1
@@ -1241,6 +1248,34 @@ save_junit_failure() {
     </testcase>
 </testsuite>
 EOF
+}
+
+add_build_comment_to_pr() {
+    info "Adding a comment with the build tag to the PR"
+
+    # hub-comment is tied to Circle CI env
+    local url
+    url=$(get_pr_details | jq -r '.html_url')
+    export CIRCLE_PULL_REQUEST="$url"
+
+    local sha
+    sha=$(get_pr_details | jq -r '.head.sha')
+    sha=${sha:0:7}
+    export _SHA="$sha"
+
+    local tag
+    tag=$(make tag)
+    export _TAG="$tag"
+
+    local tmpfile
+    tmpfile=$(mktemp)
+    cat > "$tmpfile" <<- EOT
+Images are ready for the commit at {{.Env._SHA}}.
+
+To use with deploy scripts, first \`export MAIN_IMAGE_TAG={{.Env._TAG}}\`.
+EOT
+
+    hub-comment -type build -template-file "$tmpfile"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
