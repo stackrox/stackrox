@@ -5,6 +5,7 @@ import { PolicyCategory } from 'types/policy.proto';
 import PolicyCategoriesList from './PolicyCategoriesList';
 import PolicyCategoriesFilterSelect, { CategoryFilter } from './PolicyCategoriesFilterSelect';
 import PolicyCategorySidePanel from './PolicyCategorySidePanel';
+import DeletePolicyCategoryModal from './DeletePolicyCategoryModal';
 
 type PolicyCategoriesListSectionProps = {
     policyCategories: PolicyCategory[];
@@ -27,6 +28,8 @@ function PolicyCategoriesListSection({
         'Default categories',
         'Custom categories',
     ]);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
     let currentPolicyCategories = policyCategories;
     if (selectedFilters.length === 1) {
         if (selectedFilters[0] === 'Default categories') {
@@ -49,70 +52,81 @@ function PolicyCategoriesListSection({
     }, [filterTerm, selectedFilters, policyCategories]);
 
     return (
-        <PageSection id="policy-categories-list-section">
-            <Flex
-                spaceItems={{ default: 'spaceItemsNone' }}
-                alignItems={{ default: 'alignItemsStretch' }}
-                className="pf-u-h-100"
-            >
-                <FlexItem flex={{ default: 'flex_1' }}>
-                    <PageSection isFilled variant="light" className="pf-u-h-100">
-                        <Flex direction={{ default: 'column' }}>
-                            <Title headingLevel="h2">
+        <>
+            <PageSection id="policy-categories-list-section">
+                <Flex
+                    spaceItems={{ default: 'spaceItemsNone' }}
+                    alignItems={{ default: 'alignItemsStretch' }}
+                    className="pf-u-h-100"
+                >
+                    <FlexItem flex={{ default: 'flex_1' }}>
+                        <PageSection isFilled variant="light" className="pf-u-h-100">
+                            <Flex direction={{ default: 'column' }}>
+                                <Title headingLevel="h2">
+                                    <Flex
+                                        justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                                        fullWidth={{ default: 'fullWidth' }}
+                                    >
+                                        <span>Categories</span>
+                                        <span>{filteredCategories.length} results found</span>
+                                    </Flex>
+                                </Title>
                                 <Flex
                                     justifyContent={{ default: 'justifyContentSpaceBetween' }}
                                     fullWidth={{ default: 'fullWidth' }}
+                                    flexWrap={{ default: 'nowrap' }}
                                 >
-                                    <span>Categories</span>
-                                    <span>{filteredCategories.length} results found</span>
+                                    <TextInput
+                                        onChange={setFilterTerm}
+                                        type="text"
+                                        value={filterTerm}
+                                        placeholder="Filter by category name..."
+                                        id="policy-categories-filter-input"
+                                        isDisabled={!!selectedCategory}
+                                    />
+                                    <PolicyCategoriesFilterSelect
+                                        selectedFilters={selectedFilters}
+                                        setSelectedFilters={setSelectedFilters}
+                                        isDisabled={!!selectedCategory}
+                                    />
                                 </Flex>
-                            </Title>
-                            <Flex
-                                justifyContent={{ default: 'justifyContentSpaceBetween' }}
-                                fullWidth={{ default: 'fullWidth' }}
-                                flexWrap={{ default: 'nowrap' }}
-                            >
-                                <TextInput
-                                    onChange={setFilterTerm}
-                                    type="text"
-                                    value={filterTerm}
-                                    placeholder="Filter by category name..."
-                                    id="policy-categories-filter-input"
-                                    isDisabled={!!selectedCategory}
-                                />
-                                <PolicyCategoriesFilterSelect
-                                    selectedFilters={selectedFilters}
-                                    setSelectedFilters={setSelectedFilters}
-                                    isDisabled={!!selectedCategory}
-                                />
+                                {filteredCategories.length > 0 && (
+                                    <PolicyCategoriesList
+                                        policyCategories={filteredCategories}
+                                        setSelectedCategory={setSelectedCategory}
+                                    />
+                                )}
+                                {filteredCategories.length === 0 && (
+                                    <div>No policy categories found.</div>
+                                )}
                             </Flex>
-                            {filteredCategories.length > 0 && (
-                                <PolicyCategoriesList
-                                    policyCategories={filteredCategories}
+                        </PageSection>
+                    </FlexItem>
+                    {selectedCategory && (
+                        <>
+                            <Divider component="div" isVertical />
+                            <FlexItem flex={{ default: 'flex_1' }}>
+                                <PolicyCategorySidePanel
+                                    selectedCategory={selectedCategory}
                                     setSelectedCategory={setSelectedCategory}
+                                    addToast={addToast}
+                                    openDeleteModal={() => setIsDeleteModalOpen(true)}
+                                    refreshPolicyCategories={refreshPolicyCategories}
                                 />
-                            )}
-                            {filteredCategories.length === 0 && (
-                                <div>No policy categories found.</div>
-                            )}
-                        </Flex>
-                    </PageSection>
-                </FlexItem>
-                {selectedCategory && (
-                    <>
-                        <Divider component="div" isVertical />
-                        <FlexItem flex={{ default: 'flex_1' }}>
-                            <PolicyCategorySidePanel
-                                selectedCategory={selectedCategory}
-                                setSelectedCategory={setSelectedCategory}
-                                addToast={addToast}
-                                refreshPolicyCategories={refreshPolicyCategories}
-                            />
-                        </FlexItem>
-                    </>
-                )}
-            </Flex>
-        </PageSection>
+                            </FlexItem>
+                        </>
+                    )}
+                </Flex>
+            </PageSection>
+            <DeletePolicyCategoryModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                refreshPolicyCategories={() => {}}
+                addToast={addToast}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+            />
+        </>
     );
 }
 
