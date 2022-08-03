@@ -247,7 +247,7 @@ export function getCveTableColumns(workflowState) {
     ];
 
     if (currentEntityType === entityTypes.NODE_CVE || currentEntityType === entityTypes.IMAGE_CVE) {
-        tableColumns.push({
+        tableColumns.splice(3, 0, {
             Header: `Operating System`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,

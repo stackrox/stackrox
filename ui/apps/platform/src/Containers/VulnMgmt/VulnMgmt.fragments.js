@@ -224,6 +224,7 @@ export const IMAGE_CVE_DETAIL_FRAGMENT = gql`
         deploymentCount(query: $query)
         discoveredAtImage(query: $query)
         imageCount(query: $query)
+        operatingSystem
     }
 `;
 
@@ -260,6 +261,7 @@ export const NODE_CVE_DETAIL_FRAGMENT = gql`
         }
         nodeComponentCount(query: $query)
         nodeCount(query: $query)
+        operatingSystem
     }
 `;
 
