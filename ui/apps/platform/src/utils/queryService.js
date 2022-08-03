@@ -16,6 +16,7 @@ import { IMAGE_FRAGMENT } from 'queries/image';
 import {
     VULN_COMPONENT_LIST_FRAGMENT,
     VULN_CVE_LIST_FRAGMENT,
+    OLD_IMAGE_LIST_FRAGMENT as OLD_VULN_IMAGE_LIST_FRAGMENT,
     IMAGE_LIST_FRAGMENT as VULN_IMAGE_LIST_FRAGMENT,
     CLUSTER_LIST_FRAGMENT as VULN_CLUSTER_LIST_FRAGMENT,
     DEPLOYMENT_LIST_FRAGMENT as VULN_DEPLOYMENT_LIST_FRAGMENT,
@@ -274,7 +275,9 @@ function getFragment(entityType, listType, useCase, showVMUpdates = false) {
             [entityTypes.CLUSTER_CVE]: CLUSTER_CVE_LIST_FRAGMENT,
             [entityTypes.NODE_CVE]: NODE_CVE_LIST_FRAGMENT,
             [entityTypes.IMAGE_CVE]: VULN_IMAGE_CVE_LIST_FRAGMENT,
-            [entityTypes.IMAGE]: VULN_IMAGE_LIST_FRAGMENT,
+            [entityTypes.IMAGE]: showVMUpdates
+                ? VULN_IMAGE_LIST_FRAGMENT
+                : OLD_VULN_IMAGE_LIST_FRAGMENT,
             [entityTypes.CLUSTER]: VULN_CLUSTER_LIST_FRAGMENT,
             [entityTypes.NAMESPACE]: showVMUpdates
                 ? VULN_NAMESPACE_LIST_FRAGMENT_UPDATED
