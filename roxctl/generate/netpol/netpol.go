@@ -9,8 +9,12 @@ import (
 
 type generateNetpolCommand struct {
 	// Properties that are bound to cobra flags.
-	offline    bool
-	folderPath string
+	offline          bool
+	folderPath       string
+	outputFolderPath string
+	outputFilePath   string
+	mergePolicies    bool
+	splitPolicies    bool
 
 	// injected or constructed values
 	env     environment.Environment
@@ -34,6 +38,13 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 
 	c.Flags().BoolVar(&generateNetpolCmd.offline, "offline", false, "whether to connect to a central instace for additional information")
+	c.Flags().StringVar(&generateNetpolCmd.outputFolderPath, "output-dir", "./policies", "path to the output directory for generated policies")
+	c.Flags().StringVar(&generateNetpolCmd.outputFilePath, "output-file", "./policies.yaml", "path to the output file for merged policies")
+	c.Flags().BoolVar(&generateNetpolCmd.mergePolicies, "merge-policies", false, "Merge all generated Network Policies into a single file. Combine with -f for target file")
+	c.Flags().BoolVar(&generateNetpolCmd.splitPolicies, "split-policies", false, "Create one file per Network Policy. Combine with --output-dir for target folder")
+
+	c.MarkFlagsRequiredTogether("split-policies", "output-dir")
+	c.MarkFlagsRequiredTogether("merge-policies", "output-file")
 	return c
 }
 
