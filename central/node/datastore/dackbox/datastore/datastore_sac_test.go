@@ -88,8 +88,6 @@ func (s *nodeDatastoreSACSuite) setupRocks() {
 
 func (s *nodeDatastoreSACSuite) SetupSuite() {
 	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skip Postgres tests!")
-
 		s.setupPostgres()
 	} else {
 		s.setupRocks()
@@ -303,9 +301,6 @@ func (s *nodeDatastoreSACSuite) TestCountNodes() {
 }
 
 func (s *nodeDatastoreSACSuite) TestCount() {
-	// TODO: Fix!!!
-	s.T().Skip("Skip because Count() panics for nil query.")
-
 	clusterID := testconsts.Cluster3
 
 	s.addTestNode(clusterID)
@@ -315,7 +310,7 @@ func (s *nodeDatastoreSACSuite) TestCount() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
-			numOfNodes, err := s.datastore.Count(ctx, nil)
+			numOfNodes, err := s.datastore.Count(ctx, searchPkg.EmptyQuery())
 			s.NoError(err)
 
 			// No accessible clusters.

@@ -97,8 +97,6 @@ func (s *nodeDatastoreSACSuite) setupRocks() {
 
 func (s *nodeDatastoreSACSuite) SetupSuite() {
 	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skip Postgres tests!")
-
 		s.setupPostgres()
 	} else {
 		s.setupRocks()
@@ -355,7 +353,6 @@ func (s *nodeDatastoreSACSuite) TestGetAllClusterNodeStoresWriteAccess() {
 }
 
 func (s *nodeDatastoreSACSuite) TestGetClusterNodeStore() {
-	s.T().Skip("TODO - GetClusterNodeStore")
 	clusterID := testconsts.Cluster2
 
 	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
@@ -363,10 +360,11 @@ func (s *nodeDatastoreSACSuite) TestGetClusterNodeStore() {
 		s.Run(name, func() {
 			ctx := c.Context
 			datastore, err := s.globalDatastore.GetClusterNodeStore(ctx, clusterID, false)
-			s.NoError(err)
 			if c.ExpectedFound {
+				s.NoError(err)
 				s.Require().NotNil(datastore)
 			} else {
+				s.ErrorIs(err, sac.ErrResourceAccessDenied)
 				s.Nil(datastore)
 			}
 		})
@@ -374,7 +372,6 @@ func (s *nodeDatastoreSACSuite) TestGetClusterNodeStore() {
 }
 
 func (s *nodeDatastoreSACSuite) TestGetClusterNodeStoreWriteAccess() {
-	s.T().Skip("TODO - GetClusterNodeStore")
 	clusterID := testconsts.Cluster2
 
 	cases := testutils.GenericClusterSACWriteTestCases(context.Background(), s.T(), "write", clusterID, "not-"+clusterID, resources.Node)
@@ -382,11 +379,12 @@ func (s *nodeDatastoreSACSuite) TestGetClusterNodeStoreWriteAccess() {
 		s.Run(name, func() {
 			ctx := c.Context
 			datastore, err := s.globalDatastore.GetClusterNodeStore(ctx, clusterID, true)
-			s.NoError(err)
-			if c.ExpectedFound {
-				s.Require().NotNil(datastore)
-			} else {
+			if c.ExpectError {
+				s.ErrorIs(err, sac.ErrResourceAccessDenied)
 				s.Nil(datastore)
+			} else {
+				s.NoError(err)
+				s.Require().NotNil(datastore)
 			}
 		})
 	}
