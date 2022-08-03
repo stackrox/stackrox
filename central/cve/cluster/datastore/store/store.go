@@ -18,6 +18,6 @@ type Store interface {
 
 	UpsertMany(ctx context.Context, cves []*storage.ClusterCVE) error
 
-	UpsertClusterCVEParts(ctx context.Context, cveType storage.CVE_CVEType, cvePartsArr ...converter.ClusterCVEParts) error
+	ReconcileClusterCVEParts(ctx context.Context, cveType storage.CVE_CVEType, cvePartsArr ...converter.ClusterCVEParts) error
 	DeleteClusterCVEsForCluster(ctx context.Context, clusterID string) error
 }

@@ -7,8 +7,10 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
+	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
@@ -383,6 +385,30 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	results, err = s.clusterCVEDatastore.Search(s.ctx, search.NewQueryBuilder().AddExactMatches(search.Cluster, "c1").ProtoQuery())
 	s.NoError(err)
 	s.Len(results, 10)
+
+	// Suppress CVEs
+	start := types.TimestampNow()
+	duration := types.DurationProto(10 * time.Minute)
+	clusterCVE := utils.EmbeddedVulnerabilityToClusterCVE(storage.CVE_K8S_CVE, vulns[0])
+	err = s.clusterCVEDatastore.Suppress(s.ctx, start, duration, vulns[0].GetCve())
+	s.NoError(err)
+
+	storedCVE, found, err := s.clusterCVEDatastore.Get(s.ctx, clusterCVE.GetId())
+	s.NoError(err)
+	s.True(found)
+	s.True(storedCVE.GetSnoozed())
+
+	// Reconcile
+	s.NoError(s.cveManager.updateCVEs(vulns, clusterMap, utils.K8s))
+	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(10, count)
+
+	// Ensure that snoozed state is persisted.
+	storedCVE, found, err = s.clusterCVEDatastore.Get(s.ctx, clusterCVE.GetId())
+	s.NoError(err)
+	s.True(found)
+	s.True(storedCVE.GetSnoozed())
 
 	// Upsert istio CVEs.
 	vulns, clusterMap = getTestClusterCVEParts(10, c2ID)
