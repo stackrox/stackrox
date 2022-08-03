@@ -337,7 +337,6 @@ func (s *nodeDatastoreSACSuite) TestSearch() {
 	clusterID := testconsts.Cluster2
 
 	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
-
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
@@ -345,8 +344,8 @@ func (s *nodeDatastoreSACSuite) TestSearch() {
 			s.NoError(err)
 
 			fetchedNodeIDs := make([]string, 0, len(results))
-			for _, r := range results {
-				fetchedNodeIDs = append(fetchedNodeIDs, r.ID)
+			for _, result := range results {
+				fetchedNodeIDs = append(fetchedNodeIDs, result.ID)
 			}
 
 			var expectedNodeIds []string
@@ -363,16 +362,15 @@ func (s *nodeDatastoreSACSuite) TestSearchNodes() {
 	clusterID := testconsts.Cluster2
 
 	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
-
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
-			results, err := s.datastore.SearchNodes(ctx, nil)
+			nodes, err := s.datastore.SearchNodes(ctx, nil)
 			s.NoError(err)
 
-			fetchedNodeIDs := make([]string, 0, len(results))
-			for _, r := range results {
-				fetchedNodeIDs = append(fetchedNodeIDs, r.Id)
+			fetchedNodeIDs := make([]string, 0, len(nodes))
+			for _, node := range nodes {
+				fetchedNodeIDs = append(fetchedNodeIDs, node.Id)
 			}
 
 			var expectedNodeIds []string
@@ -389,16 +387,15 @@ func (s *nodeDatastoreSACSuite) TestSearchRawNodes() {
 	clusterID := testconsts.Cluster2
 
 	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
-
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
-			results, err := s.datastore.SearchRawNodes(ctx, nil)
+			rawNodes, err := s.datastore.SearchRawNodes(ctx, nil)
 			s.NoError(err)
 
-			fetchedNodeIDs := make([]string, 0, len(results))
-			for _, r := range results {
-				fetchedNodeIDs = append(fetchedNodeIDs, r.Id)
+			fetchedNodeIDs := make([]string, 0, len(rawNodes))
+			for _, rawNode := range rawNodes {
+				fetchedNodeIDs = append(fetchedNodeIDs, rawNode.Id)
 			}
 
 			var expectedNodeIds []string

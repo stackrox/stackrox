@@ -31,6 +31,9 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// Following methods are not covered by unit tests: CountAllNodes, Search
+// and Count. Their implementations are calling underlying functions in
+// datastore. And they are covered by SAC units tests for datastore.
 func TestNodeGlobalDatastoreSAC(t *testing.T) {
 	suite.Run(t, new(nodeDatastoreSACSuite))
 }
@@ -413,6 +416,56 @@ func (s *nodeDatastoreSACSuite) TestRemoveClusterNodeStores() {
 			} else {
 				s.NoError(err)
 			}
+		})
+	}
+}
+
+func (s *nodeDatastoreSACSuite) TestSearchResults() {
+	clusterID := testconsts.Cluster2
+
+	cases := getReadSACMultiNodeTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
+	for name, c := range cases {
+		s.Run(name, func() {
+			ctx := c.Context
+			results, err := s.globalDatastore.SearchResults(ctx, nil)
+			s.NoError(err)
+
+			fetchedNodeIDs := make([]string, 0, len(results))
+			for _, result := range results {
+				fetchedNodeIDs = append(fetchedNodeIDs, result.Id)
+			}
+
+			var expectedNodeIds []string
+			for _, expectedClusterID := range c.ExpectedClusterIds {
+				expectedNodeIds = append(expectedNodeIds, s.testNodeIDs[expectedClusterID]...)
+			}
+
+			s.ElementsMatch(expectedNodeIds, fetchedNodeIDs)
+		})
+	}
+}
+
+func (s *nodeDatastoreSACSuite) TestSearchRawNodes() {
+	clusterID := testconsts.Cluster2
+
+	cases := getReadSACMultiNodeTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Node)
+	for name, c := range cases {
+		s.Run(name, func() {
+			ctx := c.Context
+			rawNodes, err := s.globalDatastore.SearchRawNodes(ctx, nil)
+			s.NoError(err)
+
+			fetchedNodeIDs := make([]string, 0, len(rawNodes))
+			for _, rawNode := range rawNodes {
+				fetchedNodeIDs = append(fetchedNodeIDs, rawNode.Id)
+			}
+
+			var expectedNodeIds []string
+			for _, expectedClusterID := range c.ExpectedClusterIds {
+				expectedNodeIds = append(expectedNodeIds, s.testNodeIDs[expectedClusterID]...)
+			}
+
+			s.ElementsMatch(expectedNodeIds, fetchedNodeIDs)
 		})
 	}
 }
