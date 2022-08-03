@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -108,7 +107,7 @@ func (s *groupDataStoreTestSuite) TestGet() {
 	// Test that can fetch by id
 	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId()})
 	s.NoError(err)
-	s.True(reflect.DeepEqual(g, group))
+	s.Equal(group, g)
 }
 
 // TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
@@ -122,7 +121,7 @@ func (s *groupDataStoreTestSuite) TestGetFetchesByProps() {
 	// Test that can fetch by props
 	g, err := s.dataStore.Get(s.hasReadCtx, expectedGroup.GetProps())
 	s.NoError(err)
-	s.True(reflect.DeepEqual(g, expectedGroup))
+	s.Equal(expectedGroup, g)
 }
 
 // TODO(ROX-11592): This can be removed once retrieving the group by its properties is fully deprecated.
@@ -136,7 +135,7 @@ func (s *groupDataStoreTestSuite) TestGetByPropsErrorsIfAmbiguous() {
 	storedGroups[1].GetProps().Id = ""
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(storedGroups))
 
-	// Test that fetching by props when ambitious will result in error
+	// Test that fetching by props when ambiguous will result in error
 	g, err := s.dataStore.Get(s.hasReadCtx, storedGroups[0].GetProps())
 	s.Error(err)
 	s.ErrorIs(err, errox.InvalidArgs)

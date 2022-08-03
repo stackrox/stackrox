@@ -74,22 +74,14 @@ func (s *storeImpl) Walk(_ context.Context, fn func(obj *storage.Group) error) e
 // Upsert upserts a group to the store
 func (s *storeImpl) Upsert(_ context.Context, group *storage.Group) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		buc := tx.Bucket(groupsBucket)
-		return upsertInTransaction(buc, group)
+		return upsertInTransaction(tx, group)
 	})
 }
 
 // UpsertMany upserts multiple groups to the store
 func (s *storeImpl) UpsertMany(_ context.Context, groups []*storage.Group) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		buc := tx.Bucket(groupsBucket)
-
-		for _, group := range groups {
-			if err := upsertInTransaction(buc, group); err != nil {
-				return err
-			}
-		}
-		return nil
+		return upsertInTransaction(tx, groups...)
 	})
 }
 
@@ -97,43 +89,47 @@ func (s *storeImpl) UpsertMany(_ context.Context, groups []*storage.Group) error
 // Returns an error if no such group exists.
 func (s *storeImpl) Delete(_ context.Context, propsID string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		buc := tx.Bucket(groupsBucket)
-		return deleteInTransaction(buc, propsID)
+		return deleteInTransaction(tx, propsID)
 	})
 }
 
 // DeleteMany removes multiple groups from the store given their ids.
 func (s *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		buc := tx.Bucket(groupsBucket)
-
-		for _, propsID := range ids {
-			if err := deleteInTransaction(buc, propsID); err != nil {
-				return err
-			}
-		}
-		return nil
+		return deleteInTransaction(tx, ids...)
 	})
 }
 
 // Helpers
 //////////
 
-func upsertInTransaction(bucket *bolt.Bucket, group *storage.Group) error {
-	bytes, err := proto.Marshal(group)
-	if err != nil {
-		return errox.InvariantViolation.CausedBy(err)
-	}
+func upsertInTransaction(tx *bolt.Tx, groups ...*storage.Group) error {
+	bucket := tx.Bucket(groupsBucket)
 
-	return bucket.Put([]byte(group.GetProps().GetId()), bytes)
+	for _, group := range groups {
+		bytes, err := proto.Marshal(group)
+		if err != nil {
+			return errox.InvariantViolation.CausedBy(err)
+		}
+
+		if err := bucket.Put([]byte(group.GetProps().GetId()), bytes); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func deleteInTransaction(bucket *bolt.Bucket, propsID string) error {
-	key := []byte(propsID)
+func deleteInTransaction(tx *bolt.Tx, ids ...string) error {
+	bucket := tx.Bucket(groupsBucket)
 
-	if bucket.Get(key) == nil {
-		return errox.NotFound.Newf("group config for %q does not exist", propsID)
+	for _, propsID := range ids {
+		key := []byte(propsID)
+		if bucket.Get(key) == nil {
+			return errox.NotFound.Newf("group config for %q does not exist", propsID)
+		}
+		if err := bucket.Delete(key); err != nil {
+			return err
+		}
 	}
-
-	return bucket.Delete(key)
+	return nil
 }
