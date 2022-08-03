@@ -15,7 +15,7 @@ type WAL interface {
 func Open() WAL {
 	db, err := pebble.Open("/tmp/wal", &pebble.Options{})
 	if err != nil {
-		panic(err)
+		log.Errorf("could not open WAL for Sensor. This could have adverse performance impacts: %v", err)
 	}
 	return &walImpl{
 		db: db,
@@ -32,6 +32,9 @@ type walImpl struct {
 }
 
 func (w *walImpl) Insert(id string, hash uint64) error {
+	if w.db == nil {
+		return nil
+	}
 	hashBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(hashBytes, hash)
 	return w.db.Set([]byte(id), hashBytes, &pebble.WriteOptions{
@@ -40,6 +43,9 @@ func (w *walImpl) Insert(id string, hash uint64) error {
 }
 
 func (w *walImpl) Delete(id string) error {
+	if w.db == nil {
+		return nil
+	}
 	return w.db.Delete([]byte(id), &pebble.WriteOptions{
 		Sync: true,
 	})
@@ -47,6 +53,11 @@ func (w *walImpl) Delete(id string) error {
 
 func (w *walImpl) GetMap() map[string]uint64 {
 	hashes := make(map[string]uint64)
+
+	if w.db == nil {
+		return hashes
+	}
+
 	it := w.db.NewIter(&pebble.IterOptions{})
 	defer it.Close()
 

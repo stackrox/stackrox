@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/wal"
 )
 
 type centralSenderImpl struct {
@@ -56,6 +57,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 	wrappedStream := metrics.NewCountingEventStream(stream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
 	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream)
+	wrappedStream = wal.NewDataStream(wrappedStream, wal.Singleton())
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "total")
 

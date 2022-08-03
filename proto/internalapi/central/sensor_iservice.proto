@@ -41,6 +41,10 @@ message ReassessPolicies {}
 
 message ReprocessDeployments {}
 
+message ResourceCheckpoint {
+    string id = 1;
+}
+
 message MsgToSensor {
     oneof msg {
         SensorEnforcement              enforcement                        =  1;
@@ -62,6 +66,7 @@ message MsgToSensor {
         IssueLocalScannerCertsResponse issue_local_scanner_certs_response = 17;
         storage.Image                  updated_image                      = 18;
         ReprocessDeployments           reprocess_deployments              = 19;
+        ResourceCheckpoint             resource_checkpoint                = 20;
     }
 }
 

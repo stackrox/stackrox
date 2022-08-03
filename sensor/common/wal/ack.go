@@ -3,6 +3,7 @@ package wal
 import (
 	"container/list"
 
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -11,23 +12,19 @@ var (
 	acker MessageAcker
 )
 
-type Action int
-
-const (
-	Add Action = iota
-	Remove
-)
-
 type MessageAcker interface {
-	Insert(id string, hash uint64, action Action)
-	Ack(value uint64) error
+	Insert(event *central.SensorEvent)
+	Ack(value string) error
 }
 
 type listEntry struct {
-	value  uint64
 	id     string
 	hash   uint64
-	action Action
+	action central.ResourceAction
+}
+
+type checkpointEntry struct {
+	checkpoint string
 }
 
 func Singleton() MessageAcker {
@@ -39,6 +36,7 @@ func Singleton() MessageAcker {
 
 func NewMessageAcker() *messageAcker {
 	return &messageAcker{
+		wal:   Open(),
 		queue: list.New(),
 	}
 }
@@ -47,23 +45,35 @@ type messageAcker struct {
 	wal WAL
 
 	lock  sync.Mutex
-	value uint64
 	queue *list.List
 }
 
-func (m *messageAcker) Insert(id string, hash uint64, action Action) {
+func (m *messageAcker) Insert(event *central.SensorEvent) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	m.value++
+
+	if event.GetCheckpoint() != nil {
+		m.queue.PushBack(&checkpointEntry{
+			checkpoint: event.GetCheckpoint().GetId(),
+		})
+		return
+	}
 	m.queue.PushBack(&listEntry{
-		value:  m.value,
-		id:     id,
-		hash:   hash,
-		action: action,
+		id:     event.GetId(),
+		hash:   event.GetHash(),
+		action: event.GetAction(),
 	})
 }
 
-func (m *messageAcker) getAckedElements(value uint64) []*listEntry {
+func (m *messageAcker) InsertCheckpoint(id string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.queue.PushBack(&checkpointEntry{
+		checkpoint: id,
+	})
+}
+
+func (m *messageAcker) getAckedElements(value string) []*listEntry {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -73,28 +83,33 @@ func (m *messageAcker) getAckedElements(value uint64) []*listEntry {
 		if front == nil {
 			break
 		}
-		le := front.Value.(*listEntry)
-		if le.value > value {
-			break
-		}
-		ackedEntries = append(ackedEntries, le)
 		m.queue.Remove(front)
+
+		switch entryValue := front.Value.(type) {
+		case *listEntry:
+			ackedEntries = append(ackedEntries, entryValue)
+		case *checkpointEntry:
+			if entryValue.checkpoint == value {
+				return ackedEntries
+			}
+			log.Errorf("found out of order checkpoints: %s vs %s. continuing", entryValue.checkpoint, value)
+		}
 	}
 	return ackedEntries
 }
 
-func (m *messageAcker) Ack(value uint64) error {
+func (m *messageAcker) Ack(value string) error {
 	entries := m.getAckedElements(value)
 
 	// Flush outside of the lock because this is just an optimization
 	for _, entry := range entries {
 		switch entry.action {
-		case Add:
-			if err := m.wal.Insert(entry.id, entry.hash); err != nil {
+		case central.ResourceAction_REMOVE_RESOURCE:
+			if err := m.wal.Delete(entry.id); err != nil {
 				return err
 			}
-		case Remove:
-			if err := m.wal.Delete(entry.id); err != nil {
+		default:
+			if err := m.wal.Insert(entry.id, entry.hash); err != nil {
 				return err
 			}
 		}

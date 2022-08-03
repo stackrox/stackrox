@@ -42,6 +42,13 @@ func (w *workerQueue) indexFromKey(key string) int {
 
 // push attempts to add an item to the queue, and returns an error if it is unable.
 func (w *workerQueue) push(msg *central.MsgFromSensor) {
+	if msg.GetEvent().GetCheckpoint() != nil {
+		for _, queue := range w.queues {
+			queue.push(msg)
+		}
+		return
+	}
+
 	// The zeroth index is reserved for objects that do not match the switch statement below
 	// w.indexFromKey returns (hashed value % poolSize) + 1 so it cannot return a 0 index
 	var idx int
@@ -55,6 +62,10 @@ func (w *workerQueue) push(msg *central.MsgFromSensor) {
 func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurrency.ErrorSignal, handler func(context.Context, *central.MsgFromSensor) error) {
 	queue := w.queues[idx]
 	for msg := queue.pullBlocking(stopSig); msg != nil; msg = queue.pullBlocking(stopSig) {
+		if checkpoint := msg.GetEvent().GetCheckpoint(); checkpoint != nil {
+			MarkCheckpoint(checkpoint.GetId())
+			continue
+		}
 		if err := handler(ctx, msg); err != nil {
 			log.Errorf("Error handling sensor message: %v", err)
 		}

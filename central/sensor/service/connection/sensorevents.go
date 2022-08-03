@@ -50,6 +50,21 @@ func stripTypePrefix(s string) string {
 	return s
 }
 
+func (s *sensorEventHandler) asyncCheckpointSender(id string) {
+	WaitForCheckpoint(id)
+
+	err := s.injector.InjectMessage(concurrency.Never(), &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ResourceCheckpoint{
+			ResourceCheckpoint: &central.ResourceCheckpoint{
+				Id: id,
+			},
+		},
+	})
+	if err != nil {
+		log.Errorf("error sending checkpoint to sensor: %v", err)
+	}
+}
+
 func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.MsgFromSensor) {
 	var typ string
 	switch evt := msg.Msg.(type) {
@@ -61,6 +76,13 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 				log.Errorf("error reconciling state: %v", err)
 			}
 			s.reconciliationMap.Close()
+			return
+		case *central.SensorEvent_Checkpoint:
+			AddCheckpoint(msg.GetEvent().GetCheckpoint().GetId(), (workerQueueSize+1)*len(s.typeToQueue))
+			for _, queue := range s.typeToQueue {
+				queue.push(msg)
+			}
+			go s.asyncCheckpointSender(msg.GetEvent().GetCheckpoint().GetId())
 			return
 		case *central.SensorEvent_ReprocessDeployment:
 			typ = deploymentQueueKey
