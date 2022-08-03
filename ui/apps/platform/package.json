@@ -82,7 +82,7 @@
         "react-truncate": "^2.4.0",
         "react-vis": "^1.11.5",
         "recharts": "^1.8.5",
-        "redoc": "2.0.0-rc.65",
+        "redoc": "2.0.0-rc.74",
         "redux": "^4.1.2",
         "redux-form": "^8.3.7",
         "redux-saga": "^0.16.0",

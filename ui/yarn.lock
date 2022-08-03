@@ -3515,10 +3515,10 @@
     require-from-string "^2.0.2"
     uri-js "^4.2.2"
 
-"@redocly/openapi-core@^1.0.0-beta.54":
-  version "1.0.0-beta.80"
-  resolved "https://registry.yarnpkg.com/@redocly/openapi-core/-/openapi-core-1.0.0-beta.80.tgz#099bd036c0c90acf8bd0d7f75529e7f1ee904003"
-  integrity sha512-IAQECLt/fDxjlfNdLGnJszt40BaiA6b78+zB6+7Rk8ums0HHLfwWFJPMTzh1bzJ5f+sZ4zDBi4gaIJ1n4XGCHg==
+"@redocly/openapi-core@^1.0.0-beta.104":
+  version "1.0.0-beta.105"
+  resolved "https://registry.yarnpkg.com/@redocly/openapi-core/-/openapi-core-1.0.0-beta.105.tgz#bf8ad66c086cadfe22dbaa3027494ab74f5297bd"
+  integrity sha512-8uYDMcqBOPhFgjRlg5uetW/E2uTVVRpk+YsJhaH78ZNuzBkQP5Waw5s8P8ym6myvHs5me8l5AdniY/ePLMT5xg==
   dependencies:
     "@redocly/ajv" "^8.6.4"
     "@types/node" "^14.11.8"
@@ -3526,15 +3526,10 @@
     js-levenshtein "^1.1.6"
     js-yaml "^4.1.0"
     lodash.isequal "^4.5.0"
-    minimatch "^3.0.4"
+    minimatch "^5.0.1"
     node-fetch "^2.6.1"
     pluralize "^8.0.0"
     yaml-ast-parser "0.0.43"
-
-"@redocly/react-dropdown-aria@^2.0.11":
-  version "2.0.11"
-  resolved "https://registry.yarnpkg.com/@redocly/react-dropdown-aria/-/react-dropdown-aria-2.0.11.tgz#532b864b329237e646abe45d0f8edc923e77370a"
-  integrity sha512-rmuSC2JFFl4DkPDdGVrmffT9KcbG2AB5jvhxPIrOc1dO9mHRMUUftQY35KZlvWqqSSqVn+AM+J9dhiTo1ZqR8A==
 
 "@rollup/plugin-babel@^5.2.0":
   version "5.3.1"
@@ -12839,10 +12834,10 @@ mark.js@^8.11.1:
   resolved "https://registry.yarnpkg.com/mark.js/-/mark.js-8.11.1.tgz#180f1f9ebef8b0e638e4166ad52db879beb2ffc5"
   integrity sha1-GA8fnr74sOY45BZq1S24eb6y/8U=
 
-marked@^4.0.10:
-  version "4.0.12"
-  resolved "https://registry.yarnpkg.com/marked/-/marked-4.0.12.tgz#2262a4e6fd1afd2f13557726238b69a48b982f7d"
-  integrity sha512-hgibXWrEDNBWgGiK18j/4lkS6ihTe9sxtV4Q1OQppb/0zzyPSzoFANBa5MfsG/zgsWklmNnhm0XACZOH/0HBiQ==
+marked@^4.0.15:
+  version "4.0.18"
+  resolved "https://registry.yarnpkg.com/marked/-/marked-4.0.18.tgz#cd0ac54b2e5610cfb90e8fd46ccaa8292c9ed569"
+  integrity sha512-wbLDJ7Zh0sqA0Vdg6aqlbT+yPxqLblpAZh1mK2+AO2twQkPywvvqQNfEPVwSSRjZ7dZcdeVBIAgiO7MMp3Dszw==
 
 matchmediaquery@^0.3.0:
   version "0.3.0"
@@ -13982,10 +13977,10 @@ open@^8.0.9, open@^8.4.0:
     is-docker "^2.1.1"
     is-wsl "^2.2.0"
 
-openapi-sampler@^1.2.1:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/openapi-sampler/-/openapi-sampler-1.2.1.tgz#2ca9eea527f8f2ddb32c3ae1dda31afd8bf0833f"
-  integrity sha512-mHrYmyvcLD0qrfqPkPRBAL2z16hGT2rW0d0B7nklfoTcc3pmkJLkSZlKSeFgerUM41E5c7jlxf0Y19xrM7mWQQ==
+openapi-sampler@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/openapi-sampler/-/openapi-sampler-1.3.0.tgz#5b99ceb4156b00d2aa3f860e52ccb768a5695793"
+  integrity sha512-2QfjK1oM9Sv0q82Ae1RrUe3yfFmAyjF548+6eAeb+h/cL1Uj51TW4UezraBEvwEdzoBgfo4AaTLVFGTKj+yYDw==
   dependencies:
     "@types/json-schema" "^7.0.7"
     json-pointer "0.6.2"
@@ -16253,13 +16248,12 @@ redent@^4.0.0:
     indent-string "^5.0.0"
     strip-indent "^4.0.0"
 
-redoc@2.0.0-rc.65:
-  version "2.0.0-rc.65"
-  resolved "https://registry.yarnpkg.com/redoc/-/redoc-2.0.0-rc.65.tgz#54f3e8fe7b526ab22cb9f2d5a0b122367181beb6"
-  integrity sha512-VqJbhb3krYXFP8De7ygyaWsA4jr9K5avsMo3GJUDv2xPiHTOzcprkIfOaL4ZdINn03x6JT1GOa47cWhrmb5KVA==
+redoc@2.0.0-rc.74:
+  version "2.0.0-rc.74"
+  resolved "https://registry.yarnpkg.com/redoc/-/redoc-2.0.0-rc.74.tgz#29b30002ace4863a5a5f21f44af9369ff047266e"
+  integrity sha512-OeOWGcbmVdfVgN//7ispiRX0fhD7Gk3tWcERugyFfP8QX/1Pttw3jRYSXmiB0i+H48zFn20K1cMppBp/qzm5xQ==
   dependencies:
-    "@redocly/openapi-core" "^1.0.0-beta.54"
-    "@redocly/react-dropdown-aria" "^2.0.11"
+    "@redocly/openapi-core" "^1.0.0-beta.104"
     classnames "^2.3.1"
     decko "^1.2.0"
     dompurify "^2.2.8"
@@ -16267,9 +16261,9 @@ redoc@2.0.0-rc.65:
     json-pointer "^0.6.2"
     lunr "^2.3.9"
     mark.js "^8.11.1"
-    marked "^4.0.10"
+    marked "^4.0.15"
     mobx-react "^7.2.0"
-    openapi-sampler "^1.2.1"
+    openapi-sampler "^1.3.0"
     path-browserify "^1.0.1"
     perfect-scrollbar "^1.5.1"
     polished "^4.1.3"
