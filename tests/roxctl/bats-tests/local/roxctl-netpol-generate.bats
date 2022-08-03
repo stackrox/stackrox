@@ -23,6 +23,10 @@ teardown() {
   run roxctl-release generate netpol "$out_dir"
   assert_failure
   assert_line --partial "Error synthesizing policies from folder: no deployment objects discovered in the repository"
+
+  run roxctl-release generate netpol
+  assert_failure
+  assert_line --partial "missing <folder-path> argument"
 }
 
 @test "roxctl-release generate netpol generates network policies" {
