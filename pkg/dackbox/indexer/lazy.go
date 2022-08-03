@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -105,7 +106,7 @@ func (li *lazyImpl) consumeFromQueue() {
 func (li *lazyImpl) handleKeyValue(key []byte, value proto.Message) {
 	indexedKey, indexedValue := li.wrapper.Wrap(key, value)
 	if indexedKey == "" {
-		log.Errorf("no wrapper registered for key: %s", key)
+		log.Errorf("no wrapper registered for key: %q", key)
 		return
 	}
 	li.buff.AddKeyToAck(key)
@@ -130,7 +131,7 @@ func (li *lazyImpl) indexItems(itemsToIndex map[string]interface{}) {
 	for key, value := range itemsToIndex {
 		if value != nil {
 			if err := batch.Index(key, value); err != nil {
-				log.Errorf("unable to index item: %s, %v", key, err)
+				log.Errorf("unable to index item: %q, %v", key, err)
 			}
 		} else {
 			batch.Delete(key)
@@ -161,7 +162,7 @@ type printableKeys [][]byte
 func (pk printableKeys) String() string {
 	keys := make([]string, 0, len(pk))
 	for _, key := range pk {
-		keys = append(keys, string(key))
+		keys = append(keys, fmt.Sprintf("%q", key))
 	}
 	return strings.Join(keys, ", ")
 }
