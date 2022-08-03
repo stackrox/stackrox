@@ -1,3 +1,6 @@
+//go:build sql_integration
+// +build sql_integration
+
 package resolvers
 
 import (
@@ -197,20 +200,20 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesScoped() {
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityMiss() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	vulnId := graphql.ID("invalid")
+	vulnID := graphql.ID("invalid")
 
-	_, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnId})
+	_, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnID})
 	require.Error(s.T(), err)
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityHit() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	vulnId := graphql.ID("cve-2018-1#")
+	vulnID := graphql.ID("cve-2018-1#")
 
-	vuln, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnId})
+	vuln, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnID})
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), vulnId, vuln.ID(ctx))
+	require.Equal(s.T(), vulnID, vuln.ID(ctx))
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityCount() {
@@ -344,19 +347,19 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityImageComponen
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) getImageResolver(ctx context.Context, id string) *imageResolver {
-	imageId := graphql.ID(id)
+	imageID := graphql.ID(id)
 
-	image, err := s.resolver.Image(ctx, struct{ ID graphql.ID }{ID: imageId})
+	image, err := s.resolver.Image(ctx, struct{ ID graphql.ID }{ID: imageID})
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), imageId, image.Id(ctx))
+	require.Equal(s.T(), imageID, image.Id(ctx))
 	return image
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) getImageVulnerabilityResolver(ctx context.Context, id string) ImageVulnerabilityResolver {
-	vulnId := graphql.ID(id)
+	vulnID := graphql.ID(id)
 
-	vuln, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnId})
+	vuln, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnID})
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), vulnId, vuln.ID(ctx))
+	require.Equal(s.T(), vulnID, vuln.ID(ctx))
 	return vuln
 }

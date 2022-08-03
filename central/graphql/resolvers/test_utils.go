@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -122,12 +123,14 @@ func testImages() []*storage.Image {
 }
 
 func checkVulnerabilityCounter(t *testing.T, resolver *VulnerabilityCounterResolver, total, fixable, critical, important, moderate, low int32) {
-	require.Equal(t, total, resolver.All(nil).Total(nil))
-	require.Equal(t, fixable, resolver.All(nil).Fixable(nil))
-	require.Equal(t, critical, resolver.Critical(nil).Total(nil))
-	require.Equal(t, important, resolver.Important(nil).Total(nil))
-	require.Equal(t, moderate, resolver.Moderate(nil).Total(nil))
-	require.Equal(t, low, resolver.Low(nil).Total(nil))
+	// we have to pass a context to the resolver functions because style checks don't like when we pass nil, this value isn't used though
+	ctx := context.Background()
+	require.Equal(t, total, resolver.All(ctx).Total(ctx))
+	require.Equal(t, fixable, resolver.All(ctx).Fixable(ctx))
+	require.Equal(t, critical, resolver.Critical(ctx).Total(ctx))
+	require.Equal(t, important, resolver.Important(ctx).Total(ctx))
+	require.Equal(t, moderate, resolver.Moderate(ctx).Total(ctx))
+	require.Equal(t, low, resolver.Low(ctx).Total(ctx))
 }
 
 func getFixableRawQuery(fixable bool) (string, error) {
