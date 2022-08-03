@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -52,25 +53,27 @@ type Builder interface {
 	WithClusterDataStore(store clusterDataStore.DataStore) Builder
 	WithPolicyCategoryDataStore(store categoryDataStore.DataStore) Builder
 	WithAggregator(aggregation.Aggregator) Builder
+	WithImageIntegrationStore(store imageIntegrationDataStore.DataStore) Builder
 
 	Build() Service
 }
 
 type serviceBuilder struct {
-	alerts          alertDataStore.DataStore
-	deployments     deploymentDataStore.DataStore
-	images          imageDataStore.DataStore
-	policies        policyDataStore.DataStore
-	secrets         secretDataStore.DataStore
-	serviceAccounts serviceAccountDataStore.DataStore
-	nodes           nodeDataStore.GlobalDataStore
-	namespaces      namespaceDataStore.DataStore
-	risks           riskDataStore.DataStore
-	roles           roleDataStore.DataStore
-	bindings        roleBindingDataStore.DataStore
-	clusters        clusterDataStore.DataStore
-	categories      categoryDataStore.DataStore
-	aggregator      aggregation.Aggregator
+	alerts            alertDataStore.DataStore
+	deployments       deploymentDataStore.DataStore
+	images            imageDataStore.DataStore
+	policies          policyDataStore.DataStore
+	secrets           secretDataStore.DataStore
+	serviceAccounts   serviceAccountDataStore.DataStore
+	nodes             nodeDataStore.GlobalDataStore
+	namespaces        namespaceDataStore.DataStore
+	risks             riskDataStore.DataStore
+	roles             roleDataStore.DataStore
+	bindings          roleBindingDataStore.DataStore
+	clusters          clusterDataStore.DataStore
+	categories        categoryDataStore.DataStore
+	aggregator        aggregation.Aggregator
+	imageIntegrations imageIntegrationDataStore.DataStore
 }
 
 // NewBuilder returns an instance of a builder to build a search service
@@ -148,22 +151,28 @@ func (b *serviceBuilder) WithPolicyCategoryDataStore(store categoryDataStore.Dat
 	return b
 }
 
+func (b *serviceBuilder) WithImageIntegrationStore(store imageIntegrationDataStore.DataStore) Builder {
+	b.imageIntegrations = store
+	return b
+}
+
 func (b *serviceBuilder) Build() Service {
 	s := serviceImpl{
-		alerts:          b.alerts,
-		deployments:     b.deployments,
-		images:          b.images,
-		policies:        b.policies,
-		secrets:         b.secrets,
-		serviceaccounts: b.serviceAccounts,
-		nodes:           b.nodes,
-		namespaces:      b.namespaces,
-		risks:           b.risks,
-		roles:           b.roles,
-		bindings:        b.bindings,
-		aggregator:      b.aggregator,
-		clusters:        b.clusters,
-		categories:      b.categories,
+		alerts:            b.alerts,
+		deployments:       b.deployments,
+		images:            b.images,
+		policies:          b.policies,
+		secrets:           b.secrets,
+		serviceaccounts:   b.serviceAccounts,
+		nodes:             b.nodes,
+		namespaces:        b.namespaces,
+		risks:             b.risks,
+		roles:             b.roles,
+		bindings:          b.bindings,
+		aggregator:        b.aggregator,
+		clusters:          b.clusters,
+		categories:        b.categories,
+		imageIntegrations: b.imageIntegrations,
 	}
 	s.initializeAuthorizer()
 	return &s
@@ -184,7 +193,8 @@ func NewService() Service {
 		WithRoleStore(roleDataStore.Singleton()).
 		WithRoleBindingStore(roleBindingDataStore.Singleton()).
 		WithAggregator(aggregation.Singleton()).
-		WithClusterDataStore(clusterDataStore.Singleton())
+		WithClusterDataStore(clusterDataStore.Singleton()).
+		WithImageIntegrationStore(imageIntegrationDataStore.Singleton())
 
 	if features.NewPolicyCategories.Enabled() {
 		builder = builder.WithPolicyCategoryDataStore(categoryDataStore.Singleton())

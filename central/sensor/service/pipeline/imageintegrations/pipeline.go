@@ -198,12 +198,12 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if !shouldInsert {
 		return nil
 	}
+
 	// Update or create.
 	if integrationToUpdate == nil {
 		if _, err := s.datastore.AddImageIntegration(ctx, imageIntegration); err != nil {
 			return errors.Wrap(err, "adding integration")
 		}
-
 		if err := s.integrationManager.Upsert(imageIntegration); err != nil {
 			return errors.Wrap(err, "notifying of image integration update")
 		}
@@ -212,7 +212,6 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		// So we can assume the other credentials were valid up to this point.
 		// Also, they will eventually be picked up within an hour.
 		s.enrichAndDetectLoop.ShortCircuit()
-
 		return nil
 	}
 

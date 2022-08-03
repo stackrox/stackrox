@@ -4,7 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	indexMocks "github.com/stackrox/rox/central/imageintegration/index/mocks"
+	searchMocks "github.com/stackrox/rox/central/imageintegration/search/mocks"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	boltStore "github.com/stackrox/rox/central/imageintegration/store/bolt"
 	"github.com/stackrox/rox/central/role/resources"
@@ -25,6 +27,7 @@ func TestImageIntegrationDataStore(t *testing.T) {
 
 type ImageIntegrationDataStoreTestSuite struct {
 	suite.Suite
+	mockCtrl *gomock.Controller
 
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
@@ -38,7 +41,8 @@ type ImageIntegrationDataStoreTestSuite struct {
 	store     store.Store
 	datastore DataStore
 
-	indexer *indexMocks.MockIndexer
+	indexer  *indexMocks.MockIndexer
+	searcher *searchMocks.MockSearcher
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
@@ -64,12 +68,12 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}
-
+	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.db = db
 	suite.store = boltStore.New(db)
-
+	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
 	// test formattedSearcher
-	suite.datastore = NewForTestOnly(suite.T(), suite.store, suite.indexer, nil)
+	suite.datastore = NewForTestOnly(suite.store, suite.indexer, nil)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {
@@ -105,7 +109,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
 			},
 		},
 	}
-
+	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).AnyTimes().Return(nil)
 	// Test Add
 	for _, r := range integrations {
 		id, err := suite.datastore.AddImageIntegration(suite.hasWriteCtx, r)
@@ -279,10 +283,12 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsAdd() {
+	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
 	id, err := suite.datastore.AddImageIntegration(suite.hasWriteCtx, getIntegration("namenamenamename"))
 	suite.NoError(err, "expected no error trying to write with permissions")
 	suite.NotEmpty(id)
 
+	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
 	id, err = suite.datastore.AddImageIntegration(suite.hasWriteIntegrationsCtx, getIntegration("namenamenamename2"))
 	suite.NoError(err, "expected no error trying to write with permissions")
 	suite.NotEmpty(id)
@@ -302,12 +308,14 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsUpdate() {
+	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
 	integration := suite.storeIntegration("joseph is the best")
 
 	err := suite.datastore.UpdateImageIntegration(suite.hasWriteCtx, integration)
 	suite.NoError(err, "expected no error trying to write with permissions")
 
 	integration = suite.storeIntegration("joseph is the best again")
+	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
 
 	err = suite.datastore.UpdateImageIntegration(suite.hasWriteIntegrationsCtx, integration)
 	suite.NoError(err, "expected no error trying to write with permissions")
@@ -325,11 +333,13 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsRemove() {
+	suite.indexer.EXPECT().DeleteImageIntegration(gomock.Any()).Return(nil)
 	integration := suite.storeIntegration("jdgbfdkjh")
 
 	err := suite.datastore.RemoveImageIntegration(suite.hasWriteCtx, integration.GetId())
 	suite.NoError(err, "expected no error trying to write with permissions")
 
+	suite.indexer.EXPECT().DeleteImageIntegration(gomock.Any()).Return(nil)
 	integration = suite.storeIntegration("jdgbfdkjh2")
 
 	err = suite.datastore.RemoveImageIntegration(suite.hasWriteIntegrationsCtx, integration.GetId())

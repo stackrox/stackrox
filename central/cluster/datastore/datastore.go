@@ -94,6 +94,7 @@ func New(
 	clusterHealthStorage clusterHealthStore.Store,
 	indexer index.Indexer,
 	ads alertDataStore.DataStore,
+	imageIntegrationStore imageIntegrationStore.DataStore,
 	namespaceDS namespaceDataStore.DataStore,
 	dds deploymentDataStore.DataStore,
 	ns nodeDataStore.GlobalDataStore,
@@ -109,31 +110,30 @@ func New(
 	graphProvider graph.Provider,
 	clusterRanker *ranking.Ranker,
 	networkBaselineMgr networkBaselineManager.Manager,
-	iiDs imageIntegrationStore.DataStore,
 ) (DataStore, error) {
 	ds := &datastoreImpl{
-		clusterStorage:          clusterStorage,
-		clusterHealthStorage:    clusterHealthStorage,
-		indexer:                 indexer,
-		alertDataStore:          ads,
-		namespaceDataStore:      namespaceDS,
-		deploymentDataStore:     dds,
-		nodeDataStore:           ns,
-		podDataStore:            pods,
-		secretsDataStore:        ss,
-		netFlowsDataStore:       flows,
-		netEntityDataStore:      netEntities,
-		serviceAccountDataStore: sads,
-		roleDataStore:           rds,
-		roleBindingDataStore:    rbds,
-		cm:                      cm,
-		notifier:                notifier,
-		clusterRanker:           clusterRanker,
-		networkBaselineMgr:      networkBaselineMgr,
+		clusterStorage:            clusterStorage,
+		clusterHealthStorage:      clusterHealthStorage,
+		indexer:                   indexer,
+		alertDataStore:            ads,
+		imageIntegrationDataStore: imageIntegrationStore,
+		namespaceDataStore:        namespaceDS,
+		deploymentDataStore:       dds,
+		nodeDataStore:             ns,
+		podDataStore:              pods,
+		secretsDataStore:          ss,
+		netFlowsDataStore:         flows,
+		netEntityDataStore:        netEntities,
+		serviceAccountDataStore:   sads,
+		roleDataStore:             rds,
+		roleBindingDataStore:      rbds,
+		cm:                        cm,
+		notifier:                  notifier,
+		clusterRanker:             clusterRanker,
+		networkBaselineMgr:        networkBaselineMgr,
 
-		idToNameCache:             simplecache.New(),
-		nameToIDCache:             simplecache.New(),
-		imageIntegrationDataStore: iiDs,
+		idToNameCache: simplecache.New(),
+		nameToIDCache: simplecache.New(),
 	}
 
 	if features.PostgresDatastore.Enabled() {
@@ -214,12 +214,16 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 	if err != nil {
 		return nil, err
 	}
+	iiStore, err := imageIntegrationStore.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
 
 	sensorCnxMgr := connection.ManagerSingleton()
 	clusterRanker := ranking.ClusterRanker()
 
 	return New(clusterdbstore, clusterhealthdbstore, indexer,
-		alertStore, namespaceStore, deploymentStore,
+		alertStore, iiStore, namespaceStore, deploymentStore,
 		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
 		nil, clusterRanker, networkBaselineManager)
@@ -288,12 +292,15 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-
+	iiStore, err := imageIntegrationStore.GetTestRocksBleveDataStore(t, boltengine, bleveIndex)
+	if err != nil {
+		return nil, err
+	}
 	sensorCnxMgr := connection.ManagerSingleton()
 	clusterRanker := ranking.ClusterRanker()
 
 	return New(clusterdbstore, clusterhealthdbstore, indexer,
-		alertStore, namespaceStore, deploymentStore,
+		alertStore, iiStore, namespaceStore, deploymentStore,
 		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
 		dacky, clusterRanker, networkBaselineManager)

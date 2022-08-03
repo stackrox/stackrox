@@ -27,14 +27,14 @@ import (
 var (
 	once sync.Once
 
-	ie                imageEnricher.ImageEnricher
-	ne                nodeEnricher.NodeEnricher
-	en                Enricher
-	cf                fetcher.OrchestratorIstioCVEManager
-	manager           Manager
-	ad                imageIntegrationDS.DataStore
-	metadataCacheOnce sync.Once
-	metadataCache     expiringcache.Cache
+	ie                    imageEnricher.ImageEnricher
+	ne                    nodeEnricher.NodeEnricher
+	en                    Enricher
+	cf                    fetcher.OrchestratorIstioCVEManager
+	manager               Manager
+	imageIntegrationStore imageIntegrationDS.DataStore
+	metadataCacheOnce     sync.Once
+	metadataCache         expiringcache.Cache
 
 	imageCacheExpiryDuration = 4 * time.Hour
 )
@@ -56,10 +56,15 @@ func initialize() {
 	ne = nodeEnricher.New(nodeCVESuppressor, metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
 	cf = fetcher.SingletonManager()
-	manager = newManager(imageintegration.Set(), ne, cf)
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	ad = imageIntegrationDS.Singleton()
-	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
+	initializeManager(ctx)
+}
+
+func initializeManager(ctx context.Context) {
+	manager = newManager(imageintegration.Set(), ne, cf)
+
+	imageIntegrationStore = imageIntegrationDS.Singleton()
+	integrations, err := imageIntegrationStore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
 	if err != nil {
 		log.Errorf("unable to use previous integrations: %s", err)
 		return

@@ -17,6 +17,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -67,18 +68,19 @@ type SearchFunc func(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, erro
 
 func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 	searchfuncs := map[v1.SearchCategory]SearchFunc{
-		v1.SearchCategory_ALERTS:           s.alerts.SearchAlerts,
-		v1.SearchCategory_DEPLOYMENTS:      s.deployments.SearchDeployments,
-		v1.SearchCategory_IMAGES:           s.images.SearchImages,
-		v1.SearchCategory_POLICIES:         s.policies.SearchPolicies,
-		v1.SearchCategory_SECRETS:          s.secrets.SearchSecrets,
-		v1.SearchCategory_NAMESPACES:       s.namespaces.SearchResults,
-		v1.SearchCategory_NODES:            s.nodes.SearchResults,
-		v1.SearchCategory_CLUSTERS:         s.clusters.SearchResults,
-		v1.SearchCategory_SERVICE_ACCOUNTS: s.serviceaccounts.SearchServiceAccounts,
-		v1.SearchCategory_ROLES:            s.roles.SearchRoles,
-		v1.SearchCategory_ROLEBINDINGS:     s.bindings.SearchRoleBindings,
-		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(s.bindings).SearchSubjects,
+		v1.SearchCategory_ALERTS:             s.alerts.SearchAlerts,
+		v1.SearchCategory_DEPLOYMENTS:        s.deployments.SearchDeployments,
+		v1.SearchCategory_IMAGES:             s.images.SearchImages,
+		v1.SearchCategory_POLICIES:           s.policies.SearchPolicies,
+		v1.SearchCategory_SECRETS:            s.secrets.SearchSecrets,
+		v1.SearchCategory_NAMESPACES:         s.namespaces.SearchResults,
+		v1.SearchCategory_NODES:              s.nodes.SearchResults,
+		v1.SearchCategory_CLUSTERS:           s.clusters.SearchResults,
+		v1.SearchCategory_SERVICE_ACCOUNTS:   s.serviceaccounts.SearchServiceAccounts,
+		v1.SearchCategory_ROLES:              s.roles.SearchRoles,
+		v1.SearchCategory_ROLEBINDINGS:       s.bindings.SearchRoleBindings,
+		v1.SearchCategory_SUBJECTS:           service.NewSubjectSearcher(s.bindings).SearchSubjects,
+		v1.SearchCategory_IMAGE_INTEGRATIONS: s.imageIntegrations.SearchImageIntegrations,
 	}
 
 	if features.NewPolicyCategories.Enabled() {
@@ -123,22 +125,22 @@ var (
 
 // SearchService provides APIs for search.
 type serviceImpl struct {
-	alerts          alertDataStore.DataStore
-	deployments     deploymentDataStore.DataStore
-	images          imageDataStore.DataStore
-	policies        policyDataStore.DataStore
-	secrets         secretDataStore.DataStore
-	serviceaccounts serviceAccountDataStore.DataStore
-	nodes           nodeDataStore.GlobalDataStore
-	namespaces      namespaceDataStore.DataStore
-	risks           riskDataStore.DataStore
-	roles           roleDataStore.DataStore
-	bindings        roleBindingDataStore.DataStore
-	clusters        clusterDataStore.DataStore
-	categories      categoriesDataStore.DataStore
-
-	aggregator aggregation.Aggregator
-	authorizer authz.Authorizer
+	alerts            alertDataStore.DataStore
+	deployments       deploymentDataStore.DataStore
+	images            imageDataStore.DataStore
+	policies          policyDataStore.DataStore
+	secrets           secretDataStore.DataStore
+	serviceaccounts   serviceAccountDataStore.DataStore
+	nodes             nodeDataStore.GlobalDataStore
+	namespaces        namespaceDataStore.DataStore
+	risks             riskDataStore.DataStore
+	roles             roleDataStore.DataStore
+	bindings          roleBindingDataStore.DataStore
+	clusters          clusterDataStore.DataStore
+	categories        categoriesDataStore.DataStore
+	aggregator        aggregation.Aggregator
+	authorizer        authz.Authorizer
+	imageIntegrations imageIntegrationDataStore.DataStore
 }
 
 func handleMatch(fieldPath, value string) string {

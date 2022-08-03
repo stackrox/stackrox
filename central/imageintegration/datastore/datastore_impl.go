@@ -4,13 +4,14 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/imageintegration/index"
+	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -24,7 +25,7 @@ type datastoreImpl struct {
 	formattedSearcher search.Searcher
 }
 
-func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
 	return ds.formattedSearcher.Search(ctx, q)
 }
 
@@ -74,9 +75,9 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 	}
 
 	integration.Id = uuid.NewV4().String()
-	error := ds.storage.Upsert(ctx, integration)
-	if error != nil {
-		return "", error
+	err := ds.storage.Upsert(ctx, integration)
+	if err != nil {
+		return "", err
 	}
 	return integration.Id, ds.indexer.AddImageIntegration(integration)
 }
@@ -89,15 +90,20 @@ func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration
 		return sac.ErrResourceAccessDenied
 	}
 
-	error := ds.storage.Upsert(ctx, integration)
-	if error != nil {
-		return error
+	err := ds.storage.Upsert(ctx, integration)
+	if err != nil {
+		return err
 	}
 	return ds.indexer.AddImageIntegration(integration)
 }
 
 // RemoveImageIntegration is pass-through to the underlying store.
 func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) error {
+	if ok, err := imageIntegrationSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return err
 	}
@@ -108,16 +114,20 @@ func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 	if features.PostgresDatastore.Enabled() {
 		return nil
 	}
-	iis, err := ds.storage.GetAll(ctx)
-	log.Infof("[STARTUP] Found %d Image Integrations to be indexed", len(iis))
+	imageIntegrations, err := ds.storage.GetAll(ctx)
+	log.Infof("[STARTUP] Found %d Image Integrations to be indexed", len(imageIntegrations))
 	if err != nil {
 		return err
 	}
-	error := ds.indexer.AddImageIntegrations(iis)
-	if error == nil {
-		log.Infof("[STARTUP] Successfully indexed %d Image Integrations", len(iis))
-		return nil
+	err = ds.indexer.AddImageIntegrations(imageIntegrations)
+	if err != nil {
+		return err
 	}
-	return error
+	log.Infof("[STARTUP] Successfully indexed %d Image Integrations", len(imageIntegrations))
+	return nil
+}
 
+// SearchImageIntegrations
+func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	return ds.formattedSearcher.SearchImageIntegrations(ctx, q)
 }

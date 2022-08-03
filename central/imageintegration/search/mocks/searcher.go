@@ -65,3 +65,18 @@ func (mr *MockSearcherMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), ctx, q)
 }
+
+// SearchImageIntegrations mocks base method.
+func (m *MockSearcher) SearchImageIntegrations(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchImageIntegrations", ctx, q)
+	ret0, _ := ret[0].([]*v1.SearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchImageIntegrations indicates an expected call of SearchImageIntegrations.
+func (mr *MockSearcherMockRecorder) SearchImageIntegrations(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchImageIntegrations", reflect.TypeOf((*MockSearcher)(nil).SearchImageIntegrations), ctx, q)
+}

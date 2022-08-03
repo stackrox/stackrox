@@ -154,23 +154,6 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
-func (ds *datastoreImpl) removeClusterImageIntegrations(ctx context.Context, cluster *storage.Cluster) {
-
-	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
-
-	imageIntegrations, err := ds.imageIntegrationDataStore.Search(ctx, q)
-	if err != nil {
-		log.Errorf("failed to get image integrations for removed cluster %s: %v", cluster.GetId(), err)
-		return
-	}
-	for _, imageIntegration := range imageIntegrations {
-		err = ds.imageIntegrationDataStore.RemoveImageIntegration(ctx, imageIntegration.ID)
-		if err != nil {
-			log.Errorf("failed to remove image integration %s in deleted cluster: %v", imageIntegration.ID, err)
-		}
-	}
-}
-
 func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 	var clusters []*storage.Cluster
 	err := ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
@@ -535,6 +518,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		}
 	}
 	ds.removeClusterImageIntegrations(ctx, cluster)
+
 	// Remove ranker record here since removal is not handled in risk store as no entry present for cluster
 	ds.clusterRanker.Remove(cluster.GetId())
 
@@ -568,6 +552,23 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 
 	if done != nil {
 		done.Signal()
+	}
+}
+
+func (ds *datastoreImpl) removeClusterImageIntegrations(ctx context.Context, cluster *storage.Cluster) {
+
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+
+	imageIntegrations, err := ds.imageIntegrationDataStore.Search(ctx, q)
+	if err != nil {
+		log.Errorf("failed to get image integrations for removed cluster %s: %v", cluster.GetId(), err)
+		return
+	}
+	for _, imageIntegration := range imageIntegrations {
+		err = ds.imageIntegrationDataStore.RemoveImageIntegration(ctx, imageIntegration.ID)
+		if err != nil {
+			log.Errorf("failed to remove image integration %s in deleted cluster: %v", imageIntegration.ID, err)
+		}
 	}
 }
 
