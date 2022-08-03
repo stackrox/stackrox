@@ -265,6 +265,7 @@ export const NODE_CVE_DETAIL_FRAGMENT = gql`
 
 export const CLUSTER_CVE_DETAIL_FRAGMENT = gql`
     fragment cveFields on ClusterVulnerability {
+        clusterCount(query: $query)
         createdAt
         cve
         cvss
@@ -361,6 +362,7 @@ export const IMAGE_CVE_LIST_FRAGMENT = gql`
 
 export const CLUSTER_CVE_LIST_FRAGMENT = gql`
     fragment clusterCVEFields on ClusterVulnerability {
+        clusterCount(query: $query)
         createdAt
         cve
         cvss
@@ -787,6 +789,52 @@ export const VULN_IMAGE_COMPONENT_LIST_FRAGMENT = gql`
         topVuln: topImageVulnerability {
             cvss
             scoreVersion
+        }
+        imageCount(query: $query)
+        deploymentCount(query: $query)
+        priority
+    }
+`;
+
+export const VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
+    fragment imageComponentFields on ImageComponent {
+        id
+        name
+        version
+        location
+        source
+        fixedIn
+        vulnCounter: imageVulnerabilityCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            moderate {
+                total
+                fixable
+            }
+            important {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        topVuln: topImageVulnerability {
+            cvss
+            scoreVersion
+        }
+        activeState(query: $scopeQuery) {
+            state
+            activeContexts {
+                containerName
+            }
         }
         imageCount(query: $query)
         deploymentCount(query: $query)

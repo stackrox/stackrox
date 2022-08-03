@@ -326,17 +326,30 @@ describe('Entities single views', () => {
     });
 
     it('should show the active state in Component overview when scoped under a deployment', () => {
+        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
+
         visitVulnerabilityManagementEntities('deployments');
 
         // click on the first deployment in the list
         cy.intercept('POST', api.vulnMgmt.graphqlEntity('deployments')).as('deployment');
         cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click();
         cy.wait('@deployment');
-        // now, go the components for that deployment
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('deployments', 'IMAGE_COMPONENT')).as(
-            'deploymentsCOMPONENT'
-        );
-        cy.get(selectors.imageComponentTileLink).click();
+
+        // now, go to the components for that deployment
+        if (usingVMUpdates) {
+            cy.intercept(
+                'POST',
+                api.vulnMgmt.graphqlEntities2('deployments', 'IMAGE_COMPONENT')
+            ).as('deploymentsCOMPONENT');
+
+            cy.get(selectors.imageComponentTileLink).click();
+        } else {
+            cy.intercept('POST', api.vulnMgmt.graphqlEntities2('deployments', 'COMPONENT')).as(
+                'deploymentsCOMPONENT'
+            );
+
+            cy.get(selectors.componentTileLink).click();
+        }
         cy.wait('@deploymentsCOMPONENT');
         // click on the first component in that list
         cy.get(`[data-testid="side-panel"] ${selectors.tableRows}`, { timeout: 10000 })

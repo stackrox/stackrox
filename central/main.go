@@ -365,6 +365,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		sensorUpgradeControlService.Singleton(),
 		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),
+		signatureIntegrationService.Singleton(),
 		siService.Singleton(),
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
@@ -377,10 +378,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
-	}
-
-	if features.ImageSignatureVerification.Enabled() {
-		servicesToRegister = append(servicesToRegister, signatureIntegrationService.Singleton())
 	}
 
 	if features.NewPolicyCategories.Enabled() {

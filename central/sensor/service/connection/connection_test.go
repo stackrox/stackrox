@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -130,10 +129,6 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 }
 
 func (s *testSuite) TestIssueLocalScannerCerts() {
-	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
-	if !features.LocalImageScanning.Enabled() {
-		s.T().Skip()
-	}
 	namespace, clusterID, requestID := "namespace", "clusterID", "requestID"
 	testCases := map[string]struct {
 		requestID  string

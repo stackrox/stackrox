@@ -877,7 +877,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"osImage: String!",
 		"priority: Int!",
 		"riskScore: Float!",
-		"scan: NodeScan",
 		"taints: [Taint]!",
 	}))
 	utils.Must(builder.AddType("NodeCVE", []string{
@@ -8066,11 +8065,6 @@ func (resolver *nodeResolver) Priority(ctx context.Context) int32 {
 func (resolver *nodeResolver) RiskScore(ctx context.Context) float64 {
 	value := resolver.data.GetRiskScore()
 	return float64(value)
-}
-
-func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
-	value := resolver.data.GetScan()
-	return resolver.root.wrapNodeScan(value, true, nil)
 }
 
 func (resolver *nodeResolver) Taints(ctx context.Context) ([]*taintResolver, error) {

@@ -407,16 +407,14 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
-	if features.ImageSignatureVerification.Enabled() {
-		f.registerFieldMetadata(fieldnames.ImageSignatureVerifiedBy,
-			querybuilders.ForImageSignatureVerificationStatus(),
-			violationmessages.ImageContextFields,
-			func(*validateConfiguration) *regexp.Regexp {
-				return signatureIntegrationIDValueRegex
-			},
-			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-			[]RuntimeFieldType{}, negationForbidden)
-	}
+	f.registerFieldMetadata(fieldnames.ImageSignatureVerifiedBy,
+		querybuilders.ForImageSignatureVerificationStatus(),
+		violationmessages.ImageContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return signatureIntegrationIDValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, negationForbidden)
 
 	f.registerFieldMetadata(fieldnames.ImageTag,
 		querybuilders.ForFieldLabelRegex(search.ImageTag),

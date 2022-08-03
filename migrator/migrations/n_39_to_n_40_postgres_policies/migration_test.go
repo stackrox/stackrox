@@ -70,7 +70,6 @@ func (s *postgresMigrationSuite) TestPolicyMigration() {
 
 	// Prepare data and write to legacy DB
 	var policys []*storage.Policy
-
 	for i := 0; i < 200; i++ {
 		policy := &storage.Policy{}
 		s.NoError(testutils.FullInit(policy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

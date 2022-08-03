@@ -19,11 +19,13 @@ import (
 	"github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
+	"github.com/stackrox/rox/sensor/testutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	v13 "k8s.io/api/networking/v1"
 	v12 "k8s.io/api/rbac/v1"
 
 	// import gcp
@@ -57,6 +59,8 @@ func objByKind(kind string) k8s.Object {
 		return &v1.Pod{}
 	case "ServiceAccount":
 		return &v1.ServiceAccount{}
+	case "NetworkPolicy":
+		return &v13.NetworkPolicy{}
 	default:
 		log.Fatalf("unrecognized resource kind %s\n", kind)
 		return nil
@@ -76,14 +80,32 @@ type TestContext struct {
 	stopFn          func()
 }
 
-// NewContext - a new context
+func defaultCentralConfig() CentralConfig {
+	// Uses replayed policies.json file as default policies for tests.
+	// These are all policies in ACS, which means many alerts might be generated.
+	policies, err := testutils.GetPoliciesFromFile("../../replay/data/policies.json")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return CentralConfig{
+		InitialSystemPolicies: policies,
+	}
+}
+
+// NewContext creates a new test context
 func NewContext(t *testing.T) (*TestContext, error) {
+	return NewContextWithConfig(t, defaultCentralConfig())
+}
+
+// NewContextWithConfig creates a new test context with custom central configuration
+func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, error) {
 	envConfig := envconf.New().WithKubeconfigFile(conf.ResolveKubeConfigFile())
 	r, err := resources.New(envConfig.Client().RESTConfig())
 	if err != nil {
 		return nil, err
 	}
-	fakeCentral, startFn, stopFn := startSensorAndFakeCentral(envConfig)
+	fakeCentral, startFn, stopFn := startSensorAndFakeCentral(envConfig, config)
 	ch := make(chan *central.MsgFromSensor, 100)
 	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
 		ch <- msg
@@ -200,7 +222,12 @@ func runPermutation(files []YamlTestFile, i int, cb func([]YamlTestFile)) {
 	}
 }
 
-func startSensorAndFakeCentral(env *envconf.Config) (*centralDebug.FakeService, func(), func()) {
+// CentralConfig allows tests to inject ACS policies in the tests
+type CentralConfig struct {
+	InitialSystemPolicies []*storage.Policy
+}
+
+func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*centralDebug.FakeService, func(), func()) {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../../tools/local-sensor/certs/cert.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../../tools/local-sensor/certs/key.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../../tools/local-sensor/certs/caCert.pem"))
@@ -209,7 +236,7 @@ func startSensorAndFakeCentral(env *envconf.Config) (*centralDebug.FakeService, 
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
 		message.SensorHello("1234"),
 		message.ClusterConfig(),
-		message.PolicySync([]*storage.Policy{}),
+		message.PolicySync(config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 
 	conn, spyCentral, _ := createConnectionAndStartServer(fakeCentral)

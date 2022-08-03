@@ -7,7 +7,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -136,15 +135,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 			},
 			scanImg: failingScan,
 		},
-	}
-
-	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
-	suite.Require().NoError(err, "failed creating test image")
-
-	// This will allow us to test this only if the env variable is set. For release builds, this will skip this case
-	// until we have deprecated this feature flag.
-	if features.ImageSignatureVerification.Enabled() {
-		cases["fail enrich image via central"] = testCase{
+		"fail enrich image via central": {
 			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true),
 			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
 				return &fakeRegistry{fail: false}, nil
@@ -152,16 +143,19 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 			scanImg:                  successfulScan,
 			fetchSignaturesWithRetry: successfulFetchSignatures,
 			enrichmentTriggered:      true,
-		}
-		cases["fail fetching signatures"] = testCase{
+		},
+		"fail fetching signatures": {
 			fakeImageServiceClient: suite.createMockImageServiceClient(nil, false),
 			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
 				return &fakeRegistry{fail: false}, nil
 			},
 			scanImg:                  successfulScan,
 			fetchSignaturesWithRetry: failingFetchSignatures,
-		}
+		},
 	}
+
+	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
+	suite.Require().NoError(err, "failed creating test image")
 
 	for name, c := range cases {
 		suite.Run(name, func() {

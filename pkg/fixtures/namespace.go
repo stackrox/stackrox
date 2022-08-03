@@ -14,3 +14,13 @@ func GetNamespace(clusterID, clusterName, namespace string) *storage.NamespaceMe
 		ClusterName: clusterName,
 	}
 }
+
+// GetScopedNamespace returns a mock *storage.NamespaceMetadata object.
+func GetScopedNamespace(ID string, clusterID string, namespace string) *storage.NamespaceMetadata {
+	return &storage.NamespaceMetadata{
+		Id:          ID,
+		Name:        namespace,
+		ClusterId:   clusterID,
+		ClusterName: clusterID,
+	}
+}

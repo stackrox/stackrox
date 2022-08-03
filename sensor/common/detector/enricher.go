@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
@@ -112,7 +111,7 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	// Ask Central to scan the image if the image is not internal.
 	// Otherwise, attempt to scan locally.
 	scanImageFn := scanImage
-	if features.LocalImageScanning.Enabled() && ci.GetIsClusterLocal() {
+	if ci.GetIsClusterLocal() {
 		scanImageFn = scanImageLocal
 	}
 

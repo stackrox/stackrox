@@ -476,3 +476,29 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	s.NoError(err)
 	s.Equal(0, count)
 }
+
+func (s *ImagePostgresDataStoreTestSuite) TestGetManyImageMetadata() {
+	ctx := sac.WithAllAccess(context.Background())
+	testImage1 := fixtures.GetImageWithUniqueComponents()
+	s.NoError(s.datastore.UpsertImage(ctx, testImage1))
+
+	testImage2 := testImage1.Clone()
+	testImage2.Id = "2"
+	s.NoError(s.datastore.UpsertImage(ctx, testImage2))
+
+	testImage3 := testImage1.Clone()
+	testImage3.Id = "3"
+	s.NoError(s.datastore.UpsertImage(ctx, testImage3))
+
+	storedImages, err := s.datastore.GetManyImageMetadata(ctx, []string{testImage1.Id, testImage2.Id, testImage3.Id})
+	s.NoError(err)
+	s.Len(storedImages, 3)
+
+	testImage1.Scan.Components = nil
+	testImage1.Priority = 1
+	testImage2.Scan.Components = nil
+	testImage2.Priority = 1
+	testImage3.Scan.Components = nil
+	testImage3.Priority = 1
+	s.ElementsMatch([]*storage.Image{testImage1, testImage2, testImage3}, storedImages)
+}

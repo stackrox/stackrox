@@ -121,6 +121,12 @@ func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty)
 			SuggestedAttributes: attributes,
 		})
 	}
+
+	// List auth providers in the same order for consistency across requests.
+	sort.Slice(supportedTypes, func(i, j int) bool {
+		return supportedTypes[i].GetType() < supportedTypes[j].GetType()
+	})
+
 	return &v1.AvailableProviderTypesResponse{
 		AuthProviderTypes: supportedTypes,
 	}, nil

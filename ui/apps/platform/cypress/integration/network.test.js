@@ -49,50 +49,20 @@ describe('Network page', () => {
     it('should display a legend', () => {
         visitNetworkGraphWithMockedData();
 
-        cy.get(networkPageSelectors.legend.deployments)
-            .eq(0)
-            .children()
-            .should('have.class', 'icon-node');
+        const { deployments, namespaces, connections } = networkPageSelectors.legend;
 
-        cy.get(networkPageSelectors.legend.deployments)
-            .eq(1)
-            .children()
-            .should('have.attr', 'alt', 'deployment-external-connections');
-        cy.get(networkPageSelectors.legend.deployments)
-            .eq(2)
-            .children()
-            .children()
-            .should('have.class', 'icon-potential');
-        cy.get(networkPageSelectors.legend.deployments)
-            .eq(3)
-            .children()
-            .should('have.class', 'icon-node');
+        cy.get(`${deployments} *:nth-child(1) [alt="deployment"]`);
+        cy.get(`${deployments} *:nth-child(2) [alt="deployment-external-connections"]`);
+        cy.get(`${deployments} *:nth-child(3) [alt="deployment-allowed-connections"]`);
+        cy.get(`${deployments} *:nth-child(4) [alt="non-isolated-deployment-allowed"]`);
 
-        cy.get(networkPageSelectors.legend.namespaces)
-            .eq(0)
-            .children()
-            .should('have.attr', 'alt', 'namespace');
-        cy.get(networkPageSelectors.legend.namespaces)
-            .eq(1)
-            .children()
-            .should('have.attr', 'alt', 'namespace-allowed-connection');
-        cy.get(networkPageSelectors.legend.namespaces)
-            .eq(2)
-            .children()
-            .should('have.attr', 'alt', 'namespace-connection');
+        cy.get(`${namespaces} *:nth-child(1) [alt="namespace"]`);
+        cy.get(`${namespaces} *:nth-child(2) [alt="namespace-allowed-connection"]`);
+        cy.get(`${namespaces} *:nth-child(3) [alt="namespace-connection"]`);
 
-        cy.get(networkPageSelectors.legend.connections)
-            .eq(0)
-            .children()
-            .should('have.attr', 'alt', 'active-connection');
-        cy.get(networkPageSelectors.legend.connections)
-            .eq(1)
-            .children()
-            .should('have.attr', 'alt', 'allowed-connection');
-        cy.get(networkPageSelectors.legend.connections)
-            .eq(2)
-            .children()
-            .should('have.class', 'icon-ingress-egress');
+        cy.get(`${connections} *:nth-child(1) [alt="active-connection"]`);
+        cy.get(`${connections} *:nth-child(2) [alt="allowed-connection"]`);
+        cy.get(`${connections} *:nth-child(3) [alt="namespace-egress-ingress"]`);
     });
 
     it('should handle toggle click on simulator network policy button', () => {

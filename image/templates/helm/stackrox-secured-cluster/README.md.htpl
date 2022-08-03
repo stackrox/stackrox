@@ -293,9 +293,7 @@ non-standard environments:
 |`exposeMonitoring`| This setting controls whether the monitoring port (TCP 9090) should be exposed on the services. | `false` |
 |`env.openshift`| The StackRox Kubernetes Security Platform automatically detects the OpenShift version (`3.x` or `4.x`). Use this parameter to override the automatically detected version number, for example `4`. | `null` |
 |`env.istio`| This setting can be used for overwriting the auto-sensing of Istio environments. If enabled, the cluster is set up for an Istio environment. | Auto-sensed, depends on environment. |
-[< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
 |`scanner.disable`| Scan images stored in the cluster's local registries. This variable is only available for the OpenShift Container Platform. | `true` |
-[<- end >]
 
 ### Default resources
 

@@ -2,10 +2,14 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store"
+	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -16,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -56,6 +61,33 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 
 	go ds.initNetworkTrees(context.TODO())
 	return ds
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (EntityDataStore, error) {
+	dbstore := postgres.New(pool)
+	graphConfigStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	treeMgr := networktree.Singleton()
+	sensorCnxMgr := connection.ManagerSingleton()
+	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr), nil
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) (EntityDataStore, error) {
+	dbstore, err := rocksdb.New(rocksengine)
+	if err != nil {
+		return nil, err
+	}
+	graphConfigStore, err := graphConfigDS.GetTestRocksBleveDataStore(t, rocksengine)
+	if err != nil {
+		return nil, err
+	}
+	treeMgr := networktree.Singleton()
+	sensorCnxMgr := connection.ManagerSingleton()
+	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr), nil
 }
 
 func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {

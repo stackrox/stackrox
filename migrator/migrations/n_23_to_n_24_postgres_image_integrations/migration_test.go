@@ -70,7 +70,6 @@ func (s *postgresMigrationSuite) TestImageIntegrationMigration() {
 
 	// Prepare data and write to legacy DB
 	var imageIntegrations []*storage.ImageIntegration
-
 	for i := 0; i < 200; i++ {
 		imageIntegration := &storage.ImageIntegration{}
 		s.NoError(testutils.FullInit(imageIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

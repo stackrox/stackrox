@@ -24,12 +24,6 @@ var (
 	// PoliciesPatternFly enables the PatternFly version of Policies. (used in the front-end app only)
 	PoliciesPatternFly = registerFeature("Enable PatternFly version of Policies", "ROX_POLICIES_PATTERNFLY", true)
 
-	// LocalImageScanning enables OpenShift local-image scanning.
-	LocalImageScanning = registerFeature("Enable OpenShift local-image scanning", "ROX_LOCAL_IMAGE_SCANNING", true)
-
-	// ImageSignatureVerification enables image signature verification.
-	ImageSignatureVerification = registerFeature("Enable Image Signature Verification workflow", "ROX_VERIFY_IMAGE_SIGNATURE", true)
-
 	// PostgresDatastore enables Postgres datastore.
 	PostgresDatastore = registerFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", false)
 

@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/rhel"
@@ -193,17 +192,13 @@ func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action ce
 	// OpenShift Container Registry, which is an internal image registry.
 	fromDefaultSA := secret.GetAnnotations()[saAnnotation] == defaultSA
 	for registry, dce := range dockerConfig {
-		if features.LocalImageScanning.Enabled() {
-			if fromDefaultSA {
-				// Store the registry credentials so Sensor can reach it.
-				err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
-				if err != nil {
-					log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
-				}
+		if fromDefaultSA {
+			// Store the registry credentials so Sensor can reach it.
+			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
+			if err != nil {
+				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 			}
-		}
-
-		if !features.LocalImageScanning.Enabled() || !fromDefaultSA {
+		} else {
 			ii := DockerConfigToImageIntegration(registry, dce)
 			sensorEvents = append(sensorEvents, &central.SensorEvent{
 				// Only update is supported at this time.

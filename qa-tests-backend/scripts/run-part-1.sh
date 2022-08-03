@@ -74,6 +74,9 @@ run_tests_part_1() {
     elif is_in_PR_context; then
         info "In a PR context without ci-all-qa-tests, running BAT tests only..."
         make -C qa-tests-backend bat-test || touch FAIL
+    elif is_nightly_run; then
+        info "Nightly tests, running all QA tests with --fast-fail..."
+        make -C qa-tests-backend test FAIL_FAST=TRUE || touch FAIL
     elif is_tagged; then
         info "Tagged, running all QA tests..."
         make -C qa-tests-backend test || touch FAIL

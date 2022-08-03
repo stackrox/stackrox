@@ -7,6 +7,7 @@ import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getEntityTypesByRelationship } from 'utils/entityRelationships';
 import relationshipTypes from 'constants/relationshipTypes';
+import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import TileList from 'Components/TileList';
 import useFeatureFlags from 'hooks/useFeatureFlags';
@@ -45,7 +46,10 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
             };
         })
         .filter((matchObj) => {
-            return matchObj.count && !entityContext[matchObj.entity];
+            return (
+                entityType === entityTypes.CLUSTER_CVE ||
+                (matchObj.count && !entityContext[matchObj.entity])
+            );
         });
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
         // @TODO: Remove the following filter step once ROX_FRONTEND_VM_UPDATES is ON
