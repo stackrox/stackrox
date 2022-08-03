@@ -37,7 +37,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.Flags().BoolVar(&generateNetpolCmd.offline, "offline", false, "whether to connect to a central instace for additional information")
 	c.Flags().StringVar(&generateNetpolCmd.outputFolderPath, "output-dir", "./policies", "path to the output directory for generated policies")
 	c.Flags().StringVar(&generateNetpolCmd.outputFilePath, "output-file", "./policies.yaml", "path to the output file for merged policies")
 	c.Flags().BoolVar(&generateNetpolCmd.mergePolicies, "merge-policies", false, "Merge all generated Network Policies into a single file. Combine with -f for target file")

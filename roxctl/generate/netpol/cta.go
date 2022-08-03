@@ -8,6 +8,7 @@ import (
 	"github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	v1 "k8s.io/api/networking/v1"
 )
 
 func (cmd *generateNetpolCommand) generateNetpol() error {
@@ -38,6 +39,12 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 		}
 	}
 
+	if cmd.splitPolicies {
+		if err := cmd.saveNetpolsToFolder(recommendedNetpols); err != nil {
+			return errors.Wrapf(err, "Error writing split Network Policies to folder")
+		}
+	}
+
 	return nil
 }
 
@@ -56,6 +63,26 @@ func (cmd *generateNetpolCommand) saveNetpolsToMergedFile(combinedNetpols string
 
 	if err := writeFile(filename, dirpath, combinedNetpols); err != nil {
 		return errors.Wrapf(err, "Error writing policy to file")
+	}
+	return nil
+}
+
+func (cmd *generateNetpolCommand) saveNetpolsToFolder(recommendedNetpols []*v1.NetworkPolicy) error {
+	for _, netpol := range recommendedNetpols {
+		policyName := netpol.GetName()
+		if policyName == "" {
+			policyName = string(netpol.GetUID())
+		}
+		filename := policyName + ".yaml"
+
+		yamlPolicy, err := networkpolicy.KubernetesNetworkPolicyWrap{NetworkPolicy: netpol}.ToYaml()
+		if err != nil {
+			return errors.Wrap(err, "Error converting Network Policy object to YAML")
+		}
+
+		if err := writeFile(filename, cmd.outputFolderPath, yamlPolicy); err != nil {
+			return errors.Wrapf(err, "Error writing policy to file")
+		}
 	}
 	return nil
 }
