@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -63,21 +62,10 @@ func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, cluster
 	if err != nil {
 		return err
 	}
-	edges, err := getClusterCVEEdgeIDs(ctx, tx, storage.CVE_ISTIO_CVE, []string{"pqr"})
-	if err != nil {
-		return err
-	}
-	fmt.Println(len(edges))
-
 	_, err = tx.Exec(ctx, "DELETE FROM "+clusterCVEsTable+" WHERE not exists (select "+clusterCVEEdgeTable+".cveid from "+clusterCVEEdgeTable+" where "+clusterCVEEdgeTable+".cveid = "+clusterCVEsTable+".id)")
 	if err != nil {
 		return err
 	}
-	cves, err := getCVEs(ctx, tx, []string{"a"})
-	if err != nil {
-		return err
-	}
-	fmt.Println(len(cves))
 	return tx.Commit(ctx)
 }
 
@@ -294,7 +282,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 }
 
 func getClusterCVEEdgeIDs(ctx context.Context, tx pgx.Tx, cveType storage.CVE_CVEType, clusterIDs []string) (set.StringSet, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ClusterCVEEdges")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ClusterCVEEdgeIDs")
 
 	rows, err := tx.Query(ctx, "select id FROM "+clusterCVEEdgeTable+" WHERE clusterid = ANY($1::text[]) and cveid in (select id from "+clusterCVEsTable+" where type = $2)", clusterIDs, cveType)
 	if err != nil {
@@ -317,20 +305,14 @@ func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, orphanedEdgeIDs
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterCVEEdges")
 
 	_, err := tx.Exec(ctx, "DELETE FROM "+clusterCVEEdgeTable+" WHERE id = ANY($1::text[])", orphanedEdgeIDs)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func removeOrphanedClusterCVEs(ctx context.Context, tx pgx.Tx) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterCVEs")
 
 	_, err := tx.Exec(ctx, "DELETE FROM "+clusterCVEsTable+" WHERE not exists (select "+clusterCVEEdgeTable+".cveid from "+clusterCVEEdgeTable+" where "+clusterCVEsTable+".id = "+clusterCVEEdgeTable+".cveid)")
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (s *fullStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
