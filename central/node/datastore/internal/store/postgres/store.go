@@ -75,17 +75,15 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db                 *pgxpool.Pool
-	noUpdateTimestamps bool
-	keyFence           concurrency.KeyFence
+	db       *pgxpool.Pool
+	keyFence concurrency.KeyFence
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, noUpdateTimestamps bool, keyFence concurrency.KeyFence) Store {
+func New(db *pgxpool.Pool, keyFence concurrency.KeyFence) Store {
 	return &storeImpl{
-		db:                 db,
-		noUpdateTimestamps: noUpdateTimestamps,
-		keyFence:           keyFence,
+		db:       db,
+		keyFence: keyFence,
 	}
 }
 
@@ -494,9 +492,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bo
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 	iTime := protoTypes.TimestampNow()
 
-	if !s.noUpdateTimestamps {
-		obj.LastUpdated = iTime
-	}
+	obj.LastUpdated = iTime
 	metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
 	if err != nil {
 		return err
@@ -916,14 +912,14 @@ func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.No
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, t *testing.T, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
+func CreateTableAndNewStore(ctx context.Context, t *testing.T, db *pgxpool.Pool, gormDB *gorm.DB) Store {
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableClustersStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeCvesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentEdgesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsCvesEdgesStmt)
-	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
+	return New(db, concurrency.NewKeyFence())
 }
 
 func dropTableNodes(ctx context.Context, db *pgxpool.Pool) {

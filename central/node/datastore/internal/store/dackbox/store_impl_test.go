@@ -39,7 +39,7 @@ func (suite *NodeStoreTestSuite) SetupSuite() {
 	if err != nil {
 		suite.FailNow("failed to create counter", err.Error())
 	}
-	suite.store = New(suite.dacky, concurrency.NewKeyFence(), false)
+	suite.store = New(suite.dacky, concurrency.NewKeyFence())
 	suite.cveStorage = cveDackBoxStore.New(suite.dacky, concurrency.NewKeyFence())
 }
 

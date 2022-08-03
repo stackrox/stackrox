@@ -44,10 +44,9 @@ type DataStore interface {
 }
 
 // newDatastore returns a datastore for Nodes.
-// noUpdateTimestamps controls whether timestamps are automatically updated when upserting nodes.
 // This should be set to `false` except for some tests.
-func newDatastore(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
-	dataStore := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
+func newDatastore(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
+	dataStore := dackBoxStore.New(dacky, keyFence)
 	indexer := nodeIndexer.New(bleveIndex)
 
 	searcher := search.New(dataStore,
@@ -66,7 +65,7 @@ func newDatastore(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIn
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
 func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
-	return newDatastore(dacky, keyFence, bleveIndex, false, risks, nodeRanker, nodeComponentRanker)
+	return newDatastore(dacky, keyFence, bleveIndex, risks, nodeRanker, nodeComponentRanker)
 }
 
 // NewWithPostgres returns a new instance of DataStore using the input store, indexer, and searcher.
@@ -78,7 +77,7 @@ func NewWithPostgres(storage store.Store, indexer nodeIndexer.Indexer, searcher 
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgresStore.New(pool, false, concurrency.NewKeyFence())
+	dbstore := postgresStore.New(pool, concurrency.NewKeyFence())
 	indexer := postgresStore.NewIndexer(pool)
 	searcher := search.NewV2(dbstore, indexer)
 	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)

@@ -81,7 +81,7 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 	postgres.Destroy(s.ctx, s.db)
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-	s.datastore = NewWithPostgres(postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), postgres.NewIndexer(s.db), s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	s.datastore = NewWithPostgres(postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB), postgres.NewIndexer(s.db), s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	componentIndexer := imageComponentPostgres.NewIndexer(s.db)

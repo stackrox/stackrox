@@ -47,7 +47,7 @@ func (suite *ImageStoreTestSuite) SetupSuite() {
 	if err != nil {
 		suite.FailNowf("failed to create counter: %+v", err.Error())
 	}
-	suite.store = New(suite.dacky, concurrency.NewKeyFence(), false)
+	suite.store = New(suite.dacky, concurrency.NewKeyFence())
 	suite.cveStorage = cveDackBoxStore.New(suite.dacky, concurrency.NewKeyFence())
 	suite.imageCVEEdgeStore = imageCVEEdgeDackBox.New(suite.dacky, concurrency.NewKeyFence())
 }

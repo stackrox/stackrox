@@ -38,7 +38,7 @@ func BenchmarkImages(b *testing.B) {
 	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
 	require.NoError(b, err)
 
-	imageDS := New(dacky, concurrency.NewKeyFence(), bleveIndex, bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
+	imageDS := New(dacky, concurrency.NewKeyFence(), bleveIndex, bleveIndex, nil, ranking.NewRanker(), ranking.NewRanker())
 
 	// Generate CVEs and components for the image.
 	var components []*storage.EmbeddedImageScanComponent

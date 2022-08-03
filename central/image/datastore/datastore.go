@@ -71,15 +71,13 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-// noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, processIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
-	storage := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, processIndex bleve.Index, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
+	storage := dackBoxStore.New(dacky, keyFence)
 	return newDatastore(dacky, storage, bleveIndex, processIndex, risks, imageRanker, imageComponentRanker)
 }
 
 // NewWithPostgres returns a new instance of DataStore using the input store, indexer, and searcher.
-// noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
 func NewWithPostgres(storage store.Store, index imageIndexer.Indexer, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
 	ds := newDatastoreImpl(storage, index, search.NewV2(storage, index), risks, imageRanker, imageComponentRanker)
@@ -89,7 +87,7 @@ func NewWithPostgres(storage store.Store, index imageIndexer.Indexer, risks risk
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgresStore.New(pool, false, concurrency.NewKeyFence())
+	dbstore := postgresStore.New(pool, concurrency.NewKeyFence())
 	indexer := postgresStore.NewIndexer(pool)
 	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
@@ -108,5 +106,5 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	}
 	imageRanker := ranking.ImageRanker()
 	imageComponentRanker := ranking.ComponentRanker()
-	return New(dacky, keyFence, bleveIndex, bleveIndex, false, riskStore, imageRanker, imageComponentRanker), nil
+	return New(dacky, keyFence, bleveIndex, bleveIndex, riskStore, imageRanker, imageComponentRanker), nil
 }

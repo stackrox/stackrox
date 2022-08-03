@@ -48,7 +48,7 @@ func BenchmarkImageGetMany(b *testing.B) {
 
 	postgres.Destroy(ctx, db)
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
-	datastore := NewWithPostgres(postgres.CreateTableAndNewStore(ctx, db, gormDB, false), postgres.NewIndexer(db), mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	datastore := NewWithPostgres(postgres.CreateTableAndNewStore(ctx, db, gormDB), postgres.NewIndexer(db), mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	ids := make([]string, 0, 100)
 	images := make([]*storage.Image, 0, 100)

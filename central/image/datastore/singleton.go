@@ -20,7 +20,7 @@ var (
 
 func initialize() {
 	if features.PostgresDatastore.Enabled() {
-		storage := postgres.New(globaldb.GetPostgres(), false, keyfence.ImageKeyFenceSingleton())
+		storage := postgres.New(globaldb.GetPostgres(), keyfence.ImageKeyFenceSingleton())
 		indexer := postgres.NewIndexer(globaldb.GetPostgres())
 		ad = NewWithPostgres(storage, indexer, riskDS.Singleton(), ranking.ImageRanker(), ranking.ComponentRanker())
 		return
@@ -30,7 +30,6 @@ func initialize() {
 		dackbox.GetKeyFence(),
 		globalindex.GetGlobalIndex(),
 		globalindex.GetProcessIndex(),
-		false,
 		riskDS.Singleton(),
 		ranking.ImageRanker(),
 		ranking.ComponentRanker())

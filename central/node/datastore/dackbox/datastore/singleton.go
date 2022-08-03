@@ -21,7 +21,7 @@ var (
 
 func initialize() {
 	if features.PostgresDatastore.Enabled() {
-		storage := postgres.New(globaldb.GetPostgres(), false, keyfence.NodeKeyFenceSingleton())
+		storage := postgres.New(globaldb.GetPostgres(), keyfence.NodeKeyFenceSingleton())
 		indexer := postgres.NewIndexer(globaldb.GetPostgres())
 		searcher := search.NewV2(storage, indexer)
 		ad = NewWithPostgres(storage, indexer, searcher, riskDS.Singleton(), ranking.NodeRanker(), ranking.NodeComponentRanker())

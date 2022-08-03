@@ -84,7 +84,7 @@ func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockRisk = mockRisks.NewMockDataStore(suite.mockCtrl)
-	storage := postgres.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
+	storage := postgres.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB)
 	indexer := postgres.NewIndexer(suite.db)
 	searcher := search.NewV2(storage, indexer)
 	suite.datastore = NewWithPostgres(storage, indexer, searcher, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())

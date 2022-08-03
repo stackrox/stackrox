@@ -28,17 +28,15 @@ import (
 )
 
 type storeImpl struct {
-	dacky              *dackbox.DackBox
-	keyFence           concurrency.KeyFence
-	noUpdateTimestamps bool
+	dacky    *dackbox.DackBox
+	keyFence concurrency.KeyFence
 }
 
 // New returns a new Store instance using the provided DackBox instance.
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, noUpdateTimestamps bool) store.Store {
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) store.Store {
 	return &storeImpl{
-		dacky:              dacky,
-		keyFence:           keyFence,
-		noUpdateTimestamps: noUpdateTimestamps,
+		dacky:    dacky,
+		keyFence: keyFence,
 	}
 }
 
@@ -196,9 +194,7 @@ func (b *storeImpl) Upsert(_ context.Context, image *storage.Image) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
 	iTime := protoTypes.TimestampNow()
-	if !b.noUpdateTimestamps {
-		image.LastUpdated = iTime
-	}
+	image.LastUpdated = iTime
 
 	metadataUpdated, scanUpdated, err := b.isUpdated(image)
 	if err != nil {

@@ -64,18 +64,16 @@ type imagePartsAsSlice struct {
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, noUpdateTimestamps bool, keyFence concurrency.KeyFence) store.Store {
+func New(db *pgxpool.Pool, keyFence concurrency.KeyFence) store.Store {
 	return &storeImpl{
-		db:                 db,
-		noUpdateTimestamps: noUpdateTimestamps,
-		keyFence:           keyFence,
+		db:       db,
+		keyFence: keyFence,
 	}
 }
 
 type storeImpl struct {
-	db                 *pgxpool.Pool
-	noUpdateTimestamps bool
-	keyFence           concurrency.KeyFence
+	db       *pgxpool.Pool
+	keyFence concurrency.KeyFence
 }
 
 func (s *storeImpl) insertIntoImages(
@@ -588,9 +586,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	iTime := protoTypes.TimestampNow()
 
-	if !s.noUpdateTimestamps {
-		obj.LastUpdated = iTime
-	}
+	obj.LastUpdated = iTime
 	metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
 	if err != nil {
 		return err
@@ -1019,14 +1015,14 @@ func Destroy(ctx context.Context, db *pgxpool.Pool) {
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) store.Store {
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) store.Store {
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImagesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentsStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCvesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentEdgesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentCveEdgesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCveEdgesStmt)
-	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
+	return New(db, concurrency.NewKeyFence())
 }
 
 //// Stubs for satisfying legacy interfaces
