@@ -1267,6 +1267,34 @@ func TestEvaluateClusters(t *testing.T) {
 			),
 		},
 		{
+			name: "test customer issue",
+			deployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d2",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+				},
+			},
+			networkTree: t1,
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("allow-only-egress-to-ipblock"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", true, false, false, true, "allow-only-egress-to-ipblock"),
+				mockNode("d2", "qa", true, true, true, true),
+				mockInternetNode(),
+				mockExternalNode("es1", "172.17.0.0/24"),
+			},
+			edges: flattenEdges(
+				egressEdges("d1", "es1", networkgraph.InternetExternalSourceID),
+			),
+		},
+		{
 			name: "ingress and egress combination",
 			deployments: []*storage.Deployment{
 				{
@@ -1310,7 +1338,11 @@ func TestEvaluateClusters(t *testing.T) {
 
 		t.Run(c.name, func(t *testing.T) {
 			graph := g.GetGraph("", nil, testCase.deployments, testCase.networkTree, testCase.nps, false)
-			assert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
+			nodes := graph.GetNodes()
+			assert.Len(t, nodes, len(testCase.nodes))
+			for idx, expected := range testCase.nodes {
+				assert.Equalf(t, expected, nodes[idx], "node in pos %d and ID %d doesn't match expected", idx, expected.Entity.Id)
+			}
 		})
 	}
 }
