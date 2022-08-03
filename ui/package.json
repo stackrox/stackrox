@@ -44,7 +44,8 @@
         "forward": "../scripts/port-forward-ui.sh"
     },
     "resolutions": {
-        "@typescript-eslint/parser": "^4.32.0"
+        "@typescript-eslint/parser": "^4.32.0",
+        "yaml": "^1.10.2"
     },
     "devDependencies": {
         "chalk-cli": "^5.0.0",
