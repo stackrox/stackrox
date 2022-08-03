@@ -37,7 +37,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) UpsertClusterCVEsInternal(ctx context.Context, cveType storage.CVE_CVEType, cveParts ...converter.ClusterCVEParts) error {
-	return ds.storage.UpsertClusterCVEParts(ctx, cveType, cveParts...)
+	return ds.storage.ReconcileClusterCVEParts(ctx, cveType, cveParts...)
 }
 
 func (ds *datastoreImpl) DeleteClusterCVEsInternal(ctx context.Context, clusterID string) error {
