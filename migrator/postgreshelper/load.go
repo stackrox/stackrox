@@ -1,10 +1,11 @@
 package postgreshelper
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -12,12 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-)
-
-const (
-	dbPasswordFile = "/run/secrets/stackrox.io/db-password/password"
 )
 
 const (
@@ -26,24 +24,27 @@ const (
 )
 
 var (
-	gormDB *gorm.DB
-	once   sync.Once
-	err    error
+	postgresDB *pgxpool.Pool
+	gormDB     *gorm.DB
+
+	err error
+
+	once      sync.Once
+	closeOnce sync.Once
 )
 
 // Load loads a Postgres instance and returns a GormDB.
-func Load(conf *config.Config) (*gorm.DB, error) {
+func Load(conf *config.Config) (*pgxpool.Pool, *gorm.DB, error) {
 	once.Do(func() {
 		var password []byte
-		password, err = os.ReadFile(dbPasswordFile)
-		if err != nil {
-			log.WriteToStderrf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
-			return
-		}
+		ctx := context.Background()
 
 		activeDB := pgconfig.GetActiveDB()
 
 		sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
+		if err != nil {
+			return
+		}
 		// Create the central database if necessary
 		if !pgadmin.CheckIfDBExists(adminConfig, activeDB) {
 			err = pgadmin.CreateDB(sourceMap, adminConfig, pgadmin.AdminDB, activeDB)
@@ -52,14 +53,23 @@ func Load(conf *config.Config) (*gorm.DB, error) {
 				return
 			}
 		}
+		adminConfig.ConnConfig.Database = activeDB
 
 		// Add the active database and password to the source
-		source := fmt.Sprintf("%s password=%s database=%s", conf.CentralDB.Source, password, activeDB)
-		source = pgutils.PgxpoolDsnToPgxDsn(source)
+		gormSource := fmt.Sprintf("%s password=%s database=%s", conf.CentralDB.Source, password, activeDB)
+		gormSource = pgutils.PgxpoolDsnToPgxDsn(gormSource)
 
 		// Waits for central-db ready with retries
 		err = retry.WithRetry(func() error {
-			gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{
+			var err error
+			if postgresDB == nil {
+				postgresDB, err = pgxpool.ConnectConfig(ctx, adminConfig)
+				if err != nil {
+					log.WriteToStderrf("fail to connect to central db %v", err)
+					return err
+				}
+			}
+			gormDB, err = gorm.Open(postgres.Open(gormSource), &gorm.Config{
 				NamingStrategy:  pgutils.NamingStrategy,
 				CreateBatchSize: 1000})
 			return err
@@ -76,5 +86,19 @@ func Load(conf *config.Config) (*gorm.DB, error) {
 		}
 	})
 
-	return gormDB, err
+	return postgresDB, gormDB, err
+}
+
+func Close() {
+	closeOnce.Do(func() {
+		if gormDB != nil {
+			sqlDB, _ := gormDB.DB()
+			if sqlDB != nil {
+				utils.IgnoreError(sqlDB.Close)
+			}
+		}
+		if postgresDB != nil {
+			postgresDB.Close()
+		}
+	})
 }
