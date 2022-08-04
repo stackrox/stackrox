@@ -45,8 +45,8 @@ jobs:
 
   pre-build-cli:
     if: |
-      (github.event.action == "labeled" && github.event.label.name == 'turbo-build') ||
-      (github.event.action != "labeled" && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
+      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
@@ -73,8 +73,8 @@ jobs:
 
   pre-build-go-binaries:
     if: |
-      (github.event.action == "labeled" && github.event.label.name == 'turbo-build') ||
-      (github.event.action != "labeled" && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
+      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
@@ -111,8 +111,8 @@ jobs:
 
   pre-build-docs:
     if: |
-      (github.event.action == "labeled" && github.event.label.name == 'turbo-build') ||
-      (github.event.action != "labeled" && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
+      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
@@ -143,8 +143,8 @@ jobs:
 
   build-and-push-main:
     if: |
-      (github.event.action == "labeled" && github.event.label.name == 'turbo-build') ||
-      (github.event.action != "labeled" && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
+      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
     runs-on: ubuntu-latest
     needs: 
       - pre-build-ui
@@ -236,8 +236,8 @@ jobs:
 
   build-and-push-operator:
     if: |
-      (github.event.action == "labeled" && github.event.label.name == 'turbo-build') ||
-      (github.event.action != "labeled" && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
+      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.44
