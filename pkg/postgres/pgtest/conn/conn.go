@@ -25,8 +25,12 @@ func GetConnectionStringWithDatabaseName(database string) string {
 	}
 	pass := env.GetString("POSTGRES_PASSWORD", "")
 	host := env.GetString("POSTGRES_HOST", "localhost")
+<<<<<<< HEAD
 	port := env.GetString("POSTGRES_PORT", "5432")
 	src := fmt.Sprintf("host=%s port=%s user=%s database=%s sslmode=disable statement_timeout=600000 client_encoding=UTF-8", host, port, user, database)
+=======
+	src := fmt.Sprintf("host=%s port=5432 user=%s database=%s sslmode=disable statement_timeout=600000", host, user, database)
+>>>>>>> cdb1fe53d3 (Revert test connection change)
 	if pass != "" {
 		src += fmt.Sprintf(" password=%s", pass)
 	}
