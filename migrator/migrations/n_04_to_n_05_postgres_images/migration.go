@@ -34,7 +34,7 @@ var (
 			return nil
 		},
 	}
-	batchSize = 10000
+	batchSize = 1000
 	schema    = pkgSchema.ImagesSchema
 	log       = loghelper.LogWrapper{}
 )
