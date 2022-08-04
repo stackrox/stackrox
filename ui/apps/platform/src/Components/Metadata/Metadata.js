@@ -85,7 +85,11 @@ const Metadata = ({
                         )}
                     </ul>
                 </div>
-                {description && <div className="p-4">{description}</div>}
+                {description && (
+                    <div className="p-4" data-testid="metadata-description">
+                        {description}
+                    </div>
+                )}
             </div>
         </Widget>
     );
