@@ -626,7 +626,7 @@ export const NODE_LIST_FRAGMENT_UPDATED = gql`
     }
 `;
 
-export const IMAGE_LIST_FRAGMENT = gql`
+export const OLD_IMAGE_LIST_FRAGMENT = gql`
     fragment imageFields on Image {
         id
         name {
@@ -652,6 +652,56 @@ export const IMAGE_LIST_FRAGMENT = gql`
             notes
         }
         vulnCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            moderate {
+                total
+                fixable
+            }
+            important {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+    }
+`;
+
+export const IMAGE_LIST_FRAGMENT = gql`
+    fragment imageFields on Image {
+        id
+        name {
+            fullName
+        }
+        watchStatus
+        deploymentCount(query: $query)
+        priority
+        topVuln: topImageVulnerability {
+            cvss
+            scoreVersion
+        }
+        metadata {
+            v1 {
+                created
+            }
+        }
+        componentCount: imageComponentCount(query: $query)
+        notes
+        scan {
+            scanTime
+            operatingSystem
+            notes
+        }
+        vulnCounter: imageVulnerabilityCounter {
             all {
                 total
                 fixable

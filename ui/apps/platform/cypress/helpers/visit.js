@@ -19,7 +19,6 @@ import { interceptRequests, waitForResponses } from './request';
  *
  * Optionally wait for responses with waitOptions: { requestTimeout, responseTimeout }
  */
-// eslint-disable-next-line import/prefer-default-export
 export function visit(pageUrl, requestConfig, staticResponseMap) {
     cy.intercept('GET', api.featureFlags).as('featureflags');
     cy.intercept('GET', api.roles.mypermissions).as('mypermissions');
