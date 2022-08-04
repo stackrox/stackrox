@@ -36,7 +36,9 @@ import (
 	"github.com/stackrox/rox/sensor/common/sensor"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
+	"github.com/stackrox/rox/sensor/common/wal"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
+	"github.com/stackrox/rox/sensor/kubernetes/checkpoint"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
@@ -129,6 +131,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
 		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
+		checkpoint.NewCheckpointHandler(wal.MessageAckerSingleton()),
 	}
 
 	if !cfg.localSensor {

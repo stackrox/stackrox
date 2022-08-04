@@ -87,7 +87,11 @@ func (s *StoreMap) Get(i interface{}) Store {
 		utils.Should(errors.Errorf("Attempted to perform a Get on a closed reconciliation store for the following: %+v", i))
 		return NewStore()
 	}
-	typ := reflectutils.Type(i)
+	typ, ok := i.(string)
+	if !ok {
+		typ = reflectutils.Type(i)
+	}
+	log.Infof("Type: %+v %+v", typ, s.reconciliationMap[typ])
 	val, ok := s.reconciliationMap[typ]
 	if !ok {
 		val = NewStore()
@@ -97,12 +101,11 @@ func (s *StoreMap) Get(i interface{}) Store {
 }
 
 // Add adds an id to the type
-func (s *StoreMap) Add(i interface{}, id string) {
+func (s *StoreMap) Add(typ string, id string) {
 	if s.reconciliationMap == nil {
 		utils.Should(errors.Errorf("Attempted to perform an Add on a closed reconciliation store for the following ID: %s", id))
 		return
 	}
-	typ := reflectutils.Type(i)
 	val, ok := s.reconciliationMap[typ]
 	if !ok {
 		val = NewStore()

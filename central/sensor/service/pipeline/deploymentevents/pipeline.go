@@ -2,6 +2,7 @@ package deploymentevents
 
 import (
 	"context"
+	"time"
 
 	"github.com/mitchellh/hashstructure"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
@@ -103,6 +104,8 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Deployment)
 
+	time.Sleep(20 * time.Second)
+	
 	event := msg.GetEvent()
 	deployment := event.GetDeployment()
 	deployment.ClusterId = clusterID

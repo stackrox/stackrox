@@ -23,7 +23,7 @@ require (
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
 	github.com/cloudflare/cfssl v1.6.1
-	github.com/cockroachdb/pebble v0.0.0-20220729140737-245afda9c39f // indirect
+	github.com/cockroachdb/pebble v0.0.0-20220729140737-245afda9c39f
 	github.com/containers/image/v5 v5.20.0
 	github.com/coreos/go-oidc/v3 v3.2.0
 	github.com/coreos/go-systemd/v22 v22.3.2

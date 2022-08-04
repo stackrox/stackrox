@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/messagestream"
 )
@@ -24,10 +25,10 @@ type deduper struct {
 }
 
 // NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
-func NewDedupingMessageStream(stream messagestream.SensorMessageStream) messagestream.SensorMessageStream {
+func NewDedupingMessageStream(stream messagestream.SensorMessageStream, lastSent map[string]uint64) messagestream.SensorMessageStream {
 	return &deduper{
 		stream:   stream,
-		lastSent: make(map[string]uint64),
+		lastSent: lastSent,
 		hasher:   fnv.New64a(),
 	}
 }
@@ -63,9 +64,28 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	utils.Should(err)
 
 	if d.lastSent[key] == hashValue {
-		return nil
+		// If we have a matching hash, then push a reconciliation event when the action is SYNC
+		// This allows Central to complete reconciliation
+		if event.GetAction() == central.ResourceAction_SYNC_RESOURCE {
+			return d.stream.Send(&central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: &central.SensorEvent{
+						Id: msg.GetEvent().GetId(),
+						Resource: &central.SensorEvent_ReconciliationEvent_{
+							ReconciliationEvent: &central.SensorEvent_ReconciliationEvent{
+								Id:   msg.GetEvent().GetId(),
+								Type: reflectutils.Type(msg.GetEvent().GetResource()),
+							},
+						},
+					},
+				},
+			})
+		}
 	}
 
+	event.HasHash = &central.SensorEvent_Hash{
+		Hash: hashValue,
+	}
 	if err := d.stream.Send(msg); err != nil {
 		return err
 	}

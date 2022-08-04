@@ -69,7 +69,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	var typ string
 	switch evt := msg.Msg.(type) {
 	case *central.MsgFromSensor_Event:
-		switch evt.Event.Resource.(type) {
+		switch val := evt.Event.Resource.(type) {
 		case *central.SensorEvent_Synced:
 			// Call the reconcile functions
 			if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
@@ -78,18 +78,24 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			s.reconciliationMap.Close()
 			return
 		case *central.SensorEvent_Checkpoint:
+			log.Infof("Received checkpoint: %+v", msg.GetEvent().GetCheckpoint().GetId())
 			AddCheckpoint(msg.GetEvent().GetCheckpoint().GetId(), (workerQueueSize+1)*len(s.typeToQueue))
 			for _, queue := range s.typeToQueue {
 				queue.push(msg)
 			}
 			go s.asyncCheckpointSender(msg.GetEvent().GetCheckpoint().GetId())
 			return
+		case *central.SensorEvent_ReconciliationEvent_:
+			if !s.reconciliationMap.IsClosed() {
+				s.reconciliationMap.Add(val.ReconciliationEvent.GetType(), evt.Event.Id)
+			}
+			return
 		case *central.SensorEvent_ReprocessDeployment:
 			typ = deploymentQueueKey
 		default:
 			typ = reflectutils.Type(evt.Event.Resource)
 			if !s.reconciliationMap.IsClosed() {
-				s.reconciliationMap.Add(evt.Event.Resource, evt.Event.Id)
+				s.reconciliationMap.Add(typ, evt.Event.Id)
 			}
 		}
 	default:

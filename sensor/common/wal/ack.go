@@ -27,7 +27,7 @@ type checkpointEntry struct {
 	checkpoint string
 }
 
-func Singleton() MessageAcker {
+func MessageAckerSingleton() MessageAcker {
 	once.Do(func() {
 		acker = NewMessageAcker()
 	})
@@ -36,7 +36,7 @@ func Singleton() MessageAcker {
 
 func NewMessageAcker() *messageAcker {
 	return &messageAcker{
-		wal:   Open(),
+		wal:   OpenWAL(),
 		queue: list.New(),
 	}
 }
@@ -58,18 +58,11 @@ func (m *messageAcker) Insert(event *central.SensorEvent) {
 		})
 		return
 	}
+	log.Infof("Pushing back: %+v", event.GetResource())
 	m.queue.PushBack(&listEntry{
 		id:     event.GetId(),
 		hash:   event.GetHash(),
 		action: event.GetAction(),
-	})
-}
-
-func (m *messageAcker) InsertCheckpoint(id string) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	m.queue.PushBack(&checkpointEntry{
-		checkpoint: id,
 	})
 }
 
@@ -93,6 +86,8 @@ func (m *messageAcker) getAckedElements(value string) []*listEntry {
 				return ackedEntries
 			}
 			log.Errorf("found out of order checkpoints: %s vs %s. continuing", entryValue.checkpoint, value)
+		default:
+			panic("nope")
 		}
 	}
 	return ackedEntries

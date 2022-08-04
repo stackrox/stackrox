@@ -2,9 +2,11 @@ package sensor
 
 import (
 	"errors"
+	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -56,8 +58,9 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 
 	wrappedStream := metrics.NewCountingEventStream(stream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
-	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream)
-	wrappedStream = wal.NewDataStream(wrappedStream, wal.Singleton())
+	wrappedStream = wal.NewDataStream(wrappedStream, wal.MessageAckerSingleton())
+	currentLastSeen := wal.OpenWAL().GetMap()
+	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, currentLastSeen)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "total")
 
@@ -74,6 +77,8 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 		}
 	}
 
+	checkpointTicker := time.NewTicker(10 * time.Second)
+
 	for {
 		var msg *central.MsgFromSensor
 		var ok bool
@@ -83,7 +88,22 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 				s.stopC.SignalWithError(errors.New("channel closed"))
 				return
 			}
+		case <-checkpointTicker.C:
+			checkpointID := uuid.NewV4().String()
+			msg = &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: &central.SensorEvent{
+						Id: checkpointID,
+						Resource: &central.SensorEvent_Checkpoint{
+							Checkpoint: &central.SensorEvent_ResourceCheckpoint{
+								Id: checkpointID,
+							},
+						},
+					},
+				},
+			}
 		case <-s.stopC.Done():
+			checkpointTicker.Stop()
 			return
 		case <-stream.Context().Done():
 			s.stopC.SignalWithError(stream.Context().Err())

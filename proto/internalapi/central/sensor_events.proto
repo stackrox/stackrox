@@ -68,6 +68,11 @@ message SensorEvent {
         string id = 1;
     }
 
+    message ReconciliationEvent {
+        string id   = 1;
+        string type = 2;
+    }
+
     oneof resource {
         storage.NetworkPolicy     network_policy    = 4;
         storage.Deployment        deployment        = 5;
@@ -93,6 +98,7 @@ message SensorEvent {
         storage.ComplianceOperatorScanSettingBinding compliance_operator_scan_setting_binding = 23;
         storage.ComplianceOperatorScan               compliance_operator_scan                 = 24;
         ResourceCheckpoint                           checkpoint                               = 26;
+        ReconciliationEvent                          reconciliation_event                     = 27;
     }
 }
 

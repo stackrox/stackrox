@@ -83,10 +83,11 @@ func (k *listenerImpl) handleAllEvents() {
 	secretInformer := sif.Core().V1().Secrets().Informer()
 	saInformer := sif.Core().V1().ServiceAccounts().Informer()
 
-	roleInformer := sif.Rbac().V1().Roles().Informer()
-	clusterRoleInformer := sif.Rbac().V1().ClusterRoles().Informer()
 	roleBindingInformer := resyncingSif.Rbac().V1().RoleBindings().Informer()
 	clusterRoleBindingInformer := resyncingSif.Rbac().V1().ClusterRoleBindings().Informer()
+
+	roleInformer := sif.Rbac().V1().Roles().Informer()
+	clusterRoleInformer := sif.Rbac().V1().ClusterRoles().Informer()
 
 	// prePodWaitGroup
 	prePodWaitGroup := &concurrency.WaitGroup{}
@@ -99,10 +100,18 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(namespaceInformer, dispatchers.ForNamespaces(), k.eventsC, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 	handle(secretInformer, dispatchers.ForSecrets(), k.eventsC, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 	handle(saInformer, dispatchers.ForServiceAccounts(), k.eventsC, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
-
 	// RBAC dispatchers handles multiple sets of data
 	handle(roleInformer, dispatchers.ForRBAC(), k.eventsC, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 	handle(clusterRoleInformer, dispatchers.ForRBAC(), k.eventsC, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+
+	sif.Start(stopSignal.Done())
+	resyncingSif.Start(stopSignal.Done())
+	// Run and then reinitialize
+	if !concurrency.WaitInContext(prePodWaitGroup, stopSignal) {
+		return
+	}
+	prePodWaitGroup = &concurrency.WaitGroup{}
+
 	handle(roleBindingInformer, dispatchers.ForRBAC(), k.eventsC, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 	handle(clusterRoleBindingInformer, dispatchers.ForRBAC(), k.eventsC, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 

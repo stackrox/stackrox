@@ -4,6 +4,12 @@ import (
 	"encoding/binary"
 
 	"github.com/cockroachdb/pebble"
+	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	walOnce sync.Once
+	wal     WAL
 )
 
 type WAL interface {
@@ -12,14 +18,17 @@ type WAL interface {
 	GetMap() map[string]uint64
 }
 
-func Open() WAL {
-	db, err := pebble.Open("/tmp/wal", &pebble.Options{})
-	if err != nil {
-		log.Errorf("could not open WAL for Sensor. This could have adverse performance impacts: %v", err)
-	}
-	return &walImpl{
-		db: db,
-	}
+func OpenWAL() WAL {
+	walOnce.Do(func() {
+		db, err := pebble.Open("/var/cache/stackrox/wal", &pebble.Options{})
+		if err != nil {
+			log.Errorf("could not open WAL for Sensor. This could have adverse performance impacts: %v", err)
+		}
+		wal = &walImpl{
+			db: db,
+		}
+	})
+	return wal
 }
 
 type Entry struct {
@@ -61,7 +70,7 @@ func (w *walImpl) GetMap() map[string]uint64 {
 	it := w.db.NewIter(&pebble.IterOptions{})
 	defer it.Close()
 
-	for it.Prev(); it.Valid(); it.Next() {
+	for it.First(); it.Valid(); it.Next() {
 		hash := binary.LittleEndian.Uint64(it.Value())
 		hashes[string(it.Key())] = hash
 	}
