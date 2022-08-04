@@ -45,4 +45,7 @@ var (
 
 	// DecommissionedClusterRetention enables the setting in System Configuration.
 	DecommissionedClusterRetention = registerFeature("Enable Decommissioned Cluster Retention in System Configuration", "ROX_DECOMMISSIONED_CLUSTER_RETENTION", true)
+
+	// QuayRobotAccounts enables Robot accounts as credentials in Quay Image Integration.
+	QuayRobotAccounts = registerFeature("Enable Robot accounts in Quay Image Integration", "ROX_QUAY_ROBOT_ACCOUNTS", false)
 )
