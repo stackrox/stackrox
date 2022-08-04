@@ -13,8 +13,8 @@ jobs:
 
   pre-build-ui:
     if: |
-      (github.event.action == "labeled" && github.event.label.name == 'turbo-build') ||
-      (github.event.action != "labeled" && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
+      (github.event.action == 'labeled' && github.event.label.name == 'turbo-build') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'turbo-build'))
 
     runs-on: ubuntu-latest
     container:
