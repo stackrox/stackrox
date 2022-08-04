@@ -47,7 +47,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/certificate-transparency-go v1.1.3
 	github.com/google/go-cmp v0.5.8
-	github.com/google/go-containerregistry v0.9.0
+	github.com/google/go-containerregistry v0.11.0
 	github.com/googleapis/gnostic v0.5.5
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.3.0
@@ -106,7 +106,7 @@ require (
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
-	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2
+	golang.org/x/oauth2 v0.0.0-20220718184931-c8730f7fcb92
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
