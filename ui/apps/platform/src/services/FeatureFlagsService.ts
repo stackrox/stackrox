@@ -7,7 +7,6 @@ const url = '/v1/featureflags';
 /**
  * Fetches the list of feature flags and their current values from the backend.
  */
-// eslint-disable-next-line import/prefer-default-export
 export function fetchFeatureFlags(): Promise<{ response: { featureFlags: FeatureFlag[] } }> {
     return axios.get<{ featureFlags: FeatureFlag[] }>(url).then((response) => ({
         response: response.data,
