@@ -14,6 +14,7 @@ import (
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
 	clusterStoreMocks "github.com/stackrox/rox/central/cluster/store/cluster/mocks"
 	clusterHealthStoreMocks "github.com/stackrox/rox/central/cluster/store/clusterhealth/mocks"
+	clusterCVEMocks "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
@@ -84,6 +85,7 @@ type ClusterDataStoreTestSuite struct {
 	serviceAccountDataStore *serviceAccountMocks.MockDataStore
 	roleDataStore           *roleMocks.MockDataStore
 	roleBindingDataStore    *roleBindingMocks.MockDataStore
+	clusterCVEDataStore     *clusterCVEMocks.MockDataStore
 }
 
 var _ suite.TearDownTestSuite = (*ClusterDataStoreTestSuite)(nil)
@@ -120,6 +122,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.serviceAccountDataStore = serviceAccountMocks.NewMockDataStore(suite.mockCtrl)
 	suite.roleDataStore = roleMocks.NewMockDataStore(suite.mockCtrl)
 	suite.roleBindingDataStore = roleBindingMocks.NewMockDataStore(suite.mockCtrl)
+	suite.roleBindingDataStore = roleBindingMocks.NewMockDataStore(suite.mockCtrl)
+	suite.clusterCVEDataStore = clusterCVEMocks.NewMockDataStore(suite.mockCtrl)
 
 	suite.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	suite.clusters.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
@@ -149,6 +153,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.mockProvider,
 		ranking.NewRanker(),
 		suite.networkBaselineMgr,
+		suite.clusterCVEDataStore,
 	)
 	suite.NoError(err)
 	suite.ei = envisolator.NewEnvIsolator(suite.T())
