@@ -1,6 +1,9 @@
 package netpol
 
 import (
+	"os"
+
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -13,8 +16,9 @@ type generateNetpolCommand struct {
 	folderPath       string
 	outputFolderPath string
 	outputFilePath   string
-	mergePolicies    bool
-	splitPolicies    bool
+	removeOutputPath bool
+	mergeMode        bool
+	splitMode        bool
 
 	// injected or constructed values
 	env     environment.Environment
@@ -25,39 +29,60 @@ type generateNetpolCommand struct {
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	generateNetpolCmd := &generateNetpolCommand{env: cliEnvironment}
 	c := &cobra.Command{
-		Use: "netpol <folder-path>",
+		Use:  "netpol <folder-path>",
+		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := validate(args); err != nil {
+			if err := generateNetpolCmd.construct(args, c); err != nil {
 				return err
 			}
-			if err := generateNetpolCmd.construct(args); err != nil {
+			if err := generateNetpolCmd.validate(); err != nil {
 				return err
 			}
 			return generateNetpolCmd.generateNetpol()
 		},
 	}
-
-	c.Flags().StringVarP(&generateNetpolCmd.outputFolderPath, "output-dir", "d", "./policies", "path to the output directory for generated policies")
-	c.Flags().StringVarP(&generateNetpolCmd.outputFilePath, "output-file", "f", "./policies.yaml", "path to the output file for merged policies")
-	c.Flags().BoolVar(&generateNetpolCmd.mergePolicies, "merge-policies", false, "Merge all generated Network Policies into a single file. Combine with -f for target file")
-	c.Flags().BoolVar(&generateNetpolCmd.splitPolicies, "split-policies", false, "Create one file per Network Policy. Combine with -d for target folder")
-
-	c.MarkFlagsRequiredTogether("split-policies", "output-dir")
-	c.MarkFlagsRequiredTogether("merge-policies", "output-file")
+	c.Flags().BoolVar(&generateNetpolCmd.removeOutputPath, "remove", false, "remove the output path if it already exists")
+	c.Flags().StringVarP(&generateNetpolCmd.outputFolderPath, "output-dir", "d", "", "save generated policies into target folder - 1 file per policy")
+	c.Flags().StringVarP(&generateNetpolCmd.outputFilePath, "output-file", "f", "", "save and merge generated policies into a single YAML file")
+	c.MarkFlagsMutuallyExclusive("output-dir", "output-file")
 	return c
 }
 
-func validate(args []string) error {
-	if len(args) > 1 {
-		return errox.InvalidArgs.Newf("too many positional arguments (expected 1, got %d)", len(args))
-	}
-	if len(args) == 0 {
-		return errox.InvalidArgs.New("missing <folder-path> argument")
-	}
+func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) error {
+	cmd.folderPath = args[0]
+	cmd.splitMode = c.Flags().Changed("output-dir")
+	cmd.mergeMode = c.Flags().Changed("output-file")
 	return nil
 }
 
-func (cmd *generateNetpolCommand) construct(args []string) error {
-	cmd.folderPath = args[0]
+func (cmd *generateNetpolCommand) validate() error {
+	if cmd.splitMode {
+		if err := cmd.setupPath(cmd.outputFolderPath); err != nil {
+			return errors.Wrapf(err, "failed to set up folder path")
+		}
+	} else if cmd.mergeMode {
+		if err := cmd.setupPath(cmd.outputFilePath); err != nil {
+			return errors.Wrapf(err, "failed to set up file path")
+		}
+	}
+
+	return nil
+}
+
+func (cmd *generateNetpolCommand) setupPath(path string) error {
+	if _, err := os.Stat(path); err == nil {
+		if cmd.removeOutputPath {
+			if err := os.RemoveAll(path); err != nil {
+				return errors.Wrapf(err, "failed to remove output path %s", path)
+			}
+			cmd.env.Logger().WarnfLn("Removed output path %s", path)
+		} else {
+			cmd.env.Logger().ErrfLn("Output path %s already exists. Use --remove to overwrite or select a different path.", path)
+			return errox.AlreadyExists.Newf("path %s already exists", path)
+		}
+	} else if !os.IsNotExist(err) {
+		return errors.Wrapf(err, "failed to check if path %s exists", path)
+	}
+	cmd.env.Logger().InfofLn("Writing generated Network Policies to %s", path)
 	return nil
 }

@@ -28,22 +28,21 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 	}
 	mergedPolicy = strings.Join(yamlPolicies, "\n---\n")
 
-	if !cmd.mergePolicies && !cmd.splitPolicies {
-		cmd.printNetpols(mergedPolicy)
-		return nil
-	}
-
-	if cmd.mergePolicies {
+	if cmd.mergeMode {
 		if err := cmd.saveNetpolsToMergedFile(mergedPolicy); err != nil {
 			return errors.Wrapf(err, "error saving merged Network Policies")
 		}
+		return nil
 	}
 
-	if cmd.splitPolicies {
+	if cmd.splitMode {
 		if err := cmd.saveNetpolsToFolder(recommendedNetpols); err != nil {
 			return errors.Wrapf(err, "error saving split Network Policies")
 		}
+		return nil
 	}
+
+	cmd.printNetpols(mergedPolicy)
 
 	return nil
 }
