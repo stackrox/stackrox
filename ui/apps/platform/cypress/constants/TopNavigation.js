@@ -1,6 +1,5 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 
-// eslint-disable-next-line import/prefer-default-export
 export const selectors = {
     orchestratorComponentsToggle: scopeSelectors('[data-testid="orchestrator-components-toggle"]', {
         hideButton: 'button:contains("Hide")',
