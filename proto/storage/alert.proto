@@ -128,7 +128,7 @@ message Alert {
 
     Enforcement               enforcement       = 6 [(gogoproto.moretags) = 'search:"Enforcement"'];
 
-    google.protobuf.Timestamp time              = 7 [(gogoproto.moretags) = "sensorhash:\"ignore\""  "search:\"Violation Time\""];
+    google.protobuf.Timestamp time              = 7 [(gogoproto.moretags) = 'sensorhash:"ignore" search:"Violation Time"'];
     google.protobuf.Timestamp first_occurred    = 10 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
 
     // The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
