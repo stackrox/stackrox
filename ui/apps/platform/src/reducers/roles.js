@@ -108,7 +108,6 @@ const getIsLoadingUserRolePermissions = (state) => state.isLoading;
 const replacedResourceMapping = new Map([
     ['AllComments', 'Administration'],
     ['APIToken', 'Integration'],
-    ['AuthPlugin', 'Access'],
     ['AuthProvider', 'Access'],
     ['BackupPlugins', 'Integration'],
     ['ComplianceRuns', 'Compliance'],
