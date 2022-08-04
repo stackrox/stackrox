@@ -18,12 +18,14 @@ type PolicyCategoriesSidePanelProps = {
     selectedCategory: PolicyCategory;
     setSelectedCategory: (selectedCategory?: PolicyCategory) => void;
     addToast: (toast) => void;
+    refreshPolicyCategories: () => void;
 };
 
 function PolicyCategorySidePanel({
     selectedCategory,
     setSelectedCategory,
     addToast,
+    refreshPolicyCategories,
 }: PolicyCategoriesSidePanelProps) {
     const formik = useFormik({
         initialValues: selectedCategory,
@@ -31,8 +33,9 @@ function PolicyCategorySidePanel({
             setSubmitting(false);
             const { id, name } = values;
             renamePolicyCategory(id, name)
-                .then(() => {
-                    setSelectedCategory(values);
+                .then((response) => {
+                    setSelectedCategory(response);
+                    refreshPolicyCategories();
                 })
                 .catch((error) => {
                     addToast(error.message);
@@ -41,6 +44,7 @@ function PolicyCategorySidePanel({
                     setSubmitting(false);
                 });
         },
+        enableReinitialize: true,
     });
 
     const { values, handleChange, dirty, handleSubmit } = formik;
@@ -70,7 +74,7 @@ function PolicyCategorySidePanel({
                         </Button>
                     </Flex>
                     <FormikProvider value={formik}>
-                        <Form>
+                        <Form onSubmit={handleSubmit}>
                             <FormGroup
                                 fieldId="policy-category-name"
                                 label="Category name"
