@@ -1,9 +1,9 @@
 package netpol
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 	"github.com/pkg/errors"
@@ -18,13 +18,16 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 	}
 
 	var mergedPolicy string
+	yamlPolicies := make([]string, 0, len(recommendedNetpols))
 	for _, netpol := range recommendedNetpols {
 		yamlPolicy, err := networkpolicy.KubernetesNetworkPolicyWrap{NetworkPolicy: netpol}.ToYaml()
 		if err != nil {
 			return errors.Wrap(err, "error converting Network Policy object to YAML")
 		}
+		yamlPolicies = append(yamlPolicies, yamlPolicy)
 	}
-mergedPolicy = strings.Join(yamlPolicies, "\n---\n")
+	mergedPolicy = strings.Join(yamlPolicies, "\n---\n")
+
 	if !cmd.mergePolicies && !cmd.splitPolicies {
 		cmd.printNetpols(mergedPolicy)
 		return nil
@@ -51,9 +54,6 @@ func (cmd *generateNetpolCommand) printNetpols(combinedNetpols string) {
 
 func (cmd *generateNetpolCommand) saveNetpolsToMergedFile(combinedNetpols string) error {
 	dirpath, filename := filepath.Split(cmd.outputFilePath)
-	if dirpath == "" {
-		dirpath = "./"
-	}
 	if filename == "" {
 		filename = "policies.yaml"
 	}
@@ -90,6 +90,5 @@ func writeFile(filename string, destDir string, content string) error {
 		return errors.Wrapf(err, "error creating directory for file %q", filename)
 	}
 
-	perms := os.FileMode(0644)
-	return errors.Wrap(os.WriteFile(outputPath, []byte(content), perms), "error writing file")
+	return errors.Wrap(os.WriteFile(outputPath, []byte(content), os.FileMode(0644)), "error writing file")
 }
