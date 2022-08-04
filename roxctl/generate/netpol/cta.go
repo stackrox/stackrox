@@ -23,9 +23,8 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 		if err != nil {
 			return errors.Wrap(err, "error converting Network Policy object to YAML")
 		}
-		mergedPolicy = fmt.Sprintf("%s---\n%s", mergedPolicy, yamlPolicy)
 	}
-
+mergedPolicy = strings.Join(yamlPolicies, "\n---\n")
 	if !cmd.mergePolicies && !cmd.splitPolicies {
 		cmd.printNetpols(mergedPolicy)
 		return nil
