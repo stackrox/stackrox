@@ -5,10 +5,11 @@ load "../helpers.bash"
 out_dir=""
 
 setup_file() {
-  echo "Testing roxctl version: '$(roxctl-release version)'" >&3
   command -v yq > /dev/null || skip "Tests in this file require yq"
+  echo "yq version: '$(yq --version)'" >&3
   # remove binaries from the previous runs
   rm -f "$(roxctl-development-cmd)" "$(roxctl-development-release)"
+  echo "Testing roxctl version: '$(roxctl-release version)'" >&3
 }
 
 setup() {
