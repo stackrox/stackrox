@@ -19,6 +19,7 @@ runs:
           /github/home/.cache/go-build
           /github/home/.cache/golangci-lint
           /github/home/.cache/staticcheck
+          /github/home/go/pkg/mod
         key: go-v2-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           go-v2-
