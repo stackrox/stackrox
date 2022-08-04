@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common/mocks"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -103,7 +103,7 @@ func (c *clusterDeleteTestSuite) TestCommandRequiresName() {
 	err := cbr.Execute()
 
 	c.Require().Error(err)
-	c.Assert().ErrorIs(err, errorhelpers.ErrInvalidArgs)
+	c.Assert().ErrorIs(err, errox.InvalidArgs)
 }
 
 func (c *clusterDeleteTestSuite) TestCommandFailsIfClusterNotFound() {
@@ -115,7 +115,7 @@ func (c *clusterDeleteTestSuite) TestCommandFailsIfClusterNotFound() {
 	err := cbr.Execute()
 
 	c.Require().Error(err)
-	c.Assert().ErrorIs(err, errorhelpers.ErrNotFound)
+	c.Assert().ErrorIs(err, errox.NotFound)
 }
 
 func (c *clusterDeleteTestSuite) TestConstructSetsTimeoutFlag() {

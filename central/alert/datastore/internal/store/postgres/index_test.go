@@ -12,13 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 var (
-	ctx = context.Background()
+	ctx = sac.WithAllAccess(context.Background())
 )
 
 type AlertsIndexSuite struct {
@@ -50,7 +51,9 @@ func (s *AlertsIndexSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	Destroy(ctx, s.pool)
-	s.store = New(ctx, s.pool)
+	gormDB := pgtest.OpenGormDB(s.T(), source)
+	defer pgtest.CloseGormDB(s.T(), gormDB)
+	s.store = CreateTableAndNewStore(ctx, s.pool, gormDB)
 	s.indexer = NewIndexer(s.pool)
 }
 

@@ -87,6 +87,12 @@ teardown() {
     '--scanner-db-image' 'example2.com/scanner-db:1.2.3'
 }
 
+@test "roxctl-release central generate k8s should not support --central-db-image" {
+  run roxctl-development central generate k8s pvc --output-dir "$out_dir" --central-db-image example.com/central-db:1.2.5
+  assert_failure
+  assert_output --partial "unknown flag: --central-db-image"
+}
+
 @test "roxctl-release central generate openshift should work when main is from custom registry and --image-defaults are used" {
   run_image_defaults_registry_test roxctl-release openshift \
     'example.com' \

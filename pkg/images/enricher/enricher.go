@@ -91,8 +91,14 @@ const (
 // ImageEnricher provides functions for enriching images with integrations.
 //go:generate mockgen-wrapper
 type ImageEnricher interface {
-	EnrichImage(ctx EnrichmentContext, image *storage.Image) (EnrichmentResult, error)
+	// EnrichImage will enrich an image with its metadata, scan results, signatures and signature verification results.
+	EnrichImage(ctx context.Context, enrichCtx EnrichmentContext, image *storage.Image) (EnrichmentResult, error)
+	// EnrichWithVulnerabilities will enrich an image with its components and their associated vulnerabilities only.
+	// This will always force re-enrichment and not take existing values into account.
 	EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error)
+	// EnrichWithSignatureVerificationData will enrich an image with signature verification results only.
+	// This will always force re-verification and not take existing values into account.
+	EnrichWithSignatureVerificationData(ctx context.Context, image *storage.Image) (EnrichmentResult, error)
 }
 
 // CVESuppressor provides enrichment for suppressed CVEs for an image's components.
@@ -130,7 +136,6 @@ func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integr
 
 		signatureIntegrationGetter: signatureIntegrationGetter,
 		signatureVerifier:          signatures.VerifyAgainstSignatureIntegrations,
-		signatureFetcherLimiter:    rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		signatureFetcher:           signatures.NewSignatureFetcher(),
 
 		imageGetter: imageGetter,

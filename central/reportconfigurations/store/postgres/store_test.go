@@ -8,25 +8,27 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	storage "github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
-type ReportconfigsStoreSuite struct {
+type ReportConfigurationsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	testDB      *pgtest.TestPostgres
 }
 
-func TestReportconfigsStore(t *testing.T) {
-	suite.Run(t, new(ReportconfigsStoreSuite))
+func TestReportConfigurationsStore(t *testing.T) {
+	suite.Run(t, new(ReportConfigurationsStoreSuite))
 }
 
-func (s *ReportconfigsStoreSuite) SetupTest() {
+func (s *ReportConfigurationsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -34,24 +36,27 @@ func (s *ReportconfigsStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
+
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
-func (s *ReportconfigsStoreSuite) TearDownTest() {
+func (s *ReportConfigurationsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE report_configurations CASCADE")
+	s.T().Log("report_configurations", tag)
+	s.NoError(err)
+}
+
+func (s *ReportConfigurationsStoreSuite) TearDownSuite() {
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ReportconfigsStoreSuite) TestStore() {
-	ctx := context.Background()
+func (s *ReportConfigurationsStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
-
-	Destroy(ctx, pool)
-	store := New(ctx, pool)
+	store := s.store
 
 	reportConfiguration := &storage.ReportConfiguration{}
 	s.NoError(testutils.FullInit(reportConfiguration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -61,6 +66,8 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundReportConfiguration)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, reportConfiguration))
 	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
@@ -69,12 +76,16 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 
 	reportConfigurationCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(reportConfigurationCount, 1)
+	s.Equal(1, reportConfigurationCount)
+	reportConfigurationCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(reportConfigurationCount)
 
 	reportConfigurationExists, err := store.Exists(ctx, reportConfiguration.GetId())
 	s.NoError(err)
 	s.True(reportConfigurationExists)
 	s.NoError(store.Upsert(ctx, reportConfiguration))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, reportConfiguration), sac.ErrResourceAccessDenied)
 
 	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
@@ -86,6 +97,7 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundReportConfiguration)
+	s.ErrorIs(store.Delete(withNoAccessCtx, reportConfiguration.GetId()), sac.ErrResourceAccessDenied)
 
 	var reportConfigurations []*storage.ReportConfiguration
 	for i := 0; i < 200; i++ {
@@ -98,5 +110,5 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 
 	reportConfigurationCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(reportConfigurationCount, 200)
+	s.Equal(200, reportConfigurationCount)
 }

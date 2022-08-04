@@ -18,9 +18,8 @@ const EntityTileLink = ({
     isError,
     short,
 }) => {
-    const text = `${count} ${
-        count === 1 ? entityType : `${pluralize(resourceLabels[entityType] || '')}`
-    }`;
+    const resourceLabel = resourceLabels[entityType] || '';
+    const text = `${count} ${count === 1 ? resourceLabel : `${pluralize(resourceLabel)}`}`;
 
     return (
         <TileLink

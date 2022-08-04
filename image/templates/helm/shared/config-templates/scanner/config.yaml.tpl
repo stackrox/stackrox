@@ -9,6 +9,7 @@
 
 scanner:
   centralEndpoint: https://central.{{ .Release.Namespace }}.svc
+  sensorEndpoint: https://sensor.{{ .Release.Namespace }}.svc
   database:
     # Database driver
     type: pgsql

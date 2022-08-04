@@ -2,69 +2,68 @@ import * as api from '../../../constants/apiEndpoints';
 import { url, selectors } from '../../../constants/VulnManagementPage';
 import withAuth from '../../../helpers/basicAuth';
 import { getHelperElementByLabel, getInputByLabel } from '../../../helpers/formHelpers';
+import { visit } from '../../../helpers/visit';
+import {
+    visitVulnerabilityReporting,
+    visitVulnerabilityReportingFromLeftNav,
+} from '../../../helpers/vulnmanagement/reporting';
+import navigationSelectors from '../../../selectors/navigation';
 
 describe('Vulnmanagement reports', () => {
     withAuth();
 
     describe('creating a report', () => {
-        let notifiers;
-        let resourcesScopes;
+        it('should go from left navigation', () => {
+            visitVulnerabilityReportingFromLeftNav();
 
-        before(() => {
-            cy.fixture('integrations/notifiers.json').then((response) => {
-                notifiers = response;
-            });
-            cy.fixture('scopes/resourceScopes.json').then((response) => {
-                resourcesScopes = response;
-            });
+            cy.location('pathname').should('eq', url.reporting.list);
         });
 
-        beforeEach(() => {
-            cy.intercept('GET', api.report.configurations, { reportConfigs: [] }).as(
-                'getReportConfigurations'
+        it('should go to url and select item in nav bar', () => {
+            visitVulnerabilityReporting();
+
+            cy.get(`${navigationSelectors.navExpandable}:contains("Vulnerability Management")`);
+            cy.get(`${navigationSelectors.nestedNavLinks}:contains("Reporting")`).should(
+                'have.class',
+                'pf-m-current'
             );
-            cy.intercept('GET', api.report.configurationsCount, { count: 0 }).as(
-                'getReportConfigurationsCount'
-            );
-            cy.intercept('POST', api.graphql('searchOptions')).as('searchOptions');
-            cy.intercept('GET', api.integrations.notifiers, notifiers).as('getNotifiers');
-            cy.intercept('GET', api.accessScopes.list, resourcesScopes).as('getResourceScopes');
         });
 
-        it('should navigate to the Create Report view by button or directly', () => {
-            cy.visit('/main/dashboard');
-            cy.get(selectors.vulnManagementExpandableNavLink).click({ force: true });
-            cy.get(selectors.vulnManagementExpandedReportingNavLink).click({ force: true });
-            cy.url().should('contain', url.reporting.list);
+        it('should navigate to the Create Report view by button', () => {
+            visitVulnerabilityReporting();
 
-            cy.wait('@getReportConfigurations');
-            cy.wait('@getReportConfigurationsCount');
-
-            cy.wait('@searchOptions');
-
-            // Hard-coded wait is to ameliorate a tenacious flake in CI that has resisted all more gentle solutions
-            cy.wait(1000);
-
+            cy.intercept('GET', api.accessScopes.list).as('getSimpleAccessScopes');
+            cy.intercept('GET', api.integrations.notifiers).as('getNotifiers');
             cy.get(selectors.reportSection.createReportLink).click();
-            cy.location('pathname').should('eq', `${url.reporting.list}`);
+            cy.wait(['@getSimpleAccessScopes', '@getNotifiers']);
+
+            cy.location('pathname').should('eq', url.reporting.list);
             cy.location('search').should('eq', '?action=create');
+
+            cy.get('h1:contains("Create an image vulnerability report")');
 
             // check the breadcrumbs
             cy.get(selectors.reportSection.breadcrumbItems)
                 .last()
-                .contains('Create a vulnerability report');
+                .contains('Create an image vulnerability report');
+
             // first breadcrumb should be link back to reports table
             cy.get(selectors.reportSection.breadcrumbItems).first().click();
-            cy.location('pathname').should('eq', `${url.reporting.list}`);
-
-            // navigate directly by URL
-            cy.visit('/main/dashboard'); // leave Create Report page
-            cy.visit(`${url.reporting.list}?action=create`);
-            cy.get('h1:contains("Create a vulnerability report")');
+            cy.get('h1:contains("Vulnerability reporting")');
+            cy.location('search').should('eq', '');
         });
 
-        it('should should allow creating a new Report Configuration', () => {
-            cy.visit(`${url.reporting.list}?action=create`);
+        it('should navigate to the Create Report view by url', () => {
+            cy.intercept('GET', api.accessScopes.list, {
+                fixture: 'scopes/resourceScopes.json',
+            }).as('getSimpleAccessScopes');
+            cy.intercept('GET', api.integrations.notifiers, {
+                fixture: 'integrations/notifiers.json',
+            }).as('getNotifiers');
+            visit(`${url.reporting.list}?action=create`);
+            cy.wait(['@getSimpleAccessScopes', '@getNotifiers']);
+
+            cy.get('h1:contains("Create an image vulnerability report")');
 
             // Step 0, should start out with disabled Save button
             cy.get(selectors.reportSection.buttons.create).should('be.disabled');

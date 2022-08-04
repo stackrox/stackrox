@@ -13,13 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
-	mappings "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/multitest/options"
 )
 
 func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_SEARCH_UNSET, schema)
 }
 
+// NewIndexer returns new indexer for `storage.TestMultiKeyStruct`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,
@@ -33,13 +33,13 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "TestMultiKeyStruct")
 
-	return postgres.RunCountRequest(v1.SearchCategory_SEARCH_UNSET, q, b.db, mappings.OptionsMap)
+	return postgres.RunCountRequest(v1.SearchCategory_SEARCH_UNSET, q, b.db)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "TestMultiKeyStruct")
 
-	return postgres.RunSearchRequest(v1.SearchCategory_SEARCH_UNSET, q, b.db, mappings.OptionsMap)
+	return postgres.RunSearchRequest(v1.SearchCategory_SEARCH_UNSET, q, b.db)
 }
 
 //// Stubs for satisfying interfaces

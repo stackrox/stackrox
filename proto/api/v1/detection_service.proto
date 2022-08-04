@@ -45,7 +45,9 @@ message DeployDetectionResponse {
         string   type                 = 2;
         repeated storage.Alert alerts = 3;
     }
-    repeated Run runs = 1;
+    repeated Run runs                   = 1;
+    // The reference will be in the format: namespace/name[<group>/<version>, Kind=<kind>].
+    repeated string ignored_object_refs = 2;
 }
 
 // DetectionService APIs can be used to check for build and deploy time policy violations.

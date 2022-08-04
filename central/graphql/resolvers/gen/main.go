@@ -20,7 +20,7 @@ var (
 			reflect.TypeOf((*storage.ActiveComponent_ActiveContext)(nil)),
 			reflect.TypeOf((*storage.Alert)(nil)),
 			reflect.TypeOf((*storage.Cluster)(nil)),
-			reflect.TypeOf((*storage.Comment)(nil)),
+			reflect.TypeOf((*storage.ClusterCVE)(nil)),
 			reflect.TypeOf((*storage.ComplianceAggregation_Response)(nil)),
 			reflect.TypeOf((*storage.ComplianceControlResult)(nil)),
 			reflect.TypeOf((*storage.CVE)(nil)),
@@ -29,6 +29,7 @@ var (
 			reflect.TypeOf((*storage.Group)(nil)),
 			reflect.TypeOf((*storage.Image)(nil)),
 			reflect.TypeOf((*storage.ImageComponent)(nil)),
+			reflect.TypeOf((*storage.ImageCVE)(nil)),
 			reflect.TypeOf((*storage.K8SRole)(nil)),
 			reflect.TypeOf((*storage.K8SRoleBinding)(nil)),
 			reflect.TypeOf((*storage.ListAlert)(nil)),
@@ -38,6 +39,8 @@ var (
 			reflect.TypeOf((*storage.MitreAttackVector)(nil)),
 			reflect.TypeOf((*storage.NetworkFlow)(nil)),
 			reflect.TypeOf((*storage.Node)(nil)),
+			reflect.TypeOf((*storage.NodeComponent)(nil)),
+			reflect.TypeOf((*storage.NodeCVE)(nil)),
 			reflect.TypeOf((*storage.Notifier)(nil)),
 			reflect.TypeOf((*storage.PermissionSet)(nil)),
 			reflect.TypeOf((*storage.Pod)(nil)),
@@ -68,8 +71,13 @@ var (
 			reflect.TypeOf(storage.EmbeddedImageScanComponent{}),
 			reflect.TypeOf(storage.EmbeddedNodeScanComponent{}),
 			reflect.TypeOf(types.Timestamp{}),
+			reflect.TypeOf(storage.NodeVulnerability{}),
 		},
 		SkipFields: []generator.TypeAndField{
+			{
+				ParentType: reflect.TypeOf(storage.Image{}),
+				FieldName:  "Scan",
+			},
 			{
 				ParentType: reflect.TypeOf(storage.ImageScan{}),
 				FieldName:  "Components",
@@ -77,6 +85,10 @@ var (
 			{
 				ParentType: reflect.TypeOf(storage.NodeScan{}),
 				FieldName:  "Components",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.Node{}),
+				FieldName:  "Scan",
 			},
 			// TODO(ROX-6194): Remove this entirely after the deprecation cycle started with the 55.0 release.
 			{

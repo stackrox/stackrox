@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/auth/user"
 )
 
 // An Provider is an authenticator which is based on an external service, like auth0.
@@ -37,6 +38,11 @@ type Provider interface {
 
 	RoleMapper() permissions.RoleMapper
 	Issuer() tokens.Issuer
+
+	// AttributeVerifier is optional. If it is set, external user attributes MUST be verified
+	// with the set user.AttributeVerifier. Otherwise, it would lead to authenticating principals that should be denied
+	// authentication.
+	AttributeVerifier() user.AttributeVerifier
 
 	ApplyOptions(options ...ProviderOption) error
 	Active() bool

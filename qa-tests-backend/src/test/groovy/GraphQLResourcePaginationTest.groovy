@@ -1,9 +1,10 @@
 import groups.BAT
 import objects.Pagination
 import objects.SortOption
+import services.GraphQLService
+
 import org.junit.Assume
 import org.junit.experimental.categories.Category
-import services.GraphQLService
 import spock.lang.Unroll
 
 class GraphQLResourcePaginationTest extends BaseSpecification {
@@ -30,7 +31,7 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
         def objs = resultRet.getValue()["${topResource}s"]
         assert objs.size() != 0
 
-        println "Got top level objects: ${objs}"
+        log.info "Got top level objects: ${objs}"
 
         def sublistGraphQLQuery = "query get${topResource}_${subResource}(" +
                 "\$id: ID!, \$query: String, \$pagination: Pagination) {" +
@@ -57,7 +58,8 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
 
         "node"       | "" | null | ""
 
-        "image"      | "Image:main" | null | "deployments"
+        // TODO: re-activate once fixed against postgres
+        //"image"      | "Image:main" | null | "deployments"
 
         "secret"     | "Secret:scanner-db-password" | null | "deployments"
 

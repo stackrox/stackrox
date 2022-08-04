@@ -53,6 +53,9 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 		"rhacs": {
 			expectedFlavor: RHACSReleaseImageFlavor(),
 		},
+		"opensource": {
+			expectedFlavor: OpenSourceImageFlavor(),
+		},
 		"wrong_value": {
 			shouldPanicAlways: true,
 		},
@@ -81,6 +84,69 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 	}
 }
 
+func (s *imageFlavorTestSuite) TestChartRepoAndIcon() {
+	ossRepoURL := "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/"
+	ossRepoIcon := "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png"
+	acsRepoURL := "https://mirror.openshift.com/pub/rhacs/charts"
+	acsRepoIcon := "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png"
+
+	testCases := map[string]struct {
+		isRelease        []bool
+		expectedRepoURL  string
+		expectedRepoIcon string
+	}{
+		"development_build": {
+			isRelease:        []bool{false},
+			expectedRepoURL:  acsRepoURL,
+			expectedRepoIcon: acsRepoIcon,
+		},
+		"rhacs": {
+			isRelease:        []bool{false},
+			expectedRepoURL:  acsRepoURL,
+			expectedRepoIcon: acsRepoIcon,
+		},
+		"opensource": {
+			isRelease:        []bool{true, false},
+			expectedRepoURL:  ossRepoURL,
+			expectedRepoIcon: ossRepoIcon,
+		},
+	}
+
+	for flavorName, testCase := range testCases {
+		for _, releaseType := range testCase.isRelease {
+			s.Run(flavorName, func() {
+				flavor, err := GetImageFlavorByName(flavorName, releaseType)
+				s.NoError(err)
+				s.Equal(testCase.expectedRepoURL, flavor.ChartRepo.URL)
+				s.Equal(testCase.expectedRepoIcon, flavor.ChartRepo.IconURL)
+			})
+		}
+	}
+}
+
+func (s *imageFlavorTestSuite) TestOpenSourceImageFlavorDevReleaseTags() {
+	f := OpenSourceImageFlavor()
+	if buildinfo.ReleaseBuild {
+		// All versions/tags should be unified
+		s.Equal(f.MainImageTag, "3.0.99.0")
+		s.Equal(f.CentralDBImageTag, "3.0.99.0")
+		s.Equal(f.CollectorImageTag, "3.0.99.0")
+		s.Equal(f.CollectorSlimImageTag, "3.0.99.0")
+		s.Equal(f.ScannerImageTag, "3.0.99.0")
+
+		s.Contains(f.CollectorSlimImageName, "-slim")
+	} else {
+		// Original tags are used
+		s.Equal(f.MainImageTag, "3.0.99.0")
+		s.Equal(f.CentralDBImageTag, "3.0.99.0")
+		s.Equal(f.CollectorImageTag, "99.9.9-latest")
+		s.Equal(f.CollectorSlimImageTag, "99.9.9-slim")
+		s.Equal(f.ScannerImageTag, "99.9.9")
+
+		s.NotContains(f.CollectorSlimImageName, "-slim")
+	}
+}
+
 func (s *imageFlavorTestSuite) TestGetImageFlavorByName() {
 	testCases := map[string]struct {
 		expectedFlavor          ImageFlavor
@@ -96,6 +162,9 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorByName() {
 		},
 		"rhacs": {
 			expectedFlavor: RHACSReleaseImageFlavor(),
+		},
+		"opensource": {
+			expectedFlavor: OpenSourceImageFlavor(),
 		},
 		"wrong_value": {
 			expectedErrorRelease:    "unexpected value 'wrong_value'",
@@ -132,8 +201,8 @@ func TestGetAllowedImageFlavorNames(t *testing.T) {
 		isRelease bool
 		want      []string
 	}{
-		{"development", false, []string{"development_build", "stackrox.io", "rhacs"}},
-		{"release", true, []string{"stackrox.io", "rhacs"}},
+		{"development", false, []string{"development_build", "stackrox.io", "rhacs", "opensource"}},
+		{"release", true, []string{"stackrox.io", "rhacs", "opensource"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

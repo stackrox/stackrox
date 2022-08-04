@@ -13,17 +13,9 @@ export const types = {
     ...searchTypes('network'),
 };
 
-// Network search should not show the 'Cluster' or 'Orchestrator Component' category
 const getNetworkSearchActions = getSearchActions('network');
 
 const networkSearchActions = { ...getNetworkSearchActions };
-
-const filterSearchOptions = (options) =>
-    options.filter((obj) => obj.value !== 'Cluster:' && obj.value !== 'Orchestrator Component:');
-networkSearchActions.setNetworkSearchModifiers = (options) =>
-    getNetworkSearchActions.setNetworkSearchModifiers(filterSearchOptions(options));
-networkSearchActions.setNetworkSearchSuggestions = (options) =>
-    getNetworkSearchActions.setNetworkSearchSuggestions(filterSearchOptions(options));
 
 // Actions
 //---------

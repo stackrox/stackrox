@@ -2,6 +2,7 @@ import common.Constants
 import groups.BAT
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
+import io.stackrox.proto.storage.NodeOuterClass.Node
 import objects.Namespace
 import org.javers.core.Javers
 import org.javers.core.JaversBuilder
@@ -12,13 +13,14 @@ import services.ClusterService
 import services.NamespaceService
 import services.NodeService
 import services.SummaryService
-import io.stackrox.proto.storage.NodeOuterClass.Node
+import spock.lang.IgnoreIf
 
 class SummaryTest extends BaseSpecification {
 
     @Category([BAT])
+    @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
-        // https://stack-rox.atlassian.net/browse/ROX-6844
+        // https://issues.redhat.com/browse/ROX-6844
         Assume.assumeFalse(ClusterService.isOpenShift4())
 
         expect:
@@ -33,15 +35,15 @@ class SummaryTest extends BaseSpecification {
                     orchestrator.getJobCount()
 
             if (stackroxSummaryCounts.numDeployments != orchestratorResourceNames.size()) {
-                println "The summary count for deployments does not equate to the orchestrator count."
-                println "Stackrox count: ${stackroxSummaryCounts.numDeployments}, " +
+                log.info "The summary count for deployments does not equate to the orchestrator count."
+                log.info "Stackrox count: ${stackroxSummaryCounts.numDeployments}, " +
                         "orchestrator count ${orchestratorResourceNames.size()}"
-                println "This diff may help with debug, however deployment names may be different between APIs"
+                log.info "This diff may help with debug, however deployment names may be different between APIs"
                 List<String> stackroxDeploymentNames = Services.getDeployments()*.name
                 Javers javers = JaversBuilder.javers()
                         .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                         .build()
-                println javers.compare(stackroxDeploymentNames, orchestratorResourceNames).prettyPrint()
+                log.info javers.compare(stackroxDeploymentNames, orchestratorResourceNames).prettyPrint()
             }
 
             assert stackroxSummaryCounts.numDeployments == orchestratorResourceNames.size()
@@ -67,8 +69,8 @@ class SummaryTest extends BaseSpecification {
             assert stackroxNode.clusterId == ClusterService.getClusterId()
             assert stackroxNode.name == orchestratorNode.name
             if (stackroxNode.labelsMap != orchestratorNode.labels) {
-                println "There is a node label difference - StackRox -v- Orchestrator:"
-                println javers.compare(stackroxNode.labelsMap, orchestratorNode.labels).prettyPrint()
+                log.info "There is a node label difference - StackRox -v- Orchestrator:"
+                log.info javers.compare(stackroxNode.labelsMap, orchestratorNode.labels).prettyPrint()
                 diff = true
             }
             assert stackroxNode.labelsMap == orchestratorNode.labels
@@ -81,8 +83,8 @@ class SummaryTest extends BaseSpecification {
                     }
                 }
                 if (stackroxNode.annotationsMap != orchestratorTruncated) {
-                    println "There is a node annotation difference - StackRox -v- Orchestrator:"
-                    println javers.compare(stackroxNode.annotationsMap, orchestratorTruncated).prettyPrint()
+                    log.info "There is a node annotation difference - StackRox -v- Orchestrator:"
+                    log.info javers.compare(stackroxNode.annotationsMap, orchestratorTruncated).prettyPrint()
                     diff = true
                 }
             }
@@ -98,8 +100,9 @@ class SummaryTest extends BaseSpecification {
     }
 
     @Category([BAT])
+    @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify namespace details"() {
-        // https://stack-rox.atlassian.net/browse/ROX-6844
+        // https://issues.redhat.com/browse/ROX-6844
         Assume.assumeFalse(ClusterService.isOpenShift4())
 
         given:
@@ -125,19 +128,19 @@ class SummaryTest extends BaseSpecification {
             while (stackroxNamespace.numDeployments != orchestratorNamespace.deploymentCount.size() &&
                 (System.currentTimeMillis() - start) < (30 * 1000)) {
                 stackroxNamespace = NamespaceService.getNamespace(stackroxNamespace.metadata.id)
-                println "There is a difference in the deployment count for namespace "+
+                log.info "There is a difference in the deployment count for namespace "+
                         stackroxNamespace.metadata.name
-                println "StackRox has ${stackroxNamespace.numDeployments}, "+
+                log.info "StackRox has ${stackroxNamespace.numDeployments}, "+
                         "the orchestrator has ${orchestratorNamespace.deploymentCount.size()}"
-                println "will retry to find equivalence in 5 seconds"
+                log.info "will retry to find equivalence in 5 seconds"
                 sleep(5000)
             }
             if (stackroxNamespace.numDeployments != orchestratorNamespace.deploymentCount.size()) {
-                println "There is a difference in the deployment count for namespace "+
+                log.info "There is a difference in the deployment count for namespace "+
                         stackroxNamespace.metadata.name
-                println "StackRox has ${stackroxNamespace.numDeployments}, "+
+                log.info "StackRox has ${stackroxNamespace.numDeployments}, "+
                         "the orchestrator has ${orchestratorNamespace.deploymentCount.size()}"
-                println "This diff may help with debug, however deployment names may be different between APIs"
+                log.info "This diff may help with debug, however deployment names may be different between APIs"
                 List<String> stackroxDeploymentNames = Services.getDeployments(
                         SearchServiceOuterClass.RawQuery.newBuilder().setQuery(
                                 "Namespace:${ stackroxNamespace.metadata.name }").build()
@@ -145,7 +148,7 @@ class SummaryTest extends BaseSpecification {
                 Javers javers = JaversBuilder.javers()
                         .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                         .build()
-                println javers.compare(stackroxDeploymentNames, orchestratorNamespace.deploymentCount).prettyPrint()
+                log.info javers.compare(stackroxDeploymentNames, orchestratorNamespace.deploymentCount).prettyPrint()
                 diff = true
             }
             assert stackroxNamespace.metadata.clusterId == ClusterService.getClusterId()

@@ -43,6 +43,25 @@ func changeName(p *storage.Policy, newName string) *storage.Policy {
 	return p
 }
 
+func enhancedDeployment(dep *storage.Deployment, images []*storage.Image) EnhancedDeployment {
+	return EnhancedDeployment{
+		Deployment: dep,
+		Images:     images,
+		NetworkPoliciesApplied: &augmentedobjs.NetworkPoliciesApplied{
+			HasIngressNetworkPolicy: true,
+			HasEgressNetworkPolicy:  true,
+		},
+	}
+}
+
+func enhancedDeploymentWithNetworkPolicies(dep *storage.Deployment, images []*storage.Image, netpolApplied *augmentedobjs.NetworkPoliciesApplied) EnhancedDeployment {
+	return EnhancedDeployment{
+		Deployment:             dep,
+		Images:                 images,
+		NetworkPoliciesApplied: netpolApplied,
+	}
+}
+
 func TestDefaultPolicies(t *testing.T) {
 	suite.Run(t, new(DefaultPoliciesTestSuite))
 }
@@ -79,7 +98,7 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	}
 
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(features.ImageSignatureVerification.EnvVar(), "true")
+	suite.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
 }
 
 func (suite *DefaultPoliciesTestSuite) TearDownSuite() {}
@@ -164,13 +183,17 @@ func imageWithOS(os string) *storage.Image {
 }
 
 func imageWithSignatureVerificationResults(name string, results []*storage.ImageSignatureVerificationResult) *storage.Image {
-	return &storage.Image{
+	img := &storage.Image{
 		Id:   uuid.NewV4().String(),
 		Name: &storage.ImageName{FullName: name, Remote: "ASFASF"},
-		SignatureVerificationData: &storage.ImageSignatureVerificationData{
-			Results: results,
-		},
 	}
+
+	if results != nil {
+		img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
+			Results: results,
+		}
+	}
+	return img
 }
 
 func deploymentWithImageAnyID(img *storage.Image) *storage.Deployment {
@@ -1412,7 +1435,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 					for _, process := range suite.deploymentsToIndicators[deploymentID] {
 						match := getViolationsWithAndWithoutCaching(t, func(cache *CacheReceptacle) (Violations, error) {
-							return processMatcher.MatchDeploymentWithProcess(nil, deployment, suite.getImagesForDeployment(deployment), process, false)
+							return processMatcher.MatchDeploymentWithProcess(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)), process, false)
 						})
 						require.NoError(t, err)
 						if expectedProcesses.Contains(process.GetId()) {
@@ -1428,7 +1451,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for id, deployment := range suite.deployments {
 				violationsForDep := getViolationsWithAndWithoutCaching(t, func(cache *CacheReceptacle) (Violations, error) {
-					return m.MatchDeployment(cache, deployment, suite.getImagesForDeployment(deployment))
+					return m.MatchDeployment(cache, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
 				})
 				assert.Nil(t, violationsForDep.ProcessViolation)
 				if alertViolations := violationsForDep.AlertViolations; len(alertViolations) > 0 {
@@ -1790,7 +1813,7 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 	} {
 		c := testCase
 		suite.Run(c.dep.GetId(), func() {
-			matched, err := m.MatchDeployment(nil, c.dep, nil)
+			matched, err := m.MatchDeployment(nil, enhancedDeployment(c.dep, nil))
 			suite.NoError(err)
 			var expectedMessages []*storage.Alert_Violation
 			for _, v := range c.expectedViolations {
@@ -1803,16 +1826,25 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 
 func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 	for _, p := range suite.defaultPolicies {
-		if policyUtils.AppliesAtRunTime(p) && p.GetFields().GetProcessPolicy() != nil {
-			processPolicy := p.GetFields().GetProcessPolicy()
-			if processPolicy.GetName() != "" {
-				regexp.MustCompile(processPolicy.GetName())
-			}
-			if processPolicy.GetArgs() != "" {
-				regexp.MustCompile(processPolicy.GetArgs())
-			}
-			if processPolicy.GetAncestor() != "" {
-				regexp.MustCompile(processPolicy.GetAncestor())
+		if policyUtils.AppliesAtRunTime(p) {
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessName)
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessArguments)
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessAncestor)
+		}
+	}
+}
+
+func checkRegexCompiles(sections []*storage.PolicySection, fieldname string) {
+	for _, s := range sections {
+		for _, g := range s.GetPolicyGroups() {
+			if g.GetFieldName() == fieldname {
+				if policyVals := g.GetValues(); len(policyVals) > 0 {
+					for _, policyVal := range policyVals {
+						if v := policyVal.GetValue(); v != "" {
+							regexp.MustCompile(v)
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1960,7 +1992,7 @@ func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
-				violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matched.Add(depRef)
@@ -2021,7 +2053,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
-				violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					assertMessageMatches(t, depRef, violations.AlertViolations)
@@ -2082,7 +2114,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 			require.NoError(t, err)
 			depMatched := set.NewStringSet()
 			for dep, img := range depToImg {
-				violations, err := depMatcher.MatchDeployment(nil, dep, []*storage.Image{img})
+				violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					depMatched.Add(img.Scan.OperatingSystem)
@@ -2112,21 +2144,21 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
-
-	if !features.ImageSignatureVerification.Enabled() {
-		return
-	}
-
 	const (
-		verifier0  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000000"
-		verifier1  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000001"
-		verifier2  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002"
-		verifier3  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000003"
+		verifier0  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000001"
+		verifier1  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002"
+		verifier2  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000003"
+		verifier3  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000004"
 		unverifier = "io.stackrox.signatureintegration.00000000-0000-0000-0000-00000000000F"
 	)
 
 	var images = []*storage.Image{
 		imageWithSignatureVerificationResults("image_no_results", []*storage.ImageSignatureVerificationResult{{}}),
+		imageWithSignatureVerificationResults("image_empty_results", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: "",
+			Status:     storage.ImageSignatureVerificationResult_UNSET,
+		}}),
+		imageWithSignatureVerificationResults("image_nil_results", nil),
 		imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: verifier0,
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
@@ -2151,51 +2183,69 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		}}),
 	}
 
-	allImages := set.NewStringSet()
-	for _, img := range images {
-		allImages.Add(img.GetName().GetFullName())
+	var allImages set.FrozenStringSet
+	{
+		ai := set.NewStringSet()
+		for _, img := range images {
+			ai.Add(img.GetName().GetFullName())
+		}
+		allImages = ai.Freeze()
+	}
+	getViolationMessages := func(img *storage.Image) set.StringSet {
+		messages := set.NewStringSet()
+		for _, r := range img.GetSignatureVerificationData().GetResults() {
+			if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+				messages.Add(fmt.Sprintf("Image signature is verified by %s", r.GetVerifierId()))
+			}
+		}
+		return messages
 	}
 
-	for _, testCase := range []struct {
+	suite.Run("Test disallowed AND operator", func() {
+		_, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerifiedBy,
+			[]string{verifier0}, false, storage.BooleanOperator_AND))
+		suite.EqualError(err,
+			"policy validation error: operator AND is not allowed for field \"Image Signature Verified By\"")
+	})
+
+	for i, testCase := range []struct {
 		values          []string
-		negate          bool
 		expectedMatches set.FrozenStringSet
 	}{
 		{
+			values:          []string{unverifier},
+			expectedMatches: allImages,
+		},
+		{
 			values:          []string{verifier0},
-			negate:          false,
-			expectedMatches: set.NewFrozenStringSet("verified_by_0"),
+			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_0")),
 		},
 		{
 			values:          []string{verifier1},
-			negate:          false,
-			expectedMatches: set.NewFrozenStringSet(),
+			expectedMatches: allImages,
 		},
 		{
 			values:          []string{verifier2},
-			negate:          false,
-			expectedMatches: set.NewFrozenStringSet("verified_by_2_and_3"),
-		},
-		{
-			values:          []string{verifier0, verifier2},
-			negate:          false,
-			expectedMatches: set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3"),
+			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_2_and_3")),
 		},
 		{
 			values:          []string{verifier3},
-			negate:          false,
-			expectedMatches: set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3"),
+			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3")),
 		},
 		{
-			values:          []string{unverifier},
-			negate:          true,
-			expectedMatches: set.NewFrozenStringSet("unverified_image", "image_no_results"),
+			values:          []string{verifier0, verifier2},
+			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3")),
+		},
+		{
+			values:          []string{verifier2, verifier3},
+			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3")),
 		},
 	} {
 		c := testCase
 
-		suite.Run(fmt.Sprintf("ImageMatcher %+v", c), func() {
-			imgMatcher, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerifiedBy, c.values, c.negate, storage.BooleanOperator_OR))
+		suite.Run(fmt.Sprintf("ImageMatcher %d: %+v", i, c), func() {
+			imgMatcher, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerifiedBy,
+				c.values, false, storage.BooleanOperator_OR))
 			suite.NoError(err)
 			matchedImages := set.NewStringSet()
 			for _, img := range images {
@@ -2205,18 +2255,10 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 					continue
 				}
 				matchedImages.Add(img.GetName().GetFullName())
-				if c.negate {
-					suite.Falsef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match %q", img.GetName().GetFullName())
-				} else {
-					suite.Truef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match %q", img.GetName().GetFullName())
-				}
+				suite.Truef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image %q should not match",
+					img.GetName().GetFullName())
 
-				messages := set.NewStringSet()
-				for _, r := range img.GetSignatureVerificationData().GetResults() {
-					if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-						messages.Add(fmt.Sprintf("Image signature is verified by %s", r.GetVerifierId()))
-					}
-				}
+				messages := getViolationMessages(img)
 				for _, violation := range violations.AlertViolations {
 					if messages.Cardinality() > 0 {
 						suite.Truef(messages.Contains(violation.GetMessage()), "Message not found %q", violation.GetMessage())
@@ -2225,11 +2267,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 					}
 				}
 			}
-			if c.negate {
-				suite.True(c.expectedMatches.Difference(allImages.Difference(matchedImages).Freeze()).IsEmpty())
-			} else {
-				suite.True(c.expectedMatches.Difference(matchedImages.Freeze()).IsEmpty())
-			}
+			suite.True(c.expectedMatches.Difference(matchedImages.Freeze()).IsEmpty(), matchedImages)
 		})
 	}
 }
@@ -2290,7 +2328,7 @@ func (suite *DefaultPoliciesTestSuite) TestContainerName() {
 			require.NoError(t, err)
 			containerNameMatched := set.NewStringSet()
 			for _, dep := range deps {
-				violations, err := depMatcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 				require.NoError(t, err)
 				// No match in case we are testing for doesnotexist
 				if len(violations.AlertViolations) > 0 {
@@ -2300,6 +2338,72 @@ func (suite *DefaultPoliciesTestSuite) TestContainerName() {
 				}
 			}
 			assert.ElementsMatch(t, containerNameMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", containerNameMatched.AsSlice(), c.value, c.expectedMatches)
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestAllowPrivilegeEscalationPolicyCriteria() {
+	const containerAllowPrivEsc = "Container with Privilege Escalation allowed"
+	const containerNotAllowPrivEsc = "Container with Privilege Escalation not allowed"
+
+	var deps []*storage.Deployment
+	for _, d := range []struct {
+		ContainerName            string
+		AllowPrivilegeEscalation bool
+	}{
+		{
+			ContainerName:            containerAllowPrivEsc,
+			AllowPrivilegeEscalation: true,
+		},
+		{
+			ContainerName:            containerNotAllowPrivEsc,
+			AllowPrivilegeEscalation: false,
+		},
+	} {
+		dep := fixtures.GetDeployment().Clone()
+		dep.Containers[0].Name = d.ContainerName
+		if d.AllowPrivilegeEscalation {
+			dep.Containers[0].SecurityContext.AllowPrivilegeEscalation = d.AllowPrivilegeEscalation
+		}
+		deps = append(deps, dep)
+	}
+
+	for _, testCase := range []struct {
+		CaseName        string
+		value           string
+		expectedMatches []string
+	}{
+		{
+			CaseName:        "Policy for containers with privilege escalation allowed",
+			value:           "true",
+			expectedMatches: []string{containerAllowPrivEsc},
+		},
+		{
+			CaseName:        "Policy for containers with privilege escalation not allowed",
+			value:           "false",
+			expectedMatches: []string{containerNotAllowPrivEsc},
+		},
+	} {
+		c := testCase
+
+		suite.T().Run(c.CaseName, func(t *testing.T) {
+			depMatcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.AllowPrivilegeEscalation, c.value, false))
+			require.NoError(t, err)
+			containerNameMatched := set.NewStringSet()
+			for _, dep := range deps {
+				violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+				require.NoError(t, err)
+				if len(violations.AlertViolations) > 0 {
+					containerNameMatched.Add(dep.Containers[0].GetName())
+					require.Len(t, violations.AlertViolations, 1)
+					if c.value == "true" {
+						assert.Equal(t, fmt.Sprintf("Container '%s' allows privilege escalation", dep.Containers[0].GetName()), violations.AlertViolations[0].GetMessage())
+					} else {
+						assert.Equal(t, fmt.Sprintf("Container '%s' does not allow privilege escalation", dep.Containers[0].GetName()), violations.AlertViolations[0].GetMessage())
+					}
+				}
+			}
+			assert.ElementsMatch(t, containerNameMatched.AsSlice(), c.expectedMatches, "Matched containers %v for policy %v; expected: %v", containerNameMatched.AsSlice(), c.value, c.expectedMatches)
 		})
 	}
 }
@@ -2391,7 +2495,7 @@ func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
 			dep := deployments[c.DeploymentName]
 			matcher, err := BuildDeploymentMatcher(c.Policy)
 			suite.NoError(err, "deployment matcher creation must succeed")
-			violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+			violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 			suite.NoError(err, "deployment matcher run must succeed")
 			suite.Empty(violations.ProcessViolation)
 			suite.Equal(c.ExpectedAlerts, violations.AlertViolations)
@@ -2443,7 +2547,7 @@ func (suite *DefaultPoliciesTestSuite) TestRuntimeClass() {
 			require.NoError(t, err)
 			matchedRuntimeClasses := set.NewStringSet()
 			for _, dep := range deps {
-				violations, err := depMatcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matchedRuntimeClasses.Add(dep.GetRuntimeClass())
@@ -2508,7 +2612,7 @@ func (suite *DefaultPoliciesTestSuite) TestNamespace() {
 			require.NoError(t, err)
 			namespacesMatched := set.NewStringSet()
 			for _, dep := range deps {
-				violations, err := depMatcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 				require.NoError(t, err)
 				// No match in case we are testing for doesnotexist
 				if len(violations.AlertViolations) > 0 {
@@ -2582,7 +2686,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
-				violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matched.Add(depRef)
@@ -2716,7 +2820,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 				for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
-					violations, err := m.MatchDeploymentWithProcess(nil, dep, suite.getImagesForDeployment(dep), indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
+					violations, err := m.MatchDeploymentWithProcess(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)), indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
 					suite.Require().NoError(err)
 					if len(violations.AlertViolations) > 0 {
 						actualMatches[dep.GetId()] = append(actualMatches[dep.GetId()], key)
@@ -2914,7 +3018,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 		LastSeenTimestamp:    timestamp,
 	}
 
-	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow)
+	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)), flow)
 	suite.NoError(err)
 	assertNetworkBaselineMessagesEqual(
 		suite,
@@ -2923,7 +3027,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 
 	// And if the flow is in the baseline, no violations should exist
 	flow.NotInNetworkBaseline = false
-	violations, err = m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow)
+	violations, err = m.MatchDeploymentWithNetworkFlowInfo(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)), flow)
 	suite.NoError(err)
 	suite.Empty(violations)
 }
@@ -2993,7 +3097,7 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 
 			matcher, err := BuildDeploymentMatcher(policy)
 			suite.NoError(err, "deployment matcher creation must succeed")
-			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			violations, err := matcher.MatchDeployment(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
@@ -3076,11 +3180,120 @@ func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
 
 			matcher, err := BuildDeploymentMatcher(policy)
 			suite.NoError(err, "deployment matcher creation must succeed")
-			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			violations, err := matcher.MatchDeployment(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
 			suite.Equal(violations.AlertViolations, testCase.alerts)
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) getViolations(policy *storage.Policy, dep EnhancedDeployment) Violations {
+	matcher, err := BuildDeploymentMatcher(policy)
+	suite.NoError(err, "deployment matcher creation must succeed")
+	violations, err := matcher.MatchDeployment(nil, dep)
+	suite.NoError(err, "deployment matcher run must succeed")
+	suite.Empty(violations.ProcessViolation)
+	return violations
+}
+
+func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
+	if !features.NetworkPolicySystemPolicy.Enabled() {
+		return
+	}
+
+	testCases := map[string]struct {
+		netpolsApplied *augmentedobjs.NetworkPoliciesApplied
+		alerts         []*storage.Alert_Violation
+	}{
+		"Missing Ingress Network Policy": {
+			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  true,
+			},
+			alerts: []*storage.Alert_Violation{
+				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
+			},
+		},
+		"Missing Egress Network Policy": {
+			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
+				HasIngressNetworkPolicy: true,
+				HasEgressNetworkPolicy:  false,
+			},
+			alerts: []*storage.Alert_Violation{
+				{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
+			},
+		},
+		"Both policies missing": {
+			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  false,
+			},
+			alerts: []*storage.Alert_Violation{
+				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
+				{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
+			},
+		},
+		"No alerts": {
+			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
+				HasIngressNetworkPolicy: true,
+				HasEgressNetworkPolicy:  true,
+			},
+			alerts: []*storage.Alert_Violation(nil),
+		},
+		"No violations on nil augmentedobj": {
+			netpolsApplied: nil,
+			alerts:         []*storage.Alert_Violation(nil),
+		},
+		"Policies attached to augmentedobj": {
+			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  true,
+				Policies: map[string]*storage.NetworkPolicy{
+					"ID1": {Id: "ID1", Name: "policy1"},
+				},
+			},
+			alerts: []*storage.Alert_Violation{
+				{
+					Message: "The deployment is missing Ingress Network Policy.",
+					Type:    storage.Alert_Violation_NETWORK_POLICY,
+					MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+						KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+							Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+								{Key: printer.PolicyID, Value: "ID1"},
+								{Key: printer.PolicyName, Value: "policy1"},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for name, testCase := range testCases {
+		suite.Run(name, func() {
+			deployment := fixtures.GetDeployment().Clone()
+			missingIngressPolicy := policyWithSingleKeyValue(fieldnames.HasIngressNetworkPolicy, "false", false)
+			missingEgressPolicy := policyWithSingleKeyValue(fieldnames.HasEgressNetworkPolicy, "false", false)
+
+			enhanced := enhancedDeploymentWithNetworkPolicies(
+				deployment,
+				suite.getImagesForDeployment(deployment),
+				testCase.netpolsApplied,
+			)
+
+			v1 := suite.getViolations(missingIngressPolicy, enhanced)
+			v2 := suite.getViolations(missingEgressPolicy, enhanced)
+
+			allAlerts := append(v1.AlertViolations, v2.AlertViolations...)
+			for i, expected := range testCase.alerts {
+				suite.Equal(expected.GetType(), allAlerts[i].Type)
+				suite.Equal(expected.GetMessage(), allAlerts[i].Message)
+				suite.Equal(expected.GetKeyValueAttrs(), allAlerts[i].GetKeyValueAttrs())
+				// We do not want to compare time, as the violation timestamp uses now()
+				suite.NotNil(allAlerts[i].GetTime())
+			}
 		})
 	}
 }
@@ -3159,7 +3372,7 @@ func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
 
 			matcher, err := BuildDeploymentMatcher(policy)
 			suite.NoError(err, "deployment matcher creation must succeed")
-			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			violations, err := matcher.MatchDeployment(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
@@ -3319,7 +3532,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 					for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
-						_, err := m.MatchDeploymentWithProcess(nil, dep, images, indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
+						_, err := m.MatchDeploymentWithProcess(nil, enhancedDeployment(dep, images), indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
 						require.NoError(b, err)
 					}
 				}
@@ -3339,7 +3552,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 				b.Run("no caching", func(b *testing.B) {
 					for i := 0; i < b.N; i++ {
 						var err error
-						resNoCaching, err = m.MatchDeploymentWithProcess(nil, privilegedDep, images, indicator, notInBaseline)
+						resNoCaching, err = m.MatchDeploymentWithProcess(nil, enhancedDeployment(privilegedDep, images), indicator, notInBaseline)
 						require.NoError(b, err)
 					}
 				})
@@ -3349,7 +3562,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 					var cache CacheReceptacle
 					for i := 0; i < b.N; i++ {
 						var err error
-						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, privilegedDep, images, indicator, notInBaseline)
+						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, enhancedDeployment(privilegedDep, images), indicator, notInBaseline)
 						require.NoError(b, err)
 					}
 				})

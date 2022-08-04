@@ -1,14 +1,18 @@
 package policyversion
 
 import (
+	"strconv"
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLatestVersion(t *testing.T) {
 	assert.Equal(t, CurrentVersion().String(), versions[len(versions)-1])
+}
+
+func TestMinimumSupportedVersion(t *testing.T) {
+	assert.Equal(t, MinimumSupportedVersion().String(), supportedVersions.AsSlice()[0])
 }
 
 // versions in versions are sorted from old to new.
@@ -46,10 +50,6 @@ func TestVersionCompare(t *testing.T) {
 	}
 
 	testCases := []TestCase{
-		{PolicyVersion{versions[0]}, Version1(), -1},
-		{Version1(), PolicyVersion{versions[0]}, 1},
-		{Version1(), Version1(), 0},
-		{PolicyVersion{version1_1}, Version1(), 1},
 		{PolicyVersion{versions[len(versions)-1]}, PolicyVersion{versions[len(versions)-2]}, 1},
 	}
 
@@ -58,36 +58,62 @@ func TestVersionCompare(t *testing.T) {
 	}
 }
 
-func TestIsBooleanPolicy(t *testing.T) {
-	testCasesTrue := []*storage.Policy{
+func TestIsCurrentVersion(t *testing.T) {
+	tests := []struct {
+		version   PolicyVersion
+		isCurrent bool
+	}{
 		{
-			PolicyVersion: version1,
+			PolicyVersion{version1_1},
+			true,
 		},
 		{
-			PolicyVersion: version1_1,
+			PolicyVersion{version1},
+			false,
 		},
 		{
-			PolicyVersion: CurrentVersion().String(),
-		},
-	}
-
-	for _, testCase := range testCasesTrue {
-		assert.True(t, IsBooleanPolicy(testCase), "policy: '%+v'", testCase)
-	}
-
-	testCasesFalse := []*storage.Policy{
-		{
-			PolicyVersion: legacyVersion,
+			PolicyVersion{legacyVersion},
+			false,
 		},
 		{
-			PolicyVersion: "0.1",
-		},
-		{
-			PolicyVersion: "2",
+			PolicyVersion{"2.0"},
+			false,
 		},
 	}
 
-	for _, testCase := range testCasesFalse {
-		assert.False(t, IsBooleanPolicy(testCase), "policy: '%+v'", testCase)
+	for _, c := range tests {
+		t.Run(c.version.String()+" - "+strconv.FormatBool(c.isCurrent), func(t *testing.T) {
+			assert.Equal(t, c.isCurrent, IsCurrentVersion(c.version))
+		})
+	}
+}
+
+func TestIsSupportedVersion(t *testing.T) {
+	tests := []struct {
+		version     PolicyVersion
+		isSupported bool
+	}{
+		{
+			PolicyVersion{version1_1},
+			true,
+		},
+		{
+			PolicyVersion{version1},
+			false,
+		},
+		{
+			PolicyVersion{legacyVersion},
+			false,
+		},
+		{
+			PolicyVersion{"2.0"},
+			false,
+		},
+	}
+
+	for _, c := range tests {
+		t.Run(c.version.String()+" - "+strconv.FormatBool(c.isSupported), func(t *testing.T) {
+			assert.Equal(t, c.isSupported, IsSupportedVersion(c.version))
+		})
 	}
 }

@@ -20,6 +20,7 @@ import (
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,7 +55,10 @@ func TestSearchCategories(t *testing.T) {
 		K8sRoleBindingStore:      rolebindings,
 		K8sRoleStore:             roles,
 		ImageComponentDataStore:  components,
-		CVEDataStore:             cves,
+	}
+
+	if !features.PostgresDatastore.Enabled() {
+		resolver.CVEDataStore = cves
 	}
 
 	searchCategories := resolver.getAutoCompleteSearchers()

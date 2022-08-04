@@ -12,7 +12,7 @@ export const NAMESPACE_FRAGMENT = gql`
                 value
             }
         }
-        numSecrets
+        numSecrets: secretCount
         imageCount
         policyCount
         k8sRoleCount
@@ -24,24 +24,6 @@ export const NAMESPACE_FRAGMENT = gql`
                 id
                 name
             }
-        }
-    }
-`;
-
-export const CONFIG_NAMESPACE_FRAGMENT = gql`
-    fragment namespaceFields on Namespace {
-        metadata {
-            name
-            id
-            clusterId
-            clusterName
-        }
-        numSecrets
-        k8sRoleCount
-        serviceAccountCount
-        subjectCount
-        policyStatus {
-            status
         }
     }
 `;
@@ -67,7 +49,7 @@ export const NAMESPACE_NO_POLICIES_FRAGMENT = gql`
                 value
             }
         }
-        numSecrets
+        numSecrets: secretCount
         k8sRoleCount
         serviceAccountCount
         subjectCount
@@ -99,7 +81,7 @@ export const ALL_NAMESPACES = gql`
                     value
                 }
             }
-            numSecrets
+            numSecrets: secretCount
         }
     }
 `;
@@ -116,7 +98,7 @@ export const NAMESPACES = gql`
                     value
                 }
             }
-            numSecrets
+            numSecrets: secretCount
         }
     }
 `;
@@ -135,9 +117,9 @@ export const NAMESPACE_QUERY = gql`
                 }
                 creationTime
             }
-            numDeployments
-            numNetworkPolicies
-            numSecrets
+            numDeployments: deploymentCount
+            numNetworkPolicies: networkPolicyCount
+            numSecrets: secretCount
             imageCount
             policyCount
         }

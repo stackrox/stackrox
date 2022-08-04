@@ -76,7 +76,7 @@ func getDefaultMetaValues(t *testing.T) *charts.MetaValues {
 
 		Versions: testutils.GetExampleVersion(t),
 
-		ChartRepo: defaults.ChartRepo{URL: "https://mock.stackrox.io/mock-charts"},
+		ChartRepo: defaults.ChartRepo{URL: "https://mock.stackrox.io/mock-charts", IconURL: "https://mock.icon/ic.png"},
 
 		KubectlOutput: true,
 	}

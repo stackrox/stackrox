@@ -22,11 +22,14 @@ export const integrationsListPath = `${integrationsPath}/:source/:type`;
 export const integrationCreatePath = `${integrationsPath}/:source/:type/create`;
 export const integrationDetailsPath = `${integrationsPath}/:source/:type/view/:id`;
 export const integrationEditPath = `${integrationsPath}/:source/:type/edit/:id`;
-export const policiesBasePath = `${mainPath}/policies`;
+export const policyManagementBasePath = `${mainPath}/policy-management`;
+export const policiesBasePath = `${policyManagementBasePath}/policies`;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
+export const policyCategoriesPath = `${policyManagementBasePath}/policy-categories`;
+export const deprecatedPoliciesBasePath = `${mainPath}/policies`;
+export const deprecatedPoliciesPath = `${deprecatedPoliciesBasePath}/:policyId?/:command?`;
 export const riskBasePath = `${mainPath}/risk`;
 export const riskPath = `${riskBasePath}/:deploymentId?`;
-export const imagesPath = `${mainPath}/images/:imageId?`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const apidocsPath = `${mainPath}/apidocs`;
 export const accessControlPath = `${mainPath}/access`;
@@ -48,11 +51,17 @@ export const productDocsPath = '/docs/product';
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const vulnManagementPoliciesPath = `${vulnManagementPath}/policies`;
 export const vulnManagementCVEsPath = `${vulnManagementPath}/cves`;
+export const vulnManagementImageCVEsPath = `${vulnManagementPath}/image-cves`;
+export const vulnManagementNodeCVEsPath = `${vulnManagementPath}/node-cves`;
+export const vulnManagementPlatformCVEsPath = `${vulnManagementPath}/cluster-cves`;
 export const vulnManagementClustersPath = `${vulnManagementPath}/clusters`;
 export const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
 export const vulnManagementDeploymentsPath = `${vulnManagementPath}/deployments`;
 export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
+// TODO: Remove the /components path once we completely split the components into node and image components
 export const vulnManagementComponentsPath = `${vulnManagementPath}/components`;
+export const vulnManagementNodeComponentsPath = `${vulnManagementPath}/node-components`;
+export const vulnManagementImageComponentsPath = `${vulnManagementPath}/image-components`;
 export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 
 // The following paths are not part of the infinite nesting Workflow in Vuln Management
@@ -77,7 +86,12 @@ export const urlEntityListTypes = {
     [resourceTypes.SECRET]: 'secrets',
     [resourceTypes.POLICY]: 'policies',
     [resourceTypes.CVE]: 'cves',
+    [resourceTypes.IMAGE_CVE]: 'image-cves',
+    [resourceTypes.NODE_CVE]: 'node-cves',
+    [resourceTypes.CLUSTER_CVE]: 'cluster-cves',
     [resourceTypes.COMPONENT]: 'components',
+    [resourceTypes.NODE_COMPONENT]: 'node-components',
+    [resourceTypes.IMAGE_COMPONENT]: 'image-components',
     [standardEntityTypes.CONTROL]: 'controls',
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccounts',
     [rbacConfigTypes.SUBJECT]: 'subjects',
@@ -93,7 +107,12 @@ export const urlEntityTypes = {
     [resourceTypes.SECRET]: 'secret',
     [resourceTypes.POLICY]: 'policy',
     [resourceTypes.CVE]: 'cve',
+    [resourceTypes.IMAGE_CVE]: 'image-cve',
+    [resourceTypes.NODE_CVE]: 'node-cve',
+    [resourceTypes.CLUSTER_CVE]: 'cluster-cve',
     [resourceTypes.COMPONENT]: 'component',
+    [resourceTypes.NODE_COMPONENT]: 'node-component',
+    [resourceTypes.IMAGE_COMPONENT]: 'image-component',
     [standardEntityTypes.CONTROL]: 'control',
     [standardEntityTypes.STANDARD]: 'standard',
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccount',
@@ -119,7 +138,9 @@ export const basePathToLabelMap = {
     [apidocsPath]: 'API Reference',
     [productDocsPath]: 'Help Center',
     [clustersBasePath]: 'Clusters',
-    [policiesBasePath]: 'Policies',
+    [policyManagementBasePath]: 'Policy Management',
+    [policiesBasePath]: 'Policy Management',
+    [policyCategoriesPath]: 'Policy Categories',
     [integrationsPath]: 'Integrations',
     [accessControlPath]: 'Access Control',
     [accessControlBasePathV2]: 'Access Control',

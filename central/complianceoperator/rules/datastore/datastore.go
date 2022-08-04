@@ -30,7 +30,13 @@ func NewDatastore(store store.Store) (DataStore, error) {
 		store:       store,
 		rulesByName: make(map[string]map[string]*storage.ComplianceOperatorRule),
 	}
-	err := store.Walk(context.TODO(), func(rule *storage.ComplianceOperatorRule) error {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.ComplianceOperator),
+		))
+
+	err := store.Walk(ctx, func(rule *storage.ComplianceOperatorRule) error {
 		ds.addToRulesByNameNoLock(rule)
 		return nil
 	})

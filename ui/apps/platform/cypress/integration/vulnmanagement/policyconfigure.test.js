@@ -1,11 +1,12 @@
-import { url, selectors } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
 
 describe('Policy Detail View Page', () => {
     withAuth();
 
     it('policy edit button on click goes to edit page of policy ', () => {
-        cy.visit(url.list.policies);
+        visitVulnerabilityManagementEntities('policies');
         cy.get(selectors.tableBodyColumn)
             .eq(0)
             .invoke('text')

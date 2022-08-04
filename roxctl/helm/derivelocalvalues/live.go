@@ -68,9 +68,6 @@ func (k liveK8sObjectDescription) get(ctx context.Context, kind string, name str
 		panic(fmt.Sprintf("Unknown resource kind %q", kind))
 	}
 
-	if gvr == nil {
-		panic(fmt.Sprintf("No group version resource defined for kind %q", kind))
-	}
 	resClient := k.client.Resource(*gvr)
 
 	resp, err := resClient.

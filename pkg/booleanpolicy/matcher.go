@@ -36,6 +36,13 @@ type CacheReceptacle struct {
 	augmentedNetworkFlow *pathutil.AugmentedObj
 }
 
+// EnhancedDeployment holds the deployment object plus the additional resources used for the matching.
+type EnhancedDeployment struct {
+	Deployment             *storage.Deployment
+	Images                 []*storage.Image
+	NetworkPoliciesApplied *augmentedobjs.NetworkPoliciesApplied
+}
+
 // Violations represents a list of violation sub-objects.
 type Violations struct {
 	ProcessViolation *storage.Alert_ProcessViolation
@@ -49,12 +56,12 @@ type ImageMatcher interface {
 
 // A DeploymentMatcher matches deployments against a policy.
 type DeploymentMatcher interface {
-	MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (Violations, error)
+	MatchDeployment(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment) (Violations, error)
 }
 
 // A DeploymentWithProcessMatcher matches deployments, and a process, against a policy.
 type DeploymentWithProcessMatcher interface {
-	MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error)
+	MatchDeploymentWithProcess(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, pi *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error)
 }
 
 // A KubeEventMatcher matches kubernetes event against a policy.
@@ -69,7 +76,7 @@ type AuditLogEventMatcher interface {
 
 // A DeploymentWithNetworkFlowMatcher matches deployments, and a network flow against a policy.
 type DeploymentWithNetworkFlowMatcher interface {
-	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) (Violations, error)
+	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (Violations, error)
 }
 
 type sectionAndEvaluator struct {

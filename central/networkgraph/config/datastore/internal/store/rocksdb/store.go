@@ -29,11 +29,11 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id string) (*storage.NetworkGraphConfig, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.NetworkGraphConfig, []int, error)
-	UpsertWithID(ctx context.Context, id string, obj *storage.NetworkGraphConfig) error
-	UpsertManyWithIDs(ctx context.Context, ids []string, objs []*storage.NetworkGraphConfig) error
+	Upsert(ctx context.Context, obj *storage.NetworkGraphConfig) error
+	UpsertMany(ctx context.Context, objs []*storage.NetworkGraphConfig) error
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
-	WalkAllWithID(ctx context.Context, fn func(id string, obj *storage.NetworkGraphConfig) error) error
+	Walk(ctx context.Context, fn func(obj *storage.NetworkGraphConfig) error) error
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
@@ -46,11 +46,15 @@ func alloc() proto.Message {
 	return &storage.NetworkGraphConfig{}
 }
 
+func keyFunc(msg proto.Message) []byte {
+	return []byte(msg.(*storage.NetworkGraphConfig).GetId())
+}
+
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) Store {
 	globaldb.RegisterBucket(bucket, "NetworkGraphConfig")
 	return &storeImpl{
-		crud: generic.NewCRUD(db, bucket, nil, alloc, false),
+		crud: generic.NewCRUD(db, bucket, keyFunc, alloc, false),
 	}
 }
 
@@ -100,15 +104,16 @@ func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Network
 	}
 	return objs, missingIndices, nil
 }
-// UpsertWithID inserts the object into the DB
-func (b *storeImpl) UpsertWithID(_ context.Context, id string, obj *storage.NetworkGraphConfig) error {
+
+// Upsert inserts the object into the DB
+func (b *storeImpl) Upsert(_ context.Context, obj *storage.NetworkGraphConfig) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "NetworkGraphConfig")
 
-	return b.crud.UpsertWithID(id, obj)
+	return b.crud.Upsert(obj)
 }
 
-// UpsertManyWithIDs batches objects into the DB
-func (b *storeImpl) UpsertManyWithIDs(_ context.Context, ids []string, objs []*storage.NetworkGraphConfig) error {
+// UpsertMany batches objects into the DB
+func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.NetworkGraphConfig) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "NetworkGraphConfig")
 
 	msgs := make([]proto.Message, 0, len(objs))
@@ -116,7 +121,7 @@ func (b *storeImpl) UpsertManyWithIDs(_ context.Context, ids []string, objs []*s
 		msgs = append(msgs, o)
     }
 
-	return b.crud.UpsertManyWithIDs(ids, msgs)
+	return b.crud.UpsertMany(msgs)
 }
 
 // Delete removes the specified ID from the store
@@ -132,10 +137,11 @@ func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 
 	return b.crud.DeleteMany(ids)
 }
-// WalkAllWithID iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) WalkAllWithID(_ context.Context, fn func(id string, obj *storage.NetworkGraphConfig) error) error {
-	return b.crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
-		return fn(string(id), msg.(*storage.NetworkGraphConfig))
+
+// Walk iterates over all of the objects in the store and applies the closure
+func (b *storeImpl) Walk(_ context.Context, fn func(obj *storage.NetworkGraphConfig) error) error {
+	return b.crud.Walk(func(msg proto.Message) error {
+		return fn(msg.(*storage.NetworkGraphConfig))
 	})
 }
 

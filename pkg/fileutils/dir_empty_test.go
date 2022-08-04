@@ -14,11 +14,7 @@ func assertPathReturns(t *testing.T, path string, retVal bool) {
 }
 
 func TestDirEmpty(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer func() {
-		require.NoError(t, os.RemoveAll(tempDir))
-	}()
+	tempDir := t.TempDir()
 
 	assertPathReturns(t, tempDir, true)
 	randomFile := filepath.Join(tempDir, "RANDOM_FILE")

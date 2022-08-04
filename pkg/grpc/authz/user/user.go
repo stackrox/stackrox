@@ -2,11 +2,10 @@ package user
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
@@ -70,23 +69,23 @@ func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootS
 		return err
 	}
 	if !allowed {
-		return errorhelpers.NewErrNotAuthorized("scoped access")
+		return errox.NotAuthorized.CausedBy("scoped access")
 	}
 	return nil
 }
 
 func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access) error {
 	if rolePerms == nil {
-		return errorhelpers.ErrNoCredentials
+		return errox.NoCredentials
 	}
 	for _, requiredPerm := range p.requiredPermissions {
 		if !evaluateAgainstPermissions(rolePerms, requiredPerm) {
-			return errorhelpers.NewErrNotAuthorized(fmt.Sprintf("%q for %q", requiredPerm.Access, requiredPerm.Resource))
+			return errox.NotAuthorized.CausedByf("%q for %q", requiredPerm.Access, requiredPerm.Resource)
 		}
 	}
 	return nil
 }
 
-func evaluateAgainstPermissions(permissions map[string]storage.Access, perm permissions.ResourceWithAccess) bool {
-	return permissions[string(perm.Resource.GetResource())] >= perm.Access
+func evaluateAgainstPermissions(perms map[string]storage.Access, perm permissions.ResourceWithAccess) bool {
+	return perm.Resource.IsPermittedBy(perms, perm.Access)
 }

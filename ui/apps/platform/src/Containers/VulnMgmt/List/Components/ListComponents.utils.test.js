@@ -13,7 +13,7 @@ describe('ListComponents.utils', () => {
                 new WorkflowEntity(entityTypes.IMAGE, 'abcd-ef09'),
                 new WorkflowEntity(entityTypes.COMPONENT),
             ];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
             const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
@@ -23,7 +23,7 @@ describe('ListComponents.utils', () => {
 
         it('should remove the source and location columns when in Components main list context', () => {
             const stateStack = [new WorkflowEntity(entityTypes.COMPONENT)];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
             const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
@@ -41,7 +41,7 @@ describe('ListComponents.utils', () => {
                 new WorkflowEntity(entityTypes.CVE, 'abcd-ef09'),
                 new WorkflowEntity(entityTypes.COMPONENT),
             ];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
             const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
@@ -59,7 +59,7 @@ describe('ListComponents.utils', () => {
                 new WorkflowEntity(entityTypes.DEPLOYMENT, 'abcd-ef09'),
                 new WorkflowEntity(entityTypes.COMPONENT),
             ];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
             const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
@@ -73,10 +73,6 @@ describe('ListComponents.utils', () => {
         });
     });
 });
-
-function getEntityState(useCase, stateStack) {
-    return new WorkflowState(useCase, stateStack);
-}
 
 function getComponentTableColumns(workflowState) {
     const tableColumns = [

@@ -6,6 +6,7 @@ import {
 import { permissions as permissionsApi } from '../../constants/apiEndpoints';
 import sampleCert from '../../helpers/sampleCert';
 import { generateNameWithDate, getInputByLabel } from '../../helpers/formHelpers';
+import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAccessRole.json';
 
 import withAuth from '../../helpers/basicAuth';
 
@@ -19,6 +20,7 @@ const mypermissionApi = '/v1/mypermissions';
 
 const groupsApi = {
     list: '/v1/groups',
+    batch: '/v1/groupsbatch',
 };
 
 const h1 = 'Access Control';
@@ -27,10 +29,10 @@ const h2 = 'Auth providers';
 describe('Access Control Auth providers', () => {
     withAuth();
 
-    function visitAuthProviders() {
+    function visitAuthProviders(saveProviderMock = {}) {
         cy.intercept('GET', authProvidersApi.list).as('GetAuthProviders');
         cy.intercept('GET', mypermissionApi).as('GetMyPermissions');
-        cy.intercept('POST', authProvidersApi.create, {}).as('CreateAuthProvider');
+        cy.intercept('POST', authProvidersApi.create, saveProviderMock).as('CreateAuthProvider');
         cy.visit(authProvidersUrl);
         cy.wait('@GetAuthProviders');
         cy.wait('@GetMyPermissions');
@@ -55,6 +57,9 @@ describe('Access Control Auth providers', () => {
     });
 
     it('list has headings, link, button, and table head cells, and no breadcrumbs', () => {
+        cy.intercept('GET', authProvidersApi.list, {
+            fixture: 'auth/authProviders-id1-id2-id3.json',
+        }).as('GetAuthProviders');
         visitAuthProviders();
 
         cy.get(selectors.breadcrumbNav).should('not.exist');
@@ -63,7 +68,7 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.navLinkCurrent).should('have.text', h2);
 
         cy.contains(selectors.h2, /^\d+ results? found$/).should('exist');
-        cy.get(selectors.list.addButton).should('have.text', 'Add auth provider');
+        cy.get(selectors.list.createButton).should('have.text', 'Create auth provider');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
         cy.get(`${selectors.list.th}:contains("Type")`);
@@ -76,17 +81,16 @@ describe('Access Control Auth providers', () => {
 
         const type = 'Auth0';
 
-        cy.get(selectors.list.addButton).click();
-        cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
+        cy.get(selectors.list.createButton).click();
+        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
 
-        cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
+        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -109,17 +113,16 @@ describe('Access Control Auth providers', () => {
 
         const type = 'OpenID Connect';
 
-        cy.get(selectors.list.addButton).click();
-        cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
+        cy.get(selectors.list.createButton).click();
+        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
 
-        cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
+        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -167,6 +170,9 @@ describe('Access Control Auth providers', () => {
         cy.intercept('PUT', '/v1/authProviders/auth-provider-1', {
             body: {},
         }).as('PutAuthProvider');
+        cy.intercept('POST', groupsApi.batch, {
+            body: {},
+        }).as('PostGroupsBatch');
 
         const id = 'auth-provider-1';
         cy.visit(`${authProvidersUrl}/${id}`);
@@ -192,7 +198,7 @@ describe('Access Control Auth providers', () => {
         cy.get(inputIssuer).clear().type('irrelevant-updated');
 
         cy.get(selectors.form.saveButton).click();
-        cy.wait('@PutAuthProvider');
+        cy.wait(['@PutAuthProvider', '@PostGroupsBatch']);
 
         cy.get(inputClientSecret)
             .should('be.disabled')
@@ -201,22 +207,60 @@ describe('Access Control Auth providers', () => {
         cy.get(checkboxDoNotUseClientSecret).should('be.disabled').should('not.be.checked');
     });
 
+    it('edit OpenID Connect minimum access role', () => {
+        cy.intercept('GET', authProvidersApi.list, {
+            fixture: 'auth/authProvidersWithClientSecret.json',
+        }).as('GetAuthProviders');
+        cy.intercept('GET', groupsApi.list, {
+            fixture: 'auth/groupsWithClientSecret.json',
+        }).as('GetGroups'); // to compute default access role
+        cy.intercept('PUT', '/v1/authProviders/auth-provider-1', {
+            body: {},
+        }).as('PutAuthProvider');
+        cy.intercept('POST', groupsApi.batch, (req) => {
+            expect(req.body).to.deep.equal(
+                updateMinimumAccessRoleRequest,
+                `request: ${JSON.stringify(req.body)} expected: ${JSON.stringify(
+                    updateMinimumAccessRoleRequest
+                )}`
+            );
+            req.body = {};
+        }).as('PostGroupsBatch');
+
+        const id = 'auth-provider-1';
+        cy.visit(`${authProvidersUrl}/${id}`);
+        cy.wait(['@GetAuthProviders', '@GetGroups']);
+
+        const { selectMinimumAccessRole, selectMinimumAccessRoleItem } =
+            selectors.form.minimumAccessRole;
+
+        cy.get(selectors.form.editButton).click();
+
+        cy.get(selectMinimumAccessRole).should('be.enabled').should('contain', 'Admin');
+        cy.get(selectMinimumAccessRole).click();
+        cy.get(`${selectMinimumAccessRoleItem}:contains("Analyst")`).click();
+
+        cy.get(selectors.form.saveButton).click();
+        cy.wait(['@PutAuthProvider', '@PostGroupsBatch']);
+
+        cy.get(selectMinimumAccessRole).should('contain', 'Analyst');
+    });
+
     it('add SAML 2.0', () => {
         visitAuthProviders();
 
         const type = 'SAML 2.0';
 
-        cy.get(selectors.list.addButton).click();
-        cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
+        cy.get(selectors.list.createButton).click();
+        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
 
-        cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
+        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -238,22 +282,37 @@ describe('Access Control Auth providers', () => {
     });
 
     it('add User Certificates', () => {
-        visitAuthProviders();
-
-        const type = 'User Certificates';
         const newProviderName = generateNameWithDate('User Cert Test Provide');
 
-        cy.get(selectors.list.addButton).click();
-        cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
+        const mockUserCertResponse = {
+            id: '21b1003e-8f24-447f-a92e-0f8ff4a1274e',
+            name: newProviderName,
+            type: 'userpki',
+            uiEndpoint: 'localhost:3000',
+            enabled: true,
+            config: {
+                keys: '-----BEGIN CERTIFICATE-----\nMIICEjCCAXsCAg36MA0GCSqGSIb3DQEBBQUAMIGbMQswCQYDVQQGEwJKUDEOMAwG\nA1UECBMFVG9reW8xEDAOBgNVBAcTB0NodW8ta3UxETAPBgNVBAoTCEZyYW5rNERE\nMRgwFgYDVQQLEw9XZWJDZXJ0IFN1cHBvcnQxGDAWBgNVBAMTD0ZyYW5rNEREIFdl\nYiBDQTEjMCEGCSqGSIb3DQEJARYUc3VwcG9ydEBmcmFuazRkZC5jb20wHhcNMTIw\nODIyMDUyNjU0WhcNMTcwODIxMDUyNjU0WjBKMQswCQYDVQQGEwJKUDEOMAwGA1UE\nCAwFVG9reW8xETAPBgNVBAoMCEZyYW5rNEREMRgwFgYDVQQDDA93d3cuZXhhbXBs\nZS5jb20wXDANBgkqhkiG9w0BAQEFAANLADBIAkEAm/xmkHmEQrurE/0re/jeFRLl\n8ZPjBop7uLHhnia7lQG/5zDtZIUC3RVpqDSwBuw/NTweGyuP+o8AG98HxqxTBwID\nAQABMA0GCSqGSIb3DQEBBQUAA4GBABS2TLuBeTPmcaTaUW/LCB2NYOy8GMdzR1mx\n8iBIu2H6/E2tiY3RIevV2OW61qY2/XRQg7YPxx3ffeUugX9F4J/iPnnu1zAxxyBy\n2VguKv4SWjRFoRkIfIlHX0qVviMhSlNy2ioFLy7JcPZb+v3ftDGywUqcBiVDoea0\nHn+GmxZA\n-----END CERTIFICATE-----',
+            },
+            loginUrl: '/sso/login/21b1003e-8f24-447f-a92e-0f8ff4a1274e',
+            validated: false,
+            extraUiEndpoints: [],
+            active: false,
+        };
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
+        visitAuthProviders(mockUserCertResponse);
+
+        const type = 'User Certificates';
+
+        cy.get(selectors.list.createButton).click();
+        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
+
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
 
-        cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
+        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
 
         getInputByLabel('Name').should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -278,6 +337,7 @@ describe('Access Control Auth providers', () => {
         cy.wait('@GetAuthProviders'); // wait for GET to finish, which means redirect back to list page
         cy.location().should((loc) => {
             expect(loc.pathname).to.eq('/main/access-control/auth-providers');
+            expect(loc.search).to.eq('');
         });
     });
 
@@ -286,17 +346,16 @@ describe('Access Control Auth providers', () => {
 
         const type = 'Google IAP';
 
-        cy.get(selectors.list.addButton).click();
-        cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
+        cy.get(selectors.list.createButton).click();
+        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
 
-        cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
+        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -364,9 +423,8 @@ describe('Access Control Auth providers', () => {
         cy.visit(`${authProvidersUrl}/bogus`);
         cy.wait('@GetAuthProviders');
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3)`).should('not.exist');
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2)`).should('not.exist');
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');

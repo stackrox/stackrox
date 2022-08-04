@@ -38,16 +38,16 @@ func TestScrubFromNestedStructPointer(t *testing.T) {
 
 func TestScrubEmbeddedConfig(t *testing.T) {
 	// Test an embedded config
-	dtrIntegration := &storage.ImageIntegration{
+	ecrIntegration := &storage.ImageIntegration{
 		Name: "hi",
-		IntegrationConfig: &storage.ImageIntegration_Dtr{
-			Dtr: &storage.DTRConfig{
-				Password: "pass",
+		IntegrationConfig: &storage.ImageIntegration_Ecr{
+			Ecr: &storage.ECRConfig{
+				SecretAccessKey: "key",
 			},
 		},
 	}
-	ScrubSecretsFromStructWithReplacement(dtrIntegration, "")
-	assert.Empty(t, dtrIntegration.GetDtr().GetPassword())
+	ScrubSecretsFromStructWithReplacement(ecrIntegration, "")
+	assert.Empty(t, ecrIntegration.GetEcr().GetSecretAccessKey())
 }
 
 func TestScrubSecretsWithoutPasswordSetWithReplacement(t *testing.T) {
@@ -80,16 +80,16 @@ func TestScrubFromNestedStructWithReplacement(t *testing.T) {
 
 func TestScrubEmbeddedConfigWithReplacement(t *testing.T) {
 	// Test an embedded config
-	dtrIntegration := &storage.ImageIntegration{
+	ecrIntegration := &storage.ImageIntegration{
 		Name: "hi",
-		IntegrationConfig: &storage.ImageIntegration_Dtr{
-			Dtr: &storage.DTRConfig{
-				Password: "pass",
+		IntegrationConfig: &storage.ImageIntegration_Ecr{
+			Ecr: &storage.ECRConfig{
+				SecretAccessKey: "key",
 			},
 		},
 	}
-	ScrubSecretsFromStructWithReplacement(dtrIntegration, ScrubReplacementStr)
-	assert.Equal(t, dtrIntegration.GetDtr().GetPassword(), ScrubReplacementStr)
+	ScrubSecretsFromStructWithReplacement(ecrIntegration, ScrubReplacementStr)
+	assert.Equal(t, ecrIntegration.GetEcr().GetSecretAccessKey(), ScrubReplacementStr)
 }
 
 func TestScrubFromStructWithOneOf(t *testing.T) {
@@ -182,15 +182,12 @@ func TestNonStringPanic(t *testing.T) {
 
 func TestValidateScrubTagTypes(t *testing.T) {
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ImageIntegration{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.DTRConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ClairifyConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.DockerConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.QuayConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ECRConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.TenableConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.GoogleConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ClairConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.AnchoreConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.IBMRegistryConfig{})))
 
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Notifier{})))

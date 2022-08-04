@@ -11,7 +11,7 @@ import Tab from 'Components/Tab';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import TopRiskyEntitiesByVulnerabilities from 'Containers/VulnMgmt/widgets/TopRiskyEntitiesByVulnerabilities';
-import RecentlyDetectedVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedVulnerabilities';
+import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedImageVulnerabilities';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import DeploymentsWithMostSeverePolicyViolations from 'Containers/VulnMgmt/widgets/DeploymentsWithMostSeverePolicyViolations';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
@@ -95,13 +95,17 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                         <div className="sx-1 lg:sx-2 sy-1 min-h-55 h-full">
                             <TopRiskyEntitiesByVulnerabilities
                                 defaultSelection={entityTypes.DEPLOYMENT}
-                                riskEntityTypes={[entityTypes.DEPLOYMENT, entityTypes.IMAGE]}
+                                riskEntityTypes={[
+                                    entityTypes.DEPLOYMENT,
+                                    entityTypes.IMAGE,
+                                    entityTypes.NODE,
+                                ]}
                                 entityContext={currentEntity}
                                 small
                             />
                         </div>
                         <div className="s-1">
-                            <RecentlyDetectedVulnerabilities entityContext={currentEntity} />
+                            <RecentlyDetectedImageVulnerabilities entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
                             <TopRiskiestEntities entityContext={currentEntity} />
@@ -114,7 +118,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Namespace findings">
-                    <div className="flex pdf-page pdf-stretch pdf-new rounded relative rounded mb-4 ml-4 mr-4">
+                    <div className="flex pdf-page pdf-stretch pdf-new relative rounded mb-4 ml-4 mr-4">
                         <BinderTabs>
                             <Tab title="Policies">
                                 <TableWidget

@@ -1,19 +1,20 @@
 package store
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store provides storage functionality for CVEs.
 //go:generate mockgen-wrapper
 type Store interface {
-	GetAll() ([]*storage.CVE, error)
-	Count() (int, error)
-	Get(id string) (*storage.CVE, bool, error)
-	GetBatch(ids []string) ([]*storage.CVE, []int, error)
+	Count(ctx context.Context) (int, error)
+	Get(ctx context.Context, id string) (*storage.CVE, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error)
 
-	Exists(id string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Upsert(cves ...*storage.CVE) error
-	Delete(ids ...string) error
+	Upsert(ctx context.Context, cves ...*storage.CVE) error
+	Delete(ctx context.Context, ids ...string) error
 }

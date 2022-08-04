@@ -21,7 +21,7 @@ message Deployment {
     uint64 hash                                = 26 [(gogoproto.moretags) = "hash:\"ignore\""];
     string type                                = 4 [(gogoproto.moretags) = "search:\"Deployment Type\""];
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-    string namespace_id                        = 23 [(gogoproto.moretags) = "search:\"Namespace ID\""];
+    string namespace_id                        = 23 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint"'];
     bool orchestrator_component                = 33 [(gogoproto.moretags) = "search:\"Orchestrator Component\""];
     int64 replicas                             = 6 [(gogoproto.moretags) = "policy:\"Replicas\""];
     // TODO(ROX-6895): "Label" search term is ambiguous.
@@ -60,7 +60,7 @@ message ContainerImage {
     // These tags maintain backwards compatibility with the previously embedded storage.Image
     // Tags after 10 may be used as needed
     reserved 2, 3, 5, 6, 7, 8, 9;
-    string    id               = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
+    string    id               = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"fk(Image:id),no-fk-constraint"'];
     ImageName name             = 1;
     bool      not_pullable     = 10;
 
@@ -119,7 +119,7 @@ message Pod {
     // Pod UID
     string id                                           = 1 [(gogoproto.moretags) = "search:\"Pod ID,hidden\" sql:\"pk\""];
     string name                                         = 2 [(gogoproto.moretags) = "search:\"Pod Name,hidden\""];
-    string deployment_id                                = 3 [(gogoproto.moretags) = "search:\"Deployment ID,hidden\""];
+    string deployment_id                                = 3 [(gogoproto.moretags) = 'search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint"'];
     string namespace                                    = 4 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string cluster_id                                   = 5 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
     repeated ContainerInstance live_instances           = 6;
@@ -266,6 +266,7 @@ message SecurityContext {
         string localhost_profile = 2;
     }
     SeccompProfile seccomp_profile = 6;
+    bool allow_privilege_escalation = 7 [(gogoproto.moretags) = 'policy:"Allow Privilege Escalation"'];
 }
 
 // Next available tag: 9

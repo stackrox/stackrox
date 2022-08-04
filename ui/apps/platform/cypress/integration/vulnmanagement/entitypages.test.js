@@ -1,31 +1,41 @@
 import * as api from '../../constants/apiEndpoints';
-import { url, selectors } from '../../constants/VulnManagementPage';
+import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
+import { hasFeatureFlag } from '../../helpers/features';
 
 describe('Entities single views', () => {
     withAuth();
 
     it('related entities tile links should unset search params upon navigation', () => {
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('CLUSTER')).as('getClusters');
-        cy.visit(url.list.clusters);
-        cy.wait('@getClusters');
+        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('CLUSTER', 'CVE')).as('getClusterCVE');
+        visitVulnerabilityManagementEntities('clusters');
+
+        if (usingVMUpdates) {
+            cy.intercept('POST', api.vulnMgmt.graphqlEntities2('clusters', 'IMAGE_CVE')).as(
+                'clustersCVE'
+            );
+        } else {
+            cy.intercept('POST', api.vulnMgmt.graphqlEntities2('clusters', 'CVE')).as(
+                'clustersCVE'
+            );
+        }
         cy.get(`${selectors.tableBodyRows} ${selectors.fixableCvesLink}:eq(0)`).click();
-        cy.wait('@getClusterCVE');
+        cy.wait('@clustersCVE');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntity('CLUSTER')).as('getCluster');
+        cy.intercept('POST', api.vulnMgmt.graphqlEntity('clusters')).as('clusters');
         cy.get(selectors.backButton).click();
-        cy.wait('@getCluster');
+        cy.wait('@clusters');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('CLUSTER', 'DEPLOYMENT')).as(
-            'getClusterDEPLOYMENT'
+        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('clusters', 'DEPLOYMENT')).as(
+            'clustersDEPLOYMENT'
         );
         cy.get(`${selectors.deploymentTileLink} ${selectors.tileLinkSuperText}`)
             .invoke('text')
             .then((numDeployments) => {
                 cy.get(selectors.deploymentTileLink).click();
-                cy.wait('@getClusterDEPLOYMENT');
+                cy.wait('@clustersDEPLOYMENT');
 
                 cy.get(`[data-testid="side-panel"] [data-testid="panel-header"]`)
                     .invoke('text')
@@ -38,15 +48,13 @@ describe('Entities single views', () => {
     });
 
     it('related entities table header should not say "0 entities" or have "page 0 of 0" if there are rows in the table', () => {
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('POLICY')).as('getPolicies');
-        cy.visit(url.list.policies);
-        cy.wait('@getPolicies');
+        visitVulnerabilityManagementEntities('policies');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('POLICY', 'DEPLOYMENT')).as(
-            'getPolicyDEPLOYMENT'
+        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('policies', 'DEPLOYMENT')).as(
+            'policiesDEPLOYMENT'
         );
         cy.get(`${selectors.tableBodyRows} ${selectors.failingDeploymentCountLink}:eq(0)`).click();
-        cy.wait('@getPolicyDEPLOYMENT');
+        cy.wait('@policiesDEPLOYMENT');
 
         cy.get(selectors.sidePanelTableBodyRows).then((value) => {
             const { length: numRows } = value;
@@ -70,16 +78,14 @@ describe('Entities single views', () => {
     it('should scope deployment data based on selected policy from table row click', () => {
         // policy -> related deployments list should scope policy status column by the policy x deployment row
         // in both side panel and entity page
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('POLICY')).as('getPolicies');
-        cy.visit(url.list.policies);
-        cy.wait('@getPolicies');
+        visitVulnerabilityManagementEntities('policies');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntity('POLICY')).as('getPolicy');
+        cy.intercept('POST', api.vulnMgmt.graphqlEntity('policies')).as('policy');
         cy.get(`${selectors.tableBodyRows}:eq(0) ${selectors.statusChips}`)
             .invoke('text')
             .then((firstPolicyStatus) => {
                 cy.get(`${selectors.tableBodyRows}:eq(0)`).click();
-                cy.wait('@getPolicy');
+                cy.wait('@policy');
 
                 cy.get(`${selectors.sidePanel} ${selectors.statusChips}:eq(0)`)
                     .invoke('text')
@@ -92,11 +98,12 @@ describe('Entities single views', () => {
                         `${selectors.emptyFindingsSection}:contains("No deployments have failed across this policy")`
                     );
 
-                    cy.intercept('POST', api.vulnMgmt.graphqlEntities2('POLICY', 'DEPLOYMENT')).as(
-                        'getPolicyDEPLOYMENT'
-                    );
+                    cy.intercept(
+                        'POST',
+                        api.vulnMgmt.graphqlEntities2('policies', 'DEPLOYMENT')
+                    ).as('policiesDEPLOYMENT');
                     cy.get(`${selectors.deploymentTileLink}:eq(0)`).click();
-                    cy.wait('@getPolicyDEPLOYMENT');
+                    cy.wait('@policiesDEPLOYMENT');
 
                     cy.get(
                         `${selectors.sidePanel} ${selectors.statusChips}:contains('pass')`
@@ -109,16 +116,14 @@ describe('Entities single views', () => {
     });
 
     it('should scope deployment data based on selected policy from table count link click', () => {
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('POLICY')).as('getPolicies');
-        cy.visit(url.list.policies);
-        cy.wait('@getPolicies');
+        visitVulnerabilityManagementEntities('policies');
 
         // Assume at least one policy has failing deployments.
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('POLICY', 'DEPLOYMENT')).as(
-            'getPolicyDEPLOYMENT'
+        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('policies', 'DEPLOYMENT')).as(
+            'policiesDEPLOYMENT'
         );
         cy.get(`${selectors.failingDeploymentCountLink}:eq(0)`).click();
-        cy.wait('@getPolicyDEPLOYMENT');
+        cy.wait('@policiesDEPLOYMENT');
 
         cy.get(`${selectors.sidePanel} ${selectors.statusChips}:contains('fail')`).should('exist');
         cy.get(`${selectors.sidePanel} ${selectors.statusChips}:contains('pass')`).should(
@@ -126,20 +131,16 @@ describe('Entities single views', () => {
         );
     });
 
-    // TODO: track fixing this test under this bug ticket, https://stack-rox.atlassian.net/browse/ROX-8705
-    it.skip('should scope deployment data based on selected policy from entity page tab sublist', () => {
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('POLICY')).as('getPolicies');
-        cy.visit(url.list.policies);
-        cy.wait('@getPolicies');
+    it('should scope deployment data based on selected policy from entity page tab sublist', () => {
+        visitVulnerabilityManagementEntities('policies');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('POLICY', 'DEPLOYMENT')).as(
-            'getPolicyDEPLOYMENT'
+        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('policies', 'DEPLOYMENT')).as(
+            'policiesDEPLOYMENT'
         );
         cy.get(`${selectors.failingDeploymentCountLink}:eq(0)`).click();
-        cy.wait('@getPolicyDEPLOYMENT');
+        cy.wait('@policiesDEPLOYMENT');
 
         cy.get(selectors.sidePanelExpandButton).click();
-        cy.wait('@getPolicyDEPLOYMENT');
 
         // Entity single page, not side panel.
         cy.get(`${selectors.tableBodyRows} ${selectors.statusChips}:contains('fail')`).should(
@@ -152,7 +153,7 @@ describe('Entities single views', () => {
 
     // test skipped because we are not currently showing the Policy (count) column, until and if performance can be improved
     it.skip('should have consistent policy count number from namespace list to policy sublist for a specific namespace', () => {
-        cy.visit(url.list.namespaces);
+        visitVulnerabilityManagementEntities('namespaces');
 
         cy.get(selectors.policyCountLink)
             .eq(2)
@@ -176,34 +177,32 @@ describe('Entities single views', () => {
     });
 
     it('should have filtered deployments list in 3rd level of side panel (namespaces -> policies -> deployments)', () => {
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('NAMESPACE')).as('getNamespaces');
-        cy.visit(url.list.namespaces);
-        cy.wait('@getNamespaces');
+        visitVulnerabilityManagementEntities('namespaces');
 
         cy.get(`${selectors.deploymentCountLink}:eq(0)`).as('firstDeploymentCountLink');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('NAMESPACE', 'DEPLOYMENT')).as(
-            'getNamespaceDEPLOYMENT'
+        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('namespaces', 'DEPLOYMENT')).as(
+            'namespacesDEPLOYMENT'
         );
         cy.get('@firstDeploymentCountLink').click();
-        cy.wait('@getNamespaceDEPLOYMENT');
+        cy.wait('@namespacesDEPLOYMENT');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntity('NAMESPACE')).as('getNamespace');
+        cy.intercept('POST', api.vulnMgmt.graphqlEntity('namespaces')).as('namespace');
         cy.get(selectors.parentEntityInfoHeader).click();
-        cy.wait('@getNamespace');
+        cy.wait('@namespace');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('NAMESPACE', 'POLICY')).as(
-            'getNamespacePOLICY'
+        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('namespaces', 'POLICY')).as(
+            'namespacesPOLICY'
         );
         cy.get(selectors.policyTileLink).click();
-        cy.wait('@getNamespacePOLICY');
+        cy.wait('@namespacesPOLICY');
 
         cy.get('@firstDeploymentCountLink')
             .invoke('text')
             .then((deploymentCountText) => {
-                cy.intercept('POST', api.vulnMgmt.graphqlEntity('POLICY')).as('getPolicy');
+                cy.intercept('POST', api.vulnMgmt.graphqlEntity('policies')).as('policy');
                 cy.get(`${selectors.sidePanelTableBodyRows}:eq(0)`).click();
-                cy.wait('@getPolicy');
+                cy.wait('@policy');
 
                 cy.get(selectors.deploymentTileLink)
                     .invoke('text')
@@ -212,11 +211,11 @@ describe('Entities single views', () => {
                             deploymentCountText.replace(' ', '')
                         );
                     });
-                cy.intercept('POST', api.vulnMgmt.graphqlEntities2('POLICY', 'DEPLOYMENT')).as(
-                    'getPolicyDEPLOYMENT'
+                cy.intercept('POST', api.vulnMgmt.graphqlEntities2('policies', 'DEPLOYMENT')).as(
+                    'policiesDEPLOYMENT'
                 );
                 cy.get(selectors.deploymentTileLink).click();
-                cy.wait('@getPolicyDEPLOYMENT');
+                cy.wait('@policiesDEPLOYMENT');
 
                 cy.get(selectors.entityRowHeader)
                     .invoke('text')
@@ -228,7 +227,7 @@ describe('Entities single views', () => {
 
     // @TODO, test needs to be re-structured
     it.skip('should filter deployment count in failing policies section in namespace findings by namespace', () => {
-        cy.visit(url.list.namespaces);
+        visitVulnerabilityManagementEntities('namespaces');
 
         cy.get(`${selectors.deploymentCountLink}:eq(0)`).as('firstDeploymentCountLink');
 
@@ -260,29 +259,26 @@ describe('Entities single views', () => {
             });
     });
 
-    // TODO: track fixing this test under this bug ticket, https://stack-rox.atlassian.net/browse/ROX-8705
+    // TODO: fix this check for comnponent count
     it.skip('should filter component count in images list and image overview by cve when coming from cve list', () => {
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('CVE')).as('getCves');
-        cy.visit(url.list.cves);
-        cy.wait('@getCves');
+        visitVulnerabilityManagementEntities('cves');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('CVE', 'IMAGE')).as('getCveIMAGE');
+        cy.intercept('POST', api.vulnMgmt.graphqlEntities2('cves', 'IMAGE')).as('cvesIMAGE');
         cy.get(`${selectors.imageCountLink}:eq(0)`).click();
-        cy.wait('@getCveIMAGE');
+        cy.wait('@cvesIMAGE');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntity('CVE')).as('getCve');
+        cy.intercept('POST', api.vulnMgmt.graphqlEntity('cves')).as('cve');
         cy.get(selectors.parentEntityInfoHeader).click();
-        cy.wait('@getCve');
+        cy.wait('@cve');
 
         cy.get(selectors.imageTileLink).click();
-        cy.wait('@getCveIMAGE');
 
         cy.get(`${selectors.sidePanel} ${selectors.componentCountLink}:eq(0)`)
             .invoke('text')
             .then((componentCountText) => {
-                cy.intercept('POST', api.vulnMgmt.graphqlEntity('IMAGE')).as('getImage');
+                cy.intercept('POST', api.vulnMgmt.graphqlEntity('images')).as('image');
                 cy.get(`${selectors.sidePanelTableBodyRows}:eq(0)`).click();
-                cy.wait('@getImage');
+                cy.wait('@image');
 
                 cy.get(selectors.componentTileLink)
                     .invoke('text')
@@ -295,16 +291,14 @@ describe('Entities single views', () => {
     });
 
     it('should show a CVE description in overview when coming from cve list', () => {
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('CVE')).as('getCves');
-        cy.visit(url.list.cves);
-        cy.wait('@getCves');
+        visitVulnerabilityManagementEntities('cves');
 
         cy.get(`${selectors.tableBodyRowGroups}:eq(0) ${selectors.cveDescription}`)
             .invoke('text')
             .then((descriptionInList) => {
-                cy.intercept('POST', api.vulnMgmt.graphqlEntity('CVE')).as('getCve');
+                cy.intercept('POST', api.vulnMgmt.graphqlEntity('cves')).as('cve');
                 cy.get(`${selectors.tableBodyRows}:eq(0)`).click();
-                cy.wait('@getCve');
+                cy.wait('@cve');
 
                 cy.get(`${selectors.entityOverview} ${selectors.cveDescription}`)
                     .invoke('text')
@@ -315,17 +309,15 @@ describe('Entities single views', () => {
     });
 
     it('should not filter cluster entity page regardless of entity context', () => {
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('NAMESPACE')).as('getNamespaces');
-        cy.visit(url.list.namespaces);
-        cy.wait('@getNamespaces');
+        visitVulnerabilityManagementEntities('namespaces');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntity('NAMESPACE')).as('getNamespace');
+        cy.intercept('POST', api.vulnMgmt.graphqlEntity('namespaces')).as('namespace');
         cy.get(`${selectors.tableRows}:contains("No deployments"):eq(0)`).click();
-        cy.wait('@getNamespace');
+        cy.wait('@namespace');
 
-        cy.intercept('POST', api.vulnMgmt.graphqlEntity('CLUSTER')).as('getCluster');
+        cy.intercept('POST', api.vulnMgmt.graphqlEntity('clusters')).as('cluster');
         cy.get(`${selectors.metadataClusterValue} a`).click();
-        cy.wait('@getCluster');
+        cy.wait('@cluster');
 
         cy.get(`${selectors.sidePanel} ${selectors.tableRows}`).should('exist');
         cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("No deployments")`).should(
@@ -334,21 +326,35 @@ describe('Entities single views', () => {
     });
 
     it('should show the active state in Component overview when scoped under a deployment', () => {
-        const getDeploymentCOMPONENT = api.graphql(api.vulnMgmt.graphqlOps.getDeploymentCOMPONENT);
-        cy.intercept('POST', getDeploymentCOMPONENT).as('getDeploymentCOMPONENT');
+        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
 
-        cy.visit(url.list.deployments);
+        visitVulnerabilityManagementEntities('deployments');
 
         // click on the first deployment in the list
+        cy.intercept('POST', api.vulnMgmt.graphqlEntity('deployments')).as('deployment');
         cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click();
-        // now, go the components for that deployment
-        cy.get(selectors.componentTileLink).click();
+        cy.wait('@deployment');
+
+        // now, go to the components for that deployment
+        if (usingVMUpdates) {
+            cy.intercept(
+                'POST',
+                api.vulnMgmt.graphqlEntities2('deployments', 'IMAGE_COMPONENT')
+            ).as('deploymentsCOMPONENT');
+
+            cy.get(selectors.imageComponentTileLink).click();
+        } else {
+            cy.intercept('POST', api.vulnMgmt.graphqlEntities2('deployments', 'COMPONENT')).as(
+                'deploymentsCOMPONENT'
+            );
+
+            cy.get(selectors.componentTileLink).click();
+        }
+        cy.wait('@deploymentsCOMPONENT');
         // click on the first component in that list
         cy.get(`[data-testid="side-panel"] ${selectors.tableRows}`, { timeout: 10000 })
             .eq(1)
             .click();
-
-        cy.wait('@getDeploymentCOMPONENT');
 
         cy.get(`[data-testid="Active status-value"]`)
             .invoke('text')
@@ -357,9 +363,7 @@ describe('Entities single views', () => {
             });
     });
 
-    // TODO: when active status for CVEs becomes available
-    // unskip the following test
-    it.skip('should show the active state in the fixable CVES widget for a single deployment', () => {
+    it('should show the active state in the fixable CVES widget for a single deployment', () => {
         const getFixableCvesForEntity = api.graphql(
             api.vulnMgmt.graphqlOps.getFixableCvesForEntity
         );
@@ -367,9 +371,11 @@ describe('Entities single views', () => {
             fixture: 'vulnerabilities/fixableCvesForEntity.json',
         }).as('getFixableCvesForEntity');
 
-        cy.visit(url.list.deployments);
+        visitVulnerabilityManagementEntities('deployments');
 
+        cy.intercept('POST', api.vulnMgmt.graphqlEntity('deployments')).as('deployment');
         cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click();
+        cy.wait('@deployment');
         cy.get('button:contains("Fixable CVEs")').click();
         cy.wait('@getFixableCvesForEntity');
         cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20231")`).contains(

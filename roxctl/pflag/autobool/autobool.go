@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
-	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
 /*
@@ -36,7 +36,7 @@ func (v Value) Set(s string) error {
 	// Then check for booleans.
 	b, err := strconv.ParseBool(s)
 	if err != nil {
-		return errox.NewErrInvalidArgs(err.Error())
+		return common.ErrInvalidCommandOption.CausedBy(err)
 	}
 
 	*v.bp = &b

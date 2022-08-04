@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/detection"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -32,7 +33,10 @@ func BenchmarkDefaultPolicies(b *testing.B) {
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := detection.Detect(deploytime.DetectionContext{}, dep, images)
+		_, err := detection.Detect(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
+			Deployment: dep,
+			Images:     images,
+		})
 		require.NoError(b, err)
 	}
 }

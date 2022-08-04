@@ -78,10 +78,10 @@ NetworkBaselinesSearch.propTypes = {
                     name: PropTypes.string,
                     namespace: PropTypes.string,
                 }),
-                port: PropTypes.string.isRequired,
+                port: PropTypes.number.isRequired,
                 protocol: PropTypes.string.isRequired,
                 ingress: PropTypes.bool.isRequired,
-                state: PropTypes.string.isRequired,
+                state: PropTypes.string,
             }),
             status: PropTypes.oneOf(Object.values(networkFlowStatus)).isRequired,
         })

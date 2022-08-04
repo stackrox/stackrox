@@ -13,7 +13,7 @@ const (
 	legacyCapsMetadataKey = `Rox-Sensor-Capabilities`
 )
 
-// AppendCapsInfoToContext appends information about the supported capabilities to the context.
+// appendCapsInfoToContext appends information about the supported capabilities to the context.
 func appendCapsInfoToContext(ctx context.Context, caps SensorCapabilitySet) context.Context {
 	capsStrs := make([]string, 0, len(caps))
 	for capability := range caps {

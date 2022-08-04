@@ -1,6 +1,8 @@
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceControl
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandard
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
+import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_WRITE_ACCESS
+import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuilder
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
 
 import java.nio.charset.StandardCharsets
@@ -15,7 +17,6 @@ import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
 
-import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
@@ -28,6 +29,9 @@ import io.stackrox.proto.storage.Compliance.ComplianceState
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.NodeOuterClass.Node
 import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
+import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
+import io.stackrox.proto.storage.RoleOuterClass
 
 import common.Constants
 import groups.BAT
@@ -40,6 +44,7 @@ import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
 import objects.SlackNotifier
+import services.ApiTokenService
 import services.BaseService
 import services.ClusterService
 import services.ComplianceManagementService
@@ -50,6 +55,7 @@ import services.NetworkPolicyService
 import services.NodeService
 import services.PolicyService
 import services.ProcessService
+import services.RoleService
 import util.Env
 import util.Timer
 
@@ -78,7 +84,6 @@ class ComplianceTest extends BaseSpecification {
     private gcrId = ""
     @Shared
     private Map<String, String> standardsByName = [:]
-    static final private String TESTROLE = "Continuous Integration"
     static final private String COMPLIANCETOKEN = "stackrox-compliance"
 
     def setupSpec() {
@@ -224,7 +229,7 @@ class ComplianceTest extends BaseSpecification {
             def standardId = result.aggregationKeysList.find { it.scope == Scope.STANDARD }?.id
 
             ComplianceRunResults run = BASE_RESULTS.get(standardId)
-            println "Verifying aggregate counts for ${standardId}"
+            log.info "Verifying aggregate counts for ${standardId}"
             run.clusterResults.controlResultsMap.each {
                 counts.get(it.value.overallState) ?
                         counts.get(it.value.overallState).add(it.key) :
@@ -244,13 +249,25 @@ class ComplianceTest extends BaseSpecification {
                             counts.put(it.value.overallState, [it.key] as Set)
                 }
             }
+            run.machineConfigResultsMap.each {
+                it.value.controlResultsMap.each {
+                    counts.get(it.value.overallState) ?
+                            counts.get(it.value.overallState).add(it.key) :
+                            counts.put(it.value.overallState, [it.key] as Set)
+                }
+            }
+
             counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS)
                     .removeAll(counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE) ?: [])
             counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS)
                     .removeAll(counts.get(ComplianceState.COMPLIANCE_STATE_ERROR) ?: [])
-            assert result.numPassing == counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS)?.size() ?: 0
-            assert result.numFailing == counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE)?.size() ?: 0 +
-                    counts.get(ComplianceState.COMPLIANCE_STATE_ERROR)?.size() ?: 0
+
+            def countPassing = (counts.get(ComplianceState.COMPLIANCE_STATE_SUCCESS) ?: []).size()
+            assert result.numPassing == countPassing
+
+            def countFailing = (counts.get(ComplianceState.COMPLIANCE_STATE_FAILURE) ?: []).size() +
+                    (counts.get(ComplianceState.COMPLIANCE_STATE_ERROR) ?: []).size()
+            assert result.numFailing == countFailing
         }
     }
 
@@ -440,7 +457,7 @@ class ComplianceTest extends BaseSpecification {
                     it.name == normalizedControlName
                 }
                 if (!control) {
-                    println "Couldn't find ${normalizedControlName} (row " +
+                    log.info "Couldn't find ${normalizedControlName} (row " +
                             "was ${row.cluster} ${row.standard} ${row.control}"
                 }
                 assert control
@@ -475,9 +492,9 @@ class ComplianceTest extends BaseSpecification {
                         break
                 }
                 if (!value) {
-                    println "Control: ${control} StandardId: ${standardId}" +
+                    log.info "Control: ${control} StandardId: ${standardId}" +
                             "Row: ${row.cluster}, ${row.standard}, ${row.objectType}, ${row.control}, ${row.evidence}"
-                    println result.clusterResults.controlResultsMap.keySet()
+                    log.info result.clusterResults.controlResultsMap.keySet()
                 }
                 assert value
                 assert convertStringState(row.state) ?
@@ -491,9 +508,9 @@ class ComplianceTest extends BaseSpecification {
                         .withZone(ZoneId.of("UTC"))
                 assert row.timestamp == formatter.format(i)
             }
-            println "Verified ${verifiedRows} out of ${rowNumber} total rows"
+            log.info "Verified ${verifiedRows} out of ${rowNumber} total rows"
         } catch (Exception e) {
-            println e.printStackTrace()
+            log.error("Exception", e)
         }
     }
 
@@ -552,7 +569,7 @@ class ComplianceTest extends BaseSpecification {
         def hasMaster = false
         for (objects.Node node : orchNodes) {
             for (String label : node.getLabels().keySet()) {
-                if (label == "node-role.kubernetes.io/master") {
+                if (label == "node-role.kubernetes.io/master" || label == "node-role.kubernetes.io/control-plane") {
                     hasMaster = true
                     break
                 }
@@ -666,7 +683,7 @@ class ComplianceTest extends BaseSpecification {
 
         and:
         "verify standard started on schedule"
-        println "Waiting for schedule to start..."
+        log.info "Waiting for schedule to start..."
         while (now.get(Calendar.MINUTE) < minute) {
             sleep 1000
             now = Calendar.getInstance(TimeZone.getTimeZone("GMT"))
@@ -744,7 +761,7 @@ class ComplianceTest extends BaseSpecification {
         def missingControls = []
         for (Control control : controls) {
             if (clusterResults.keySet().contains(control.id)) {
-                println "Validating ${control.id}"
+                log.info "Validating ${control.id}"
                 ComplianceResultValue value = clusterResults.get(control.id)
                 assert value.overallState == control.state
                 assert value.evidenceList*.message.containsAll(control.evidenceMessages)
@@ -813,7 +830,7 @@ class ComplianceTest extends BaseSpecification {
         "create Deployment that forces checks to fail"
         Deployment deployment = new Deployment()
                 .setName("compliance-deployment")
-                .setImage("nginx:1.15.4-alpine")
+                .setImage("quay.io/rhacs-eng/qa:nginx-1-15-4-alpine")
                 .addPort(80, "UDP")
                 .setCommand(["/bin/sh", "-c",])
                 .setArgs(["dd if=/dev/zero of=/dev/null & yes"])
@@ -841,7 +858,7 @@ class ComplianceTest extends BaseSpecification {
             if (receivedProcessPaths.size() > 1) {
                 break
             }
-            println "Didn't find all the expected processes, retrying..."
+            log.info "Didn't find all the expected processes, retrying..."
         }
         assert receivedProcessPaths.size() > 1
 
@@ -861,7 +878,7 @@ class ComplianceTest extends BaseSpecification {
         def missingControls = []
         for (Control control : controls) {
             if (deploymentResults.keySet().contains(control.id)) {
-                println "Validating deployment control ${control.id}"
+                log.info "Validating deployment control ${control.id}"
                 ComplianceResultValue value = deploymentResults.get(control.id)
                 assert value.overallState == control.state
                 assert value.evidenceList*.message.containsAll(control.evidenceMessages)
@@ -869,7 +886,7 @@ class ComplianceTest extends BaseSpecification {
                 missingControls.add(control)
             }
         }
-        assert missingControls*.id.size() == 0
+        assert missingControls.size() == 0
 
         cleanup:
         "remove deployment"
@@ -927,6 +944,7 @@ class ComplianceTest extends BaseSpecification {
                 "90-Day Image Age",
                 "Latest tag",
                 "Ubuntu Package Manager Execution",
+                "Environment Variable Contains Secret",
         ]
         Map<String, List<PolicyOuterClass.EnforcementAction>> priorEnforcement = [:]
 
@@ -950,6 +968,11 @@ class ComplianceTest extends BaseSpecification {
             def prior = Services.updatePolicyEnforcement(policyName, enforcements)
             priorEnforcement.put(policyName, prior)
         }
+        def policyGroup = PolicyGroup.newBuilder()
+                .setFieldName("Environment Variable")
+                .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
+        policyGroup.addAllValues([PolicyValue.newBuilder().setValue(".*SECRET.*=.*").build()])
+
         def policyId = PolicyService.createNewPolicy(PolicyOuterClass.Policy.newBuilder()
                 .setName("XYZ Compliance Secrets")
                 .setDescription("Test Secrets in Compliance")
@@ -959,11 +982,8 @@ class ComplianceTest extends BaseSpecification {
                 .addCategories("Image Assurance")
                 .setDisabled(false)
                 .setSeverityValue(2)
-                .setFields(PolicyOuterClass.PolicyFields.newBuilder()
-                        .setEnv(PolicyOuterClass.KeyValuePolicy.newBuilder()
-                                .setKey(".*SECRET.*")
-                                .setValue(".*"))
-                        .build())
+                .addPolicySections(
+                        PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
                 .build())
 
         when:
@@ -980,7 +1000,7 @@ class ComplianceTest extends BaseSpecification {
         def missingControls = []
         for (Control control : controls) {
             if (clusterResults.keySet().contains(control.id)) {
-                println "Validating deployment control ${control.id}"
+                log.info "Validating deployment control ${control.id}"
                 ComplianceResultValue value = clusterResults.get(control.id)
                 assert value.overallState == control.state
                 assert value.evidenceList*.message.containsAll(control.evidenceMessages)
@@ -988,7 +1008,7 @@ class ComplianceTest extends BaseSpecification {
                 missingControls.add(control)
             }
         }
-        assert missingControls*.id.size() == 0
+        assert missingControls.size() == 0
 
         cleanup:
         "undo policy changes"
@@ -1038,7 +1058,7 @@ class ComplianceTest extends BaseSpecification {
         def missingControls = []
         for (Control control : controls) {
             if (clusterResults.keySet().contains(control.id)) {
-                println "Validating cluster control ${control.id}"
+                log.info "Validating cluster control ${control.id}"
                 ComplianceResultValue value = clusterResults.get(control.id)
                 assert value.overallState == control.state
                 assert value.evidenceList*.message.containsAll(control.evidenceMessages)
@@ -1057,7 +1077,7 @@ class ComplianceTest extends BaseSpecification {
         Assume.assumeTrue(ClusterService.isOpenShift4())
         Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
 
-        println "Getting compliance results for ${standard}"
+        log.info "Getting compliance results for ${standard}"
         ComplianceRunResults run = BASE_RESULTS.get(standard)
 
         expect:
@@ -1067,7 +1087,7 @@ class ComplianceTest extends BaseSpecification {
         def machineConfigsWithResults = 0
         def numErrors = 0
         for (def entry in run.machineConfigResultsMap) {
-            println "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
+            log.info "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
             if (entry.value.controlResultsMap.size()  > 0) {
                 machineConfigsWithResults++
             }
@@ -1094,6 +1114,9 @@ class ComplianceTest extends BaseSpecification {
         "get compliance aggregation results"
         Assume.assumeTrue(ClusterService.isOpenShift4())
 
+        // https://issues.redhat.com/browse/ROX-9951 -- fails on OSD
+        Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
+
         ComplianceRunResults run = BASE_RESULTS.get("rhcos4-moderate-modified")
 
         expect:
@@ -1103,7 +1126,7 @@ class ComplianceTest extends BaseSpecification {
         def machineConfigsWithResults = 0
         def numErrors = 0
         for (def entry in run.machineConfigResultsMap) {
-            println "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
+            log.info "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
             if (entry.value.controlResultsMap.size()  > 0) {
                 machineConfigsWithResults++
             }
@@ -1121,7 +1144,7 @@ class ComplianceTest extends BaseSpecification {
         Assume.assumeTrue(ClusterService.isOpenShift4())
         Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
 
-        println "Getting compliance results for ocp4-cis"
+        log.info "Getting compliance results for ocp4-cis"
         ComplianceRunResults run = BASE_RESULTS.get("ocp4-cis")
 
         expect:
@@ -1170,12 +1193,12 @@ class ComplianceTest extends BaseSpecification {
         ImageOuterClass.ListImage image = null
 
         while (!image?.fixableCves && timer.IsValid()) {
-            println "Image not found or not scanned: ${image}"
+            log.info "Image not found or not scanned: ${image}"
             image = ImageService.getImages(imageQuery).find { it.name == cveDeployment.image }
         }
         assert image?.fixableCves
 
-        println "Found scanned image ${image}"
+        log.info "Found scanned image ${image}"
 
         when:
         "trigger compliance runs"
@@ -1191,7 +1214,7 @@ class ComplianceTest extends BaseSpecification {
         def missingControls = []
         for (Control control : controls) {
             if (clusterResults.keySet().contains(control.id)) {
-                println "Validating ${control.id}"
+                log.info "Validating ${control.id}"
                 ComplianceResultValue value = clusterResults.get(control.id)
                 assert value.overallState == control.state
 
@@ -1273,7 +1296,7 @@ class ComplianceTest extends BaseSpecification {
         "wait for sensor to come back up"
         def start = System.currentTimeMillis()
         orchestrator.waitForSensor()
-        println "waited ${System.currentTimeMillis() - start}ms for sensor to come back online"
+        log.info "waited ${System.currentTimeMillis() - start}ms for sensor to come back online"
     }
 
     @Category([BAT])
@@ -1307,7 +1330,7 @@ class ComplianceTest extends BaseSpecification {
                     break
                 }
             }
-            println "Didn't find an SSH processes, retrying..."
+            log.info "Didn't find an SSH processes, retrying..."
         }
         assert foundSSHProcess
 
@@ -1369,9 +1392,47 @@ class ComplianceTest extends BaseSpecification {
         def otherClusterName = "disallowedCluster"
 
         given:
+        "Create access scope and test role"
+        def remoteStackroxAccessScope = RoleService.createAccessScope(newBuilder()
+                .setName(UUID.randomUUID().toString())
+                .setRules(RoleOuterClass.SimpleAccessScope.Rules.newBuilder()
+                        .addIncludedNamespaces(RoleOuterClass.SimpleAccessScope.Rules.Namespace.newBuilder()
+                                .setClusterName(DEFAULT_CLUSTER_NAME)
+                                .setNamespaceName("stackrox")))
+                .build())
+        String testRole = RoleService.createRoleWithScopeAndPermissionSet(
+                "Compliance Test Automation Role " + UUID.randomUUID(),
+                remoteStackroxAccessScope.id, [
+                "APIToken"             : READ_WRITE_ACCESS,
+                "AllComments"          : READ_WRITE_ACCESS,
+                "AuthPlugin"           : READ_WRITE_ACCESS,
+                "AuthProvider"         : READ_WRITE_ACCESS,
+                "BackupPlugins"        : READ_WRITE_ACCESS,
+                "ComplianceRunSchedule": READ_WRITE_ACCESS,
+                "Config"               : READ_WRITE_ACCESS,
+                "DebugLogs"            : READ_WRITE_ACCESS,
+                "Detection"            : READ_WRITE_ACCESS,
+                "Group"                : READ_WRITE_ACCESS,
+                "ImageIntegration"     : READ_WRITE_ACCESS,
+                "Licenses"             : READ_WRITE_ACCESS,
+                "Notifier"             : READ_WRITE_ACCESS,
+                "Policy"               : READ_WRITE_ACCESS,
+                "ProbeUpload"          : READ_WRITE_ACCESS,
+                "Role"                 : READ_WRITE_ACCESS,
+                "ScannerBundle"        : READ_WRITE_ACCESS,
+                "ScannerDefinitions"   : READ_WRITE_ACCESS,
+                "SensorUpgradeConfig"  : READ_WRITE_ACCESS,
+                "ServiceIdentity"      : READ_WRITE_ACCESS,
+                "User"                 : READ_WRITE_ACCESS,
+                "Cluster"              : READ_WRITE_ACCESS,
+                "Compliance"           : READ_WRITE_ACCESS,
+                "ComplianceRuns"       : READ_WRITE_ACCESS,
+                "Node"                 : READ_WRITE_ACCESS,
+        ]).name
+
         "Enable SAC token and add other cluster"
         ClusterService.createCluster(otherClusterName, "stackrox/main:latest", "central.stackrox:443")
-        ApiTokenService.GenerateTokenResponse token = services.ApiTokenService.generateToken(COMPLIANCETOKEN, TESTROLE)
+        def token = ApiTokenService.generateToken(COMPLIANCETOKEN, testRole, "None")
         BaseService.useApiToken(token.token)
 
         when:
@@ -1390,5 +1451,6 @@ class ComplianceTest extends BaseSpecification {
         "revert to basic auth and delete extra cluster"
         BaseService.useBasicAuth()
         ClusterService.deleteCluster(ClusterService.getClusterId(otherClusterName))
+        RoleService.deleteRole(testRole)
     }
 }

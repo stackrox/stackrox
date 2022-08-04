@@ -67,6 +67,7 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 				Vulns:   convertNodeVulns(resp.GetKubeproxyVulnerabilities()),
 			},
 		},
+		Notes: convertNodeNotes(resp.GetNotes()),
 	}
 	if req.GetRuntime().GetName() != "" && req.GetRuntime().GetVersion() != "" {
 		scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
@@ -76,6 +77,22 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 		})
 	}
 	return scan
+}
+
+func convertNodeNotes(v1Notes []v1.NodeNote) []storage.NodeScan_Note {
+	notes := make([]storage.NodeScan_Note, 0, len(v1Notes))
+	for _, note := range v1Notes {
+		switch note {
+		case v1.NodeNote_NODE_UNSUPPORTED:
+			notes = append(notes, storage.NodeScan_UNSUPPORTED)
+		case v1.NodeNote_NODE_KERNEL_UNSUPPORTED:
+			notes = append(notes, storage.NodeScan_KERNEL_UNSUPPORTED)
+		default:
+			continue
+		}
+	}
+
+	return notes
 }
 
 func convertNodeVulns(vulnerabilities []*v1.Vulnerability) []*storage.EmbeddedVulnerability {
@@ -154,7 +171,7 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 }
 
 func convertImageToImageScan(metadata *storage.ImageMetadata, image *v1.Image) *storage.ImageScan {
-	components := convertFeatures(metadata, image.GetFeatures())
+	components := convertFeatures(metadata, image.GetFeatures(), image.Namespace)
 	return &storage.ImageScan{
 		ScanTime:        gogoProto.TimestampNow(),
 		Components:      components,
@@ -162,12 +179,12 @@ func convertImageToImageScan(metadata *storage.ImageMetadata, image *v1.Image) *
 	}
 }
 
-func convertFeatures(metadata *storage.ImageMetadata, features []*v1.Feature) []*storage.EmbeddedImageScanComponent {
+func convertFeatures(metadata *storage.ImageMetadata, features []*v1.Feature, os string) []*storage.EmbeddedImageScanComponent {
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
 
 	components := make([]*storage.EmbeddedImageScanComponent, 0, len(features))
 	for _, feature := range features {
-		convertedComponent := convertFeature(feature)
+		convertedComponent := convertFeature(feature, os)
 		if val, ok := layerSHAToIndex[feature.GetAddedByLayer()]; ok {
 			convertedComponent.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
 				LayerIndex: val,
@@ -179,7 +196,7 @@ func convertFeatures(metadata *storage.ImageMetadata, features []*v1.Feature) []
 	return components
 }
 
-func convertFeature(feature *v1.Feature) *storage.EmbeddedImageScanComponent {
+func convertFeature(feature *v1.Feature, os string) *storage.EmbeddedImageScanComponent {
 	component := &storage.EmbeddedImageScanComponent{
 		Name:     feature.GetName(),
 		Version:  feature.GetVersion(),
@@ -195,7 +212,7 @@ func convertFeature(feature *v1.Feature) *storage.EmbeddedImageScanComponent {
 	for _, executable := range feature.GetProvidedExecutables() {
 		imageComponentIds := make([]string, 0, len(executable.GetRequiredFeatures()))
 		for _, f := range executable.GetRequiredFeatures() {
-			imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion()))
+			imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), os))
 		}
 		exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.GetPath(), Dependencies: imageComponentIds}
 		executables = append(executables, exec)

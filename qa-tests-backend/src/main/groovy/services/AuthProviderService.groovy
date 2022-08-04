@@ -3,6 +3,7 @@ package services
 import static com.jayway.restassured.RestAssured.given
 
 import com.jayway.restassured.config.RestAssuredConfig
+import groovy.util.logging.Slf4j
 import util.Keys
 
 import javax.net.ssl.SSLContext
@@ -17,6 +18,7 @@ import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.AuthProviderOuterClass
 
+@Slf4j
 class AuthProviderService extends BaseService {
     static getAuthProviderService() {
         return AuthProviderServiceGrpc.newBlockingStub(getChannel())
@@ -34,7 +36,7 @@ class AuthProviderService extends BaseService {
                     AuthproviderService.GetAuthProviderRequest.newBuilder().setId(id).build()
             )
         } catch (Exception e) {
-            println "Failed getting auth provider: ${e}"
+            log.error( "Failed getting auth provider", e)
         }
     }
 
@@ -52,7 +54,7 @@ class AuthProviderService extends BaseService {
 
             return authProviderId
         } catch (Exception e) {
-            println "Failed to create auth provider: ${e}"
+            log.error("Failed to create auth provider", e)
         }
     }
 

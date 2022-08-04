@@ -3,7 +3,7 @@ package printer
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +23,7 @@ func TestJSONPrinterFactory_CreatePrinter(t *testing.T) {
 			j:          &JSONPrinterFactory{},
 			format:     "junit",
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 	}
 

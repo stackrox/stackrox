@@ -43,12 +43,16 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"timeoutSeconds: Int!",
 	}))
 	utils.Must(builder.AddType("Alert", []string{
+		"clusterId: String!",
+		"clusterName: String!",
 		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
 		"firstOccurred: Time",
 		"id: ID!",
 		"image: ContainerImage",
 		"lifecycleStage: LifecycleStage!",
+		"namespace: String!",
+		"namespaceId: String!",
 		"policy: Policy",
 		"processViolation: Alert_ProcessViolation",
 		"resolvedAt: Time",
@@ -156,6 +160,23 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: CVE_CVEType!",
 		"types: [CVE_CVEType!]!",
 	}))
+	utils.Must(builder.AddType("CVEInfo", []string{
+		"createdAt: Time",
+		"cve: String!",
+		"cvssV2: CVSSV2",
+		"cvssV3: CVSSV3",
+		"lastModified: Time",
+		"link: String!",
+		"publishedOn: Time",
+		"references: [CVEInfo_Reference]!",
+		"scoreVersion: CVEInfo_ScoreVersion!",
+		"summary: String!",
+	}))
+	utils.Must(builder.AddType("CVEInfo_Reference", []string{
+		"tags: [String!]!",
+		"uRI: String!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVEInfo_ScoreVersion(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVE_CVEType(0)))
 	utils.Must(builder.AddType("CVE_Reference", []string{
 		"tags: [String!]!",
@@ -245,6 +266,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"tolerationsConfig: TolerationsConfig",
 		"type: ClusterType!",
 	}))
+	utils.Must(builder.AddType("ClusterCVE", []string{
+		"cveBaseInfo: CVEInfo",
+		"cvss: Float!",
+		"id: ID!",
+		"impactScore: Float!",
+		"severity: VulnerabilitySeverity!",
+		"snoozeExpiry: Time",
+		"snoozeStart: Time",
+		"snoozed: Boolean!",
+		"type: CVE_CVEType!",
+	}))
 	utils.Must(builder.AddType("ClusterCertExpiryStatus", []string{
 		"sensorCertExpiry: Time",
 		"sensorCertNotBefore: Time",
@@ -258,6 +290,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"lastContact: Time",
 		"overallHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
+		"scannerHealthInfo: ScannerHealthInfo",
+		"scannerHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"sensorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterHealthStatus_HealthStatusLabel(0)))
@@ -290,21 +324,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"statusErrors: [String!]!",
 		"version: String!",
 	}))
-	utils.Must(builder.AddType("Comment", []string{
-		"commentId: String!",
-		"commentMessage: String!",
-		"createdAt: Time",
-		"lastModified: Time",
-		"resourceId: String!",
-		"resourceType: ResourceType!",
-		"user: Comment_User",
-	}))
-	utils.Must(builder.AddType("Comment_User", []string{
-		"email: String!",
-		"id: ID!",
-		"name: String!",
-	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Comparator(0)))
 	utils.Must(builder.AddType("CompleteClusterConfig", []string{
 		"clusterLabels: [Label!]!",
 		"configFingerprint: String!",
@@ -441,10 +460,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.ComplianceStandardMetadata_Scope(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ComplianceState(0)))
-	utils.Must(builder.AddType("Component", []string{
-		"name: String!",
-		"version: String!",
-	}))
 	utils.Must(builder.AddType("Container", []string{
 		"config: ContainerConfig",
 		"id: ID!",
@@ -538,10 +553,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"tolerations: [Toleration]!",
 		"type: String!",
 	}))
-	utils.Must(builder.AddType("DockerfileLineRuleField", []string{
-		"instruction: String!",
-		"value: String!",
-	}))
 	utils.Must(builder.AddType("DynamicClusterConfig", []string{
 		"admissionControllerConfig: AdmissionControllerConfig",
 		"disableAuditLogs: Boolean!",
@@ -619,10 +630,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("GroupProperties", []string{
 		"authProviderId: String!",
+		"id: ID!",
 		"key: String!",
 		"value: String!",
-	}))
-	utils.Must(builder.AddType("HostMountPolicy", []string{
 	}))
 	utils.Must(builder.AddType("Image", []string{
 		"id: ID!",
@@ -634,15 +644,26 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notes: [Image_Note!]!",
 		"priority: Int!",
 		"riskScore: Float!",
-		"scan: ImageScan",
 		"signature: ImageSignature",
 		"signatureVerificationData: ImageSignatureVerificationData",
+	}))
+	utils.Must(builder.AddType("ImageCVE", []string{
+		"cveBaseInfo: CVEInfo",
+		"cvss: Float!",
+		"id: ID!",
+		"impactScore: Float!",
+		"operatingSystem: String!",
+		"severity: VulnerabilitySeverity!",
+		"snoozeExpiry: Time",
+		"snoozeStart: Time",
+		"snoozed: Boolean!",
 	}))
 	utils.Must(builder.AddType("ImageComponent", []string{
 		"fixedBy: String!",
 		"id: ID!",
 		"license: License",
 		"name: String!",
+		"operatingSystem: String!",
 		"priority: Int!",
 		"riskScore: Float!",
 		"source: SourceType!",
@@ -667,11 +688,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"remote: String!",
 		"tag: String!",
 	}))
-	utils.Must(builder.AddType("ImageNamePolicy", []string{
-		"registry: String!",
-		"remote: String!",
-		"tag: String!",
-	}))
 	utils.Must(builder.AddType("ImagePullSecret", []string{
 		"registries: [ImagePullSecret_Registry]!",
 	}))
@@ -688,6 +704,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageScan_Note(0)))
 	utils.Must(builder.AddType("ImageSignature", []string{
+		"fetched: Time",
 		"signatures: [Signature]!",
 	}))
 	utils.Must(builder.AddType("ImageSignatureVerificationData", []string{
@@ -739,11 +756,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"subjects: [Subject]!",
 	}))
 	utils.Must(builder.AddType("KeyValuePair", []string{
-		"key: String!",
-		"value: String!",
-	}))
-	utils.Must(builder.AddType("KeyValuePolicy", []string{
-		"envVarSource: ContainerConfig_EnvironmentConfig_EnvVarSource!",
 		"key: String!",
 		"value: String!",
 	}))
@@ -833,6 +845,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
 	utils.Must(builder.AddType("NetworkFlow", []string{
+		"clusterId: String!",
 		"lastSeenTimestamp: Time",
 		"props: NetworkFlowProperties",
 	}))
@@ -859,17 +872,39 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"labels: [Label!]!",
 		"lastUpdated: Time",
 		"name: String!",
+		"notes: [Node_Note!]!",
 		"operatingSystem: String!",
 		"osImage: String!",
 		"priority: Int!",
 		"riskScore: Float!",
-		"scan: NodeScan",
 		"taints: [Taint]!",
 	}))
+	utils.Must(builder.AddType("NodeCVE", []string{
+		"cveBaseInfo: CVEInfo",
+		"cvss: Float!",
+		"id: ID!",
+		"impactScore: Float!",
+		"operatingSystem: String!",
+		"severity: VulnerabilitySeverity!",
+		"snoozeExpiry: Time",
+		"snoozeStart: Time",
+		"snoozed: Boolean!",
+	}))
+	utils.Must(builder.AddType("NodeComponent", []string{
+		"id: ID!",
+		"name: String!",
+		"operatingSystem: String!",
+		"priority: Int!",
+		"riskScore: Float!",
+		"version: String!",
+	}))
 	utils.Must(builder.AddType("NodeScan", []string{
+		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
 		"scanTime: Time",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
 		"cscc: CSCC",
@@ -899,10 +934,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"AWSSecurityHub",
 		"Syslog",
 	}))
-	utils.Must(builder.AddType("NumericalPolicy", []string{
-		"op: Comparator!",
-		"value: Float!",
-	}))
 	utils.Must(builder.AddType("OrchestratorMetadata", []string{
 		"apiVersions: [String!]!",
 		"buildDate: Time",
@@ -917,9 +948,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sortOption: SortOption",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PermissionLevel(0)))
-	utils.Must(builder.AddType("PermissionPolicy", []string{
-		"permissionLevel: PermissionLevel!",
-	}))
 	utils.Must(builder.AddType("PermissionSet", []string{
 		"description: String!",
 		"id: ID!",
@@ -946,7 +974,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"enforcementActions: [EnforcementAction!]!",
 		"eventSource: EventSource!",
 		"exclusions: [Exclusion]!",
-		"fields: PolicyFields",
 		"id: ID!",
 		"isDefault: Boolean!",
 		"lastUpdated: Time",
@@ -964,34 +991,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sORTName: String!",
 		"scope: [Scope]!",
 		"severity: Severity!",
-	}))
-	utils.Must(builder.AddType("PolicyFields", []string{
-		"addCapabilities: [String!]!",
-		"args: String!",
-		"command: String!",
-		"component: Component",
-		"containerResourcePolicy: ResourcePolicy",
-		"cve: String!",
-		"cvss: NumericalPolicy",
-		"directory: String!",
-		"disallowedAnnotation: KeyValuePolicy",
-		"disallowedImageLabel: KeyValuePolicy",
-		"dropCapabilities: [String!]!",
-		"env: KeyValuePolicy",
-		"fixedBy: String!",
-		"hostMountPolicy: HostMountPolicy",
-		"imageName: ImageNamePolicy",
-		"imageSignatureVerifiedBy: String!",
-		"lineRule: DockerfileLineRuleField",
-		"permissionPolicy: PermissionPolicy",
-		"portExposurePolicy: PortExposurePolicy",
-		"portPolicy: PortPolicy",
-		"processPolicy: ProcessPolicy",
-		"requiredAnnotation: KeyValuePolicy",
-		"requiredImageLabel: KeyValuePolicy",
-		"requiredLabel: KeyValuePolicy",
-		"user: String!",
-		"volumePolicy: VolumePolicy",
 	}))
 	utils.Must(builder.AddType("PolicyGroup", []string{
 		"booleanOperator: BooleanOperator!",
@@ -1036,13 +1035,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"servicePort: Int!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PortConfig_ExposureLevel(0)))
-	utils.Must(builder.AddType("PortExposurePolicy", []string{
-		"exposureLevels: [PortConfig_ExposureLevel!]!",
-	}))
-	utils.Must(builder.AddType("PortPolicy", []string{
-		"port: Int!",
-		"protocol: String!",
-	}))
 	utils.Must(builder.AddType("ProcessGroup", []string{
 		"args: String!",
 		"signals: [ProcessIndicator]!",
@@ -1069,12 +1061,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"containerName: String!",
 		"deploymentID: String!",
 		"execFilePath: String!",
-	}))
-	utils.Must(builder.AddType("ProcessPolicy", []string{
-		"ancestor: String!",
-		"args: String!",
-		"name: String!",
-		"uid: String!",
 	}))
 	utils.Must(builder.AddType("ProcessSignal", []string{
 		"args: String!",
@@ -1117,13 +1103,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"message: String!",
 		"user: SlimUser",
 	}))
-	utils.Must(builder.AddType("ResourcePolicy", []string{
-		"cpuResourceLimit: NumericalPolicy",
-		"cpuResourceRequest: NumericalPolicy",
-		"memoryResourceLimit: NumericalPolicy",
-		"memoryResourceRequest: NumericalPolicy",
-	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ResourceType(0)))
 	utils.Must(builder.AddType("Resources", []string{
 		"cpuCoresLimit: Float!",
 		"cpuCoresRequest: Float!",
@@ -1158,6 +1137,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"globalAccess: Access!",
 		"name: String!",
 		"permissionSetId: String!",
+	}))
+	utils.Must(builder.AddType("ScannerHealthInfo", []string{
+		"statusErrors: [String!]!",
 	}))
 	utils.Must(builder.AddType("Scope", []string{
 		"cluster: String!",
@@ -1216,6 +1198,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SecretType(0)))
 	utils.Must(builder.AddType("SecurityContext", []string{
 		"addCapabilities: [String!]!",
+		"allowPrivilegeEscalation: Boolean!",
 		"dropCapabilities: [String!]!",
 		"privileged: Boolean!",
 		"readOnlyRootFilesystem: Boolean!",
@@ -1395,12 +1378,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"mountPropagation: Volume_MountPropagation!",
 		"name: String!",
 		"readOnly: Boolean!",
-		"source: String!",
-		"type: String!",
-	}))
-	utils.Must(builder.AddType("VolumePolicy", []string{
-		"destination: String!",
-		"name: String!",
 		"source: String!",
 		"type: String!",
 	}))
@@ -1714,6 +1691,18 @@ func (resolver *alertResolver) ensureData(ctx context.Context) {
 	}
 }
 
+func (resolver *alertResolver) ClusterId(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *alertResolver) ClusterName(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetClusterName()
+	return value
+}
+
 func (resolver *alertResolver) Deployment(ctx context.Context) (*alert_DeploymentResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetDeployment()
@@ -1752,6 +1741,18 @@ func (resolver *alertResolver) LifecycleStage(ctx context.Context) string {
 		value = resolver.list.GetLifecycleStage()
 	}
 	return value.String()
+}
+
+func (resolver *alertResolver) Namespace(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *alertResolver) NamespaceId(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNamespaceId()
+	return value
 }
 
 func (resolver *alertResolver) Policy(ctx context.Context) (*policyResolver, error) {
@@ -2531,6 +2532,132 @@ func (resolver *cVEResolver) Types(ctx context.Context) []string {
 	return stringSlice(value)
 }
 
+type cVEInfoResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CVEInfo
+}
+
+func (resolver *Resolver) wrapCVEInfo(value *storage.CVEInfo, ok bool, err error) (*cVEInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVEInfoResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCVEInfos(values []*storage.CVEInfo, err error) ([]*cVEInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVEInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVEInfoResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *cVEInfoResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetCreatedAt()
+	return timestamp(value)
+}
+
+func (resolver *cVEInfoResolver) Cve(ctx context.Context) string {
+	value := resolver.data.GetCve()
+	return value
+}
+
+func (resolver *cVEInfoResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
+	value := resolver.data.GetCvssV2()
+	return resolver.root.wrapCVSSV2(value, true, nil)
+}
+
+func (resolver *cVEInfoResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error) {
+	value := resolver.data.GetCvssV3()
+	return resolver.root.wrapCVSSV3(value, true, nil)
+}
+
+func (resolver *cVEInfoResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetLastModified()
+	return timestamp(value)
+}
+
+func (resolver *cVEInfoResolver) Link(ctx context.Context) string {
+	value := resolver.data.GetLink()
+	return value
+}
+
+func (resolver *cVEInfoResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetPublishedOn()
+	return timestamp(value)
+}
+
+func (resolver *cVEInfoResolver) References(ctx context.Context) ([]*cVEInfo_ReferenceResolver, error) {
+	value := resolver.data.GetReferences()
+	return resolver.root.wrapCVEInfo_References(value, nil)
+}
+
+func (resolver *cVEInfoResolver) ScoreVersion(ctx context.Context) string {
+	value := resolver.data.GetScoreVersion()
+	return value.String()
+}
+
+func (resolver *cVEInfoResolver) Summary(ctx context.Context) string {
+	value := resolver.data.GetSummary()
+	return value
+}
+
+type cVEInfo_ReferenceResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CVEInfo_Reference
+}
+
+func (resolver *Resolver) wrapCVEInfo_Reference(value *storage.CVEInfo_Reference, ok bool, err error) (*cVEInfo_ReferenceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVEInfo_ReferenceResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCVEInfo_References(values []*storage.CVEInfo_Reference, err error) ([]*cVEInfo_ReferenceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVEInfo_ReferenceResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVEInfo_ReferenceResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *cVEInfo_ReferenceResolver) Tags(ctx context.Context) []string {
+	value := resolver.data.GetTags()
+	return value
+}
+
+func (resolver *cVEInfo_ReferenceResolver) URI(ctx context.Context) string {
+	value := resolver.data.GetURI()
+	return value
+}
+
+func toCVEInfo_ScoreVersion(value *string) storage.CVEInfo_ScoreVersion {
+	if value != nil {
+		return storage.CVEInfo_ScoreVersion(storage.CVEInfo_ScoreVersion_value[*value])
+	}
+	return storage.CVEInfo_ScoreVersion(0)
+}
+
+func toCVEInfo_ScoreVersions(values *[]string) []storage.CVEInfo_ScoreVersion {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVEInfo_ScoreVersion, len(*values))
+	for i, v := range *values {
+		output[i] = toCVEInfo_ScoreVersion(&v)
+	}
+	return output
+}
+
 func toCVE_CVEType(value *string) storage.CVE_CVEType {
 	if value != nil {
 		return storage.CVE_CVEType(storage.CVE_CVEType_value[*value])
@@ -3242,6 +3369,75 @@ func (resolver *clusterResolver) Type(ctx context.Context) string {
 	return value.String()
 }
 
+type clusterCVEResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ClusterCVE
+}
+
+func (resolver *Resolver) wrapClusterCVE(value *storage.ClusterCVE, ok bool, err error) (*clusterCVEResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterCVEResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapClusterCVEs(values []*storage.ClusterCVE, err error) ([]*clusterCVEResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterCVEResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterCVEResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *clusterCVEResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
+	value := resolver.data.GetCveBaseInfo()
+	return resolver.root.wrapCVEInfo(value, true, nil)
+}
+
+func (resolver *clusterCVEResolver) Cvss(ctx context.Context) float64 {
+	value := resolver.data.GetCvss()
+	return float64(value)
+}
+
+func (resolver *clusterCVEResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *clusterCVEResolver) ImpactScore(ctx context.Context) float64 {
+	value := resolver.data.GetImpactScore()
+	return float64(value)
+}
+
+func (resolver *clusterCVEResolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
+	return value.String()
+}
+
+func (resolver *clusterCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeExpiry()
+	return timestamp(value)
+}
+
+func (resolver *clusterCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeStart()
+	return timestamp(value)
+}
+
+func (resolver *clusterCVEResolver) Snoozed(ctx context.Context) bool {
+	value := resolver.data.GetSnoozed()
+	return value
+}
+
+func (resolver *clusterCVEResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
 type clusterCertExpiryStatusResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -3337,6 +3533,16 @@ func (resolver *clusterHealthStatusResolver) LastContact(ctx context.Context) (*
 
 func (resolver *clusterHealthStatusResolver) OverallHealthStatus(ctx context.Context) string {
 	value := resolver.data.GetOverallHealthStatus()
+	return value.String()
+}
+
+func (resolver *clusterHealthStatusResolver) ScannerHealthInfo(ctx context.Context) (*scannerHealthInfoResolver, error) {
+	value := resolver.data.GetScannerHealthInfo()
+	return resolver.root.wrapScannerHealthInfo(value, true, nil)
+}
+
+func (resolver *clusterHealthStatusResolver) ScannerHealthStatus(ctx context.Context) string {
+	value := resolver.data.GetScannerHealthStatus()
 	return value.String()
 }
 
@@ -3614,122 +3820,6 @@ func (resolver *collectorHealthInfoResolver) StatusErrors(ctx context.Context) [
 func (resolver *collectorHealthInfoResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
 	return value
-}
-
-type commentResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.Comment
-}
-
-func (resolver *Resolver) wrapComment(value *storage.Comment, ok bool, err error) (*commentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &commentResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapComments(values []*storage.Comment, err error) ([]*commentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*commentResolver, len(values))
-	for i, v := range values {
-		output[i] = &commentResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *commentResolver) CommentId(ctx context.Context) string {
-	value := resolver.data.GetCommentId()
-	return value
-}
-
-func (resolver *commentResolver) CommentMessage(ctx context.Context) string {
-	value := resolver.data.GetCommentMessage()
-	return value
-}
-
-func (resolver *commentResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
-}
-
-func (resolver *commentResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetLastModified()
-	return timestamp(value)
-}
-
-func (resolver *commentResolver) ResourceId(ctx context.Context) string {
-	value := resolver.data.GetResourceId()
-	return value
-}
-
-func (resolver *commentResolver) ResourceType(ctx context.Context) string {
-	value := resolver.data.GetResourceType()
-	return value.String()
-}
-
-func (resolver *commentResolver) User(ctx context.Context) (*comment_UserResolver, error) {
-	value := resolver.data.GetUser()
-	return resolver.root.wrapComment_User(value, true, nil)
-}
-
-type comment_UserResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.Comment_User
-}
-
-func (resolver *Resolver) wrapComment_User(value *storage.Comment_User, ok bool, err error) (*comment_UserResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &comment_UserResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapComment_Users(values []*storage.Comment_User, err error) ([]*comment_UserResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*comment_UserResolver, len(values))
-	for i, v := range values {
-		output[i] = &comment_UserResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *comment_UserResolver) Email(ctx context.Context) string {
-	value := resolver.data.GetEmail()
-	return value
-}
-
-func (resolver *comment_UserResolver) Id(ctx context.Context) graphql.ID {
-	value := resolver.data.GetId()
-	return graphql.ID(value)
-}
-
-func (resolver *comment_UserResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func toComparator(value *string) storage.Comparator {
-	if value != nil {
-		return storage.Comparator(storage.Comparator_value[*value])
-	}
-	return storage.Comparator(0)
-}
-
-func toComparators(values *[]string) []storage.Comparator {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.Comparator, len(*values))
-	for i, v := range *values {
-		output[i] = toComparator(&v)
-	}
-	return output
 }
 
 type completeClusterConfigResolver struct {
@@ -4757,40 +4847,6 @@ func toComplianceStates(values *[]string) []storage.ComplianceState {
 	return output
 }
 
-type componentResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.Component
-}
-
-func (resolver *Resolver) wrapComponent(value *storage.Component, ok bool, err error) (*componentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &componentResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapComponents(values []*storage.Component, err error) ([]*componentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*componentResolver, len(values))
-	for i, v := range values {
-		output[i] = &componentResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *componentResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *componentResolver) Version(ctx context.Context) string {
-	value := resolver.data.GetVersion()
-	return value
-}
-
 type containerResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -5492,40 +5548,6 @@ func (resolver *deploymentResolver) Type(ctx context.Context) string {
 	return value
 }
 
-type dockerfileLineRuleFieldResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.DockerfileLineRuleField
-}
-
-func (resolver *Resolver) wrapDockerfileLineRuleField(value *storage.DockerfileLineRuleField, ok bool, err error) (*dockerfileLineRuleFieldResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &dockerfileLineRuleFieldResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapDockerfileLineRuleFields(values []*storage.DockerfileLineRuleField, err error) ([]*dockerfileLineRuleFieldResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*dockerfileLineRuleFieldResolver, len(values))
-	for i, v := range values {
-		output[i] = &dockerfileLineRuleFieldResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *dockerfileLineRuleFieldResolver) Instruction(ctx context.Context) string {
-	value := resolver.data.GetInstruction()
-	return value
-}
-
-func (resolver *dockerfileLineRuleFieldResolver) Value(ctx context.Context) string {
-	value := resolver.data.GetValue()
-	return value
-}
-
 type dynamicClusterConfigResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -6166,6 +6188,11 @@ func (resolver *groupPropertiesResolver) AuthProviderId(ctx context.Context) str
 	return value
 }
 
+func (resolver *groupPropertiesResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
 func (resolver *groupPropertiesResolver) Key(ctx context.Context) string {
 	value := resolver.data.GetKey()
 	return value
@@ -6174,30 +6201,6 @@ func (resolver *groupPropertiesResolver) Key(ctx context.Context) string {
 func (resolver *groupPropertiesResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
-}
-
-type hostMountPolicyResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.HostMountPolicy
-}
-
-func (resolver *Resolver) wrapHostMountPolicy(value *storage.HostMountPolicy, ok bool, err error) (*hostMountPolicyResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &hostMountPolicyResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapHostMountPolicies(values []*storage.HostMountPolicy, err error) ([]*hostMountPolicyResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*hostMountPolicyResolver, len(values))
-	for i, v := range values {
-		output[i] = &hostMountPolicyResolver{root: resolver, data: v}
-	}
-	return output, nil
 }
 
 type imageResolver struct {
@@ -6302,12 +6305,6 @@ func (resolver *imageResolver) RiskScore(ctx context.Context) float64 {
 	return float64(value)
 }
 
-func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetScan()
-	return resolver.root.wrapImageScan(value, true, nil)
-}
-
 func (resolver *imageResolver) Signature(ctx context.Context) (*imageSignatureResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetSignature()
@@ -6318,6 +6315,75 @@ func (resolver *imageResolver) SignatureVerificationData(ctx context.Context) (*
 	resolver.ensureData(ctx)
 	value := resolver.data.GetSignatureVerificationData()
 	return resolver.root.wrapImageSignatureVerificationData(value, true, nil)
+}
+
+type imageCVEResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageCVE
+}
+
+func (resolver *Resolver) wrapImageCVE(value *storage.ImageCVE, ok bool, err error) (*imageCVEResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageCVEResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageCVEs(values []*storage.ImageCVE, err error) ([]*imageCVEResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageCVEResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageCVEResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageCVEResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
+	value := resolver.data.GetCveBaseInfo()
+	return resolver.root.wrapCVEInfo(value, true, nil)
+}
+
+func (resolver *imageCVEResolver) Cvss(ctx context.Context) float64 {
+	value := resolver.data.GetCvss()
+	return float64(value)
+}
+
+func (resolver *imageCVEResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *imageCVEResolver) ImpactScore(ctx context.Context) float64 {
+	value := resolver.data.GetImpactScore()
+	return float64(value)
+}
+
+func (resolver *imageCVEResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
+	return value
+}
+
+func (resolver *imageCVEResolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
+	return value.String()
+}
+
+func (resolver *imageCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeExpiry()
+	return timestamp(value)
+}
+
+func (resolver *imageCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeStart()
+	return timestamp(value)
+}
+
+func (resolver *imageCVEResolver) Snoozed(ctx context.Context) bool {
+	value := resolver.data.GetSnoozed()
+	return value
 }
 
 type imageComponentResolver struct {
@@ -6361,6 +6427,11 @@ func (resolver *imageComponentResolver) License(ctx context.Context) (*licenseRe
 
 func (resolver *imageComponentResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *imageComponentResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
 	return value
 }
 
@@ -6521,45 +6592,6 @@ func (resolver *imageNameResolver) Tag(ctx context.Context) string {
 	return value
 }
 
-type imageNamePolicyResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.ImageNamePolicy
-}
-
-func (resolver *Resolver) wrapImageNamePolicy(value *storage.ImageNamePolicy, ok bool, err error) (*imageNamePolicyResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &imageNamePolicyResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapImageNamePolicies(values []*storage.ImageNamePolicy, err error) ([]*imageNamePolicyResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*imageNamePolicyResolver, len(values))
-	for i, v := range values {
-		output[i] = &imageNamePolicyResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *imageNamePolicyResolver) Registry(ctx context.Context) string {
-	value := resolver.data.GetRegistry()
-	return value
-}
-
-func (resolver *imageNamePolicyResolver) Remote(ctx context.Context) string {
-	value := resolver.data.GetRemote()
-	return value
-}
-
-func (resolver *imageNamePolicyResolver) Tag(ctx context.Context) string {
-	value := resolver.data.GetTag()
-	return value
-}
-
 type imagePullSecretResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -6712,6 +6744,11 @@ func (resolver *Resolver) wrapImageSignatures(values []*storage.ImageSignature, 
 		output[i] = &imageSignatureResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *imageSignatureResolver) Fetched(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetFetched()
+	return timestamp(value)
 }
 
 func (resolver *imageSignatureResolver) Signatures(ctx context.Context) ([]*signatureResolver, error) {
@@ -7099,45 +7136,6 @@ func (resolver *keyValuePairResolver) Key(ctx context.Context) string {
 }
 
 func (resolver *keyValuePairResolver) Value(ctx context.Context) string {
-	value := resolver.data.GetValue()
-	return value
-}
-
-type keyValuePolicyResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.KeyValuePolicy
-}
-
-func (resolver *Resolver) wrapKeyValuePolicy(value *storage.KeyValuePolicy, ok bool, err error) (*keyValuePolicyResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &keyValuePolicyResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapKeyValuePolicies(values []*storage.KeyValuePolicy, err error) ([]*keyValuePolicyResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*keyValuePolicyResolver, len(values))
-	for i, v := range values {
-		output[i] = &keyValuePolicyResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *keyValuePolicyResolver) EnvVarSource(ctx context.Context) string {
-	value := resolver.data.GetEnvVarSource()
-	return value.String()
-}
-
-func (resolver *keyValuePolicyResolver) Key(ctx context.Context) string {
-	value := resolver.data.GetKey()
-	return value
-}
-
-func (resolver *keyValuePolicyResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
 }
@@ -7881,6 +7879,11 @@ func (resolver *Resolver) wrapNetworkFlows(values []*storage.NetworkFlow, err er
 	return output, nil
 }
 
+func (resolver *networkFlowResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
 func (resolver *networkFlowResolver) LastSeenTimestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastSeenTimestamp()
 	return timestamp(value)
@@ -8039,6 +8042,11 @@ func (resolver *nodeResolver) Name(ctx context.Context) string {
 	return value
 }
 
+func (resolver *nodeResolver) Notes(ctx context.Context) []string {
+	value := resolver.data.GetNotes()
+	return stringSlice(value)
+}
+
 func (resolver *nodeResolver) OperatingSystem(ctx context.Context) string {
 	value := resolver.data.GetOperatingSystem()
 	return value
@@ -8059,14 +8067,132 @@ func (resolver *nodeResolver) RiskScore(ctx context.Context) float64 {
 	return float64(value)
 }
 
-func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
-	value := resolver.data.GetScan()
-	return resolver.root.wrapNodeScan(value, true, nil)
-}
-
 func (resolver *nodeResolver) Taints(ctx context.Context) ([]*taintResolver, error) {
 	value := resolver.data.GetTaints()
 	return resolver.root.wrapTaints(value, nil)
+}
+
+type nodeCVEResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeCVE
+}
+
+func (resolver *Resolver) wrapNodeCVE(value *storage.NodeCVE, ok bool, err error) (*nodeCVEResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeCVEResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeCVEs(values []*storage.NodeCVE, err error) ([]*nodeCVEResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeCVEResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeCVEResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeCVEResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
+	value := resolver.data.GetCveBaseInfo()
+	return resolver.root.wrapCVEInfo(value, true, nil)
+}
+
+func (resolver *nodeCVEResolver) Cvss(ctx context.Context) float64 {
+	value := resolver.data.GetCvss()
+	return float64(value)
+}
+
+func (resolver *nodeCVEResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *nodeCVEResolver) ImpactScore(ctx context.Context) float64 {
+	value := resolver.data.GetImpactScore()
+	return float64(value)
+}
+
+func (resolver *nodeCVEResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
+	return value
+}
+
+func (resolver *nodeCVEResolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
+	return value.String()
+}
+
+func (resolver *nodeCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeExpiry()
+	return timestamp(value)
+}
+
+func (resolver *nodeCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeStart()
+	return timestamp(value)
+}
+
+func (resolver *nodeCVEResolver) Snoozed(ctx context.Context) bool {
+	value := resolver.data.GetSnoozed()
+	return value
+}
+
+type nodeComponentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeComponent
+}
+
+func (resolver *Resolver) wrapNodeComponent(value *storage.NodeComponent, ok bool, err error) (*nodeComponentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeComponentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeComponents(values []*storage.NodeComponent, err error) ([]*nodeComponentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeComponentResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeComponentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeComponentResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *nodeComponentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *nodeComponentResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
+	return value
+}
+
+func (resolver *nodeComponentResolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	return int32(value)
+}
+
+func (resolver *nodeComponentResolver) RiskScore(ctx context.Context) float64 {
+	value := resolver.data.GetRiskScore()
+	return float64(value)
+}
+
+func (resolver *nodeComponentResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
+	return value
 }
 
 type nodeScanResolver struct {
@@ -8093,6 +8219,11 @@ func (resolver *Resolver) wrapNodeScans(values []*storage.NodeScan, err error) (
 	return output, nil
 }
 
+func (resolver *nodeScanResolver) Notes(ctx context.Context) []string {
+	value := resolver.data.GetNotes()
+	return stringSlice(value)
+}
+
 func (resolver *nodeScanResolver) OperatingSystem(ctx context.Context) string {
 	value := resolver.data.GetOperatingSystem()
 	return value
@@ -8101,6 +8232,42 @@ func (resolver *nodeScanResolver) OperatingSystem(ctx context.Context) string {
 func (resolver *nodeScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
 	return timestamp(value)
+}
+
+func toNodeScan_Note(value *string) storage.NodeScan_Note {
+	if value != nil {
+		return storage.NodeScan_Note(storage.NodeScan_Note_value[*value])
+	}
+	return storage.NodeScan_Note(0)
+}
+
+func toNodeScan_Notes(values *[]string) []storage.NodeScan_Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.NodeScan_Note, len(*values))
+	for i, v := range *values {
+		output[i] = toNodeScan_Note(&v)
+	}
+	return output
+}
+
+func toNode_Note(value *string) storage.Node_Note {
+	if value != nil {
+		return storage.Node_Note(storage.Node_Note_value[*value])
+	}
+	return storage.Node_Note(0)
+}
+
+func toNode_Notes(values *[]string) []storage.Node_Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Node_Note, len(*values))
+	for i, v := range *values {
+		output[i] = toNode_Note(&v)
+	}
+	return output
 }
 
 type notifierResolver struct {
@@ -8300,40 +8467,6 @@ func (resolver *notifierConfigResolver) ToSyslog() (*syslogResolver, bool) {
 	return res, ok
 }
 
-type numericalPolicyResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.NumericalPolicy
-}
-
-func (resolver *Resolver) wrapNumericalPolicy(value *storage.NumericalPolicy, ok bool, err error) (*numericalPolicyResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &numericalPolicyResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapNumericalPolicies(values []*storage.NumericalPolicy, err error) ([]*numericalPolicyResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*numericalPolicyResolver, len(values))
-	for i, v := range values {
-		output[i] = &numericalPolicyResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *numericalPolicyResolver) Op(ctx context.Context) string {
-	value := resolver.data.GetOp()
-	return value.String()
-}
-
-func (resolver *numericalPolicyResolver) Value(ctx context.Context) float64 {
-	value := resolver.data.GetValue()
-	return float64(value)
-}
-
 type orchestratorMetadataResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -8418,35 +8551,6 @@ func toPermissionLevels(values *[]string) []storage.PermissionLevel {
 		output[i] = toPermissionLevel(&v)
 	}
 	return output
-}
-
-type permissionPolicyResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.PermissionPolicy
-}
-
-func (resolver *Resolver) wrapPermissionPolicy(value *storage.PermissionPolicy, ok bool, err error) (*permissionPolicyResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &permissionPolicyResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapPermissionPolicies(values []*storage.PermissionPolicy, err error) ([]*permissionPolicyResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*permissionPolicyResolver, len(values))
-	for i, v := range values {
-		output[i] = &permissionPolicyResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *permissionPolicyResolver) PermissionLevel(ctx context.Context) string {
-	value := resolver.data.GetPermissionLevel()
-	return value.String()
 }
 
 type permissionSetResolver struct {
@@ -8640,11 +8744,6 @@ func (resolver *policyResolver) Exclusions(ctx context.Context) ([]*exclusionRes
 	return resolver.root.wrapExclusions(value, nil)
 }
 
-func (resolver *policyResolver) Fields(ctx context.Context) (*policyFieldsResolver, error) {
-	value := resolver.data.GetFields()
-	return resolver.root.wrapPolicyFields(value, true, nil)
-}
-
 func (resolver *policyResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -8728,160 +8827,6 @@ func (resolver *policyResolver) Scope(ctx context.Context) ([]*scopeResolver, er
 func (resolver *policyResolver) Severity(ctx context.Context) string {
 	value := resolver.data.GetSeverity()
 	return value.String()
-}
-
-type policyFieldsResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.PolicyFields
-}
-
-func (resolver *Resolver) wrapPolicyFields(value *storage.PolicyFields, ok bool, err error) (*policyFieldsResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &policyFieldsResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapPolicyFieldses(values []*storage.PolicyFields, err error) ([]*policyFieldsResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*policyFieldsResolver, len(values))
-	for i, v := range values {
-		output[i] = &policyFieldsResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *policyFieldsResolver) AddCapabilities(ctx context.Context) []string {
-	value := resolver.data.GetAddCapabilities()
-	return value
-}
-
-func (resolver *policyFieldsResolver) Args(ctx context.Context) string {
-	value := resolver.data.GetArgs()
-	return value
-}
-
-func (resolver *policyFieldsResolver) Command(ctx context.Context) string {
-	value := resolver.data.GetCommand()
-	return value
-}
-
-func (resolver *policyFieldsResolver) Component(ctx context.Context) (*componentResolver, error) {
-	value := resolver.data.GetComponent()
-	return resolver.root.wrapComponent(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) ContainerResourcePolicy(ctx context.Context) (*resourcePolicyResolver, error) {
-	value := resolver.data.GetContainerResourcePolicy()
-	return resolver.root.wrapResourcePolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) Cve(ctx context.Context) string {
-	value := resolver.data.GetCve()
-	return value
-}
-
-func (resolver *policyFieldsResolver) Cvss(ctx context.Context) (*numericalPolicyResolver, error) {
-	value := resolver.data.GetCvss()
-	return resolver.root.wrapNumericalPolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) Directory(ctx context.Context) string {
-	value := resolver.data.GetDirectory()
-	return value
-}
-
-func (resolver *policyFieldsResolver) DisallowedAnnotation(ctx context.Context) (*keyValuePolicyResolver, error) {
-	value := resolver.data.GetDisallowedAnnotation()
-	return resolver.root.wrapKeyValuePolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) DisallowedImageLabel(ctx context.Context) (*keyValuePolicyResolver, error) {
-	value := resolver.data.GetDisallowedImageLabel()
-	return resolver.root.wrapKeyValuePolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) DropCapabilities(ctx context.Context) []string {
-	value := resolver.data.GetDropCapabilities()
-	return value
-}
-
-func (resolver *policyFieldsResolver) Env(ctx context.Context) (*keyValuePolicyResolver, error) {
-	value := resolver.data.GetEnv()
-	return resolver.root.wrapKeyValuePolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) FixedBy(ctx context.Context) string {
-	value := resolver.data.GetFixedBy()
-	return value
-}
-
-func (resolver *policyFieldsResolver) HostMountPolicy(ctx context.Context) (*hostMountPolicyResolver, error) {
-	value := resolver.data.GetHostMountPolicy()
-	return resolver.root.wrapHostMountPolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) ImageName(ctx context.Context) (*imageNamePolicyResolver, error) {
-	value := resolver.data.GetImageName()
-	return resolver.root.wrapImageNamePolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) ImageSignatureVerifiedBy(ctx context.Context) string {
-	value := resolver.data.GetImageSignatureVerifiedBy()
-	return value
-}
-
-func (resolver *policyFieldsResolver) LineRule(ctx context.Context) (*dockerfileLineRuleFieldResolver, error) {
-	value := resolver.data.GetLineRule()
-	return resolver.root.wrapDockerfileLineRuleField(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) PermissionPolicy(ctx context.Context) (*permissionPolicyResolver, error) {
-	value := resolver.data.GetPermissionPolicy()
-	return resolver.root.wrapPermissionPolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) PortExposurePolicy(ctx context.Context) (*portExposurePolicyResolver, error) {
-	value := resolver.data.GetPortExposurePolicy()
-	return resolver.root.wrapPortExposurePolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) PortPolicy(ctx context.Context) (*portPolicyResolver, error) {
-	value := resolver.data.GetPortPolicy()
-	return resolver.root.wrapPortPolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) ProcessPolicy(ctx context.Context) (*processPolicyResolver, error) {
-	value := resolver.data.GetProcessPolicy()
-	return resolver.root.wrapProcessPolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) RequiredAnnotation(ctx context.Context) (*keyValuePolicyResolver, error) {
-	value := resolver.data.GetRequiredAnnotation()
-	return resolver.root.wrapKeyValuePolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) RequiredImageLabel(ctx context.Context) (*keyValuePolicyResolver, error) {
-	value := resolver.data.GetRequiredImageLabel()
-	return resolver.root.wrapKeyValuePolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) RequiredLabel(ctx context.Context) (*keyValuePolicyResolver, error) {
-	value := resolver.data.GetRequiredLabel()
-	return resolver.root.wrapKeyValuePolicy(value, true, nil)
-}
-
-func (resolver *policyFieldsResolver) User(ctx context.Context) string {
-	value := resolver.data.GetUser()
-	return value
-}
-
-func (resolver *policyFieldsResolver) VolumePolicy(ctx context.Context) (*volumePolicyResolver, error) {
-	value := resolver.data.GetVolumePolicy()
-	return resolver.root.wrapVolumePolicy(value, true, nil)
 }
 
 type policyGroupResolver struct {
@@ -9210,69 +9155,6 @@ func toPortConfig_ExposureLevels(values *[]string) []storage.PortConfig_Exposure
 	return output
 }
 
-type portExposurePolicyResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.PortExposurePolicy
-}
-
-func (resolver *Resolver) wrapPortExposurePolicy(value *storage.PortExposurePolicy, ok bool, err error) (*portExposurePolicyResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &portExposurePolicyResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapPortExposurePolicies(values []*storage.PortExposurePolicy, err error) ([]*portExposurePolicyResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*portExposurePolicyResolver, len(values))
-	for i, v := range values {
-		output[i] = &portExposurePolicyResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *portExposurePolicyResolver) ExposureLevels(ctx context.Context) []string {
-	value := resolver.data.GetExposureLevels()
-	return stringSlice(value)
-}
-
-type portPolicyResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.PortPolicy
-}
-
-func (resolver *Resolver) wrapPortPolicy(value *storage.PortPolicy, ok bool, err error) (*portPolicyResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &portPolicyResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapPortPolicies(values []*storage.PortPolicy, err error) ([]*portPolicyResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*portPolicyResolver, len(values))
-	for i, v := range values {
-		output[i] = &portPolicyResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *portPolicyResolver) Port(ctx context.Context) int32 {
-	value := resolver.data.GetPort()
-	return value
-}
-
-func (resolver *portPolicyResolver) Protocol(ctx context.Context) string {
-	value := resolver.data.GetProtocol()
-	return value
-}
-
 type processGroupResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -9418,50 +9300,6 @@ func (resolver *processNameGroupResolver) Name(ctx context.Context) string {
 func (resolver *processNameGroupResolver) TimesExecuted(ctx context.Context) int32 {
 	value := resolver.data.GetTimesExecuted()
 	return int32(value)
-}
-
-type processPolicyResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.ProcessPolicy
-}
-
-func (resolver *Resolver) wrapProcessPolicy(value *storage.ProcessPolicy, ok bool, err error) (*processPolicyResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &processPolicyResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapProcessPolicies(values []*storage.ProcessPolicy, err error) ([]*processPolicyResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*processPolicyResolver, len(values))
-	for i, v := range values {
-		output[i] = &processPolicyResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *processPolicyResolver) Ancestor(ctx context.Context) string {
-	value := resolver.data.GetAncestor()
-	return value
-}
-
-func (resolver *processPolicyResolver) Args(ctx context.Context) string {
-	value := resolver.data.GetArgs()
-	return value
-}
-
-func (resolver *processPolicyResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *processPolicyResolver) Uid(ctx context.Context) string {
-	value := resolver.data.GetUid()
-	return value
 }
 
 type processSignalResolver struct {
@@ -9747,68 +9585,6 @@ func (resolver *requestCommentResolver) User(ctx context.Context) (*slimUserReso
 	return resolver.root.wrapSlimUser(value, true, nil)
 }
 
-type resourcePolicyResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.ResourcePolicy
-}
-
-func (resolver *Resolver) wrapResourcePolicy(value *storage.ResourcePolicy, ok bool, err error) (*resourcePolicyResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &resourcePolicyResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapResourcePolicies(values []*storage.ResourcePolicy, err error) ([]*resourcePolicyResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*resourcePolicyResolver, len(values))
-	for i, v := range values {
-		output[i] = &resourcePolicyResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *resourcePolicyResolver) CpuResourceLimit(ctx context.Context) (*numericalPolicyResolver, error) {
-	value := resolver.data.GetCpuResourceLimit()
-	return resolver.root.wrapNumericalPolicy(value, true, nil)
-}
-
-func (resolver *resourcePolicyResolver) CpuResourceRequest(ctx context.Context) (*numericalPolicyResolver, error) {
-	value := resolver.data.GetCpuResourceRequest()
-	return resolver.root.wrapNumericalPolicy(value, true, nil)
-}
-
-func (resolver *resourcePolicyResolver) MemoryResourceLimit(ctx context.Context) (*numericalPolicyResolver, error) {
-	value := resolver.data.GetMemoryResourceLimit()
-	return resolver.root.wrapNumericalPolicy(value, true, nil)
-}
-
-func (resolver *resourcePolicyResolver) MemoryResourceRequest(ctx context.Context) (*numericalPolicyResolver, error) {
-	value := resolver.data.GetMemoryResourceRequest()
-	return resolver.root.wrapNumericalPolicy(value, true, nil)
-}
-
-func toResourceType(value *string) storage.ResourceType {
-	if value != nil {
-		return storage.ResourceType(storage.ResourceType_value[*value])
-	}
-	return storage.ResourceType(0)
-}
-
-func toResourceTypes(values *[]string) []storage.ResourceType {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.ResourceType, len(*values))
-	for i, v := range *values {
-		output[i] = toResourceType(&v)
-	}
-	return output
-}
-
 type resourcesResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -10081,6 +9857,35 @@ func (resolver *roleResolver) PermissionSetId(ctx context.Context) string {
 	return value
 }
 
+type scannerHealthInfoResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ScannerHealthInfo
+}
+
+func (resolver *Resolver) wrapScannerHealthInfo(value *storage.ScannerHealthInfo, ok bool, err error) (*scannerHealthInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &scannerHealthInfoResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapScannerHealthInfos(values []*storage.ScannerHealthInfo, err error) ([]*scannerHealthInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*scannerHealthInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &scannerHealthInfoResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *scannerHealthInfoResolver) StatusErrors(ctx context.Context) []string {
+	value := resolver.data.GetStatusErrors()
+	return value
+}
+
 type scopeResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -10270,8 +10075,10 @@ func (resolver *secretResolver) Annotations(ctx context.Context) labels {
 }
 
 func (resolver *secretResolver) ClusterId(ctx context.Context) string {
-	resolver.ensureData(ctx)
 	value := resolver.data.GetClusterId()
+	if resolver.data == nil {
+		value = resolver.list.GetClusterId()
+	}
 	return value
 }
 
@@ -10562,6 +10369,11 @@ func (resolver *Resolver) wrapSecurityContexts(values []*storage.SecurityContext
 
 func (resolver *securityContextResolver) AddCapabilities(ctx context.Context) []string {
 	value := resolver.data.GetAddCapabilities()
+	return value
+}
+
+func (resolver *securityContextResolver) AllowPrivilegeEscalation(ctx context.Context) bool {
+	value := resolver.data.GetAllowPrivilegeEscalation()
 	return value
 }
 
@@ -11922,50 +11734,6 @@ func (resolver *volumeResolver) Source(ctx context.Context) string {
 }
 
 func (resolver *volumeResolver) Type(ctx context.Context) string {
-	value := resolver.data.GetType()
-	return value
-}
-
-type volumePolicyResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.VolumePolicy
-}
-
-func (resolver *Resolver) wrapVolumePolicy(value *storage.VolumePolicy, ok bool, err error) (*volumePolicyResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &volumePolicyResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapVolumePolicies(values []*storage.VolumePolicy, err error) ([]*volumePolicyResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*volumePolicyResolver, len(values))
-	for i, v := range values {
-		output[i] = &volumePolicyResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *volumePolicyResolver) Destination(ctx context.Context) string {
-	value := resolver.data.GetDestination()
-	return value
-}
-
-func (resolver *volumePolicyResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *volumePolicyResolver) Source(ctx context.Context) string {
-	value := resolver.data.GetSource()
-	return value
-}
-
-func (resolver *volumePolicyResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value
 }

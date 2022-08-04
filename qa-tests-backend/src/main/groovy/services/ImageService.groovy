@@ -1,23 +1,25 @@
 package services
 
+import groovy.util.logging.Slf4j
+import io.stackrox.proto.api.v1.EmptyOuterClass
 import io.stackrox.proto.api.v1.ImageServiceGrpc
 import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.ImageOuterClass
 
+@Slf4j
 class ImageService extends BaseService {
-    static getImageClient() {
+    static ImageServiceGrpc.ImageServiceBlockingStub getImageClient() {
         return ImageServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getImages(RawQuery request = RawQuery.newBuilder().build()) {
+    static List<ImageOuterClass.ListImage> getImages(RawQuery request = RawQuery.newBuilder().build()) {
         return getImageClient().listImages(request).imagesList
     }
 
     static getImage(String digest, Boolean includeSnoozed = true) {
         if (digest == null) {
-            ImageOuterClass.Image nullImage
-            return nullImage
+            return null
         }
         return getImageClient().getImage(
                 ImageServiceOuterClass.GetImageRequest.newBuilder()
@@ -28,7 +30,7 @@ class ImageService extends BaseService {
     }
 
     static clearImageCaches() {
-        getImageClient().invalidateScanAndRegistryCaches()
+        getImageClient().invalidateScanAndRegistryCaches(EmptyOuterClass.Empty.newBuilder().build())
     }
 
     static scanImage(String image, Boolean includeSnoozed = true) {
@@ -38,8 +40,7 @@ class ImageService extends BaseService {
                     .setIncludeSnoozed(includeSnoozed)
                     .build())
         } catch (Exception e) {
-            println "Image failed to scan: ${image} - ${e}"
-            return ""
+            log.error("Image failed to scan: ${image}", e)
         }
     }
 
@@ -50,7 +51,7 @@ class ImageService extends BaseService {
                 .deleteImages(ImageServiceOuterClass.DeleteImagesRequest.newBuilder()
                         .setQuery(query)
                         .setConfirm(confirm).build())
-        println "Deleted ${response.numDeleted} images based on ${query.query}"
+        log.debug "Deleted ${response.numDeleted} images based on ${query.query}"
         return response
     }
 
@@ -64,7 +65,7 @@ class ImageService extends BaseService {
                         deletedCount + " -v- " + expectedDeletions)
             }
         }
-        println "Deleted at least as many images as expected based on ${query.query}. " +
+        log.debug "Deleted at least as many images as expected based on ${query.query}. " +
                 deletedCount + " -v- " + expectedDeletions
     }
 }

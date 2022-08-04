@@ -3,7 +3,7 @@ package printer
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,12 +23,12 @@ func TestTabularPrinterFactory_CreatePrinter(t *testing.T) {
 			t:          &TabularPrinterFactory{HeaderAsComment: true, NoHeader: true},
 			format:     "csv",
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 		"should fail with invalid format": {
 			t:          &TabularPrinterFactory{},
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 	}
 
@@ -62,7 +62,7 @@ func TestTabularPrinterFactory_Validate(t *testing.T) {
 				HeaderAsComment: true,
 			},
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 		"should fail with columns to merge not matching header": {
 			t: &TabularPrinterFactory{
@@ -70,7 +70,7 @@ func TestTabularPrinterFactory_Validate(t *testing.T) {
 				columnsToMerge: []string{"a", "d", "c", "e"},
 			},
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 	}
 

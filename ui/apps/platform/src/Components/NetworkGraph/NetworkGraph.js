@@ -86,6 +86,7 @@ const NetworkGraph = ({
     selectedClusterName,
     showNamespaceFlows,
     history,
+    location,
     match,
     featureFlags,
     lastUpdatedTimestamp,
@@ -273,7 +274,7 @@ const NetworkGraph = ({
                 setSelectedNode();
                 setSelectedNodeInGraph();
                 onClickOutside();
-                history.push('/main/network');
+                history.push(`/main/network${location.search}`);
                 return;
             }
 
@@ -314,7 +315,7 @@ const NetworkGraph = ({
                 if (type === nodeTypes.EXTERNAL_ENTITIES || type === nodeTypes.CIDR_BLOCK) {
                     onExternalEntitiesClick();
                 } else {
-                    history.push(`/main/network/${id}`);
+                    history.push(`/main/network/${id}${location.search}`);
                     onNodeClick(evData);
                 }
             }
@@ -734,6 +735,7 @@ NetworkGraph.propTypes = {
     setNetworkGraphRef: PropTypes.func.isRequired,
     setSelectedNamespace: PropTypes.func.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
     match: ReactRouterPropTypes.match.isRequired,
     setSelectedNodeInGraph: PropTypes.func,
     isReadOnly: PropTypes.bool,

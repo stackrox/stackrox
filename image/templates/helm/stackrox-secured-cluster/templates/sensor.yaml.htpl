@@ -47,29 +47,28 @@ spec:
                     operator: NotIn
                     values:
                     - "true"
-            {{- if ._rox.env.openshift }}
+            - weight: 50
+              preference:
+                matchExpressions:
+                - key: node-role.kubernetes.io/infra
+                  operator: Exists
             - weight: 25
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/compute
-                    operator: In
-                    values:
-                    - "true"
-            - weight: 75
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/infra
-                    operator: NotIn
-                    values:
-                    - "true"
+                    operator: Exists
+            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
             - weight: 100
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/master
-                    operator: NotIn
-                    values:
-                    - "true"
-            {{- end}}
+                    operator: DoesNotExist
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
       securityContext:
         runAsUser: 4000
         fsGroup: 4000
@@ -119,13 +118,15 @@ spec:
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
-        [<- if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
-        - name: ROX_USE_LOCAL_SCANNER
-          value: "{{ not ._rox.scanner.disable | not | not }}"
+        [<- if (not .KubectlOutput) >]
+        {{- if ._rox.sensor.localImageScanning.enabled }}
         - name: ROX_SCANNER_GRPC_ENDPOINT
           value: {{ printf "scanner.%s.svc:8443" .Release.Namespace }}
+        - name: ROX_LOCAL_IMAGE_SCANNING_ENABLED
+          value: "true"
+        {{- end }}
         [<- end >]
-        {{- end}}
+        {{- end }}
         [<- if not .KubectlOutput >]
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}

@@ -190,7 +190,7 @@ func (g *generic) postMessage(ctx context.Context, message proto.Message, msgKey
 	}
 
 	if g.GetGeneric().GetUsername() != "" {
-		req.SetBasicAuth(g.GetGeneric().GetUsername(), g.GetGeneric().GetUsername())
+		req.SetBasicAuth(g.GetGeneric().GetUsername(), g.GetGeneric().GetPassword())
 	}
 
 	resp, err := g.client.Do(req)

@@ -6,7 +6,6 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	metrics "github.com/stackrox/rox/central/metrics"
-	mappings "github.com/stackrox/rox/central/processbaseline/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -20,6 +19,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_BASELINES, schema)
 }
 
+// NewIndexer returns new indexer for `storage.ProcessBaseline`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,
@@ -33,13 +33,13 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ProcessBaseline")
 
-	return postgres.RunCountRequest(v1.SearchCategory_PROCESS_BASELINES, q, b.db, mappings.OptionsMap)
+	return postgres.RunCountRequest(v1.SearchCategory_PROCESS_BASELINES, q, b.db)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessBaseline")
 
-	return postgres.RunSearchRequest(v1.SearchCategory_PROCESS_BASELINES, q, b.db, mappings.OptionsMap)
+	return postgres.RunSearchRequest(v1.SearchCategory_PROCESS_BASELINES, q, b.db)
 }
 
 //// Stubs for satisfying interfaces

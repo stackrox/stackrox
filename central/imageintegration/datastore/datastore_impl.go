@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -26,7 +27,7 @@ func (ds *datastoreImpl) GetImageIntegration(ctx context.Context, id string) (*s
 		return nil, false, nil
 	}
 
-	return ds.storage.GetImageIntegration(id)
+	return ds.storage.Get(ctx, id)
 }
 
 // GetImageIntegrations provides an in memory layer on top of the underlying DB based storage.
@@ -37,7 +38,7 @@ func (ds *datastoreImpl) GetImageIntegrations(ctx context.Context, request *v1.G
 		return nil, nil
 	}
 
-	integrations, err := ds.storage.GetImageIntegrations()
+	integrations, err := ds.storage.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +64,8 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 		return "", sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.AddImageIntegration(integration)
+	integration.Id = uuid.NewV4().String()
+	return integration.Id, ds.storage.Upsert(ctx, integration)
 }
 
 // UpdateImageIntegration is pass-through to the underlying store.
@@ -74,7 +76,7 @@ func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.UpdateImageIntegration(integration)
+	return ds.storage.Upsert(ctx, integration)
 }
 
 // RemoveImageIntegration is pass-through to the underlying store.
@@ -85,5 +87,5 @@ func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) 
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.RemoveImageIntegration(id)
+	return ds.storage.Delete(ctx, id)
 }

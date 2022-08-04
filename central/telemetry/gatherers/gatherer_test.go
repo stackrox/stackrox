@@ -9,7 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/grpc/metrics"
-	installation "github.com/stackrox/rox/central/installation/store"
+	installation "github.com/stackrox/rox/central/installation/store/bolt"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -60,7 +60,7 @@ func (s *gathererTestSuite) SetupSuite() {
 	s.sensorUpgradeConfigDatastore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Return(&storage.SensorUpgradeConfig{
 		EnableAutoUpgrade: true,
 	}, nil)
-	s.gatherer = newCentralGatherer(nil, installationStore, newDatabaseGatherer(newRocksDBGatherer(s.rocks), newBoltGatherer(s.bolt), newBleveGatherer(s.index)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer(), s.sensorUpgradeConfigDatastore)
+	s.gatherer = newCentralGatherer(installationStore, newDatabaseGatherer(newRocksDBGatherer(s.rocks), newBoltGatherer(s.bolt), newBleveGatherer(s.index)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer(), s.sensorUpgradeConfigDatastore)
 }
 
 func (s *gathererTestSuite) TearDownSuite() {
@@ -85,7 +85,6 @@ func (s *gathererTestSuite) TestJSONSerialization() {
 	s.Equal(metrics.Orchestrator, marshalledMetrics.Orchestrator)
 	s.Equal(metrics.Errors, marshalledMetrics.Errors)
 	s.Equal(metrics.Storage, marshalledMetrics.Storage)
-	s.Equal(metrics.License, marshalledMetrics.License)
 	s.Equal(metrics.Process, marshalledMetrics.Process)
 	s.Equal(metrics.Restarts, marshalledMetrics.Restarts)
 	s.Equal(metrics.Version, marshalledMetrics.Version)

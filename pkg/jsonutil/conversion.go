@@ -56,7 +56,7 @@ func ProtoToJSON(m proto.Message, options ...ConversionOption) (string, error) {
 	return s, nil
 }
 
-// UnEscape restores characters escaped by JSON marshaller on behalf of the
+// unEscape restores characters escaped by JSON marshaller on behalf of the
 // jsonpb library. There is no option to disable escaping and a strong
 // opposition to add such functionality into jsonpb:
 //     https://github.com/golang/protobuf/pull/409#issuecomment-350385601

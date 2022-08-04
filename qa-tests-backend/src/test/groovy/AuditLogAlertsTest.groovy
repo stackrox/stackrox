@@ -1,6 +1,5 @@
 import static Services.getAllResourceViolationsWithTimeout
 import static Services.getResourceViolationsWithTimeout
-
 import common.Constants
 import groups.BAT
 import groups.RUNTIME

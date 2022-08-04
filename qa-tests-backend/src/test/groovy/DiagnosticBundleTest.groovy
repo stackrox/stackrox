@@ -1,20 +1,17 @@
 import static com.jayway.restassured.RestAssured.given
-
-import spock.lang.Shared
 import com.jayway.restassured.config.RestAssuredConfig
 import com.jayway.restassured.config.SSLConfig
 import groups.BAT
-import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.storage.RoleOuterClass
 import io.stackrox.proto.storage.RoleOuterClass.Role
-import org.junit.experimental.categories.Category
-import services.RoleService
-import spock.lang.Unroll
-import util.Env
-
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
+import org.junit.experimental.categories.Category
+import services.RoleService
+import spock.lang.Shared
+import spock.lang.Unroll
+import util.Env
 
 @Category(BAT)
 class DiagnosticBundleTest extends BaseSpecification {
@@ -31,8 +28,6 @@ class DiagnosticBundleTest extends BaseSpecification {
     private Role noAccessRole
 
     def setupSpec() {
-        disableAuthzPlugin()
-
         adminToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "Admin")
         debugLogsReaderRoleName = UUID.randomUUID()
         RoleService.createRoleWithScopeAndPermissionSet(debugLogsReaderRoleName,
@@ -112,7 +107,7 @@ class DiagnosticBundleTest extends BaseSpecification {
             try {
                 ZipEntry entry
                 while ((entry = zis.nextEntry) != null) {
-                    print "Found file ${entry.name}"
+                    log.info "Found file ${entry.name}"
                     if (entry.name == "kubernetes/remote/stackrox/sensor/deployment-sensor.yaml") {
                         foundK8sInfo = true
                     }

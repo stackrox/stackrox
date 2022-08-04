@@ -8,6 +8,11 @@ body {
     font-family: var(--pf-global--FontFamily--sans-serif) !important;
 }
 
+/* overrides the default link styling in Tailwind (`inherit`) with PF's default blue */
+.pf-c-page__main-section a {
+    color: var(--pf-global--link--Color);
+}
+
 .pf-c-page__sidebar {
     --pf-c-page__sidebar-body--PaddingTop: 0;
 }
@@ -39,6 +44,7 @@ body {
     border-right-color: var(--pf-global--BorderColor--300);
     border-bottom-color: var(--pf-global--BorderColor--200);
     border-left-color: var(--pf-global--BorderColor--300);
+    padding: var(--pf-c-form-control--PaddingTop) var(--pf-c-form-control--PaddingRight) var(--pf-c-form-control--PaddingBottom) var(--pf-c-form-control--PaddingLeft);
 }
 
 .pf-c-form-control:disabled {
@@ -85,7 +91,8 @@ body {
 }
 
 /* Override filter which simulates dark background color */
-.theme-dark .pf-c-table input[type='checkbox'] {
+.theme-dark .pf-c-table input[type='checkbox'],
+.theme-dark .pf-c-check input[type='checkbox'] {
     filter: inherit; /* replace invert(0.3) */
 }
 
@@ -96,6 +103,17 @@ button.pf-c-tree-view__node {
 /* Global Search modal */
 .search-modal .pf-c-tab-content {
     height: calc(100% - 112px) !important;
+}
+
+/* Overrides Tailwind bolding of PF ToggleGroup buttons */
+.pf-c-toggle-group__button {
+    font-weight: var(--pf-global--FontWeight--normal);
+}
+
+/* override PatternFly DescriptionList horizontal variant to allow long keys and values to wrap */
+.pf-c-description-list__term,
+.pf-c-description-list__description{
+    word-break: break-all;
 }
 
 /* For classic components to equal or exceed z-index of PatternFly elements. */

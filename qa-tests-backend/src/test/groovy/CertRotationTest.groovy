@@ -5,20 +5,18 @@ import io.fabric8.kubernetes.api.model.Secret
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.storage.ClusterOuterClass.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
 import io.stackrox.proto.storage.ClusterOuterClass.UpgradeProgress.UpgradeState
+import java.nio.charset.Charset
+import java.security.cert.X509Certificate
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x500.style.BCStyle
 import org.bouncycastle.asn1.x500.style.IETFUtils
 import org.junit.Assume
-import org.junit.AssumptionViolatedException
 import org.junit.experimental.categories.Category
 import org.yaml.snakeyaml.Yaml
 import services.ClusterService
 import services.DirectHTTPService
 import services.SensorUpgradeService
 import util.Cert
-
-import java.nio.charset.Charset
-import java.security.cert.X509Certificate
 
 @Category(BAT)
 class CertRotationTest extends BaseSpecification {
@@ -116,7 +114,7 @@ class CertRotationTest extends BaseSpecification {
         def admissionControlTLSSecret = orchestrator.getSecret("admission-control-tls", "stackrox")
         // Admission control secret may or may not be present, depending on how the cluster was deployed.
         def admissionControlSecretPresent = (admissionControlTLSSecret != null)
-        println "Admission control secret present: ${admissionControlSecretPresent}"
+        log.info "Admission control secret present: ${admissionControlSecretPresent}"
         def cluster = ClusterService.getCluster()
         assert cluster
         def reqObject = new JsonObject()

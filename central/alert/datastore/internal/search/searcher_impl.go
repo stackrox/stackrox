@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/alert/convert"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -27,7 +29,8 @@ var (
 		Reversed: true,
 	}
 
-	alertSearchHelper = sac.ForResource(resources.Alert).MustCreateSearchHelper(mappings.OptionsMap)
+	alertSearchHelper           = sac.ForResource(resources.Alert).MustCreateSearchHelper(mappings.OptionsMap)
+	alertPosgresSACSearchHelper = sac.ForResource(resources.Alert).MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
@@ -67,12 +70,16 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 	if err != nil {
 		return nil, nil, err
 	}
-	alerts, missingIndices, err := ds.storage.GetListAlerts(ctx, search.ResultsToIDs(results))
+	alerts, missingIndices, err := ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 	if err != nil {
 		return nil, nil, err
 	}
+	listAlerts := make([]*storage.ListAlert, 0, len(alerts))
+	for _, alert := range alerts {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+	}
 	results = search.RemoveMissingResults(results, missingIndices)
-	return alerts, results, nil
+	return listAlerts, results, nil
 }
 
 func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
@@ -97,7 +104,7 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.formattedSearcher.Count(ctx, q)
 }
 
-// ConvertAlert returns proto search result from an alert object and the internal search result
+// convertAlert returns proto search result from an alert object and the internal search result
 func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResult {
 	entityInfo := alert.GetCommonEntityInfo()
 	var entityName string
@@ -130,7 +137,13 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 ///////////////////////////////////////////////
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	filteredSearcher := alertSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+	var filteredSearcher search.Searcher
+	if features.PostgresDatastore.Enabled() {
+		// Make the UnsafeSearcher safe.
+		filteredSearcher = alertPosgresSACSearchHelper.FilteredSearcher(unsafeSearcher)
+	} else {
+		filteredSearcher = alertSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+	}
 	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher, mappings.OptionsMap)
 	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)

@@ -11,6 +11,7 @@ import (
 	edgeIndexMocks "github.com/stackrox/rox/central/clustercveedge/index/mocks"
 	edgeSearchMocks "github.com/stackrox/rox/central/clustercveedge/search/mocks"
 	edgeStore "github.com/stackrox/rox/central/clustercveedge/store/dackbox"
+	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/converter"
 	indexMocks "github.com/stackrox/rox/central/cve/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/cve/search/mocks"
@@ -20,6 +21,9 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
+	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	queueMocks "github.com/stackrox/rox/pkg/dackbox/utils/queue/mocks"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -28,8 +32,6 @@ import (
 
 var (
 	testSuppressionQuery = searchPkg.NewQueryBuilder().AddBools(searchPkg.CVESuppressed, true).ProtoQuery()
-
-	testAllAccessContext = sac.WithAllAccess(context.Background())
 )
 
 func TestCVEDataStore(t *testing.T) {
@@ -45,20 +47,25 @@ type CVEDataStoreSuite struct {
 	storage   *storeMocks.MockStore
 	searcher  *searchMocks.MockSearcher
 	provider  *graphMocks.MockProvider
+	indexQ    *queueMocks.MockWaitableQueue
 	datastore *datastoreImpl
 }
 
 func (suite *CVEDataStoreSuite) SetupSuite() {
+	if features.PostgresDatastore.Enabled() {
+		suite.T().Skip("Skip non-postgres store tests")
+		suite.T().SkipNow()
+	}
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
 	suite.storage = storeMocks.NewMockStore(suite.mockCtrl)
 	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 	suite.provider = graphMocks.NewMockProvider(suite.mockCtrl)
-
+	suite.indexQ = queueMocks.NewMockWaitableQueue(suite.mockCtrl)
 	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.CVE{}, nil)
 
-	ds, err := New(suite.provider, suite.storage, suite.indexer, suite.searcher)
+	ds, err := New(suite.provider, suite.indexQ, suite.storage, suite.indexer, suite.searcher)
 	suite.Require().NoError(err)
 	suite.datastore = ds.(*datastoreImpl)
 }
@@ -149,13 +156,9 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 		},
 	}, nil)
 	suite.NoError(suite.datastore.buildSuppressedCache())
-	expectedCache := map[string]suppressionCacheEntry{
-		"CVE-ABC": {
-			Suppressed: true,
-		},
-		"CVE-DEF": {
-			Suppressed: true,
-		},
+	expectedCache := common.CVESuppressionCache{
+		"CVE-ABC": {},
+		"CVE-DEF": {},
 	}
 	suite.Equal(expectedCache, suite.datastore.cveSuppressionCache)
 
@@ -170,28 +173,36 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 	expiry, err := getSuppressExpiry(start, duration)
 	suite.NoError(err)
 
-	suite.storage.EXPECT().GetBatch([]string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
 	storedCVE := &storage.CVE{
 		Id:                 "CVE-GHI",
 		Suppressed:         true,
 		SuppressActivation: start,
 		SuppressExpiry:     expiry,
 	}
-	suite.storage.EXPECT().Upsert(storedCVE).Return(nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	testAllAccessContext := sac.WithAllAccess(ctx)
+	suite.storage.EXPECT().Upsert(testAllAccessContext, storedCVE).Return(nil)
 
 	// Clear image before suppressing
 	img = getImageWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
+	suite.indexQ.EXPECT().PushSignal(gomock.Any())
 	err = suite.datastore.Suppress(testAllAccessContext, start, duration, "CVE-GHI")
-	suite.NoError(err)
+	suite.Equal("timed out waiting for indexing", err.Error())
 	suite.datastore.EnrichImageWithSuppressedCVEs(img)
 	suite.verifySuppressionStateImage(img, []string{"CVE-ABC", "CVE-DEF", "CVE-GHI"}, nil)
 
 	// Clear image before unsupressing
 	img = getImageWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
-	suite.storage.EXPECT().GetBatch([]string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
-	suite.storage.EXPECT().Upsert(&storage.CVE{Id: "CVE-GHI"}).Return(nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
+	suite.storage.EXPECT().Upsert(gomock.Any(), &storage.CVE{Id: "CVE-GHI"}).Return(nil)
+	suite.indexQ.EXPECT().PushSignal(gomock.Any())
+	ctx, cancel = context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	testAllAccessContext = sac.WithAllAccess(ctx)
 	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
-	suite.NoError(err)
+	suite.Equal("timed out waiting for indexing", err.Error())
 	suite.datastore.EnrichImageWithSuppressedCVEs(img)
 	suite.verifySuppressionStateImage(img, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
 }
@@ -209,13 +220,9 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheNodes() {
 		},
 	}, nil)
 	suite.NoError(suite.datastore.buildSuppressedCache())
-	expectedCache := map[string]suppressionCacheEntry{
-		"CVE-ABC": {
-			Suppressed: true,
-		},
-		"CVE-DEF": {
-			Suppressed: true,
-		},
+	expectedCache := common.CVESuppressionCache{
+		"CVE-ABC": {},
+		"CVE-DEF": {},
 	}
 	suite.Equal(expectedCache, suite.datastore.cveSuppressionCache)
 
@@ -230,28 +237,36 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheNodes() {
 	expiry, err := getSuppressExpiry(start, duration)
 	suite.NoError(err)
 
-	suite.storage.EXPECT().GetBatch([]string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
 	storedCVE := &storage.CVE{
 		Id:                 "CVE-GHI",
 		Suppressed:         true,
 		SuppressActivation: start,
 		SuppressExpiry:     expiry,
 	}
-	suite.storage.EXPECT().Upsert(storedCVE).Return(nil)
+	suite.storage.EXPECT().Upsert(gomock.Any(), storedCVE).Return(nil)
 
 	// Clear node before suppressing
 	node = getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
+	suite.indexQ.EXPECT().PushSignal(gomock.Any())
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	testAllAccessContext := sac.WithAllAccess(ctx)
 	err = suite.datastore.Suppress(testAllAccessContext, start, duration, "CVE-GHI")
-	suite.NoError(err)
+	suite.Equal("timed out waiting for indexing", err.Error())
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
 	suite.verifySuppressionStateNode(node, []string{"CVE-ABC", "CVE-DEF", "CVE-GHI"}, nil)
 
 	// Clear node before unsupressing
 	node = getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
-	suite.storage.EXPECT().GetBatch([]string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
-	suite.storage.EXPECT().Upsert(&storage.CVE{Id: "CVE-GHI"}).Return(nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
+	suite.storage.EXPECT().Upsert(gomock.Any(), &storage.CVE{Id: "CVE-GHI"}).Return(nil)
+	suite.indexQ.EXPECT().PushSignal(gomock.Any())
+	ctx, cancel = context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	testAllAccessContext = sac.WithAllAccess(ctx)
 	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
-	suite.NoError(err)
+	suite.Equal("timed out waiting for indexing", err.Error())
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
 	suite.verifySuppressionStateNode(node, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
 }
@@ -262,7 +277,7 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 	dacky, err := dackbox.NewRocksDBDackBox(rocksDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	suite.Require().NoError(err)
 	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.CVE{}, nil)
-	datastore, err := New(dacky, store.New(dacky, concurrency.NewKeyFence()), suite.indexer, suite.searcher)
+	datastore, err := New(dacky, queue.NewWaitableQueue(), store.New(dacky, concurrency.NewKeyFence()), suite.indexer, suite.searcher)
 	suite.Require().NoError(err)
 	edgeStore, err := edgeStore.New(dacky, concurrency.NewKeyFence())
 	suite.Require().NoError(err)
@@ -276,7 +291,8 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Type: storage.CVE_NODE_CVE,
 	}
 	cveClusters := []*storage.Cluster{{Id: "id"}}
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")))
+	cve1Parts := converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")
+	suite.NoError(edgeDataStore.Upsert(ctx, cve1Parts))
 
 	expectedCVE := &storage.CVE{
 		Id:    "CVE-2021-1234",
@@ -292,7 +308,8 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Id:   "CVE-2021-1234",
 		Type: storage.CVE_IMAGE_CVE,
 	}
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")))
+	cve1Parts = converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")
+	suite.NoError(edgeDataStore.Upsert(ctx, cve1Parts))
 
 	expectedCVE = &storage.CVE{
 		Id:    "CVE-2021-1234",
@@ -312,8 +329,10 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Id:   "CVE-2021-1235",
 		Type: storage.CVE_IMAGE_CVE,
 	}
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")))
-	suite.NoError(edgeDataStore.Upsert(ctx, converter.NewClusterCVEParts(cve2, cveClusters, "fixVersions")))
+	cve1Parts = converter.NewClusterCVEParts(cve, cveClusters, "fixVersions")
+	cve2Parts := converter.NewClusterCVEParts(cve2, cveClusters, "fixVersions")
+	suite.NoError(edgeDataStore.Upsert(ctx, cve1Parts))
+	suite.NoError(edgeDataStore.Upsert(ctx, cve2Parts))
 
 	expectedCVE = &storage.CVE{
 		Id:    "CVE-2021-1234",
@@ -330,9 +349,10 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 	suite.Equal(expectedCVE2, storedCVEs[1])
 
 	// CVE datastore will not delete CVEs until they are no longer referenced by cluster/image/node.
-	cveEdges, _ := edgeStore.GetAll()
-	for _, cveEdge := range cveEdges {
-		suite.NoError(edgeStore.Delete(cveEdge.GetId()))
+	for _, partsArr := range []converter.ClusterCVEParts{cve1Parts, cve2Parts} {
+		for _, child := range partsArr.Children {
+			suite.NoError(edgeStore.Delete(ctx, child.Edge.GetId()))
+		}
 	}
 	// Delete CVE.
 	suite.NoError(datastore.Delete(ctx, cve.GetId()))

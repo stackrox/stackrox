@@ -21,9 +21,12 @@ import (
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
+	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
+	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
+	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
+	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -35,6 +38,8 @@ import (
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
+	nodeComponentCVEEdgeDataStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
@@ -55,6 +60,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -62,49 +68,54 @@ import (
 
 // Resolver is the root GraphQL resolver
 type Resolver struct {
-	ActiveComponent             activeComponent.DataStore
-	ComplianceAggregator        aggregation.Aggregator
-	APITokenBackend             backend.Backend
-	ClusterDataStore            clusterDatastore.DataStore
-	ComplianceDataStore         complianceDS.DataStore
-	ComplianceStandardStore     complianceStandards.Repository
-	ComplianceService           v1.ComplianceServiceServer
-	ComplianceManagementService v1.ComplianceManagementServiceServer
-	ComplianceManager           complianceManager.ComplianceManager
-	clusterCVEEdgeDataStore     clusterCVEEdgeDataStore.DataStore
-	ComponentCVEEdgeDataStore   componentCVEEdgeDataStore.DataStore
-	CVEDataStore                cveDataStore.DataStore
-	DeploymentDataStore         deploymentDatastore.DataStore
-	PodDataStore                podDatastore.DataStore
-	ImageDataStore              imageDatastore.DataStore
-	ImageComponentDataStore     imageComponentDataStore.DataStore
-	ImageComponentEdgeDataStore imageComponentEdgeDataStore.DataStore
-	ImageCVEEdgeDataStore       imageCVEEdgeDataStore.DataStore
-	GroupDataStore              groupDataStore.DataStore
-	NamespaceDataStore          namespaceDataStore.DataStore
-	NetworkFlowDataStore        nfDS.ClusterDataStore
-	NetworkPoliciesStore        npDS.DataStore
-	NodeGlobalDataStore         nodeDataStore.GlobalDataStore
-	NotifierStore               notifierDataStore.DataStore
-	PolicyDataStore             policyDatastore.DataStore
-	ProcessIndicatorStore       processIndicatorStore.DataStore
-	K8sRoleStore                k8sroleStore.DataStore
-	K8sRoleBindingStore         k8srolebindingStore.DataStore
-	RoleDataStore               roleDataStore.DataStore
-	RiskDataStore               riskDataStore.DataStore
-	SecretsDataStore            secretDataStore.DataStore
-	ServiceAccountsDataStore    serviceAccountDataStore.DataStore
-	ViolationsDataStore         violationsDatastore.DataStore
-	BaselineDataStore           baselineStore.DataStore
-	WatchedImageDataStore       watchedImageDataStore.DataStore
-	orchestratorIstioCVEManager fetcher.OrchestratorIstioCVEManager
-	cveMatcher                  *cveMatcher.CVEMatcher
-	manager                     complianceOperatorManager.Manager
-	mitreStore                  mitreDataStore.MitreAttackReadOnlyDataStore
-	vulnReqMgr                  requestmgr.Manager
-	vulnReqQueryMgr             querymgr.VulnReqQueryManager
-	vulnReqStore                vulnReqDataStore.DataStore
-	AuditLogger                 auditPkg.Auditor
+	ActiveComponent               activeComponent.DataStore
+	ComplianceAggregator          aggregation.Aggregator
+	APITokenBackend               backend.Backend
+	ClusterDataStore              clusterDatastore.DataStore
+	ClusterCVEDataStore           clusterCVEDataStore.DataStore
+	ComplianceDataStore           complianceDS.DataStore
+	ComplianceStandardStore       complianceStandards.Repository
+	ComplianceService             v1.ComplianceServiceServer
+	ComplianceManagementService   v1.ComplianceManagementServiceServer
+	ComplianceManager             complianceManager.ComplianceManager
+	ClusterCVEEdgeDataStore       clusterCVEEdgeDataStore.DataStore
+	ComponentCVEEdgeDataStore     componentCVEEdgeDataStore.DataStore
+	CVEDataStore                  legacyImageCVEDataStore.DataStore
+	ImageCVEDataStore             imageCVEDataStore.DataStore
+	NodeCVEDataStore              nodeCVEDataStore.DataStore
+	DeploymentDataStore           deploymentDatastore.DataStore
+	PodDataStore                  podDatastore.DataStore
+	ImageDataStore                imageDatastore.DataStore
+	ImageComponentDataStore       imageComponentDataStore.DataStore
+	NodeComponentDataStore        nodeComponentDataStore.DataStore
+	NodeComponentCVEEdgeDataStore nodeComponentCVEEdgeDataStore.DataStore
+	ImageComponentEdgeDataStore   imageComponentEdgeDataStore.DataStore
+	ImageCVEEdgeDataStore         imageCVEEdgeDataStore.DataStore
+	GroupDataStore                groupDataStore.DataStore
+	NamespaceDataStore            namespaceDataStore.DataStore
+	NetworkFlowDataStore          nfDS.ClusterDataStore
+	NetworkPoliciesStore          npDS.DataStore
+	NodeGlobalDataStore           nodeDataStore.GlobalDataStore
+	NotifierStore                 notifierDataStore.DataStore
+	PolicyDataStore               policyDatastore.DataStore
+	ProcessIndicatorStore         processIndicatorStore.DataStore
+	K8sRoleStore                  k8sroleStore.DataStore
+	K8sRoleBindingStore           k8srolebindingStore.DataStore
+	RoleDataStore                 roleDataStore.DataStore
+	RiskDataStore                 riskDataStore.DataStore
+	SecretsDataStore              secretDataStore.DataStore
+	ServiceAccountsDataStore      serviceAccountDataStore.DataStore
+	ViolationsDataStore           violationsDatastore.DataStore
+	BaselineDataStore             baselineStore.DataStore
+	WatchedImageDataStore         watchedImageDataStore.DataStore
+	orchestratorIstioCVEManager   fetcher.OrchestratorIstioCVEManager
+	cveMatcher                    *cveMatcher.CVEMatcher
+	manager                       complianceOperatorManager.Manager
+	mitreStore                    mitreDataStore.MitreAttackReadOnlyDataStore
+	vulnReqMgr                    requestmgr.Manager
+	vulnReqQueryMgr               querymgr.VulnReqQueryManager
+	vulnReqStore                  vulnReqDataStore.DataStore
+	AuditLogger                   auditPkg.Auditor
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -119,9 +130,8 @@ func New() *Resolver {
 		ComplianceManager:           complianceManager.Singleton(),
 		ComplianceService:           complianceService.Singleton(),
 		ClusterDataStore:            clusterDatastore.Singleton(),
-		clusterCVEEdgeDataStore:     clusterCVEEdgeDataStore.Singleton(),
+		ClusterCVEEdgeDataStore:     clusterCVEEdgeDataStore.Singleton(),
 		ComponentCVEEdgeDataStore:   componentCVEEdgeDataStore.Singleton(),
-		CVEDataStore:                cveDataStore.Singleton(),
 		DeploymentDataStore:         deploymentDatastore.Singleton(),
 		PodDataStore:                podDatastore.Singleton(),
 		ImageDataStore:              imageDatastore.Singleton(),
@@ -154,6 +164,16 @@ func New() *Resolver {
 		vulnReqStore:                vulnReqDataStore.Singleton(),
 		AuditLogger:                 audit.New(processor.Singleton()),
 	}
+	if features.PostgresDatastore.Enabled() {
+		resolver.ClusterCVEDataStore = clusterCVEDataStore.Singleton()
+		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
+		resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()
+		resolver.NodeComponentCVEEdgeDataStore = nodeComponentCVEEdgeDataStore.Singleton()
+		resolver.NodeComponentDataStore = nodeComponentDataStore.Singleton()
+
+	} else {
+		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
+	}
 	return resolver
 }
 
@@ -171,6 +191,7 @@ var (
 	readImages                           = readAuth(resources.Image)
 	readIndicators                       = readAuth(resources.Indicator)
 	readNamespaces                       = readAuth(resources.Namespace)
+	readNetPolicies                      = readAuth(resources.NetworkPolicy)
 	readNodes                            = readAuth(resources.Node)
 	readNotifiers                        = readAuth(resources.Notifier)
 	readPolicies                         = readAuth(resources.Policy)
@@ -243,4 +264,9 @@ func stringSlice(inputSlice interface{}) []string {
 		output[i] = fmt.Sprint(r.Index(i).Interface())
 	}
 	return output
+}
+
+// NewMock returns an empty Resolver for use in testing whether the GraphQL schema can be compiled
+func NewMock() *Resolver {
+	return &Resolver{}
 }

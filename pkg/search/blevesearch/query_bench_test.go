@@ -3,7 +3,6 @@ package blevesearch
 import (
 	"fmt"
 	"math"
-	"os"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -15,12 +14,7 @@ import (
 )
 
 func preload(b *testing.B) bleve.Index {
-	tmpDir, err := os.MkdirTemp("", "")
-	require.NoError(b, err)
-
-	defer func() {
-		_ = os.RemoveAll(tmpDir)
-	}()
+	tmpDir := b.TempDir()
 
 	kvconfig := map[string]interface{}{
 		// Persist the index

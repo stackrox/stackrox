@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/features"
 	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -94,6 +93,9 @@ config:
 enableOpenShiftMonitoring: true
 scanner:
   disable: false
+
+system:
+    enablePodSecurityPolicies: true
 `
 )
 
@@ -110,7 +112,7 @@ func (s *baseSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
-func (s *baseSuite) TeardownTest() {
+func (s *baseSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 
@@ -172,8 +174,6 @@ func (s *baseSuite) ParseObjects(objYAMLs map[string]string) []unstructured.Unst
 func (s *baseSuite) TestAllGeneratableExplicit() {
 	// Ensures that allValuesExplicit causes all templates to be rendered non-empty, including the one
 	// containing generated values.
-
-	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
 
 	_, rendered := s.LoadAndRender(allValuesExplicit)
 	s.Require().NotEmpty(rendered)

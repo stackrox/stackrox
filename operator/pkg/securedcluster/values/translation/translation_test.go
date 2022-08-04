@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	testingUtils "github.com/stackrox/rox/operator/pkg/values/testing"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,7 +43,7 @@ func (s *TranslationTestSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 
-func (s TranslationTestSuite) TestImageOverrides() {
+func (s *TranslationTestSuite) TestImageOverrides() {
 	s.envIsolator.Setenv(images.ScannerSlim.EnvVar(), "stackrox/scanner:1.0.0")
 	s.envIsolator.Setenv(images.ScannerSlimDB.EnvVar(), "stackrox/scanner-db:1.0.0")
 
@@ -97,8 +96,7 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	testingUtils.AssertPathValueMatches(t, vals, regexp.MustCompile("[0-9a-f]{32}"), "meta.configFingerprintOverride")
 }
 
-func (s TranslationTestSuite) TestTranslate() {
-	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
+func (s *TranslationTestSuite) TestTranslate() {
 	t := s.T()
 
 	type args struct {
@@ -143,6 +141,11 @@ func (s TranslationTestSuite) TestTranslate() {
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
 			},
 		},
 		"local scanner autosense suppression": {
@@ -152,6 +155,9 @@ func (s TranslationTestSuite) TestTranslate() {
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
 						ClusterName: "test-cluster",
+						Scanner: &platform.LocalScannerComponentSpec{
+							ScannerComponent: platform.LocalScannerComponentDisabled.Pointer(),
+						},
 					},
 				},
 			},
@@ -196,6 +202,11 @@ func (s TranslationTestSuite) TestTranslate() {
 				},
 				"scanner": map[string]interface{}{
 					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
 				},
 			},
 		},
@@ -387,6 +398,9 @@ func (s TranslationTestSuite) TestTranslate() {
 							"operator": "Exists",
 						},
 					},
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
 				},
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{
@@ -558,7 +572,8 @@ func newFakeClientWithInitBundle(t *testing.T) ctrlClient.Client {
 	return testutils.NewFakeClientBuilder(t,
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),
-		createSecret(admissionControlTLSSecretName)).Build()
+		createSecret(admissionControlTLSSecretName),
+		testutils.ValidClusterVersion).Build()
 }
 
 func newFakeClientWithInitBundleAndCentral(t *testing.T) ctrlClient.Client {
@@ -566,6 +581,7 @@ func newFakeClientWithInitBundleAndCentral(t *testing.T) ctrlClient.Client {
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),
 		createSecret(admissionControlTLSSecretName),
+		testutils.ValidClusterVersion,
 		&platform.Central{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "a-central",

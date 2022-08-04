@@ -1,11 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import capitalize from 'lodash/capitalize';
-
-export type SearchEntry = {
-    type?: 'categoryOption';
-    value: string;
-    label: string;
-};
+import { SearchEntry } from 'types/search';
 
 export type SearchState = {
     searchOptions: SearchEntry[];

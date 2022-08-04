@@ -1,8 +1,11 @@
+import * as api from '../../constants/apiEndpoints';
 import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { visitVulnerabilityManagementDashboard } from '../../helpers/vulnmanagement/entities';
+import { hasFeatureFlag } from '../../helpers/features';
 
 function validateTopRiskyEntities(entityName) {
-    cy.visit(url.dashboard);
+    visitVulnerabilityManagementDashboard();
     cy.get(selectors.topRiskyItems.select.value).should(
         'contain',
         'Top risky deployments by CVE count & CVSS score'
@@ -15,26 +18,19 @@ function validateTopRiskyEntities(entityName) {
         'contain',
         `Top risky ${entityName} by CVE count & CVSS score`
     );
+    cy.intercept('POST', api.vulnMgmt.graphqlEntities(entityName)).as('entities');
     cy.get(selectors.getWidget(`Top risky ${entityName} by CVE count & CVSS score`))
         .find(selectors.viewAllButton)
         .click();
-    cy.wait(500);
-    if (entityName === 'clusters') {
-        cy.url().should('contain', url.list.clusters);
-    } else if (entityName === 'images') {
-        cy.url().should('contain', url.list.images);
-    } else if (entityName === 'namespaces') {
-        cy.url().should('contain', url.list.namespaces);
-    } else if (entityName === 'deployments') {
-        cy.url().should('contain', url.list.deployments);
-    }
+    cy.wait('@entities');
+    cy.location('pathname').should('eq', url.list[entityName]);
 }
 
 describe('Vuln Management Dashboard Page', () => {
     withAuth();
 
     it('should show same number of policies between the tile and the policies list', () => {
-        cy.visit(url.dashboard);
+        visitVulnerabilityManagementDashboard();
         cy.get(selectors.tileLinks)
             .eq(0)
             .find(selectors.tileLinkValue)
@@ -50,8 +46,9 @@ describe('Vuln Management Dashboard Page', () => {
             });
     });
 
-    it('should show same number of cves between the tile and the cves list', () => {
-        cy.visit(url.dashboard);
+    // TODO: update CVE links to CVE tables checks, for VM Updates
+    it.skip('should show same number of cves between the tile and the cves list', () => {
+        visitVulnerabilityManagementDashboard();
         cy.get(selectors.tileLinks)
             .eq(1)
             .find(selectors.tileLinkValue)
@@ -68,15 +65,17 @@ describe('Vuln Management Dashboard Page', () => {
     });
 
     it('should show same number of images between the tile and the images list', () => {
-        cy.visit(url.dashboard);
-        cy.get(selectors.tileLinks)
-            .eq(2)
+        visitVulnerabilityManagementDashboard();
 
+        const tileToCheck = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES') ? 2 : 3;
+        cy.log({ tileToCheck });
+        cy.get(selectors.tileLinks, { timeout: 8000 })
+            .eq(tileToCheck)
             .find(selectors.tileLinkValue)
             .invoke('text')
             .then((value) => {
                 const numImages = value;
-                cy.get(selectors.tileLinks).eq(2).click();
+                cy.get(selectors.tileLinks).eq(tileToCheck).click();
                 cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
                     .invoke('text')
                     .then((panelHeaderText) => {
@@ -86,36 +85,34 @@ describe('Vuln Management Dashboard Page', () => {
     });
 
     it('should properly navigate to the policies list', () => {
-        cy.visit(url.dashboard);
+        visitVulnerabilityManagementDashboard();
         cy.get(selectors.tileLinks).eq(0).click();
-        cy.url().should('contain', url.list.policies);
+        cy.location('pathname').should('eq', url.list.policies);
     });
 
     it('should properly navigate to the clusters list', () => {
-        cy.visit(url.dashboard);
+        visitVulnerabilityManagementDashboard();
         cy.get(selectors.applicationAndInfrastructureDropdown).click();
         cy.get(selectors.getMenuListItem('clusters')).click();
-        cy.url().should('contain', url.list.clusters);
+        cy.location('pathname').should('eq', url.list.clusters);
     });
 
     it('should properly navigate to the namespaces list', () => {
-        cy.visit(url.dashboard);
+        visitVulnerabilityManagementDashboard();
         cy.get(selectors.applicationAndInfrastructureDropdown).click();
         cy.get(selectors.getMenuListItem('namespaces')).click();
-        cy.url().should('contain', url.list.namespaces);
+        cy.location('pathname').should('eq', url.list.namespaces);
     });
 
     it('should properly navigate to the deployments list', () => {
-        cy.visit(url.dashboard);
+        visitVulnerabilityManagementDashboard();
         cy.get(selectors.applicationAndInfrastructureDropdown).click();
         cy.get(selectors.getMenuListItem('deployments')).click();
-        cy.url().should('contain', url.list.deployments);
+        cy.location('pathname').should('eq', url.list.deployments);
     });
 
-    // @TODO: add check that changing entity type re-displays the loader
-    //   not reliable to test without a good way to mock GraphQL responses
     it('"Top Riskiest <entities>" widget should start with a loading indicator', () => {
-        cy.visit(url.dashboard);
+        cy.visit(url.dashboard); // do not call visit helper because it waits on the requests
         cy.get(selectors.getWidget('Top risky deployments by CVE count & CVSS score'))
             .find(selectors.widgetBody)
             .invoke('text')
@@ -124,61 +121,80 @@ describe('Vuln Management Dashboard Page', () => {
             });
     });
 
-    // TODO  add a check that there is a sort param on the link URL for sorting by the widget's appropriate sort
     it('clicking the "Top Riskiest Images" widget\'s "View All" button should take you to the images list', () => {
-        cy.visit(url.dashboard);
+        visitVulnerabilityManagementDashboard();
+        cy.intercept('POST', api.vulnMgmt.graphqlEntities('images')).as('images');
         cy.get(selectors.getWidget('Top Riskiest Images')).find(selectors.viewAllButton).click();
-        cy.url().should('contain', url.list.images);
+        cy.wait('@images');
+        cy.location('pathname').should('eq', url.list.images);
+        cy.location('search').should(
+            'eq',
+            '?sort[0][id]=Image%20Risk%20Priority&sort[0][desc]=false'
+        );
     });
 
     // TODO  change the sort param checked for, if a more desirable sort becomes available from the API
     //   see https://stack-rox.atlassian.net/browse/ROX-4295 for details
     it('clicking the "Frequently Violated Policies" widget\'s "View All" button should take you to the policies list', () => {
-        cy.visit(url.dashboard);
+        visitVulnerabilityManagementDashboard();
         cy.get(selectors.getWidget('Frequently Violated Policies'))
             .find(selectors.viewAllButton)
             .click();
-        cy.url().should('contain', url.list.policies);
-
-        // check sort requested
-        cy.url().should('contain', 'sort[0][id]=Severity');
-        cy.url().should('contain', 'sort[0][desc]=true');
+        cy.location('pathname').should('eq', url.list.policies);
+        cy.location('search').should('eq', '?sort[0][id]=Severity&sort[0][desc]=true');
     });
 
-    // TODO  add a check that there is a sort param on the link URL for sorting by the widget's appropriate sort
-    it('clicking the "Recently Detected Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
-        cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('Recently Detected Vulnerabilities'))
-            .find(selectors.viewAllButton)
-            .click();
-        cy.url().should('contain', url.list.cves);
+    it('clicking the "Recently Detected Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const titleToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+            ? 'Recently Detected Image Vulnerabilities'
+            : 'Recently Detected Vulnerabilities';
+
+        const urlToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+            ? url.list['image-cves']
+            : url.list.cves;
+
+        cy.get(selectors.getWidget(titleToExpect)).find(selectors.viewAllButton).click();
+        cy.location('pathname').should('eq', urlToExpect);
+        cy.location('search').should('eq', '?sort[0][id]=CVE%20Created%20Time&sort[0][desc]=true');
     });
 
-    // TODO  add a check that there is a sort param on the link URL for sorting by the widget's appropriate sort
-    it('clicking the "Most Common Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
-        cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('Most Common Vulnerabilities'))
-            .find(selectors.viewAllButton)
-            .click();
-        cy.url().should('contain', url.list.cves);
+    it('clicking the "Most Common Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
+        visitVulnerabilityManagementDashboard();
+
+        const titleToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+            ? 'Most Common Image Vulnerabilities'
+            : 'Most Common Vulnerabilities';
+
+        const urlToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+            ? url.list['image-cves']
+            : url.list.cves;
+
+        cy.get(selectors.getWidget(titleToExpect)).find(selectors.viewAllButton).click();
+        cy.location('pathname').should('eq', urlToExpect);
+        cy.location('search').should(
+            'eq',
+            '?sort[0][id]=Deployment%20Count&sort[0][desc]=true&sort[1][id]=CVSS&sort[1][desc]=true'
+        );
     });
 
-    // TODO  add a check that there is a sort param on the link URL for sorting by the widget's appropriate sort
     it('clicking the "Deployments With Most Severe Policy Violations" widget\'s "View All" button should take you to the policies list', () => {
-        cy.visit(url.dashboard);
+        visitVulnerabilityManagementDashboard();
         cy.get(selectors.getWidget('Deployments With Most Severe Policy Violations'))
             .find(selectors.viewAllButton)
             .click();
-        cy.url().should('contain', url.list.deployments);
+        cy.location('pathname').should('eq', url.list.deployments);
+        cy.location('search').should('eq', '');
     });
 
-    // TODO  add a check that there is a sort param on the link URL for sorting by the widget's appropriate sort
     it('clicking the "Clusters With Most Orchestrator & Istio Vulnerabilities" widget\'s "View All" button should take you to the clusters list', () => {
-        cy.visit(url.dashboard);
+        visitVulnerabilityManagementDashboard();
         cy.get(selectors.getWidget('Clusters With Most Orchestrator & Istio Vulnerabilities'))
             .find(selectors.viewAllButton)
             .click();
-        cy.url().should('contain', url.list.clusters);
+        cy.location('pathname').should('eq', url.list.clusters);
+        cy.location('search').should('eq', '');
     });
 
     it('clicking the "Top risky deployments by CVE count & CVSS score" widget\'s "View All" button should take you to the deployments list', () => {
@@ -191,9 +207,5 @@ describe('Vuln Management Dashboard Page', () => {
 
     it('clicking the "Top risky images by CVE count & CVSS score" widget\'s "View All" button should take you to the images list', () => {
         validateTopRiskyEntities('images');
-    });
-
-    it('clicking the "Top risky clusters by CVE count & CVSS score" widget\'s "View All" button should take you to the clusters list', () => {
-        validateTopRiskyEntities('clusters');
     });
 });

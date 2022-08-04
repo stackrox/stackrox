@@ -56,7 +56,7 @@ func (ds *searcherImpl) SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.Sear
 	if err != nil {
 		return nil, err
 	}
-	return ds.resultsToSearchResults(results)
+	return ds.resultsToSearchResults(ctx, results)
 }
 
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
@@ -86,12 +86,12 @@ func (ds *searcherImpl) getCount(ctx context.Context, q *v1.Query) (count int, e
 	return count, err
 }
 
-func (ds *searcherImpl) resultsToCVEs(results []search.Result) ([]*storage.CVE, []int, error) {
-	return ds.storage.GetBatch(search.ResultsToIDs(results))
+func (ds *searcherImpl) resultsToCVEs(ctx context.Context, results []search.Result) ([]*storage.CVE, []int, error) {
+	return ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 }
 
-func (ds *searcherImpl) resultsToSearchResults(results []search.Result) ([]*v1.SearchResult, error) {
-	cves, missingIndices, err := ds.resultsToCVEs(results)
+func (ds *searcherImpl) resultsToSearchResults(ctx context.Context, results []search.Result) ([]*v1.SearchResult, error) {
+	cves, missingIndices, err := ds.resultsToCVEs(ctx, results)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (ds *searcherImpl) searchCVEs(ctx context.Context, q *v1.Query) ([]*storage
 	}
 
 	ids := search.ResultsToIDs(results)
-	cves, _, err := ds.storage.GetBatch(ids)
+	cves, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

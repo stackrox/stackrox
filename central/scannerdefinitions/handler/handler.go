@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -117,44 +118,34 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
+	// Open the most recent definitions file for the provided `uuid`.
 	uuid := r.URL.Query().Get(`uuid`)
-	if !h.online || uuid == "" {
-		// Default to the offline dump.
-		serveFile(w, r, h.offlineFile.Path())
-		return
-	}
-
-	u := h.getUpdater(uuid)
-	// Start may be called multiple times, but will only start the updater once.
-	u.Start()
-
-	// Serve the more recent of the requested file and the manually uploaded definitions.
-
-	onlineF, onlineModTime, err := u.file.Open()
+	f, modTime, err := h.openMostRecentDefinitions(uuid)
 	if err != nil {
-		writeErrorForFile(w, err, u.file.Path())
+		writeErrorForFile(w, err, uuid)
 		return
 	}
-	defer utils.IgnoreError(onlineF.Close)
 
-	offlineF, offlineModTime, err := h.offlineFile.Open()
-	if err != nil {
-		writeErrorForFile(w, err, h.offlineFile.Path())
-		return
-	}
-	defer utils.IgnoreError(offlineF.Close)
-
-	f, modTime := onlineF, onlineModTime
-	if offlineModTime.After(onlineModTime) {
-		f, modTime = offlineF, offlineModTime
-	}
-
-	// It is possible no offline Scanner definitions are uploaded and Central cannot reach
-	// the vulnerability source or the client requested vulnerabilities which do not exist.
-	// Check for nil to protect against this.
+	// It is possible no offline Scanner definitions were uploaded, or Central cannot
+	// reach the definitions object, or there is no definitions for the given
+	// `uuid`; in any of those cases, `f` will be `nil`.
 	if f == nil {
 		writeErrorNotFound(w)
 		return
+	}
+
+	defer utils.IgnoreError(f.Close)
+
+	// If `file` was provided, extract from definitions' bundle to a
+	// temporary file and serve that instead.
+	fileName := r.URL.Query().Get(`file`)
+	if fileName != "" {
+		f, err = openFromArchive(f.Name(), fileName)
+		if err != nil {
+			writeErrorForFile(w, err, fileName)
+			return
+		}
+		defer utils.IgnoreError(f.Close)
 	}
 
 	serveContent(w, r, f.Name(), modTime, f)
@@ -172,11 +163,6 @@ func writeErrorForFile(w http.ResponseWriter, err error, path string) {
 	}
 
 	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read file %s: %v", filepath.Base(path), err)
-}
-
-func serveFile(w http.ResponseWriter, r *http.Request, name string) {
-	log.Debugf("Serving vulnerability definitions from %s", filepath.Base(name))
-	http.ServeFile(w, r, name)
 }
 
 func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime time.Time, content io.ReadSeeker) {
@@ -315,4 +301,100 @@ func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 			delete(h.updaters, id)
 		}
 	}
+}
+
+// openMostRecentDefinitions opens the latest Scanner Definitions based on
+// modification time. It's either the one selected by `uuid` if present and
+// online, otherwise fallback to the manually uploaded definitions. The file
+// object can be `nil` if the definitions file does not exist, rather than
+// returning an error.
+func (h *httpHandler) openMostRecentDefinitions(uuid string) (file *os.File, modTime time.Time, err error) {
+	// If in offline mode or uuid is not provided, default to the offline file.
+	if !h.online || uuid == "" {
+		file, modTime, err = h.offlineFile.Open()
+		return
+	}
+
+	// Start the updater, can be called multiple times for the same uuid, but will
+	// only start the updater once. The Start() call blocks if the definitions were
+	// not downloaded yet.
+	u := h.getUpdater(uuid)
+	u.Start()
+
+	// Open both the "online" and "offline", and save their modification times.
+	onlineFile, onlineTime, err := u.file.Open()
+	if err != nil {
+		return
+	}
+	offlineFile, offlineTime, err := h.offlineFile.Open()
+	if err != nil {
+		utils.IgnoreError(onlineFile.Close)
+		return
+	}
+
+	// Return the most recent file, notice that if both don't exist, nil is returned
+	// since modification time will be zero.
+
+	if offlineTime.After(onlineTime) {
+		file, modTime = offlineFile, offlineTime
+		utils.IgnoreError(onlineFile.Close)
+	} else {
+		file, modTime = onlineFile, onlineTime
+		utils.IgnoreError(offlineFile.Close)
+	}
+
+	return
+}
+
+// openFromArchive returns a file object for a name within the definitions
+// bundle. The file object has a file descriptor allocated on the filesystem, but
+// its name is removed. Meaning once the file object is closed, the data will be
+// freed in filesystem by the OS.
+func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
+	// Open zip archive and extract the fileName.
+	zipReader, err := zip.OpenReader(archiveFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "opening zip archive")
+	}
+	defer utils.IgnoreError(zipReader.Close)
+	fileReader, err := zipReader.Open(fileName)
+	if err != nil {
+		return nil, errors.Wrap(err, "extracting")
+	}
+	defer utils.IgnoreError(fileReader.Close)
+
+	// Create a temporary file and remove it, keeping the file descriptor.
+	tmpDir, err := os.MkdirTemp("", definitionsBaseDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating temporary directory")
+	}
+	tmpFile, err := os.Create(filepath.Join(tmpDir, path.Base(fileName)))
+	if err != nil {
+		// Best effort to clean.
+		_ = os.RemoveAll(tmpDir)
+		return nil, errors.Wrap(err, "opening temporary file")
+	}
+	defer func() {
+		if err != nil {
+			_ = tmpFile.Close()
+		}
+	}()
+	err = os.RemoveAll(tmpDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "removing temporary file")
+	}
+
+	// Extract the file and copy contents to the temporary file, notice we
+	// intentionally don't Sync(), to benefit from filesystem caching.
+	_, err = io.Copy(tmpFile, fileReader)
+	if err != nil {
+		return nil, errors.Wrap(err, "writing to temporary file")
+	}
+
+	// Reset for caller's convenience.
+	_, err = tmpFile.Seek(0, io.SeekStart)
+	if err != nil {
+		return nil, errors.Wrap(err, "writing to temporary file")
+	}
+	return tmpFile, nil
 }

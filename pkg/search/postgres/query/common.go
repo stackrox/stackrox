@@ -1,9 +1,13 @@
 package pgsearch
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -38,8 +42,10 @@ type SelectQueryField struct {
 
 // QueryEntry is an entry with clauses added by portions of the query.
 type QueryEntry struct {
-	Where          WhereClause
-	SelectedFields []SelectQueryField
+	Where             WhereClause
+	Having            *WhereClause
+	SelectedFields    []SelectQueryField
+	GroupByPrimaryKey bool
 
 	// This is populated only in the case of enums, so that callers know how to
 	// convert the returned enum value to a string.
@@ -77,15 +83,38 @@ func NewTrueQuery() *QueryEntry {
 }
 
 // MatchFieldQuery is a simple query that performs operations on a single field.
-func MatchFieldQuery(dbField *walker.Field, value string, highlight bool, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
+func MatchFieldQuery(dbField *walker.Field, derivedMetadata *walker.DerivedSearchField, value string, highlight bool, now time.Time) (*QueryEntry, error) {
 	if dbField == nil {
 		return nil, nil
 	}
 	// Need to find base value
-	field, ok := optionsMap.Get(dbField.Search.FieldName)
+	if dbField.Schema.OptionsMap == nil {
+		return nil, errors.Errorf("Options Map for %s does not exist", dbField.Schema.Table)
+	}
+	field, ok := dbField.Schema.OptionsMap.Get(dbField.Search.FieldName)
 	if !ok {
-		log.Infof("Options Map for %s does not have field: %v", dbField.Schema.Table, dbField.Search.FieldName)
 		return nil, nil
 	}
-	return matchFieldQuery(dbField, field, value, highlight)
+
+	qualifiedColName := dbField.Schema.Table + "." + dbField.ColumnName
+	dataType := dbField.DataType
+	var goesIntoHavingClause bool
+	if derivedMetadata != nil {
+		switch derivedMetadata.DerivationType {
+		case search.CountDerivationType:
+			qualifiedColName = fmt.Sprintf("count(%s)", qualifiedColName)
+			dataType = walker.Integer
+			goesIntoHavingClause = true
+		default:
+			return nil, errors.Errorf("unsupported derivation type %s", derivedMetadata.DerivationType)
+		}
+	}
+	qe, err := matchFieldQuery(qualifiedColName, dataType, field, value, highlight, now, goesIntoHavingClause)
+	if err != nil {
+		return nil, err
+	}
+	if goesIntoHavingClause {
+		qe.GroupByPrimaryKey = true
+	}
+	return qe, nil
 }

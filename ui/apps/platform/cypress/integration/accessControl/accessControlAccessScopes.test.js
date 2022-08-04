@@ -47,7 +47,7 @@ describe('Access Control Access scopes', () => {
         cy.get(selectors.navLinkCurrent).should('have.text', h2);
 
         cy.contains(selectors.h2, /^\d+ results? found$/).should('exist');
-        cy.get(selectors.list.addButton).should('have.text', 'Add access scope');
+        cy.get(selectors.list.createButton).should('have.text', 'Create access scope');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
         cy.get(`${selectors.list.th}:contains("Description")`);
@@ -68,9 +68,8 @@ describe('Access Control Access scopes', () => {
         const name = 'Deny All';
         cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("${name}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${name}")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
@@ -88,9 +87,8 @@ describe('Access Control Access scopes', () => {
         cy.visit(`${accessScopesUrl}/bogus`);
         cy.wait('@GetAccessScopes');
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3)`).should('not.exist');
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2)`).should('not.exist');
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');

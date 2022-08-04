@@ -15,6 +15,7 @@ import entityTypes from 'constants/entityTypes';
 import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { getTooltip } from 'utils/vulnerabilityUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const MOST_COMMON_VULNERABILITIES = gql`
     query mostCommonVulnerabilities($query: String, $vulnPagination: Pagination) {
@@ -25,6 +26,23 @@ const MOST_COMMON_VULNERABILITIES = gql`
             scoreVersion
             isFixable
             deploymentCount
+            summary
+            imageCount
+            lastScanned
+        }
+    }
+`;
+
+const MOST_COMMON_IMAGE_VULNERABILITIES = gql`
+    query mostCommonImageVulnerabilities($query: String, $vulnPagination: Pagination) {
+        results: imageVulnerabilities(query: $query, pagination: $vulnPagination) {
+            id
+            cve
+            cvss
+            scoreVersion
+            isFixable
+            deploymentCount
+            imageCount
             summary
             imageCount
             lastScanned
@@ -53,16 +71,22 @@ const processData = (data, workflowState) => {
 };
 
 const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+
     const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
 
     const queryObject = { ...entityContextObject, ...search }; // Combine entity context and search
     const query = queryService.objectToWhereClause(queryObject); // get final gql query string
+    const queryToUse = showVMUpdates
+        ? MOST_COMMON_IMAGE_VULNERABILITIES
+        : MOST_COMMON_VULNERABILITIES;
 
     const {
         loading,
         data = {},
         error,
-    } = useQuery(MOST_COMMON_VULNERABILITIES, {
+    } = useQuery(queryToUse, {
         variables: {
             query,
             vulnPagination: queryService.getPagination(
@@ -102,8 +126,12 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
         }
     }
 
+    const header = showVMUpdates
+        ? 'Most Common Image Vulnerabilities'
+        : 'Most Common Vulnerabilities';
+    const targetUrlType = showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE;
     const viewAllURL = workflowState
-        .pushList(entityTypes.CVE)
+        .pushList(targetUrlType)
         .setSort([
             { id: cveSortFields.DEPLOYMENT_COUNT, desc: true },
             { id: cveSortFields.CVSS_SCORE, desc: true },
@@ -113,7 +141,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     return (
         <Widget
             className="h-full pdf-page"
-            header="Most Common Vulnerabilities"
+            header={header}
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}

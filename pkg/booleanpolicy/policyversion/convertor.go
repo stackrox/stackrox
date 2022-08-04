@@ -6,40 +6,33 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// EnsureConvertedToLatest converts the given policy into a Boolean policy, if it is not one already.
+// EnsureConvertedToLatest converts the given policy to the latest version (as defined by CurrentVersion), if it isn't already
+// The policy is modified in place.
 func EnsureConvertedToLatest(p *storage.Policy) error {
 	if p == nil {
 		return errors.New("nil policy")
 	}
-	policyVersion, err := FromString(p.GetPolicyVersion())
+
+	ver, err := FromString(p.GetPolicyVersion())
 	if err != nil {
-		return err
+		return errors.New("invalid version")
 	}
 
-	if Compare(policyVersion, Version1()) >= 0 && len(p.GetPolicySections()) == 0 {
-		return errors.New("empty sections")
+	// If a policy is sent with legacyVersion but contains sections, that's okay --
+	// we will use those sections as-is, and infer that it's of the newer version.
+	// Other later validation will check to see if the rest of the policy is formatted correctly.
+	// NOTE: This will be removed soon, and we will prevent anyone from making an API call without version set
+	// This is an intermediate step.
+	if ver.String() == legacyVersion {
+		p.PolicyVersion = version1_1
 	}
-	if Compare(policyVersion, Version1()) < 0 {
-		// If a policy is sent with legacyVersion but contains sections, that's okay --
-		// we will use those sections as-is, and infer that it's of the newer version.
-		if p.GetFields() == nil && len(p.GetPolicySections()) == 0 {
-			return errors.New("empty policy")
+
+	// If it's not the latest version, delegate to the upgrader
+	// CurrentVersion should always be the latest, thus this will always involve an upgrade.
+	if !IsCurrentVersion(ver) {
+		if err := upgradePolicyTo(p, CurrentVersion()); err != nil {
+			return err
 		}
-
-		upgradeLegacyToVersion1(p)
-	}
-	if Compare(policyVersion, Version1()) > 0 && len(p.GetWhitelists()) > 0 {
-		// Policy.whitelists is deprecated in favor of Policy.exclusions in all
-		// versions greater than Version1.
-		return errors.New("field 'whitelists' is deprecated in this version")
-	}
-	if Compare(policyVersion, Version1()) <= 0 {
-		// It's fine to receive exclusions but not both exclusions and whitelists.
-		if len(p.GetWhitelists()) > 0 && len(p.GetExclusions()) > 0 {
-			return errors.New("both 'exclusions' and 'whitelists' fields are set")
-		}
-
-		upgradeVersion1ToVersion1_1(p)
 	}
 
 	if p.PolicyVersion != CurrentVersion().String() {

@@ -4,33 +4,32 @@ package postgres
 
 import (
 	"context"
-	"reflect"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sync"
+	"gorm.io/gorm"
 )
 
 const (
-	baseTable  = "clusters"
-	countStmt  = "SELECT COUNT(*) FROM clusters"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusters WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM clusters WHERE Id = $1"
-	deleteStmt  = "DELETE FROM clusters WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM clusters"
-	getIDsStmt  = "SELECT Id FROM clusters"
-	getManyStmt = "SELECT serialized FROM clusters WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM clusters WHERE Id = ANY($1::text[])"
+	baseTable = "clusters"
 
 	batchAfter = 100
 
@@ -38,16 +37,15 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), baseTable)
-	log    = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.ClustersSchema
+	targetResource = resources.Cluster
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -67,123 +65,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	mutex sync.Mutex
 }
 
-func createTableClusters(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists clusters (
-    Id varchar,
-    Name varchar UNIQUE,
-    Type integer,
-    Labels jsonb,
-    MainImage varchar,
-    CollectorImage varchar,
-    CentralApiEndpoint varchar,
-    RuntimeSupport bool,
-    CollectionMethod integer,
-    AdmissionController bool,
-    AdmissionControllerUpdates bool,
-    AdmissionControllerEvents bool,
-    Status_SensorVersion varchar,
-    Status_DEPRECATEDLastContact timestamp,
-    Status_ProviderMetadata_Region varchar,
-    Status_ProviderMetadata_Zone varchar,
-    Status_ProviderMetadata_Google_Project varchar,
-    Status_ProviderMetadata_Google_ClusterName varchar,
-    Status_ProviderMetadata_Aws_AccountId varchar,
-    Status_ProviderMetadata_Azure_SubscriptionId varchar,
-    Status_ProviderMetadata_Verified bool,
-    Status_OrchestratorMetadata_Version varchar,
-    Status_OrchestratorMetadata_OpenshiftVersion varchar,
-    Status_OrchestratorMetadata_BuildDate timestamp,
-    Status_OrchestratorMetadata_ApiVersions text[],
-    Status_UpgradeStatus_Upgradability integer,
-    Status_UpgradeStatus_UpgradabilityStatusReason varchar,
-    Status_UpgradeStatus_MostRecentProcess_Active bool,
-    Status_UpgradeStatus_MostRecentProcess_Id varchar,
-    Status_UpgradeStatus_MostRecentProcess_TargetVersion varchar,
-    Status_UpgradeStatus_MostRecentProcess_UpgraderImage varchar,
-    Status_UpgradeStatus_MostRecentProcess_InitiatedAt timestamp,
-    Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeState integer,
-    Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeStatusDetail varchar,
-    Status_UpgradeStatus_MostRecentProcess_Progress_Since timestamp,
-    Status_UpgradeStatus_MostRecentProcess_Type integer,
-    Status_CertExpiryStatus_SensorCertExpiry timestamp,
-    Status_CertExpiryStatus_SensorCertNotBefore timestamp,
-    DynamicConfig_AdmissionControllerConfig_Enabled bool,
-    DynamicConfig_AdmissionControllerConfig_TimeoutSeconds integer,
-    DynamicConfig_AdmissionControllerConfig_ScanInline bool,
-    DynamicConfig_AdmissionControllerConfig_DisableBypass bool,
-    DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates bool,
-    DynamicConfig_RegistryOverride varchar,
-    DynamicConfig_DisableAuditLogs bool,
-    TolerationsConfig_Disabled bool,
-    Priority integer,
-    HealthStatus_Id varchar,
-    HealthStatus_CollectorHealthInfo_Version varchar,
-    HealthStatus_CollectorHealthInfo_TotalDesiredPods integer,
-    HealthStatus_CollectorHealthInfo_TotalReadyPods integer,
-    HealthStatus_CollectorHealthInfo_TotalRegisteredNodes integer,
-    HealthStatus_CollectorHealthInfo_StatusErrors text[],
-    HealthStatus_AdmissionControlHealthInfo_TotalDesiredPods integer,
-    HealthStatus_AdmissionControlHealthInfo_TotalReadyPods integer,
-    HealthStatus_AdmissionControlHealthInfo_StatusErrors text[],
-    HealthStatus_SensorHealthStatus integer,
-    HealthStatus_CollectorHealthStatus integer,
-    HealthStatus_OverallHealthStatus integer,
-    HealthStatus_AdmissionControlHealthStatus integer,
-    HealthStatus_LastContact timestamp,
-    HealthStatus_HealthInfoComplete bool,
-    SlimCollector bool,
-    HelmConfig_DynamicConfig_AdmissionControllerConfig_Enabled bool,
-    HelmConfig_DynamicConfig_AdmissionControllerConfig_TimeoutSeconds integer,
-    HelmConfig_DynamicConfig_AdmissionControllerConfig_ScanInline bool,
-    HelmConfig_DynamicConfig_AdmissionControllerConfig_DisableBypass bool,
-    HelmConfig_DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates bool,
-    HelmConfig_DynamicConfig_RegistryOverride varchar,
-    HelmConfig_DynamicConfig_DisableAuditLogs bool,
-    HelmConfig_StaticConfig_Type integer,
-    HelmConfig_StaticConfig_MainImage varchar,
-    HelmConfig_StaticConfig_CentralApiEndpoint varchar,
-    HelmConfig_StaticConfig_CollectionMethod integer,
-    HelmConfig_StaticConfig_CollectorImage varchar,
-    HelmConfig_StaticConfig_AdmissionController bool,
-    HelmConfig_StaticConfig_AdmissionControllerUpdates bool,
-    HelmConfig_StaticConfig_TolerationsConfig_Disabled bool,
-    HelmConfig_StaticConfig_SlimCollector bool,
-    HelmConfig_StaticConfig_AdmissionControllerEvents bool,
-    HelmConfig_ConfigFingerprint varchar,
-    HelmConfig_ClusterLabels jsonb,
-    MostRecentSensorId_SystemNamespaceId varchar,
-    MostRecentSensorId_DefaultNamespaceId varchar,
-    MostRecentSensorId_AppNamespace varchar,
-    MostRecentSensorId_AppNamespaceId varchar,
-    MostRecentSensorId_AppServiceaccountId varchar,
-    MostRecentSensorId_K8SNodeName varchar,
-    AuditLogState jsonb,
-    InitBundleId varchar,
-    ManagedBy integer,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+// New returns a new Store instance using the provided sql instance.
+func New(db *pgxpool.Pool) Store {
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
-func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) error {
+func insertIntoClusters(ctx context.Context, batch *pgx.Batch, obj *storage.Cluster) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -194,103 +87,12 @@ func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) er
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
-		obj.GetType(),
 		obj.GetLabels(),
-		obj.GetMainImage(),
-		obj.GetCollectorImage(),
-		obj.GetCentralApiEndpoint(),
-		obj.GetRuntimeSupport(),
-		obj.GetCollectionMethod(),
-		obj.GetAdmissionController(),
-		obj.GetAdmissionControllerUpdates(),
-		obj.GetAdmissionControllerEvents(),
-		obj.GetStatus().GetSensorVersion(),
-		pgutils.NilOrTime(obj.GetStatus().GetDEPRECATEDLastContact()),
-		obj.GetStatus().GetProviderMetadata().GetRegion(),
-		obj.GetStatus().GetProviderMetadata().GetZone(),
-		obj.GetStatus().GetProviderMetadata().GetGoogle().GetProject(),
-		obj.GetStatus().GetProviderMetadata().GetGoogle().GetClusterName(),
-		obj.GetStatus().GetProviderMetadata().GetAws().GetAccountId(),
-		obj.GetStatus().GetProviderMetadata().GetAzure().GetSubscriptionId(),
-		obj.GetStatus().GetProviderMetadata().GetVerified(),
-		obj.GetStatus().GetOrchestratorMetadata().GetVersion(),
-		obj.GetStatus().GetOrchestratorMetadata().GetOpenshiftVersion(),
-		pgutils.NilOrTime(obj.GetStatus().GetOrchestratorMetadata().GetBuildDate()),
-		obj.GetStatus().GetOrchestratorMetadata().GetApiVersions(),
-		obj.GetStatus().GetUpgradeStatus().GetUpgradability(),
-		obj.GetStatus().GetUpgradeStatus().GetUpgradabilityStatusReason(),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetActive(),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetId(),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetTargetVersion(),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetUpgraderImage(),
-		pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetInitiatedAt()),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeState(),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeStatusDetail(),
-		pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetSince()),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetType(),
-		pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry()),
-		pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore()),
-		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
-		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
-		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
-		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
-		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
-		obj.GetDynamicConfig().GetRegistryOverride(),
-		obj.GetDynamicConfig().GetDisableAuditLogs(),
-		obj.GetTolerationsConfig().GetDisabled(),
-		obj.GetPriority(),
-		obj.GetHealthStatus().GetId(),
-		obj.GetHealthStatus().GetCollectorHealthInfo().GetVersion(),
-		obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalDesiredPods(),
-		obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalReadyPods(),
-		obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalRegisteredNodes(),
-		obj.GetHealthStatus().GetCollectorHealthInfo().GetStatusErrors(),
-		obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetTotalDesiredPods(),
-		obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetTotalReadyPods(),
-		obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetStatusErrors(),
-		obj.GetHealthStatus().GetSensorHealthStatus(),
-		obj.GetHealthStatus().GetCollectorHealthStatus(),
-		obj.GetHealthStatus().GetOverallHealthStatus(),
-		obj.GetHealthStatus().GetAdmissionControlHealthStatus(),
-		pgutils.NilOrTime(obj.GetHealthStatus().GetLastContact()),
-		obj.GetHealthStatus().GetHealthInfoComplete(),
-		obj.GetSlimCollector(),
-		obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
-		obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
-		obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
-		obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
-		obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
-		obj.GetHelmConfig().GetDynamicConfig().GetRegistryOverride(),
-		obj.GetHelmConfig().GetDynamicConfig().GetDisableAuditLogs(),
-		obj.GetHelmConfig().GetStaticConfig().GetType(),
-		obj.GetHelmConfig().GetStaticConfig().GetMainImage(),
-		obj.GetHelmConfig().GetStaticConfig().GetCentralApiEndpoint(),
-		obj.GetHelmConfig().GetStaticConfig().GetCollectionMethod(),
-		obj.GetHelmConfig().GetStaticConfig().GetCollectorImage(),
-		obj.GetHelmConfig().GetStaticConfig().GetAdmissionController(),
-		obj.GetHelmConfig().GetStaticConfig().GetAdmissionControllerUpdates(),
-		obj.GetHelmConfig().GetStaticConfig().GetTolerationsConfig().GetDisabled(),
-		obj.GetHelmConfig().GetStaticConfig().GetSlimCollector(),
-		obj.GetHelmConfig().GetStaticConfig().GetAdmissionControllerEvents(),
-		obj.GetHelmConfig().GetConfigFingerprint(),
-		obj.GetHelmConfig().GetClusterLabels(),
-		obj.GetMostRecentSensorId().GetSystemNamespaceId(),
-		obj.GetMostRecentSensorId().GetDefaultNamespaceId(),
-		obj.GetMostRecentSensorId().GetAppNamespace(),
-		obj.GetMostRecentSensorId().GetAppNamespaceId(),
-		obj.GetMostRecentSensorId().GetAppServiceaccountId(),
-		obj.GetMostRecentSensorId().GetK8SNodeName(),
-		obj.GetAuditLogState(),
-		obj.GetInitBundleId(),
-		obj.GetManagedBy(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusters (Id, Name, Type, Labels, MainImage, CollectorImage, CentralApiEndpoint, RuntimeSupport, CollectionMethod, AdmissionController, AdmissionControllerUpdates, AdmissionControllerEvents, Status_SensorVersion, Status_DEPRECATEDLastContact, Status_ProviderMetadata_Region, Status_ProviderMetadata_Zone, Status_ProviderMetadata_Google_Project, Status_ProviderMetadata_Google_ClusterName, Status_ProviderMetadata_Aws_AccountId, Status_ProviderMetadata_Azure_SubscriptionId, Status_ProviderMetadata_Verified, Status_OrchestratorMetadata_Version, Status_OrchestratorMetadata_OpenshiftVersion, Status_OrchestratorMetadata_BuildDate, Status_OrchestratorMetadata_ApiVersions, Status_UpgradeStatus_Upgradability, Status_UpgradeStatus_UpgradabilityStatusReason, Status_UpgradeStatus_MostRecentProcess_Active, Status_UpgradeStatus_MostRecentProcess_Id, Status_UpgradeStatus_MostRecentProcess_TargetVersion, Status_UpgradeStatus_MostRecentProcess_UpgraderImage, Status_UpgradeStatus_MostRecentProcess_InitiatedAt, Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeState, Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeStatusDetail, Status_UpgradeStatus_MostRecentProcess_Progress_Since, Status_UpgradeStatus_MostRecentProcess_Type, Status_CertExpiryStatus_SensorCertExpiry, Status_CertExpiryStatus_SensorCertNotBefore, DynamicConfig_AdmissionControllerConfig_Enabled, DynamicConfig_AdmissionControllerConfig_TimeoutSeconds, DynamicConfig_AdmissionControllerConfig_ScanInline, DynamicConfig_AdmissionControllerConfig_DisableBypass, DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates, DynamicConfig_RegistryOverride, DynamicConfig_DisableAuditLogs, TolerationsConfig_Disabled, Priority, HealthStatus_Id, HealthStatus_CollectorHealthInfo_Version, HealthStatus_CollectorHealthInfo_TotalDesiredPods, HealthStatus_CollectorHealthInfo_TotalReadyPods, HealthStatus_CollectorHealthInfo_TotalRegisteredNodes, HealthStatus_CollectorHealthInfo_StatusErrors, HealthStatus_AdmissionControlHealthInfo_TotalDesiredPods, HealthStatus_AdmissionControlHealthInfo_TotalReadyPods, HealthStatus_AdmissionControlHealthInfo_StatusErrors, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus, HealthStatus_LastContact, HealthStatus_HealthInfoComplete, SlimCollector, HelmConfig_DynamicConfig_AdmissionControllerConfig_Enabled, HelmConfig_DynamicConfig_AdmissionControllerConfig_TimeoutSeconds, HelmConfig_DynamicConfig_AdmissionControllerConfig_ScanInline, HelmConfig_DynamicConfig_AdmissionControllerConfig_DisableBypass, HelmConfig_DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates, HelmConfig_DynamicConfig_RegistryOverride, HelmConfig_DynamicConfig_DisableAuditLogs, HelmConfig_StaticConfig_Type, HelmConfig_StaticConfig_MainImage, HelmConfig_StaticConfig_CentralApiEndpoint, HelmConfig_StaticConfig_CollectionMethod, HelmConfig_StaticConfig_CollectorImage, HelmConfig_StaticConfig_AdmissionController, HelmConfig_StaticConfig_AdmissionControllerUpdates, HelmConfig_StaticConfig_TolerationsConfig_Disabled, HelmConfig_StaticConfig_SlimCollector, HelmConfig_StaticConfig_AdmissionControllerEvents, HelmConfig_ConfigFingerprint, HelmConfig_ClusterLabels, MostRecentSensorId_SystemNamespaceId, MostRecentSensorId_DefaultNamespaceId, MostRecentSensorId_AppNamespace, MostRecentSensorId_AppNamespaceId, MostRecentSensorId_AppServiceaccountId, MostRecentSensorId_K8SNodeName, AuditLogState, InitBundleId, ManagedBy, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, $71, $72, $73, $74, $75, $76, $77, $78, $79, $80, $81, $82, $83, $84, $85, $86, $87, $88, $89, $90, $91, $92) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Labels = EXCLUDED.Labels, MainImage = EXCLUDED.MainImage, CollectorImage = EXCLUDED.CollectorImage, CentralApiEndpoint = EXCLUDED.CentralApiEndpoint, RuntimeSupport = EXCLUDED.RuntimeSupport, CollectionMethod = EXCLUDED.CollectionMethod, AdmissionController = EXCLUDED.AdmissionController, AdmissionControllerUpdates = EXCLUDED.AdmissionControllerUpdates, AdmissionControllerEvents = EXCLUDED.AdmissionControllerEvents, Status_SensorVersion = EXCLUDED.Status_SensorVersion, Status_DEPRECATEDLastContact = EXCLUDED.Status_DEPRECATEDLastContact, Status_ProviderMetadata_Region = EXCLUDED.Status_ProviderMetadata_Region, Status_ProviderMetadata_Zone = EXCLUDED.Status_ProviderMetadata_Zone, Status_ProviderMetadata_Google_Project = EXCLUDED.Status_ProviderMetadata_Google_Project, Status_ProviderMetadata_Google_ClusterName = EXCLUDED.Status_ProviderMetadata_Google_ClusterName, Status_ProviderMetadata_Aws_AccountId = EXCLUDED.Status_ProviderMetadata_Aws_AccountId, Status_ProviderMetadata_Azure_SubscriptionId = EXCLUDED.Status_ProviderMetadata_Azure_SubscriptionId, Status_ProviderMetadata_Verified = EXCLUDED.Status_ProviderMetadata_Verified, Status_OrchestratorMetadata_Version = EXCLUDED.Status_OrchestratorMetadata_Version, Status_OrchestratorMetadata_OpenshiftVersion = EXCLUDED.Status_OrchestratorMetadata_OpenshiftVersion, Status_OrchestratorMetadata_BuildDate = EXCLUDED.Status_OrchestratorMetadata_BuildDate, Status_OrchestratorMetadata_ApiVersions = EXCLUDED.Status_OrchestratorMetadata_ApiVersions, Status_UpgradeStatus_Upgradability = EXCLUDED.Status_UpgradeStatus_Upgradability, Status_UpgradeStatus_UpgradabilityStatusReason = EXCLUDED.Status_UpgradeStatus_UpgradabilityStatusReason, Status_UpgradeStatus_MostRecentProcess_Active = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Active, Status_UpgradeStatus_MostRecentProcess_Id = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Id, Status_UpgradeStatus_MostRecentProcess_TargetVersion = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_TargetVersion, Status_UpgradeStatus_MostRecentProcess_UpgraderImage = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_UpgraderImage, Status_UpgradeStatus_MostRecentProcess_InitiatedAt = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_InitiatedAt, Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeState = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeState, Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeStatusDetail = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeStatusDetail, Status_UpgradeStatus_MostRecentProcess_Progress_Since = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Progress_Since, Status_UpgradeStatus_MostRecentProcess_Type = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Type, Status_CertExpiryStatus_SensorCertExpiry = EXCLUDED.Status_CertExpiryStatus_SensorCertExpiry, Status_CertExpiryStatus_SensorCertNotBefore = EXCLUDED.Status_CertExpiryStatus_SensorCertNotBefore, DynamicConfig_AdmissionControllerConfig_Enabled = EXCLUDED.DynamicConfig_AdmissionControllerConfig_Enabled, DynamicConfig_AdmissionControllerConfig_TimeoutSeconds = EXCLUDED.DynamicConfig_AdmissionControllerConfig_TimeoutSeconds, DynamicConfig_AdmissionControllerConfig_ScanInline = EXCLUDED.DynamicConfig_AdmissionControllerConfig_ScanInline, DynamicConfig_AdmissionControllerConfig_DisableBypass = EXCLUDED.DynamicConfig_AdmissionControllerConfig_DisableBypass, DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates = EXCLUDED.DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates, DynamicConfig_RegistryOverride = EXCLUDED.DynamicConfig_RegistryOverride, DynamicConfig_DisableAuditLogs = EXCLUDED.DynamicConfig_DisableAuditLogs, TolerationsConfig_Disabled = EXCLUDED.TolerationsConfig_Disabled, Priority = EXCLUDED.Priority, HealthStatus_Id = EXCLUDED.HealthStatus_Id, HealthStatus_CollectorHealthInfo_Version = EXCLUDED.HealthStatus_CollectorHealthInfo_Version, HealthStatus_CollectorHealthInfo_TotalDesiredPods = EXCLUDED.HealthStatus_CollectorHealthInfo_TotalDesiredPods, HealthStatus_CollectorHealthInfo_TotalReadyPods = EXCLUDED.HealthStatus_CollectorHealthInfo_TotalReadyPods, HealthStatus_CollectorHealthInfo_TotalRegisteredNodes = EXCLUDED.HealthStatus_CollectorHealthInfo_TotalRegisteredNodes, HealthStatus_CollectorHealthInfo_StatusErrors = EXCLUDED.HealthStatus_CollectorHealthInfo_StatusErrors, HealthStatus_AdmissionControlHealthInfo_TotalDesiredPods = EXCLUDED.HealthStatus_AdmissionControlHealthInfo_TotalDesiredPods, HealthStatus_AdmissionControlHealthInfo_TotalReadyPods = EXCLUDED.HealthStatus_AdmissionControlHealthInfo_TotalReadyPods, HealthStatus_AdmissionControlHealthInfo_StatusErrors = EXCLUDED.HealthStatus_AdmissionControlHealthInfo_StatusErrors, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus, HealthStatus_LastContact = EXCLUDED.HealthStatus_LastContact, HealthStatus_HealthInfoComplete = EXCLUDED.HealthStatus_HealthInfoComplete, SlimCollector = EXCLUDED.SlimCollector, HelmConfig_DynamicConfig_AdmissionControllerConfig_Enabled = EXCLUDED.HelmConfig_DynamicConfig_AdmissionControllerConfig_Enabled, HelmConfig_DynamicConfig_AdmissionControllerConfig_TimeoutSeconds = EXCLUDED.HelmConfig_DynamicConfig_AdmissionControllerConfig_TimeoutSeconds, HelmConfig_DynamicConfig_AdmissionControllerConfig_ScanInline = EXCLUDED.HelmConfig_DynamicConfig_AdmissionControllerConfig_ScanInline, HelmConfig_DynamicConfig_AdmissionControllerConfig_DisableBypass = EXCLUDED.HelmConfig_DynamicConfig_AdmissionControllerConfig_DisableBypass, HelmConfig_DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates = EXCLUDED.HelmConfig_DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates, HelmConfig_DynamicConfig_RegistryOverride = EXCLUDED.HelmConfig_DynamicConfig_RegistryOverride, HelmConfig_DynamicConfig_DisableAuditLogs = EXCLUDED.HelmConfig_DynamicConfig_DisableAuditLogs, HelmConfig_StaticConfig_Type = EXCLUDED.HelmConfig_StaticConfig_Type, HelmConfig_StaticConfig_MainImage = EXCLUDED.HelmConfig_StaticConfig_MainImage, HelmConfig_StaticConfig_CentralApiEndpoint = EXCLUDED.HelmConfig_StaticConfig_CentralApiEndpoint, HelmConfig_StaticConfig_CollectionMethod = EXCLUDED.HelmConfig_StaticConfig_CollectionMethod, HelmConfig_StaticConfig_CollectorImage = EXCLUDED.HelmConfig_StaticConfig_CollectorImage, HelmConfig_StaticConfig_AdmissionController = EXCLUDED.HelmConfig_StaticConfig_AdmissionController, HelmConfig_StaticConfig_AdmissionControllerUpdates = EXCLUDED.HelmConfig_StaticConfig_AdmissionControllerUpdates, HelmConfig_StaticConfig_TolerationsConfig_Disabled = EXCLUDED.HelmConfig_StaticConfig_TolerationsConfig_Disabled, HelmConfig_StaticConfig_SlimCollector = EXCLUDED.HelmConfig_StaticConfig_SlimCollector, HelmConfig_StaticConfig_AdmissionControllerEvents = EXCLUDED.HelmConfig_StaticConfig_AdmissionControllerEvents, HelmConfig_ConfigFingerprint = EXCLUDED.HelmConfig_ConfigFingerprint, HelmConfig_ClusterLabels = EXCLUDED.HelmConfig_ClusterLabels, MostRecentSensorId_SystemNamespaceId = EXCLUDED.MostRecentSensorId_SystemNamespaceId, MostRecentSensorId_DefaultNamespaceId = EXCLUDED.MostRecentSensorId_DefaultNamespaceId, MostRecentSensorId_AppNamespace = EXCLUDED.MostRecentSensorId_AppNamespace, MostRecentSensorId_AppNamespaceId = EXCLUDED.MostRecentSensorId_AppNamespaceId, MostRecentSensorId_AppServiceaccountId = EXCLUDED.MostRecentSensorId_AppServiceaccountId, MostRecentSensorId_K8SNodeName = EXCLUDED.MostRecentSensorId_K8SNodeName, AuditLogState = EXCLUDED.AuditLogState, InitBundleId = EXCLUDED.InitBundleId, ManagedBy = EXCLUDED.ManagedBy, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO clusters (Id, Name, Labels, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -311,183 +113,7 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 
 		"name",
 
-		"type",
-
 		"labels",
-
-		"mainimage",
-
-		"collectorimage",
-
-		"centralapiendpoint",
-
-		"runtimesupport",
-
-		"collectionmethod",
-
-		"admissioncontroller",
-
-		"admissioncontrollerupdates",
-
-		"admissioncontrollerevents",
-
-		"status_sensorversion",
-
-		"status_deprecatedlastcontact",
-
-		"status_providermetadata_region",
-
-		"status_providermetadata_zone",
-
-		"status_providermetadata_google_project",
-
-		"status_providermetadata_google_clustername",
-
-		"status_providermetadata_aws_accountid",
-
-		"status_providermetadata_azure_subscriptionid",
-
-		"status_providermetadata_verified",
-
-		"status_orchestratormetadata_version",
-
-		"status_orchestratormetadata_openshiftversion",
-
-		"status_orchestratormetadata_builddate",
-
-		"status_orchestratormetadata_apiversions",
-
-		"status_upgradestatus_upgradability",
-
-		"status_upgradestatus_upgradabilitystatusreason",
-
-		"status_upgradestatus_mostrecentprocess_active",
-
-		"status_upgradestatus_mostrecentprocess_id",
-
-		"status_upgradestatus_mostrecentprocess_targetversion",
-
-		"status_upgradestatus_mostrecentprocess_upgraderimage",
-
-		"status_upgradestatus_mostrecentprocess_initiatedat",
-
-		"status_upgradestatus_mostrecentprocess_progress_upgradestate",
-
-		"status_upgradestatus_mostrecentprocess_progress_upgradestatusdetail",
-
-		"status_upgradestatus_mostrecentprocess_progress_since",
-
-		"status_upgradestatus_mostrecentprocess_type",
-
-		"status_certexpirystatus_sensorcertexpiry",
-
-		"status_certexpirystatus_sensorcertnotbefore",
-
-		"dynamicconfig_admissioncontrollerconfig_enabled",
-
-		"dynamicconfig_admissioncontrollerconfig_timeoutseconds",
-
-		"dynamicconfig_admissioncontrollerconfig_scaninline",
-
-		"dynamicconfig_admissioncontrollerconfig_disablebypass",
-
-		"dynamicconfig_admissioncontrollerconfig_enforceonupdates",
-
-		"dynamicconfig_registryoverride",
-
-		"dynamicconfig_disableauditlogs",
-
-		"tolerationsconfig_disabled",
-
-		"priority",
-
-		"healthstatus_id",
-
-		"healthstatus_collectorhealthinfo_version",
-
-		"healthstatus_collectorhealthinfo_totaldesiredpods",
-
-		"healthstatus_collectorhealthinfo_totalreadypods",
-
-		"healthstatus_collectorhealthinfo_totalregisterednodes",
-
-		"healthstatus_collectorhealthinfo_statuserrors",
-
-		"healthstatus_admissioncontrolhealthinfo_totaldesiredpods",
-
-		"healthstatus_admissioncontrolhealthinfo_totalreadypods",
-
-		"healthstatus_admissioncontrolhealthinfo_statuserrors",
-
-		"healthstatus_sensorhealthstatus",
-
-		"healthstatus_collectorhealthstatus",
-
-		"healthstatus_overallhealthstatus",
-
-		"healthstatus_admissioncontrolhealthstatus",
-
-		"healthstatus_lastcontact",
-
-		"healthstatus_healthinfocomplete",
-
-		"slimcollector",
-
-		"helmconfig_dynamicconfig_admissioncontrollerconfig_enabled",
-
-		"helmconfig_dynamicconfig_admissioncontrollerconfig_timeoutseconds",
-
-		"helmconfig_dynamicconfig_admissioncontrollerconfig_scaninline",
-
-		"helmconfig_dynamicconfig_admissioncontrollerconfig_disablebypass",
-
-		"helmconfig_dynamicconfig_admissioncontrollerconfig_enforceonupdates",
-
-		"helmconfig_dynamicconfig_registryoverride",
-
-		"helmconfig_dynamicconfig_disableauditlogs",
-
-		"helmconfig_staticconfig_type",
-
-		"helmconfig_staticconfig_mainimage",
-
-		"helmconfig_staticconfig_centralapiendpoint",
-
-		"helmconfig_staticconfig_collectionmethod",
-
-		"helmconfig_staticconfig_collectorimage",
-
-		"helmconfig_staticconfig_admissioncontroller",
-
-		"helmconfig_staticconfig_admissioncontrollerupdates",
-
-		"helmconfig_staticconfig_tolerationsconfig_disabled",
-
-		"helmconfig_staticconfig_slimcollector",
-
-		"helmconfig_staticconfig_admissioncontrollerevents",
-
-		"helmconfig_configfingerprint",
-
-		"helmconfig_clusterlabels",
-
-		"mostrecentsensorid_systemnamespaceid",
-
-		"mostrecentsensorid_defaultnamespaceid",
-
-		"mostrecentsensorid_appnamespace",
-
-		"mostrecentsensorid_appnamespaceid",
-
-		"mostrecentsensorid_appserviceaccountid",
-
-		"mostrecentsensorid_k8snodename",
-
-		"auditlogstate",
-
-		"initbundleid",
-
-		"managedby",
 
 		"serialized",
 	}
@@ -507,183 +133,7 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 
 			obj.GetName(),
 
-			obj.GetType(),
-
 			obj.GetLabels(),
-
-			obj.GetMainImage(),
-
-			obj.GetCollectorImage(),
-
-			obj.GetCentralApiEndpoint(),
-
-			obj.GetRuntimeSupport(),
-
-			obj.GetCollectionMethod(),
-
-			obj.GetAdmissionController(),
-
-			obj.GetAdmissionControllerUpdates(),
-
-			obj.GetAdmissionControllerEvents(),
-
-			obj.GetStatus().GetSensorVersion(),
-
-			pgutils.NilOrTime(obj.GetStatus().GetDEPRECATEDLastContact()),
-
-			obj.GetStatus().GetProviderMetadata().GetRegion(),
-
-			obj.GetStatus().GetProviderMetadata().GetZone(),
-
-			obj.GetStatus().GetProviderMetadata().GetGoogle().GetProject(),
-
-			obj.GetStatus().GetProviderMetadata().GetGoogle().GetClusterName(),
-
-			obj.GetStatus().GetProviderMetadata().GetAws().GetAccountId(),
-
-			obj.GetStatus().GetProviderMetadata().GetAzure().GetSubscriptionId(),
-
-			obj.GetStatus().GetProviderMetadata().GetVerified(),
-
-			obj.GetStatus().GetOrchestratorMetadata().GetVersion(),
-
-			obj.GetStatus().GetOrchestratorMetadata().GetOpenshiftVersion(),
-
-			pgutils.NilOrTime(obj.GetStatus().GetOrchestratorMetadata().GetBuildDate()),
-
-			obj.GetStatus().GetOrchestratorMetadata().GetApiVersions(),
-
-			obj.GetStatus().GetUpgradeStatus().GetUpgradability(),
-
-			obj.GetStatus().GetUpgradeStatus().GetUpgradabilityStatusReason(),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetActive(),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetId(),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetTargetVersion(),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetUpgraderImage(),
-
-			pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetInitiatedAt()),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeState(),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeStatusDetail(),
-
-			pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetSince()),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetType(),
-
-			pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry()),
-
-			pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore()),
-
-			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
-
-			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
-
-			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
-
-			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
-
-			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
-
-			obj.GetDynamicConfig().GetRegistryOverride(),
-
-			obj.GetDynamicConfig().GetDisableAuditLogs(),
-
-			obj.GetTolerationsConfig().GetDisabled(),
-
-			obj.GetPriority(),
-
-			obj.GetHealthStatus().GetId(),
-
-			obj.GetHealthStatus().GetCollectorHealthInfo().GetVersion(),
-
-			obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalDesiredPods(),
-
-			obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalReadyPods(),
-
-			obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalRegisteredNodes(),
-
-			obj.GetHealthStatus().GetCollectorHealthInfo().GetStatusErrors(),
-
-			obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetTotalDesiredPods(),
-
-			obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetTotalReadyPods(),
-
-			obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetStatusErrors(),
-
-			obj.GetHealthStatus().GetSensorHealthStatus(),
-
-			obj.GetHealthStatus().GetCollectorHealthStatus(),
-
-			obj.GetHealthStatus().GetOverallHealthStatus(),
-
-			obj.GetHealthStatus().GetAdmissionControlHealthStatus(),
-
-			pgutils.NilOrTime(obj.GetHealthStatus().GetLastContact()),
-
-			obj.GetHealthStatus().GetHealthInfoComplete(),
-
-			obj.GetSlimCollector(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetRegistryOverride(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetDisableAuditLogs(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetType(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetMainImage(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetCentralApiEndpoint(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetCollectionMethod(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetCollectorImage(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetAdmissionController(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetAdmissionControllerUpdates(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetTolerationsConfig().GetDisabled(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetSlimCollector(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetAdmissionControllerEvents(),
-
-			obj.GetHelmConfig().GetConfigFingerprint(),
-
-			obj.GetHelmConfig().GetClusterLabels(),
-
-			obj.GetMostRecentSensorId().GetSystemNamespaceId(),
-
-			obj.GetMostRecentSensorId().GetDefaultNamespaceId(),
-
-			obj.GetMostRecentSensorId().GetAppNamespace(),
-
-			obj.GetMostRecentSensorId().GetAppNamespaceId(),
-
-			obj.GetMostRecentSensorId().GetAppServiceaccountId(),
-
-			obj.GetMostRecentSensorId().GetK8SNodeName(),
-
-			obj.GetAuditLogState(),
-
-			obj.GetInitBundleId(),
-
-			obj.GetManagedBy(),
 
 			serialized,
 		})
@@ -696,8 +146,7 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -717,17 +166,11 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 	return err
 }
 
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableClusters(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Cluster) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "Cluster")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Cluster")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -748,22 +191,27 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Cluster) erro
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Cluster) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "Cluster")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Cluster")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoClusters(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoClusters(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		if err := batchResults.Close(); err != nil {
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}
@@ -773,11 +221,43 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Cluster) error 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Cluster) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Cluster")
 
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
+		ClusterID(obj.GetId())
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Cluster) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Cluster")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		var deniedIds []string
+		for _, obj := range objs {
+			subScopeChecker := scopeChecker.ClusterID(obj.GetId())
+			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
+				return err
+			} else if !ok {
+				deniedIds = append(deniedIds, obj.GetId())
+			}
+		}
+		if len(deniedIds) != 0 {
+			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying clusters with IDs [%s] was denied", strings.Join(deniedIds, ", "))
+		}
+	}
+
+	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+	// violations
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -790,36 +270,71 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Cluster) err
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Cluster")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
 		return 0, err
 	}
-	return count, nil
+	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Cluster")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return false, err
 	}
-	return exists, nil
+	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Cluster, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Cluster")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "Cluster")
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return nil, false, err
+	}
+	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -830,45 +345,62 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Cluster, bool,
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Cluster")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "Cluster")
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ClusterIDs")
+	var sacQueryFilter *v1.Query
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
 	}
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
+	}
+
 	return ids, nil
 }
 
@@ -876,12 +408,32 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Cluster, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Cluster")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "Cluster")
-	defer release()
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		return nil, nil, err
+	}
+	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -890,13 +442,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Clust
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.Cluster)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.Cluster{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
@@ -921,32 +468,62 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Clust
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Cluster")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "Cluster")
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Cluster) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+		return err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
+	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		var msg storage.Cluster
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
+		for _, data := range rows {
+			var msg storage.Cluster
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
 		}
-		if err := fn(&msg); err != nil {
-			return err
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil
@@ -961,6 +538,12 @@ func dropTableClusters(ctx context.Context, db *pgxpool.Pool) {
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableClusters(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

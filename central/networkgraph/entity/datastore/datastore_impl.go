@@ -2,19 +2,25 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store"
+	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -55,6 +61,33 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 
 	go ds.initNetworkTrees(context.TODO())
 	return ds
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (EntityDataStore, error) {
+	dbstore := postgres.New(pool)
+	graphConfigStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	treeMgr := networktree.Singleton()
+	sensorCnxMgr := connection.ManagerSingleton()
+	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr), nil
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) (EntityDataStore, error) {
+	dbstore, err := rocksdb.New(rocksengine)
+	if err != nil {
+		return nil, err
+	}
+	graphConfigStore, err := graphConfigDS.GetTestRocksBleveDataStore(t, rocksengine)
+	if err != nil {
+		return nil, err
+	}
+	treeMgr := networktree.Singleton()
+	sensorCnxMgr := connection.ManagerSingleton()
+	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr), nil
 }
 
 func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {
@@ -127,7 +160,7 @@ func (ds *dataStoreImpl) GetEntity(ctx context.Context, id string) (*storage.Net
 
 func (ds *dataStoreImpl) GetAllEntitiesForCluster(ctx context.Context, clusterID string) ([]*storage.NetworkEntity, error) {
 	if clusterID == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "cannot get network entities. Cluster ID not specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "cannot get network entities. Cluster ID not specified")
 	}
 
 	graphConfig, err := ds.graphConfig.GetNetworkGraphConfig(graphConfigReadCtx)
@@ -277,7 +310,7 @@ func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEnti
 		return errors.Wrapf(err, "could not determine if network entity %s already exists in DB. SKIPPING",
 			entity.GetInfo().GetExternalSource().GetName())
 	} else if found {
-		return errors.Wrapf(errorhelpers.ErrAlreadyExists,
+		return errors.Wrapf(errox.AlreadyExists,
 			"network %s of entity %s (CIDR=%s) conflicts with network of stored entity %s (CIDR=%s)",
 			network,
 			entity.GetInfo().GetExternalSource().GetName(), entity.GetInfo().GetExternalSource().GetCidr(),
@@ -362,7 +395,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 
 func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Context, clusterID string) error {
 	if clusterID == "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "external network entities cannot be deleted. Cluster ID not specified")
+		return errors.Wrap(errox.InvalidArgs, "external network entities cannot be deleted. Cluster ID not specified")
 	}
 
 	if ok, err := networkGraphSAC.WriteAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
@@ -464,15 +497,15 @@ func validateExternalNetworkEntity(entity *storage.NetworkEntity) error {
 	}
 
 	if entity.GetInfo().GetType() != storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "only external network graph sources can be created")
+		return errors.Wrap(errox.InvalidArgs, "only external network graph sources can be created")
 	}
 
 	if entity.GetInfo().GetExternalSource() == nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "network entity must be specified")
+		return errors.Wrap(errox.InvalidArgs, "network entity must be specified")
 	}
 
 	if _, err := networkgraph.ValidateCIDR(entity.GetInfo().GetExternalSource().GetCidr()); err != nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	if entity.GetInfo().GetExternalSource().GetName() == "" {
@@ -484,16 +517,16 @@ func validateExternalNetworkEntity(entity *storage.NetworkEntity) error {
 
 func parseAndValidateID(id string) (sac.ResourceID, error) {
 	if id == "" {
-		return sac.ResourceID{}, errors.Wrap(errorhelpers.ErrInvalidArgs, "network entity ID must be specified")
+		return sac.ResourceID{}, errors.Wrap(errox.InvalidArgs, "network entity ID must be specified")
 	}
 
 	decodedID, err := sac.ParseResourceID(id)
 	if err != nil {
-		return sac.ResourceID{}, errors.Wrapf(errorhelpers.ErrInvalidArgs, "failed to parse network entity id %s", id)
+		return sac.ResourceID{}, errors.Wrapf(errox.InvalidArgs, "failed to parse network entity id %s", id)
 	}
 
 	if !decodedID.IsValid() || decodedID.NamespaceScoped() {
-		return sac.ResourceID{}, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid network entity id %s. Must be cluster-scoped or global-scoped", id)
+		return sac.ResourceID{}, errors.Wrapf(errox.InvalidArgs, "invalid network entity id %s. Must be cluster-scoped or global-scoped", id)
 	}
 	return decodedID, nil
 }

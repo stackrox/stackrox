@@ -2,7 +2,7 @@
 
 function realpath {
 	[[ -n "$1" ]] || return 0
-	python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
+	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
 }
 
 function launch_service {
@@ -99,8 +99,12 @@ function launch_central {
     local STORAGE_ARGS=()
 
     local use_docker=1
-    if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
-    	use_docker=0
+    if [[ "${USE_LOCAL_ROXCTL:-}" == "true" ]]; then
+      echo "Using $(command -v roxctl) for install due to USE_LOCAL_ROXCTL==true"
+      use_docker=0
+    elif [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
+      echo "Using $(command -v roxctl) for install due to version match with MAIN_IMAGE_TAG $MAIN_IMAGE_TAG"
+      use_docker=0
     fi
 
     local DOCKER_PLATFORM_ARGS=()
@@ -158,10 +162,16 @@ function launch_central {
 
     add_args -i "${MAIN_IMAGE}"
 
+    if [[ "${ROX_POSTGRES_DATASTORE}" == "true" && -n "${CENTRAL_DB_IMAGE}" ]]; then
+        add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
+    fi
+
+    add_args "--image-defaults=${ROXCTL_ROX_IMAGE_FLAVOR}"
+
     pkill -f kubectl'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
     pkill -9 -f kubectl'.*port-forward.*' || true
-    command -v oc && pkill -f oc'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
-    command -v oc && pkill -9 -f oc'.*port-forward.*' || true
+    command -v oc >/dev/null && pkill -f oc'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
+    command -v oc >/dev/null && pkill -9 -f oc'.*port-forward.*' || true
 
     if [[ "${STORAGE_CLASS}" == "faster" ]]; then
         kubectl apply -f "${common_dir}/ssd-storageclass.yaml"
@@ -182,6 +192,10 @@ function launch_central {
 
     if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
     	add_args "--with-config-file=${ROXDEPLOY_CONFIG_FILE_MAP}"
+    fi
+
+    if [[ "$POD_SECURITY_POLICIES" == "true" ]]; then
+      add_args "--enable-pod-security-policies"
     fi
 
     local unzip_dir="${k8s_dir}/central-deploy/"
@@ -217,8 +231,6 @@ function launch_central {
     if [[ "${needs_monitoring}" == "true" ]]; then
         echo "Deploying Monitoring..."
         helm_args=(
-          -f "${COMMON_DIR}/monitoring-values.yaml"
-          --set image="${MONITORING_IMAGE}"
           --set persistence.type="${STORAGE}"
           --set exposure.type="${MONITORING_LOAD_BALANCER}"
         )
@@ -230,15 +242,20 @@ function launch_central {
         echo
     fi
 
-	if [[ -f "${unzip_dir}/password" ]]; then
-		export ROX_ADMIN_USER=admin
-		export ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
-	fi
+    if [[ -f "${unzip_dir}/password" ]]; then
+      export ROX_ADMIN_USER=admin
+      export ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
+    fi
 
     echo "Deploying Central..."
 
+    ${KUBE_COMMAND:-kubectl} get namespace "${STACKROX_NAMESPACE}" &>/dev/null || \
+      ${KUBE_COMMAND:-kubectl} create namespace "${STACKROX_NAMESPACE}"
+
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
-      $unzip_dir/scripts/setup.sh
+      if [[ -n "${REGISTRY_USERNAME}" ]]; then
+        $unzip_dir/scripts/setup.sh
+      fi
       central_scripts_dir="$unzip_dir/scripts"
 
       # New helm setup flavor
@@ -279,6 +296,12 @@ function launch_central {
         )
       fi
 
+      if [[ "$POD_SECURITY_POLICIES" == "true" ]]; then
+        helm_args+=(
+          --set system.enablePodSecurityPolicies=true
+        )
+      fi
+
       if [[ -n "$CI" ]]; then
         helm lint "$unzip_dir/chart"
         helm lint "$unzip_dir/chart" -n stackrox
@@ -287,7 +310,9 @@ function launch_central {
       helm install -n stackrox stackrox-central-services "$unzip_dir/chart" \
           "${helm_args[@]}"
     else
-      $unzip_dir/central/scripts/setup.sh
+      if [[ -n "${REGISTRY_USERNAME}" ]]; then
+        $unzip_dir/central/scripts/setup.sh
+      fi
       central_scripts_dir="$unzip_dir/central/scripts"
       launch_service $unzip_dir central
       echo
@@ -312,7 +337,9 @@ function launch_central {
 
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
           echo "Deploying Scanner..."
-          $unzip_dir/scanner/scripts/setup.sh
+          if [[ -n "${REGISTRY_USERNAME}" ]]; then
+            $unzip_dir/scanner/scripts/setup.sh
+          fi
           launch_service $unzip_dir scanner
 
           if [[ -n "$CI" ]]; then
@@ -334,7 +361,7 @@ function launch_central {
     # On some systems there's a race condition when port-forward connects to central but its pod then gets deleted due
     # to ongoing modifications to the central deployment. This port-forward dies and the script hangs "Waiting for
     # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
-    kubectl -n stackrox rollout status deploy/central --timeout=3m
+    kubectl -n stackrox rollout status deploy/central --timeout=6m
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
@@ -380,8 +407,8 @@ function launch_central {
     echo "Successfully deployed Central!"
 
     echo "Access the UI at: https://${API_ENDPOINT}"
-    if [[ "$AUTH0_SUPPORT" == "true" ]]; then
-        setup_auth0 "${API_ENDPOINT}"
+    if [[ "${ROX_DEV_AUTH0_CLIENT_SECRET}" != "" ]]; then
+        setup_auth0 "${API_ENDPOINT}" "${ROX_DEV_AUTH0_CLIENT_SECRET}"
     fi
 }
 
@@ -499,14 +526,21 @@ function launch_sensor {
         rm "$k8s_dir/sensor-deploy.zip"
       fi
 
+      namespace=stackrox
+      if [[ -n "$NAMESPACE_OVERRIDE" ]]; then
+        namespace="$NAMESPACE_OVERRIDE"
+        echo "Changing namespace to $NAMESPACE_OVERRIDE"
+        ls $k8s_dir/sensor-deploy/*.yaml | while read file; do sed -i'.original' -e 's/namespace: stackrox/namespace: '"$NAMESPACE_OVERRIDE"'/g' $file; done
+        sed -itmp.bak 's/set -e//g' $k8s_dir/sensor-deploy/sensor.sh
+      fi
+
       echo "Deploying Sensor..."
-      $k8s_dir/sensor-deploy/sensor.sh
+      NAMESPACE="$namespace" $k8s_dir/sensor-deploy/sensor.sh
     fi
 
     if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
        kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
-
 
     if [[ -n "${CI}" || $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
        if [[ "${ROX_HOTRELOAD}" == "true" ]]; then

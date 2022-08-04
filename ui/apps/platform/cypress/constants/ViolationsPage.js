@@ -1,4 +1,3 @@
-import { violationCommentsSelectors, commentsDialogSelectors } from '../selectors/comments';
 import navigationSelectors from '../selectors/navigation';
 
 export const url = '/main/violations';
@@ -11,6 +10,8 @@ export const selectors = {
     firstTableRowLink: 'tbody tr:nth(0) a',
     lastTableRow: 'tbody tr:last',
     lastTableRowLink: 'tbody tr:last a',
+    resultsFoundHeader: (number) =>
+        `h2:contains("${number} result${number === 1 ? '' : 's'} found")`,
     actions: {
         btn: 'td.pf-c-table__action button',
         excludeDeploymentBtn: 'button:contains("Exclude deployment")',
@@ -35,7 +36,6 @@ export const selectors = {
                 `[data-testid="violation-tags"] div.pf-c-chip:contains(${tag}) button`,
             clearAllTagsButton: '[data-testid="violation-tags"] .pf-c-select__toggle-clear',
         },
-        comments: violationCommentsSelectors,
     },
     enforcement: {
         detailMessage: '[data-testid="enforcement-detail-message"]',
@@ -52,12 +52,6 @@ export const selectors = {
     },
     table: {
         rows: 'tbody tr',
-        column: {
-            lifecycle: 'th:contains("Lifecycle")',
-            entity: 'th:contains("Entity")',
-            type: 'th:contains("Type")',
-            policy: 'th:contains("Policy")',
-        },
     },
     modal: {
         excludeConfirmation: '[data-testid="exclude-confirmation-modal"]',
@@ -74,5 +68,4 @@ export const selectors = {
     securityBestPractices: '[data-testid="deployment-security-practices"]',
     runtimeProcessCards: '[data-testid="runtime-processes"]',
     excludedDeploymentRow: '.rt-tr:contains("metadata-proxy-v0.1")',
-    commentsDialog: commentsDialogSelectors,
 };

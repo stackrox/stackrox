@@ -20,15 +20,15 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// client is a Scanner gRPC client.
-type client struct {
+// Client is a Scanner gRPC Client.
+type Client struct {
 	client scannerV1.ImageScanServiceClient
 	conn   *grpc.ClientConn
 }
 
-// dial Scanner and return a new client.
+// dial Scanner and return a new Client.
 // dial is non-blocking and returns a non-nil error upon configuration error.
-func dial(endpoint string) (*client, error) {
+func dial(endpoint string) (*Client, error) {
 	if endpoint == "" {
 		return nil, errors.New("Invalid Scanner endpoint (empty)")
 	}
@@ -54,14 +54,14 @@ func dial(endpoint string) (*client, error) {
 
 	log.Infof("Dialing Scanner at %s", endpoint)
 
-	return &client{
+	return &Client{
 		client: scannerV1.NewImageScanServiceClient(conn),
 		conn:   conn,
 	}, nil
 }
 
 // GetImageAnalysis retrieves the image analysis results for the given image.
-func (c *client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*scannerV1.GetImageComponentsResponse, error) {
+func (c *Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*scannerV1.GetImageComponentsResponse, error) {
 	name := image.GetName().GetFullName()
 
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
@@ -83,6 +83,7 @@ func (c *client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg
 	return resp, nil
 }
 
-func (c *client) Close() error {
+// Close closes the underlying grpc.ClientConn.
+func (c *Client) Close() error {
 	return c.conn.Close()
 }

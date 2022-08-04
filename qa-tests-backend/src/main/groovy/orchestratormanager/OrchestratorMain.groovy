@@ -2,7 +2,7 @@ package orchestratormanager
 
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.Pod
-import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
+import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
 import objects.ConfigMap
 import objects.DaemonSet
 import objects.Deployment
@@ -75,7 +75,6 @@ interface OrchestratorMain {
     //Containers
     def deleteContainer(String containerName, String namespace)
     def wasContainerKilled(String containerName, String namespace)
-    def isKubeProxyPresent()
     def isKubeDashboardRunning()
     String getContainerlogs(String ns, String podName, String containerName)
     def getStaticPodCount(String ns)
@@ -98,7 +97,7 @@ interface OrchestratorMain {
     def createImagePullSecret(String name, String username, String password, String namespace, String server)
     def createImagePullSecret(Secret secret)
     def deleteSecret(String name, String namespace)
-    def getSecretCount(String ns)
+    int getSecretCount(String ns)
     io.fabric8.kubernetes.api.model.Secret getSecret(String name, String namespace)
     def updateSecret(io.fabric8.kubernetes.api.model.Secret secret)
 
@@ -170,9 +169,9 @@ interface OrchestratorMain {
     def waitForSensor()
     int getAllDeploymentTypesCount(String ns)
 
-    V1beta1ValidatingWebhookConfiguration getAdmissionController()
+    ValidatingWebhookConfiguration getAdmissionController()
     def deleteAdmissionController(String name)
-    def createAdmissionController(V1beta1ValidatingWebhookConfiguration config)
+    def createAdmissionController(ValidatingWebhookConfiguration config)
 
     /*TODO:
         def getDeploymenton(String deploymentName)

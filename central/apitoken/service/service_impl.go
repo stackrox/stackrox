@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -43,14 +42,14 @@ type serviceImpl struct {
 
 func (s *serviceImpl) GetAPIToken(ctx context.Context, req *v1.ResourceByID) (*storage.TokenMetadata, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "empty id passed")
+		return nil, errors.Wrap(errox.InvalidArgs, "empty id passed")
 	}
 	token, err := s.backend.GetTokenOrNil(ctx, req.GetId())
 	if err != nil {
 		return nil, errors.Errorf("token retrieval failed: %s", err)
 	}
 	if token == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "token with id '%s' does not exist", req.GetId())
+		return nil, errors.Wrapf(errox.InvalidArgs, "token with id '%s' does not exist", req.GetId())
 	}
 	return token, nil
 }
@@ -78,12 +77,12 @@ func (s *serviceImpl) RevokeToken(ctx context.Context, req *v1.ResourceByID) (*v
 
 func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRequest) (*v1.GenerateTokenResponse, error) {
 	if req.GetName() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "token name cannot be empty")
+		return nil, errors.Wrap(errox.InvalidArgs, "token name cannot be empty")
 	}
 
 	if req.GetRole() != "" {
 		if len(req.GetRoles()) > 0 {
-			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "must use either role or roles, but not both")
+			return nil, errors.Wrap(errox.InvalidArgs, "must use either role or roles, but not both")
 		}
 		req.Roles = []string{req.GetRole()}
 		req.Role = ""
@@ -94,7 +93,7 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		return nil, errors.Wrap(err, "unable to fetch roles")
 	}
 	if len(missingIndices) > 0 {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "role(s) %s don't exist", strings.Join(sliceutils.StringSelect(req.GetRoles(), missingIndices...), ","))
+		return nil, errors.Wrapf(errox.InvalidArgs, "role(s) %s don't exist", strings.Join(sliceutils.StringSelect(req.GetRoles(), missingIndices...), ","))
 	}
 
 	id, err := authn.IdentityFromContext(ctx)
@@ -102,7 +101,7 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		return nil, err
 	}
 	if err := verifyNoPrivilegeEscalation(id.Roles(), roles); err != nil {
-		return nil, errox.NewErrNotAuthorized(err.Error())
+		return nil, errox.NotAuthorized.CausedBy(err)
 	}
 
 	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), utils.RoleNames(roles))

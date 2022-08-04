@@ -1,85 +1,61 @@
 import React, { useState, ReactElement } from 'react';
-import * as Icon from 'react-feather';
+import {
+    Button,
+    ButtonVariant,
+    Card,
+    CardBody,
+    CardHeader,
+    CardTitle,
+    Divider,
+    List,
+} from '@patternfly/react-core';
+import { TimesIcon } from '@patternfly/react-icons';
 
-import LegendTile from 'Components/LegendTile';
-import { UIfeatureFlags } from 'utils/featureFlags';
+import LegendTile from 'Containers/Network/Graph/Overlays/LegendTile';
 
-function LegendContent({ toggleLegend }: { toggleLegend: (value) => void }): ReactElement {
+function LegendContent(): ReactElement {
     return (
         <>
-            <div className="flex justify-between border-b border-base-400 p-2 uppercase items-center">
-                Legend
-                <button type="button" className="flex" onClick={toggleLegend}>
-                    <Icon.X className="h-3 w-3" />
-                </button>
-            </div>
-            <div className="bg-primary-100">
-                <div className="flex border-b border-base-400" data-testid="deployment-legend">
-                    <LegendTile name="deployment" tooltip="Deployment" type="font" />
-                    <LegendTile
-                        name="deployment-external-connections"
-                        tooltip="Deployment with active external connections"
-                        type="svg"
-                    />
-                    <LegendTile
-                        name="deployment-allowed-connections"
-                        tooltip="Deployment with allowed external connections"
-                        type="font"
-                    />
-                    <LegendTile
-                        name="non-isolated-deployment-allowed"
-                        tooltip="Non-isolated deployment (all connections allowed)"
-                        type="font"
-                    />
-                    {UIfeatureFlags.SHOW_DISALLOWED_CONNECTIONS && (
-                        <LegendTile
-                            name="disallowed-deployment"
-                            tooltip="Disallowed deployment (no connections allowed)"
-                            type="font"
-                        />
-                    )}
-                </div>
-                <div className="flex border-b border-base-400" data-testid="namespace-legend">
-                    <LegendTile name="namespace" tooltip="Namespace" type="svg" />
-                    <LegendTile
-                        name="namespace-allowed-connection"
-                        tooltip="Namespace with allowed external connections"
-                        type="svg"
-                    />
-                    <LegendTile
-                        name="namespace-connection"
-                        tooltip="Namespace connection"
-                        type="svg"
-                    />
-                    {UIfeatureFlags.SHOW_DISALLOWED_CONNECTIONS && (
-                        <LegendTile
-                            name="namespace-disallowed-connection"
-                            tooltip="Active but disallowed namespace connection"
-                            type="svg"
-                        />
-                    )}
-                </div>
-                <div className="flex border-b border-base-400" data-testid="connection-legend">
-                    <LegendTile name="active-connection" tooltip="Active connection" type="svg" />
-                    <LegendTile name="allowed-connection" tooltip="Allowed connection" type="svg" />
-                    {UIfeatureFlags.SHOW_DISALLOWED_CONNECTIONS && (
-                        <LegendTile
-                            name="disallowed-connection"
-                            tooltip="Active but disallowed connection"
-                            type="svg"
-                        />
-                    )}
-                    <LegendTile
-                        name="namespace-egress-ingress"
-                        tooltip="Namespace external egress/ingress traffic"
-                        type="font"
-                    />
-                </div>
-            </div>
+            <List isPlain data-testid="deployment-legend">
+                <LegendTile name="deployment" description="Deployment" />
+                <LegendTile
+                    name="deployment-external-connections"
+                    description="Deployment with active external connections"
+                />
+                <LegendTile
+                    name="deployment-allowed-connections"
+                    description="Deployment with allowed external connections"
+                />
+                <LegendTile
+                    name="non-isolated-deployment-allowed"
+                    description="Non-isolated deployment (all connections allowed)"
+                />
+            </List>
+            <Divider component="div" className="pf-u-py-sm" />
+            <List isPlain data-testid="namespace-legend">
+                <LegendTile name="namespace" description="Namespace" />
+                <LegendTile
+                    name="namespace-allowed-connection"
+                    description="Namespace with allowed external connections"
+                />
+                <LegendTile name="namespace-connection" description="Namespace connection" />
+            </List>
+            <Divider component="div" className="pf-u-py-sm" />
+            <List isPlain data-testid="connection-legend">
+                <LegendTile name="active-connection" description="Active connection" />
+                <LegendTile name="allowed-connection" description="Allowed connection" />
+                <LegendTile
+                    name="namespace-egress-ingress"
+                    description="Namespace external egress/ingress traffic"
+                />
+            </List>
         </>
     );
 }
 
+// Note, most of the utility styles related to text here can be removed when the app is fully
+// migrated to PatternFly, or at the very least once the network graph has been moved to
+// be under a top level <PageSection> component.
 function Legend(): ReactElement {
     const [isOpen, toggleOpen] = useState(true);
 
@@ -92,23 +68,48 @@ function Legend(): ReactElement {
     }
 
     return (
-        <div
+        <Card
             data-testid="legend"
-            className="env-graph-legend absolute bottom-0 left-0 mb-2 ml-2 bg-base-100 text-base-500 text-sm font-700 border-base-400 border-2 rounded-sm z-10"
+            className="pf-u-mb-sm pf-u-ml-sm pf-u-color-100"
+            style={{ position: 'absolute', bottom: 0, left: 0 }}
+            isCompact
+            isRounded
         >
+            {isOpen && (
+                <>
+                    <CardHeader className="pf-u-justify-content-space-between">
+                        <CardTitle className="pf-u-font-size-sm pf-u-font-family-heading-sans-serif">
+                            Legend
+                        </CardTitle>
+                        <Button
+                            aria-label="Close legend"
+                            className="pf-u-p-xs"
+                            isSmall
+                            onClick={toggleLegend}
+                            variant={ButtonVariant.plain}
+                        >
+                            <TimesIcon />
+                        </Button>
+                    </CardHeader>
+                    <CardBody className="pf-u-font-family-sans-serif pf-u-color-200">
+                        <LegendContent />
+                    </CardBody>
+                </>
+            )}
             {!isOpen && (
-                <div
-                    role="button"
-                    className="uppercase p-2 hover:bg-base-200 hover:text-primary-700 cursor-pointer"
+                <Button
+                    aria-label="Open legend"
+                    isSmall
                     onClick={toggleLegend}
                     onKeyUp={handleKeyUp}
                     tabIndex={0}
+                    variant={ButtonVariant.plain}
+                    className="pf-u-font-family-heading-sans-serif pf-u-color-100"
                 >
                     Legend
-                </div>
+                </Button>
             )}
-            {isOpen && <LegendContent toggleLegend={toggleLegend} />}
-        </div>
+        </Card>
     );
 }
 

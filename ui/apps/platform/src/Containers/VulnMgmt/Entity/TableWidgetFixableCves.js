@@ -6,7 +6,12 @@ import { Message } from '@stackrox/ui-components';
 
 import Loader from 'Components/Loader';
 import { getCveTableColumns, defaultCveSort } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
-import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import {
+    CLUSTER_CVE_LIST_FRAGMENT,
+    NODE_CVE_LIST_FRAGMENT,
+    IMAGE_CVE_LIST_FRAGMENT,
+    VULN_CVE_LIST_FRAGMENT,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import entityTypes from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
@@ -16,12 +21,52 @@ import FixableCveExportButton from '../VulnMgmtComponents/FixableCveExportButton
 import TableWidget from './TableWidget';
 import { getScopeQuery } from './VulnMgmtPolicyQueryUtil';
 
-const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name, id }) => {
+const queryFieldNames = {
+    [entityTypes.CLUSTER]: 'cluster',
+    [entityTypes.NODE]: 'node',
+    [entityTypes.NAMESPACE]: 'namespace',
+    [entityTypes.DEPLOYMENT]: 'deployment',
+    [entityTypes.COMPONENT]: 'component',
+    [entityTypes.NODE_COMPONENT]: 'nodeComponent',
+    [entityTypes.IMAGE_COMPONENT]: 'imageComponent',
+};
+
+const TableWidgetFixableCves = ({
+    workflowState,
+    entityContext,
+    entityType,
+    name,
+    id,
+    vulnType = entityTypes.CVE,
+}) => {
     const [fixableCvesPage, setFixableCvesPage] = useState(0);
     const [cveSort, setCveSort] = useState(defaultCveSort);
 
     const displayedEntityType = resourceLabels[entityType];
-    const idFieldName = 'id';
+
+    const queryFieldName = queryFieldNames[entityType];
+    let queryVulnCounterFieldName = 'vulnCounter';
+    let queryVulnsFieldName = 'vulns';
+    let queryCVEFieldsName = 'cveFields';
+    let queryFragment = VULN_CVE_LIST_FRAGMENT;
+
+    if (vulnType === entityTypes.CLUSTER_CVE) {
+        queryVulnCounterFieldName = 'clusterVulnerabilityCounter';
+        queryVulnsFieldName = 'clusterVulnerabilities';
+        queryCVEFieldsName = 'clusterCVEFields';
+        queryFragment = CLUSTER_CVE_LIST_FRAGMENT;
+    } else if (vulnType === entityTypes.NODE_CVE) {
+        queryVulnCounterFieldName = 'nodeVulnerabilityCounter';
+        queryVulnsFieldName = 'nodeVulnerabilities';
+        queryCVEFieldsName = 'nodeCVEFields';
+        queryFragment = NODE_CVE_LIST_FRAGMENT;
+    } else if (entityType === entityTypes.IMAGE_COMPONENT || vulnType === entityTypes.IMAGE_CVE) {
+        // TODO: after the split of CVE types is released, make this the default
+        queryVulnCounterFieldName = 'imageVulnerabilityCounter';
+        queryVulnsFieldName = 'imageVulnerabilities';
+        queryCVEFieldsName = 'imageCVEFields';
+        queryFragment = IMAGE_CVE_LIST_FRAGMENT;
+    }
 
     // `id` field is not needed in result,
     //   but is needed to keep apollo-client from throwing an error with certain entities,
@@ -29,29 +74,34 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
     const fixableCvesQuery = gql`
         query getFixableCvesForEntity(
             $id: ID!
-            $query: String
+            ${
+                entityType !== entityTypes.NODE_COMPONENT &&
+                vulnType !== entityTypes.NODE_CVE &&
+                vulnType !== entityTypes.CLUSTER_CVE
+                    ? '$query: String'
+                    : ''
+            }
             $scopeQuery: String
             $vulnQuery: String
             $vulnPagination: Pagination
         ) {
-            result: ${displayedEntityType}(${idFieldName}: $id) {
+            result: ${queryFieldName}(id: $id) {
                 ${entityType !== entityTypes.NAMESPACE ? 'id' : ''}
-                vulnCounter {
+                vulnCounter: ${queryVulnCounterFieldName} {
                     all {
                         fixable
                     }
                 }
-                vulnerabilities: vulns(query: $vulnQuery, scopeQuery: $scopeQuery, pagination: $vulnPagination) {
-                    ...cveFields
+                vulnerabilities:  ${queryVulnsFieldName}(query: $vulnQuery, scopeQuery: $scopeQuery, pagination: $vulnPagination) {
+                    ... ${queryCVEFieldsName}
                 }
             }
         }
-        ${VULN_CVE_LIST_FRAGMENT}
+        ${queryFragment}
     `;
     const queryOptions = {
         variables: {
             id,
-            query: '',
             scopeQuery: getScopeQuery(entityContext),
             vulnQuery: queryService.objectToWhereClause({ Fixable: true }),
             vulnPagination: queryService.getPagination(cveSort, fixableCvesPage, LIST_PAGE_SIZE),
@@ -100,12 +150,12 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
             {!cvesLoading && !cvesError && (
                 <TableWidget
                     header={`${fixableCount} fixable ${pluralize(
-                        entityTypes.CVE,
+                        vulnType,
                         fixableCount
                     )} found across this ${displayedEntityType}`}
                     headerActions={cveActions}
                     rows={fixableCves}
-                    entityType={entityTypes.CVE}
+                    entityType={vulnType}
                     noDataText={`No fixable CVEs available in this ${displayedEntityType}`}
                     className="bg-base-100"
                     columns={getCveTableColumns(workflowState)}
@@ -125,6 +175,7 @@ TableWidgetFixableCves.propType = {
     workflowState: PropTypes.shape({}).isRequired,
     entityContext: PropTypes.shape({}).isRequired,
     entityType: PropTypes.string.isRequired,
+    vulnType: PropTypes.string,
     name: PropTypes.string.isRequired,
     id: PropTypes.string.isRequired,
 };

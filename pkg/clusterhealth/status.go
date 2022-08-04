@@ -26,6 +26,13 @@ const (
 	// DegradedAdmissionControlThreshold represents the threshold for overall admission control status to be healthy.
 	// This threshold is calculated as fraction of total desired admission control pods that are ready.
 	DegradedAdmissionControlThreshold = float64(0.66)
+
+	// healthyLocalScannerThreshold represents the threshold for overall local scanner status to be healthy.
+	// This threshold is calculated as fraction of total desired local scanner pods that are ready.
+	healthyLocalScannerThreshold = float64(1)
+	// degradedLocalScannerThreshold represents the threshold for overall local scanner status to be degraded.
+	// This threshold is calculated as fraction of total desired local scanner pods that are ready.
+	degradedLocalScannerThreshold = float64(0.66)
 )
 
 // PopulateInactiveSensorStatus returns sensor status based on sensor's last contact with central in situation when there's no active connection between sensor and central.
@@ -104,6 +111,35 @@ func PopulateAdmissionControlStatus(admissionControlHealthInfo *storage.Admissio
 		return storage.ClusterHealthStatus_DEGRADED
 	}
 	return storage.ClusterHealthStatus_UNHEALTHY
+}
+
+// PopulateLocalScannerStatus returns local scanner status based on fraction of total desired pods that
+// have not failed to register with sensor.
+func PopulateLocalScannerStatus(localScannerHealthInfo *storage.ScannerHealthInfo) storage.ClusterHealthStatus_HealthStatusLabel {
+	if localScannerHealthInfo == nil {
+		return storage.ClusterHealthStatus_UNINITIALIZED
+	}
+
+	desiredPods := localScannerHealthInfo.GetTotalDesiredAnalyzerPods()
+	readyPods := localScannerHealthInfo.GetTotalReadyAnalyzerPods()
+
+	if desiredPods == 0 {
+		return storage.ClusterHealthStatus_UNINITIALIZED
+	}
+	if localScannerHealthInfo.GetTotalReadyDbPods() == 0 {
+		return storage.ClusterHealthStatus_UNHEALTHY
+	}
+
+	fraction := float64(readyPods) / float64(desiredPods)
+
+	if fraction < degradedLocalScannerThreshold {
+		return storage.ClusterHealthStatus_UNHEALTHY
+	}
+	if fraction < healthyLocalScannerThreshold {
+		return storage.ClusterHealthStatus_DEGRADED
+	}
+
+	return storage.ClusterHealthStatus_HEALTHY
 }
 
 // PopulateOverallClusterStatus returns overall cluster status based on sensor status and collector status.

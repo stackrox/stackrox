@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
 // DeploymentStore stores deployments.
@@ -80,7 +79,7 @@ func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector
 			continue
 		}
 
-		if sel.Matches(labels.Set(wrap.PodLabels)) {
+		if sel.Matches(createLabelsWithLen(wrap.PodLabels)) {
 			matching = append(matching, wrap)
 		}
 	}

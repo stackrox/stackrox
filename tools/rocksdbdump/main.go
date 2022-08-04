@@ -74,10 +74,10 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"networkentity":                        (*storage.NetworkEntity)(nil),
 	"networkgraphconfig":                   (*storage.NetworkGraphConfig)(nil),
 	"node_to_comp":                         (*storage.NodeComponentEdge)(nil),
-	"node_to_cve":                          (*storage.NodeCVEEdge)(nil),
 	"nodes":                                (*storage.Node)(nil),
 	"permission_sets":                      (*storage.PermissionSet)(nil),
 	"pods":                                 (*storage.Pod)(nil),
+	"policy_categories":                    (*storage.PolicyCategory)(nil),
 	"processWhitelistResults":              (*storage.ProcessBaselineResults)(nil),
 	"processWhitelists2":                   (*storage.ProcessBaseline)(nil),
 	"process_indicators2":                  (*storage.ProcessIndicator)(nil),
@@ -85,6 +85,7 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"risk":                                 (*storage.Risk)(nil),
 	"rolebindings":                         (*storage.K8SRoleBinding)(nil),
 	"roles":                                (*storage.Role)(nil),
+	"signature_integrations":               (*storage.SignatureIntegration)(nil),
 	"secrets":                              (*storage.Secret)(nil),
 	"service_accounts":                     (*storage.ServiceAccount)(nil),
 	"simple_access_scopes":                 (*storage.SimpleAccessScope)(nil),
@@ -97,6 +98,7 @@ var knownUnhandledBuckets = set.NewStringSet(
 	"dackbox_graph",
 	"dackbox_dirty",
 	"dackbox_reindex",
+	"node_to_cve",
 )
 
 var ignoreUnmarshallErrors = set.NewStringSet(

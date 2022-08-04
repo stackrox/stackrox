@@ -1,7 +1,6 @@
 package generic
 
 import (
-	"os"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
@@ -36,8 +35,8 @@ type UniqueKeyCRUDTestSuite struct {
 }
 
 func (s *UniqueKeyCRUDTestSuite) SetupTest() {
-	dir, err := os.MkdirTemp("", "")
-	s.NoError(err)
+	var err error
+	dir := s.T().TempDir()
 
 	s.dir = dir
 
@@ -48,7 +47,6 @@ func (s *UniqueKeyCRUDTestSuite) SetupTest() {
 
 func (s *UniqueKeyCRUDTestSuite) TearDownTest() {
 	s.db.Close()
-	_ = os.RemoveAll(s.dir)
 }
 
 func (s *UniqueKeyCRUDTestSuite) TestUpsert() {

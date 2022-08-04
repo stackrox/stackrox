@@ -30,6 +30,7 @@ import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useMultiSelect from 'hooks/useMultiSelect';
+import usePermissions from 'hooks/usePermissions';
 import { saveReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -101,6 +102,15 @@ function VulnMgmtReportForm({
 }: VulnMgmtReportFormProps): ReactElement {
     const history = useHistory();
     const [message, setMessage] = useState<FormResponseMessage>(null);
+
+    const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+    const hasRoleWriteAccess = hasReadWriteAccess('Role');
+    const hasClusterReadAccess = hasReadAccess('Cluster');
+    const hasNamespaceReadAccess = hasReadAccess('Namespace');
+    const hasNotifierWriteAccess = hasReadWriteAccess('Notifier');
+
+    const canWriteScopes = hasRoleWriteAccess && hasClusterReadAccess && hasNamespaceReadAccess;
+
     const formik = useFormik<ReportConfiguration>({
         initialValues,
         onSubmit: (formValues) => {
@@ -339,7 +349,7 @@ function VulnMgmtReportForm({
                                                 Important
                                             </SelectOption>
                                             <SelectOption value="MODERATE_VULNERABILITY_SEVERITY">
-                                                Medium
+                                                Moderate
                                             </SelectOption>
                                             <SelectOption value="LOW_VULNERABILITY_SEVERITY">
                                                 Low
@@ -351,6 +361,7 @@ function VulnMgmtReportForm({
                                     <ResourceScopeSelection
                                         scopeId={values.scopeId}
                                         setFieldValue={setFieldValue}
+                                        allowCreate={canWriteScopes}
                                     />
                                 </GridItem>
                             </Grid>
@@ -371,6 +382,7 @@ function VulnMgmtReportForm({
                                     handleBlur={handleBlur}
                                     touched={touched}
                                     errors={errors}
+                                    allowCreate={hasNotifierWriteAccess}
                                 />
                             </div>
                         </GridItem>

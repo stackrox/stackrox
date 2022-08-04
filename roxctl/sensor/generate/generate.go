@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/pflag/autobool"
@@ -34,8 +35,6 @@ Please use --admission-controller-listen-on-creates instead to suppress this war
 	warningDeprecatedAdmControllerEnableSet = `The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
 
-	errorDeprecatedFlag = "Specified deprecated flag %s and new flag %s at the same time"
-
 	mainImageRepository = "main-image-repository"
 	slimCollector       = "slim-collector"
 
@@ -50,6 +49,8 @@ type sensorGenerateCommand struct {
 	outputDir        string
 	slimCollectorP   *bool
 	timeout          time.Duration
+
+	enablePodSecurityPolicies bool
 
 	// injected or constructed values
 	cluster     storage.Cluster
@@ -73,7 +74,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed && cmd.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
-		return errox.InvalidArgs.Newf(errorDeprecatedFlag, "--create-admission-controller", "--admission-controller-listen-on-creates")
+		return common.ErrDeprecatedFlag("--create-admission-controller", "--admission-controller-listen-on-creates")
 	}
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerCreateSet)
@@ -82,7 +83,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed && cmd.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
-		return errox.InvalidArgs.Newf(errorDeprecatedFlag, "--admission-controller-enabled", "--admission-controller-enforce-on-creates")
+		return common.ErrDeprecatedFlag("--admission-controller-enabled", "--admission-controller-enforce-on-creates")
 	}
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerEnableSet)
@@ -129,6 +130,8 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	}
 	s.setClusterDefaults(env)
 
+	common.LogInfoPsp(s.env.Logger(), s.enablePodSecurityPolicies)
+
 	id, err := s.createCluster(ctx, service)
 
 	// If the error is not explicitly AlreadyExists or it is AlreadyExists AND continueIfExists isn't set
@@ -160,8 +163,10 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		CreateUpgraderSA: &s.createUpgraderSA,
 		SlimCollector:    pointer.BoolPtr(s.cluster.GetSlimCollector()),
 		IstioVersion:     s.istioVersion,
+
+		DisablePodSecurityPolicies: !s.enablePodSecurityPolicies,
 	}
-	if err := s.getBundleFn(params, s.outputDir, s.timeout); err != nil {
+	if err := s.getBundleFn(params, s.outputDir, s.timeout, s.env.Logger()); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 
@@ -225,6 +230,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "admission-controller-listen-on-creates", false, "whether or not to configure the admission controller webhook to listen on deployment creates")
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "whether or not to configure the admission controller webhook to listen on deployment updates")
+	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 
 	// Admission controller config
 	ac := generateCmd.cluster.DynamicConfig.AdmissionControllerConfig

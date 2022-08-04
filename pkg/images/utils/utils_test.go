@@ -188,3 +188,20 @@ func TestStripCVEDescriptions(t *testing.T) {
 	// Validate that we at least removed one summary
 	assert.True(t, hitOne)
 }
+
+func TestExtractOpenShiftProject_fullName(t *testing.T) {
+	imgName := &storage.ImageName{
+		Registry: "image-registry.openshift-image-registry.svc:5000",
+		Remote:   "qa/nginx",
+		Tag:      "1.18.0",
+		FullName: "image-registry.openshift-image-registry.svc:5000/qa/nginx:1.18.0",
+	}
+	assert.Equal(t, "qa", ExtractOpenShiftProject(imgName))
+}
+
+func TestExtractOpenShiftProject_solelyRemote(t *testing.T) {
+	imgName := &storage.ImageName{
+		Remote: "stackrox/nginx",
+	}
+	assert.Equal(t, "stackrox", ExtractOpenShiftProject(imgName))
+}

@@ -11,13 +11,13 @@ type detectorImpl struct {
 	policySet detection.PolicySet
 }
 
-// UpsertPolicy adds or updates a policy in the set.
+// PolicySet returns set of policies.
 func (d *detectorImpl) PolicySet() detection.PolicySet {
 	return d.policySet
 }
 
-// Detect runs detection on an deployment, returning any generated alerts.
-func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployment, images []*storage.Image, filters ...detection.FilterOption) ([]*storage.Alert, error) {
+// Detect runs detection on a deployment, returning any generated alerts.
+func (d *detectorImpl) Detect(ctx DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment, filters ...detection.FilterOption) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	var cacheReceptacle booleanpolicy.CacheReceptacle
 	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
@@ -30,23 +30,23 @@ func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployme
 			}
 		}
 		// Check predicate on deployment.
-		if !compiled.AppliesTo(deployment) {
+		if !compiled.AppliesTo(enhancedDeployment.Deployment) {
 			return nil
 		}
 
 		// Check enforcement on deployment if we don't want unenforced alerts.
-		enforcement, _ := buildEnforcement(compiled.Policy(), deployment)
+		enforcement, _ := buildEnforcement(compiled.Policy(), enhancedDeployment.Deployment)
 		if enforcement == storage.EnforcementAction_UNSET_ENFORCEMENT && ctx.EnforcementOnly {
 			return nil
 		}
 
 		// Generate violations.
-		violations, err := compiled.MatchAgainstDeployment(&cacheReceptacle, deployment, images)
+		violations, err := compiled.MatchAgainstDeployment(&cacheReceptacle, enhancedDeployment)
 		if err != nil {
-			return errors.Wrapf(err, "evaluating violations for policy %s; deployment %s/%s", compiled.Policy().GetName(), deployment.GetNamespace(), deployment.GetName())
+			return errors.Wrapf(err, "evaluating violations for policy %s; deployment %s/%s", compiled.Policy().GetName(), enhancedDeployment.Deployment.GetNamespace(), enhancedDeployment.Deployment.GetName())
 		}
 		if alertViolations := violations.AlertViolations; len(alertViolations) > 0 {
-			alerts = append(alerts, PolicyDeploymentAndViolationsToAlert(compiled.Policy(), deployment, alertViolations))
+			alerts = append(alerts, PolicyDeploymentAndViolationsToAlert(compiled.Policy(), enhancedDeployment.Deployment, alertViolations))
 		}
 		return nil
 	})

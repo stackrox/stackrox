@@ -5,11 +5,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
-	"github.com/stackrox/rox/central/processindicator/internal/commentsstore"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
@@ -19,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/features"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -33,10 +32,9 @@ var (
 )
 
 type datastoreImpl struct {
-	storage         store.Store
-	commentsStorage commentsstore.Store
-	indexer         index.Indexer
-	searcher        search.Searcher
+	storage  store.Store
+	indexer  index.Indexer
+	searcher search.Searcher
 
 	prunerFactory         pruner.Factory
 	prunedArgsLengthCache map[processindicator.ProcessWithContainerInfo]int
@@ -46,85 +44,6 @@ type datastoreImpl struct {
 
 func checkReadAccess(ctx context.Context, indicator *storage.ProcessIndicator) (bool, error) {
 	return indicatorSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(indicator).Allowed(ctx)
-}
-
-func (ds *datastoreImpl) AddProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) (string, error) {
-	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
-		return "", err
-	} else if !ok {
-		return "", sac.ErrResourceAccessDenied
-	}
-	comment.User = analystnotes.UserFromContext(ctx)
-	return ds.commentsStorage.AddProcessComment(processKey, comment)
-}
-
-func (ds *datastoreImpl) getExistingComment(key *analystnotes.ProcessNoteKey, commentID string) (*storage.Comment, error) {
-	existingComment, err := ds.commentsStorage.GetComment(key, commentID)
-	if err != nil {
-		return nil, errors.Wrap(err, "retrieving existing comment")
-	}
-	return existingComment, nil
-}
-
-func (ds *datastoreImpl) UpdateProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) error {
-	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	user := analystnotes.UserFromContext(ctx)
-
-	existingComment, err := ds.getExistingComment(processKey, comment.GetCommentId())
-	if err != nil {
-		return err
-	}
-	if existingComment == nil {
-		return errors.Errorf("cannot update comment %v: no existing comment found", comment.GetCommentId())
-	}
-	if !analystnotes.CommentIsModifiableUser(user, existingComment) {
-		return errors.New("user cannot modify this comment: permission denied")
-	}
-	comment.User = user
-	return ds.commentsStorage.UpdateProcessComment(processKey, comment)
-}
-
-func (ds *datastoreImpl) GetCommentsForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) ([]*storage.Comment, error) {
-	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, err
-	}
-
-	return ds.commentsStorage.GetComments(processKey)
-}
-
-func (ds *datastoreImpl) GetCommentsCountForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) (int, error) {
-	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil || !ok {
-		return 0, err
-	}
-
-	return ds.commentsStorage.GetCommentsCount(processKey)
-}
-
-func (ds *datastoreImpl) RemoveProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, commentID string) error {
-	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	existingComment, err := ds.getExistingComment(processKey, commentID)
-	if err != nil {
-		return err
-	}
-
-	// Comment not existing is okay for remove
-	if existingComment == nil {
-		return nil
-	}
-
-	if !analystnotes.CommentIsDeletable(ctx, existingComment) {
-		return errors.New("user cannot delete this comment: permission denied")
-	}
-	return ds.commentsStorage.RemoveProcessComment(processKey, commentID)
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -146,6 +65,25 @@ func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*s
 	}
 
 	return indicator, true, nil
+}
+
+func (ds *datastoreImpl) GetProcessIndicators(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, bool, error) {
+	indicators, _, err := ds.storage.GetMany(ctx, ids)
+	if err != nil || len(indicators) == 0 {
+		return nil, false, err
+	}
+
+	allowedIndicators := indicators[:0]
+
+	for _, indicator := range indicators {
+		if ok, err := checkReadAccess(ctx, indicator); !ok || err != nil {
+			continue
+		}
+
+		allowedIndicators = append(allowedIndicators, indicator)
+	}
+
+	return allowedIndicators, len(allowedIndicators) != 0, nil
 }
 
 func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ...*storage.ProcessIndicator) error {
@@ -359,6 +297,9 @@ func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
 }
 
 func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
 	defer debug.FreeOSMemory()
 
 	needsFullIndexing, err := ds.indexer.NeedsInitialIndexing()

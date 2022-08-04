@@ -1,33 +1,13 @@
-import * as api from '../../../constants/apiEndpoints';
-import { url, selectors as VulnMgmtPageSelectors } from '../../../constants/VulnManagementPage';
+import { selectors as VulnMgmtPageSelectors } from '../../../constants/VulnManagementPage';
 import withAuth from '../../../helpers/basicAuth';
+import { visitVulnerabilityReportingWithFixture } from '../../../helpers/vulnmanagement/reporting';
 
 describe('Vulnmanagement reports', () => {
     withAuth();
 
     describe('report configurations', () => {
-        beforeEach(() => {
-            cy.intercept('GET', api.report.configurations, {
-                fixture: 'reports/reportConfigurations.json',
-            }).as('getReportConfigurations');
-            cy.intercept('GET', api.report.configurationsCount, { count: 2 }).as(
-                'getReportConfigurationsCount'
-            );
-            cy.intercept('POST', api.graphql('searchOptions')).as('searchOptions');
-        });
-
         it('should show a list of report configurations', () => {
-            cy.visit(`${url.reporting.list}`);
-
-            cy.wait('@getReportConfigurations');
-            cy.wait('@getReportConfigurationsCount');
-            cy.wait('@searchOptions');
-
-            // Hard-coded wait is to ameliorate a tenacious flake in CI that has resisted all more gentle solutions
-            cy.wait(1000);
-
-            // page title
-            cy.get('h1:contains("Vulnerability reporting")');
+            visitVulnerabilityReportingWithFixture('reports/reportConfigurations.json');
 
             // column headings
             cy.get(VulnMgmtPageSelectors.reportSection.table.column.name).should('be.visible');

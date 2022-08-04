@@ -19,7 +19,6 @@ import pluralize from 'pluralize';
 
 import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
-import { TableColumn, SortDirection } from 'hooks/useTableSort';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -28,6 +27,7 @@ import TableCell from 'Components/PatternFly/TableCell';
 import { vulnManagementReportsPath } from 'routePaths';
 import { ReportConfiguration } from 'types/report.proto';
 import { SearchFilter } from 'types/search';
+import { TableColumn, SortDirection } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ReportsSearchFilter from './Components/ReportsSearchFilter';
 

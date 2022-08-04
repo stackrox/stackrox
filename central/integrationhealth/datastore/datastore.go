@@ -3,7 +3,7 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/integrationhealth/store/rocksdb"
+	"github.com/stackrox/rox/central/integrationhealth/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -25,9 +25,8 @@ type DataStore interface {
 }
 
 // New returns an instance of DataStore.
-func New(storage rocksdb.Store) DataStore {
+func New(storage store.Store) DataStore {
 	return &datastoreImpl{
 		store: storage,
 	}
-
 }

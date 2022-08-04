@@ -24,7 +24,8 @@
         "build:tailwind": "postcss ./src/index.tw.css -o ./lib/ui-components.css",
         "build:ts": "tsc --build",
         "build": "npm-run-all build:*",
-        "test": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports jest --coverage --reporters=default --reporters=jest-junit",
+        "test": "jest --verbose=true --slowTestThreshold=1",
+        "test:coverage": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports jest --coverage --reporters=default --reporters=jest-junit",
         "test:watch": "jest --watch-all",
         "lint:non-src": "prettier --check '**/*.{md,css,json}'",
         "lint:src": "eslint --ext .js,.ts,.tsx ./",
@@ -41,7 +42,7 @@
     "dependencies": {
         "@tippyjs/react": "^4.2.5",
         "formik": "^2.2.9",
-        "initials": "^3.1.1",
+        "initials": "^3.1.2",
         "lodash": "^4.17.21",
         "react-feather": "^2.0.9",
         "tippy.js": "^6.3.7"
@@ -51,8 +52,8 @@
         "@stackrox/tailwind-config": "^0.2.0",
         "@testing-library/jest-dom": "^5.15.0",
         "@testing-library/react": "^12.1.2",
-        "@testing-library/user-event": "^13.5.0",
-        "@types/lodash": "^4.14.176",
+        "@testing-library/user-event": "^14.2.1",
+        "@types/lodash": "^4.14.182",
         "@types/node": "^17.0.16",
         "@types/react": "^17.0.34",
         "@types/react-dom": "^17.0.11",
@@ -77,12 +78,12 @@
         "npm-run-all": "^4.1.5",
         "postcss": "^8.3.4",
         "postcss-cli": "^8.3.1",
-        "prettier": "^2.6.0",
+        "prettier": "^2.7.1",
         "react": "^17.0.2",
         "react-dom": "^17.0.2",
         "react-is": "^17.0.2",
         "tailwindcss": "^2.0.3",
         "ts-jest": "^26.5.6",
-        "typescript": "^4.6.2"
+        "typescript": "^4.7.4"
     }
 }

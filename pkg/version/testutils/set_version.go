@@ -52,18 +52,3 @@ func GetExampleVersion(t *testing.T) version.Versions {
 		ChartVersion:     "3.99.0",
 	}
 }
-
-// GetExampleVersionUnified returns an example version where scanner and collector are unified with main, only intended for usage in testing.
-func GetExampleVersionUnified(t *testing.T) version.Versions {
-	testutils.MustBeInTest(t)
-	return version.Versions{
-		BuildDate:        time.Unix(0, 0),
-		CollectorVersion: "3.0.99.0",
-		GitCommit:        "45b4a8ac",
-		GoVersion:        runtime.Version(),
-		MainVersion:      "3.0.99.0",
-		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
-		ScannerVersion:   "3.0.99.0",
-		ChartVersion:     "3.99.0",
-	}
-}

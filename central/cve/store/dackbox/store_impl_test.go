@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/central/cve/store"
@@ -8,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
@@ -43,6 +45,8 @@ func (suite *CVEStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *CVEStoreTestSuite) TestCVES() {
+	ctx := sac.WithAllAccess(context.Background())
+
 	cves := []*storage.CVE{
 		{
 			Id:   "CVE-2019-02-14",
@@ -56,11 +60,11 @@ func (suite *CVEStoreTestSuite) TestCVES() {
 
 	// Test Add
 	for _, d := range cves {
-		suite.NoError(suite.store.Upsert(d))
+		suite.NoError(suite.store.Upsert(ctx, d))
 	}
 
 	for _, d := range cves {
-		got, exists, err := suite.store.Get(d.GetId())
+		got, exists, err := suite.store.Get(ctx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, d)
@@ -71,17 +75,17 @@ func (suite *CVEStoreTestSuite) TestCVES() {
 		d.Cvss += 1.0
 	}
 
-	suite.NoError(suite.store.Upsert(cves...))
+	suite.NoError(suite.store.Upsert(ctx, cves...))
 
 	for _, d := range cves {
-		got, exists, err := suite.store.Get(d.GetId())
+		got, exists, err := suite.store.Get(ctx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, d)
 	}
 
 	// Test Count
-	count, err := suite.store.Count()
+	count, err := suite.store.Count(ctx)
 	suite.NoError(err)
 	suite.Equal(len(cves), count)
 }

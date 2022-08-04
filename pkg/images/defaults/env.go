@@ -11,6 +11,8 @@ const (
 	ImageFlavorNameStackRoxIORelease = "stackrox.io"
 	// ImageFlavorNameRHACSRelease is a name for image flavor (image defaults) for images released to registry.redhat.io.
 	ImageFlavorNameRHACSRelease = "rhacs"
+	// ImageFlavorNameOpenSource is a name for image flavor (image defaults) for images released to quay.io/stackrox-io.
+	ImageFlavorNameOpenSource = "opensource"
 )
 
 var (

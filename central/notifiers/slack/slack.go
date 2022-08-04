@@ -47,7 +47,7 @@ type notification struct {
 	Text        string       `json:"text"`
 }
 
-// Attachment json struct for attachments
+// attachment json struct for attachments
 type attachment struct {
 	FallBack       string            `json:"fallback"`
 	Color          string            `json:"color"`

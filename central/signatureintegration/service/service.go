@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/signatureintegration/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -18,8 +19,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(store datastore.DataStore) Service {
+func New(store datastore.DataStore, reprocessingLoop reprocessor.Loop) Service {
 	return &serviceImpl{
-		datastore: store,
+		datastore:        store,
+		reprocessingLoop: reprocessingLoop,
 	}
 }

@@ -119,6 +119,7 @@ type SchemaBuilder interface {
 	AddInterfaceType(name string, fields []string) error
 	AddUnionType(name string, types []string) error
 	AddExtraResolver(name string, resolver string) error
+	AddExtraResolvers(name string, resolver []string) error
 	AddQuery(resolver string) error
 	// Deprecated: Use REST APIs instead
 	AddMutation(resolver string) error
@@ -187,6 +188,18 @@ func (s *schemaBuilderImpl) AddUnionType(name string, types []string) error {
 		name:        name,
 		unionValues: types,
 	}
+	return nil
+}
+
+func (s *schemaBuilderImpl) AddExtraResolvers(name string, resolvers []string) error {
+	entry, ok := s.entries[name]
+	if !ok {
+		return fmt.Errorf("no type data for %q (known: %v)", name, s.entries)
+	}
+	if entry.definedResolvers == nil {
+		return fmt.Errorf("%q is an invalid type for adding resolvers", name)
+	}
+	entry.extraResolvers = append(entry.extraResolvers, resolvers...)
 	return nil
 }
 

@@ -20,9 +20,11 @@ import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constant
 import { entitySortFieldsMap } from 'constants/sortFields';
 import { resourceLabels } from 'messages/common';
 import { entityPriorityField } from 'Containers/VulnMgmt/VulnMgmt.constants';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
+// TODO: remove once ROX_FRONTEND_VM_UPDATES is enabled
 const TOP_RISKIEST_IMAGES = gql`
-    query topRiskiestImages($query: String, $pagination: Pagination) {
+    query topRiskiestImagesOld($query: String, $pagination: Pagination) {
         results: images(query: $query, pagination: $pagination) {
             id
             name {
@@ -58,6 +60,44 @@ const TOP_RISKIEST_IMAGES = gql`
     }
 `;
 
+const TOP_RISKIEST_IMAGE_VULNS = gql`
+    query topRiskiestImageVulns($query: String, $pagination: Pagination) {
+        results: images(query: $query, pagination: $pagination) {
+            id
+            name {
+                fullName
+            }
+            vulnCounter: imageVulnerabilityCounter {
+                all {
+                    total
+                    fixable
+                }
+                low {
+                    total
+                    fixable
+                }
+                moderate {
+                    total
+                    fixable
+                }
+                important {
+                    total
+                    fixable
+                }
+                critical {
+                    total
+                    fixable
+                }
+            }
+            priority
+            scan {
+                scanTime
+            }
+        }
+    }
+`;
+
+// TODO: remove once ROX_FRONTEND_VM_UPDATES is enabled
 const TOP_RISKIEST_COMPONENTS = gql`
     query topRiskiestComponents($query: String, $pagination: Pagination) {
         results: components(query: $query, pagination: $pagination) {
@@ -92,6 +132,75 @@ const TOP_RISKIEST_COMPONENTS = gql`
     }
 `;
 
+const TOP_RISKIEST_IMAGE_COMPONENTS = gql`
+    query topRiskiestImageComponents($query: String, $pagination: Pagination) {
+        results: imageComponents(query: $query, pagination: $pagination) {
+            id
+            name
+            version
+            lastScanned
+            vulnCounter: imageVulnerabilityCounter {
+                all {
+                    total
+                    fixable
+                }
+                low {
+                    total
+                    fixable
+                }
+                moderate {
+                    total
+                    fixable
+                }
+                important {
+                    total
+                    fixable
+                }
+                critical {
+                    total
+                    fixable
+                }
+            }
+            priority
+        }
+    }
+`;
+
+const TOP_RISKIEST_NODE_COMPONENTS = gql`
+    query topRiskiestNodeComponents($query: String, $pagination: Pagination) {
+        results: nodeComponents(query: $query, pagination: $pagination) {
+            id
+            name
+            version
+            lastScanned: nodeComponentLastScanned
+            vulnCounter: nodeVulnerabilityCounter {
+                all {
+                    total
+                    fixable
+                }
+                low {
+                    total
+                    fixable
+                }
+                moderate {
+                    total
+                    fixable
+                }
+                important {
+                    total
+                    fixable
+                }
+                critical {
+                    total
+                    fixable
+                }
+            }
+            priority
+        }
+    }
+`;
+
+// TODO: remove once ROX_FRONTEND_VM_UPDATES is enabled
 const TOP_RISKIEST_NODES = gql`
     query topRiskiestNodes($query: String, $pagination: Pagination) {
         results: nodes(query: $query, pagination: $pagination) {
@@ -127,19 +236,139 @@ const TOP_RISKIEST_NODES = gql`
     }
 `;
 
+const TOP_RISKIEST_NODE_VULNS = gql`
+    query topRiskiestNodeVulns($query: String, $pagination: Pagination) {
+        results: nodes(query: $query, pagination: $pagination) {
+            id
+            name
+            vulnCounter: nodeVulnerabilityCounter {
+                all {
+                    total
+                    fixable
+                }
+                low {
+                    total
+                    fixable
+                }
+                moderate {
+                    total
+                    fixable
+                }
+                important {
+                    total
+                    fixable
+                }
+                critical {
+                    total
+                    fixable
+                }
+            }
+            priority
+            scan {
+                scanTime
+            }
+        }
+    }
+`;
+
 const getTextByEntityType = (entityType, data) => {
     switch (entityType) {
         case entityTypes.NODE:
-            return data.name;
+        case entityTypes.NODE_CVE:
+            return data.name.fullName || data.name;
         case entityTypes.COMPONENT:
+        case entityTypes.NODE_COMPONENT:
+        case entityTypes.IMAGE_COMPONENT:
             return `${data.name}:${data.version}`;
         case entityTypes.IMAGE:
+        case entityTypes.IMAGE_CVE:
         default:
             return data.name.fullName;
     }
 };
 
-const processData = (data, entityType, workflowState) => {
+const getQueryBySelectedEntity = (entityType) => {
+    switch (entityType) {
+        case entityTypes.COMPONENT:
+            return TOP_RISKIEST_COMPONENTS;
+        case entityTypes.NODE:
+            return TOP_RISKIEST_NODES;
+        case entityTypes.IMAGE:
+        default:
+            return TOP_RISKIEST_IMAGES;
+    }
+};
+
+function getQueryBySelectedEntityVulns(entityType) {
+    switch (entityType) {
+        case entityTypes.IMAGE_COMPONENT:
+            return TOP_RISKIEST_IMAGE_COMPONENTS;
+        case entityTypes.NODE_COMPONENT:
+            return TOP_RISKIEST_NODE_COMPONENTS;
+        case entityTypes.NODE:
+            return TOP_RISKIEST_NODE_VULNS;
+        case entityTypes.IMAGE:
+        default:
+            return TOP_RISKIEST_IMAGE_VULNS;
+    }
+}
+
+const getEntitiesByContext = (entityContext, showVmUpdates) => {
+    const entities = [];
+    if (!showVmUpdates) {
+        if (entityContext === {} || !entityContext[entityTypes.COMPONENT]) {
+            entities.push({
+                label: 'Top Riskiest Components',
+                value: entityTypes.COMPONENT,
+            });
+        }
+    } else {
+        if (entityContext === {} || !entityContext[entityTypes.NODE_COMPONENT]) {
+            entities.push({
+                label: 'Top Riskiest Node Components',
+                value: entityTypes.NODE_COMPONENT,
+            });
+        }
+        if (entityContext === {} || !entityContext[entityTypes.IMAGE_COMPONENT]) {
+            entities.push({
+                label: 'Top Riskiest Image Components',
+                value: entityTypes.IMAGE_COMPONENT,
+            });
+        }
+    }
+    if (entityContext === {} || !entityContext[entityTypes.IMAGE] || entities.length === 0) {
+        // unshift so it sits at the front of the list (in case both entity types are added, image should come first)
+        entities.unshift({
+            label: 'Top Riskiest Images',
+            value: entityTypes.IMAGE,
+        });
+    }
+    if (entityContext === {} || !entityContext[entityTypes.NODE]) {
+        entities.push({
+            label: 'Top Riskiest Nodes',
+            value: entityTypes.NODE,
+        });
+    }
+    return entities;
+};
+
+function getCVEListType(entityType, showVmUpdates) {
+    if (!showVmUpdates) {
+        return entityType.CVE;
+    }
+    switch (entityType) {
+        case entityTypes.NODE:
+        case entityTypes.NODE_COMPONENT:
+            return entityTypes.NODE_CVE;
+        case entityTypes.IMAGE:
+        case entityTypes.IMAGE_COMPONENT:
+            return entityTypes.IMAGE_CVE;
+        default:
+            return entityTypes.CVE;
+    }
+}
+
+const processData = (data, entityType, workflowState, showVmUpdates) => {
     const results = data.results
         .slice()
         .sort((a, b) => {
@@ -160,7 +389,7 @@ const processData = (data, entityType, workflowState) => {
             const newState = workflowState.pushRelatedEntity(entityType, id);
 
             const url = newState.toUrl();
-            const cveListState = newState.pushList(entityTypes.CVE);
+            const cveListState = newState.pushList(getCVEListType(entityType, showVmUpdates));
             const cvesUrl = cveListState.toUrl();
             const fixableUrl = cveListState.setSearch({ Fixable: true }).toUrl();
 
@@ -224,35 +453,10 @@ const processData = (data, entityType, workflowState) => {
     return results;
 };
 
-const getQueryBySelectedEntity = (entityType) => {
-    switch (entityType) {
-        case entityTypes.COMPONENT:
-            return TOP_RISKIEST_COMPONENTS;
-        case entityTypes.NODE:
-            return TOP_RISKIEST_NODES;
-        case entityTypes.IMAGE:
-        default:
-            return TOP_RISKIEST_IMAGES;
-    }
-};
-
-const getEntitiesByContext = (entityContext) => {
-    const entities = [];
-    if (entityContext === {} || !entityContext[entityTypes.COMPONENT]) {
-        entities.push({ label: 'Top Riskiest Components', value: entityTypes.COMPONENT });
-    }
-    if (entityContext === {} || !entityContext[entityTypes.IMAGE] || entities.length === 0) {
-        // unshift so it sits at the front of the list (in case both entity types are added, image should come first)
-        entities.unshift({ label: 'Top Riskiest Images', value: entityTypes.IMAGE });
-    }
-    if (entityContext === {} || !entityContext[entityTypes.NODE]) {
-        entities.push({ label: 'Top Riskiest Nodes', value: entityTypes.NODE });
-    }
-    return entities;
-};
-
 const TopRiskiestEntities = ({ entityContext, limit }) => {
-    const entities = getEntitiesByContext(entityContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const entities = getEntitiesByContext(entityContext, showVmUpdates);
     const [selectedEntity, setSelectedEntity] = useState(entities[0].value);
 
     function onEntityChange(value) {
@@ -263,19 +467,24 @@ const TopRiskiestEntities = ({ entityContext, limit }) => {
         loading,
         data = {},
         error,
-    } = useQuery(getQueryBySelectedEntity(selectedEntity), {
-        variables: {
-            query: queryService.entityContextToQueryString(entityContext),
-            pagination: queryService.getPagination(
-                {
-                    id: entityPriorityField[selectedEntity],
-                    desc: false,
-                },
-                WIDGET_PAGINATION_START_OFFSET,
-                limit
-            ),
-        },
-    });
+    } = useQuery(
+        showVmUpdates
+            ? getQueryBySelectedEntityVulns(selectedEntity)
+            : getQueryBySelectedEntity(selectedEntity),
+        {
+            variables: {
+                query: queryService.entityContextToQueryString(entityContext),
+                pagination: queryService.getPagination(
+                    {
+                        id: entityPriorityField[selectedEntity],
+                        desc: false,
+                    },
+                    WIDGET_PAGINATION_START_OFFSET,
+                    limit
+                ),
+            },
+        }
+    );
 
     const workflowState = useContext(workflowStateContext);
 
@@ -300,7 +509,7 @@ const TopRiskiestEntities = ({ entityContext, limit }) => {
                 <div className="flex mx-auto items-center">No scanner setup for this registry.</div>
             );
         } else {
-            const processedData = processData(data, selectedEntity, workflowState, limit);
+            const processedData = processData(data, selectedEntity, workflowState, showVmUpdates);
 
             if (processedData.length) {
                 content = (

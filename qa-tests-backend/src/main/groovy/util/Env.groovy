@@ -5,8 +5,12 @@ import orchestratormanager.OrchestratorTypes
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.attribute.FileTime
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class Env {
+
+    private static final Logger LOG = LoggerFactory.getLogger(this.getClass())
 
     private static final PROPERTIES_FILE = "qa-test-settings.properties"
 
@@ -17,7 +21,7 @@ class Env {
     ]
 
     static final IN_CI = (System.getenv("CI") != null)
-    static final CI_JOBNAME = System.getenv("CIRCLE_JOB")
+    static final CI_JOBNAME = System.getenv("CIRCLE_JOB") ?: ""
     static final CI_TAG = System.getenv("CIRCLE_TAG")
 
     private static final Env INSTANCE = new Env()
@@ -50,7 +54,7 @@ class Env {
         try {
             envVars.load(new FileInputStream(PROPERTIES_FILE))
         } catch (Exception ex) {
-            print "Failed to load extra properties file: ${ex}"
+            LOG.error( "Failed to load extra properties file", ex)
         }
     }
 
@@ -95,7 +99,7 @@ class Env {
                     mostRecent = modTime
                 }
             } catch (Exception ex) {
-                print "" // no-op
+                LOG.debug("error inferOrchestratorType", ex) // no-op
             }
         }
 
@@ -108,7 +112,7 @@ class Env {
                 envVars.put(entry.key, entry.value)
             }
         }
-        println System.getenv()
+        LOG.debug System.getenv().toMapString()
 
         if (isEnvVarEmpty("ROX_PASSWORD")) {
             if (isEnvVarEmpty("CLUSTER")) {
@@ -121,7 +125,7 @@ class Env {
                 BufferedReader br = new BufferedReader(new FileReader(passwordPath))
                 password = br.readLine()
             } catch (Exception ex) {
-                println "Failed to load password for current deployment: ${ex}"
+                LOG.warn("Failed to load password for current deployment", ex)
             }
 
             if (password != null) {

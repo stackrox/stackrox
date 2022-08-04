@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+package central;
+
+// ClusterMetrics defines a set of metrics, which are collected by Sensor and
+// send to Central.
+message ClusterMetrics {
+    int64 node_count = 1;  // The number of nodes in the cluster accessible by Sensor.
+    int64 cpu_capacity = 2;  // The total cpu capacity of all nodes accessible by Sensor.
+}

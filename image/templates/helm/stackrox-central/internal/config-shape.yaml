@@ -41,6 +41,11 @@ central:
     name: null # string
     tag: null # string
     fullRef: null # string
+  dbImage:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
   adminPassword:
     value: null # string
     generate: null # bool
@@ -115,3 +120,4 @@ meta:
 globalPrefix: null # string
 system:
   createSCCs: null # bool
+  enablePodSecurityPolicies: null # bool

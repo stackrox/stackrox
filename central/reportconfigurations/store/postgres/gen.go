@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-table-bindings-wrapper --type=storage.ReportConfiguration --table=reportconfigs --search-category REPORT_CONFIGURATIONS --options-path central/reportconfigurations/mappings
+//go:generate pg-table-bindings-wrapper --type=storage.ReportConfiguration --search-category REPORT_CONFIGURATIONS --migration-seq 43 --migrate-from rocksdb

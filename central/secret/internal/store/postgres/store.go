@@ -4,33 +4,32 @@ package postgres
 
 import (
 	"context"
-	"reflect"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sync"
+	"gorm.io/gorm"
 )
 
 const (
-	baseTable  = "secrets"
-	countStmt  = "SELECT COUNT(*) FROM secrets"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM secrets WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM secrets WHERE Id = $1"
-	deleteStmt  = "DELETE FROM secrets WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM secrets"
-	getIDsStmt  = "SELECT Id FROM secrets"
-	getManyStmt = "SELECT serialized FROM secrets WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM secrets WHERE Id = ANY($1::text[])"
+	baseTable = "secrets"
 
 	batchAfter = 100
 
@@ -38,16 +37,15 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.Secret)(nil)), baseTable)
-	log    = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.SecretsSchema
+	targetResource = resources.Secret
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -67,185 +65,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	mutex sync.Mutex
 }
 
-func createTableSecrets(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists secrets (
-    Id varchar,
-    Name varchar,
-    ClusterId varchar,
-    ClusterName varchar,
-    Namespace varchar,
-    Type varchar,
-    Labels jsonb,
-    Annotations jsonb,
-    CreatedAt timestamp,
-    Relationship_Id varchar,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+// New returns a new Store instance using the provided sql instance.
+func New(db *pgxpool.Pool) Store {
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableSecretsFiles(ctx, db)
-	createTableSecretsContainerRelationships(ctx, db)
-	createTableSecretsDeploymentRelationships(ctx, db)
 }
 
-func createTableSecretsFiles(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists secrets_Files (
-    secrets_Id varchar,
-    idx integer,
-    Name varchar,
-    Type integer,
-    Cert_Subject_CommonName varchar,
-    Cert_Subject_Country varchar,
-    Cert_Subject_Organization varchar,
-    Cert_Subject_OrganizationUnit varchar,
-    Cert_Subject_Locality varchar,
-    Cert_Subject_Province varchar,
-    Cert_Subject_StreetAddress varchar,
-    Cert_Subject_PostalCode varchar,
-    Cert_Subject_Names text[],
-    Cert_Issuer_CommonName varchar,
-    Cert_Issuer_Country varchar,
-    Cert_Issuer_Organization varchar,
-    Cert_Issuer_OrganizationUnit varchar,
-    Cert_Issuer_Locality varchar,
-    Cert_Issuer_Province varchar,
-    Cert_Issuer_StreetAddress varchar,
-    Cert_Issuer_PostalCode varchar,
-    Cert_Issuer_Names text[],
-    Cert_Sans text[],
-    Cert_StartDate timestamp,
-    Cert_EndDate timestamp,
-    Cert_Algorithm varchar,
-    PRIMARY KEY(secrets_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists secretsFiles_idx on secrets_Files using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableSecretsFilesRegistries(ctx, db)
-}
-
-func createTableSecretsFilesRegistries(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists secrets_Files_Registries (
-    secrets_Id varchar,
-    secrets_Files_idx integer,
-    idx integer,
-    Name varchar,
-    Username varchar,
-    PRIMARY KEY(secrets_Id, secrets_Files_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id, secrets_Files_idx) REFERENCES secrets_Files(secrets_Id, idx) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists secretsFilesRegistries_idx on secrets_Files_Registries using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableSecretsContainerRelationships(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists secrets_ContainerRelationships (
-    secrets_Id varchar,
-    idx integer,
-    Id varchar,
-    Path varchar,
-    PRIMARY KEY(secrets_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists secretsContainerRelationships_idx on secrets_ContainerRelationships using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableSecretsDeploymentRelationships(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists secrets_DeploymentRelationships (
-    secrets_Id varchar,
-    idx integer,
-    Id varchar,
-    Name varchar,
-    PRIMARY KEY(secrets_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists secretsDeploymentRelationships_idx on secrets_DeploymentRelationships using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) error {
+func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secret) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -259,166 +90,64 @@ func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) erro
 		obj.GetClusterId(),
 		obj.GetClusterName(),
 		obj.GetNamespace(),
-		obj.GetType(),
-		obj.GetLabels(),
-		obj.GetAnnotations(),
 		pgutils.NilOrTime(obj.GetCreatedAt()),
-		obj.GetRelationship().GetId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO secrets (Id, Name, ClusterId, ClusterName, Namespace, Type, Labels, Annotations, CreatedAt, Relationship_Id, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, Type = EXCLUDED.Type, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, CreatedAt = EXCLUDED.CreatedAt, Relationship_Id = EXCLUDED.Relationship_Id, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO secrets (Id, Name, ClusterId, ClusterName, Namespace, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetFiles() {
-		if err := insertIntoSecretsFiles(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoSecretsFiles(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from secrets_Files where secrets_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetFiles()))
-	if err != nil {
-		return err
-	}
-	for childIdx, child := range obj.GetRelationship().GetContainerRelationships() {
-		if err := insertIntoSecretsContainerRelationships(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from secrets_ContainerRelationships where secrets_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetRelationship().GetContainerRelationships()))
-	if err != nil {
-		return err
-	}
-	for childIdx, child := range obj.GetRelationship().GetDeploymentRelationships() {
-		if err := insertIntoSecretsDeploymentRelationships(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from secrets_DeploymentRelationships where secrets_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetRelationship().GetDeploymentRelationships()))
-	if err != nil {
-		return err
-	}
+	query = "delete from secrets_files where secrets_Id = $1 AND idx >= $2"
+	batch.Queue(query, obj.GetId(), len(obj.GetFiles()))
 	return nil
 }
 
-func insertIntoSecretsFiles(ctx context.Context, tx pgx.Tx, obj *storage.SecretDataFile, secrets_Id string, idx int) error {
+func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.SecretDataFile, secrets_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 		secrets_Id,
 		idx,
-		obj.GetName(),
 		obj.GetType(),
-		obj.GetCert().GetSubject().GetCommonName(),
-		obj.GetCert().GetSubject().GetCountry(),
-		obj.GetCert().GetSubject().GetOrganization(),
-		obj.GetCert().GetSubject().GetOrganizationUnit(),
-		obj.GetCert().GetSubject().GetLocality(),
-		obj.GetCert().GetSubject().GetProvince(),
-		obj.GetCert().GetSubject().GetStreetAddress(),
-		obj.GetCert().GetSubject().GetPostalCode(),
-		obj.GetCert().GetSubject().GetNames(),
-		obj.GetCert().GetIssuer().GetCommonName(),
-		obj.GetCert().GetIssuer().GetCountry(),
-		obj.GetCert().GetIssuer().GetOrganization(),
-		obj.GetCert().GetIssuer().GetOrganizationUnit(),
-		obj.GetCert().GetIssuer().GetLocality(),
-		obj.GetCert().GetIssuer().GetProvince(),
-		obj.GetCert().GetIssuer().GetStreetAddress(),
-		obj.GetCert().GetIssuer().GetPostalCode(),
-		obj.GetCert().GetIssuer().GetNames(),
-		obj.GetCert().GetSans(),
-		pgutils.NilOrTime(obj.GetCert().GetStartDate()),
 		pgutils.NilOrTime(obj.GetCert().GetEndDate()),
-		obj.GetCert().GetAlgorithm(),
 	}
 
-	finalStr := "INSERT INTO secrets_Files (secrets_Id, idx, Name, Type, Cert_Subject_CommonName, Cert_Subject_Country, Cert_Subject_Organization, Cert_Subject_OrganizationUnit, Cert_Subject_Locality, Cert_Subject_Province, Cert_Subject_StreetAddress, Cert_Subject_PostalCode, Cert_Subject_Names, Cert_Issuer_CommonName, Cert_Issuer_Country, Cert_Issuer_Organization, Cert_Issuer_OrganizationUnit, Cert_Issuer_Locality, Cert_Issuer_Province, Cert_Issuer_StreetAddress, Cert_Issuer_PostalCode, Cert_Issuer_Names, Cert_Sans, Cert_StartDate, Cert_EndDate, Cert_Algorithm) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Cert_Subject_CommonName = EXCLUDED.Cert_Subject_CommonName, Cert_Subject_Country = EXCLUDED.Cert_Subject_Country, Cert_Subject_Organization = EXCLUDED.Cert_Subject_Organization, Cert_Subject_OrganizationUnit = EXCLUDED.Cert_Subject_OrganizationUnit, Cert_Subject_Locality = EXCLUDED.Cert_Subject_Locality, Cert_Subject_Province = EXCLUDED.Cert_Subject_Province, Cert_Subject_StreetAddress = EXCLUDED.Cert_Subject_StreetAddress, Cert_Subject_PostalCode = EXCLUDED.Cert_Subject_PostalCode, Cert_Subject_Names = EXCLUDED.Cert_Subject_Names, Cert_Issuer_CommonName = EXCLUDED.Cert_Issuer_CommonName, Cert_Issuer_Country = EXCLUDED.Cert_Issuer_Country, Cert_Issuer_Organization = EXCLUDED.Cert_Issuer_Organization, Cert_Issuer_OrganizationUnit = EXCLUDED.Cert_Issuer_OrganizationUnit, Cert_Issuer_Locality = EXCLUDED.Cert_Issuer_Locality, Cert_Issuer_Province = EXCLUDED.Cert_Issuer_Province, Cert_Issuer_StreetAddress = EXCLUDED.Cert_Issuer_StreetAddress, Cert_Issuer_PostalCode = EXCLUDED.Cert_Issuer_PostalCode, Cert_Issuer_Names = EXCLUDED.Cert_Issuer_Names, Cert_Sans = EXCLUDED.Cert_Sans, Cert_StartDate = EXCLUDED.Cert_StartDate, Cert_EndDate = EXCLUDED.Cert_EndDate, Cert_Algorithm = EXCLUDED.Cert_Algorithm"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO secrets_files (secrets_Id, idx, Type, Cert_EndDate) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Type = EXCLUDED.Type, Cert_EndDate = EXCLUDED.Cert_EndDate"
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetImagePullSecret().GetRegistries() {
-		if err := insertIntoSecretsFilesRegistries(ctx, tx, child, secrets_Id, idx, childIdx); err != nil {
+		if err := insertIntoSecretsFilesRegistries(ctx, batch, child, secrets_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from secrets_Files_Registries where secrets_Id = $1 AND secrets_Files_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, secrets_Id, idx, len(obj.GetImagePullSecret().GetRegistries()))
-	if err != nil {
-		return err
-	}
+	query = "delete from secrets_files_registries where secrets_Id = $1 AND secrets_files_idx = $2 AND idx >= $3"
+	batch.Queue(query, secrets_Id, idx, len(obj.GetImagePullSecret().GetRegistries()))
 	return nil
 }
 
-func insertIntoSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, obj *storage.ImagePullSecret_Registry, secrets_Id string, secrets_Files_idx int, idx int) error {
+func insertIntoSecretsFilesRegistries(ctx context.Context, batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secrets_Id string, secrets_files_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 		secrets_Id,
-		secrets_Files_idx,
+		secrets_files_idx,
 		idx,
 		obj.GetName(),
-		obj.GetUsername(),
 	}
 
-	finalStr := "INSERT INTO secrets_Files_Registries (secrets_Id, secrets_Files_idx, idx, Name, Username) VALUES($1, $2, $3, $4, $5) ON CONFLICT(secrets_Id, secrets_Files_idx, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, secrets_Files_idx = EXCLUDED.secrets_Files_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Username = EXCLUDED.Username"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoSecretsContainerRelationships(ctx context.Context, tx pgx.Tx, obj *storage.SecretContainerRelationship, secrets_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		secrets_Id,
-		idx,
-		obj.GetId(),
-		obj.GetPath(),
-	}
-
-	finalStr := "INSERT INTO secrets_ContainerRelationships (secrets_Id, idx, Id, Path) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, Path = EXCLUDED.Path"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoSecretsDeploymentRelationships(ctx context.Context, tx pgx.Tx, obj *storage.SecretDeploymentRelationship, secrets_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		secrets_Id,
-		idx,
-		obj.GetId(),
-		obj.GetName(),
-	}
-
-	finalStr := "INSERT INTO secrets_DeploymentRelationships (secrets_Id, idx, Id, Name) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, Name = EXCLUDED.Name"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO secrets_files_registries (secrets_Id, secrets_files_idx, idx, Name) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, secrets_files_idx, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, secrets_files_idx = EXCLUDED.secrets_files_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name"
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -445,15 +174,7 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 
 		"namespace",
 
-		"type",
-
-		"labels",
-
-		"annotations",
-
 		"createdat",
-
-		"relationship_id",
 
 		"serialized",
 	}
@@ -479,15 +200,7 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 
 			obj.GetNamespace(),
 
-			obj.GetType(),
-
-			obj.GetLabels(),
-
-			obj.GetAnnotations(),
-
 			pgutils.NilOrTime(obj.GetCreatedAt()),
-
-			obj.GetRelationship().GetId(),
 
 			serialized,
 		})
@@ -500,8 +213,7 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -518,15 +230,10 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 		}
 	}
 
-	for _, obj := range objs {
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromSecretsFiles(ctx, tx, obj.GetId(), obj.GetFiles()...); err != nil {
-			return err
-		}
-		if err = s.copyFromSecretsContainerRelationships(ctx, tx, obj.GetId(), obj.GetRelationship().GetContainerRelationships()...); err != nil {
-			return err
-		}
-		if err = s.copyFromSecretsDeploymentRelationships(ctx, tx, obj.GetId(), obj.GetRelationship().GetDeploymentRelationships()...); err != nil {
 			return err
 		}
 	}
@@ -546,53 +253,9 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 
 		"idx",
 
-		"name",
-
 		"type",
 
-		"cert_subject_commonname",
-
-		"cert_subject_country",
-
-		"cert_subject_organization",
-
-		"cert_subject_organizationunit",
-
-		"cert_subject_locality",
-
-		"cert_subject_province",
-
-		"cert_subject_streetaddress",
-
-		"cert_subject_postalcode",
-
-		"cert_subject_names",
-
-		"cert_issuer_commonname",
-
-		"cert_issuer_country",
-
-		"cert_issuer_organization",
-
-		"cert_issuer_organizationunit",
-
-		"cert_issuer_locality",
-
-		"cert_issuer_province",
-
-		"cert_issuer_streetaddress",
-
-		"cert_issuer_postalcode",
-
-		"cert_issuer_names",
-
-		"cert_sans",
-
-		"cert_startdate",
-
 		"cert_enddate",
-
-		"cert_algorithm",
 	}
 
 	for idx, obj := range objs {
@@ -605,53 +268,9 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 
 			idx,
 
-			obj.GetName(),
-
 			obj.GetType(),
 
-			obj.GetCert().GetSubject().GetCommonName(),
-
-			obj.GetCert().GetSubject().GetCountry(),
-
-			obj.GetCert().GetSubject().GetOrganization(),
-
-			obj.GetCert().GetSubject().GetOrganizationUnit(),
-
-			obj.GetCert().GetSubject().GetLocality(),
-
-			obj.GetCert().GetSubject().GetProvince(),
-
-			obj.GetCert().GetSubject().GetStreetAddress(),
-
-			obj.GetCert().GetSubject().GetPostalCode(),
-
-			obj.GetCert().GetSubject().GetNames(),
-
-			obj.GetCert().GetIssuer().GetCommonName(),
-
-			obj.GetCert().GetIssuer().GetCountry(),
-
-			obj.GetCert().GetIssuer().GetOrganization(),
-
-			obj.GetCert().GetIssuer().GetOrganizationUnit(),
-
-			obj.GetCert().GetIssuer().GetLocality(),
-
-			obj.GetCert().GetIssuer().GetProvince(),
-
-			obj.GetCert().GetIssuer().GetStreetAddress(),
-
-			obj.GetCert().GetIssuer().GetPostalCode(),
-
-			obj.GetCert().GetIssuer().GetNames(),
-
-			obj.GetCert().GetSans(),
-
-			pgutils.NilOrTime(obj.GetCert().GetStartDate()),
-
 			pgutils.NilOrTime(obj.GetCert().GetEndDate()),
-
-			obj.GetCert().GetAlgorithm(),
 		})
 
 		// if we hit our batch size we need to push the data
@@ -671,6 +290,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 	}
 
 	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromSecretsFilesRegistries(ctx, tx, secrets_Id, idx, obj.GetImagePullSecret().GetRegistries()...); err != nil {
 			return err
@@ -680,7 +300,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, secrets_Id string, secrets_Files_idx int, objs ...*storage.ImagePullSecret_Registry) error {
+func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, secrets_Id string, secrets_files_idx int, objs ...*storage.ImagePullSecret_Registry) error {
 
 	inputRows := [][]interface{}{}
 
@@ -695,8 +315,6 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 		"idx",
 
 		"name",
-
-		"username",
 	}
 
 	for idx, obj := range objs {
@@ -707,13 +325,11 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 
 			secrets_Id,
 
-			secrets_Files_idx,
+			secrets_files_idx,
 
 			idx,
 
 			obj.GetName(),
-
-			obj.GetUsername(),
 		})
 
 		// if we hit our batch size we need to push the data
@@ -735,119 +351,11 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsContainerRelationships(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretContainerRelationship) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"secrets_id",
-
-		"idx",
-
-		"id",
-
-		"path",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			secrets_Id,
-
-			idx,
-
-			obj.GetId(),
-
-			obj.GetPath(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets_containerrelationships"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromSecretsDeploymentRelationships(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretDeploymentRelationship) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"secrets_id",
-
-		"idx",
-
-		"id",
-
-		"name",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			secrets_Id,
-
-			idx,
-
-			obj.GetId(),
-
-			obj.GetName(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets_deploymentrelationships"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableSecrets(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Secret) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "Secret")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Secret")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -868,22 +376,27 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Secret) error
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Secret) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "Secret")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Secret")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoSecrets(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoSecrets(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		if err := batchResults.Close(); err != nil {
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}
@@ -893,11 +406,43 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Secret) error {
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Secret) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Secret")
 
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
+		ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Secret) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Secret")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		var deniedIds []string
+		for _, obj := range objs {
+			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
+				return err
+			} else if !ok {
+				deniedIds = append(deniedIds, obj.GetId())
+			}
+		}
+		if len(deniedIds) != 0 {
+			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying secrets with IDs [%s] was denied", strings.Join(deniedIds, ", "))
+		}
+	}
+
+	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+	// violations
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -910,36 +455,71 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Secret) erro
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Secret")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
 		return 0, err
 	}
-	return count, nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Secret")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return false, err
 	}
-	return exists, nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Secret, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Secret")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "Secret")
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return nil, false, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -950,45 +530,62 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Secret, bool, 
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Secret")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "Secret")
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.SecretIDs")
+	var sacQueryFilter *v1.Query
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
 	}
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
+	}
+
 	return ids, nil
 }
 
@@ -996,12 +593,32 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Secret, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Secret")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "Secret")
-	defer release()
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		return nil, nil, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -1010,13 +627,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Secre
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.Secret)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.Secret{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
@@ -1041,32 +653,62 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Secre
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Secret")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "Secret")
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Secret) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+		return err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		var msg storage.Secret
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
+		for _, data := range rows {
+			var msg storage.Secret
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
 		}
-		if err := fn(&msg); err != nil {
-			return err
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil
@@ -1077,34 +719,28 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Secret) error
 func dropTableSecrets(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets CASCADE")
 	dropTableSecretsFiles(ctx, db)
-	dropTableSecretsContainerRelationships(ctx, db)
-	dropTableSecretsDeploymentRelationships(ctx, db)
 
 }
 
 func dropTableSecretsFiles(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_Files CASCADE")
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_files CASCADE")
 	dropTableSecretsFilesRegistries(ctx, db)
 
 }
 
 func dropTableSecretsFilesRegistries(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_Files_Registries CASCADE")
-
-}
-
-func dropTableSecretsContainerRelationships(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_ContainerRelationships CASCADE")
-
-}
-
-func dropTableSecretsDeploymentRelationships(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_DeploymentRelationships CASCADE")
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_files_registries CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableSecrets(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

@@ -14,14 +14,13 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	complianceSearch "github.com/stackrox/rox/central/compliance/search"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	componentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/rbac/service"
@@ -32,7 +31,8 @@ import (
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	protoSet "github.com/stackrox/rox/generated/set"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -78,9 +78,11 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_SERVICE_ACCOUNTS: s.serviceaccounts.SearchServiceAccounts,
 		v1.SearchCategory_ROLES:            s.roles.SearchRoles,
 		v1.SearchCategory_ROLEBINDINGS:     s.bindings.SearchRoleBindings,
-		v1.SearchCategory_IMAGE_COMPONENTS: s.components.SearchImageComponents,
-		v1.SearchCategory_VULNERABILITIES:  s.cves.SearchCVEs,
 		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(s.bindings).SearchSubjects,
+	}
+
+	if features.NewPolicyCategories.Enabled() {
+		searchfuncs[v1.SearchCategory_POLICY_CATEGORIES] = s.categories.SearchPolicyCategories
 	}
 
 	return searchfuncs
@@ -101,9 +103,11 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_SERVICE_ACCOUNTS: s.serviceaccounts,
 		v1.SearchCategory_ROLES:            s.roles,
 		v1.SearchCategory_ROLEBINDINGS:     s.bindings,
-		v1.SearchCategory_IMAGE_COMPONENTS: s.components,
-		v1.SearchCategory_VULNERABILITIES:  s.cves,
 		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(s.bindings),
+	}
+
+	if features.NewPolicyCategories.Enabled() {
+		searchers[v1.SearchCategory_POLICY_CATEGORIES] = s.categories
 	}
 
 	return searchers
@@ -131,8 +135,7 @@ type serviceImpl struct {
 	roles           roleDataStore.DataStore
 	bindings        roleBindingDataStore.DataStore
 	clusters        clusterDataStore.DataStore
-	cves            cveDataStore.DataStore
-	components      componentDataStore.DataStore
+	categories      categoriesDataStore.DataStore
 
 	aggregator aggregation.Aggregator
 	authorizer authz.Authorizer
@@ -192,7 +195,7 @@ func trimMatches(matches map[string][]string, fieldPaths []string) map[string][]
 func RunAutoComplete(ctx context.Context, queryString string, categories []v1.SearchCategory, searchers map[v1.SearchCategory]search.Searcher) ([]string, error) {
 	query, autocompleteKey, err := search.ParseQueryForAutocomplete(queryString)
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "unable to parse query %q: %v", queryString, err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "unable to parse query %q: %v", queryString, err)
 	}
 	// Set the max return size for the query
 	query.Pagination = &v1.QueryPagination{
@@ -212,12 +215,12 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 			if ok {
 				utils.Should(errors.Errorf("searchers map has an entry for category %v, but the returned searcher was nil", category))
 			}
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Search category %q is not implemented", category.String())
+			return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
 		}
 
 		optMultiMap := categoryToOptionsMultimap[category]
 		if optMultiMap == nil {
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Search category %q is not implemented", category.String())
+			return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
 		}
 
 		autocompleteFields := optMultiMap.GetAll(autocompleteKey)
@@ -279,7 +282,7 @@ func (s *serviceImpl) autocomplete(ctx context.Context, queryString string, cate
 
 func (s *serviceImpl) Autocomplete(ctx context.Context, req *v1.RawSearchRequest) (*v1.AutocompleteResponse, error) {
 	if req.GetQuery() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "query cannot be empty")
+		return nil, errors.Wrap(errox.InvalidArgs, "query cannot be empty")
 	}
 	results, err := s.autocomplete(ctx, req.GetQuery(), req.GetCategories())
 	if err != nil {
@@ -335,7 +338,7 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 
 	parsedRequest, err := search.ParseQuery(query)
 	if err != nil {
-		err = errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		err = errors.Wrap(errox.InvalidArgs, err.Error())
 		return
 	}
 	if len(categories) == 0 {
@@ -348,7 +351,7 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 		}
 		searchFunc, ok := searchFuncMap[category]
 		if !ok {
-			err = errors.Wrapf(errorhelpers.ErrInvalidArgs, "Search category '%s' is not implemented", category.String())
+			err = errors.Wrapf(errox.InvalidArgs, "Search category '%s' is not implemented", category.String())
 			return
 		}
 		var resultsFromCategory []*v1.SearchResult

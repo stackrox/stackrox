@@ -1,14 +1,26 @@
 import selectors, { systemConfigUrl, text } from '../constants/SystemConfigPage';
-import navigationSelectors from '../selectors/navigation';
 import withAuth from '../helpers/basicAuth';
+import { visitFromLeftNavExpandable } from '../helpers/nav';
 import { system as configApi } from '../constants/apiEndpoints';
 
+function visitSytemConfigurationFromLeftNav() {
+    cy.intercept('GET', configApi.config).as('getSystemConfiguration');
+    visitFromLeftNavExpandable('Platform Configuration', 'System Configuration');
+    cy.wait('@getSystemConfiguration');
+}
+
+function visitSystemConfiguration() {
+    cy.intercept('GET', configApi.config).as('getSystemConfiguration');
+    cy.visit(systemConfigUrl);
+    cy.wait('@getSystemConfiguration');
+}
+
 function editBaseConfig(type) {
-    cy.get(selectors.pageHeader.editButton, { timeout: 10000 }).click();
+    cy.get(selectors.pageHeader.editButton).click();
 
     cy.get(selectors[type].config.toggle).should('exist');
-    cy.get(selectors[type].config.toggle).check({ force: true });
-    cy.get(selectors[type].config.textInput, { timeout: 10000 }).type(text.banner);
+    cy.get(selectors[type].config.toggle).check({ force: true }); // force for PatternFly Switch element
+    cy.get(selectors[type].config.textInput).type(text.banner);
 }
 
 function editBannerConfig(type) {
@@ -22,15 +34,16 @@ function editBannerConfig(type) {
     cy.get(selectors[type].widget).click();
 }
 
-function saveConfig(type) {
+function saveSystemConfiguration() {
+    cy.intercept('PUT', configApi.config).as('putSystemConfiguration');
     cy.get(selectors.pageHeader.saveButton).click();
-    cy.get(selectors[type].state).contains('Enabled');
+    cy.wait('@putSystemConfiguration');
 }
 
 function disableConfig(type) {
     cy.get(selectors.pageHeader.editButton).click();
-    cy.get(selectors[type].config.toggle).uncheck({ force: true });
-    cy.get(selectors.pageHeader.saveButton).click();
+    cy.get(selectors[type].config.toggle).uncheck({ force: true }); // force for PatternFly Switch element
+    saveSystemConfiguration();
     cy.get(selectors[type].state).contains('Disabled');
 }
 
@@ -45,17 +58,10 @@ function getRandomNumber() {
 describe('System Configuration', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.server();
-        cy.route('GET', configApi.config).as('getSystemConfig');
-    });
-
     it('should go to System Configuration from main navigation', () => {
-        cy.visit('/');
-        cy.get(`${navigationSelectors.navExpandable}:contains("Platform Configuration")`).click();
-        cy.get(`${navigationSelectors.nestedNavLinks}:contains("System Configuration")`).click();
-        cy.url().should('contain', systemConfigUrl);
-        cy.wait('@getSystemConfig');
+        visitSytemConfigurationFromLeftNav();
+        cy.location('pathname').should('eq', systemConfigUrl);
+        cy.get('h1:contains("System Configuration")');
         cy.get(selectors.dataRetention.widget).should('exist');
         cy.get(selectors.header.widget).should('exist');
         cy.get(selectors.footer.widget).should('exist');
@@ -63,33 +69,36 @@ describe('System Configuration', () => {
     });
 
     it('should allow the user to set data retention to "never delete"', () => {
+        visitSystemConfiguration();
+
         const neverDeletedText = 'Never deleted';
 
-        cy.visit(systemConfigUrl);
-        cy.wait('@getSystemConfig');
         cy.get(selectors.pageHeader.editButton).click();
 
         // If you reran the test without setting these random values first, it won’t save.
         // The save button is disabled when the form is pristine (ie. already 0)
-        cy.get(getNumericInputByLabel('All Runtime Violations')).clear().type(getRandomNumber());
-        cy.get(getNumericInputByLabel('Runtime Violations For Deleted Deployments'))
+        cy.get(getNumericInputByLabel('All runtime violations')).clear().type(getRandomNumber());
+        cy.get(getNumericInputByLabel('Runtime violations for deleted deployments'))
             .clear()
             .type(getRandomNumber());
-        cy.get(getNumericInputByLabel('Resolved Deploy-Phase Violations'))
+        cy.get(getNumericInputByLabel('Resolved deploy-phase violations'))
             .clear()
             .type(getRandomNumber());
-        cy.get(getNumericInputByLabel('Images No Longer Deployed')).clear().type(getRandomNumber());
-        cy.get(selectors.pageHeader.saveButton).click();
-        cy.wait('@getSystemConfig');
+        cy.get(getNumericInputByLabel('Images no longer deployed')).clear().type(getRandomNumber());
+
+        saveSystemConfiguration();
+
         // Change input values to 0 to set it to "never delete"
         cy.get(selectors.pageHeader.editButton).click();
-        cy.get(getNumericInputByLabel('All Runtime Violations')).clear().type(0);
-        cy.get(getNumericInputByLabel('Runtime Violations For Deleted Deployments'))
+
+        cy.get(getNumericInputByLabel('All runtime violations')).clear().type(0);
+        cy.get(getNumericInputByLabel('Runtime violations for deleted deployments'))
             .clear()
             .type(0);
-        cy.get(getNumericInputByLabel('Resolved Deploy-Phase Violations')).clear().type(0);
-        cy.get(getNumericInputByLabel('Images No Longer Deployed')).clear().type(0);
-        cy.get(selectors.pageHeader.saveButton).click();
+        cy.get(getNumericInputByLabel('Resolved deploy-phase violations')).clear().type(0);
+        cy.get(getNumericInputByLabel('Images no longer deployed')).clear().type(0);
+
+        saveSystemConfiguration();
 
         cy.get(selectors.dataRetention.allRuntimeViolationsBox).should('contain', neverDeletedText);
         cy.get(selectors.dataRetention.resolvedDeployViolationsBox).should(
@@ -104,34 +113,40 @@ describe('System Configuration', () => {
     });
 
     it('should be able to edit and enable header', () => {
-        cy.visit(systemConfigUrl);
-        cy.wait('@getSystemConfig');
+        visitSystemConfiguration();
+
         editBaseConfig('header');
         editBannerConfig('header');
-        saveConfig('header');
+        saveSystemConfiguration();
 
+        cy.get(selectors.header.state).contains('Enabled');
         cy.get(selectors.header.banner).should('exist');
+
         disableConfig('header');
         cy.get(selectors.header.banner).should('not.exist');
     });
 
     it('should be able to edit and enable footer', () => {
-        cy.visit(systemConfigUrl);
-        cy.wait('@getSystemConfig');
+        visitSystemConfiguration();
+
         editBaseConfig('footer');
         editBannerConfig('footer');
-        saveConfig('footer');
+        saveSystemConfiguration();
+
+        cy.get(selectors.footer.state).contains('Enabled');
         cy.get(selectors.footer.banner).should('exist');
+
         disableConfig('footer');
         cy.get(selectors.footer.banner).should('not.exist');
     });
 
-    // TODO: re-enable when PatternFly masthead style is integrated
     it('should be able to edit and enable login notice', () => {
-        cy.visit(systemConfigUrl);
-        cy.wait('@getSystemConfig');
+        visitSystemConfiguration();
+
         editBaseConfig('loginNotice');
-        saveConfig('loginNotice');
+        saveSystemConfiguration();
+
+        cy.get(selectors.loginNotice.state).contains('Enabled');
         cy.get(selectors.navLinks.topNav).click();
         cy.get(selectors.navLinks.logout).click();
         cy.get(selectors.loginNotice.banner).should('exist');

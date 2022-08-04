@@ -1,24 +1,90 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import { connect } from 'react-redux';
-import { createSelector, createStructuredSelector } from 'reselect';
 import { useTheme } from 'Containers/ThemeProvider';
 import PageHeader from 'Components/PageHeader';
-import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
+import SearchFilterInput from 'Components/SearchFilterInput';
 import DashboardCompliance from 'Containers/Dashboard/DashboardCompliance';
 import TopRiskyDeployments from 'Containers/Dashboard/TopRiskyDeployments';
-import { selectors } from 'reducers';
-import { actions as dashboardActions } from 'reducers/dashboard';
+import useURLSearch from 'hooks/useURLSearch';
+import {
+    fetchAlertsByTimeseries,
+    fetchSummaryAlertCountsLegacy as fetchSummaryAlertCounts,
+} from 'services/AlertsService';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { fetchDeploymentsLegacy as fetchDeployments } from 'services/DeploymentsService';
 import AlertsByTimeseriesChart from './AlertsByTimeseriesChart';
 import SummaryCounts from './SummaryCounts';
 import ViolationsByClusterChart from './ViolationsByClusterChart';
 import ViolationsByPolicyCategory from './ViolationsByPolicyCategory';
 import EnvironmentRisk from './EnvironmentRisk';
 
-const DashboardPage = (props) => {
+// The search filter value could either be `undefined`, a string, or a string[], so
+// we coerce to an array for consistency.
+function getFilteredClusters(clusterSearchValue) {
+    if (Array.isArray(clusterSearchValue)) {
+        return clusterSearchValue;
+    }
+    if (clusterSearchValue) {
+        return [clusterSearchValue];
+    }
+    return [];
+}
+
+const DashboardPage = () => {
     const { isDarkMode } = useTheme();
-    const subHeader = props.isViewFiltered ? 'Filtered view' : 'Default view';
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const isViewFiltered =
+        Object.keys(searchFilter).length &&
+        Object.values(searchFilter).some((filter) => filter !== '');
+    const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
+
+    const [globalViolationsCounts, setGlobalViolationsCounts] = useState([]);
+    const [violationCountsByPolicyCategories, setViolationCountsByPolicyCategories] = useState([]);
+    const [alertsByTimeseries, setAlertsByTimeseries] = useState([]);
+    const [topRiskyDeployments, setTopRiskyDeployments] = useState([]);
+
+    const filteredClusters = getFilteredClusters(searchFilter.Cluster);
+
+    // TODO All of these effects need cancellation/cleanup
+    useEffect(() => {
+        const query = getRequestQueryStringForSearchFilter(searchFilter);
+
+        fetchSummaryAlertCounts({ 'request.query': query, group_by: 'CLUSTER' })
+            .then(setGlobalViolationsCounts)
+            .catch(() => {
+                // TODO
+            });
+
+        fetchSummaryAlertCounts({ 'request.query': query, group_by: 'CATEGORY' })
+            .then(setViolationCountsByPolicyCategories)
+            .catch(() => {
+                // TODO
+            });
+
+        fetchAlertsByTimeseries({ query })
+            .then(setAlertsByTimeseries)
+            .catch(() => {
+                // TODO
+            });
+
+        const legacyFormatSearchOptions = Object.entries(searchFilter)
+            .filter(([, value]) => value)
+            .flatMap(([label, value]) => [
+                { value: `${label}:`, type: 'categoryOption' },
+                { value },
+            ]);
+        const sortOption = { field: 'Deployment Risk Priority', reversed: false };
+        // Fetch the top 5 deployments, sorted by Risk
+        fetchDeployments(legacyFormatSearchOptions, sortOption, 0, 5)
+            .then((deployments) => {
+                setTopRiskyDeployments(deployments.map(({ deployment }) => deployment));
+            })
+            .catch(() => {
+                // TODO
+            });
+    }, [searchFilter]);
+
     return (
         <section
             className={`flex flex-1 h-full w-full ${!isDarkMode ? 'bg-base-200' : 'bg-base-0'}`}
@@ -27,14 +93,12 @@ const DashboardPage = (props) => {
                 <SummaryCounts />
                 <div>
                     <PageHeader header="Dashboard" subHeader={subHeader}>
-                        <ReduxSearchInput
-                            className="w-full"
-                            searchOptions={props.searchOptions}
-                            searchModifiers={props.searchModifiers}
-                            searchSuggestions={props.searchSuggestions}
-                            setSearchOptions={props.setSearchOptions}
-                            setSearchModifiers={props.setSearchModifiers}
-                            setSearchSuggestions={props.setSearchSuggestions}
+                        <SearchFilterInput
+                            className="pf-u-w-100"
+                            handleChangeSearchFilter={setSearchFilter}
+                            placeholder="Add one or more resource filters"
+                            searchFilter={searchFilter}
+                            searchOptions={['Cluster']}
                         />
                     </PageHeader>
                 </div>
@@ -43,7 +107,10 @@ const DashboardPage = (props) => {
                         className={`flex flex-wrap ${!isDarkMode ? 'bg-base-300' : 'bg-base-100'}`}
                     >
                         <div className="w-full lg:w-1/2 p-6 z-1">
-                            <EnvironmentRisk />
+                            <EnvironmentRisk
+                                globalViolationsCounts={globalViolationsCounts}
+                                clusters={filteredClusters}
+                            />
                         </div>
                         <div className="w-full lg:w-1/2 p-6 z-1 border-l border-base-400">
                             <DashboardCompliance />
@@ -61,12 +128,14 @@ const DashboardPage = (props) => {
                                             </span>
                                         </h2>
                                         <div className="m-4 h-64">
-                                            <ViolationsByClusterChart />
+                                            <ViolationsByClusterChart
+                                                globalViolationsCounts={globalViolationsCounts}
+                                            />
                                         </div>
                                     </div>
                                 </div>
                                 <div className="p-3 w-full lg:w-1/2 xl:w-1/3">
-                                    <TopRiskyDeployments />
+                                    <TopRiskyDeployments deployments={topRiskyDeployments} />
                                 </div>
                                 <div className="p-3 w-full lg:w-1/2 xl:w-1/3">
                                     <div className="flex flex-col bg-base-100 rounded-sm shadow h-full rounded">
@@ -77,11 +146,16 @@ const DashboardPage = (props) => {
                                             </span>
                                         </h2>
                                         <div className="m-4 h-64">
-                                            <AlertsByTimeseriesChart />
+                                            <AlertsByTimeseriesChart
+                                                alertsByTimeseries={alertsByTimeseries}
+                                            />
                                         </div>
                                     </div>
                                 </div>
-                                <ViolationsByPolicyCategory />
+                                <ViolationsByPolicyCategory
+                                    data={violationCountsByPolicyCategories}
+                                    clusters={filteredClusters}
+                                />
                             </div>
                         </div>
                     </div>
@@ -95,31 +169,6 @@ DashboardPage.propTypes = {
     history: PropTypes.shape({
         push: PropTypes.func.isRequired,
     }).isRequired,
-    searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
-    searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
-    searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
-    setSearchOptions: PropTypes.func.isRequired,
-    setSearchModifiers: PropTypes.func.isRequired,
-    setSearchSuggestions: PropTypes.func.isRequired,
-    isViewFiltered: PropTypes.bool.isRequired,
 };
 
-const isViewFiltered = createSelector(
-    [selectors.getDashboardSearchOptions],
-    (searchOptions) => searchOptions.length !== 0
-);
-
-const mapStateToProps = createStructuredSelector({
-    searchOptions: selectors.getDashboardSearchOptions,
-    searchModifiers: selectors.getDashboardSearchModifiers,
-    searchSuggestions: selectors.getDashboardSearchSuggestions,
-    isViewFiltered,
-});
-
-const mapDispatchToProps = {
-    setSearchOptions: dashboardActions.setDashboardSearchOptions,
-    setSearchModifiers: dashboardActions.setDashboardSearchModifiers,
-    setSearchSuggestions: dashboardActions.setDashboardSearchSuggestions,
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(DashboardPage);
+export default DashboardPage;

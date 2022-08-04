@@ -28,10 +28,11 @@ updates:
       day: 'wednesday'
     open-pull-requests-limit: 1
     labels:
+      - "ci-aks-tests"
       - "ci-all-qa-tests"
+      - "ci-eks-tests"
       - "ci-no-api-tests"
       - "ci-no-ui-tests"
-      - "ci-eks-tests"
       - "ci-openshift-4-tests"
       - "ci-rhel-tests"
       - "dependencies"
@@ -67,6 +68,24 @@ updates:
 
   - package-ecosystem: 'docker'
     directory: 'operator/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+
+  - package-ecosystem: 'docker'
+    directory: 'image/rhel'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+
+  - package-ecosystem: 'docker'
+    directory: 'image/postgres'
     schedule:
       interval: 'weekly'
       day: 'wednesday'

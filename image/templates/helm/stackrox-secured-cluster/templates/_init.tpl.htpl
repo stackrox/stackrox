@@ -39,7 +39,7 @@
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
 
 {{/* Only merge scanner config shapes if feature flag is enabled and kubectl output is disabled */}}
-[< if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+[< if (not .KubectlOutput) ->]
   {{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
   {{ $_ := include "srox.mergeInto" (list $rox $configShape $configShapeScanner) }}
 [< else >]
@@ -82,30 +82,8 @@
    Environment setup
 */}}
 
-{{/* Infer openshift version */}}
-{{ if kindIs "invalid" $._rox.env.openshift }}
-  {{ $_ := set $._rox.env "openshift" (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
-{{ end }}
-{{ if and $._rox.env.openshift (kindIs "bool" $._rox.env.openshift) }}
-  {{/* Parse and add KubeVersion as semver from built-in resources. This is necessary to compare valid integer numbers. */}}
-  {{ $kubeVersion := semver .Capabilities.KubeVersion.Version }}
-
-  {{/* Default to OpenShift 3 if no openshift resources are available, i.e. in helm tempalte commands */}}
-  {{ if not (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
-    {{ $_ := set $._rox.env "openshift" 3 }}
-  {{ else if gt $kubeVersion.Minor 11 }}
-    {{ $_ := set $._rox.env "openshift" 4 }}
-  {{ else }}
-    {{ $_ := set $._rox.env "openshift" 3 }}
-  {{ end }}
-
-  {{ include "srox.note" (list $ (printf "Based on API server properties, we have inferred that you are deploying into an OpenShift %d cluster. Set the `env.openshift` property explicitly to 3 or 4 to override the auto-sensed value." $._rox.env.openshift)) }}
-{{ end }}
-{{ if not (kindIs "bool" $._rox.env.openshift) }}
-  {{ $_ := set $._rox.env "openshift" (int $._rox.env.openshift) }}
-{{ else if not $._rox.env.openshift }}
-  {{ $_ := set $._rox.env "openshift" 0 }}
-{{ end }}
+{{/* Detect openshift version */}}
+{{ include "srox.autoSenseOpenshiftVersion" (list $) }}
 
 {{/* Openshift monitoring */}}
 {{ if $._rox.enableOpenShiftMonitoring }}
@@ -139,6 +117,11 @@
   {{ end }}
   {{ include "srox.note" (list $ (printf "To have openshift-monitoring include metrics from the %s namespace a label metadata is required. Run: oc label namespace/%s openshift.io/cluster-monitoring=true." .Release.Namespace .Release.Namespace)) }}
 {{ end }}
+
+[<- if .AutoSensePodSecurityPolicies >]
+{{/* Detect enablePodSecurityPolicies */}}
+{{ include "srox.autoSensePodSecurityPolicies" (list $) }}
+[<- end >]
 
 {{ include "srox.applyDefaults" $ }}
 
@@ -247,7 +230,7 @@
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ ._rox.image.main) }}
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
-[< if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+[< if (not .KubectlOutput) ->]
 {{ include "srox.configureImage" (list $ ._rox.image.scanner) }}
 [<- end >]
 
@@ -260,7 +243,7 @@
   {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
 {{- end }}
 
-[< if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+[< if (not .KubectlOutput) ->]
 {{/*
    Local scanner setup.
   */}}
@@ -282,13 +265,20 @@
   {{ $centralDeployment := dict }}
   {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
   {{ if $centralDeployment.result }}
-    {{ include "srox.fail" "Scanner is not supported to be deployed using this chart within a namespace running Central, must instead be deployed using the Central chart. To fix this error set scanner.disable=true and re-deploy." }}
+    {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner from this chart and configuring sensor to use existing scanner instance, if any.") }}
+    {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+    {{ $_ := set $._rox.scanner "disable" true }}
   {{ end }}
 {{ end }}
 
 {{ if and ._rox.env.openshift (eq ._rox.scanner.disable false) }}
-  {{ $_ = set $._rox.scanner "slimImage" ._rox.image.scanner }}
-  {{ $_ = set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
+  {{ if ne ._rox.scanner.mode "slim" }}
+    {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
+  {{ end }}
+
+  {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+  {{ $_ := set $._rox.scanner "slimImage" ._rox.image.scanner }}
+  {{ $_ := set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
   {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
   {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
 {{ end }}

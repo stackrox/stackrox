@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -66,14 +67,14 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetExternalBackup retrieves the external backup based on the id passed
 func (s *serviceImpl) GetExternalBackup(ctx context.Context, request *v1.ResourceByID) (*storage.ExternalBackup, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "id must be specified when requesting an external backup")
+		return nil, errors.Wrap(errox.InvalidArgs, "id must be specified when requesting an external backup")
 	}
-	backup, err := s.dataStore.GetBackup(ctx, request.GetId())
+	backup, exists, err := s.dataStore.GetBackup(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	}
-	if backup == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "No external backup with id %q found", request.GetId())
+	if !exists {
+		return nil, errors.Wrapf(errox.NotFound, "No external backup with id %q found", request.GetId())
 	}
 	secrets.ScrubSecretsFromStructWithReplacement(backup, secrets.ScrubReplacementStr)
 	return backup, nil
@@ -124,7 +125,7 @@ func (s *serviceImpl) TestExternalBackup(ctx context.Context, externalBackup *st
 // TestUpdatedExternalBackup tests that the provided config is valid
 func (s *serviceImpl) TestUpdatedExternalBackup(ctx context.Context, request *v1.UpdateExternalBackupRequest) (*v1.Empty, error) {
 	if err := validateBackup(request.GetExternalBackup()); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if err := s.reconcileUpdateExternalBackupRequest(ctx, request); err != nil {
 		return nil, err
@@ -137,7 +138,7 @@ func (s *serviceImpl) TestUpdatedExternalBackup(ctx context.Context, request *v1
 
 func (s *serviceImpl) TriggerExternalBackup(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "id must be specified when triggering a backup")
+		return nil, errors.Wrap(errox.InvalidArgs, "id must be specified when triggering a backup")
 	}
 	if err := s.manager.Backup(ctx, request.GetId()); err != nil {
 		log.Errorf("error trigger backup: %v", err)
@@ -148,7 +149,7 @@ func (s *serviceImpl) TriggerExternalBackup(ctx context.Context, request *v1.Res
 
 func (s *serviceImpl) upsertExternalBackup(ctx context.Context, request *storage.ExternalBackup) error {
 	if err := s.manager.Upsert(ctx, request); err != nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if err := s.dataStore.UpsertBackup(ctx, request); err != nil {
 		s.manager.Remove(ctx, request.GetId())
@@ -165,13 +166,13 @@ func (s *serviceImpl) PutExternalBackup(ctx context.Context, externalBackup *sto
 // UpdateExternalBackup inserts a new external backup into the system
 func (s *serviceImpl) UpdateExternalBackup(ctx context.Context, request *v1.UpdateExternalBackupRequest) (*storage.ExternalBackup, error) {
 	if request.GetExternalBackup().GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "id field must be provided when updating an external backup")
+		return nil, errors.Wrap(errox.InvalidArgs, "id field must be provided when updating an external backup")
 	}
 	if err := s.reconcileUpdateExternalBackupRequest(ctx, request); err != nil {
 		return nil, err
 	}
 	if err := validateBackup(request.GetExternalBackup()); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if err := s.upsertExternalBackup(ctx, request.GetExternalBackup()); err != nil {
 		return nil, err
@@ -182,10 +183,10 @@ func (s *serviceImpl) UpdateExternalBackup(ctx context.Context, request *v1.Upda
 // PostExternalBackup adds a new external backup to the system
 func (s *serviceImpl) PostExternalBackup(ctx context.Context, request *storage.ExternalBackup) (*storage.ExternalBackup, error) {
 	if request.GetId() != "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "id field must be empty when posting a new external backup")
+		return nil, errors.Wrap(errox.InvalidArgs, "id field must be empty when posting a new external backup")
 	}
 	if err := validateBackup(request); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	request.Id = uuid.NewV4().String()
 	if err := s.upsertExternalBackup(ctx, request); err != nil {
@@ -202,7 +203,7 @@ func (s *serviceImpl) PostExternalBackup(ctx context.Context, request *storage.E
 // DeleteExternalBackup deletes an external backup from the system
 func (s *serviceImpl) DeleteExternalBackup(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Backup id is required for deletions")
+		return nil, errors.Wrap(errox.InvalidArgs, "Backup id is required for deletions")
 	}
 	if err := s.dataStore.RemoveBackup(ctx, request.GetId()); err != nil {
 		return nil, err
@@ -221,20 +222,20 @@ func (s *serviceImpl) reconcileUpdateExternalBackupRequest(ctx context.Context, 
 		return nil
 	}
 	if updateRequest.GetExternalBackup() == nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "request is missing external backup config")
+		return errors.Wrap(errox.InvalidArgs, "request is missing external backup config")
 	}
 	if updateRequest.GetExternalBackup().GetId() == "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "id required for stored credential reconciliation")
+		return errors.Wrap(errox.InvalidArgs, "id required for stored credential reconciliation")
 	}
-	existingBackupConfig, err := s.dataStore.GetBackup(ctx, updateRequest.GetExternalBackup().GetId())
+	existingBackupConfig, exists, err := s.dataStore.GetBackup(ctx, updateRequest.GetExternalBackup().GetId())
 	if err != nil {
 		return err
 	}
-	if existingBackupConfig == nil {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "backup config %s not found", updateRequest.GetExternalBackup().GetId())
+	if !exists {
+		return errors.Wrapf(errox.NotFound, "backup config %s not found", updateRequest.GetExternalBackup().GetId())
 	}
 	if err := reconcileExternalBackupWithExisting(updateRequest.GetExternalBackup(), existingBackupConfig); err != nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	return nil
 }

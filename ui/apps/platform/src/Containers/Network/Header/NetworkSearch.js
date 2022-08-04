@@ -1,62 +1,107 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
+import { useHistory } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
 import { actions as searchActions } from 'reducers/network/search';
+import useURLSearch from 'hooks/useURLSearch';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import { getSearchOptionsForCategory } from 'services/SearchService';
+import { isCompleteSearchFilter } from 'utils/searchUtils';
+import SearchFilterInput from 'Components/SearchFilterInput';
 import {
-    ORCHESTRATOR_COMPONENT_KEY,
-    orchestratorComponentOption,
-} from 'Containers/Navigation/OrchestratorComponentsToggle';
-import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
+    ORCHESTRATOR_COMPONENTS_KEY,
+    orchestratorComponentsOption,
+} from 'utils/orchestratorComponents';
 
 import './NetworkSearch.css';
 
+function searchFilterToSearchEntries(searchFilter) {
+    const entries = [];
+    Object.entries(searchFilter).forEach(([key, value]) => {
+        entries.push({ label: `${key}:`, value: `${key}:`, type: 'categoryOption' });
+        if (value !== '') {
+            const values = Array.isArray(value) ? value : [value];
+            const valueOptions = values.map((v) => ({ label: v, value: v }));
+            entries.push(...valueOptions);
+        }
+    });
+    return entries;
+}
+
+const searchCategory = 'DEPLOYMENTS';
+const searchOptionExclusions = ['Cluster', 'Namespace', 'Namespace ID', 'Orchestrator Component'];
+
 function NetworkSearch({
-    searchOptions,
-    searchModifiers,
-    setSearchOptions,
-    setSearchSuggestions,
+    selectedNamespaceFilters,
+    dispatchSearchFilter,
     closeSidePanel,
     isDisabled,
 }) {
+    const history = useHistory();
+    const [searchOptions, setSearchOptions] = useState([]);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+
+    useEffect(() => {
+        const { request, cancel } = getSearchOptionsForCategory(searchCategory);
+        request
+            .then((options) => {
+                const filteredOptions = options.filter((o) => !searchOptionExclusions.includes(o));
+                setSearchOptions(filteredOptions);
+            })
+            .catch(() => {
+                // A request error will disable the search filter.
+            });
+
+        return cancel;
+    }, [setSearchOptions]);
+
+    // Keep the Redux store in sync with the URL Search Filter
+    useEffect(() => {
+        dispatchSearchFilter(searchFilterToSearchEntries(searchFilter));
+    }, [searchFilter, dispatchSearchFilter]);
+
     function onSearch(options) {
-        if (options.length && !options[options.length - 1].type) {
+        setSearchFilter(options);
+        if (isCompleteSearchFilter(options)) {
+            history.push(`/main/network${history.location.search}`);
             closeSidePanel();
         }
     }
 
-    let prependAutocompleteQuery;
-    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
-    if (orchestratorComponentShowState !== 'true') {
-        prependAutocompleteQuery = [...orchestratorComponentOption];
+    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY);
+    const prependAutocompleteQuery =
+        orchestratorComponentShowState !== 'true' ? [...orchestratorComponentsOption] : [];
+
+    if (selectedNamespaceFilters.length) {
+        prependAutocompleteQuery.push({ value: 'Namespace:', type: 'categoryOption' });
+        selectedNamespaceFilters.forEach((nsFilter) =>
+            prependAutocompleteQuery.push({ value: nsFilter })
+        );
     }
 
     return (
-        <ReduxSearchInput
-            className="pf-u-w-100 network-search"
+        <SearchFilterInput
+            className="pf-u-w-100 pf-search-shim"
             placeholder="Add one or more deployment filters"
+            searchFilter={searchFilter}
+            searchCategory="DEPLOYMENTS"
             searchOptions={searchOptions}
-            searchModifiers={searchModifiers}
-            setSearchOptions={setSearchOptions}
-            setSearchSuggestions={setSearchSuggestions}
-            onSearch={onSearch}
+            handleChangeSearchFilter={onSearch}
+            autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
             isDisabled={isDisabled}
-            prependAutocompleteQuery={prependAutocompleteQuery}
-            autoCompleteCategories={['DEPLOYMENTS']}
         />
     );
 }
 
 const mapStateToProps = createStructuredSelector({
-    searchOptions: selectors.getNetworkSearchOptions,
-    searchModifiers: selectors.getNetworkSearchModifiers,
+    selectedNamespaceFilters: selectors.getSelectedNamespaceFilters,
 });
 
 const mapDispatchToProps = {
-    setSearchOptions: searchActions.setNetworkSearchOptions,
-    setSearchSuggestions: searchActions.setNetworkSearchSuggestions,
+    dispatchSearchFilter: searchActions.setNetworkSearchOptions,
     closeSidePanel: pageActions.closeSidePanel,
 };
 

@@ -20,6 +20,9 @@ message GetGroupsRequest {
     oneof value_opt {
         string value = 3;
     }
+    oneof id_opt {
+        string id = 4;
+    }
 }
 
 // API for updating Groups and getting users.
@@ -37,6 +40,7 @@ message GroupBatchUpdateRequest {
     // 2) if in previous_groups and required_groups, it gets updated.
     // 3) if not in previous_groups but in required_groups, it gets added.
     repeated storage.Group previous_groups = 1;
+
     // Required groups are the groups we want to mutate the previous groups into.
     repeated storage.Group required_groups = 2;
 }

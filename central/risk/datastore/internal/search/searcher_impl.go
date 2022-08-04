@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -21,7 +22,8 @@ var (
 		Reversed: true,
 	}
 
-	riskSACSearchHelper = sac.ForResource(resources.Risk).MustCreateSearchHelper(mappings.OptionsMap)
+	riskSACSearchHelper         = sac.ForResource(resources.Risk).MustCreateSearchHelper(mappings.OptionsMap)
+	riskSACPostgresSearchHelper = sac.ForResource(resources.Risk).MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides an intermediary implementation layer for RiskStorage.
@@ -57,7 +59,12 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	filteredSearcher := riskSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+	var filteredSearcher search.Searcher
+	if features.PostgresDatastore.Enabled() {
+		filteredSearcher = riskSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+	} else {
+		filteredSearcher = riskSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+	}
 	paginatedSearcher := paginated.Paginated(filteredSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	return defaultSortedSearcher

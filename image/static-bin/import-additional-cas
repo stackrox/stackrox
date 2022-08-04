@@ -2,7 +2,21 @@
 
 set -euo pipefail
 
-[ -d /usr/local/share/ca-certificates ] || exit 0
-[ "$(find /usr/local/share/ca-certificates -maxdepth 1 -name '*.crt' | wc -l)" -gt 0 ] || exit 0
-cp -L /usr/local/share/ca-certificates/* /etc/pki/ca-trust/source/anchors
-update-ca-trust
+# The function copies everything that could be found under the path provided in
+# the first argument, ignoring files starting with '..' which are created by
+# kubernetes secret volume mount process.
+copy_existing () {
+    src=$1
+    if [ -d "$src" ] && [ "$(ls -A -I "..*" "$src")" ]; then
+        cp -v -L "$src"/* /etc/pki/ca-trust/source/anchors
+    else
+        echo "No certificates found in $src"
+    fi
+}
+
+copy_existing /usr/local/share/ca-certificates
+
+# Copy the custom trusted CA bundles injected by the Openshift Network Operator.
+copy_existing /etc/pki/injected-ca-trust
+
+update-ca-trust extract

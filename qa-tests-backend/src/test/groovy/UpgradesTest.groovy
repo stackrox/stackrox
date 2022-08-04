@@ -1,6 +1,7 @@
 import com.google.protobuf.util.JsonFormat
 import groovy.io.FileType
 import groups.Upgrade
+import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -71,7 +72,7 @@ class UpgradesTest extends BaseSpecification {
         def gqlService = new GraphQLService()
         def resultRet = gqlService.Call(getQuery(resourceType), [ query: searchQuery ])
         assert resultRet.getCode() == 200
-        println "return code " + resultRet.getCode()
+        log.info "return code " + resultRet.getCode()
 
         then:
         "Check that we got the correct number of #resourceType from GraphQL "
@@ -108,7 +109,7 @@ class UpgradesTest extends BaseSpecification {
         def gqlService = new GraphQLService()
         def resultRet = gqlService.Call(COMPLIANCE_QUERY, [ groupBy: groupBy, unit: unit ])
         assert resultRet.getCode() == 200
-        println "return code " + resultRet.getCode()
+        log.info "return code " + resultRet.getCode()
 
         then:
         "Check that we got the correct number of #unit from GraphQL "
@@ -188,6 +189,7 @@ class UpgradesTest extends BaseSpecification {
         given:
         "Default policies in code"
 
+        def policiesGuardedByFeatureFlags = []
         Map<String, PolicyOuterClass.Policy> defaultPolicies = [:]
         def policiesDir = new File(POLICIES_JSON_PATH)
         policiesDir.eachFileRecurse (FileType.FILES) { file ->
@@ -195,18 +197,27 @@ class UpgradesTest extends BaseSpecification {
                 def builder = PolicyOuterClass.Policy.newBuilder()
                 JsonFormat.parser().merge(file.text, builder)
                 def policy = builder.build()
-
-                defaultPolicies[policy.id] = policy
+                if (!policiesGuardedByFeatureFlags.contains(policy.id)) {
+                    defaultPolicies[policy.id] = policy
+                }
             }
         }
 
         when:
         "Upgraded default policies are fetched from central"
-        def upgradedPolicies = PolicyService.getPolicyClient().exportPolicies(
-                PolicyServiceOuterClass.ExportPoliciesRequest.newBuilder().
-                        addAllPolicyIds(defaultPolicies.keySet()).
-                        build()
-        ).getPoliciesList()
+        def upgradedPolicies
+        try {
+            log.info("Exporting policies: ${defaultPolicies.keySet().join(", ")}")
+            upgradedPolicies = PolicyService.getPolicyClient().exportPolicies(
+                    PolicyServiceOuterClass.ExportPoliciesRequest.newBuilder().
+                            addAllPolicyIds(defaultPolicies.keySet()).
+                            build()
+            ).getPoliciesList()
+        } catch (StatusRuntimeException e) {
+            log.info "Exception in exportPolicies(): ${e.getStatus()}"
+            log.info "See central log for more details."
+            throw(e)
+        }
 
         def knownPolicyDifferences = [
                 "2e90874a-3521-44de-85c6-5720f519a701": new KnownPolicyDiffs()
@@ -233,9 +244,6 @@ class UpgradesTest extends BaseSpecification {
             assert Float.parseFloat(policy.policyVersion) >= 1.0
 
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
-            if (policy.hasFields()) {
-                builder.clearFields() // fields is ignored so clear it out
-            }
 
             // All default policies are expected to have the following flags set to true.
             // Therefore, move to target by adding the known diff.

@@ -1,4 +1,4 @@
-import React, { useContext, useState, useReducer } from 'react';
+import React, { useState, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import { DownloadCloud, Plus, Trash2 } from 'react-feather';
@@ -11,12 +11,13 @@ import PanelButton from 'Components/PanelButton';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
-import { searchParams } from 'constants/searchParams';
-import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
+import usePermissions from 'hooks/usePermissions';
+import useURLSearch from 'hooks/useURLSearch';
 import {
-    fetchClustersAsArray,
+    fetchClustersWithRetentionInfo,
     deleteClusters,
     upgradeClusters,
     upgradeCluster,
@@ -29,10 +30,16 @@ import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.h
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 
 function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOptions }) {
-    const workflowState = useContext(workflowStateContext);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasReadWriteAccessForCluster = hasReadWriteAccess('Cluster');
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDecommissionedClusterRetentionEnabled = isFeatureFlagEnabled(
+        'ROX_DECOMMISSIONED_CLUSTER_RETENTION'
+    );
+
     const metadata = useMetadata();
 
-    const pageSearch = workflowState.search[searchParams.page];
+    const { searchFilter: pageSearch } = useURLSearch();
 
     const [checkedClusterIds, setCheckedClusters] = useState([]);
     const [upgradableClusters, setUpgradableClusters] = useState([]);
@@ -44,6 +51,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const [isViewFiltered, setIsViewFiltered] = useState(false);
 
     const [currentClusters, setCurrentClusters] = useState([]);
+    const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] = useState({});
 
     function notificationsReducer(state, action) {
         switch (action.type) {
@@ -76,15 +84,15 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     ));
 
     function refreshClusterList(restSearch) {
-        return fetchClustersAsArray(restSearch).then((clusters) => {
-            setCurrentClusters(clusters);
+        return fetchClustersWithRetentionInfo(restSearch).then((clustersResponse) => {
+            setCurrentClusters(clustersResponse.clusters);
+            setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
         });
     }
 
+    const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
+    const restSearch = convertToRestSearch(filteredSearch || {});
     useDeepCompareEffect(() => {
-        const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
-        const restSearch = convertToRestSearch(filteredSearch || {});
-
         if (restSearch.length) {
             setIsViewFiltered(true);
         } else {
@@ -92,7 +100,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
         }
 
         refreshClusterList(restSearch);
-    }, [pageSearch, searchOptions, pollingCount]);
+    }, [restSearch, pollingCount]);
 
     // use a custom hook to set up polling, thanks Dan Abramov and Rob Stark
     useInterval(() => {
@@ -143,8 +151,9 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
             .then(() => {
                 setCheckedClusters([]);
 
-                fetchClustersAsArray().then((clusters) => {
-                    setCurrentClusters(clusters);
+                fetchClustersWithRetentionInfo().then((clustersResponse) => {
+                    setCurrentClusters(clustersResponse.clusters);
+                    setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
                 });
             })
             .finally(() => {
@@ -226,6 +235,9 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     }
 
     const columnOptions = {
+        clusterIdToRetentionInfo,
+        hasReadWriteAccessForCluster,
+        isDecommissionedClusterRetentionEnabled,
         metadata,
         rowActions: {
             onDeleteHandler,

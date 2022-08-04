@@ -99,22 +99,23 @@ func initializeIndices(scorchPath string, indexPersisted IndexPersisted, typeStr
 		"unsafe_batch": indexPersisted == EphemeralIndex,
 	}
 
-	var globalIndex bleve.Index
 	if _, err := os.Stat(filepath.Join(scorchPath, "index_meta.json")); err != nil {
 		if !os.IsNotExist(err) {
 			return nil, err
 		}
-		globalIndex, err = bleve.NewUsing(scorchPath, mapping.GetIndexMapping(), scorch.Name, scorch.Name, kvconfig)
+		globalIndex, err := bleve.NewUsing(scorchPath, mapping.GetIndexMapping(), scorch.Name, scorch.Name, kvconfig)
 		if err != nil {
 			return nil, err
 		}
 		globalIndex.SetName(scorchPath)
 		return globalIndex, nil
 	}
+
+	//nolint:staticcheck // SA4023 globalIndex being always non-nil is not documented behavior.
 	globalIndex, err := bleve.OpenUsing(scorchPath, kvconfig)
 	if err != nil {
 		log.Errorf("Error opening Bleve index: %q %v. Removing index and retrying from scratch...", scorchPath, err)
-		//lint:ignore SA4023 globalIndex being always non-nil is not documented behavior.
+		//nolint:staticcheck // SA4023 globalIndex being always non-nil is not documented behavior.
 		if globalIndex != nil {
 			_ = globalIndex.Close()
 		}

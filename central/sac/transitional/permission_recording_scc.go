@@ -22,7 +22,7 @@ func newPermissionUseRecorder() *permissionUseRecorder {
 	}
 }
 
-func (r *permissionUseRecorder) RecordPermissionUse(resource permissions.Resource, am storage.Access) {
+func (r *permissionUseRecorder) RecordPermissionUse(resource permissions.ResourceMetadata, am storage.Access) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -92,9 +92,11 @@ func (s *permissionRecordingSCC) TryAllowed() sac.TryAllowedResult {
 	if s.am != nil {
 		am = *s.am
 	}
-	resources := resources2.ListAll()
+	resources := resources2.ListAllMetadata()
 	if s.res != nil {
-		resources = []permissions.Resource{*s.res}
+		if resourceMD, ok := resources2.MetadataForResource(*s.res); ok {
+			resources = []permissions.ResourceMetadata{resourceMD}
+		}
 	}
 
 	for _, resource := range resources {

@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
@@ -25,6 +26,9 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) buildIndex(ctx context.Context) error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing secrets")
 

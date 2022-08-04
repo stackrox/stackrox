@@ -10,12 +10,13 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStore(t *testing.T) {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
 	require.NoError(t, err)
@@ -24,7 +25,9 @@ func TestStore(t *testing.T) {
 	t.Cleanup(pool.Close)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+	gormDB := pgtest.OpenGormDB(t, source)
+	defer pgtest.CloseGormDB(t, gormDB)
+	store := CreateTableAndNewStore(ctx, pool, gormDB)
 
 	multiKey := &storage.TestMultiKeyStruct{
 		Key1: "key1",

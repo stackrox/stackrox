@@ -2,9 +2,11 @@ package objects
 
 import common.Constants
 import groovy.transform.AutoClone
+import groovy.util.logging.Slf4j
 import orchestratormanager.OrchestratorType
 
 @AutoClone
+@Slf4j
 class Deployment {
     String name
     String namespace = Constants.ORCHESTRATOR_NAMESPACE
@@ -63,8 +65,34 @@ class Deployment {
         return this
     }
 
-    Deployment setImage(String i) {
-        this.image = i
+    static final List<String> TEST_IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK = [
+            "busybox:latest",
+            "busybox",
+            "nginx:latest",
+            "nginx",
+            "non-existent:image",
+    ]
+
+    Deployment setImage(String imageName) {
+        // This is an imperfect check that images used in test are not
+        // potentially subject to docker.io rate limiting and thus the cause of
+        // test flakes. Imperfect because some tests rely on latest images in
+        // particular to trigger the 'latest tag' policy and undoing that
+        // reliance is a longer term project (ROX-10041).
+        if (!TEST_IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK.contains(imageName) &&
+                (imageName =~ /^docker.io.*/ ||
+                 !(imageName =~ /^[a-z]+\./))) {
+            String nameAsTag = imageName.replaceAll(~"[./:]", "-")
+            log.warn """\
+                WARNING: ${imageName} may be subject to rate limiting.
+                Consider making a duplicate at quay.io/rhacs-eng/qa:${nameAsTag}
+                e.g. (needs write access - ask @eng-staff)
+                docker pull ${imageName}
+                docker tag ${imageName} quay.io/rhacs-eng/qa:${nameAsTag}
+                docker push quay.io/rhacs-eng/qa:${nameAsTag}
+                """.stripIndent()
+        }
+        this.image = imageName
         return this
     }
 

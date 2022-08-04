@@ -10,8 +10,8 @@ import "storage/policy.proto";
 package storage;
 
 message Notifier {
-    string id                  = 1;
-    string name                = 2;
+    string id                  = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string name                = 2 [(gogoproto.moretags) = 'sql:"unique"'];
     string type                = 3;
     string ui_endpoint         = 4;
     string label_key           = 8;

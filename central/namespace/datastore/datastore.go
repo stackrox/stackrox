@@ -3,7 +3,10 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"testing"
 
+	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"
@@ -14,18 +17,25 @@ import (
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/namespace/store"
+	"github.com/stackrox/rox/central/namespace/store/postgres"
+	"github.com/stackrox/rox/central/namespace/store/rocksdb"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	dackboxPkg "github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
@@ -46,24 +56,59 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance using the provided store and indexer
-func New(store store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker, idMapStorage idmap.Storage) (DataStore, error) {
+func New(nsStore store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker, idMapStorage idmap.Storage) (DataStore, error) {
 	ds := &datastoreImpl{
-		store:             store,
-		indexer:           indexer,
-		formattedSearcher: formatSearcher(indexer, graphProvider, namespaceRanker),
-		deployments:       deploymentDataStore,
-		namespaceRanker:   namespaceRanker,
-		idMapStorage:      idMapStorage,
+		store:           nsStore,
+		indexer:         indexer,
+		deployments:     deploymentDataStore,
+		namespaceRanker: namespaceRanker,
+		idMapStorage:    idMapStorage,
 	}
-	if err := ds.buildIndex(context.TODO()); err != nil {
+	if features.PostgresDatastore.Enabled() {
+		ds.formattedSearcher = formatSearcherV2(indexer, namespaceRanker)
+	} else {
+		ds.formattedSearcher = formatSearcher(indexer, graphProvider, namespaceRanker)
+	}
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Namespace)))
+	if err := ds.buildIndex(ctx); err != nil {
 		return nil, err
 	}
 	return ds, nil
 }
 
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgres.New(pool)
+	indexer := postgres.NewIndexer(pool)
+	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	namespaceRanker := ranking.NamespaceRanker()
+	idMapStore := idmap.StorageSingleton()
+	return New(dbstore, nil, indexer, deploymentStore, namespaceRanker, idMapStore)
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackboxPkg.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
+	dbstore := rocksdb.New(rocksengine)
+	indexer := index.New(bleveIndex)
+	deploymentStore, err := deploymentDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
+	if err != nil {
+		return nil, err
+	}
+	namespaceRanker := ranking.NamespaceRanker()
+	idMapStore := idmap.StorageSingleton()
+	return New(dbstore, dacky, indexer, deploymentStore, namespaceRanker, idMapStore)
+}
+
 var (
-	namespaceSAC             = sac.ForResource(resources.Namespace)
-	namespaceSACSearchHelper = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
+	namespaceSAC                     = sac.ForResource(resources.Namespace)
+	namespaceSACSearchHelper         = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
+	namespaceSACPostgresSearchHelper = namespaceSAC.MustCreatePgSearchHelper()
 
 	log = logging.LoggerForModule()
 
@@ -85,7 +130,7 @@ type datastoreImpl struct {
 }
 
 func (b *datastoreImpl) buildIndex(ctx context.Context) error {
-	log.Info("[STARTUP] Indexing namespaces")
+	log.Info("[STARTUP] initializing namespaces")
 	var namespaces []*storage.NamespaceMetadata
 	err := b.store.Walk(ctx, func(ns *storage.NamespaceMetadata) error {
 		namespaces = append(namespaces, ns)
@@ -98,7 +143,10 @@ func (b *datastoreImpl) buildIndex(ctx context.Context) error {
 	if b.idMapStorage != nil {
 		b.idMapStorage.OnNamespaceAdd(namespaces...)
 	}
-
+	if features.PostgresDatastore.Enabled() {
+		log.Info("[STARTUP] Successfully initialized namespaces")
+		return nil
+	}
 	if err := b.indexer.AddNamespaceMetadatas(namespaces); err != nil {
 		return err
 	}
@@ -262,6 +310,12 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
+
+func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, namespaceRanker *ranking.Ranker) search.Searcher {
+	scopedSearcher := pkgPostgres.WithScoping(namespaceSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher))
+	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.NamespacePriority, namespaceRanker)
+	return paginated.WithDefaultSortOption(prioritySortedSearcher, defaultSortOption)
+}
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider graph.Provider, namespaceRanker *ranking.Ranker) search.Searcher {
 	filteredSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.

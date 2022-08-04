@@ -9,12 +9,14 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	k8sRolesSACSearchHelper = sac.ForResource(resources.K8sRole).MustCreateSearchHelper(mappings.OptionsMap)
+	k8sRolesSACSearchHelper   = sac.ForResource(resources.K8sRole).MustCreateSearchHelper(mappings.OptionsMap)
+	k8sRolesSACPgSearchHelper = sac.ForResource(resources.K8sRole).MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
@@ -23,7 +25,7 @@ type searcherImpl struct {
 	indexer index.Indexer
 }
 
-// SearchSecrets returns the search results from indexed k8s roles for the query.
+// SearchRoles returns the search results from indexed k8s roles for the query.
 func (ds *searcherImpl) SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	roles, results, err := ds.searchRoles(ctx, q)
 	if err != nil {
@@ -33,17 +35,17 @@ func (ds *searcherImpl) SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.Sea
 	return convertMany(roles, results), nil
 }
 
-// Search returns the raw search results from the query
+// Search returns the raw search results from the query.
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return ds.getSearchResults(ctx, q)
 }
 
-// Count returns the number of search results from the query
+// Count returns the number of search results from the query.
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.getCountResults(ctx, q)
 }
 
-// SearchSecrets returns the secrets and relationships that match the query.
+// SearchRawRoles returns the roles and relationships that match the query.
 func (ds *searcherImpl) SearchRawRoles(ctx context.Context, q *v1.Query) ([]*storage.K8SRole, error) {
 	roles, _, err := ds.searchRoles(ctx, q)
 	if err != nil {
@@ -66,10 +68,18 @@ func (ds *searcherImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storag
 }
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	if features.PostgresDatastore.Enabled() {
+		return k8sRolesSACPgSearchHelper.Apply(ds.indexer.Search)(ctx, q)
+	}
+
 	return k8sRolesSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
 }
 
 func (ds *searcherImpl) getCountResults(ctx context.Context, q *v1.Query) (int, error) {
+	if features.PostgresDatastore.Enabled() {
+		return k8sRolesSACPgSearchHelper.ApplyCount(ds.indexer.Count)(ctx, q)
+	}
+
 	return k8sRolesSACSearchHelper.ApplyCount(ds.indexer.Count)(ctx, q)
 }
 

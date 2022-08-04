@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stretchr/testify/assert"
@@ -41,9 +40,9 @@ func TestErrorToGrpcCodeInterceptor(t *testing.T) {
 		{
 			name: "Error is one of types from pkg/errorhelpers (ErrNotFound etc.) -> map to correct gRPC code, preserve error message",
 			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
-				return "err", errors.Wrap(errorhelpers.ErrNotFound, "error message")
+				return "err", errors.Wrap(errox.NotFound, "error message")
 			},
-			resp: "err", err: status.Error(codes.NotFound, errors.Wrap(errorhelpers.ErrNotFound, "error message").Error()),
+			resp: "err", err: status.Error(codes.NotFound, errors.Wrap(errox.NotFound, "error message").Error()),
 		},
 		{
 			name: "Error is not a gRPC status error and not a known error type -> set error to internal",
@@ -129,9 +128,9 @@ func TestErrorToGrpcCodeStreamInterceptor(t *testing.T) {
 		{
 			name: "Error is one of types from pkg/errorhelpers (ErrNotFound etc.) -> map to correct gRPC code, preserve error message",
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
-				return errors.Wrap(errorhelpers.ErrNotFound, "error message")
+				return errors.Wrap(errox.NotFound, "error message")
 			},
-			err: status.Error(codes.NotFound, errors.Wrap(errorhelpers.ErrNotFound, "error message").Error()),
+			err: status.Error(codes.NotFound, errors.Wrap(errox.NotFound, "error message").Error()),
 		},
 		{
 			name: "Error is not a gRPC status error and not a known error type -> set error to internal",
@@ -173,7 +172,7 @@ func TestPanicOnInvariantViolationUnaryInterceptor(t *testing.T) {
 		{
 			name: "Error is ErrInvariantViolation -> panic",
 			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
-				return "err", errorhelpers.ErrInvariantViolation
+				return "err", errox.InvariantViolation
 			},
 			resp: nil, err: nil,
 			panics: true,
@@ -181,9 +180,9 @@ func TestPanicOnInvariantViolationUnaryInterceptor(t *testing.T) {
 		{
 			name: "Error is not ErrInvariantViolation -> do nothing, just pass through",
 			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
-				return "err", errorhelpers.ErrNoCredentials
+				return "err", errox.NoCredentials
 			},
-			resp: "err", err: errorhelpers.ErrNoCredentials,
+			resp: "err", err: errox.NoCredentials,
 			panics: false,
 		},
 	}
@@ -222,16 +221,16 @@ func TestPanicOnInvariantViolationStreamInterceptor(t *testing.T) {
 		},
 		"Error is ErrInvariantViolation -> panic": {
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
-				return errorhelpers.NewErrInvariantViolation("some explanation")
+				return errox.InvariantViolation.CausedBy("some explanation")
 			},
 			err:    nil,
 			panics: true,
 		},
 		"Error is not ErrInvariantViolation -> do nothing, just pass through": {
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
-				return errorhelpers.ErrNotFound
+				return errox.NotFound
 			},
-			err:    errorhelpers.ErrNotFound,
+			err:    errox.NotFound,
 			panics: false,
 		},
 	}

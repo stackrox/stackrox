@@ -26,7 +26,6 @@ func ProcessPodEvent(t *testing.T, mgr manager.Manager, pod *storage.Pod) {
 		Resource: &sensor.AdmCtrlUpdateResourceRequest_Pod{Pod: pod},
 		Action:   central.ResourceAction_CREATE_RESOURCE,
 	}
-
 }
 
 // ProcessDeploymentEvent adds deployment to the admission controller deployment storage. In a production system

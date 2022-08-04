@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 var (
@@ -36,5 +37,5 @@ func ReadTokenFromFile(fileName string) (string, error) {
 	if token != "" {
 		return token, nil
 	}
-	return "", errors.Errorf("failed to retrieve token from file %q: file is empty", fileName)
+	return "", errox.NotFound.Newf("failed to retrieve token from file %q: file is empty", fileName)
 }

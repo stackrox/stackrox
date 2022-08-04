@@ -21,7 +21,7 @@ func TestConvertVulnerability(t *testing.T) {
 
 func TestConvertFeatures(t *testing.T) {
 	clairFeatures, protoComponents := mock.GetTestFeatures()
-	assert.Equal(t, protoComponents, ConvertFeatures(nil, clairFeatures))
+	assert.Equal(t, protoComponents, ConvertFeatures(nil, clairFeatures, ""))
 }
 
 func TestVersionFormatCompleteness(t *testing.T) {
@@ -143,7 +143,7 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 			img := &storage.Image{
 				Metadata: c.metadata,
 			}
-			convertedComponents := ConvertFeatures(img, c.features)
+			convertedComponents := ConvertFeatures(img, c.features, "")
 			require.Equal(t, len(c.expectedComponents), len(convertedComponents))
 			for i := range convertedComponents {
 				assert.Equal(t, c.expectedComponents[i], convertedComponents[i])

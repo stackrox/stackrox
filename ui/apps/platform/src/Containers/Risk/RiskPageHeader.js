@@ -3,31 +3,33 @@ import PropTypes from 'prop-types';
 
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import PageHeader from 'Components/PageHeader';
-import URLSearchInput from 'Components/URLSearchInput';
 import {
-    ORCHESTRATOR_COMPONENT_KEY,
-    orchestratorComponentOption,
-} from 'Containers/Navigation/OrchestratorComponentsToggle';
+    ORCHESTRATOR_COMPONENTS_KEY,
+    orchestratorComponentsOption,
+} from 'utils/orchestratorComponents';
+import SearchFilterInput from 'Components/SearchFilterInput';
+import useURLSearch from 'hooks/useURLSearch';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import CreatePolicyFromSearch from './CreatePolicyFromSearch';
 
-function RiskPageHeader({ autoFocusSearchInput, isViewFiltered, searchOptions }) {
+function RiskPageHeader({ isViewFiltered, searchOptions }) {
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
-    const autoCompleteCategories = [searchCategories[entityTypes.DEPLOYMENT]];
+    const autoCompleteCategory = searchCategories[entityTypes.DEPLOYMENT];
 
-    let prependAutocompleteQuery;
-    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
-    if (orchestratorComponentShowState !== 'true') {
-        prependAutocompleteQuery = orchestratorComponentOption;
-    }
+    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY);
+    const prependAutocompleteQuery =
+        orchestratorComponentShowState !== 'true' ? orchestratorComponentsOption : [];
     return (
         <PageHeader header="Risk" subHeader={subHeader}>
-            <URLSearchInput
+            <SearchFilterInput
                 className="w-full"
-                categoryOptions={searchOptions}
-                categories={autoCompleteCategories}
+                searchFilter={searchFilter}
+                searchOptions={searchOptions}
+                searchCategory={autoCompleteCategory}
                 placeholder="Add one or more resource filters"
-                autoFocus={autoFocusSearchInput}
-                prependAutocompleteQuery={prependAutocompleteQuery}
+                handleChangeSearchFilter={(filter) => setSearchFilter(filter, 'push')}
+                autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
             />
             <CreatePolicyFromSearch />
         </PageHeader>
@@ -35,7 +37,6 @@ function RiskPageHeader({ autoFocusSearchInput, isViewFiltered, searchOptions })
 }
 
 RiskPageHeader.propTypes = {
-    autoFocusSearchInput: PropTypes.bool.isRequired,
     isViewFiltered: PropTypes.bool.isRequired,
     searchOptions: PropTypes.arrayOf(PropTypes.string).isRequired,
 };

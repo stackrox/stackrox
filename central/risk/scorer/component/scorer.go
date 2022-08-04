@@ -16,7 +16,7 @@ var (
 
 // Scorer is the object that encompasses the multipliers for evaluating component risk
 type Scorer interface {
-	Score(ctx context.Context, component scancomponent.ScanComponent) *storage.Risk
+	Score(ctx context.Context, component scancomponent.ScanComponent, os string) *storage.Risk
 }
 
 // NewComponentScorer returns a new scorer that encompasses multipliers for evaluating component risk
@@ -35,7 +35,7 @@ type componentScorerImpl struct {
 }
 
 // Score takes a component and evaluates its risk
-func (s *componentScorerImpl) Score(ctx context.Context, scanComponent scancomponent.ScanComponent) *storage.Risk {
+func (s *componentScorerImpl) Score(ctx context.Context, scanComponent scancomponent.ScanComponent, os string) *storage.Risk {
 	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
 	overallScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
@@ -52,7 +52,7 @@ func (s *componentScorerImpl) Score(ctx context.Context, scanComponent scancompo
 		Score:   overallScore,
 		Results: riskResults,
 		Subject: &storage.RiskSubject{
-			Id:   scancomponent.ComponentID(scanComponent.GetName(), scanComponent.GetVersion()),
+			Id:   scancomponent.ComponentID(scanComponent.GetName(), scanComponent.GetVersion(), os),
 			Type: s.riskSubjectType,
 		},
 	}

@@ -7,10 +7,8 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate"
 	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/central/clusters"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/sac"
 )
 
 // CAConfig is the configuration for the StackRox Service CA.
@@ -46,18 +44,4 @@ func newBackend(store store.Store, certProvider certificate.Provider) Backend {
 		store:        store,
 		certProvider: certProvider,
 	}
-}
-
-func checkAccess(ctx context.Context, access storage.Access) error {
-	// we need access to the API token and service identity resources
-	scopes := [][]sac.ScopeKey{
-		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.APIToken.GetResource())},
-		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.ServiceIdentity.GetResource())},
-	}
-	if allowed, err := sac.GlobalAccessScopeChecker(ctx).AllAllowed(ctx, scopes); err != nil {
-		return errors.Wrap(err, "checking access")
-	} else if !allowed {
-		return errors.New("not allowed")
-	}
-	return nil
 }

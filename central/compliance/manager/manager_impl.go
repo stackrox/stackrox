@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -518,7 +519,7 @@ func (m *manager) GetRecentRun(ctx context.Context, id string) (*v1.ComplianceRu
 	if ok, err := complianceRunSAC.ReadAllowed(ctx, sac.ClusterScopeKey(run.ClusterId)); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errorhelpers.ErrNotFound
+		return nil, errox.NotFound
 	}
 
 	return run, nil
@@ -686,7 +687,7 @@ func (m *manager) GetRunStatuses(ctx context.Context, ids ...string) ([]*v1.Comp
 	if ok, err := complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(ctx, clusterScopes.get()); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errorhelpers.ErrNotFound
+		return nil, errox.NotFound
 	}
 
 	return runStatuses, nil

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -32,9 +33,9 @@ func Singleton() DataStore {
 		var permissionSetStorage permissionSetPGStore.Store
 		var accessScopeStorage simpleAccessScopeStore.Store
 		if features.PostgresDatastore.Enabled() {
-			roleStorage = postgresRolePGStore.New(context.TODO(), globaldb.GetPostgres())
-			permissionSetStorage = PermissionSetPGStore.New(context.TODO(), globaldb.GetPostgres())
-			accessScopeStorage = postgresSimpleAccessScopeStore.New(context.TODO(), globaldb.GetPostgres())
+			roleStorage = postgresRolePGStore.New(globaldb.GetPostgres())
+			permissionSetStorage = PermissionSetPGStore.New(globaldb.GetPostgres())
+			accessScopeStorage = postgresSimpleAccessScopeStore.New(globaldb.GetPostgres())
 		} else {
 			var err error
 			roleStorage, err = roleStore.New(globaldb.GetRocksDB())
@@ -47,13 +48,14 @@ func Singleton() DataStore {
 		// Which role format is used is determined solely by the feature flag.
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
 
-		if features.VulnReporting.Enabled() {
-			for r, a := range vulnReportingDefaultRoles {
-				defaultRoles[r] = a
-			}
+		for r, a := range vulnReportingDefaultRoles {
+			defaultRoles[r] = a
 		}
 
-		ctx := context.TODO()
+		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Role)))
 		roles, permissionSets, accessScopes := getDefaultObjects()
 		utils.Must(roleStorage.UpsertMany(ctx, roles))
 		utils.Must(permissionSetStorage.UpsertMany(ctx, permissionSets))
@@ -142,8 +144,6 @@ var vulnReportingDefaultRoles = map[string]roleAttributes{
 			permissions.View(resources.Role),                   // required for scopes
 			permissions.View(resources.Image),                  // required to gather CVE data for the report
 			permissions.View(resources.Notifier),               // required for vuln report configurations
-			permissions.Modify(resources.Notifier),             // required for vuln report configurations
-
 		},
 	},
 }

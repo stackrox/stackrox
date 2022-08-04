@@ -3,6 +3,7 @@ import { Toolbar, ToolbarGroup, ToolbarItem, ToolbarItemVariant } from '@pattern
 
 import NetworkSearch from './NetworkSearch';
 import ClusterSelect from './ClusterSelect';
+import NamespaceSelect from './NamespaceSelect';
 import TimeWindowSelector from './TimeWindowSelector';
 
 interface FilterToolbarProps {
@@ -21,6 +22,9 @@ function FilterToolbar({ isDisabled }: FilterToolbarProps) {
             <ToolbarGroup spacer={{ default: 'spacerNone' }}>
                 <ToolbarItem>
                     <ClusterSelect isDisabled={isDisabled} />
+                </ToolbarItem>
+                <ToolbarItem>
+                    <NamespaceSelect isDisabled={isDisabled} />
                 </ToolbarItem>
                 <ToolbarItem variant={ToolbarItemVariant.separator} />
                 <ToolbarItem className="pf-u-flex-grow-1">

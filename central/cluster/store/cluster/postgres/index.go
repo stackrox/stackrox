@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	mappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -20,6 +19,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, schema)
 }
 
+// NewIndexer returns new indexer for `storage.Cluster`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,
@@ -33,13 +33,13 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Cluster")
 
-	return postgres.RunCountRequest(v1.SearchCategory_CLUSTERS, q, b.db, mappings.OptionsMap)
+	return postgres.RunCountRequest(v1.SearchCategory_CLUSTERS, q, b.db)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Cluster")
 
-	return postgres.RunSearchRequest(v1.SearchCategory_CLUSTERS, q, b.db, mappings.OptionsMap)
+	return postgres.RunSearchRequest(v1.SearchCategory_CLUSTERS, q, b.db)
 }
 
 //// Stubs for satisfying interfaces

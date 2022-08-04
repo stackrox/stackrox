@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -34,22 +35,42 @@ func registerImageWatchStatus(s string) string {
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		// NOTE: This list is and should remain alphabetically ordered
+		schema.AddExtraResolvers("Image", []string{
+			"deploymentCount(query: String): Int!",
+			"deployments(query: String, pagination: Pagination): [Deployment!]!",
+			"imageComponentCount(query: String): Int!",
+			"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
+			"imageVulnerabilityCount(query: String): Int!",
+			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
+			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
+			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
+			"scan: ImageScan",
+			"topImageVulnerability(query: String): ImageVulnerability",
+			"unusedVarSink(query: String): Int",
+			"watchStatus: ImageWatchStatus!",
+		}),
+		// deprecated fields
+		schema.AddExtraResolvers("Image", []string{
+			"topVuln(query: String): EmbeddedVulnerability " +
+				"@deprecated(reason: \"use 'topImageVulnerability'\")",
+			"vulnCount(query: String): Int! " +
+				"@deprecated(reason: \"use 'imageVulnerabilityCount'\")",
+			"vulnCounter(query: String): VulnerabilityCounter! " +
+				"@deprecated(reason: \"use 'imageVulnerabilityCounter'\")",
+			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! " +
+				"@deprecated(reason: \"use 'imageVulnerabilities'\")",
+			"componentCount(query: String): Int!" +
+				"@deprecated(reason: \"use 'imageComponentCount'\")",
+			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!" +
+				"@deprecated(reason: \"use 'imageComponentCount'\")",
+			"plottedVulns(query: String): PlottedVulnerabilities!" +
+				"@deprecated(reason: \"use 'plottedImageVulnerabilities'\")",
+		}),
+		schema.AddQuery("image(id: ID!): Image"),
 		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
 		schema.AddQuery("imageCount(query: String): Int!"),
-		schema.AddQuery("image(id: ID!): Image"),
-		schema.AddExtraResolver("Image", "deployments(query: String, pagination: Pagination): [Deployment!]!"),
-		schema.AddExtraResolver("Image", "deploymentCount(query: String): Int!"),
-		schema.AddExtraResolver("Image", "topVuln(query: String): EmbeddedVulnerability"),
-		schema.AddExtraResolver("Image", "vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!"),
-		schema.AddExtraResolver("Image", "vulnCount(query: String): Int!"),
-		schema.AddExtraResolver("Image", "vulnCounter(query: String): VulnerabilityCounter!"),
-		schema.AddExtraResolver("EmbeddedImageScanComponent", "layerIndex: Int"),
-		schema.AddExtraResolver("Image", "components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"),
-		schema.AddExtraResolver("Image", `componentCount(query: String): Int!`),
-		schema.AddExtraResolver("Image", `unusedVarSink(query: String): Int`),
-		schema.AddExtraResolver("Image", "plottedVulns(query: String): PlottedVulnerabilities!"),
 		schema.AddEnumType("ImageWatchStatus", imageWatchStatuses),
-		schema.AddExtraResolver("Image", "watchStatus: ImageWatchStatus!"),
 	)
 }
 
@@ -116,8 +137,9 @@ func (resolver *imageResolver) Deployments(ctx context.Context, args PaginatedQu
 	return resolver.root.Deployments(ctx, PaginatedQuery{Pagination: args.Pagination, Query: &query})
 }
 
-// Deployments returns the deployments which use this image for the identified image, if it exists
+// DeploymentCount returns the number of deployments which use this image for the identified image, if it exists
 func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "DeploymentCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
@@ -127,13 +149,34 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuer
 	return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
 }
 
-// TopVuln returns the first vulnerability with the top CVSS score.
-func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVulnerability")
-	return resolver.topVulnV2(ctx, args)
+// TopImageVulnerability returns the image vulnerability with the top CVSS score.
+func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopImageVulnerability")
+	if !features.PostgresDatastore.Enabled() {
+		vulnResolver, err := resolver.topVulnV2(ctx, args)
+		if err != nil || vulnResolver == nil {
+			return nil, err
+		}
+		return vulnResolver, nil
+	}
+	return resolver.root.TopImageVulnerability(resolver.imageScopeContext(ctx), args)
 }
 
-func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
+// TopVuln returns the first vulnerability with the top CVSS score.
+func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVuln")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("TopVuln not supported with postgres enabled. Please use TopImageVulnerability.")
+	}
+
+	vulnResolver, err := resolver.topVulnV2(ctx, args)
+	if err != nil || vulnResolver == nil {
+		return nil, err
+	}
+	return vulnResolver, nil
+}
+
+func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (*cVEResolver, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -141,22 +184,6 @@ func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (Vu
 
 	if resolver.data.GetSetTopCvss() == nil {
 		return nil, nil
-	}
-
-	if args.IsEmpty() {
-		var max *storage.EmbeddedVulnerability
-		for _, c := range resolver.data.GetScan().GetComponents() {
-			for _, v := range c.GetVulns() {
-				if max == nil {
-					max = v
-					continue
-				}
-				if v.GetCvss() > max.GetCvss() || (v.GetCvss() == max.GetCvss() && v.GetCve() > max.GetCve()) {
-					max = v
-				}
-			}
-		}
-		return resolver.root.wrapEmbeddedVulnerability(max, nil)
 	}
 
 	query = search.ConjunctionQuery(query, resolver.getImageQuery())
@@ -190,9 +217,47 @@ func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (Vu
 	return &cVEResolver{root: resolver.root, data: vulns[0]}, nil
 }
 
+func (resolver *imageResolver) vulnQueryScoping(ctx context.Context) context.Context {
+	ctx = scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGES,
+		ID:    resolver.data.GetId(),
+	})
+	ctx = distroctx.Context(ctx, resolver.data.GetScan().GetOperatingSystem())
+
+	return ctx
+}
+
+// ImageVulnerabilities returns, as ImageVulnerabilityResolver, the vulnerabilities for the image
+func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
+
+	ctx = resolver.vulnQueryScoping(ctx)
+
+	return resolver.root.ImageVulnerabilities(ctx, args)
+}
+
+func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCount")
+
+	ctx = resolver.vulnQueryScoping(ctx)
+
+	return resolver.root.ImageVulnerabilityCount(ctx, args)
+}
+
+func (resolver *imageResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCounter")
+
+	ctx = resolver.vulnQueryScoping(ctx)
+
+	return resolver.root.ImageVulnerabilityCounter(ctx, args)
+}
+
 // Vulns returns all of the vulnerabilities in the image.
 func (resolver *imageResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Vulnerabilities")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Vulns")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("Vulns not supported with postgres enabled. Please use ImageVulnerabilities.")
+	}
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 
@@ -206,8 +271,12 @@ func (resolver *imageResolver) Vulns(ctx context.Context, args PaginatedQuery) (
 
 // VulnCount returns the number of vulnerabilities the image has.
 func (resolver *imageResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnerabilityCount")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnCount")
+	if features.PostgresDatastore.Enabled() {
+		return 0, errors.New("VulnCount not supported with postgres enabled. Please use ImageVulnerabilityCount.")
+	}
 
+	// if the request isn't being filtered down we can use cached data
 	if args.IsEmpty() {
 		vulnSet := set.NewStringSet()
 		for _, c := range resolver.data.GetScan().GetComponents() {
@@ -229,6 +298,12 @@ func (resolver *imageResolver) VulnCount(ctx context.Context, args RawQuery) (in
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
 func (resolver *imageResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnCounter")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("VulnCounter not supported with postgres enabled. Please use ImageVulnerabilityCounter.")
+	}
+
+	// if the request isn't being filtered down we can use cached data
 	if args.IsEmpty() {
 		var vulns []*storage.EmbeddedVulnerability
 		vulnSet := set.NewStringSet()
@@ -241,6 +316,7 @@ func (resolver *imageResolver) VulnCounter(ctx context.Context, args RawQuery) (
 		}
 		return mapVulnsToVulnerabilityCounter(vulns), nil
 	}
+
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 	return resolver.root.VulnCounter(scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
@@ -248,9 +324,26 @@ func (resolver *imageResolver) VulnCounter(ctx context.Context, args RawQuery) (
 	}), RawQuery{Query: &query})
 }
 
+func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
+	return resolver.root.ImageComponents(resolver.imageScopeContext(ctx), args)
+}
+
+func (resolver *imageResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponentCount")
+	return resolver.root.ImageComponentCount(resolver.imageScopeContext(ctx), args)
+}
+
+func (resolver *imageResolver) imageScopeContext(ctx context.Context) context.Context {
+	return scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGES,
+		ID:    resolver.data.GetId(),
+	})
+}
+
 // Components returns all of the components in the image.
 func (resolver *imageResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Components")
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 
@@ -263,7 +356,7 @@ func (resolver *imageResolver) Components(ctx context.Context, args PaginatedQue
 }
 
 func (resolver *imageResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComponentCount")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ComponentCount")
 
 	if args.IsEmpty() {
 		return int32(len(resolver.data.GetScan().GetComponents())), nil
@@ -297,11 +390,32 @@ func (resolver *imageResolver) getImageQuery() *v1.Query {
 }
 
 func (resolver *imageResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "PlottedVulns")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
+	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }
 
+// PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
+func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "PlottedImageVulnerabilities")
+	return resolver.root.PlottedImageVulnerabilities(resolver.imageScopeContext(ctx), args)
+}
+
+func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
+	resolver.ensureData(ctx)
+	res, err := resolver.root.wrapImageScan(resolver.data.GetScan(), true, nil)
+	if err != nil || res == nil {
+		return nil, err
+	}
+	res.ctx = resolver.imageScopeContext(ctx)
+	return res, nil
+}
+
 func (resolver *imageResolver) WatchStatus(ctx context.Context) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "WatchStatus")
 	if err := readAuth(resources.WatchedImage)(ctx); err != nil {
 		return "", err
 	}

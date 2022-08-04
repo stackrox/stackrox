@@ -239,8 +239,8 @@ describe.skip('Access Control Page', () => {
             });
         });
 
-        it('should have AllComments permission', () => {
-            cy.get(selectors.permissionsMatrix.rowByPermission('AllComments')).should('exist');
+        it('should have Alert permission', () => {
+            cy.get(selectors.permissionsMatrix.rowByPermission('Alert')).should('exist');
         });
     });
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -96,5 +96,5 @@ func GetSubject(subjectName string, bindings []*storage.K8SRoleBinding) (*storag
 			}
 		}
 	}
-	return nil, false, errors.Wrapf(errorhelpers.ErrNotFound, "subject not found: %s", subjectName)
+	return nil, false, errors.Wrapf(errox.NotFound, "subject not found: %s", subjectName)
 }

@@ -1,16 +1,21 @@
 package resources
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/docker/config"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -84,14 +89,13 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 	for _, c := range cases {
 		ph := references.NewParentHierarchy()
 		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil,
-			mockNamespaceStore, ph, "", orchestratornamespaces.Singleton())
+			mockNamespaceStore, ph, "", orchestratornamespaces.Singleton(), registry.Singleton())
 		assert.Equal(t, c.expectedAction, c.action)
 	}
 }
 
-func TestPopulateImageIDs(t *testing.T) {
+func TestPopulateImageMetadata(t *testing.T) {
 	type wrapContainer struct {
-		id    string
 		image string
 	}
 
@@ -100,15 +104,23 @@ func TestPopulateImageIDs(t *testing.T) {
 		imageIDsInStatus []string
 	}
 
+	type metadata struct {
+		expectedID             string
+		expectedNotPullable    bool
+		expectedIsClusterLocal bool
+	}
+
 	cases := []struct {
-		wrap        []wrapContainer
-		pods        []pod
-		expectedIDs []string
+		name             string
+		wrap             []wrapContainer
+		pods             []pod
+		expectedMetadata []metadata
+		isClusterLocal   bool
 	}{
 		{
+			name: "Image with latest tag, ID in status",
 			wrap: []wrapContainer{
 				{
-					id:    "sha256:e980d7ae539ba63dfbc19cc2ab3bc5cede348ee060e91f4d990de9352eb92c85",
 					image: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/imagedigestexporter@sha256:e980d7ae539ba63dfbc19cc2ab3bc5cede348ee060e91f4d990de9352eb92c85",
 				},
 			},
@@ -117,9 +129,14 @@ func TestPopulateImageIDs(t *testing.T) {
 					images: []string{"stackrox.io/main:latest"},
 				},
 			},
-			expectedIDs: []string{"sha256:e980d7ae539ba63dfbc19cc2ab3bc5cede348ee060e91f4d990de9352eb92c85"},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "sha256:e980d7ae539ba63dfbc19cc2ab3bc5cede348ee060e91f4d990de9352eb92c85",
+				},
+			},
 		},
 		{
+			name: "Image with latest tag without ID",
 			wrap: []wrapContainer{
 				{
 					image: "stackrox.io/main:latest",
@@ -130,9 +147,14 @@ func TestPopulateImageIDs(t *testing.T) {
 					images: []string{"stackrox.io/main:latest"},
 				},
 			},
-			expectedIDs: []string{""},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "",
+				},
+			},
 		},
 		{
+			name: "Explicitly pullable image with latest tag, ID in status",
 			wrap: []wrapContainer{
 				{
 					image: "stackrox.io/main:latest",
@@ -146,9 +168,36 @@ func TestPopulateImageIDs(t *testing.T) {
 					},
 				},
 			},
-			expectedIDs: []string{"sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3"},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+				},
+			},
 		},
 		{
+			name: "Image with latest tag, ID in status, not pullable",
+			wrap: []wrapContainer{
+				{
+					image: "stackrox.io/main:latest",
+				},
+			},
+			pods: []pod{
+				{
+					images: []string{"stackrox.io/main:latest"},
+					imageIDsInStatus: []string{
+						"docker://stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID:          "sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+					expectedNotPullable: true,
+				},
+			},
+		},
+		{
+			name: "Explicitly pullable image with latest tag, ID in status, two pods",
 			wrap: []wrapContainer{
 				{
 					image: "stackrox.io/main:latest",
@@ -165,9 +214,14 @@ func TestPopulateImageIDs(t *testing.T) {
 					},
 				},
 			},
-			expectedIDs: []string{"sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3"},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+				},
+			},
 		},
 		{
+			name: "Image and status mismatch",
 			wrap: []wrapContainer{
 				{
 					image: "stackrox.io/main:latest",
@@ -184,9 +238,14 @@ func TestPopulateImageIDs(t *testing.T) {
 					},
 				},
 			},
-			expectedIDs: []string{""},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "",
+				},
+			},
 		},
 		{
+			name: "Two images, one mismatch",
 			wrap: []wrapContainer{
 				{
 					image: "stackrox.io/main:latest",
@@ -213,44 +272,105 @@ func TestPopulateImageIDs(t *testing.T) {
 					},
 				},
 			},
-			expectedIDs: []string{
-				"",
-				"sha256:latestformonitoring",
+			expectedMetadata: []metadata{
+				{
+					expectedID: "",
+				},
+				{
+					expectedID: "sha256:latestformonitoring",
+				},
 			},
+		},
+		{
+			name: "Cluster-local image with tag specified",
+			wrap: []wrapContainer{
+				{
+					image: "image-registry.openshift-image-registry.svc:5000/testdev/nodejs-basic@sha256:31734e0a1e52996cde63a67c18eafebeb99149d0b3d0b56e1c5f31b0583ec44b",
+				},
+			},
+			pods: []pod{
+				{
+					images: []string{
+						"image-registry.openshift-image-registry.svc:5000/testdev/nodejs-basic@sha256:31734e0a1e52996cde63a67c18eafebeb99149d0b3d0b56e1c5f31b0583ec44b",
+					},
+					imageIDsInStatus: []string{
+						"image-registry.openshift-image-registry.svc:5000/testdev/nodejs-basic@sha256:31734e0a1e52996cde63a67c18eafebeb99149d0b3d0b56e1c5f31b0583ec44b",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID:             "sha256:31734e0a1e52996cde63a67c18eafebeb99149d0b3d0b56e1c5f31b0583ec44b",
+					expectedIsClusterLocal: true,
+				},
+			},
+			isClusterLocal: true,
+		},
+		{
+			name: "Cluster-local image with latest tag, ID in status",
+			wrap: []wrapContainer{
+				{
+					image: "image-registry.openshift-image-registry.svc:5000/testdev/nginx:1.18.0",
+				},
+			},
+			pods: []pod{
+				{
+					images: []string{"image-registry.openshift-image-registry.svc:5000/testdev/nginx:1.18.0"},
+					imageIDsInStatus: []string{
+						"crio://image-registry.openshift-image-registry.svc:5000/testdev/nginx:1.18.0@sha256:e90ac5331fe095cea01b121a3627174b2e33e06e83720e9a934c7b8ccc9c55a0",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID:             "sha256:e90ac5331fe095cea01b121a3627174b2e33e06e83720e9a934c7b8ccc9c55a0",
+					expectedIsClusterLocal: true,
+				},
+			},
+			isClusterLocal: true,
 		},
 	}
 
 	for _, c := range cases {
-		wrap := deploymentWrap{
-			Deployment: &storage.Deployment{},
-		}
-		for _, container := range c.wrap {
-			wrap.Containers = append(wrap.Containers, &storage.Container{
-				Image: &storage.ContainerImage{
-					Id: container.id,
-					Name: &storage.ImageName{
-						FullName: container.image,
-					},
-				},
-			})
-		}
-		pods := make([]*v1.Pod, 0, len(c.pods))
-		for _, pod := range c.pods {
-			k8sPod := &v1.Pod{}
-			for _, img := range pod.images {
-				k8sPod.Spec.Containers = append(k8sPod.Spec.Containers, v1.Container{Image: img})
+		t.Run(c.name, func(t *testing.T) {
+			registryStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
+			if c.isClusterLocal {
+				require.NoError(t, registryStore.UpsertRegistry(context.Background(), "testdev", "image-registry.openshift-image-registry.svc:5000", config.DockerConfigEntry{}))
 			}
-			for _, imageID := range pod.imageIDsInStatus {
-				k8sPod.Status.ContainerStatuses = append(k8sPod.Status.ContainerStatuses, v1.ContainerStatus{
-					ImageID: imageID,
+
+			wrap := deploymentWrap{
+				Deployment:    &storage.Deployment{},
+				registryStore: registryStore,
+			}
+			for _, container := range c.wrap {
+				img, err := imageUtils.GenerateImageFromString(container.image)
+				require.NoError(t, err)
+				wrap.Containers = append(wrap.Containers, &storage.Container{
+					Image: img,
 				})
 			}
-			pods = append(pods, k8sPod)
-		}
-		wrap.populateImageIDs(pods...)
-		for i, id := range c.expectedIDs {
-			assert.Equal(t, id, wrap.Deployment.Containers[i].Image.Id)
-		}
+
+			pods := make([]*v1.Pod, 0, len(c.pods))
+			for _, pod := range c.pods {
+				k8sPod := &v1.Pod{}
+				for _, img := range pod.images {
+					k8sPod.Spec.Containers = append(k8sPod.Spec.Containers, v1.Container{Image: img})
+				}
+				for _, imageID := range pod.imageIDsInStatus {
+					k8sPod.Status.ContainerStatuses = append(k8sPod.Status.ContainerStatuses, v1.ContainerStatus{
+						ImageID: imageID,
+					})
+				}
+				pods = append(pods, k8sPod)
+			}
+
+			wrap.populateImageMetadata(pods...)
+			for i, m := range c.expectedMetadata {
+				assert.Equal(t, m.expectedID, wrap.Deployment.Containers[i].Image.Id)
+				assert.Equal(t, m.expectedNotPullable, wrap.Deployment.Containers[i].Image.NotPullable)
+				assert.Equal(t, m.expectedIsClusterLocal, wrap.Deployment.Containers[i].Image.IsClusterLocal)
+			}
+		})
 	}
 }
 
@@ -402,7 +522,8 @@ func TestConvert(t *testing.T) {
 												v1.Capability("SYS_RESOURCE"),
 											},
 										},
-										ReadOnlyRootFilesystem: &[]bool{true}[0],
+										ReadOnlyRootFilesystem:   &[]bool{true}[0],
+										AllowPrivilegeEscalation: &[]bool{true}[0],
 									},
 									VolumeMounts: []v1.VolumeMount{
 										{
@@ -623,9 +744,10 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
-							Privileged:             true,
-							AddCapabilities:        []string{"IPC_LOCK", "SYS_RESOURCE"},
-							ReadOnlyRootFilesystem: true,
+							Privileged:               true,
+							AddCapabilities:          []string{"IPC_LOCK", "SYS_RESOURCE"},
+							ReadOnlyRootFilesystem:   true,
+							AllowPrivilegeEscalation: true,
 						},
 						Volumes: []*storage.Volume{
 
@@ -649,7 +771,7 @@ func TestConvert(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,
 				c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "",
-				orchestratornamespaces.Singleton()).GetDeployment()
+				orchestratornamespaces.Singleton(), registry.Singleton()).GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}
@@ -664,10 +786,10 @@ type mockPodLister struct {
 	pods []*v1.Pod
 }
 
-func (l *mockPodLister) List(selector labels.Selector) ([]*v1.Pod, error) {
+func (l *mockPodLister) List(_ labels.Selector) ([]*v1.Pod, error) {
 	return l.pods, nil
 }
 
-func (l *mockPodLister) Pods(namespace string) v1listers.PodNamespaceLister {
+func (l *mockPodLister) Pods(_ string) v1listers.PodNamespaceLister {
 	return l
 }

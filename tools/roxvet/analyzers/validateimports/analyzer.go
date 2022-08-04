@@ -30,8 +30,12 @@ var (
 		"scale",
 		"sensor/common",
 		"sensor/kubernetes",
+		"sensor/kubernetes/sensor",
 		"sensor/admission-control",
 		"sensor/upgrader",
+		"sensor/debugger",
+		"sensor/tests",
+		"sensor/testutils",
 		"tools",
 		"webhookserver",
 		"operator",
@@ -182,13 +186,56 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	// will need to be protected by strict compatibility guarantees.
 	if validImportRoot == "migrator" {
 		allowedPackages = append(allowedPackages,
-			"pkg/env", "pkg/rocksdb", "pkg/process/id", "pkg/migrations", "pkg/testutils", "pkg/batcher",
-			"pkg/config", "pkg/features", "pkg/grpc/routes", "pkg/logging", "pkg/set", "pkg/version", "pkg/uuid",
-			"pkg/utils", "pkg/fileutils", "pkg/buildinfo", "pkg/fsutils", "pkg/sliceutils")
+			"pkg/auth",
+			"pkg/batcher",
+			"pkg/bolthelper",
+			"pkg/buildinfo",
+			"pkg/concurrency",
+			"pkg/config",
+			"pkg/dackbox",
+			"pkg/dackbox/crud",
+			"pkg/dackbox/raw",
+			"pkg/dackbox/sortedkeys",
+			"pkg/db",
+			"pkg/env",
+			"pkg/errorhelpers",
+			"pkg/features",
+			"pkg/fileutils",
+			"pkg/fsutils",
+			"pkg/grpc/routes",
+			"pkg/logging",
+			"pkg/metrics",
+			"pkg/migrations",
+			"pkg/postgres/pgadmin",
+			"pkg/postgres/pgconfig",
+			"pkg/postgres/pgtest",
+			"pkg/postgres/pgutils",
+			"pkg/postgres/schema",
+			"pkg/process/id",
+			"pkg/retry",
+			"pkg/rocksdb",
+			"pkg/sac",
+			"pkg/search",
+			"pkg/search/postgres",
+			"pkg/secondarykey",
+			"pkg/set",
+			"pkg/sliceutils",
+			"pkg/sync",
+			"pkg/testutils",
+			"pkg/timestamp",
+			"pkg/utils",
+			"pkg/uuid",
+			"pkg/version",
+		)
+	}
+
+	if validImportRoot == "sensor/debugger" {
+		allowedPackages = append(allowedPackages, "sensor/kubernetes/listener/resources")
 	}
 
 	if validImportRoot == "tools" {
-		allowedPackages = append(allowedPackages, "central/globaldb", "central/metrics")
+		allowedPackages = append(allowedPackages, "central/globaldb", "central/metrics", "central/postgres", "central/role/resources",
+			"sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils")
 	}
 
 	if validImportRoot == "sensor/kubernetes" {
@@ -199,6 +246,10 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	// This is not a problem since none of this code is used in prod anyway.
 	if validImportRoot == "scale" {
 		allowedPackages = append(allowedPackages, "central")
+	}
+
+	if validImportRoot == "sensor/tests" {
+		allowedPackages = append(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger", "sensor/testutils")
 	}
 
 	for _, imp := range imports {

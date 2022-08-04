@@ -2,11 +2,16 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkbaseline/store"
+	"github.com/stackrox/rox/central/networkbaseline/store/postgres"
+	"github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -24,6 +29,18 @@ func newNetworkBaselineDataStore(storage store.Store) DataStore {
 		storage: storage,
 	}
 	return ds
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgres.New(pool)
+	return newNetworkBaselineDataStore(dbstore), nil
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
+	dbstore := rocksdb.New(rocksengine)
+	return newNetworkBaselineDataStore(dbstore), nil
 }
 
 func (ds *dataStoreImpl) GetNetworkBaseline(
@@ -114,8 +131,13 @@ func (ds *dataStoreImpl) DeleteNetworkBaseline(ctx context.Context, deploymentID
 
 func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error {
 	// First check permission
+	elevatedCheckForDeleteCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkBaseline),
+		))
 	for _, id := range deploymentIDs {
-		baseline, found, err := ds.storage.Get(ctx, id)
+		baseline, found, err := ds.storage.Get(elevatedCheckForDeleteCtx, id)
 		if err != nil {
 			return err
 		} else if !found {

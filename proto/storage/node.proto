@@ -13,15 +13,15 @@ import "gogoproto/gogo.proto";
 package storage;
 
 // Node represents information about a node in the cluster.
-// next available tag: 27
+// next available tag: 28
 message Node {
     // A unique ID identifying this node.
-    string id                              = 1 [(gogoproto.moretags) = "search:\"Node ID,store\""];
+    string id                              = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk"'];
     // The (host)name of the node. Might or might not be the same as ID.
     string name                            = 2 [(gogoproto.moretags) = "search:\"Node,store\""];
     // Taints on the host
     repeated Taint taints                  = 3;
-    string cluster_id                      = 4 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
+    string cluster_id                      = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint"'];
     string cluster_name                    = 5 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     // TODO(ROX-6895): "Label" search term is ambiguous.
     map<string, string> labels             = 6 [(gogoproto.moretags) = "search:\"Label\""];
@@ -57,37 +57,40 @@ message Node {
     oneof set_fixable {
         int32 fixable_cves                 = 21 [(gogoproto.moretags) = "search:\"Fixable CVE Count,store,hidden\""];
     }
-    int64 priority                         = 22;
+    int64 priority                         = 22 [(gogoproto.moretags) = 'search:"Node Risk Priority,hidden"'];
     float risk_score                       = 23 [(gogoproto.moretags) = "search:\"Node Risk Score,hidden\""];
     oneof set_top_cvss {
         float top_cvss                     = 24 [(gogoproto.moretags) = "search:\"Node Top CVSS,store\""];
     }
+
+    enum Note {
+        MISSING_SCAN_DATA = 0;
+    }
+    repeated Note notes                    = 27;
 }
 
+// Next tag: 5
 message NodeScan {
     google.protobuf.Timestamp          scan_time        = 1 [(gogoproto.moretags) = "search:\"Node Scan Time,store\""];
     string                             operating_system = 3;
-    repeated EmbeddedNodeScanComponent components       = 2;
+    repeated EmbeddedNodeScanComponent components       = 2 [(gogoproto.moretags) = 'sql:"-"'];
+
+    enum Note {
+        UNSET              = 0;
+        UNSUPPORTED        = 1;
+        KERNEL_UNSUPPORTED = 2;
+    }
+    repeated Note                      notes            = 4;
 }
 
 message EmbeddedNodeScanComponent {
-    string                         name       = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
-    string                         version    = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
-    repeated EmbeddedVulnerability vulns      = 3;
-    int64                          priority   = 4;
+    string                         name             = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
+    string                         version          = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
+    repeated EmbeddedVulnerability vulns            = 3;
+    repeated NodeVulnerability     vulnerabilities  = 7;
+    int64                          priority         = 4;
     oneof set_top_cvss {
-        float                      top_cvss   = 5;
+        float                      top_cvss         = 5;
     }
-    float                          risk_score = 6;
-}
-
-message NodeComponentEdge {
-    // base 64 encoded Node:Component ids.
-    string id = 1;
-}
-
-message NodeCVEEdge {
-    // base 64 encoded Node:CVE ids.
-    string                    id                    = 1;
-    google.protobuf.Timestamp first_node_occurrence = 2;
+    float                          risk_score       = 6;
 }

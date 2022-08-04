@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/v2backuprestore"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -28,7 +29,7 @@ func v2RestoreStatusCmd(cliEnvironment environment.Environment) *cobra.Command {
 	return c
 }
 
-func printStatus(logger environment.Logger, st *v1.DBRestoreProcessStatus) {
+func printStatus(logger logger.Logger, st *v1.DBRestoreProcessStatus) {
 	logger.PrintfLn("ID:")
 	logger.PrintfLn(" ", st.GetMetadata().GetId())
 	logger.PrintfLn("State:")

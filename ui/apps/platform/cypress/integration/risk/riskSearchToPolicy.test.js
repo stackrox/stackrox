@@ -1,5 +1,6 @@
 import { selectors as riskSelectors, url as riskUrl } from '../../constants/RiskPage';
-import { selectors as policySelectors, url as policiesUrl } from '../../constants/PoliciesPage';
+import { selectors as policySelectors } from '../../constants/PoliciesPage';
+import { url as policiesUrl } from '../../constants/PoliciesPagePatternFly';
 import { hasFeatureFlag } from '../../helpers/features';
 import withAuth from '../../helpers/basicAuth';
 

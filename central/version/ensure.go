@@ -9,8 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	bolt "go.etcd.io/bbolt"
 )
 
 var (
@@ -23,8 +21,7 @@ var (
 // It will returns an error if the DB is of an old version.
 // If Ensure returns an error, the state of the DB is undefined, and it is not safe for Central to try to
 // function normally.
-func Ensure(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) error {
-	versionStore := store.New(boltDB, rocksDB)
+func Ensure(versionStore store.Store) error {
 	version, err := versionStore.GetVersion()
 	if err != nil {
 		return errors.Wrap(err, "failed to read version from DB")

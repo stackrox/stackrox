@@ -1,11 +1,13 @@
 package services
 
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.RoleServiceGrpc
 import io.stackrox.proto.api.v1.RoleServiceOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 import io.stackrox.proto.storage.RoleOuterClass.Role
 
+@Slf4j
 class RoleService extends BaseService {
     static getRoleService() {
         return RoleServiceGrpc.newBlockingStub(getChannel())
@@ -23,7 +25,7 @@ class RoleService extends BaseService {
         try {
             return getRoleService().getResources(EMPTY)
         } catch (Exception e) {
-            println "Failed to fetch resources: ${e}"
+            log.warn("Failed to fetch resources", e)
         }
     }
 
@@ -52,7 +54,7 @@ class RoleService extends BaseService {
             getRoleService().deleteRole(Common.ResourceByID.newBuilder().setId(name).build())
             deletePermissionSet(role.permissionSetId)
         } catch (Exception e) {
-            println "Error deleting role ${name}: ${e}"
+            log.warn("Error deleting role ${name}", e)
         }
     }
 
@@ -66,7 +68,7 @@ class RoleService extends BaseService {
         try {
             getRoleService().deletePermissionSet(Common.ResourceByID.newBuilder().setId(id).build())
         } catch (Exception e) {
-            println "Error deleting permission set ${id}: ${e}"
+            log.warn("Error deleting permission set ${id}", e)
         }
     }
 

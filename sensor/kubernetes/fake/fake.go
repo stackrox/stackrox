@@ -25,6 +25,8 @@ import (
 
 const (
 	workloadPath = "/var/scale/stackrox/workload.yaml"
+
+	defaultNamespaceNum = 30
 )
 
 var (
@@ -123,8 +125,8 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 }
 
 // clearActions periodically cleans up the fake client we're using. This needs to exist because we aren't
-// using the client for it's original purpose of unit testing. Essentially, it stores the actions
-// so you can check which actions were run. We don't care about this actions so clear them every 10s
+// using the client for its original purpose of unit testing. Essentially, it stores the actions
+// so you can check which actions were run. We don't care about these actions so clear them every 10s
 func (w *WorkloadManager) clearActions() {
 	t := time.NewTicker(10 * time.Second)
 	for range t.C {
@@ -135,7 +137,11 @@ func (w *WorkloadManager) clearActions() {
 func (w *WorkloadManager) initializePreexistingResources() {
 	var objects []runtime.Object
 
-	for _, n := range getNamespaces() {
+	numNamespaces := defaultNamespaceNum
+	if num := w.workload.NumNamespaces; num != 0 {
+		numNamespaces = num
+	}
+	for _, n := range getNamespaces(numNamespaces) {
 		objects = append(objects, n)
 	}
 
@@ -155,6 +161,16 @@ func (w *WorkloadManager) initializePreexistingResources() {
 			for _, p := range resource.pods {
 				objects = append(objects, p)
 			}
+		}
+	}
+
+	var npResources []*networkPolicyToBeManaged
+	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
+		for i := 0; i < npWorkload.NumNetworkPolicies; i++ {
+			resource := w.getNetworkPolicy(npWorkload)
+			npResources = append(npResources, resource)
+
+			objects = append(objects, resource.networkPolicy)
 		}
 	}
 
@@ -179,6 +195,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	// Fork management of deployment resources
 	for _, resource := range resources {
 		go w.manageDeployment(context.Background(), resource)
+	}
+
+	// Fork management of networkPolicy resources
+	for _, resource := range npResources {
+		go w.manageNetworkPolicy(context.Background(), resource)
 	}
 
 	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)

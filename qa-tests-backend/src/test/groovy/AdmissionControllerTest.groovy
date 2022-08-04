@@ -5,6 +5,9 @@ import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
+import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
+import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Deployment
 import objects.GCRImageIntegration
@@ -17,9 +20,10 @@ import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Timeout
 import spock.lang.Unroll
+import util.ChaosMonkey
+import util.Env
 import util.Helpers
 import util.Timer
-import util.ChaosMonkey
 
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
@@ -58,7 +62,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private Deployment MISC_DEPLOYMENT = new Deployment()
         .setName("random-busybox")
-        .setImage("busybox:1.30")
+        .setImage("quay.io/rhacs-eng/qa:busybox-1-30")
         .addLabel("app", "random-busybox")
 
     def setupSpec() {
@@ -172,7 +176,12 @@ class AdmissionControllerTest extends BaseSpecification {
                 .build()
         assert ClusterService.updateAdmissionController(ac)
 
-        printlnDated "Admission control configuration updated"
+        log.info("Admission control configuration updated")
+
+        def policyGroup = PolicyGroup.newBuilder()
+                .setFieldName("CVE")
+                .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
+        policyGroup.addAllValues([PolicyValue.newBuilder().setValue("CVE-2019-3462").build(),])
 
         PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
                 .setName("Matching CVE (CVE-2019-3462)")
@@ -180,9 +189,8 @@ class AdmissionControllerTest extends BaseSpecification {
                 .addCategories("Testing")
                 .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
                 .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
-                .setFields(
-                        PolicyOuterClass.PolicyFields.newBuilder().setCve("CVE-2019-3462").build()
-                )
+                .addPolicySections(
+                        PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
                 .build()
         policy = PolicyService.policyClient.postPolicy(
                 PolicyServiceOuterClass.PostPolicyRequest.newBuilder()
@@ -190,10 +198,10 @@ class AdmissionControllerTest extends BaseSpecification {
                         .build()
         )
 
-        printlnDated "Policy created to scale-to-zero deployments with CVE-2019-3462"
+        log.info("Policy created to scale-to-zero deployments with CVE-2019-3462")
         // Maximum time to wait for propagation to sensor
         Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
-        printlnDated "Sensor and admission-controller _should_ have the policy update"
+        log.info("Sensor and admission-controller _should_ have the policy update")
 
         def deployment = new Deployment()
                 .setName("admission-suppress-cve")
@@ -207,11 +215,18 @@ class AdmissionControllerTest extends BaseSpecification {
 
         when:
         "Suppress CVE and check that the deployment can now launch"
-        CVEService.suppressCVE("CVE-2019-3462")
-        printlnDated "Suppressing CVE-2019-3462"
+
+        def cve = "CVE-2019-3462"
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            CVEService.suppressImageCVE(cve)
+        } else {
+            CVEService.suppressCVE(cve)
+        }
+
+        log.info("Suppressed "+cve)
         // Allow propagation of CVE suppression and invalidation of cache
         Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
-        printlnDated "Expect that the suppression has propagated"
+        log.info("Expect that the suppression has propagated")
 
         created = orchestrator.createDeploymentNoWait(deployment)
         assert created
@@ -220,11 +235,15 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Unsuppress CVE"
-        CVEService.unsuppressCVE("CVE-2019-3462")
-        printlnDated "Unsuppress CVE-2019-3462"
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            CVEService.unsuppressImageCVE(cve)
+        } else {
+            CVEService.unsuppressCVE(cve)
+        }
+        log.info("Unsuppressed "+cve)
         // Allow propagation of CVE suppression and invalidation of cache
         Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
-        printlnDated "Expect that the unsuppression has propagated"
+        log.info("Expect that the unsuppression has propagated")
 
         and:
         "Verify unsuppressing lets the deployment be blocked again"
@@ -274,7 +293,7 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Create the deployment with a harmless image"
         def modDeployment = deployment.clone()
-        modDeployment.image = "busybox:1.28"
+        modDeployment.image = "quay.io/rhacs-eng/qa:busybox-1-28"
         def created = orchestrator.createDeploymentNoWait(modDeployment)
         assert created
 
@@ -387,7 +406,7 @@ class AdmissionControllerTest extends BaseSpecification {
         then:
         "Verify deployment can be created"
         def deployment = MISC_DEPLOYMENT.clone()
-        def created = orchestrator.createDeploymentNoWait(deployment)
+        def created = orchestrator.createDeploymentNoWait(deployment, 10)
         assert created
 
         and:
@@ -395,7 +414,7 @@ class AdmissionControllerTest extends BaseSpecification {
         for (int i = 0; i < 45; i++) {
             Helpers.sleepWithRetryBackoff(1000)
             deployment.addAnnotation("qa.stackrox.io/iteration", "${i}")
-            assert orchestrator.updateDeploymentNoWait(deployment)
+            assert orchestrator.updateDeploymentNoWait(deployment, 10)
         }
 
         cleanup:
@@ -421,11 +440,11 @@ class AdmissionControllerTest extends BaseSpecification {
                 orchestrator.deleteDeployment(deployment)
                 deleted = true
             } catch (NullPointerException ignore) {
-                println "Caught NPE while deleting deployment, retrying in 1s..."
+                log.info "Caught NPE while deleting deployment, retrying in 1s..."
             }
         }
         if (!deleted) {
-            println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
+            log.warn "Failed to delete deployment. Subsequent tests may be affected ..."
         }
     }
 
@@ -447,7 +466,7 @@ class AdmissionControllerTest extends BaseSpecification {
         "Sensor is unavailable"
         orchestrator.scaleDeployment("stackrox", "sensor", 0)
         orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 1)
-        printlnDated "Sensor is now scaled to 0"
+        log.info("Sensor is now scaled to 0")
 
         and:
         "Admission controller is started from scratch w/o cached scans"
@@ -455,11 +474,11 @@ class AdmissionControllerTest extends BaseSpecification {
         def originalAdmCtrlReplicas = admCtrlDeploy.spec.replicas
         orchestrator.scaleDeployment("stackrox", "admission-control", 0)
         orchestrator.waitForAllPodsToBeRemoved("stackrox", admCtrlDeploy.spec.selector.matchLabels, 30, 1)
-        printlnDated "Admission controller scaled to 0, was ${originalAdmCtrlReplicas}"
+        log.info("Admission controller scaled to 0, was ${originalAdmCtrlReplicas}")
         orchestrator.scaleDeployment("stackrox", "admission-control", originalAdmCtrlReplicas)
         orchestrator.waitForPodsReady("stackrox", admCtrlDeploy.spec.selector.matchLabels,
                 originalAdmCtrlReplicas, 30, 1)
-        printlnDated "Admission controller scaled back to ${originalAdmCtrlReplicas}"
+        log.info("Admission controller scaled back to ${originalAdmCtrlReplicas}")
 
         when:
         "A deployment with an image violating a policy is created"

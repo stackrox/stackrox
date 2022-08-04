@@ -3,8 +3,6 @@ import React, { ReactElement } from 'react';
 import { NavigateToEntityHook } from 'Containers/Network/SidePanel/useNavigateToEntity';
 import { filterModes } from 'constants/networkFilterModes';
 import { FilterState } from 'Containers/Network/networkTypes';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import { networkFlowStatus } from 'constants/networkGraph';
 import useFetchNetworkBaselines from './useFetchNetworkBaselines';
 
@@ -27,9 +25,6 @@ function BaselineSettings({
     filterState,
     onNavigateToEntity,
 }: BaselineSettingsProps): ReactElement {
-    const isBaselineSimulationFeatureEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_NETWORK_DETECTION_BASELINE_SIMULATION
-    );
     const {
         data: { networkBaselines, isAlertingEnabled },
         isLoading,
@@ -57,11 +52,9 @@ function BaselineSettings({
                 includedBaselineStatuses={[networkFlowStatus.BASELINE]}
                 excludedSearchCategories={['State']}
             />
-            {isBaselineSimulationFeatureEnabled && (
-                <div className="flex justify-center items-center py-4 border-t border-base-300 bg-base-100">
-                    <SimulateBaselineNetworkPolicy />
-                </div>
-            )}
+            <div className="flex justify-center items-center py-4 border-t border-base-300 bg-base-100">
+                <SimulateBaselineNetworkPolicy />
+            </div>
         </div>
     );
 }

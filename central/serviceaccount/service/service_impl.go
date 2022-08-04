@@ -15,7 +15,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -64,7 +64,7 @@ func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.Resourc
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "service account with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "service account with id '%s' does not exist", request.GetId())
 	}
 
 	clusterRoles, scopedRoles, err := s.getRoles(ctx, sa)
@@ -87,7 +87,7 @@ func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.Resourc
 func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListServiceAccountResponse, error) {
 	q, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	serviceAccounts, err := s.serviceAccounts.SearchRawServiceAccounts(ctx, q)
 

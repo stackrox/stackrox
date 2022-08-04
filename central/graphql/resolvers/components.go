@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/utils"
@@ -19,34 +21,37 @@ var (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("EmbeddedImageScanComponent", []string{
-			"license: License",
+			"activeState(query: String): ActiveState",
+			"deploymentCount(query: String, scopeQuery: String): Int!",
+			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
+			"fixedIn: String!",
 			"id: ID!",
+			"imageCount(query: String, scopeQuery: String): Int!",
+			"images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!",
+			"lastScanned: Time",
+			"layerIndex: Int",
+			"license: License",
+			"location(query: String): String!",
 			"name: String!",
-			"version: String!",
+			"nodeCount(query: String, scopeQuery: String): Int!",
+			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
+			"priority: Int!",
+			"riskScore: Float!",
+			"source: String!",
 			"topVuln: EmbeddedVulnerability",
-			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!",
+			"version: String!",
 			"vulnCount(query: String, scopeQuery: String): Int!",
 			"vulnCounter(query: String): VulnerabilityCounter!",
-			"lastScanned: Time",
-			"images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!",
-			"imageCount(query: String, scopeQuery: String): Int!",
-			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
-			"deploymentCount(query: String, scopeQuery: String): Int!",
-			"activeState(query: String): ActiveState",
-			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
-			"nodeCount(query: String, scopeQuery: String): Int!",
-			"priority: Int!",
-			"source: String!",
-			"location(query: String): String!",
-			"riskScore: Float!",
-			"fixedIn: String!",
+			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!",
 		}),
-		schema.AddExtraResolver("ImageScan", `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
-		schema.AddExtraResolver("ImageScan", `componentCount(query: String): Int!`),
-		schema.AddQuery("component(id: ID): EmbeddedImageScanComponent"),
-		schema.AddQuery("components(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"),
-		schema.AddQuery("componentCount(query: String): Int!"),
+		schema.AddQuery("component(id: ID): EmbeddedImageScanComponent"+
+			"@deprecated(reason: \"use 'imageComponent' or 'nodeComponent'\")"),
+		schema.AddQuery("components(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"+
+			"@deprecated(reason: \"use 'imageComponents' or 'nodeComponents'\")"),
+		schema.AddQuery("componentCount(query: String): Int!"+
+			"@deprecated(reason: \"use 'imageComponentCount' or 'nodeComponentCount'\")"),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", `unusedVarSink(query: String): Int`),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
@@ -61,7 +66,7 @@ type ComponentResolver interface {
 	Priority(ctx context.Context) int32
 	Source(ctx context.Context) string
 	Location(ctx context.Context, args RawQuery) (string, error)
-	LayerIndex() *int32
+	LayerIndex() (*int32, error)
 	LastScanned(ctx context.Context) (*graphql.Time, error)
 	License(ctx context.Context) (*licenseResolver, error)
 	RiskScore(ctx context.Context) float64
@@ -90,17 +95,26 @@ type ComponentResolver interface {
 // Component returns an image scan component based on an input id (name:version)
 func (resolver *Resolver) Component(ctx context.Context, args IDQuery) (ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("Component is not supported with postgres, please use Image/NodeComponent")
+	}
 	return resolver.componentV2(ctx, args)
 }
 
 // Components returns the image scan components that match the input query.
 func (resolver *Resolver) Components(ctx context.Context, q PaginatedQuery) ([]ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("Components is not supported with postgres, please use Image/NodeComponents")
+	}
 	return resolver.componentsV2(ctx, q)
 }
 
 // ComponentCount returns count of all clusters across infrastructure
 func (resolver *Resolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComponentCount")
+	if features.PostgresDatastore.Enabled() {
+		return 0, errors.New("ComponentCount is not supported with postgres, please use Image/NodeComponentCount")
+	}
 	return resolver.componentCountV2(ctx, args)
 }

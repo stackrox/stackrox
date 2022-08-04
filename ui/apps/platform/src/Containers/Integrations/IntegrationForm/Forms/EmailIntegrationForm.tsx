@@ -288,7 +288,7 @@ function EmailIntegrationForm({
                             type="text"
                             id="notifier.email.from"
                             value={values.notifier.email.from}
-                            placeholder="example, Advanced Cluster Security"
+                            placeholder="example, Security Alerts"
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
@@ -311,7 +311,7 @@ function EmailIntegrationForm({
                             type="text"
                             id="notifier.email.sender"
                             value={values.notifier.email.sender}
-                            placeholder="example, acs-notifier@example.com"
+                            placeholder="example, security-alerts@example.com"
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
@@ -329,7 +329,7 @@ function EmailIntegrationForm({
                             type="text"
                             id="notifier.labelDefault"
                             value={values.notifier.labelDefault}
-                            placeholder="example, acs-alerts@example.com"
+                            placeholder="example, security-alerts-recipients@example.com"
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}

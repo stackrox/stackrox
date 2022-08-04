@@ -31,7 +31,9 @@ function getMessage(response) {
         return (
             <li key={curr.key}>
                 <span id={curr.key}>{curr.key}</span>:{' '}
-                <span aria-labelledby={curr.key}>{curr.values}</span>
+                <span aria-labelledby={curr.key}>
+                    {Array.isArray(curr.values) ? curr.values.join(', ') : curr.values}
+                </span>
             </li>
         );
     });

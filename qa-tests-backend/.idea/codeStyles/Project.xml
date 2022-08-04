@@ -1,0 +1,58 @@
+<component name="ProjectCodeStyleConfiguration">
+  <code_scheme name="Project" version="173">
+    <GroovyCodeStyleSettings>
+      <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999" />
+      <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999" />
+      <option name="IMPORT_LAYOUT_TABLE">
+        <value>
+          <package name="" withSubpackages="true" static="true" />
+          <emptyLine />
+          <package name="java" withSubpackages="true" static="false" />
+          <package name="javax" withSubpackages="true" static="false" />
+          <emptyLine />
+          <package name="" withSubpackages="true" static="false" />
+          <emptyLine />
+          <package name="com.stackrox" withSubpackages="true" static="false" />
+          <emptyLine />
+          <package name="io.stackrox" withSubpackages="true" static="false" />
+          <emptyLine />
+          <package name="common" withSubpackages="true" static="false" />
+          <package name="groups" withSubpackages="true" static="false" />
+          <package name="objects" withSubpackages="true" static="false" />
+          <package name="services" withSubpackages="true" static="false" />
+          <package name="util" withSubpackages="true" static="false" />
+          <emptyLine />
+          <package name="org.junit" withSubpackages="true" static="false" />
+          <package name="spock.lang" withSubpackages="true" static="false" />
+        </value>
+      </option>
+    </GroovyCodeStyleSettings>
+    <JavaCodeStyleSettings>
+      <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999" />
+      <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999" />
+      <option name="IMPORT_LAYOUT_TABLE">
+        <value>
+          <package name="" withSubpackages="true" static="true" />
+          <emptyLine />
+          <package name="java" withSubpackages="true" static="false" />
+          <package name="javax" withSubpackages="true" static="false" />
+          <emptyLine />
+          <package name="" withSubpackages="true" static="false" />
+          <emptyLine />
+          <package name="com.stackrox" withSubpackages="true" static="false" />
+          <emptyLine />
+          <package name="io.stackrox" withSubpackages="true" static="false" />
+          <emptyLine />
+          <package name="common" withSubpackages="true" static="false" />
+          <package name="groups" withSubpackages="true" static="false" />
+          <package name="objects" withSubpackages="true" static="false" />
+          <package name="services" withSubpackages="true" static="false" />
+          <package name="util" withSubpackages="true" static="false" />
+          <emptyLine />
+          <package name="org.junit" withSubpackages="true" static="false" />
+          <package name="spock.lang" withSubpackages="true" static="false" />
+        </value>
+      </option>
+    </JavaCodeStyleSettings>
+  </code_scheme>
+</component>

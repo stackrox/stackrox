@@ -122,11 +122,11 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 	}
 }
 
-// Validate verifies whether the current configuration can be used to create an ObjectPrinter. It will return an error
+// validate verifies whether the current configuration can be used to create an ObjectPrinter. It will return an error
 // if it is not possible
 func (t *TabularPrinterFactory) validate() error {
 	if t.NoHeader && t.HeaderAsComment {
-		return errox.NewErrInvalidArgs("cannot specify both --no-header as well as " +
+		return errox.InvalidArgs.New("cannot specify both --no-header as well as " +
 			"--headers-as-comment flags. Choose only one of them")
 	}
 	headers := set.NewStringSet(t.Headers...)

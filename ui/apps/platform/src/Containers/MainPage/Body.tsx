@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
-import { Redirect, Switch } from 'react-router-dom';
+import { Redirect, Route, Switch } from 'react-router-dom';
+import { PageSection } from '@patternfly/react-core';
 
 import {
     mainPath,
@@ -11,6 +12,8 @@ import {
     clustersListPath,
     integrationsPath,
     policiesPath,
+    policyManagementBasePath,
+    deprecatedPoliciesPath,
     riskPath,
     apidocsPath,
     accessControlPathV2,
@@ -26,13 +29,28 @@ import {
 import { useTheme } from 'Containers/ThemeProvider';
 
 import asyncComponent from 'Components/AsyncComponent';
-import ProtectedRoute from 'Components/ProtectedRoute';
+import PageNotFound from 'Components/PageNotFound';
+import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Containers/ErrorBoundary';
-import { knownBackendFlags } from 'utils/featureFlags';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { HasReadAccess } from 'hooks/usePermissions';
+import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+
+function NotFoundPage(): ReactElement {
+    return (
+        <PageSection variant="light">
+            <PageTitle title="Not Found" />
+            <PageNotFound />
+        </PageSection>
+    );
+}
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
+// TODO Rename this and replace AsyncDashboardPage once Sec Metrics Phase One is complete
+// Jira: https://issues.redhat.com/browse/ROX-10650
+const AsyncDashboardPagePF = asyncComponent(
+    () => import('Containers/Dashboard/PatternFly/DashboardPage')
+);
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
 const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/ClustersPage'));
 const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/ClustersPage'));
@@ -41,18 +59,19 @@ const AsyncIntegrationsPage = asyncComponent(
 );
 const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
 
-// TODO: rename this to AsyncPoliciesPage after we remove the old deprecated policies code
-// Jira issue to track: https://issues.redhat.com/browse/ROX-9450
-const AsyncPoliciesPagePatternFly = asyncComponent(
-    () => import('Containers/Policies/PatternFly/PoliciesPage')
+const AsyncPolicyManagementPage = asyncComponent(
+    () => import('Containers/PolicyManagement/PolicyManagementPage')
 );
+
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncAccessControlPageV2 = asyncComponent(
     () => import('Containers/AccessControl/AccessControl')
 );
 const AsyncUserPage = asyncComponent(() => import('Containers/User/UserPage'));
-const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
+const AsyncSystemConfigPage = asyncComponent(
+    () => import('Containers/SystemConfig/SystemConfigPage')
+);
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
 const AsyncVulnMgmtReports = asyncComponent(
     () => import('Containers/VulnMgmt/Reports/VulnMgmtReports')
@@ -66,12 +85,19 @@ const AsyncSystemHealthPagePF = asyncComponent(
     () => import('Containers/SystemHealth/PatternFly/SystemHealthDashboard')
 );
 
-function Body(): ReactElement {
+type BodyProps = {
+    hasReadAccess: HasReadAccess;
+    isFeatureFlagEnabled: IsFeatureFlagEnabled;
+};
+
+function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
     const { isDarkMode } = useTheme();
-    const isSystemHealthPatternFlyEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_SYSTEM_HEALTH_PF
-    );
-    const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
+
+    const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
+    const isDashboardPatternFlyEnabled = isFeatureFlagEnabled('ROX_SECURITY_METRICS_PHASE_ONE');
+
+    const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
+
     return (
         <div
             className={`flex flex-col h-full w-full relative overflow-auto ${
@@ -80,46 +106,43 @@ function Body(): ReactElement {
         >
             <ErrorBoundary>
                 <Switch>
-                    <ProtectedRoute path={dashboardPath} component={AsyncDashboardPage} />
-                    <ProtectedRoute path={networkPath} component={AsyncNetworkPage} />
-                    <ProtectedRoute path={violationsPath} component={AsyncViolationsPage} />
-                    <ProtectedRoute path={compliancePath} component={AsyncCompliancePage} />
-                    <ProtectedRoute path={integrationsPath} component={AsyncIntegrationsPage} />
-                    <ProtectedRoute path={policiesPath} component={AsyncPoliciesPagePatternFly} />
-                    <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
-                    <ProtectedRoute
-                        path={accessControlPathV2}
-                        component={AsyncAccessControlPageV2}
+                    <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
+                    <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
+                    <Route
+                        path={dashboardPath}
+                        component={
+                            isDashboardPatternFlyEnabled ? AsyncDashboardPagePF : AsyncDashboardPage
+                        }
                     />
-                    <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
-                    <ProtectedRoute path={userBasePath} component={AsyncUserPage} />
-                    <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
-                    <ProtectedRoute
-                        path={vulnManagementReportsPath}
-                        component={AsyncVulnMgmtReports}
-                        featureFlagEnabled={isVulnReportingEnabled}
-                        requiredPermission="VulnerabilityReports"
-                    />
-                    <ProtectedRoute
+                    <Route path={networkPath} component={AsyncNetworkPage} />
+                    <Route path={violationsPath} component={AsyncViolationsPage} />
+                    <Route path={compliancePath} component={AsyncCompliancePage} />
+                    <Route path={integrationsPath} component={AsyncIntegrationsPage} />
+                    <Route path={policyManagementBasePath} component={AsyncPolicyManagementPage} />
+                    <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
+                    <Route path={riskPath} component={AsyncRiskPage} />
+                    <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
+                    <Route path={apidocsPath} component={AsyncApiDocsPage} />
+                    <Route path={userBasePath} component={AsyncUserPage} />
+                    <Route path={systemConfigPath} component={AsyncSystemConfigPage} />
+                    {hasVulnerabilityReportsPermission && (
+                        <Route path={vulnManagementReportsPath} component={AsyncVulnMgmtReports} />
+                    )}
+                    <Route
                         path={vulnManagementRiskAcceptancePath}
                         component={AsyncVulnMgmtRiskAcceptancePage}
                     />
-                    <ProtectedRoute path={vulnManagementPath} component={AsyncVulnMgmtPage} />
-                    <ProtectedRoute
-                        path={configManagementPath}
-                        component={AsyncConfigManagementPage}
-                    />
-                    <ProtectedRoute path={clustersPathWithParam} component={AsyncClustersPage} />
+                    <Route path={vulnManagementPath} component={AsyncVulnMgmtPage} />
+                    <Route path={configManagementPath} component={AsyncConfigManagementPage} />
+                    <Route path={clustersPathWithParam} component={AsyncClustersPage} />
                     {process.env.NODE_ENV === 'development' && (
-                        <ProtectedRoute path={clustersListPath} component={AsyncPFClustersPage} />
+                        <Route path={clustersListPath} component={AsyncPFClustersPage} />
                     )}
-                    <ProtectedRoute path={systemHealthPath} component={AsyncSystemHealthPage} />
-                    <ProtectedRoute
-                        path={systemHealthPathPF}
-                        component={AsyncSystemHealthPagePF}
-                        featureFlagEnabled={isSystemHealthPatternFlyEnabled}
-                    />
-                    <Redirect from={mainPath} to={dashboardPath} />
+                    <Route path={systemHealthPath} component={AsyncSystemHealthPage} />
+                    {isSystemHealthPatternFlyEnabled && (
+                        <Route path={systemHealthPathPF} component={AsyncSystemHealthPagePF} />
+                    )}
+                    <Route component={NotFoundPage} />
                 </Switch>
             </ErrorBoundary>
         </div>

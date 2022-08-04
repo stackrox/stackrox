@@ -24,27 +24,24 @@ teardown() {
   run roxctl-development helm output central-services --rhacs --output-dir "$out_dir"
   assert_success
   has_deprecation_warning
-  has_no_default_flavor_warning
 }
 
 @test "roxctl-development helm output should support --image-defaults flag" {
   run roxctl-development helm output central-services --image-defaults="stackrox.io" --output-dir "$out_dir"
   assert_success
-  has_no_default_flavor_warning
 }
 
 @test "roxctl-development helm output help-text should state default value for --image-defaults flag" {
   run roxctl-development helm output central-services -h
   assert_success
-  assert_line --regexp "--image-defaults.*\(development_build, stackrox.io, rhacs\).*default \"development_build\""
+  assert_line --regexp "--image-defaults.*\(development_build, stackrox.io, rhacs, opensource\).*default \"development_build\""
 }
 
 @test "roxctl-development helm output central-services should use docker.io registry" {
   run roxctl-development helm output central-services --output-dir "$out_dir"
   assert_success
-  has_default_flavor_warning
   assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'docker.io' "$any_version" 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'quay.io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --rhacs should use redhat.io registry and display deprecation warning" {
@@ -58,7 +55,7 @@ teardown() {
 @test "roxctl-development helm output central-services --image-defaults=dummy should fail" {
   run roxctl-development helm output central-services --image-defaults=dummy --output-dir "$out_dir"
   assert_failure
-  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: '--image-defaults': unexpected value 'dummy', allowed values are \[development_build stackrox.io rhacs\]"
+  assert_line --regexp "ERROR:[[:space:]]+unable to get chart meta values: '--image-defaults': unexpected value 'dummy', allowed values are \[development_build stackrox.io rhacs opensource\]"
 }
 
 @test "roxctl-development helm output central-services --image-defaults=stackrox.io should use stackrox.io registry" {
@@ -79,7 +76,7 @@ teardown() {
   run roxctl-development helm output central-services --image-defaults=development_build --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'docker.io' "$any_version" 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'quay.io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --rhacs --image-defaults=development_build should return error about --rhacs colliding with --image-defaults" {
@@ -94,7 +91,6 @@ teardown() {
   assert_failure
   has_deprecation_warning
   has_flag_collision_warning
-  has_no_default_flavor_warning
 }
 
 @test "roxctl-development helm output central-services --rhacs --image-defaults=rhacs should return error about --rhacs colliding with --image-defaults" {
@@ -102,7 +98,6 @@ teardown() {
   assert_failure
   has_deprecation_warning
   has_flag_collision_warning
-  has_no_default_flavor_warning
 }
 
 @test "roxctl-development helm output central-services --debug should use the local directory" {

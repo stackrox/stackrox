@@ -26,7 +26,7 @@ gitroot="$(git rev-parse --show-toplevel)"
 cd "${gitroot}/webhookserver"
 mkdir -p chart/certs
 cp "${certs_tmp_dir}/tls.crt" "${certs_tmp_dir}/tls.key" chart/certs
-helm upgrade --install webhookserver chart/
+helm -n stackrox upgrade --install webhookserver chart/
 
 sleep 5
 pod="$(kubectl -n stackrox get pod -l app=webhookserver -o name)"

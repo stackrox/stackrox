@@ -55,7 +55,7 @@ describe('Access Control Roles', () => {
         cy.get(selectors.navLinkCurrent).should('have.text', h2);
 
         cy.contains(selectors.h2, /^\d+ results? found$/).should('exist');
-        cy.get(selectors.list.addButton).should('have.text', 'Add role');
+        cy.get(selectors.list.createButton).should('have.text', 'Create role');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
         cy.get(`${selectors.list.th}:contains("Description")`);
@@ -127,9 +127,9 @@ describe('Access Control Roles', () => {
     it('adds a new role and form disables name input when editing an existing role', () => {
         visitRoles();
 
-        cy.get(selectors.list.addButton).click();
+        cy.get(selectors.list.createButton).click();
 
-        cy.get(selectors.h2).should('have.text', 'Add role');
+        cy.get(selectors.h2).should('have.text', 'Create role');
         cy.get(selectors.form.notEditableLabel).should('not.exist');
         cy.get(selectors.form.editButton).should('not.exist');
         cy.get(selectors.form.saveButton).should('be.disabled');
@@ -180,9 +180,8 @@ describe('Access Control Roles', () => {
         cy.visit(`${rolesUrl}/bogus`);
         cy.wait('@GetAuthProviders');
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3)`).should('not.exist');
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2)`).should('not.exist');
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');

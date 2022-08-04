@@ -4,7 +4,6 @@ import (
 	"context"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/detection"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -28,12 +27,11 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(clusters clusterDatastore.DataStore, imageEnricher enricher.ImageEnricher, imageDatastore imageDatastore.DataStore, riskManager manager.Manager,
-	cveDatastore cveDataStore.DataStore, deploymentEnricher enrichment.Enricher, buildTimeDetector buildTimeDetection.Detector, notifications processor.Processor, detector deploytime.Detector, policySet detection.PolicySet) Service {
+	deploymentEnricher enrichment.Enricher, buildTimeDetector buildTimeDetection.Detector, notifications processor.Processor, detector deploytime.Detector, policySet detection.PolicySet) Service {
 	return &serviceImpl{
 		clusters:           clusters,
 		imageEnricher:      imageEnricher,
 		imageDatastore:     imageDatastore,
-		cveDatastore:       cveDatastore,
 		riskManager:        riskManager,
 		deploymentEnricher: deploymentEnricher,
 		buildTimeDetector:  buildTimeDetector,

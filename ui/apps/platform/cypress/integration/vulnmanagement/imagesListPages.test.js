@@ -1,21 +1,19 @@
-import withAuth from '../../helpers/basicAuth';
 import { url, selectors } from '../../constants/VulnManagementPage';
+import withAuth from '../../helpers/basicAuth';
 import {
     hasExpectedHeaderColumns,
     allChecksForEntities,
     allCVECheck,
     allFixableCheck,
 } from '../../helpers/vmWorkflowUtils';
-import * as api from '../../constants/apiEndpoints';
+import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
 
-// TODO(ROX-8674): Enable this test.
-describe.skip('Images list page and its entity detail page, related entities sub list validations ', () => {
+describe('Images list page and its entity detail page, related entities sub list validations ', () => {
     withAuth();
 
-    it('should display all the columns and links expected in images list page', () => {
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('IMAGE')).as('getImages');
-        cy.visit(url.list.images);
-        cy.wait('@getImages');
+    // TODO(ROX-8674): Enable this test.
+    it.skip('should display all the columns and links expected in images list page', () => {
+        visitVulnerabilityManagementEntities('images');
 
         hasExpectedHeaderColumns([
             'Image',
@@ -23,6 +21,7 @@ describe.skip('Images list page and its entity detail page, related entities sub
             'Top CVSS',
             'Created',
             'Scan Time',
+            'Image OS',
             'Image Status',
             'Deployments',
             'Components',
@@ -49,11 +48,12 @@ describe.skip('Images list page and its entity detail page, related entities sub
                     waitForAnimations: false,
                 });
 
-                cy.get('.pf-c-tabs .pf-c-tabs__item:eq(2):contains("False Positive CVEs")').click({
+                cy.get('.pf-c-tabs .pf-c-tabs__item:eq(2):contains("False positive CVEs")').click({
                     force: true,
                     waitForAnimations: false,
                 });
 
+                // TODO fix the following test problem: Expected to find element: [data-testid="tabs"]
                 allFixableCheck(url.list.images);
             }
             if (columnValue !== 'no cves' && columnValue.includes('cve')) {
@@ -65,9 +65,7 @@ describe.skip('Images list page and its entity detail page, related entities sub
     });
 
     it('should show entity icon, not back button, if there is only one item on the side panel stack', () => {
-        cy.intercept('POST', api.vulnMgmt.graphqlEntities('IMAGE')).as('getImages');
-        cy.visit(url.list.images);
-        cy.wait('@getImages');
+        visitVulnerabilityManagementEntities('images');
 
         cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
         cy.wait(1000);

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/rbac/service"
 	searchService "github.com/stackrox/rox/central/search/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
@@ -26,6 +27,11 @@ func init() {
 type PaginatedQuery struct {
 	Query      *string
 	ScopeQuery *string
+	Pagination *inputtypes.Pagination
+}
+
+// PaginationWrapper represents pagination without any query
+type PaginationWrapper struct {
 	Pagination *inputtypes.Pagination
 }
 
@@ -129,8 +135,10 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 		v1.SearchCategory_ROLES:            resolver.K8sRoleStore,
 		v1.SearchCategory_ROLEBINDINGS:     resolver.K8sRoleBindingStore,
 		v1.SearchCategory_IMAGE_COMPONENTS: resolver.ImageComponentDataStore,
-		v1.SearchCategory_VULNERABILITIES:  resolver.CVEDataStore,
 		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(resolver.K8sRoleBindingStore),
+	}
+	if !features.PostgresDatastore.Enabled() {
+		searchers[v1.SearchCategory_VULNERABILITIES] = resolver.CVEDataStore
 	}
 
 	return searchers
@@ -151,10 +159,11 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 		v1.SearchCategory_ROLES:            resolver.K8sRoleStore.SearchRoles,
 		v1.SearchCategory_ROLEBINDINGS:     resolver.K8sRoleBindingStore.SearchRoleBindings,
 		v1.SearchCategory_IMAGE_COMPONENTS: resolver.ImageComponentDataStore.SearchImageComponents,
-		v1.SearchCategory_VULNERABILITIES:  resolver.CVEDataStore.SearchCVEs,
 		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(resolver.K8sRoleBindingStore).SearchSubjects,
 	}
-
+	if !features.PostgresDatastore.Enabled() {
+		searchfuncs[v1.SearchCategory_VULNERABILITIES] = resolver.CVEDataStore.SearchCVEs
+	}
 	return searchfuncs
 }
 

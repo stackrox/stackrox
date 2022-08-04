@@ -6,8 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -29,7 +27,7 @@ func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process 
 
 // ConstructDeploymentWithProcess constructs an augmented deployment with process information.
 func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) (*pathutil.AugmentedObj, error) {
-	obj, err := ConstructDeployment(deployment, images)
+	obj, err := ConstructDeployment(deployment, images, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +119,7 @@ func ConstructDeploymentWithNetworkFlowInfo(
 	images []*storage.Image,
 	flow *NetworkFlowDetails,
 ) (*pathutil.AugmentedObj, error) {
-	obj, err := ConstructDeployment(deployment, images)
+	obj, err := ConstructDeployment(deployment, images, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -139,12 +137,18 @@ func ConstructDeploymentWithNetworkFlowInfo(
 }
 
 // ConstructDeployment constructs the augmented deployment object.
-func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image) (*pathutil.AugmentedObj, error) {
+func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied) (*pathutil.AugmentedObj, error) {
 	obj := pathutil.NewAugmentedObj(deployment)
 	if len(images) != len(deployment.GetContainers()) {
 		return nil, errors.Errorf("deployment %s/%s had %d containers, but got %d images",
 			deployment.GetNamespace(), deployment.GetName(), len(deployment.GetContainers()), len(images))
 	}
+
+	appliedPolicies := pathutil.NewAugmentedObj(applied)
+	if err := obj.AddAugmentedObjAt(appliedPolicies, pathutil.FieldStep(networkPoliciesAppliedKey)); err != nil {
+		return nil, utils.Should(err)
+	}
+
 	for i, image := range images {
 		augmentedImg, err := ConstructImage(image)
 		if err != nil {
@@ -179,7 +183,26 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 
 // ConstructImage constructs the augmented image object.
 func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
-	obj := pathutil.NewAugmentedObj(image)
+	if image == nil {
+		return pathutil.NewAugmentedObj(image), nil
+	}
+
+	img := *image
+
+	// When evaluating policies, the evaluator will stop when any of the objects within the path
+	// are nil and immediately return, not matching. Within the image signature criteria, we have
+	// a combination of "Match if the signature verification result is not as expected" OR "Match if
+	// there is no signature verification result". This means that we have to add the SignatureVerificationData
+	// and SignatureVerificationResults object here as a workaround and add the placeholder value,
+	// making it possible to also match for nil objects.
+	// We have to do this at the beginning, so the augmented object contains the field steps.
+	if img.GetSignatureVerificationData().GetResults() == nil {
+		img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
+			Results: []*storage.ImageSignatureVerificationResult{{}},
+		}
+	}
+
+	obj := pathutil.NewAugmentedObj(&img)
 
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
 	// dockerfile line under each layer.
@@ -211,28 +234,20 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 		}
 	}
 
-	if features.ImageSignatureVerification.Enabled() {
-		// Since policies query for image verification status as a single boolean field, we add it to the image here.
-		for i, result := range image.GetSignatureVerificationData().GetResults() {
-			if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-				if result.GetVerifierId() == "" {
-					return nil, utils.Should(errox.InvariantViolation.New(
-						"missing verifier ID in signature verification results"))
-				}
-				err := obj.AddPlainObjAt(
-					&imageSignatureVerification{
-						VerifiedBy: result.GetVerifierId(),
-					},
-					pathutil.FieldStep("SignatureVerificationData"),
-					pathutil.FieldStep("Results"),
-					pathutil.IndexStep(i),
-					pathutil.FieldStep(imageSignatureVerifiedKey),
-				)
-				if err != nil {
-					return nil, utils.Should(err)
-				}
-			}
+	ids := []string{}
+	for _, result := range image.GetSignatureVerificationData().GetResults() {
+		if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+			ids = append(ids, result.GetVerifierId())
 		}
+	}
+	// When the object is not created, the policy will not match, but it should match.
+	if err := obj.AddPlainObjAt(
+		&imageSignatureVerification{
+			VerifierIDs: ids,
+		},
+		pathutil.FieldStep("SignatureVerificationData"),
+		pathutil.FieldStep(imageSignatureVerifiedKey)); err != nil {
+		return nil, utils.Should(err)
 	}
 
 	return obj, nil

@@ -2,6 +2,7 @@ import dateFns from 'date-fns';
 import withAuth from '../helpers/basicAuth';
 import * as api from '../constants/apiEndpoints';
 import { selectors } from '../constants/CertExpiration';
+import { visitMainDashboard } from '../helpers/main';
 
 describe('Cert Expiration Banner', () => {
     withAuth();
@@ -10,7 +11,7 @@ describe('Cert Expiration Banner', () => {
         cy.intercept('GET', endpoint, {
             body: { expiry },
         }).as('certExpiry');
-        cy.visit('/');
+        visitMainDashboard();
         cy.wait('@certExpiry');
     };
 

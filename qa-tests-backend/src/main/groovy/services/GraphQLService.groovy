@@ -2,6 +2,8 @@ package services
 
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
+import groovy.transform.ToString
+import groovy.util.logging.Slf4j
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
 import org.apache.http.HttpResponse
@@ -15,6 +17,7 @@ import org.apache.http.impl.client.HttpClients
 import org.apache.http.ssl.SSLContextBuilder
 import util.Env
 
+@Slf4j
 class GraphQLService {
     // Top level service object functionality
     /////////////////////////////////////////
@@ -38,14 +41,14 @@ class GraphQLService {
             return response
         }
 
-        println "There were errors in the graph QL response:"
-        response.print()
+        log.warn("There were errors in the graph QL response: ${response}")
 
         return response
     }
 
     // Response value type for GQL requests. Since the return is not tied to any data structure,
     // we return a Map generated from the JSON returned as the response.
+    @ToString
     static class Response {
         private final int code
         private final Object value
@@ -73,15 +76,6 @@ class GraphQLService {
 
         Boolean hasNoErrors() {
             return this.code == 200 && (this.errors == null || this.errors.size() == 0)
-        }
-
-        void print() {
-            println "code: "
-            println this.code
-            println "value: "
-            println this.value
-            println "errors: "
-            println this.errors
         }
     }
 
@@ -128,7 +122,7 @@ class GraphQLService {
                 HttpResponse response = client.execute(httpPost)
                 return parseResponse(response)
             } catch (Exception e) {
-                e.toString()
+                log.error("failed to GQL post", e)
             }
             return new Response()
         }

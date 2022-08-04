@@ -20,6 +20,12 @@ defaults:
     image:
       name: [< required "" .ImageRemote >]
       tag: [< required "" .ImageTag >]
+    [<- if .FeatureFlags.ROX_POSTGRES_DATASTORE >]
+    dbImage:
+      name: [< required "" .CentralDBImageRemote >]
+      tag: [< required "" .CentralDBImageTag >]
+
+    [<- end >]
 
     resources:
       requests:
@@ -76,6 +82,10 @@ defaults:
 
   system:
     createSCCs: [< not .Operator >]
+
+    [<- if not .AutoSensePodSecurityPolicies >]
+    enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]
+    [<- end >]
 
   enableOpenShiftMonitoring: false
 

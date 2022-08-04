@@ -2,14 +2,21 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 
+import entityLabels from 'messages/entity';
 import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getEntityTypesByRelationship } from 'utils/entityRelationships';
 import relationshipTypes from 'constants/relationshipTypes';
+import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import TileList from 'Components/TileList';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import filterEntityRelationship from 'Containers/VulnMgmt/VulnMgmt.utils/filterEntityRelationship';
 
 const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityContext }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+
     const { isDarkMode } = useTheme();
     const workflowState = useContext(workflowStateContext);
     const { useCase } = workflowState;
@@ -20,33 +27,59 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
     const countKeyMap = { ...defaultCountKeyMap, ...altCountKeyMap };
 
     const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
+        // @TODO: Remove the following filter step once ROX_FRONTEND_VM_UPDATES is ON
+        .filter((matchEntity) => {
+            return filterEntityRelationship(showVMUpdates, matchEntity);
+        })
         .map((matchEntity) => {
-            const count = data[countKeyMap[matchEntity]];
+            let countKeyToUse = countKeyMap[matchEntity];
+            if (countKeyMap[matchEntity].includes('k8sVulnCount')) {
+                countKeyToUse = 'vulnCount';
+            }
+            const count = data[countKeyToUse];
+
             return {
                 count,
-                label: pluralize(matchEntity, count),
+                label: pluralize(matchEntity, count).replace('_', ' '),
                 entity: matchEntity,
                 url: workflowState.pushList(matchEntity).setSearch('').toUrl(),
             };
         })
-        .filter((matchObj) => matchObj.count && !entityContext[matchObj.entity]);
+        .filter((matchObj) => {
+            return (
+                entityType === entityTypes.CLUSTER_CVE ||
+                (matchObj.count && !entityContext[matchObj.entity])
+            );
+        });
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
+        // @TODO: Remove the following filter step once ROX_FRONTEND_VM_UPDATES is ON
+        .filter((containEntity) => {
+            return filterEntityRelationship(showVMUpdates, containEntity);
+        })
         .map((containEntity) => {
-            const count = data[countKeyMap[containEntity]];
+            let countKeyToUse = countKeyMap[containEntity];
+            if (countKeyMap[containEntity].includes('k8sVulnCount')) {
+                countKeyToUse = 'vulnCount';
+            }
+            const count = data[countKeyToUse];
+
+            const entityLabel = entityLabels[containEntity].toUpperCase();
             return {
                 count,
-                label: pluralize(containEntity, count),
+                label: pluralize(entityLabel, count),
                 entity: containEntity,
                 url: workflowState.pushList(containEntity).setSearch('').toUrl(),
             };
         })
-        .filter((containObj) => containObj.count && !entityContext[containObj.entity]);
+        .filter((containObj) => {
+            return containObj.count && !entityContext[containObj.entity];
+        });
     if (!matches.length && !contains.length) {
         return null;
     }
     return (
         <div
-            className={` h-full relative border-base-100 border-l w-32 ${
+            className={`h-full relative border-base-100 border-l max-w-43 ${
                 !isDarkMode ? 'bg-primary-300' : 'bg-base-100'
             }`}
         >
@@ -58,7 +91,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
                         left: '-0.5rem',
                         width: 'calc(100% + 0.5rem)',
                     }}
-                    className={`mb-3 p-2  text-base rounded-l text-lg ${
+                    className={`mb-3 p-2 rounded-l text-lg ${
                         !isDarkMode
                             ? 'bg-primary-700 text-base-100'
                             : 'bg-tertiary-300 text-base-900'

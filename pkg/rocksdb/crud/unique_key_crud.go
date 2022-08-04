@@ -6,7 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/db"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -36,7 +36,7 @@ func (c *uniqueKeyCRUD) checkForConflicts(newID []byte, newMsg proto.Message) er
 			return nil
 		}
 		if bytes.Equal(newUniqueKey, c.uniqueKeyFunc(msg)) {
-			return errors.Wrapf(errorhelpers.ErrAlreadyExists, "unique key conflict between %s and existing %s on value: %s", newID, id, newUniqueKey)
+			return errors.Wrapf(errox.AlreadyExists, "unique key conflict between %s and existing %s on value: %s", newID, id, newUniqueKey)
 		}
 		return nil
 	})

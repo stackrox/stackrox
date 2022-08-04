@@ -8,7 +8,7 @@ import (
 	"github.com/blevesearch/bleve/analysis/token/lowercase"
 	"github.com/blevesearch/bleve/analysis/tokenizer/whitespace"
 	"github.com/blevesearch/bleve/mapping"
-	activeComponentMappings "github.com/stackrox/rox/central/activecomponent/index/mappings"
+	activeComponentMappings "github.com/stackrox/rox/central/activecomponent/datastore/index/mappings"
 	alertMapping "github.com/stackrox/rox/central/alert/mappings"
 	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterVulnEdgeMapping "github.com/stackrox/rox/central/clustercveedge/mappings"
@@ -20,9 +20,12 @@ import (
 	imageCVEEdgeMapping "github.com/stackrox/rox/central/imagecveedge/mappings"
 	namespaceMapping "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeMapping "github.com/stackrox/rox/central/node/index/mappings"
+	nodeComponentEdgeMapping "github.com/stackrox/rox/central/nodecomponentedge/mappings"
 	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
 	podMapping "github.com/stackrox/rox/central/pod/mappings"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
+	policyCategoryMapping "github.com/stackrox/rox/central/policycategory/index/mappings"
+
 	processBaselineMapping "github.com/stackrox/rox/central/processbaseline/index/mappings"
 	roleOptions "github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
@@ -92,6 +95,14 @@ func singleTermAnalyzer() map[string]interface{} {
 
 // GetEntityOptionsMap is a mapping from search categories to the options
 func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
+	nodeSearchOptions := search.CombineOptionsMaps(
+		nodeMapping.OptionsMap,
+		nodeComponentEdgeMapping.OptionsMap,
+		imageComponentMapping.OptionsMap,
+		componentVulnEdgeMapping.OptionsMap,
+		cveMapping.OptionsMap,
+	)
+
 	// Images in dackbox support an expanded set of search options
 	imageSearchOptions := search.CombineOptionsMaps(
 		imageMapping.OptionsMap,
@@ -127,13 +138,14 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_PODS:                  podMapping.OptionsMap,
 		v1.SearchCategory_IMAGES:                imageSearchOptions,
 		v1.SearchCategory_POLICIES:              policyMapping.OptionsMap,
+		v1.SearchCategory_POLICY_CATEGORIES:     policyCategoryMapping.OptionsMap,
 		v1.SearchCategory_SECRETS:               secretOptions.OptionsMap,
 		v1.SearchCategory_PROCESS_INDICATORS:    processindicators.OptionsMap,
 		v1.SearchCategory_COMPLIANCE_STANDARD:   index.StandardOptions,
 		v1.SearchCategory_COMPLIANCE_CONTROL:    index.ControlOptions,
 		v1.SearchCategory_CLUSTERS:              clusterMapping.OptionsMap,
 		v1.SearchCategory_NAMESPACES:            namespaceMapping.OptionsMap,
-		v1.SearchCategory_NODES:                 nodeMapping.OptionsMap,
+		v1.SearchCategory_NODES:                 nodeSearchOptions,
 		v1.SearchCategory_PROCESS_BASELINES:     processBaselineMapping.OptionsMap,
 		v1.SearchCategory_REPORT_CONFIGURATIONS: reportConfigurationsMapping.OptionsMap,
 		v1.SearchCategory_RISKS:                 riskMappings.OptionsMap,

@@ -1,4 +1,6 @@
-import { ClusterLabels } from 'services/ClustersService';
+import { Cluster } from 'types/cluster.proto';
+
+export type { Cluster }; // TODO replace all imports from this file with imports from types/cluster.proto file
 
 export type SensorHealthStatus = 'HEALTHY' | 'UNHEALTHY' | 'DEGRADED' | 'UNINITIALIZED';
 
@@ -22,6 +24,14 @@ export type ClusterHealthStatus = {
         totalDesiredPods: number;
         totalReadyPods: number;
         totalRegisteredNodes: number;
+        statusErrors: string[];
+    };
+    scannerHealthStatus?: ClusterHealthItemStatus;
+    scannerHealthInfo?: {
+        totalDesiredAnalyzerPods: number;
+        totalReadyAnalyzerPods: number;
+        totalDesiredDbPods: number;
+        totalReadyDbPods: number;
         statusErrors: string[];
     };
     sensorHealthStatus: SensorHealthStatus;
@@ -88,25 +98,3 @@ export type ClusterManagerType =
     | 'MANAGER_TYPE_MANUAL'
     | 'MANAGER_TYPE_HELM_CHART'
     | 'MANAGER_TYPE_KUBERNETES_OPERATOR';
-
-export type Cluster = {
-    id: string;
-    name: string;
-    type: string;
-    mainImage: string;
-    centralApiEndpoint: string;
-    collectionMethod: string;
-    collectorImage: string;
-    admissionController: boolean;
-    admissionControllerUpdates: boolean;
-    tolerationsConfig: {
-        disabled: boolean;
-    };
-    status: ClusterStatus;
-    dynamicConfig: DynamicConfig;
-    helmConfig?: HelmConfig;
-    slimCollector: boolean;
-    healthStatus: ClusterHealthStatus;
-    labels: ClusterLabels;
-    managedBy: ClusterManagerType;
-};

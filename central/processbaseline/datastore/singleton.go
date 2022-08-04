@@ -1,8 +1,6 @@
 package datastore
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processbaseline/index"
@@ -11,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/store/postgres"
 	"github.com/stackrox/rox/central/processbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore"
+	indicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -29,7 +28,7 @@ func initialize() {
 	var storage store.Store
 	var indexer index.Indexer
 	if features.PostgresDatastore.Enabled() {
-		storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {
 		var err error
@@ -44,7 +43,7 @@ func initialize() {
 		panic("unable to load search index for process baseline")
 	}
 
-	ad = New(storage, indexer, searcher, datastore.Singleton())
+	ad = New(storage, indexer, searcher, datastore.Singleton(), indicatorStore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.

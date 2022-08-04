@@ -289,16 +289,29 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 	}
 }
 
+func testImageFlavorChartRepoSettings(s *deployerTestSuite, flavor defaults.ImageFlavor) {
+	cluster := makeTestCluster(flavor.MainImage(), flavor.CollectorFullImage())
+
+	fields, err := FieldsFromClusterAndRenderOpts(cluster, &flavor, RenderOptions{})
+	s.NoError(err)
+	s.NotEmpty(fields.ChartRepo.URL, "Chart Repo URL must not be empty")
+	s.NotEmpty(fields.ChartRepo.IconURL, "Chart Repo IconURL must not be empty")
+	s.Equal(flavor.ChartRepo.URL, fields.ChartRepo.URL, "ChartRepo URL does not match")
+	s.Equal(flavor.ChartRepo.IconURL, fields.ChartRepo.IconURL, "ChartRepo IconURL does not match")
+}
+
 func (s *deployerTestSuite) TestFieldsFromClusterAndRenderOpts() {
 	flavorCases := map[string]defaults.ImageFlavor{
 		"development": defaults.DevelopmentBuildImageFlavor(),
 		"stackrox":    defaults.StackRoxIOReleaseImageFlavor(),
 		"rhacs":       defaults.RHACSReleaseImageFlavor(),
+		"opensource":  defaults.OpenSourceImageFlavor(),
 	}
 
 	for name, flavor := range flavorCases {
 		s.Run(name, func() {
 			testMetaValueGenerationWithImageFlavor(s, flavor)
+			testImageFlavorChartRepoSettings(s, flavor)
 		})
 	}
 

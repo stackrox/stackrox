@@ -5,11 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joelanford/helm-operator/pkg/reconciler"
-	"github.com/joelanford/helm-operator/pkg/values"
+	"github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
+	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -36,10 +35,6 @@ var (
 // SetupReconcilerWithManager creates and registers a new helm reconciler to the given controller manager.
 func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix image.ChartPrefix, translator values.Translator, extraOpts ...reconciler.Option) error {
 	metaVals := charts.GetMetaValuesForFlavor(defaults.GetImageFlavorFromEnv())
-	if !buildinfo.ReleaseBuild {
-		metaVals.MainRegistry = mainRegistryOverride.Setting()
-		metaVals.CollectorRegistry = collectorRegistryOverride.Setting()
-	}
 	metaVals.Operator = true
 
 	metaVals.ImagePullSecrets.AllowNone = true
@@ -73,6 +68,8 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		reconciler.SkipDependentWatches(true),
 		reconciler.WithMaxReleaseHistory(maxReleaseHistorySize),
 		reconciler.WithMarkFailedAfter(markReleaseFailedAfter),
+		reconciler.SkipPrimaryGVKSchemeRegistration(true),
+		reconciler.WithLog(ctrl.Log.WithName("controllers").WithName(gvk.Kind)),
 	}
 	reconcilerOpts = append(reconcilerOpts, extraOpts...)
 
@@ -81,7 +78,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		return errors.Wrapf(err, "unable to create %s reconciler", gvk)
 	}
 
-	if err := r.SetupWithManager(mgr, reconciler.SetupOpts{DisableSetupScheme: true}); err != nil {
+	if err := r.SetupWithManager(mgr); err != nil {
 		return errors.Wrapf(err, "unable to setup %s reconciler", gvk)
 	}
 	return nil

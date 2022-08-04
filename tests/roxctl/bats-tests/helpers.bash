@@ -181,6 +181,9 @@ assert_components_registry() {
       main)
         assert_registry_version_file "${dir}/01-central-13-deployment.yaml" 0 "central" "$regex"
         ;;
+      central-db)
+        assert_registry_version_file "${dir}/01-central-12-central-db.yaml" 0 "central-db" "$regex"
+        ;;
       scanner)
         assert_registry_version_file "${dir}/02-scanner-06-deployment.yaml" 0 "scanner" "$regex"
         ;;
@@ -211,14 +214,21 @@ assert_file_exist() {
   fi
 }
 
+assert_file_not_exist() {
+  local -r file="$1"
+  if [[ -e "$file" ]]; then
+    fail "ERROR: file '$file' exists"
+  fi
+}
+
 image_reference_regex() {
   local registry_slug="$1"
   local component="$2"
   local version="${3:-$any_version}"
 
   case $registry_slug in
-    docker.io)
-      echo "docker\.io/stackrox/$component:$version"
+    quay.io)
+      echo "quay\.io/rhacs-eng/$component:$version"
       ;;
     stackrox.io)
       if [[ "$component" == "collector" ]]; then
@@ -264,6 +274,11 @@ run_image_defaults_registry_test() {
   assert_success
   assert_components_registry "$out_dir/central" "$expected_main_registry" "$any_version" 'main'
   assert_components_registry "$out_dir/scanner" "$expected_scanner_registry" "$any_version" 'scanner' 'scanner-db'
+  if [[ "$ROX_POSTGRES_DATASTORE" =~ "true" ]]; then
+    assert_components_registry "$out_dir/central" "$expected_main_registry" "$any_version" 'central-db'
+  else
+    assert_file_not_exist "$out_dir/central/01-central-12-central-db.yaml"
+  fi
 }
 
 # run_no_rhacs_flag_test asserts that 'roxctl central generate' fails when presented with `--rhacs` parameter
@@ -287,7 +302,7 @@ run_invalid_flavor_value_test() {
 
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
-  assert_output --regexp "invalid arguments: '--image-defaults': unexpected value .*, allowed values are \[.*\]"
+  assert_output --regexp "invalid command option: '--image-defaults': unexpected value .*, allowed values are \[.*\]"
 }
 
 # run_with_debug_flag_test copies chart bundle content into a temporary folder, modifies it, and executes a given command with the debug flag
@@ -312,16 +327,6 @@ assert_debug_templates_exist() {
 
 has_deprecation_warning() {
   assert_line --regexp "WARN:[[:space:]]+'--rhacs' is deprecated, please use '--image-defaults=rhacs' instead"
-}
-
-flavor_warning_regexp="WARN:[[:space:]]+Default image registries have changed. Images will be taken from 'registry.redhat.io'. Specify '--image-defaults=stackrox.io' command line argument to use images from 'stackrox.io' registries."
-
-has_default_flavor_warning() {
-  assert_line --regexp "$flavor_warning_regexp"
-}
-
-has_no_default_flavor_warning() {
-  refute_line --regexp "$flavor_warning_regexp"
 }
 
 has_flag_collision_warning() {

@@ -42,12 +42,16 @@ type ReportTablePageProps = {
 function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
     const history = useHistory();
 
-    const { hasReadWriteAccess } = usePermissions();
+    const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
-    const hasAccessScopeWriteAccess = hasReadWriteAccess('AuthProvider');
-    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Notifier');
+    const hasImageReadAccess = hasReadAccess('Image');
+    const hasAccessScopeReadAccess = hasReadAccess('Role');
+    const hasNotifierIntegrationReadAccess = hasReadAccess('Notifier');
     const canWriteReports =
-        hasVulnReportWriteAccess && hasAccessScopeWriteAccess && hasNotifierIntegrationWriteAccess;
+        hasVulnReportWriteAccess &&
+        hasImageReadAccess &&
+        hasAccessScopeReadAccess &&
+        hasNotifierIntegrationReadAccess;
 
     const searchOptions = useSearchOptions(searchCategories.REPORT_CONFIGURATIONS) || [];
 

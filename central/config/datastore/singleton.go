@@ -3,10 +3,13 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/config/store"
+	configStore "github.com/stackrox/rox/central/config/store"
+	"github.com/stackrox/rox/central/config/store/bolt"
+	"github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -27,6 +30,8 @@ const (
 	DefaultAttemptedRuntimeAlertRetention = 7
 	// DefaultExpiredVulnReqRetention is the number of days to retain expired vulnerability requests.
 	DefaultExpiredVulnReqRetention = 90
+	// DefaultDecommissionedClusterRetentionDays is the number of days to retain a cluster that is unreachable.
+	DefaultDecommissionedClusterRetentionDays = 90
 )
 
 var (
@@ -50,25 +55,42 @@ var (
 )
 
 func initialize() {
-	d = New(store.New(globaldb.GetGlobalDB()))
+	var store configStore.Store
+	if features.PostgresDatastore.Enabled() {
+		store = postgres.New(context.TODO(), globaldb.GetPostgres())
+	} else {
+		store = bolt.New(globaldb.GetGlobalDB())
+	}
+	d = New(store)
 
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),
-		sac.OneStepSCC{
-			sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.AllowFixedScopes(
-				sac.ResourceScopeKeys(resources.Config)),
-			sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(
-				sac.ResourceScopeKeys(resources.Config)),
-		})
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Config)))
 	config, err := d.GetConfig(ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	if config.GetPrivateConfig() == nil {
+	privateConfig := config.GetPrivateConfig()
+	needsUpsert := false
+	if privateConfig == nil {
+		privateConfig = &defaultPrivateConfig
+		needsUpsert = true
+	}
+
+	if features.DecommissionedClusterRetention.Enabled() && privateConfig.GetDecommissionedClusterRetention() == nil {
+		privateConfig.DecommissionedClusterRetention = &storage.DecommissionedClusterRetentionConfig{
+			RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
+		}
+		needsUpsert = true
+	}
+
+	if needsUpsert {
 		utils.Must(d.UpsertConfig(ctx, &storage.Config{
 			PublicConfig:  config.GetPublicConfig(),
-			PrivateConfig: &defaultPrivateConfig,
+			PrivateConfig: privateConfig,
 		}))
 	}
 }

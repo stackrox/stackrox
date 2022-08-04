@@ -13,3 +13,12 @@ func GetServiceAccount() *storage.ServiceAccount {
 		Namespace:   "namespace",
 	}
 }
+
+// GetScopedServiceAccount returns a mock ServiceAccount belonging to the input scope.
+func GetScopedServiceAccount(id string, clusterID string, namespace string) *storage.ServiceAccount {
+	return &storage.ServiceAccount{
+		Id:        id,
+		ClusterId: clusterID,
+		Namespace: namespace,
+	}
+}

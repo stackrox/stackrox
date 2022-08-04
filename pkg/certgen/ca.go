@@ -66,7 +66,7 @@ func GenerateCA() (mtls.CA, error) {
 	}
 	req := csr.CertificateRequest{
 		CN:           mtls.ServiceCACommonName,
-		KeyRequest:   csr.NewBasicKeyRequest(),
+		KeyRequest:   csr.NewKeyRequest(),
 		SerialNumber: serial.String(),
 	}
 	caCert, _, caKey, err := initca.New(&req)

@@ -1,10 +1,7 @@
 package datastore
 
 import (
-	"context"
-
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
@@ -27,16 +24,15 @@ func initialize() {
 	var indexer index.Indexer
 
 	if features.PostgresDatastore.Enabled() {
-		storage = store.NewFullStore(postgres.New(context.TODO(), globaldb.GetPostgres()))
+		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {
-		storage = store.NewFullStore(rocksdb.New(globaldb.GetRocksDB()))
+		storage = rocksdb.New(globaldb.GetRocksDB())
 		indexer = index.New(globalindex.GetAlertIndex())
 	}
-	commentsStorage := commentsstore.New(globaldb.GetGlobalDB())
 	searcher := search.New(storage, indexer)
 	var err error
-	soleInstance, err = New(storage, commentsStorage, indexer, searcher)
+	soleInstance, err = New(storage, indexer, searcher)
 	utils.CrashOnError(errors.Wrap(err, "unable to load datastore for alerts"))
 }
 

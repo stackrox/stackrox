@@ -1,0 +1,48 @@
+# There are two deployment workloads on purpose.
+# One is created with random labels.
+# The other one matches the labels of the Network Policies.
+deploymentWorkload:
+- deploymentType: Deployment
+  lifecycleDuration: 30m0s
+  numDeployments: 500
+  numLifecycles: 0
+  numLabels: 10
+  podWorkload:
+    containerWorkload:
+      numImages: 0
+    lifecycleDuration: 10m0s
+    numContainers: 3
+    numPods: 5
+    processWorkload:
+      alertRate: 0.001
+      processInterval: 1m0s
+  updateInterval: 10m0s
+- deploymentType: Deployment
+  lifecycleDuration: 30m0s
+  numDeployments: 500
+  numLifecycles: 0
+  podWorkload:
+    containerWorkload:
+      numImages: 0
+    lifecycleDuration: 10m0s
+    numContainers: 3
+    numPods: 5
+    processWorkload:
+      alertRate: 0.001
+      processInterval: 1m0s
+  updateInterval: 10m0s
+networkPolicyWorkload:
+- lifecycleDuration: 30m0s
+  numNetworkPolicies: 1000
+  numLifecycles: 0
+  numLabels: 5
+  updateInterval: 10m0s
+networkWorkload:
+  batchSize: 100
+  flowInterval: 1s
+nodeWorkload:
+  numNodes: 1000
+rbacWorkload:
+  numBindings: 1000
+  numRoles: 1000
+  numServiceAccounts: 1000

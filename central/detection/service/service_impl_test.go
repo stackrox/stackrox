@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
+	openshiftRouteV1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -378,44 +379,6 @@ spec:
     type: Rolling
 `
 
-const unregisteredType = `
-apiVersion: apps/v1
-kind: DeploymentConfig
-metadata:
-  name: frontend
-  namespace: frontend
-  labels:
-    app: frontend
-spec:
-  replicas: 5
-  selector:
-    app: frontend
-  template:
-    metadata:
-      labels:
-        app: frontend
-    spec:
-      containers:
-      - image: hello-openshift:latest
-        name: helloworld
-        ports:
-        - containerPort: 8080
-          protocol: TCP
-        restartPolicy: Always
-  triggers:
-  - type: ConfigChange
-  - imageChangeParams:
-      automatic: true
-      containerNames:
-      - helloworld
-      from:
-        kind: ImageStreamTag
-        name: hello-ogpenshift:latest
-    type: ImageChange
-  strategy:
-    type: Rolling
-`
-
 const openshiftDeployConfMultiYaml = `
 apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
@@ -490,31 +453,169 @@ spec:
     type: Rolling
 `
 
+const openshiftRouteYaml = `
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  namespace: frontend
+  name: frontend
+spec:
+  host: frontend.local
+  to:
+    kind: Service
+    name: frontend
+    weight: 100
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  port:
+    targetPort: 8443
+`
+
+const operatorCRDYaml = `
+apiVersion: apps.3scale.net/v1alpha1
+kind: APIcast
+metadata:
+  name: example-apicast
+  namespace: default
+spec:
+  adminPortalCredentialsRef:
+    name: asecretname
+`
+
+const openshiftRouteWithOperatorCRDYaml = `
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  namespace: frontend
+  name: frontend
+spec:
+  host: frontend.local
+  to:
+    kind: Service
+    name: frontend
+    weight: 100
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  port:
+    targetPort: 8443
+---
+apiVersion: apps.3scale.net/v1alpha1
+kind: APIcast
+metadata:
+  name: example-apicast
+  namespace: default
+spec:
+  adminPortalCredentialsRef:
+    name: asecretname
+`
+
+const operatorCRDMultiYaml = `
+apiVersion: apps.3scale.net/v1alpha1
+kind: APIcast
+metadata:
+  name: example-apicast
+  namespace: default
+spec:
+  adminPortalCredentialsRef:
+    name: asecretname
+---
+apiVersion: apps.3scale.net/v1alpha1
+kind: APIcast
+metadata:
+  name: example-apicast
+  namespace: default
+spec:
+  adminPortalCredentialsRef:
+    name: asecretname
+`
+
 func TestParseList_Success(t *testing.T) {
-	_, err := getObjectsFromYAML(listYAML)
+	_, _, err := getObjectsFromYAML(listYAML)
 	require.NoError(t, err)
 
-	_, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
+	_, _, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
 	require.NoError(t, err)
 
-	_, err = getObjectsFromYAML(multiYaml)
+	_, _, err = getObjectsFromYAML(multiYaml)
 	require.NoError(t, err)
 
-	_, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
+	_, _, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
 	require.NoError(t, err)
-}
-
-func TestParseList_Error(t *testing.T) {
-	_, err := getObjectsFromYAML(unregisteredType)
-	require.Error(t, err)
 }
 
 func TestParseList_ConversionToOpenshiftObjects(t *testing.T) {
-	objs, err := getObjectsFromYAML(openshiftDeployConfMultiYaml)
-	require.NoError(t, err)
+	cases := map[string]struct {
+		yaml         string
+		expectedType interface{}
+	}{
+		"single apps.openshift.io/v1/DeployConfig": {
+			yaml:         openshiftDeploymentConfigYaml,
+			expectedType: (*openshiftAppsV1.DeploymentConfig)(nil),
+		},
+		"single route.openshift.io/v1/Route": {
+			yaml:         openshiftRouteYaml,
+			expectedType: (*openshiftRouteV1.Route)(nil),
+		},
+		"list of apps.openshift.io/v1/DeployConfig and v1/DeployConfig": {
+			yaml:         openshiftDeployConfMultiYaml,
+			expectedType: (*openshiftAppsV1.DeploymentConfig)(nil),
+		},
+		"list of route.openshift.io/v1/Route and operator CRD": {
+			yaml:         openshiftRouteYaml,
+			expectedType: (*openshiftRouteV1.Route)(nil),
+		},
+	}
 
-	for i := range objs {
-		obj := objs[i]
-		assert.IsType(t, (*openshiftAppsV1.DeploymentConfig)(nil), obj)
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			objs, _, err := getObjectsFromYAML(c.yaml)
+			require.NoError(t, err)
+			for _, obj := range objs {
+				assert.IsType(t, c.expectedType, obj)
+			}
+		})
+	}
+}
+
+func TestParseList_IgnoredObjects(t *testing.T) {
+	cases := map[string]struct {
+		yaml                   string
+		expectedObject         interface{}
+		expectedIgnoredObjects []string
+	}{
+		"single ignored object": {
+			yaml: operatorCRDYaml,
+			expectedIgnoredObjects: []string{
+				"default/example-apicast[apps.3scale.net/v1alpha1, Kind=APIcast]",
+			},
+		},
+		"list of apps.openshift.io/v1/Route and ignored object": {
+			yaml: openshiftRouteWithOperatorCRDYaml,
+			expectedIgnoredObjects: []string{
+				"default/example-apicast[apps.3scale.net/v1alpha1, Kind=APIcast]",
+			},
+			expectedObject: (*openshiftRouteV1.Route)(nil),
+		},
+		"list of multiple ignored objects": {
+			yaml: operatorCRDMultiYaml,
+			expectedIgnoredObjects: []string{
+				"default/example-apicast[apps.3scale.net/v1alpha1, Kind=APIcast]",
+				"default/example-apicast[apps.3scale.net/v1alpha1, Kind=APIcast]",
+			},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			objs, ignoredObjRefs, err := getObjectsFromYAML(c.yaml)
+			require.NoError(t, err)
+			for _, obj := range objs {
+				assert.IsType(t, c.expectedObject, obj)
+			}
+			assert.Len(t, ignoredObjRefs, len(c.expectedIgnoredObjects))
+			assert.ElementsMatch(t, ignoredObjRefs, c.expectedIgnoredObjects)
+		})
 	}
 }

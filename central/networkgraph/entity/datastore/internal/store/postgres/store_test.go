@@ -8,25 +8,27 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
-type NetworkentityStoreSuite struct {
+type NetworkEntitiesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	testDB      *pgtest.TestPostgres
 }
 
-func TestNetworkentityStore(t *testing.T) {
-	suite.Run(t, new(NetworkentityStoreSuite))
+func TestNetworkEntitiesStore(t *testing.T) {
+	suite.Run(t, new(NetworkEntitiesStoreSuite))
 }
 
-func (s *NetworkentityStoreSuite) SetupTest() {
+func (s *NetworkEntitiesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -34,24 +36,27 @@ func (s *NetworkentityStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
+
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
-func (s *NetworkentityStoreSuite) TearDownTest() {
+func (s *NetworkEntitiesStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE network_entities CASCADE")
+	s.T().Log("network_entities", tag)
+	s.NoError(err)
+}
+
+func (s *NetworkEntitiesStoreSuite) TearDownSuite() {
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
-func (s *NetworkentityStoreSuite) TestStore() {
-	ctx := context.Background()
+func (s *NetworkEntitiesStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
-
-	Destroy(ctx, pool)
-	store := New(ctx, pool)
+	store := s.store
 
 	networkEntity := &storage.NetworkEntity{}
 	s.NoError(testutils.FullInit(networkEntity, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -61,6 +66,8 @@ func (s *NetworkentityStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNetworkEntity)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, networkEntity))
 	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
@@ -69,12 +76,16 @@ func (s *NetworkentityStoreSuite) TestStore() {
 
 	networkEntityCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(networkEntityCount, 1)
+	s.Equal(1, networkEntityCount)
+	networkEntityCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(networkEntityCount)
 
 	networkEntityExists, err := store.Exists(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
 	s.True(networkEntityExists)
 	s.NoError(store.Upsert(ctx, networkEntity))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, networkEntity), sac.ErrResourceAccessDenied)
 
 	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
@@ -86,6 +97,7 @@ func (s *NetworkentityStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkEntity)
+	s.NoError(store.Delete(withNoAccessCtx, networkEntity.GetInfo().GetId()))
 
 	var networkEntitys []*storage.NetworkEntity
 	for i := 0; i < 200; i++ {
@@ -98,5 +110,5 @@ func (s *NetworkentityStoreSuite) TestStore() {
 
 	networkEntityCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(networkEntityCount, 200)
+	s.Equal(200, networkEntityCount)
 }

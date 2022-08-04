@@ -37,10 +37,37 @@ expect "Enter path to the backup bundle from which to restore keys and certifica
 expect "Enter read templates from local filesystem*" { send "\n" }
 expect "Enter path to helm templates on your local filesystem*" { send "\n" }
 expect "Enter PEM cert bundle file*" { send "\n" }
+expect "Enter Create PodSecurityPolicy resources*" { send "\n" }
 expect "Enter administrator password*" { send "\n" }
 expect "Enter orchestrator (k8s, openshift)*" { send "k8s\n" }
 expect "Enter the directory to output the deployment bundle to*" { send "$out_dir\n" }
 expect "Enter default container images settings*" { send "$flavor\n" }
+
+if {[info exists ::env(ROX_POSTGRES_DATASTORE)] && [string equal "$env(ROX_POSTGRES_DATASTORE)" true]} {
+  # Enter central-db image to use (default: "docker.io/stackrox/central-db:2.21.0-15-g448f2dc8fa"):
+  # Enter central-db image to use (default: "stackrox.io/central-db:3.67.x-296-g56df6a892d"):
+  # Enter central-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
+  expect {
+    default {
+      send_user "\nFATAL: No question about Central-DB image\n"
+      exit 8
+    }
+    "Enter central-db * (if unset, the default will be used):" {
+      send_user "WARNING: roxctl does not suggest any registry for central-db"
+      send "\n"
+      set exitWith [expr {$exitWith + 2}]
+    }
+    "Enter central-db * (default: \"$registry/central-db:*\"):" {
+      send_user "roxctl suggests correct registry for central-db"
+      send "\n"
+    }
+    # Special case for RHACS to avoid writing a regexp in TCL
+    "Enter central-db * (default: \"$registry/rhacs-central-db-rhel8:*\"):" {
+      send_user "roxctl suggests correct registry for central-db"
+      send "\n"
+    }
+  }
+}
 expect "Enter the method of exposing Central*" { send "none\n" }
 
 # Enter main image to use (default: "docker.io/stackrox/main:3.67.x-296-g56df6a892d"):

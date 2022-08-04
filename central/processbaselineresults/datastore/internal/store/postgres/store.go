@@ -4,33 +4,32 @@ package postgres
 
 import (
 	"context"
-	"reflect"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sync"
+	"gorm.io/gorm"
 )
 
 const (
-	baseTable  = "processwhitelistresults"
-	countStmt  = "SELECT COUNT(*) FROM processwhitelistresults"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM processwhitelistresults WHERE DeploymentId = $1)"
-
-	getStmt     = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = $1"
-	deleteStmt  = "DELETE FROM processwhitelistresults WHERE DeploymentId = $1"
-	walkStmt    = "SELECT serialized FROM processwhitelistresults"
-	getIDsStmt  = "SELECT DeploymentId FROM processwhitelistresults"
-	getManyStmt = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
+	baseTable = "process_baseline_results"
 
 	batchAfter = 100
 
@@ -38,16 +37,15 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.ProcessBaselineResults)(nil)), baseTable)
-	log    = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.ProcessBaselineResultsSchema
+	targetResource = resources.ProcessWhitelist
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -67,66 +65,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	mutex sync.Mutex
 }
 
-func createTableProcesswhitelistresults(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists processwhitelistresults (
-    DeploymentId varchar,
-    ClusterId varchar,
-    Namespace varchar,
-    serialized bytea,
-    PRIMARY KEY(DeploymentId)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+// New returns a new Store instance using the provided sql instance.
+func New(db *pgxpool.Pool) Store {
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableProcesswhitelistresultsBaselineStatuses(ctx, db)
 }
 
-func createTableProcesswhitelistresultsBaselineStatuses(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists processwhitelistresults_BaselineStatuses (
-    processwhitelistresults_DeploymentId varchar,
-    idx integer,
-    ContainerName varchar,
-    BaselineStatus integer,
-    AnomalousProcessesExecuted bool,
-    PRIMARY KEY(processwhitelistresults_DeploymentId, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (processwhitelistresults_DeploymentId) REFERENCES processwhitelistresults(DeploymentId) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists processwhitelistresultsBaselineStatuses_idx on processwhitelistresults_BaselineStatuses using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func insertIntoProcesswhitelistresults(ctx context.Context, tx pgx.Tx, obj *storage.ProcessBaselineResults) error {
+func insertIntoProcessBaselineResults(ctx context.Context, batch *pgx.Batch, obj *storage.ProcessBaselineResults) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -141,49 +91,13 @@ func insertIntoProcesswhitelistresults(ctx context.Context, tx pgx.Tx, obj *stor
 		serialized,
 	}
 
-	finalStr := "INSERT INTO processwhitelistresults (DeploymentId, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetBaselineStatuses() {
-		if err := insertIntoProcesswhitelistresultsBaselineStatuses(ctx, tx, child, obj.GetDeploymentId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from processwhitelistresults_BaselineStatuses where processwhitelistresults_DeploymentId = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetDeploymentId(), len(obj.GetBaselineStatuses()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoProcesswhitelistresultsBaselineStatuses(ctx context.Context, tx pgx.Tx, obj *storage.ContainerNameAndBaselineStatus, processwhitelistresults_DeploymentId string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		processwhitelistresults_DeploymentId,
-		idx,
-		obj.GetContainerName(),
-		obj.GetBaselineStatus(),
-		obj.GetAnomalousProcessesExecuted(),
-	}
-
-	finalStr := "INSERT INTO processwhitelistresults_BaselineStatuses (processwhitelistresults_DeploymentId, idx, ContainerName, BaselineStatus, AnomalousProcessesExecuted) VALUES($1, $2, $3, $4, $5) ON CONFLICT(processwhitelistresults_DeploymentId, idx) DO UPDATE SET processwhitelistresults_DeploymentId = EXCLUDED.processwhitelistresults_DeploymentId, idx = EXCLUDED.idx, ContainerName = EXCLUDED.ContainerName, BaselineStatus = EXCLUDED.BaselineStatus, AnomalousProcessesExecuted = EXCLUDED.AnomalousProcessesExecuted"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO process_baseline_results (DeploymentId, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromProcesswhitelistresults(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaselineResults) error {
+func (s *storeImpl) copyFromProcessBaselineResults(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaselineResults) error {
 
 	inputRows := [][]interface{}{}
 
@@ -232,76 +146,13 @@ func (s *storeImpl) copyFromProcesswhitelistresults(ctx context.Context, tx pgx.
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processwhitelistresults"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromProcesswhitelistresultsBaselineStatuses(ctx, tx, obj.GetDeploymentId(), obj.GetBaselineStatuses()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromProcesswhitelistresultsBaselineStatuses(ctx context.Context, tx pgx.Tx, processwhitelistresults_DeploymentId string, objs ...*storage.ContainerNameAndBaselineStatus) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"processwhitelistresults_deploymentid",
-
-		"idx",
-
-		"containername",
-
-		"baselinestatus",
-
-		"anomalousprocessesexecuted",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			processwhitelistresults_DeploymentId,
-
-			idx,
-
-			obj.GetContainerName(),
-
-			obj.GetBaselineStatus(),
-
-			obj.GetAnomalousProcessesExecuted(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processwhitelistresults_baselinestatuses"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_baseline_results"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -313,19 +164,13 @@ func (s *storeImpl) copyFromProcesswhitelistresultsBaselineStatuses(ctx context.
 	}
 
 	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableProcesswhitelistresults(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaselineResults) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "ProcessBaselineResults")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ProcessBaselineResults")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -333,7 +178,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseli
 		return err
 	}
 
-	if err := s.copyFromProcesswhitelistresults(ctx, tx, objs...); err != nil {
+	if err := s.copyFromProcessBaselineResults(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -346,22 +191,27 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseli
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessBaselineResults) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "ProcessBaselineResults")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ProcessBaselineResults")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoProcessBaselineResults(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoProcesswhitelistresults(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		if err := batchResults.Close(); err != nil {
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}
@@ -371,11 +221,43 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessBaseline
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ProcessBaselineResults) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "ProcessBaselineResults")
 
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
+		ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBaselineResults) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ProcessBaselineResults")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		var deniedIds []string
+		for _, obj := range objs {
+			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
+				return err
+			} else if !ok {
+				deniedIds = append(deniedIds, obj.GetDeploymentId())
+			}
+		}
+		if len(deniedIds) != 0 {
+			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying processBaselineResultss with IDs [%s] was denied", strings.Join(deniedIds, ", "))
+		}
+	}
+
+	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+	// violations
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -388,36 +270,71 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBasel
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ProcessBaselineResults")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
 		return 0, err
 	}
-	return count, nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ProcessBaselineResults")
 
-	row := s.db.QueryRow(ctx, existsStmt, deploymentId)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return false, err
 	}
-	return exists, nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.ProcessBaselineResults, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ProcessBaselineResults")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "ProcessBaselineResults")
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, deploymentId)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return nil, false, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -428,45 +345,62 @@ func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.Proc
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, deploymentId string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ProcessBaselineResults")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "ProcessBaselineResults")
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, deploymentId); err != nil {
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ProcessBaselineResultsIDs")
+	var sacQueryFilter *v1.Query
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
 	}
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
+	}
+
 	return ids, nil
 }
 
@@ -474,12 +408,32 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ProcessBaselineResults, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ProcessBaselineResults")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "ProcessBaselineResults")
-	defer release()
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		return nil, nil, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -488,13 +442,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.ProcessBaselineResults)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.ProcessBaselineResults{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
@@ -519,32 +468,62 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessBaselineResults")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "ProcessBaselineResults")
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessBaselineResults) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+		return err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		var msg storage.ProcessBaselineResults
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
+		for _, data := range rows {
+			var msg storage.ProcessBaselineResults
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
 		}
-		if err := fn(&msg); err != nil {
-			return err
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil
@@ -552,19 +531,19 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessBaseli
 
 //// Used for testing
 
-func dropTableProcesswhitelistresults(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processwhitelistresults CASCADE")
-	dropTableProcesswhitelistresultsBaselineStatuses(ctx, db)
-
-}
-
-func dropTableProcesswhitelistresultsBaselineStatuses(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processwhitelistresults_BaselineStatuses CASCADE")
+func dropTableProcessBaselineResults(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_baseline_results CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableProcesswhitelistresults(ctx, db)
+	dropTableProcessBaselineResults(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

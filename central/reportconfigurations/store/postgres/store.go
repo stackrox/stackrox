@@ -4,33 +4,30 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sync"
+	"gorm.io/gorm"
 )
 
 const (
-	baseTable  = "reportconfigs"
-	countStmt  = "SELECT COUNT(*) FROM reportconfigs"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM reportconfigs WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM reportconfigs WHERE Id = $1"
-	deleteStmt  = "DELETE FROM reportconfigs WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM reportconfigs"
-	getIDsStmt  = "SELECT Id FROM reportconfigs"
-	getManyStmt = "SELECT serialized FROM reportconfigs WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM reportconfigs WHERE Id = ANY($1::text[])"
+	baseTable = "report_configurations"
 
 	batchAfter = 100
 
@@ -38,16 +35,15 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.ReportConfiguration)(nil)), baseTable)
-	log    = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.ReportConfigurationsSchema
+	targetResource = resources.VulnerabilityReports
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -67,52 +63,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	mutex sync.Mutex
 }
 
-func createTableReportconfigs(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists reportconfigs (
-    Id varchar,
-    Name varchar,
-    Description varchar,
-    Type integer,
-    VulnReportFilters_Fixability integer,
-    VulnReportFilters_SinceLastReport bool,
-    VulnReportFilters_Severities int[],
-    ScopeId varchar,
-    EmailConfig_NotifierId varchar,
-    EmailConfig_MailingLists text[],
-    Schedule_IntervalType integer,
-    Schedule_Hour integer,
-    Schedule_Minute integer,
-    Schedule_Weekly_Day integer,
-    Schedule_DaysOfWeek_Days int[],
-    Schedule_DaysOfMonth_Days int[],
-    LastRunStatus_ReportStatus integer,
-    LastRunStatus_LastRunTime timestamp,
-    LastRunStatus_ErrorMsg varchar,
-    LastSuccessfulRunTime timestamp,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+// New returns a new Store instance using the provided sql instance.
+func New(db *pgxpool.Pool) Store {
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
-func insertIntoReportconfigs(ctx context.Context, tx pgx.Tx, obj *storage.ReportConfiguration) error {
+func insertIntoReportConfigurations(ctx context.Context, batch *pgx.Batch, obj *storage.ReportConfiguration) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -123,37 +85,17 @@ func insertIntoReportconfigs(ctx context.Context, tx pgx.Tx, obj *storage.Report
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
-		obj.GetDescription(),
 		obj.GetType(),
-		obj.GetVulnReportFilters().GetFixability(),
-		obj.GetVulnReportFilters().GetSinceLastReport(),
-		obj.GetVulnReportFilters().GetSeverities(),
-		obj.GetScopeId(),
-		obj.GetEmailConfig().GetNotifierId(),
-		obj.GetEmailConfig().GetMailingLists(),
-		obj.GetSchedule().GetIntervalType(),
-		obj.GetSchedule().GetHour(),
-		obj.GetSchedule().GetMinute(),
-		obj.GetSchedule().GetWeekly().GetDay(),
-		obj.GetSchedule().GetDaysOfWeek().GetDays(),
-		obj.GetSchedule().GetDaysOfMonth().GetDays(),
-		obj.GetLastRunStatus().GetReportStatus(),
-		pgutils.NilOrTime(obj.GetLastRunStatus().GetLastRunTime()),
-		obj.GetLastRunStatus().GetErrorMsg(),
-		pgutils.NilOrTime(obj.GetLastSuccessfulRunTime()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO reportconfigs (Id, Name, Description, Type, VulnReportFilters_Fixability, VulnReportFilters_SinceLastReport, VulnReportFilters_Severities, ScopeId, EmailConfig_NotifierId, EmailConfig_MailingLists, Schedule_IntervalType, Schedule_Hour, Schedule_Minute, Schedule_Weekly_Day, Schedule_DaysOfWeek_Days, Schedule_DaysOfMonth_Days, LastRunStatus_ReportStatus, LastRunStatus_LastRunTime, LastRunStatus_ErrorMsg, LastSuccessfulRunTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Type = EXCLUDED.Type, VulnReportFilters_Fixability = EXCLUDED.VulnReportFilters_Fixability, VulnReportFilters_SinceLastReport = EXCLUDED.VulnReportFilters_SinceLastReport, VulnReportFilters_Severities = EXCLUDED.VulnReportFilters_Severities, ScopeId = EXCLUDED.ScopeId, EmailConfig_NotifierId = EXCLUDED.EmailConfig_NotifierId, EmailConfig_MailingLists = EXCLUDED.EmailConfig_MailingLists, Schedule_IntervalType = EXCLUDED.Schedule_IntervalType, Schedule_Hour = EXCLUDED.Schedule_Hour, Schedule_Minute = EXCLUDED.Schedule_Minute, Schedule_Weekly_Day = EXCLUDED.Schedule_Weekly_Day, Schedule_DaysOfWeek_Days = EXCLUDED.Schedule_DaysOfWeek_Days, Schedule_DaysOfMonth_Days = EXCLUDED.Schedule_DaysOfMonth_Days, LastRunStatus_ReportStatus = EXCLUDED.LastRunStatus_ReportStatus, LastRunStatus_LastRunTime = EXCLUDED.LastRunStatus_LastRunTime, LastRunStatus_ErrorMsg = EXCLUDED.LastRunStatus_ErrorMsg, LastSuccessfulRunTime = EXCLUDED.LastSuccessfulRunTime, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO report_configurations (Id, Name, Type, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromReportconfigs(ctx context.Context, tx pgx.Tx, objs ...*storage.ReportConfiguration) error {
+func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx pgx.Tx, objs ...*storage.ReportConfiguration) error {
 
 	inputRows := [][]interface{}{}
 
@@ -169,41 +111,7 @@ func (s *storeImpl) copyFromReportconfigs(ctx context.Context, tx pgx.Tx, objs .
 
 		"name",
 
-		"description",
-
 		"type",
-
-		"vulnreportfilters_fixability",
-
-		"vulnreportfilters_sincelastreport",
-
-		"vulnreportfilters_severities",
-
-		"scopeid",
-
-		"emailconfig_notifierid",
-
-		"emailconfig_mailinglists",
-
-		"schedule_intervaltype",
-
-		"schedule_hour",
-
-		"schedule_minute",
-
-		"schedule_weekly_day",
-
-		"schedule_daysofweek_days",
-
-		"schedule_daysofmonth_days",
-
-		"lastrunstatus_reportstatus",
-
-		"lastrunstatus_lastruntime",
-
-		"lastrunstatus_errormsg",
-
-		"lastsuccessfulruntime",
 
 		"serialized",
 	}
@@ -223,41 +131,7 @@ func (s *storeImpl) copyFromReportconfigs(ctx context.Context, tx pgx.Tx, objs .
 
 			obj.GetName(),
 
-			obj.GetDescription(),
-
 			obj.GetType(),
-
-			obj.GetVulnReportFilters().GetFixability(),
-
-			obj.GetVulnReportFilters().GetSinceLastReport(),
-
-			obj.GetVulnReportFilters().GetSeverities(),
-
-			obj.GetScopeId(),
-
-			obj.GetEmailConfig().GetNotifierId(),
-
-			obj.GetEmailConfig().GetMailingLists(),
-
-			obj.GetSchedule().GetIntervalType(),
-
-			obj.GetSchedule().GetHour(),
-
-			obj.GetSchedule().GetMinute(),
-
-			obj.GetSchedule().GetWeekly().GetDay(),
-
-			obj.GetSchedule().GetDaysOfWeek().GetDays(),
-
-			obj.GetSchedule().GetDaysOfMonth().GetDays(),
-
-			obj.GetLastRunStatus().GetReportStatus(),
-
-			pgutils.NilOrTime(obj.GetLastRunStatus().GetLastRunTime()),
-
-			obj.GetLastRunStatus().GetErrorMsg(),
-
-			pgutils.NilOrTime(obj.GetLastSuccessfulRunTime()),
 
 			serialized,
 		})
@@ -270,14 +144,13 @@ func (s *storeImpl) copyFromReportconfigs(ctx context.Context, tx pgx.Tx, objs .
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"reportconfigs"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"report_configurations"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -291,17 +164,11 @@ func (s *storeImpl) copyFromReportconfigs(ctx context.Context, tx pgx.Tx, objs .
 	return err
 }
 
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableReportconfigs(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportConfiguration) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -309,7 +176,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportConfigu
 		return err
 	}
 
-	if err := s.copyFromReportconfigs(ctx, tx, objs...); err != nil {
+	if err := s.copyFromReportConfigurations(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -322,22 +189,27 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportConfigu
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportConfiguration) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoReportConfigurations(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoReportconfigs(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		if err := batchResults.Close(); err != nil {
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}
@@ -347,11 +219,31 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportConfigura
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ReportConfiguration) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "ReportConfiguration")
 
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ReportConfiguration")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+	// violations
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -364,36 +256,59 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ReportConfig
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ReportConfiguration")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
 		return 0, err
 	}
-	return count, nil
+
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ReportConfiguration")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return false, err
+	} else if !ok {
+		return false, nil
 	}
-	return exists, nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ReportConfiguration, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ReportConfiguration")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return nil, false, err
+	} else if !ok {
+		return nil, false, nil
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -404,45 +319,56 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ReportConfigur
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ReportConfiguration")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "ReportConfiguration")
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ReportConfigurationIDs")
+	var sacQueryFilter *v1.Query
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
 	}
+
 	return ids, nil
 }
 
@@ -450,12 +376,26 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ReportConfiguration, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ReportConfiguration")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "ReportConfiguration")
-	defer release()
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return nil, nil, err
+	} else if !ok {
+		return nil, nil, nil
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -464,13 +404,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Repor
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.ReportConfiguration)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.ReportConfiguration{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
@@ -495,32 +430,53 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Repor
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ReportConfiguration")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "ReportConfiguration")
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ReportConfiguration) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
-	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return nil
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		var msg storage.ReportConfiguration
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
+		for _, data := range rows {
+			var msg storage.ReportConfiguration
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
 		}
-		if err := fn(&msg); err != nil {
-			return err
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil
@@ -528,13 +484,19 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ReportConfigu
 
 //// Used for testing
 
-func dropTableReportconfigs(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS reportconfigs CASCADE")
+func dropTableReportConfigurations(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS report_configurations CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableReportconfigs(ctx, db)
+	dropTableReportConfigurations(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

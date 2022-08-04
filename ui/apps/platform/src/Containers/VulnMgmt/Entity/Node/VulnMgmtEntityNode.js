@@ -8,6 +8,7 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import VulnMgmtNodeOverview from './VulnMgmtNodeOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -25,6 +26,9 @@ const VulmMgmtNode = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+
     const workflowState = useContext(workflowStateContext);
 
     const overviewQuery = gql`
@@ -40,7 +44,7 @@ const VulmMgmtNode = ({
                 kernelVersion
                 kubeletVersion
                 osImage
-                topVuln {
+                ${showVMUpdates ? 'topVuln: topNodeVulnerability' : 'topVuln'} {
                     cvss
                     scoreVersion
                 }
@@ -53,9 +57,11 @@ const VulmMgmtNode = ({
                     key
                     value
                 }
-                vulnCount
+                ${showVMUpdates ? 'nodeVulnerabilityCount' : 'vulnCount'}
+                notes
                 scan {
                     scanTime
+                    notes
                     components {
                         id
                         priority

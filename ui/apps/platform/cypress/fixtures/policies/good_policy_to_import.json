@@ -1,55 +1,51 @@
 {
     "policies": [
         {
-            "id": "f09f8da1-6111-4ca0-8f49-294a76c65117",
-            "name": "Fixable CVSS >= 9",
+            "id": "bc7852e5-a64c-4cd4-8586-62ce2e699398",
+            "name": "Severity greater than moderate",
             "description": "Alert on deployments with fixable vulnerabilities with a CVSS of at least 9",
             "rationale": "Known vulnerabilities make it easier for adversaries to exploit your application. You can fix these critical-severity vulnerabilities by updating to a newer version of the affected component(s).",
             "remediation": "Use your package manager to update to a fixed version in future builds or speak with your security team to mitigate the vulnerabilities.",
             "disabled": false,
             "categories": ["Vulnerability Management"],
-            "fields": {
-                "imageName": null,
-                "lineRule": null,
-                "cvss": {
-                    "op": "GREATER_THAN_OR_EQUALS",
-                    "value": 9
-                },
-                "cve": "",
-                "component": null,
-                "env": null,
-                "command": "",
-                "args": "",
-                "directory": "",
-                "user": "",
-                "volumePolicy": null,
-                "portPolicy": null,
-                "requiredLabel": null,
-                "requiredAnnotation": null,
-                "disallowedAnnotation": null,
-                "dropCapabilities": [],
-                "addCapabilities": [],
-                "containerResourcePolicy": null,
-                "processPolicy": null,
-                "fixedBy": ".*",
-                "portExposurePolicy": null,
-                "permissionPolicy": null,
-                "hostMountPolicy": null,
-                "requiredImageLabel": null,
-                "disallowedImageLabel": null
-            },
+            "eventSource": "NOT_APPLICABLE",
+            "policyVersion": "1.1",
+            "policySections": [
+                {
+                    "sectionName": "Policy Section 1",
+                    "policyGroups": [
+                        {
+                            "fieldName": "Severity",
+                            "booleanOperator": "OR",
+                            "negate": false,
+                            "values": [
+                                {
+                                    "value": ">MODERATE"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
             "lifecycleStages": ["BUILD", "DEPLOY"],
             "exclusions": [],
             "scope": [],
             "severity": "HIGH_SEVERITY",
             "enforcementActions": ["FAIL_BUILD_ENFORCEMENT"],
             "notifiers": [],
-            "lastUpdated": null,
+            "lastUpdated": "2022-03-25T19:21:54.390570100Z",
             "SORTName": "Fixable CVSS >= 9",
             "SORTLifecycleStage": "BUILD,DEPLOY",
             "SORTEnforcement": true,
-            "policyVersion": "",
-            "policySections": []
+            "mitreAttackVectors": [
+                {
+                    "tactic": "TA0002",
+                    "techniques": ["T1153"]
+                }
+            ],
+            "criteriaLocked": false,
+            "mitreVectorsLocked": false,
+            "isDefault": false
         }
     ]
 }

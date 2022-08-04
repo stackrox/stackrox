@@ -7,8 +7,10 @@ import (
 	"github.com/stackrox/rox/central/reportconfigurations/index"
 	"github.com/stackrox/rox/central/reportconfigurations/search"
 	"github.com/stackrox/rox/central/reportconfigurations/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -32,7 +34,12 @@ func New(reportConfigStore store.Store, indexer index.Indexer, searcher search.S
 		searcher:          searcher,
 		indexer:           indexer,
 	}
-	if err := d.buildIndex(context.TODO()); err != nil {
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.VulnerabilityReports)))
+	if err := d.buildIndex(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
 	return d, nil

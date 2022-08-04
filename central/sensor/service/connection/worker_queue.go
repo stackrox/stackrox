@@ -40,7 +40,7 @@ func (w *workerQueue) indexFromKey(key string) int {
 	return (int(h.Sum32()) % w.poolSize) + 1
 }
 
-// Push attempts to add an item to the queue, and returns an error if it is unable.
+// push attempts to add an item to the queue, and returns an error if it is unable.
 func (w *workerQueue) push(msg *central.MsgFromSensor) {
 	// The zeroth index is reserved for objects that do not match the switch statement below
 	// w.indexFromKey returns (hashed value % poolSize) + 1 so it cannot return a 0 index

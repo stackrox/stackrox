@@ -3,16 +3,15 @@ import static Services.getViolationsByDeploymentID
 import static Services.roxDetectedDeployment
 import static Services.updatePolicy
 import static Services.updatePolicyToExclusionDeployment
-
-import util.Timer
-import services.AlertService
 import groups.BAT
-import java.util.stream.Collectors
-import objects.Deployment
-import org.junit.experimental.categories.Category
 import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ProcessIndicatorOuterClass.ProcessIndicator
+import java.util.stream.Collectors
+import objects.Deployment
+import org.junit.experimental.categories.Category
+import services.AlertService
+import util.Timer
 
 class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String APTGETPOLICY = "Ubuntu Package Manager Execution"
@@ -20,7 +19,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String DEPLOYMENTNAME = "runtimeviolationlifecycle"
     static final private Deployment DEPLOYMENT = new Deployment()
         .setName(DEPLOYMENTNAME)
-        .setImage ("nginx@sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
+        .setImage ("quay.io/rhacs-eng/qa:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
         .addLabel ("app", DEPLOYMENTNAME)
         .setCommand(["sh" , "-c" , "apt-get -y update && sleep 600"])
 

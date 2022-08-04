@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-table-bindings-wrapper --registered-type=storage.K8sRole --type=storage.K8SRole --table=k8sroles --search-category ROLES --options-path central/rbac/k8srole/mappings
+//go:generate pg-table-bindings-wrapper --registered-type=storage.K8sRole --type=storage.K8SRole --table=k8s_roles --search-category ROLES --migration-seq 26 --migrate-from rocksdb

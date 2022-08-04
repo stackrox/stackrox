@@ -2,7 +2,9 @@ package util
 
 import com.slack.api.Slack
 import com.slack.api.webhook.WebhookResponse
+import groovy.util.logging.Slf4j
 
+@Slf4j
 class SlackUtil {
     static final String token = Env.mustGetSlackFixableVulnsChannel()
 
@@ -11,12 +13,12 @@ class SlackUtil {
 
         WebhookResponse response = slack.send(webhook, "{\"text\":\"${message}\"}")
         if (response.code == 200) {
-            println "Sent slack message successfully!"
+            log.debug "Sent slack message successfully!"
             return true
         }
 
-        println "Failed to send Slack message: ${response.body}"
-        println "The message was: ${message}"
+        log.warn "Failed to send Slack message: ${response.body}"
+        log.debug "The message was: ${message}"
         return false
     }
 }

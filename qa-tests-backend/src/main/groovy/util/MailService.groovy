@@ -1,5 +1,6 @@
 package util
 
+import groovy.util.logging.Slf4j
 import javax.mail.Folder
 import javax.mail.Message
 import javax.mail.MessagingException
@@ -8,6 +9,7 @@ import javax.mail.Store
 import javax.mail.URLName
 import javax.mail.search.SearchTerm
 
+@Slf4j
 class MailService {
     private Session session
     private Store store
@@ -41,7 +43,7 @@ class MailService {
                 store.connect()
                 break
             } catch (Exception e) {
-                println "Connection to mail server failed... retrying."
+                log.debug "Connection to mail server failed... retrying."
                 exception = e
             }
         }
@@ -64,7 +66,7 @@ class MailService {
                 store = null
                 session = null
             } catch (IllegalStateException ise) {
-                println "Error on logout - already logged out: ${ise}"
+                log.warn("Error on logout - already logged out", ise)
             } catch (Exception e) {
                 throw e
             }
@@ -82,7 +84,7 @@ class MailService {
             refreshConnection() //refresh inbox contents
             return defaultFolder.search(term) + spamFolder.search(term)
         } catch (Exception e) {
-            println e.toString()
+            log.warn("could not search messages", e)
             throw e
         }
     }

@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 # A collection of GKE related reusable bash functions for CI
 
-set +u
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-set -u
-
 source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
 source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
+
+set -euo pipefail
 
 provision_gke_cluster() {
     info "Provisioning a GKE cluster"
@@ -44,6 +41,7 @@ assign_env_variables() {
     fi
 
     local cluster_name="rox-ci-${cluster_id}-${build_num}"
+    cluster_name="${cluster_name:0:40}" # (for GKE name limit)
     ci_export CLUSTER_NAME "$cluster_name"
     echo "Assigned cluster name is $cluster_name"
 
@@ -77,16 +75,30 @@ create_cluster() {
     if is_OPENSHIFT_CI; then
         require_environment "JOB_NAME"
         require_environment "BUILD_ID"
-        tags="${tags},stackrox-ci-${JOB_NAME}"
-        labels="${labels},stackrox-ci-job=${JOB_NAME},stackrox-ci-build-id=${BUILD_ID}"
+        tags="${tags},stackrox-ci-${JOB_NAME:0:50}"
+        tags="${tags/%-/x}"
+        labels="${labels},stackrox-ci-job=${JOB_NAME:0:63}"
+        labels="${labels/%-/x}"
+        labels="${labels},stackrox-ci-build-id=${BUILD_ID:0:63}"
+        labels="${labels/%-/x}"
     elif is_CIRCLECI; then
         require_environment "CIRCLE_JOB"
         require_environment "CIRCLE_WORKFLOW_ID"
-        tags="${tags},stackrox-ci-${CIRCLE_JOB}"
-        labels="${labels},stackrox-ci-job=${CIRCLE_JOB},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID}"
+        tags="${tags},stackrox-ci-${CIRCLE_JOB:0:50}"
+        tags="${tags/%-/x}"
+        labels="${labels},stackrox-ci-job=${CIRCLE_JOB:0:63}"
+        labels="${labels/%-/x}"
+        labels="${labels},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID:0:63}"
+        labels="${labels/%-/x}"
     else
         die "Support is missing for this CI environment"
     fi
+    # . from branch names
+    tags="${tags//./-}"
+    labels="${labels//./-}"
+    # lowercase
+    tags="${tags,,}"
+    labels="${labels,,}"
 
     ### Network Sizing ###
     # The overall subnetwork ("--create-subnetwork") is used for nodes.
@@ -101,9 +113,6 @@ create_cluster() {
     GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
     MACHINE_TYPE="${MACHINE_TYPE:-e2-standard-4}"
 
-    # # this function does not work in strict -e mode
-    # set +euo pipefail
-
     echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\""
 
     VERSION_ARGS=(--release-channel "${GKE_RELEASE_CHANNEL}")
@@ -117,7 +126,7 @@ create_cluster() {
     if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
         PSP_ARG="--enable-pod-security-policy"
     fi
-    zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
+    zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ' | shuf)
     success=0
     for zone in $zones; do
         if is_CIRCLECI; then
@@ -126,8 +135,9 @@ create_cluster() {
         echo "Trying zone $zone"
         ci_export ZONE "$zone"
         gcloud config set compute/zone "${zone}"
+        status=0
         # shellcheck disable=SC2153
-        timeout 420 gcloud beta container clusters create \
+        timeout 630 gcloud beta container clusters create \
             --machine-type "${MACHINE_TYPE}" \
             --num-nodes "${NUM_NODES}" \
             --disk-type=pd-standard \
@@ -143,8 +153,7 @@ create_cluster() {
             --tags="${tags}" \
             --labels="${labels}" \
             ${PSP_ARG} \
-            "${CLUSTER_NAME}"
-        status="$?"
+            "${CLUSTER_NAME}" || status="$?"
         if [[ "${status}" == 0 ]]; then
             success=1
             break
@@ -153,12 +162,12 @@ create_cluster() {
             if ! gcloud container clusters describe "${CLUSTER_NAME}" >/dev/null; then
                 echo >&2 "Create cluster did not create the cluster in Google. Trying a different zone..."
             else
-                for i in {1..120}; do
+                for i in {1..60}; do
                     if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format json | jq -r .status)" == "RUNNING" ]]; then
                         success=1
                         break
                     fi
-                    sleep 5
+                    sleep 20
                     echo "Currently have waited $((i * 5)) for cluster ${CLUSTER_NAME} in ${zone} to move to running state"
                 done
             fi
@@ -255,9 +264,12 @@ teardown_gke_cluster() {
     require_environment "CLUSTER_NAME"
     require_executable "gcloud"
 
-    "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" || true
+    # (prefix output to avoid triggering prow log focus)
+    "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
 
     gcloud container clusters delete "$CLUSTER_NAME" --async
+
+    info "Cluster deleting asynchronously"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

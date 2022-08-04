@@ -3,6 +3,7 @@
 package uuid
 
 import (
+	"crypto/sha256"
 	"database/sql/driver"
 
 	"github.com/gofrs/uuid"
@@ -122,6 +123,21 @@ func FromStringOrPanic(input string) UUID {
 func NewV4() UUID {
 	return UUID{
 		uuid: uuid.Must(uuid.NewV4()),
+	}
+}
+
+// NewV5FromNonUUIDs is like NewV5, but accepts non-UUIDs for the name.
+// It converts the name to a UUID using SHA-256 hashing.
+// The output will be deterministic.
+func NewV5FromNonUUIDs(ns, name string) UUID {
+	nsSha256 := sha256.Sum256([]byte(ns))
+	nsUUID, err := uuid.FromBytes(nsSha256[:16])
+	// This should never error out since we're passing 16 bytes, as expected by UUID.
+	if err != nil {
+		panic(err)
+	}
+	return UUID{
+		uuid: uuid.NewV5(nsUUID, name),
 	}
 }
 

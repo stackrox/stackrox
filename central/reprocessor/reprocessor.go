@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -45,15 +46,28 @@ var (
 
 	allAccessCtx = sac.WithAllAccess(context.Background())
 
+	emptyCtx = context.Background()
+
 	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
+
+	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
+			ProtoQuery()
+
+	imagesWithSignatureVerificationResultsQuery = search.NewQueryBuilder().
+							AddStringsHighlighted(search.ClusterID, search.WildcardString).
+							AddStrings(search.ImageSignatureFetchedTime, search.WildcardString).ProtoQuery()
 )
 
 // Singleton returns the singleton reprocessor loop
 func Singleton() Loop {
 	once.Do(func() {
+		var dackboxIndexQueue queue.WaitableQueue
+		if !features.PostgresDatastore.Enabled() {
+			dackboxIndexQueue = dackbox.GetIndexQueue()
+		}
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
 			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
-			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton(), dackbox.GetIndexQueue())
+			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton(), dackboxIndexQueue)
 	})
 	return loop
 }
@@ -66,6 +80,7 @@ type Loop interface {
 	Stop()
 
 	ReprocessRiskForDeployments(deploymentIDs ...string)
+	ReprocessSignatureVerifications()
 }
 
 // NewLoop returns a new instance of a Loop.
@@ -109,14 +124,17 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		enrichmentStopped: concurrency.NewSignal(),
 		riskStopped:       concurrency.NewSignal(),
 
-		// Used for testing purposes
-		reprocessingStarted:  concurrency.NewSignal(),
-		reprocessingComplete: concurrency.NewSignal(),
+		signatureVerificationSig: concurrency.NewSignal(),
 
 		connManager: connManager,
 		indexQueue:  indexQueue,
 	}
 }
+
+// imageReprocessingFunc represents the function used for image reprocessing. This enables us to specifically exclude
+// some parts of the enrichment, i.e. when only wanting to re-fetch signature verification results.
+type imageReprocessingFunc func(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
+	image *storage.Image) (imageEnricher.EnrichmentResult, error)
 
 type loopImpl struct {
 	enrichAndDetectTickerDuration time.Duration
@@ -146,9 +164,10 @@ type loopImpl struct {
 	stopSig           concurrency.Signal
 	riskStopped       concurrency.Signal
 	enrichmentStopped concurrency.Signal
-	// used for testing
-	reprocessingStarted  concurrency.Signal
-	reprocessingComplete concurrency.Signal
+
+	signatureVerificationSig concurrency.Signal
+
+	reprocessingInProgress concurrency.Flag
 
 	connManager connection.Manager
 	indexQueue  queue.WaitableQueue
@@ -168,10 +187,8 @@ func (l *loopImpl) Start() {
 	go l.riskLoop()
 	go l.enrichLoop()
 
-	if features.ActiveVulnManagement.Enabled() {
-		l.activeComponentTicker = time.NewTicker(l.activeComponentTickerDuration)
-		go l.activeComponentLoop()
-	}
+	l.activeComponentTicker = time.NewTicker(l.activeComponentTickerDuration)
+	go l.activeComponentLoop()
 }
 
 // Stop stops the enrich and detect loop.
@@ -179,15 +196,20 @@ func (l *loopImpl) Stop() {
 	l.stopSig.Signal()
 	l.riskStopped.Wait()
 	l.enrichmentStopped.Wait()
-	if features.ActiveVulnManagement.Enabled() {
-		l.activeComponentStopped.Wait()
-	}
+	l.activeComponentStopped.Wait()
 }
 
 func (l *loopImpl) ShortCircuit() {
 	// Signal that we should run a short circuited reprocessing. If the signal is already triggered, then the current
 	// signal is effectively deduped
 	l.shortCircuitSig.Signal()
+}
+
+func (l *loopImpl) ReprocessSignatureVerifications() {
+	// Signal that we should reprocess signature verifications for all images. This will only trigger a reprocess with
+	// refetch of signature verification results.
+	// If the signal is already triggered, then the current signal is effectively deduped.
+	l.signatureVerificationSig.Signal()
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
@@ -264,7 +286,9 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 			defer wg.Add(-1)
 			if individualReprocessFunc(id) {
 				nReprocessed.Inc()
-				l.waitForIndexing()
+				if !features.PostgresDatastore.Enabled() {
+					l.waitForIndexing()
+				}
 			}
 		}(id)
 	}
@@ -278,7 +302,8 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 	log.Infof("Successfully reprocessed %d/%d %ss", nReprocessed.Load(), len(ids), entityType)
 }
 
-func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption) (*storage.Image, bool) {
+func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
+	reprocessingFunc imageReprocessingFunc) (*storage.Image, bool) {
 	image, exists, err := l.images.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorf("error fetching image %q from the database: %v", id, err)
@@ -288,7 +313,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption)
 		return nil, false
 	}
 
-	result, err := l.imageEnricher.EnrichImage(imageEnricher.EnrichmentContext{
+	result, err := reprocessingFunc(emptyCtx, imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
 
@@ -303,7 +328,9 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption)
 		}
 	}
 
-	l.waitForIndexing()
+	if !features.PostgresDatastore.Enabled() {
+		l.waitForIndexing()
+	}
 
 	return image, true
 }
@@ -328,12 +355,12 @@ func (l *loopImpl) waitForIndexing() {
 	}
 }
 
-func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption) {
+func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption,
+	imgReprocessingFunc imageReprocessingFunc, imageQuery *v1.Query) {
 	if l.stopSig.IsDone() {
 		return
 	}
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).ProtoQuery()
-	results, err := l.images.Search(allAccessCtx, query)
+	results, err := l.images.Search(allAccessCtx, imageQuery)
 	if err != nil {
 		log.Errorf("error searching for active image IDs: %v", err)
 		return
@@ -359,7 +386,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
-			image, successfullyProcessed := l.reprocessImage(id, fetchOpt)
+			image, successfullyProcessed := l.reprocessImage(id, fetchOpt, imgReprocessingFunc)
 			if !successfullyProcessed {
 				return
 			}
@@ -439,7 +466,7 @@ func (l *loopImpl) reprocessNodes() {
 }
 
 func (l *loopImpl) reprocessWatchedImage(name string) bool {
-	img, err := imageEnricher.EnrichImageByName(l.imageEnricher, imageEnricher.EnrichmentContext{
+	img, err := imageEnricher.EnrichImageByName(emptyCtx, l.imageEnricher, imageEnricher.EnrichmentContext{
 		FetchOpt: imageEnricher.IgnoreExistingImages,
 	}, name)
 	if err != nil {
@@ -473,15 +500,33 @@ func (l *loopImpl) reprocessWatchedImages() {
 }
 
 func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
-	l.reprocessingComplete.Reset()
-	l.reprocessingStarted.Signal()
-
+	// In case the current reprocessing run takes longer than the ticker (i.e. > 4 hours when using a high number of
+	// images), we shouldn't trigger a parallel reprocessing run.
+	if l.reprocessingInProgress.TestAndSet(true) {
+		return
+	}
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
-	l.reprocessImagesAndResyncDeployments(imageFetchOpt)
+	l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage, allImagesQuery)
 
-	l.reprocessingStarted.Reset()
-	l.reprocessingComplete.Signal()
+	l.reprocessingInProgress.Set(false)
+}
+
+func (l *loopImpl) runSignatureVerificationReprocessing() {
+	l.reprocessWatchedImages()
+	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
+		l.forceEnrichImageSignatureVerificationResults, imagesWithSignatureVerificationResultsQuery)
+
+}
+
+func (l *loopImpl) forceEnrichImageSignatureVerificationResults(ctx context.Context, _ imageEnricher.EnrichmentContext,
+	image *storage.Image) (imageEnricher.EnrichmentResult, error) {
+	return l.imageEnricher.EnrichWithSignatureVerificationData(ctx, image)
+}
+
+func (l *loopImpl) enrichImage(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
+	image *storage.Image) (imageEnricher.EnrichmentResult, error) {
+	return l.imageEnricher.EnrichImage(ctx, enrichCtx, image)
 }
 
 func (l *loopImpl) enrichLoop() {
@@ -498,8 +543,11 @@ func (l *loopImpl) enrichLoop() {
 		case <-l.shortCircuitSig.Done():
 			l.shortCircuitSig.Reset()
 			l.runReprocessing(imageEnricher.UseCachesIfPossible)
+		case <-l.signatureVerificationSig.Done():
+			l.signatureVerificationSig.Reset()
+			l.runSignatureVerificationReprocessing()
 		case <-l.enrichAndDetectTicker.C:
-			l.runReprocessing(imageEnricher.ForceRefetchScansOnly)
+			l.runReprocessing(imageEnricher.ForceRefetchCachedValuesOnly)
 		}
 	}
 }

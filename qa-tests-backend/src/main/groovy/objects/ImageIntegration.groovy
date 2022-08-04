@@ -59,38 +59,6 @@ class StackroxScannerIntegration implements ImageIntegration {
     }
 }
 
-class AnchoreScannerIntegration implements ImageIntegration {
-
-    static String name() { "Anchore Scanner" }
-
-    static Boolean isTestable() {
-        return Env.get("ANCHORE_ENDPOINT") != null
-    }
-
-    static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
-        Map defaultArgs = [
-                name: "anchore",
-                endpoint: Env.get("ANCHORE_ENDPOINT", ""),
-                username: Env.get("ANCHORE_USERNAME", ""),
-                password: Env.get("ANCHORE_PASSWORD", ""),
-        ]
-        Map args = defaultArgs + customArgs
-
-        ImageIntegrationOuterClass.AnchoreConfig.Builder config =
-                ImageIntegrationOuterClass.AnchoreConfig.newBuilder()
-                        .setUsername(args.username as String)
-                        .setPassword(args.password as String)
-                        .setEndpoint(args.endpoint as String)
-
-        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                .setName(args.name as String)
-                .setType("anchore")
-                .clearCategories()
-                .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER])
-                .setAnchore(config)
-    }
-}
-
 class ClairScannerIntegration implements ImageIntegration {
 
     static String name() { "Clair Scanner" }

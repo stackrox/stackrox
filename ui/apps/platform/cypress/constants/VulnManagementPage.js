@@ -14,8 +14,14 @@ export const url = {
         namespaces: `${baseURL}/namespaces`,
         deployments: `${baseURL}/deployments`,
         images: `${baseURL}/images`,
+        nodes: `${baseURL}/nodes`,
         components: `${baseURL}/components`,
+        'image-components': `${baseURL}/image-components`,
+        'node-components': `${baseURL}/node-components`,
         cves: `${baseURL}/cves`,
+        'image-cves': `${baseURL}/image-cves`,
+        'node-cves': `${baseURL}/node-cves`,
+        'cluster-cves': `${baseURL}/cluster-cves`,
         image: `${baseURL}/image`,
         cve: `${baseURL}/cve`,
         policy: `${baseURL}/policy`,
@@ -23,11 +29,32 @@ export const url = {
     },
     sidepanel: {
         image: `${baseURL}/images?workflowState[0][t]=IMAGE&workflowState[0][i]=sha256:02382353821b12c21b062c59184e227e001079bb13ebd01f9d3270ba0fcbf1e4`,
+        node: `${baseURL}/nodes?workflowState[0][t]=NODE&workflowState[0][i]=065fe8cb-d9af-4516-a91e-3941e9db58ca`,
     },
     reporting: {
         list: `${baseURL}/reports`,
         create: `${baseURL}/reports?action=create`,
     },
+};
+
+/*
+ * Headings on entities pages: uppercase style hides the inconsistencies.
+ * The keys correspond to url list object above.
+ */
+export const headingPlural = {
+    clusters: 'clusters',
+    components: 'components',
+    'image-components': 'image components',
+    'node-components': 'node components',
+    cves: 'CVES',
+    'image-cves': 'Image CVES',
+    'node-cves': 'Node CVES',
+    'cluster-cves': 'Platform CVES',
+    deployments: 'deployments',
+    images: 'images',
+    namespaces: 'namespaces',
+    nodes: 'nodes',
+    policies: 'policies',
 };
 
 export const vmHomePageSelectors = {
@@ -50,7 +77,7 @@ export const listSelectors = {
     tableRowCheckbox: '[data-testid="checkbox-table-row-selector"]',
     tableColumn: '.rt-th.leading-normal > div',
     tableBodyColumn: '.rt-tr-group:nth-child(1) > .rt-tr > .rt-td',
-    tableColumnLinks: '.rt-tr-group:nth-child(1)> .rt-tr > .rt-td a',
+    tableColumnLinks: '.rt-tr-group:nth-child(1) > .rt-tr > .rt-td a',
     allCVEColumnLink: '[data-testid="allCvesLink"]',
     fixableCVELink: '[data-testid="fixableCvesLink"]',
     numCVEColLink: '.rt-tr > .rt-td',
@@ -86,10 +113,13 @@ export const sidePanelListEntityPageSelectors = {
     tileLinkValue: '[data-testid="tile-link-value"]',
     imageTileLink: '[data-testid="IMAGE-tile-link"]',
     namespaceTileLink: '[data-testid="NAMESPACE-tile-link"]',
+    imageComponentTileLink: '[data-testid="IMAGE_COMPONENT-tile-link"]',
+    nodeComponentTileLink: '[data-testid="NODE_COMPONENT-tile-link"]',
     componentTileLink: '[data-testid="COMPONENT-tile-link"]',
     deploymentTileLink: "[data-testid='DEPLOYMENT-tile-link']",
     policyTileLink: "[data-testid='POLICY-tile-link']",
     cveTileLink: '[data-testid="CVE-tile-link"]',
+    nodeTileLink: '[data-testid="NODE-tile-link"]',
     tabButton: '[data-testid="tabs"] button',
     getSidePanelTabHeader: (title) => {
         return `[data-testid="widget-header"] > .w-full:contains('${title}')`;

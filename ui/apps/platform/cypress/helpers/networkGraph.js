@@ -1,3 +1,9 @@
+import * as api from '../constants/apiEndpoints';
+import { selectors as networkGraphSelectors, url as networkUrl } from '../constants/NetworkPage';
+import { visitFromLeftNav } from './nav';
+import { visit } from './visit';
+import selectSelectors from '../selectors/select';
+
 const getNodeErrorMessage = (node) => `Could not find node "${node.name}" of type "${node.type}"`;
 
 const getEdgeErrorMessage = (sourceNode, targetNode) =>
@@ -22,6 +28,10 @@ export function clickOnNodeByName(cytoscape, node) {
         throw Error(getNodeErrorMessage(node));
     }
     filteredNodes.emit('click');
+}
+
+export function clickOnDeploymentNodeByName(cytoscape, name) {
+    clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name });
 }
 
 export function mouseOverNodeById(cytoscape, node) {
@@ -112,4 +122,87 @@ export function filterBySourceTarget(sourceNode, targetNode) {
             `An edge type between a (${sourceNode.type}) and (${targetNode.type}) does not exist`
         );
     };
+}
+
+// search filters
+
+export function selectDeploymentFilter(deploymentName) {
+    cy.intercept('GET', api.network.networkGraph).as('networkGraph');
+    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
+    cy.get(networkGraphSelectors.toolbar.filterSelect).type('Deployment{enter}');
+    cy.get(networkGraphSelectors.toolbar.filterSelect).type(`${deploymentName}{enter}{esc}`);
+    cy.wait(['@networkGraph', '@networkPolicies']);
+}
+
+// Additional calls in a test can select additional namespaces.
+
+export function selectNamespaceFilter(namespace) {
+    cy.intercept('GET', api.network.networkGraph).as('networkGraph');
+    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
+
+    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+    cy.get(`${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`).click();
+    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+
+    cy.wait(['@networkGraph', '@networkPolicies']);
+}
+
+export function selectNamespaceFilterWithGraphAndPoliciesFixtures(
+    namespace,
+    fixturePathGraph,
+    fixturePathPolicies
+) {
+    cy.intercept('GET', api.network.networkGraph, { fixture: fixturePathGraph }).as('networkGraph');
+    cy.intercept('GET', api.network.networkPoliciesGraph, {
+        fixture: fixturePathPolicies,
+    }).as('networkPolicies');
+
+    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+    cy.get(`${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`).click();
+    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+
+    cy.wait(['@networkGraph', '@networkPolicies']);
+}
+
+export function selectNamespaceFilterWithNetworkGraphResponse(namespace, response) {
+    cy.intercept('GET', api.network.networkGraph, response).as('networkGraph');
+    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
+
+    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+    cy.get(`${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`).click();
+    cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+
+    cy.wait(['@networkGraph', '@networkPolicies']);
+}
+
+// visit helpers
+
+export function visitNetworkGraphFromLeftNav() {
+    cy.intercept('GET', api.clusters.list).as('clusters');
+    visitFromLeftNav('Network');
+    cy.wait('@clusters');
+    cy.get(networkGraphSelectors.networkGraphHeading);
+    cy.get(networkGraphSelectors.emptyStateSubheading);
+}
+
+export function visitNetworkGraph() {
+    cy.intercept('GET', api.clusters.list).as('clusters');
+    visit(networkUrl);
+    cy.wait('@clusters');
+    cy.get(networkGraphSelectors.networkGraphHeading);
+    cy.get(networkGraphSelectors.emptyStateSubheading);
+}
+
+export function visitNetworkGraphWithNamespaceFilter(namespace) {
+    visitNetworkGraph();
+    selectNamespaceFilter(namespace);
+}
+
+export function visitNetworkGraphWithMockedData() {
+    visitNetworkGraph();
+    selectNamespaceFilterWithGraphAndPoliciesFixtures(
+        'stackrox',
+        'network/networkGraph.json',
+        'network/networkPolicies.json'
+    );
 }

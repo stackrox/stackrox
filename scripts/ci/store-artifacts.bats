@@ -79,6 +79,7 @@ make_env() {
         GS_URL="gs://roxci-artifacts/${CIRCLE_PROJECT_REPONAME}/${CIRCLE_WORKFLOW_ID}/${CIRCLE_BUILD_NUM}-${CIRCLE_JOB}"
     fi
     PATH="$BATS_RUN_TMPDIR:$PATH"
+    TEST_OUTPUT=1
 }
 
 mock_gcloud() {

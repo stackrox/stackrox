@@ -4,33 +4,32 @@ package postgres
 
 import (
 	"context"
-	"reflect"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sync"
+	"gorm.io/gorm"
 )
 
 const (
-	baseTable  = "namespaces"
-	countStmt  = "SELECT COUNT(*) FROM namespaces"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM namespaces WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM namespaces WHERE Id = $1"
-	deleteStmt  = "DELETE FROM namespaces WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM namespaces"
-	getIDsStmt  = "SELECT Id FROM namespaces"
-	getManyStmt = "SELECT serialized FROM namespaces WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM namespaces WHERE Id = ANY($1::text[])"
+	baseTable = "namespaces"
 
 	batchAfter = 100
 
@@ -38,16 +37,15 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.NamespaceMetadata)(nil)), baseTable)
-	log    = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.NamespacesSchema
+	targetResource = resources.Namespace
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -67,40 +65,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	mutex sync.Mutex
 }
 
-func createTableNamespaces(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists namespaces (
-    Id varchar,
-    Name varchar,
-    ClusterId varchar,
-    ClusterName varchar,
-    Labels jsonb,
-    CreationTime timestamp,
-    Priority integer,
-    Annotations jsonb,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+// New returns a new Store instance using the provided sql instance.
+func New(db *pgxpool.Pool) Store {
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
-func insertIntoNamespaces(ctx context.Context, tx pgx.Tx, obj *storage.NamespaceMetadata) error {
+func insertIntoNamespaces(ctx context.Context, batch *pgx.Batch, obj *storage.NamespaceMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -114,17 +90,12 @@ func insertIntoNamespaces(ctx context.Context, tx pgx.Tx, obj *storage.Namespace
 		obj.GetClusterId(),
 		obj.GetClusterName(),
 		obj.GetLabels(),
-		pgutils.NilOrTime(obj.GetCreationTime()),
-		obj.GetPriority(),
 		obj.GetAnnotations(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO namespaces (Id, Name, ClusterId, ClusterName, Labels, CreationTime, Priority, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, CreationTime = EXCLUDED.CreationTime, Priority = EXCLUDED.Priority, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO namespaces (Id, Name, ClusterId, ClusterName, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
@@ -150,10 +121,6 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*
 		"clustername",
 
 		"labels",
-
-		"creationtime",
-
-		"priority",
 
 		"annotations",
 
@@ -181,10 +148,6 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*
 
 			obj.GetLabels(),
 
-			pgutils.NilOrTime(obj.GetCreationTime()),
-
-			obj.GetPriority(),
-
 			obj.GetAnnotations(),
 
 			serialized,
@@ -198,8 +161,7 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -219,17 +181,11 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*
 	return err
 }
 
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableNamespaces(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NamespaceMetadata) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "NamespaceMetadata")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NamespaceMetadata")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -250,22 +206,27 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NamespaceMeta
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NamespaceMetadata) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "NamespaceMetadata")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NamespaceMetadata")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoNamespaces(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoNamespaces(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		if err := batchResults.Close(); err != nil {
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}
@@ -275,11 +236,43 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NamespaceMetada
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NamespaceMetadata) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NamespaceMetadata")
 
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
+		ClusterID(obj.GetClusterId()).Namespace(obj.GetName())
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NamespaceMetadata) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NamespaceMetadata")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		var deniedIds []string
+		for _, obj := range objs {
+			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetName())
+			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
+				return err
+			} else if !ok {
+				deniedIds = append(deniedIds, obj.GetId())
+			}
+		}
+		if len(deniedIds) != 0 {
+			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying namespaceMetadatas with IDs [%s] was denied", strings.Join(deniedIds, ", "))
+		}
+	}
+
+	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+	// violations
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -292,36 +285,71 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NamespaceMet
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "NamespaceMetadata")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
 		return 0, err
 	}
-	return count, nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NamespaceMetadata")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return false, err
 	}
-	return exists, nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NamespaceMetadata")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "NamespaceMetadata")
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return nil, false, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -332,45 +360,62 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NamespaceMetad
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NamespaceMetadata")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "NamespaceMetadata")
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NamespaceMetadataIDs")
+	var sacQueryFilter *v1.Query
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
 	}
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
+	}
+
 	return ids, nil
 }
 
@@ -378,12 +423,32 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NamespaceMetadata")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "NamespaceMetadata")
-	defer release()
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		return nil, nil, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -392,13 +457,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Names
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.NamespaceMetadata)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.NamespaceMetadata{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
@@ -423,32 +483,62 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Names
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NamespaceMetadata")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "NamespaceMetadata")
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NamespaceMetadata) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+		return err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		var msg storage.NamespaceMetadata
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
+		for _, data := range rows {
+			var msg storage.NamespaceMetadata
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
 		}
-		if err := fn(&msg); err != nil {
-			return err
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil
@@ -463,6 +553,12 @@ func dropTableNamespaces(ctx context.Context, db *pgxpool.Pool) {
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableNamespaces(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

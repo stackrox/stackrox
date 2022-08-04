@@ -8,13 +8,10 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
 	indexMocks "github.com/stackrox/rox/central/processindicator/index/mocks"
-	"github.com/stackrox/rox/central/processindicator/internal/commentsstore"
-	commentsStoreMocks "github.com/stackrox/rox/central/processindicator/internal/commentsstore/mocks"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	prunerMocks "github.com/stackrox/rox/central/processindicator/pruner/mocks"
 	processSearch "github.com/stackrox/rox/central/processindicator/search"
@@ -22,25 +19,19 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	storeMocks "github.com/stackrox/rox/central/processindicator/store/mocks"
 	rocksStore "github.com/stackrox/rox/central/processindicator/store/rocksdb"
-	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
-	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
 )
 
 func TestIndicatorDatastore(t *testing.T) {
@@ -49,14 +40,12 @@ func TestIndicatorDatastore(t *testing.T) {
 
 type IndicatorDataStoreTestSuite struct {
 	suite.Suite
-	datastore       DataStore
-	storage         store.Store
-	commentsStorage commentsstore.Store
-	indexer         index.Indexer
-	searcher        processSearch.Searcher
+	datastore DataStore
+	storage   store.Store
+	indexer   index.Indexer
+	searcher  processSearch.Searcher
 
 	rocksDB *rocksdb.RocksDB
-	boltDB  *bolt.DB
 
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
@@ -81,9 +70,6 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 	suite.NoError(err)
 	suite.storage = rocksStore.New(suite.rocksDB)
 
-	suite.boltDB = testutils.DBForSuite(suite)
-	suite.commentsStorage = commentsstore.New(suite.boltDB)
-
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	suite.NoError(err)
 	suite.indexer = index.New(tmpIndex)
@@ -95,28 +81,25 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 
 func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
 	rocksdbtest.TearDownRocksDB(suite.rocksDB)
-	testutils.TearDownDB(suite.boltDB)
 	suite.mockCtrl.Finish()
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 	var err error
-	suite.datastore, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
+	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher, nil)
 	suite.Require().NoError(err)
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks.MockStore, *indexMocks.MockIndexer, *searchMocks.MockSearcher) {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
-	mockStorage.EXPECT().GetKeysToIndex(context.TODO()).Return(nil, nil)
-
-	mockCommentsStorage := commentsStoreMocks.NewMockStore(suite.mockCtrl)
-
 	mockIndexer := indexMocks.NewMockIndexer(suite.mockCtrl)
-	mockIndexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-
+	if !features.PostgresDatastore.Enabled() {
+		mockStorage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
+		mockIndexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+	}
 	mockSearcher := searchMocks.NewMockSearcher(suite.mockCtrl)
 	var err error
-	suite.datastore, err = New(mockStorage, mockCommentsStorage, mockIndexer, mockSearcher, nil)
+	suite.datastore, err = New(mockStorage, mockIndexer, mockSearcher, nil)
 	suite.Require().NoError(err)
 
 	return mockStorage, mockIndexer, mockSearcher
@@ -184,97 +167,6 @@ func getIndicators() (indicators []*storage.ProcessIndicator, repeatIndicator *s
 		Signal:        repeatedSignal,
 	}
 	return
-}
-
-func (suite *IndicatorDataStoreTestSuite) mustGetCommentsAndValidateCount(ctx context.Context, key *analystnotes.ProcessNoteKey) []*storage.Comment {
-	comments, err := suite.datastore.GetCommentsForProcess(ctx, key)
-	suite.Require().NoError(err)
-	count, err := suite.datastore.GetCommentsCountForProcess(ctx, key)
-	suite.Require().NoError(err)
-	suite.Len(comments, count)
-	return comments
-}
-
-func (suite *IndicatorDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID string, role permissions.ResolvedRole) context.Context {
-	identity := mocks.NewMockIdentity(suite.mockCtrl)
-	identity.EXPECT().UID().AnyTimes().Return(userID)
-	identity.EXPECT().FullName().AnyTimes().Return(userID)
-	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
-	identity.EXPECT().User().AnyTimes().Return(nil)
-	identity.EXPECT().Roles().AnyTimes().Return([]permissions.ResolvedRole{role})
-	identity.EXPECT().Permissions().AnyTimes().Return(role.GetPermissions())
-
-	return authn.ContextWithIdentity(ctx, identity, suite.T())
-}
-
-func (suite *IndicatorDataStoreTestSuite) TestComments() {
-	suite.setupDataStoreNoPruning()
-
-	roleNone := roletest.NewResolvedRoleWithDenyAll(role.None, nil)
-	roleAdmin := roletest.NewResolvedRoleWithDenyAll(role.Admin, utils.FromResourcesWithAccess(resources.AllResourcesModifyPermissions()...))
-
-	uid1Ctx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "1", roleNone)
-	uid2Ctx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "2", roleNone)
-	uid2ButAdminCtx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "2", roleAdmin)
-
-	indicators, _ := getIndicators()
-	suite.NoError(suite.datastore.AddProcessIndicators(uid1Ctx, indicators...))
-
-	key := analystnotes.ProcessToKey(indicators[0])
-
-	_, err := suite.datastore.AddProcessComment(suite.hasNoneCtx, key, &storage.Comment{CommentMessage: "blah"})
-	suite.Error(err)
-	_, err = suite.datastore.AddProcessComment(suite.hasReadCtx, key, &storage.Comment{CommentMessage: "blah"})
-	suite.Error(err)
-	id, err := suite.datastore.AddProcessComment(uid1Ctx, key, &storage.Comment{CommentMessage: "blah"})
-	suite.NoError(err)
-	suite.NotEmpty(id)
-
-	gotComments := suite.mustGetCommentsAndValidateCount(suite.hasNoneCtx, key)
-	suite.Empty(gotComments)
-
-	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
-	suite.Len(gotComments, 1)
-	suite.Equal(id, gotComments[0].GetCommentId())
-	suite.Equal("blah", gotComments[0].GetCommentMessage())
-	suite.Equal("1", gotComments[0].GetUser().GetId())
-
-	suite.Error(suite.datastore.UpdateProcessComment(suite.hasNoneCtx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
-	suite.Error(suite.datastore.UpdateProcessComment(suite.hasReadCtx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
-	suite.Error(suite.datastore.UpdateProcessComment(uid2Ctx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
-	// Admin cannot edit other people's comments.
-	suite.Error(suite.datastore.UpdateProcessComment(uid2ButAdminCtx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
-
-	suite.NoError(suite.datastore.UpdateProcessComment(uid1Ctx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
-
-	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
-	suite.Len(gotComments, 1)
-	suite.Equal(id, gotComments[0].GetCommentId())
-	suite.Equal("blah2", gotComments[0].GetCommentMessage())
-
-	suite.Error(suite.datastore.RemoveProcessComment(suite.hasNoneCtx, key, id))
-	suite.Error(suite.datastore.RemoveProcessComment(suite.hasReadCtx, key, id))
-	suite.Error(suite.datastore.RemoveProcessComment(uid2Ctx, key, id))
-
-	suite.NoError(suite.datastore.RemoveProcessComment(uid1Ctx, key, id))
-	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
-	suite.Empty(gotComments)
-
-	comment2ID, err := suite.datastore.AddProcessComment(uid1Ctx, key, &storage.Comment{CommentMessage: "blah3"})
-	suite.NoError(err)
-	suite.NotEmpty(comment2ID)
-	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
-	suite.Len(gotComments, 1)
-	suite.Equal(comment2ID, gotComments[0].GetCommentId())
-	suite.Equal("blah3", gotComments[0].GetCommentMessage())
-	suite.Equal("1", gotComments[0].GetUser().GetId())
-	suite.Error(suite.datastore.RemoveProcessComment(uid2Ctx, key, comment2ID))
-
-	// Admin can delete other people's comments.
-	suite.NoError(suite.datastore.RemoveProcessComment(uid2ButAdminCtx, key, comment2ID))
-
-	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
-	suite.Empty(gotComments)
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAdd() {
@@ -391,7 +283,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 		})
 	}
 	var err error
-	suite.datastore, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, mockPrunerFactory)
+	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher, mockPrunerFactory)
 	suite.Require().NoError(err)
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
@@ -550,10 +442,9 @@ func TestProcessIndicatorReindexSuite(t *testing.T) {
 type ProcessIndicatorReindexSuite struct {
 	suite.Suite
 
-	storage         *storeMocks.MockStore
-	commentsStorage *commentsStoreMocks.MockStore
-	indexer         *indexMocks.MockIndexer
-	searcher        *searchMocks.MockSearcher
+	storage  *storeMocks.MockStore
+	indexer  *indexMocks.MockIndexer
+	searcher *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller
 }
@@ -561,12 +452,14 @@ type ProcessIndicatorReindexSuite struct {
 func (suite *ProcessIndicatorReindexSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.storage = storeMocks.NewMockStore(suite.mockCtrl)
-	suite.commentsStorage = commentsStoreMocks.NewMockStore(suite.mockCtrl)
 	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
 	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 }
 
 func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
+	if features.PostgresDatastore.Enabled() {
+		return
+	}
 	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
@@ -583,7 +476,7 @@ func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
 	suite.indexer.EXPECT().AddProcessIndicators(processes).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
 
-	_, err := New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
+	_, err := New(suite.storage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)
 
 	// Make listAlerts just A,B so C should be deleted
@@ -596,6 +489,6 @@ func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
 	suite.indexer.EXPECT().DeleteProcessIndicators([]string{"C"}).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
 
-	_, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
+	_, err = New(suite.storage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)
 }

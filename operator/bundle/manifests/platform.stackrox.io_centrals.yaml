@@ -116,6 +116,20 @@ spec:
                             type: boolean
                         type: object
                     type: object
+                  monitoring:
+                    description: Configures monitoring endpoint for Central. The monitoring
+                      endpoint allows other services to collect metrics from Central,
+                      provided in Prometheus compatible format.
+                    properties:
+                      exposeEndpoint:
+                        description: Expose Central's monitoring endpoint. A new service,
+                          "monitoring", with port 9090, will be created as well as
+                          a network policy allowing inbound connections to the port.
+                        enum:
+                        - Enabled
+                        - Disabled
+                        type: string
+                    type: object
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -642,6 +656,10 @@ spec:
                     description: AdminPassword stores information related to the auto-generated
                       admin password.
                     properties:
+                      adminPasswordSecretReference:
+                        description: AdminPasswordSecretReference contains reference
+                          for the admin password
+                        type: string
                       info:
                         description: Info stores information on how to obtain the
                           admin password.

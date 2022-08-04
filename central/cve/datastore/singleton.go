@@ -27,23 +27,25 @@ var (
 )
 
 func initialize() {
-	storage := dackbox.New(globaldb.GetGlobalDackBox(), globaldb.GetKeyFence())
+	globalDackbox := globaldb.GetGlobalDackBox()
+	globalIndex := globalindex.GetGlobalIndex()
 
-	searcher := search.New(storage, globaldb.GetGlobalDackBox(),
-		cveIndexer.New(globalindex.GetGlobalIndex()),
-		clusterCVEEdgeIndexer.New(globalindex.GetGlobalIndex()),
-		componentCVEEdgeIndexer.New(globalindex.GetGlobalIndex()),
-		componentIndexer.New(globalindex.GetGlobalIndex()),
-		imageComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
-		imageCVEEdgeIndexer.New(globalindex.GetGlobalIndex()),
-		imageIndexer.New(globalindex.GetGlobalIndex()),
-		nodeComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
-		nodeIndexer.New(globalindex.GetGlobalIndex()),
-		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()),
+	storage := dackbox.New(globalDackbox, globaldb.GetKeyFence())
+	searcher := search.New(storage, globalDackbox,
+		cveIndexer.New(globalIndex),
+		clusterCVEEdgeIndexer.New(globalIndex),
+		componentCVEEdgeIndexer.New(globalIndex),
+		componentIndexer.New(globalIndex),
+		imageComponentEdgeIndexer.New(globalIndex),
+		imageCVEEdgeIndexer.New(globalIndex),
+		imageIndexer.New(globalIndex),
+		nodeComponentEdgeIndexer.New(globalIndex),
+		nodeIndexer.New(globalIndex),
+		deploymentIndexer.New(globalIndex, globalindex.GetProcessIndex()),
 		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
 
 	var err error
-	ds, err = New(globaldb.GetGlobalDackBox(), storage, cveIndexer.New(globalindex.GetGlobalIndex()), searcher)
+	ds, err = New(globalDackbox, globaldb.GetIndexQueue(), storage, cveIndexer.New(globalIndex), searcher)
 	utils.CrashOnError(err)
 }
 

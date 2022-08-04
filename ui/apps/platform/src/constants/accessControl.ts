@@ -14,7 +14,7 @@ const defaultRoles = {
     'Sensor Creator': true,
     'Vulnerability Management Approver': true,
     'Vulnerability Management Requester': true,
-    'Vulnerability Reporter': true,
+    'Vulnerability Report Creator': true,
 };
 
 export function getIsDefaultRoleName(name: string): boolean {

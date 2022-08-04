@@ -16,23 +16,26 @@ func _() {
 	_ = x[Get-5]
 	_ = x[GetAll-6]
 	_ = x[GetMany-7]
-	_ = x[GetGrouped-8]
-	_ = x[List-9]
-	_ = x[Prune-10]
-	_ = x[Reset-11]
-	_ = x[Rename-12]
-	_ = x[Remove-13]
-	_ = x[RemoveMany-14]
-	_ = x[Search-15]
-	_ = x[Update-16]
-	_ = x[UpdateMany-17]
-	_ = x[Upsert-18]
-	_ = x[UpsertAll-19]
+	_ = x[GetFlowsForDeployment-8]
+	_ = x[GetGrouped-9]
+	_ = x[List-10]
+	_ = x[Prune-11]
+	_ = x[Reset-12]
+	_ = x[Rename-13]
+	_ = x[Remove-14]
+	_ = x[RemoveMany-15]
+	_ = x[RemoveFlowsByDeployment-16]
+	_ = x[Search-17]
+	_ = x[Sync-18]
+	_ = x[Update-19]
+	_ = x[UpdateMany-20]
+	_ = x[Upsert-21]
+	_ = x[UpsertAll-22]
 }
 
-const _Op_name = "AddAddManyCountDedupeExistsGetGetAllGetManyGetGroupedListPruneResetRenameRemoveRemoveManySearchUpdateUpdateManyUpsertUpsertAll"
+const _Op_name = "AddAddManyCountDedupeExistsGetGetAllGetManyGetFlowsForDeploymentGetGroupedListPruneResetRenameRemoveRemoveManyRemoveFlowsByDeploymentSearchSyncUpdateUpdateManyUpsertUpsertAll"
 
-var _Op_index = [...]uint8{0, 3, 10, 15, 21, 27, 30, 36, 43, 53, 57, 62, 67, 73, 79, 89, 95, 101, 111, 117, 126}
+var _Op_index = [...]uint8{0, 3, 10, 15, 21, 27, 30, 36, 43, 64, 74, 78, 83, 88, 94, 100, 110, 133, 139, 143, 149, 159, 165, 174}
 
 func (i Op) String() string {
 	if i < 0 || i >= Op(len(_Op_index)-1) {

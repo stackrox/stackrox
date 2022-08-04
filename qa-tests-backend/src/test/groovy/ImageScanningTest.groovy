@@ -1,48 +1,48 @@
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
-
+import common.Constants
+import groups.BAT
+import groups.Integration
 import io.grpc.StatusRuntimeException
-
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.Vulnerability
-
-import common.Constants
-import groups.BAT
-import groups.Integration
-import objects.AnchoreScannerIntegration
+import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
-import objects.AzureRegistryIntegration
 import objects.ECRRegistryIntegration
 import objects.GCRImageIntegration
 import objects.GoogleArtifactRegistry
 import objects.QuayImageIntegration
 import objects.Secret
 import objects.StackroxScannerIntegration
-import services.ClusterService
-import services.ImageIntegrationService
-import services.ImageService
-import util.Env
-import util.Helpers
-import util.Timer
-
+import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.AssumptionViolatedException
 import org.junit.experimental.categories.Category
+import services.ClusterService
+import services.ImageIntegrationService
+import services.ImageService
 import spock.lang.Shared
 import spock.lang.Unroll
+import util.Env
+import util.Helpers
+import util.Timer
 
 class ImageScanningTest extends BaseSpecification {
 
     static final private String RHEL7_IMAGE =
             "richxsl/rhel7@sha256:8f3aae325d2074d2dc328cb532d6e7aeb0c588e15ddf847347038fe0566364d6"
     static final private String GCR_IMAGE   = "us.gcr.io/stackrox-ci/qa/registry-image:0.2"
-    static final private String NGINX_IMAGE = "nginx:1.12.1"
+    static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-12-1"
     static final private String OCI_IMAGE   = "quay.io/rhacs-eng/qa:oci-manifest"
     static final private String AR_IMAGE    = "us-west1-docker.pkg.dev/stackrox-ci/artifact-registry-test1/nginx:1.17"
     static final private String CENTOS_IMAGE = "quay.io/rhacs-eng/qa:centos7-base"
     static final private String CENTOS_ECHO_IMAGE = "quay.io/rhacs-eng/qa:centos7-base-echo"
+
+    // Amount of seconds to sleep to avoid race condition during on-going processing of images.
+    static final private int SLEEP_DURING_PROCESSING = isRaceBuild() ? 25000 :
+            ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 20000 : 15000)
 
     static final private List<String> POLICIES = [
             "ADD Command used instead of COPY",
@@ -143,7 +143,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     def cleanup() {
-        println "Post test cleanup:"
+        log.info "Post test cleanup:"
         if (secret != null) {
             orchestrator.deleteSecret(secret.name, secret.namespace)
         }
@@ -154,13 +154,13 @@ class ImageScanningTest extends BaseSpecification {
         if (imageToCleanup != null) {
             ImageService.clearImageCaches()
             try {
-                // Sleep for 10s in order to avoid race condition with processing that is currently in progress
-                println "Sleep for 10s and avoid race condition with reprocessing"
-                sleep(10000)
+                // Sleep for 20s in order to avoid race condition with processing that is currently in progress
+                log.info "Sleeping to avoid race condition with reprocessing"
+                sleep(SLEEP_DURING_PROCESSING)
                 ImageService.deleteImagesWithRetry(SearchServiceOuterClass.RawQuery.newBuilder()
                         .setQuery("Image:${imageToCleanup}").build(), true)
             } catch (e) {
-                println "Image delete threw an exception: ${e}, this is OK for some retry cases."
+                log.info "Image delete threw an exception: ${e}, this is OK for some retry cases."
             }
         }
         integrationIds.each { ImageIntegrationService.deleteImageIntegration(it) }
@@ -209,7 +209,7 @@ class ImageScanningTest extends BaseSpecification {
         "validate registry based image metadata"
         def imageDigest
         try {
-            withRetry(15, 2) {
+            withRetry(30, 2) {
                 imageDigest = ImageService.getImages().find { it.name == deployment.image }
                 assert imageDigest?.id
             }
@@ -241,7 +241,7 @@ class ImageScanningTest extends BaseSpecification {
         "validate scan results for the image"
         Timer t = new Timer(20, 3)
         while (imageDetail?.scan?.componentsCount == 0 && t.IsValid()) {
-            println "waiting on scan details..."
+            log.info "waiting on scan details..."
             sleep 3000
             ImageService.scanImage(deployment.image)
             imageDetail = ImageService.getImage(ImageService.getImages().find { it.name == deployment.image }?.id)
@@ -262,7 +262,7 @@ class ImageScanningTest extends BaseSpecification {
         and:
         "validate the existence of expected CVEs"
         for (String cve : cves) {
-            println "Validating existence of ${cve} cve..."
+            log.info "Validating existence of ${cve} cve..."
             ImageOuterClass.EmbeddedImageScanComponent component = imageDetail.scan.componentsList.find {
                 component -> component.vulnsList.find { vuln -> vuln.cve == cve }
             }
@@ -275,7 +275,7 @@ class ImageScanningTest extends BaseSpecification {
             assert vuln.link && vuln.link != ""
         }
         assert imageDetail.components >= components
-        assert imageDetail.cves >= totalCves
+        assert ((imageDetail.cves - 5)..(imageDetail.cves + 5)).contains(totalCves)
         assert imageDetail.fixableCves >= fixable
 
         where:
@@ -324,20 +324,20 @@ class ImageScanningTest extends BaseSpecification {
 
         "gcr-keep-autogenerated"        | "gcr"  |
                 [{ GCRImageIntegration.createDefaultIntegration() },]                                     |
-                41  | 182 | 28
+                41  | 181 | 28
 
         "gcr"                           | "gcr"  |
                 [{ GCRImageIntegration.createDefaultIntegration() },] |
-                41  | 182 | 28
+                41  | 181 | 28
 
         "gcr-fully-qualified-endpoint"  | "gcr"  |
                 [{ GCRImageIntegration.createCustomIntegration(endpoint: "https://us.gcr.io/") },]        |
-                41  | 182 | 28
+                41  | 181 | 28
 
         "gcr-duplicate"                 | "gcr"  |
                 [{ GCRImageIntegration.createDefaultIntegration() },
                  { GCRImageIntegration.createCustomIntegration(name: "gcr-duplicate") },]                 |
-                41  | 182 | 28
+                41  | 181 | 28
 
         "gcr-dupe-invalid"              | "gcr"  |
                 [{ GCRImageIntegration.createDefaultIntegration() },
@@ -347,12 +347,12 @@ class ImageScanningTest extends BaseSpecification {
                              serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY"),
                              skipTestIntegration: true,
                      ) },]                                                                                          |
-                41  | 182 | 28
+                41  | 181 | 28
 
         "gcr-and-other"                 | "gcr"  |
                 [{ GCRImageIntegration.createDefaultIntegration() },
                  { QuayImageIntegration.createDefaultIntegration() },]                                    |
-                41  | 182 | 28
+                41  | 181 | 28
 
         cves = ["CVE-2016-2781", "CVE-2017-9614"]
     }
@@ -370,7 +370,7 @@ class ImageScanningTest extends BaseSpecification {
             assert IMAGE_PULL_SECRETS.containsKey(registry)
             secret = IMAGE_PULL_SECRETS.get(registry)
             orchestrator.createImagePullSecret(secret)
-            sleep(1000L)
+            sleep 2000
             String autoCreatedIntegrationId = expectAutoGeneratedRegistry(secret)
             integrationIds.add(autoCreatedIntegrationId)
         }
@@ -412,9 +412,7 @@ class ImageScanningTest extends BaseSpecification {
         scanner                          | component      | version            | idx | cve              | image       | registry
         new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1   | "RHSA-2014:1052" | RHEL7_IMAGE | ""
         new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1   | "CVE-2014-3509"  | RHEL7_IMAGE | ""
-        new StackroxScannerIntegration() | "glibc"        | "2.23-0ubuntu11.2" | 0   | "CVE-2015-8985"  | OCI_IMAGE   | ""
-        new AnchoreScannerIntegration()  | "openssl"      | "1.0.1t-1+deb8u12" | 0   | "CVE-2010-0928"  | GCR_IMAGE   | "gcr"
-        new AnchoreScannerIntegration()  | "perl"         | "5.20.2-3+deb8u12" | 0   | "CVE-2011-4116"  | GCR_IMAGE   | "gcr"
+        new StackroxScannerIntegration() | "systemd"      | "229-4ubuntu21.29" | 0   | "CVE-2021-33910" | OCI_IMAGE   | ""
         new ClairScannerIntegration()    | "apt"          | "1.4.8"            | 0   | "CVE-2011-3374"  | NGINX_IMAGE | ""
         new ClairScannerIntegration()    | "bash"         | "4.4-5"            | 0   | "CVE-2019-18276" | NGINX_IMAGE | ""
     }
@@ -463,11 +461,6 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     static final private IMAGES_FOR_ERROR_TESTS = [
-            "Anchore Scanner" : [
-                    "image does not exist"     : "non-existent:image",
-                    "no access"                : "quay.io/stackrox/testing:registry-image",
-                    "missing required registry": GCR_IMAGE,
-            ],
             "Clair Scanner"   : [
                     "image does not exist"     : "non-existent:image",
                     "missing required registry": GCR_IMAGE,
@@ -506,15 +499,12 @@ class ImageScanningTest extends BaseSpecification {
         "tests are:"
 
         scanner                          | expectedMessage                      | testAspect
-        new AnchoreScannerIntegration()  | /Failed to get the manifest digest/  | "image does not exist"
         new ClairScannerIntegration()    | /Failed to get the manifest digest/  | "image does not exist"
         new StackroxScannerIntegration() | /Failed to get the manifest digest/  | "image does not exist"
-        new AnchoreScannerIntegration()  | /no matching image registries found/ | "missing required registry"
         new ClairScannerIntegration()    | /no matching image registries found/ | "missing required registry"
         new StackroxScannerIntegration() | /no matching image registries found/ | "missing required registry"
 // This is not supported. Scanners get access to previous creds and can pull the images that way.
 // https://stack-rox.atlassian.net/browse/ROX-5376
-//        new AnchoreScannerIntegration() | /access to the requested resource is not authorized/ | "no access"
 //        new StackroxScannerIntegration() | /status=401/ | "no access"
 
         expectedError = StatusRuntimeException
@@ -547,7 +537,7 @@ class ImageScanningTest extends BaseSpecification {
         "A pull secret auto creates an integration"
         if (secret) {
             orchestrator.createImagePullSecret(secret)
-            sleep 1000
+            sleep(SLEEP_DURING_PROCESSING)
             String autoCreatedIntegrationId = expectAutoGeneratedRegistry(secret)
             if (deleteAutoRegistry) {
                 ImageIntegrationService.deleteImageIntegration(autoCreatedIntegrationId)
@@ -665,10 +655,10 @@ class ImageScanningTest extends BaseSpecification {
                 }
             }
             if (missingValues.containsKey(imageDetails.name)) {
-                println "Failing image: ${imageDetails}"
+                log.info "Failing image: ${imageDetails}"
             }
         }
-        println missingValues
+        log.info missingValues.toString()
         assert missingValues.size() == 0
     }
 
@@ -719,7 +709,7 @@ class ImageScanningTest extends BaseSpecification {
 
     private static ImageOuterClass.Image expectDigestedImage(String imageName, String source) {
         def imageDigest
-        withRetry(15, 2) {
+        withRetry(30, 2) {
             imageDigest = ImageService.getImages().find { it.name == imageName }
             assert imageDigest?.id
         }

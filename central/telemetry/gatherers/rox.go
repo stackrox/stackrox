@@ -12,7 +12,7 @@ type RoxGatherer struct {
 	cluster *ClusterGatherer
 }
 
-// NewRoxGatherer creates and returns a RoxGatherer object
+// newRoxGatherer creates and returns a RoxGatherer object
 func newRoxGatherer(central *CentralGatherer, cluster *ClusterGatherer) *RoxGatherer {
 	return &RoxGatherer{
 		central: central,

@@ -8,15 +8,15 @@ import (
 
 var (
 	once          sync.Once
-	scannerClient *client
+	scannerClient *Client
 )
 
-// GRPCClientSingleton returns a gRPC client to a local Scanner.
-// Only one client per Sensor is required.
-func GRPCClientSingleton() *client {
+// GRPCClientSingleton returns a gRPC Client to a local Scanner.
+// Only one Client per Sensor is required.
+func GRPCClientSingleton() *Client {
 	once.Do(func() {
-		if !env.OpenshiftAPI.BooleanSetting() {
-			log.Info("Will not attempt to connect to a local scanner")
+		if !env.LocalImageScanningEnabled.BooleanSetting() {
+			log.Info("Local scanning disabled, will not attempt to connect to a local scanner.")
 			return
 		}
 

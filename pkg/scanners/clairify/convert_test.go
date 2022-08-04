@@ -81,7 +81,8 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 		req  *v1.GetNodeVulnerabilitiesRequest
 		resp *v1.GetNodeVulnerabilitiesResponse
 
-		expected []*storage.EmbeddedNodeScanComponent
+		expectedNotes      []storage.NodeScan_Note
+		expectedComponents []*storage.EmbeddedNodeScanComponent
 	}{
 		{
 			req: &v1.GetNodeVulnerabilitiesRequest{
@@ -132,8 +133,10 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 						FixedBy: "4",
 					},
 				},
+				Notes: []v1.NodeNote{v1.NodeNote_NODE_UNSUPPORTED, v1.NodeNote_NODE_KERNEL_UNSUPPORTED},
 			},
-			expected: []*storage.EmbeddedNodeScanComponent{
+			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED},
+			expectedComponents: []*storage.EmbeddedNodeScanComponent{
 				{
 					Name:    "docker",
 					Version: "19.3.5",
@@ -200,7 +203,8 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 		},
 	} {
 		actual := convertVulnResponseToNodeScan(testCase.req, testCase.resp)
-		assert.ElementsMatch(t, testCase.expected, actual.Components)
+		assert.ElementsMatch(t, testCase.expectedNotes, actual.Notes)
+		assert.ElementsMatch(t, testCase.expectedComponents, actual.Components)
 	}
 }
 
@@ -342,5 +346,6 @@ func TestConvertFeatures(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, expectedFeatures, convertFeatures(metadata, features))
+	converted := convertFeatures(metadata, features, "")
+	assert.Equal(t, expectedFeatures, converted)
 }

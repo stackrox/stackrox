@@ -2,14 +2,17 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/image/datastore/internal/search"
-	"github.com/stackrox/rox/central/image/datastore/internal/store"
-	dackBoxStore "github.com/stackrox/rox/central/image/datastore/internal/store/dackbox"
+	"github.com/stackrox/rox/central/image/datastore/search"
+	"github.com/stackrox/rox/central/image/datastore/store"
+	dackBoxStore "github.com/stackrox/rox/central/image/datastore/store/dackbox"
+	postgresStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
@@ -20,6 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -37,9 +41,11 @@ type DataStore interface {
 	CountImages(ctx context.Context) (int, error)
 	GetImage(ctx context.Context, sha string) (*storage.Image, bool, error)
 	GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error)
+	GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, error)
 	GetImagesBatch(ctx context.Context, shas []string) ([]*storage.Image, error)
 
 	UpsertImage(ctx context.Context, image *storage.Image) error
+	UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error
 
 	DeleteImages(ctx context.Context, ids ...string) error
 	Exists(ctx context.Context, id string) (bool, error)
@@ -70,4 +76,37 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, processIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
 	storage := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
 	return newDatastore(dacky, storage, bleveIndex, processIndex, risks, imageRanker, imageComponentRanker)
+}
+
+// NewWithPostgres returns a new instance of DataStore using the input store, indexer, and searcher.
+// noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
+// This should be set to `false` except for some tests.
+func NewWithPostgres(storage store.Store, index imageIndexer.Indexer, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
+	ds := newDatastoreImpl(storage, index, search.NewV2(storage, index), risks, imageRanker, imageComponentRanker)
+	ds.initializeRankers()
+	return ds
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	dbstore := postgresStore.New(pool, false, concurrency.NewKeyFence())
+	indexer := postgresStore.NewIndexer(pool)
+	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	imageRanker := ranking.ImageRanker()
+	imageComponentRanker := ranking.ComponentRanker()
+	return NewWithPostgres(dbstore, indexer, riskStore, imageRanker, imageComponentRanker), nil
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
+	riskStore, err := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
+	if err != nil {
+		return nil, err
+	}
+	imageRanker := ranking.ImageRanker()
+	imageComponentRanker := ranking.ComponentRanker()
+	return New(dacky, keyFence, bleveIndex, bleveIndex, false, riskStore, imageRanker, imageComponentRanker), nil
 }

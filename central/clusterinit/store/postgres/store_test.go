@@ -8,25 +8,27 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
-type ClusterinitbundlesStoreSuite struct {
+type ClusterInitBundlesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	testDB      *pgtest.TestPostgres
 }
 
-func TestClusterinitbundlesStore(t *testing.T) {
-	suite.Run(t, new(ClusterinitbundlesStoreSuite))
+func TestClusterInitBundlesStore(t *testing.T) {
+	suite.Run(t, new(ClusterInitBundlesStoreSuite))
 }
 
-func (s *ClusterinitbundlesStoreSuite) SetupTest() {
+func (s *ClusterInitBundlesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -34,24 +36,27 @@ func (s *ClusterinitbundlesStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
+
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
-func (s *ClusterinitbundlesStoreSuite) TearDownTest() {
+func (s *ClusterInitBundlesStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE cluster_init_bundles CASCADE")
+	s.T().Log("cluster_init_bundles", tag)
+	s.NoError(err)
+}
+
+func (s *ClusterInitBundlesStoreSuite) TearDownSuite() {
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ClusterinitbundlesStoreSuite) TestStore() {
-	ctx := context.Background()
+func (s *ClusterInitBundlesStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
-
-	Destroy(ctx, pool)
-	store := New(ctx, pool)
+	store := s.store
 
 	initBundleMeta := &storage.InitBundleMeta{}
 	s.NoError(testutils.FullInit(initBundleMeta, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -61,6 +66,8 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundInitBundleMeta)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, initBundleMeta))
 	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)
@@ -69,12 +76,16 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 
 	initBundleMetaCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(initBundleMetaCount, 1)
+	s.Equal(1, initBundleMetaCount)
+	initBundleMetaCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(initBundleMetaCount)
 
 	initBundleMetaExists, err := store.Exists(ctx, initBundleMeta.GetId())
 	s.NoError(err)
 	s.True(initBundleMetaExists)
 	s.NoError(store.Upsert(ctx, initBundleMeta))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, initBundleMeta), sac.ErrResourceAccessDenied)
 
 	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)
@@ -86,6 +97,7 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundInitBundleMeta)
+	s.ErrorIs(store.Delete(withNoAccessCtx, initBundleMeta.GetId()), sac.ErrResourceAccessDenied)
 
 	var initBundleMetas []*storage.InitBundleMeta
 	for i := 0; i < 200; i++ {
@@ -98,5 +110,5 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 
 	initBundleMetaCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(initBundleMetaCount, 200)
+	s.Equal(200, initBundleMetaCount)
 }

@@ -42,20 +42,20 @@ bitfield_to_failure() {
 }
 
 assert_flavor_prompt_development() {
-  assert_line --partial 'Enter default container images settings (development_build, stackrox.io, rhacs); it controls repositories from where to download the images, image names and tags format (default: "development_build"):'
+  assert_line --partial 'Enter default container images settings (development_build, stackrox.io, rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "development_build"):'
 }
 
 assert_flavor_prompt_release() {
-  assert_line --partial 'Enter default container images settings (stackrox.io, rhacs); it controls repositories from where to download the images, image names and tags format (default: "rhacs"):'
+  assert_line --partial 'Enter default container images settings (stackrox.io, rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "rhacs"):'
 }
 
 assert_prompts_development() {
   # partial line matching allows to avoid problems with leading an trailing whitespaces
   # Enter - comes form interactive mode
   # main/scanner/scanner-db are contants from code
-  assert_line --regexp 'Enter main .* "docker.io/stackrox/main:'
-  assert_line --regexp 'Enter scanner-db .* "docker.io/stackrox/scanner-db:'
-  assert_line --regexp 'Enter scanner .* "docker.io/stackrox/scanner:'
+  assert_line --regexp 'Enter main .* "quay.io/rhacs-eng/main:'
+  assert_line --regexp 'Enter scanner-db .* "quay.io/rhacs-eng/scanner-db:'
+  assert_line --regexp 'Enter scanner .* "quay.io/rhacs-eng/scanner:'
 }
 
 assert_prompts_stackrox() {
@@ -78,14 +78,14 @@ assert_prompts_rhacs() {
 
 @test "roxctl-development central generate interactive flavor=development_build" {
   roxctl_bin="$(roxctl-development-cmd)"
-  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" development_build "$out_dir" "docker.io/stackrox"
+  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" development_build "$out_dir" "quay.io/rhacs-eng"
   bitfield_to_failure "$status"
   assert_success
   assert_prompts_development
   assert_flavor_prompt_development
   sleep 2 # due to frequent flakes of missing yaml files
-  assert_components_registry "$out_dir/central" "docker.io" "$any_version" 'main'
-  assert_components_registry "$out_dir/scanner" "docker.io" "$any_version" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/central" "quay.io" "$any_version" 'main'
+  assert_components_registry "$out_dir/scanner" "quay.io" "$any_version" 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development central generate interactive flavor=stackrox.io" {

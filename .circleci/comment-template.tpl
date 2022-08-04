@@ -6,10 +6,4 @@ Tag for [build #{{.Build.Number}}]({{.Build.URL}}) is `{{.Env.TAG}}`.
 export MAIN_IMAGE_TAG='{{.Env.TAG}}'
 ```
 
-📦 You can also generate an installation bundle with:
-
-```sh
-docker run -i --rm stackrox/main:{{.Env.TAG}} central generate interactive > bundle.zip
-```
-
-🕹️ A `roxctl` binary artifact can be [downloaded from CircleCI](https://circleci.com/gh/stackrox/rox/{{.Build.Number}}#artifacts/containers/0).
+🕹️ A `roxctl` binary can be [downloaded from the CircleCI]({{.Build.URL}}) artifacts.

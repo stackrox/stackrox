@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -20,7 +21,7 @@ func init() {
 	})
 }
 
-// NewImageLoader creates a new loader for image data.
+// NewImageLoader creates a new loader for image data. If postgres is enabled, this loader holds images without scan data—components and vulns.
 func NewImageLoader(ds datastore.DataStore) ImageLoader {
 	return &imageLoaderImpl{
 		loaded: make(map[string]*storage.Image),
@@ -102,7 +103,11 @@ func (idl *imageLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.
 	images, missing := idl.readAll(ids)
 	if len(missing) > 0 {
 		var err error
-		images, err = idl.ds.GetImagesBatch(ctx, collectMissing(ids, missing))
+		if features.PostgresDatastore.Enabled() {
+			images, err = idl.ds.GetManyImageMetadata(ctx, collectMissing(ids, missing))
+		} else {
+			images, err = idl.ds.GetImagesBatch(ctx, collectMissing(ids, missing))
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -134,12 +139,4 @@ func (idl *imageLoaderImpl) readAll(ids []string) (images []*storage.Image, miss
 		}
 	}
 	return
-}
-
-func collectMissing(ids []string, missing []int) []string {
-	missingIds := make([]string, 0, len(missing))
-	for _, missingIdx := range missing {
-		missingIds = append(missingIds, ids[missingIdx])
-	}
-	return missingIds
 }

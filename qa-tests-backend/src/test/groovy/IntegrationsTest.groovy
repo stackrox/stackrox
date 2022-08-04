@@ -1,18 +1,13 @@
-import java.util.concurrent.TimeUnit
-
-import io.grpc.StatusRuntimeException
-import org.apache.commons.lang.RandomStringUtils
-
-import io.stackrox.proto.storage.ClusterOuterClass
-import io.stackrox.proto.storage.NotifierOuterClass
-import io.stackrox.proto.storage.PolicyOuterClass
-import io.stackrox.proto.storage.ScopeOuterClass
-
 import common.Constants
 import groups.BAT
 import groups.Integration
 import groups.Notifiers
-import objects.AnchoreScannerIntegration
+import io.grpc.StatusRuntimeException
+import io.stackrox.proto.storage.ClusterOuterClass
+import io.stackrox.proto.storage.NotifierOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.ScopeOuterClass
+import java.util.concurrent.TimeUnit
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
@@ -27,23 +22,22 @@ import objects.QuayImageIntegration
 import objects.SlackNotifier
 import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
-import objects.SyslogNotifier
+import org.apache.commons.lang3.RandomStringUtils
+import org.junit.Assume
+import org.junit.AssumptionViolatedException
+import org.junit.Rule
+import org.junit.experimental.categories.Category
+import org.junit.rules.Timeout
 import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
 import services.NotifierService
 import services.PolicyService
-import util.Env
-import util.SplunkUtil
-
-import org.junit.Assume
-import org.junit.AssumptionViolatedException
-import org.junit.Rule
-import org.junit.experimental.categories.Category
-import org.junit.rules.Timeout
 import spock.lang.Ignore
 import spock.lang.Unroll
+import util.Env
+import util.SplunkUtil
 
 class IntegrationsTest extends BaseSpecification {
     static final private String NOTIFIERDEPLOYMENT = "netpol-notification-test-deployment"
@@ -631,7 +625,6 @@ class IntegrationsTest extends BaseSpecification {
 
         imageIntegration                 | customArgs      | testAspect
         new StackroxScannerIntegration() | [:]             | "default config"
-        new AnchoreScannerIntegration()  | [:]             | "default config"
         new ClairScannerIntegration()    | [:]             | "default config"
         new QuayImageIntegration()       | [:]             | "default config"
         new GCRImageIntegration()        | [:]             | "default config"
@@ -664,15 +657,6 @@ class IntegrationsTest extends BaseSpecification {
                 | expectedError          | expectedMessage      | testAspect
 
         new StackroxScannerIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
-        }       | StatusRuntimeException |
-        /invalid endpoint: endpoint cannot reference localhost/ |
-        "invalid endpoint"
-
-        new AnchoreScannerIntegration() | { [username: Env.mustGet("ANCHORE_USERNAME") + "WRONG",]
-        }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect user"
-        new AnchoreScannerIntegration() | { [password: Env.mustGet("ANCHORE_PASSWORD") + "WRONG",]
-        }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect password"
-        new AnchoreScannerIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |
         /invalid endpoint: endpoint cannot reference localhost/ |
         "invalid endpoint"
@@ -731,34 +715,35 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"
     }
 
-    @Category(Integration)
-    def "Verify syslog notifier"() {
-        given:
-        "the some syslog receiver is created"
-        // Change the local port numbers so we don't conflict with any other splunk instances
-        SplunkUtil.SplunkDeployment splunkDeployment = SplunkUtil.createSplunk(orchestrator,
-                Constants.ORCHESTRATOR_NAMESPACE, true)
+    // TODO disabled due to flaking (ROX-7902), shoudl be re-enabled once reworked (ROX-10310)
+    //@Category(Integration)
+    //def "Verify syslog notifier"() {
+    //    given:
+    //    "the some syslog receiver is created"
+    //    // Change the local port numbers so we don't conflict with any other splunk instances
+    //    SplunkUtil.SplunkDeployment splunkDeployment = SplunkUtil.createSplunk(orchestrator,
+    //            Constants.ORCHESTRATOR_NAMESPACE, true)
 
-        when:
-        "call the grpc API for the syslog integration."
-        SyslogNotifier notifier = new SyslogNotifier(splunkDeployment.syslogSvc.name, 514,
-                splunkDeployment.splunkPortForward.localPort)
-        try {
-            notifier.createNotifier()
-        } catch (Exception e) {
-            throw new AssumptionViolatedException("Could not create syslog notifier. Skipping test!", e)
-        }
+    //    when:
+    //    "call the grpc API for the syslog integration."
+    //    SyslogNotifier notifier = new SyslogNotifier(splunkDeployment.syslogSvc.name, 514,
+    //            splunkDeployment.splunkPortForward.localPort)
+    //    try {
+    //        notifier.createNotifier()
+    //    } catch (Exception e) {
+    //        throw new AssumptionViolatedException("Could not create syslog notifier. Skipping test!", e)
+    //    }
 
-        then:
-        "Verify the messages are seen in the json"
-        // We should have at least one audit log for the message which created the syslog integration.
-        notifier.validateViolationNotification(null, null, false)
+    //    then:
+    //    "Verify the messages are seen in the json"
+    //    // We should have at least one audit log for the message which created the syslog integration.
+    //    notifier.validateViolationNotification(null, null, false)
 
-        cleanup:
-        "remove splunk and syslog notifier integration"
-        SplunkUtil.tearDownSplunk(orchestrator, splunkDeployment)
-        notifier.deleteNotifier()
-    }
+    //    cleanup:
+    //    "remove splunk and syslog notifier integration"
+    //    SplunkUtil.tearDownSplunk(orchestrator, splunkDeployment)
+    //    notifier.deleteNotifier()
+    //}
 
     def uniqueName(String name) {
         return name + RandomStringUtils.randomAlphanumeric(5).toLowerCase()

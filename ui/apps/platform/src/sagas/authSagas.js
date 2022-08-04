@@ -28,11 +28,18 @@ import { actions as rolesActions } from 'reducers/roles';
 const testLoginClientState = `e003ba41-9cc1-48ee-b6a9-2dd7c21da92e`;
 
 function* getUserPermissions() {
+    /*
+     * Call request because userRolePermissions.isLoading reducer needs the action
+     * for subsequent requests (for example, manual refresh; or log out, and then log in again).
+     * Imitate request-success-failure pattern in redux-thunk.
+     * In this case, redux-saga makes the request independently of the action.
+     */
+    yield put(rolesActions.fetchUserRolePermissions.request());
     try {
         const result = yield call(fetchUserRolePermissions);
         yield put(rolesActions.fetchUserRolePermissions.success(result.response));
     } catch (error) {
-        // do nothing
+        yield put(rolesActions.fetchUserRolePermissions.failure(error));
     }
 }
 

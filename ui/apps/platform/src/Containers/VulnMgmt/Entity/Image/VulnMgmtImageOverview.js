@@ -8,6 +8,8 @@ import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import CVETable from 'Containers/Images/CVETable';
+import ScanDataMessage from 'Containers/VulnMgmt/Components/ScanDataMessage';
+import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessage';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
@@ -19,7 +21,6 @@ import useTabs from 'hooks/patternfly/useTabs';
 import DeferredCVEs from 'Containers/VulnMgmt/RiskAcceptance/DeferredCVEs';
 import ObservedCVEs from 'Containers/VulnMgmt/RiskAcceptance/ObservedCVEs';
 import FalsePositiveCVEs from 'Containers/VulnMgmt/RiskAcceptance/FalsePositiveCVEs';
-import ScanDataMessage from './ScanDataMessage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
@@ -52,6 +53,10 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const { metadata, scan, topVuln, priority, notes } = safeData;
     safeData.componentCount = scan?.components?.length || 0;
 
+    // TODO: replace this hack with feature flag selection of components or imageComponents,
+    //       after `layerIndex` is available on ImageComponent
+    safeData.imageComponentCount = scan?.components?.length || 0;
+
     const layers = metadata ? cloneDeep(metadata.v1.layers) : [];
     const fixableCves = [];
 
@@ -76,6 +81,10 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     }
 
     const metadataKeyValuePairs = [
+        {
+            key: 'SHA',
+            value: safeData.id,
+        },
         {
             key: 'Created',
             value: (metadata?.v1 && <DateTimeField date={metadata.v1.created} asString />) || '-',
@@ -118,10 +127,12 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const currentEntity = { [entityTypes.IMAGE]: data.id };
     const newEntityContext = { ...entityContext, ...currentEntity };
 
+    const scanMessage = getImageScanMessage(notes || [], scan?.notes || []);
+
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
-                <ScanDataMessage imagesNotes={notes} scanNotes={scan?.notes} />
+                <ScanDataMessage header={scanMessage.header} body={scanMessage.body} />
                 <CollapsibleSection title="Image Summary">
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
@@ -157,7 +168,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                         />
                     </div>
                 </CollapsibleSection>
-                <CollapsibleSection title="Image Findings">
+                <CollapsibleSection id="image-findings" title="Image Findings">
                     <div className="flex pdf-page pdf-stretch pdf-new rounded relative mb-4 ml-4 mr-4 pb-20">
                         {/* TODO: replace these 3 repeated Fixable CVEs tabs with tabs for
                             Observed, Deferred, and False Postive CVEs tables */}

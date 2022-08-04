@@ -9,8 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -56,7 +57,7 @@ type registryImpl struct {
 }
 
 func (r *registryImpl) Init() error {
-	providerDefs, err := r.store.GetAllAuthProviders()
+	providerDefs, err := r.store.GetAllAuthProviders(sac.WithAllAccess(context.Background()))
 	if err != nil {
 		return err
 	}
@@ -66,6 +67,7 @@ func (r *registryImpl) Init() error {
 		// Construct the options for the provider, using the stored definition, and the defaults for previously stored objects.
 		options := []ProviderOption{
 			WithStorageView(storedValue),
+			WithAttributeVerifier(storedValue),
 		}
 		options = append(options, DefaultOptionsForStoredProvider(r.backendFactories, r.issuerFactory, r.roleMapperFactory, r.loginURL)...)
 
@@ -162,6 +164,7 @@ func (r *registryImpl) ValidateProvider(ctx context.Context, options ...Provider
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -222,7 +225,7 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, id string, ignoreActi
 func (r *registryImpl) ResolveProvider(typ, state string) (Provider, error) {
 	factory := r.getFactory(typ)
 	if factory == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid auth provider type %q", typ)
+		return nil, errors.Wrapf(errox.InvalidArgs, "invalid auth provider type %q", typ)
 	}
 
 	providerID, _, err := factory.ResolveProviderAndClientState(state)
@@ -231,7 +234,7 @@ func (r *registryImpl) ResolveProvider(typ, state string) (Provider, error) {
 	}
 	provider := r.getAuthProvider(providerID)
 	if provider == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "could not locate auth provider %q", providerID)
+		return nil, errors.Wrapf(errox.NotFound, "could not locate auth provider %q", providerID)
 	}
 	return provider, nil
 }
@@ -239,7 +242,7 @@ func (r *registryImpl) ResolveProvider(typ, state string) (Provider, error) {
 func (r *registryImpl) GetExternalUserClaim(ctx context.Context, externalToken, typ, state string) (*AuthResponse, string, error) {
 	factory := r.getFactory(typ)
 	if factory == nil {
-		return nil, "", errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid auth provider type %q", typ)
+		return nil, "", errors.Wrapf(errox.InvalidArgs, "invalid auth provider type %q", typ)
 	}
 
 	providerID, clientState, err := factory.ResolveProviderAndClientState(state)
@@ -248,7 +251,7 @@ func (r *registryImpl) GetExternalUserClaim(ctx context.Context, externalToken, 
 	}
 	provider := r.getAuthProvider(providerID)
 	if provider == nil {
-		return nil, clientState, errors.Wrapf(errorhelpers.ErrNotFound, "could not locate auth provider %q", providerID)
+		return nil, clientState, errors.Wrapf(errox.NotFound, "could not locate auth provider %q", providerID)
 	}
 
 	backend, err := provider.GetOrCreateBackend(ctx)
@@ -260,6 +263,17 @@ func (r *registryImpl) GetExternalUserClaim(ctx context.Context, externalToken, 
 	if err != nil {
 		return nil, clientState, err
 	}
+
+	if authResp == nil || authResp.Claims == nil {
+		return nil, clientState, errox.NoCredentials.CausedBy("authentication response is empty")
+	}
+
+	if provider.AttributeVerifier() != nil {
+		if err := provider.AttributeVerifier().Verify(authResp.Claims.Attributes); err != nil {
+			return nil, clientState, errox.NoCredentials.CausedBy(err)
+		}
+	}
+
 	return authResp, clientState, nil
 }
 

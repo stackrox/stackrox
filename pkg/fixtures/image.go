@@ -8,17 +8,18 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func getVulnsPerComponent(componentIndex int) []*storage.EmbeddedVulnerability {
+func getVulnsPerComponent(componentIndex int, cveType storage.EmbeddedVulnerability_VulnerabilityType) []*storage.EmbeddedVulnerability {
 	numVulnsPerComponent := 5
 	vulnsPerComponent := make([]*storage.EmbeddedVulnerability, 0, numVulnsPerComponent)
 	for i := 0; i < numVulnsPerComponent; i++ {
 		cveName := fmt.Sprintf("CVE-2014-62%d%d", componentIndex, i)
 		vulnsPerComponent = append(vulnsPerComponent, &storage.EmbeddedVulnerability{
-			Cve:      cveName,
-			Cvss:     5,
-			Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-			Summary:  "GNU Bash through 4.3 processes trailing strings after function definitions in the values of environment variables, which allows remote attackers to execute arbitrary code via a crafted environment, as demonstrated by vectors involving the ForceCommand feature in OpenSSH sshd, the mod_cgi and mod_cgid modules in the Apache HTTP Server, scripts executed by unspecified DHCP clients, and other situations in which setting the environment occurs across a privilege boundary from Bash execution, aka \"ShellShock.\"  NOTE: the original fix for this issue was incorrect; CVE-2014-7169 has been assigned to cover the vulnerability that is still present after the incorrect fix.",
-			Link:     fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", cveName),
+			Cve:               cveName,
+			Cvss:              5,
+			VulnerabilityType: cveType,
+			Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+			Summary:           "GNU Bash through 4.3 processes trailing strings after function definitions in the values of environment variables, which allows remote attackers to execute arbitrary code via a crafted environment, as demonstrated by vectors involving the ForceCommand feature in OpenSSH sshd, the mod_cgi and mod_cgid modules in the Apache HTTP Server, scripts executed by unspecified DHCP clients, and other situations in which setting the environment occurs across a privilege boundary from Bash execution, aka \"ShellShock.\"  NOTE: the original fix for this issue was incorrect; CVE-2014-7169 has been assigned to cover the vulnerability that is still present after the incorrect fix.",
+			Link:              fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", cveName),
 			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 				FixedBy: "abcdefg",
 			},
@@ -39,7 +40,7 @@ func GetImage() *storage.Image {
 				Name: "blah",
 				Type: "GPL",
 			},
-			Vulns: getVulnsPerComponent(i),
+			Vulns: getVulnsPerComponent(i, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
 		})
 	}
 	return getImageWithComponents(componentsPerImage)
@@ -47,7 +48,7 @@ func GetImage() *storage.Image {
 
 // GetImageWithUniqueComponents returns a Mock Image where each component is unique
 func GetImageWithUniqueComponents() *storage.Image {
-	numComponentsPerImage := 2
+	numComponentsPerImage := 5
 	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponentsPerImage)
 	for i := 0; i < numComponentsPerImage; i++ {
 		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
@@ -57,7 +58,7 @@ func GetImageWithUniqueComponents() *storage.Image {
 				Name: "blah",
 				Type: "GPL",
 			},
-			Vulns: getVulnsPerComponent(i),
+			Vulns: getVulnsPerComponent(i, storage.EmbeddedVulnerability_IMAGE_VULNERABILITY),
 		})
 	}
 	return getImageWithComponents(componentsPerImage)
@@ -144,6 +145,9 @@ func getImageWithComponents(componentsPerImage []*storage.EmbeddedImageScanCompo
 
 // GetRandomImage returns a random image from the list of sample images
 func GetRandomImage() ImageAndID {
+	if useSignedImage() {
+		return ImagesWithSignatureNames[rand.Int()%len(ImagesWithSignatureNames)]
+	}
 	return ImageNames[rand.Int()%len(ImageNames)]
 }
 
@@ -152,7 +156,15 @@ func GetRandomImageN(n int) ImageAndID {
 	if n > len(ImageNames) {
 		panic("n must be <= the available images")
 	}
+
+	if useSignedImage() {
+		return ImagesWithSignatureNames[rand.Int()%len(ImagesWithSignatureNames)]
+	}
 	return ImageNames[rand.Int()%n]
+}
+
+func useSignedImage() bool {
+	return rand.Intn(2) == 0
 }
 
 // ImageAndID encapsulates a name and id pair for a sample image
@@ -167,6 +179,49 @@ func (i ImageAndID) FullName() string {
 }
 
 var (
+	// ImagesWithSignatureNames holds images which have cosign signatures.
+	ImagesWithSignatureNames = []ImageAndID{
+		// Images with cosign signatures.
+		{"gcr.io/distroless/base", "sha256:d6db59952a608d2f5696f40f3cb4c97d607d6eec59a5f95f7a9ef189734c2062"},
+		{"gcr.io/distroless/base-debian10", "sha256:fd79eb53ade37d9a2d5b94f78e7f6fd5a04863d131346b8f146745936d4be417"},
+		{"gcr.io/distroless/base-debian11", "sha256:d6db59952a608d2f5696f40f3cb4c97d607d6eec59a5f95f7a9ef189734c2062"},
+		{"gcr.io/distroless/cc", "sha256:828066963da079b19f9bf316ecf2589ede4bb0c426aab3d83f45e417c3c4491f"},
+		{"gcr.io/distroless/cc-debian10", "sha256:e4a3ac3eb9c84960a8bc731f0029552fc7a60dbca7f8e0896cf5069683156182"},
+		{"gcr.io/distroless/cc-debian11", "sha256:828066963da079b19f9bf316ecf2589ede4bb0c426aab3d83f45e417c3c4491f"},
+		{"gcr.io/distroless/java", "sha256:5a12f15d3e042591ddcf5cbe970d2f7ba4f7b80118e602939a43b870f31e1e94"},
+		{"gcr.io/distroless/java-base", "sha256:02eca8385ff015af0faf7c6704854abe9d4c49183ac678c47f13b95703e3a151"},
+		{"gcr.io/distroless/java-base-debian10", "sha256:b9dec343e09cf3e5ede93753082f7c40a006da2d35fe755e64e6f4a045731442"},
+		{"gcr.io/distroless/java-base-debian11", "sha256:0d4710549c7b400286aa2ad784ab492b6eed39957c6bda7586165c094c2a658a"},
+		{"gcr.io/distroless/java-debian10", "sha256:af803515b752aa1fbb2f759038040e918d2b9a18118a336d6d70d108946bbbe0"},
+		{"gcr.io/distroless/java-debian11", "sha256:5a12f15d3e042591ddcf5cbe970d2f7ba4f7b80118e602939a43b870f31e1e94"},
+		{"gcr.io/distroless/java11", "sha256:5a12f15d3e042591ddcf5cbe970d2f7ba4f7b80118e602939a43b870f31e1e94"},
+		{"gcr.io/distroless/java11-debian10", "sha256:5f971d9096b67153136ae0942a72ac241c54989d846171f68891530f635dc14b"},
+		{"gcr.io/distroless/java11-debian11", "sha256:11fac55f660c514d43a2a447a9c39fdd0096824e6593024339448c1d9e5d4084"},
+		{"gcr.io/distroless/java17", "sha256:09fcc0d75bba7e7f461d173fb1fe3527d369d1dc9793b68071e998357183595f"},
+		{"gcr.io/distroless/java17-debian11", "sha256:a2e7adc3e29c0e49d4f1f21f8cf3fcd2263c354751043ed4d31411a0439af93d"},
+		{"gcr.io/distroless/nodejs", "sha256:da93fb8b5a5a29284d4fcd33bd84afde4adbfad5252ed9a76884a17c89845c3d"},
+		{"gcr.io/distroless/nodejs-debian10", "sha256:4b455adff4b22765408bc21cbddd36dbb0dc8d782c70421a99217e70012dbc38"},
+		{"gcr.io/distroless/nodejs-debian11", "sha256:da93fb8b5a5a29284d4fcd33bd84afde4adbfad5252ed9a76884a17c89845c3d"},
+		{"gcr.io/distroless/python2.7", "sha256:6286aea644ca29ad1016159fa52537df669c701c1ed84a466afb098ba7cf63fc"},
+		{"gcr.io/distroless/python2.7-debian10", "sha256:6286aea644ca29ad1016159fa52537df669c701c1ed84a466afb098ba7cf63fc"},
+		{"gcr.io/distroless/python3", "sha256:603f65765fa0aa06dc402a46ad49f8dd1af2e8bdc87cdeaa0fbd30135057e011"},
+		{"gcr.io/distroless/python3-debian10", "sha256:d73aa91154b03d1d07e90ab4bd778612595eaf76fd5fbe8cd1ba7292be25608b"},
+		{"gcr.io/distroless/python3-debian11", "sha256:82f52cbdc3c4b9b92a8cee80b1570331996979843ad8b9030e47367ad4c0b563"},
+		{"gcr.io/distroless/static", "sha256:a3907cfc0b633bb1a71ae873b8743f2f43baa96a5dc462ef194d16e0008eff3d"},
+		{"gcr.io/distroless/static-debian10", "sha256:ee3194ce36e7464695a6a975a40c3b5a89885539f509cb0247e1a0689ad1a639"},
+		{"gcr.io/distroless/static-debian11", "sha256:a3907cfc0b633bb1a71ae873b8743f2f43baa96a5dc462ef194d16e0008eff3d"},
+		{"gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/controller", "sha256:5639b3a8cc51826df0f17af64b2dd2828db549fc1bb6a378f7361251b434bc92"},
+		{"gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/entrypoint", "sha256:7cbabe130b63fb824fd8b36f421671a5fdb1da70cc60736ee7e488274ec6ae98"},
+		{"gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init", "sha256:79f768d28ff9af9fcbf186f9fc1b8e9f88835dfb07be91610a1f17cf862db89e"},
+		{"gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/imagedigestexporter", "sha256:235765182af071bda58092c609e02c7fef01ceab0b762a2cca6ad14aec384466"},
+		{"gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/kubeconfigwriter", "sha256:5d3a4b285041f38f251f9aeec39a9749590851275339a32f297e8eee1850855f"},
+		{"gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/nop", "sha256:430f8838cbf003d8886573265fa554eb84ca679b6d6136ec76fc5324c2817c96"},
+		{"gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/pullrequest-init", "sha256:da0e56a5156db8f0b0db5dd94d67e1c2fd39b7343748db119aecb4e94342615e"},
+		{"gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/webhook", "sha256:36dbe491f1c39c15850febad08a94f199e894fd3f7fbc5ed117d397a9d715959"},
+		{"gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/workingdirinit", "sha256:1d481e9b728651dd9e3f7bdf5c1ad135b52b516b4c2d631c220431d2d6c98eb4"},
+		{"raesene/cosign_test", "sha256:9b5a67e1e2e67f60d4e93529ff280f12601586c0c382949f96947001c0c6094f"},
+	}
+
 	// ImageNames lists the top images from DockerHub.
 	ImageNames = []ImageAndID{
 		{"18fgsa/bosh-deployment-resource", "sha256:547398309a6e25f789ba8f6f3c15345059ee014b98111951b1aaa4f8c744489b"},

@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -29,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -54,6 +54,11 @@ type NodeDataStoreTestSuite struct {
 }
 
 func (suite *NodeDataStoreTestSuite) SetupSuite() {
+	if features.PostgresDatastore.Enabled() {
+		suite.T().Skip("Skip dackbox tests if postgres is enabled")
+		suite.T().SkipNow()
+	}
+
 	suite.db = rocksdbtest.RocksDBForT(suite.T())
 
 	suite.indexQ = queue.NewWaitableQueue()
@@ -63,10 +68,7 @@ func (suite *NodeDataStoreTestSuite) SetupSuite() {
 		suite.FailNow("failed to create dackbox", err.Error())
 	}
 
-	suite.blevePath, err = os.MkdirTemp("", "")
-	if err != nil {
-		suite.FailNow("failed to create dir for bleve", err.Error())
-	}
+	suite.blevePath = suite.T().TempDir()
 	blevePath := filepath.Join(suite.blevePath, "scorch.bleve")
 	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
 	if err != nil {
@@ -87,7 +89,6 @@ func (suite *NodeDataStoreTestSuite) SetupSuite() {
 }
 
 func (suite *NodeDataStoreTestSuite) TearDownSuite() {
-	_ = os.RemoveAll(suite.blevePath)
 	rocksdbtest.TearDownRocksDB(suite.db)
 }
 
@@ -125,7 +126,6 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 	for _, component := range node.GetScan().GetComponents() {
 		for _, cve := range component.GetVulns() {
 			cve.FirstSystemOccurrence = storedNode.GetLastUpdated()
-			cve.FirstNodeOccurrence = storedNode.GetLastUpdated()
 			cve.VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 		}
@@ -169,12 +169,6 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 	suite.True(exists)
 	suite.NoError(err)
 	suite.NotNil(storedNode)
-	for _, component := range newNode.GetScan().GetComponents() {
-		for _, cve := range component.GetVulns() {
-			// Same CVEs as the first node, so first system occurrence stays the same.
-			cve.FirstNodeOccurrence = storedNode.GetLastUpdated()
-		}
-	}
 	suite.Equal(newNode, storedNode)
 
 	// Count nodes.
@@ -246,7 +240,6 @@ func (suite *NodeDataStoreTestSuite) TestBasicSearch() {
 	for _, component := range node.GetScan().GetComponents() {
 		for _, cve := range component.GetVulns() {
 			cve.FirstSystemOccurrence = nodes[0].GetLastUpdated()
-			cve.FirstNodeOccurrence = nodes[0].GetLastUpdated()
 			cve.VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 		}
@@ -403,7 +396,7 @@ func (suite *NodeDataStoreTestSuite) TestSearchByComponent() {
 
 	// Search by Component.
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp1", "ver1"),
+		ID:    scancomponent.ComponentID("comp1", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 	results, err := suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -411,7 +404,7 @@ func (suite *NodeDataStoreTestSuite) TestSearchByComponent() {
 	suite.Len(results, 2)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp3", "ver1"),
+		ID:    scancomponent.ComponentID("comp3", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -420,7 +413,7 @@ func (suite *NodeDataStoreTestSuite) TestSearchByComponent() {
 	suite.Equal("id2", results[0].ID)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp4", "ver1"),
+		ID:    scancomponent.ComponentID("comp4", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -431,7 +424,7 @@ func (suite *NodeDataStoreTestSuite) TestSearchByComponent() {
 
 	// Ensure search does not find anything.
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp1", "ver1"),
+		ID:    scancomponent.ComponentID("comp1", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -439,7 +432,7 @@ func (suite *NodeDataStoreTestSuite) TestSearchByComponent() {
 	suite.Empty(results)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp3", "ver1"),
+		ID:    scancomponent.ComponentID("comp3", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())

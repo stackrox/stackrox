@@ -6,7 +6,6 @@ import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
 
 import FixableCVECount from 'Components/FixableCVECount';
 import SeverityStackedPill from 'Components/visuals/SeverityStackedPill';
-import getImageScanMessages from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessages';
 
 function PillTooltipBody({ vulnCounter }) {
     if (vulnCounter?.all?.total > 0) {
@@ -38,12 +37,14 @@ const CVEStackedPill = ({
     url,
     fixableUrl,
     showTooltip,
-    imageNotes,
+    entityName,
     scan,
+    scanMessage,
 }) => {
     const hasCounts = vulnCounter?.all?.total > 0;
     const useScan = !!scan;
     const hasScan = !!scan?.scanTime;
+    const hasScanMessage = !!scanMessage?.header;
 
     const pillTooltip = showTooltip
         ? {
@@ -54,12 +55,9 @@ const CVEStackedPill = ({
 
     const width = horizontal ? '' : 'min-w-16';
 
-    const imageScanMessages = getImageScanMessages(imageNotes || [], scan?.notes || []);
-    const hasScanMessages = Object.keys(imageScanMessages).length > 0;
-
     return (
         <div className="flex items-center w-full">
-            {useScan && !hasScan && <span>Image not scanned</span>}
+            {useScan && !hasScan && <span>{entityName} not scanned</span>}
             {!hasCounts && <span>No CVEs</span>}
             {hasCounts && (
                 <>
@@ -82,18 +80,18 @@ const CVEStackedPill = ({
                     />
                 </>
             )}
-            {hasScanMessages && (
+            {hasScanMessage && (
                 <Tooltip
                     type="alert"
                     content={
                         <DetailedTooltipOverlay
                             extraClassName="text-alert-800"
                             title="CVE Data May Be Inaccurate"
-                            subtitle={imageScanMessages?.header}
+                            subtitle={scanMessage?.header}
                             body={
                                 <div className="">
                                     <h3 className="text-font-700">Reason:</h3>
-                                    <p className="font-600">{imageScanMessages?.body}</p>
+                                    <p className="font-600">{scanMessage?.body}</p>
                                 </div>
                             }
                         />
@@ -134,10 +132,14 @@ CVEStackedPill.propTypes = {
     url: PropTypes.string,
     fixableUrl: PropTypes.string,
     showTooltip: PropTypes.bool,
-    imageNotes: PropTypes.arrayOf(PropTypes.string),
+    entityName: PropTypes.string,
     scan: PropTypes.shape({
         scanTime: PropTypes.string,
         notes: PropTypes.arrayOf(PropTypes.string),
+    }),
+    scanMessage: PropTypes.shape({
+        header: PropTypes.string,
+        body: PropTypes.string,
     }),
 };
 
@@ -147,8 +149,9 @@ CVEStackedPill.defaultProps = {
     url: '',
     fixableUrl: '',
     showTooltip: true,
-    imageNotes: null,
+    entityName: '',
     scan: null,
+    scanMessage: null,
 };
 
 export default CVEStackedPill;

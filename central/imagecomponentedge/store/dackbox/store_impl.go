@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -31,7 +32,7 @@ func New(dacky *dackbox.DackBox) (store.Store, error) {
 	}, nil
 }
 
-func (b *storeImpl) Exists(id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -46,7 +47,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 	return exists, nil
 }
 
-func (b *storeImpl) Count() (int, error) {
+func (b *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "ImageComponentEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -63,28 +64,7 @@ func (b *storeImpl) Count() (int, error) {
 	return count, nil
 }
 
-func (b *storeImpl) GetAll() ([]*storage.ImageComponentEdge, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "ImageComponentEdge")
-
-	dackTxn, err := b.dacky.NewReadOnlyTransaction()
-	if err != nil {
-		return nil, err
-	}
-	defer dackTxn.Discard()
-
-	msgs, err := b.reader.ReadAllIn(edgeDackBox.Bucket, dackTxn)
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]*storage.ImageComponentEdge, 0, len(msgs))
-	for _, msg := range msgs {
-		ret = append(ret, msg.(*storage.ImageComponentEdge))
-	}
-
-	return ret, nil
-}
-
-func (b *storeImpl) Get(id string) (cve *storage.ImageComponentEdge, exists bool, err error) {
+func (b *storeImpl) Get(_ context.Context, id string) (cve *storage.ImageComponentEdge, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ImageComponentEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -101,7 +81,7 @@ func (b *storeImpl) Get(id string) (cve *storage.ImageComponentEdge, exists bool
 	return msg.(*storage.ImageComponentEdge), msg != nil, err
 }
 
-func (b *storeImpl) GetBatch(ids []string) ([]*storage.ImageComponentEdge, []int, error) {
+func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.ImageComponentEdge, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "ImageComponentEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()

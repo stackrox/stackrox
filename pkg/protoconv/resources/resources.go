@@ -459,6 +459,10 @@ func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 					sc.DropCapabilities = append(sc.DropCapabilities, string(drop))
 				}
 			}
+
+			if ape := s.AllowPrivilegeEscalation; ape != nil {
+				sc.AllowPrivilegeEscalation = *ape
+			}
 		}
 		sc.Selinux = makeSELinuxWithDefaults(s, podSpec.SecurityContext)
 		sc.SeccompProfile = makeSeccompProfileWithDefaults(s, podSpec.SecurityContext)

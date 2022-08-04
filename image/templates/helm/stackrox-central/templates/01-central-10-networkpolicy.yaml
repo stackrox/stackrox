@@ -40,3 +40,30 @@ spec:
   policyTypes:
     - Ingress
 {{ end }}
+{{- if ._rox.central.enableCentralDB }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: central-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "central-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "central-db") | nindent 4 }}
+spec:
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app: central
+      ports:
+      - port: 5432
+        protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central-db
+{{- end }}

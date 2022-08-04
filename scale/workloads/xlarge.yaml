@@ -7,8 +7,8 @@ deploymentWorkload:
     containerWorkload:
       numImages: 0
     lifecycleDuration: 5m
-    numContainers: 3
-    numPods: 2
+    numContainers: 2
+    numPods: 5
     processWorkload:
       alertRate: 0.001
       processInterval: 30s
@@ -19,6 +19,7 @@ networkWorkload:
 nodeWorkload:
   numNodes: 1000
 rbacWorkload:
-  numBindings: 1000
-  numRoles: 1000
-  numServiceAccounts: 1000
+  numBindings: 50000
+  numRoles: 50000
+  numServiceAccounts: 50000
+numNamespaces: 1000

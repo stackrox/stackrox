@@ -7,7 +7,6 @@ export interface NetworkLink {
     isActive: boolean;
     isAllowed: boolean;
     isBetweenNonIsolated: boolean;
-    isDisallowed: boolean;
     isExternal: boolean;
     source: string;
     sourceNS: string;
@@ -97,7 +96,6 @@ function enhanceLinksWithSimulatedStatus(
                 isActive: false,
                 isAllowed: true,
                 isBetweenNonIsolated: false,
-                isDisallowed: false,
                 isExternal: false,
                 isSimulated: true,
                 simulatedStatus: 'ADDED',

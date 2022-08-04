@@ -1,6 +1,6 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 
-export const url = '/main/policies';
+export const url = '/main/policy-management/policies';
 
 export const selectors = {
     table: {
@@ -8,8 +8,7 @@ export const selectors = {
         importButton: 'button:contains("Import policy")',
         searchInput: '.react-select__input > input',
         bulkActionsDropdownButton: 'button:contains("Bulk actions")',
-        bulkActionsDropdownItem:
-            'button:contains("Bulk actions") + ul[role="menu"] li[role="menuitem"]',
+        bulkActionsDropdownItem: 'button:contains("Bulk actions") + ul[role="menu"] li',
         reassessButton: 'button:contains("Reassess all")',
         policyLink: 'td[data-label="Policy"] a',
         statusCell: 'td[data-label="Status"]',
@@ -17,7 +16,7 @@ export const selectors = {
         lifecycleCell: 'td[data-label="Lifecycle"]',
         selectCheckbox: '.pf-c-table__check input[type="checkbox"]',
         actionsToggleButton: 'td.pf-c-table__action button.pf-c-dropdown__toggle',
-        actionsItemButton: 'td.pf-c-table__action ul li[role="menuitem"] button',
+        actionsItemButton: 'td.pf-c-table__action ul li button[role="menuitem"]',
         firstRow: '[data-testid="policies-table"] tbody tr:nth(0)',
         rows: '[data-testid="policies-table"] tbody tr',
     },
@@ -32,6 +31,7 @@ export const selectors = {
     },
     wizardBtns: {
         step3: '.pf-c-wizard__nav-link:contains("criteria")',
+        step5: '.pf-c-wizard__nav-link:contains("Review policy")',
     },
     step3: {
         defaultPolicyAlert: '[data-testid="default-policy-alert"]',

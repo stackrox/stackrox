@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -51,19 +51,19 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) GetDeploymentForPod(ctx context.Context, req *sensor.GetDeploymentForPodRequest) (*storage.Deployment, error) {
 	if req.GetPodName() == "" || req.GetNamespace() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "pod namespace and pod name must be provided")
+		return nil, errors.Wrap(errox.InvalidArgs, "pod namespace and pod name must be provided")
 	}
 
 	pod := s.pods.GetByName(req.GetPodName(), req.GetNamespace())
 	if pod == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound,
+		return nil, errors.Wrapf(errox.NotFound,
 			"namespace/%s/pods/%s not found",
 			req.GetNamespace(), req.GetPodName())
 	}
 
 	dep := s.deployments.Get(pod.GetDeploymentId())
 	if dep == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound,
+		return nil, errors.Wrapf(errox.NotFound,
 			"no containing deployment found for namespace/%s/pods/%s",
 			req.GetNamespace(), req.GetPodName())
 	}

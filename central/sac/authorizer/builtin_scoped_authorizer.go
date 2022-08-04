@@ -90,7 +90,10 @@ func (a *globalScopeChecker) PerformChecks(_ context.Context) error {
 }
 
 func (a *globalScopeChecker) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
-	return nil, errors.New("global scope checker has no effective access scope")
+	return a.
+		SubScopeChecker(sac.AccessModeScopeKey(resource.Access)).
+		SubScopeChecker(sac.ResourceScopeKey(resource.Resource.GetResource())).
+		EffectiveAccessScope(resource)
 }
 
 func (a *globalScopeChecker) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
@@ -128,7 +131,7 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 	}
 	filteredRoles := make([]permissions.ResolvedRole, 0, len(a.roles))
 	for _, role := range a.roles {
-		if role.GetPermissions()[string(resource.GetResource())] >= a.access {
+		if resource.IsPermittedBy(role.GetPermissions(), a.access) {
 			filteredRoles = append(filteredRoles, role)
 		}
 	}
@@ -184,11 +187,27 @@ func (a *resourceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
 }
 
 func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
-	// TODO(ROX-9537): Implement it
 	// 1. Get all roles and filter them to get only roles with desired access level (here: READ_ACCESS)
 	// 2. For every role get it's effective access scope (EAS)
 	// 3. Merge all EAS into a single tree
-	panic("Implement me: ROX-9537")
+	if a.access < resource.Access {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+	// Ensure replaced resources are also taken into account.
+	if a.resource != resource.Resource && (a.resource.ReplacingResource == nil ||
+		(a.resource.ReplacingResource != nil && *a.resource.ReplacingResource != resource.Resource)) {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+
+	eas := effectiveaccessscope.DenyAllEffectiveAccessScope()
+	for _, role := range a.roles {
+		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
+		if err != nil {
+			return nil, err
+		}
+		eas.Merge(scope)
+	}
+	return eas, nil
 }
 
 func (a *resourceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {

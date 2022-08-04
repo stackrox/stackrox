@@ -7,6 +7,7 @@ import (
 	"time"
 
 	v1 "github.com/openshift/api/config/v1"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -151,13 +152,25 @@ func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
 }
 
 func (u *updaterImpl) getOpenshiftVersion() (string, error) {
+	openShiftCfg := u.client.OpenshiftConfig()
+	if openShiftCfg == nil {
+		return "", errors.New("failed to get OpenShift config")
+	}
+	configV1 := openShiftCfg.ConfigV1()
+	if configV1 == nil {
+		return "", errors.Errorf("invalid OpenShift config, %v", openShiftCfg)
+	}
+	operators := configV1.ClusterOperators()
+	if operators == nil {
+		return "", errors.Errorf("cannot get cluster operators from ConfigV1 %v", configV1)
+	}
 	var clusterOperator *v1.ClusterOperator
 	err := retry.WithRetry(
 		func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), getVersionTimeout)
 			defer cancel()
 			var err error
-			clusterOperator, err = u.client.OpenshiftConfig().ConfigV1().ClusterOperators().Get(ctx, "openshift-apiserver", metav1.GetOptions{})
+			clusterOperator, err = operators.Get(ctx, "openshift-apiserver", metav1.GetOptions{})
 			if err != nil {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)

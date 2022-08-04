@@ -15,11 +15,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )
 
@@ -28,7 +27,6 @@ var (
 		user.With(permissions.View(resources.Compliance)): {
 			"/v1.ComplianceService/GetStandards",
 			"/v1.ComplianceService/GetStandard",
-			"/v1.ComplianceService/GetComplianceControlResults",
 			"/v1.ComplianceService/GetComplianceStatistics",
 			"/v1.ComplianceService/GetRunResults",
 			"/v1.ComplianceService/GetAggregatedResults",
@@ -96,29 +94,10 @@ func (s *serviceImpl) GetStandard(ctx context.Context, req *v1.ResourceByID) (*v
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrap(errorhelpers.ErrNotFound, req.GetId())
+		return nil, errors.Wrap(errox.NotFound, req.GetId())
 	}
 	return &v1.GetComplianceStandardResponse{
 		Standard: standard,
-	}, nil
-}
-
-// GetComplianceControlResults returns controls and evidence
-func (s *serviceImpl) GetComplianceControlResults(ctx context.Context, query *v1.RawQuery) (*v1.ComplianceControlResultsResponse, error) {
-	q := search.EmptyQuery()
-	var err error
-	if query.GetQuery() != "" {
-		q, err = search.ParseQuery(query.GetQuery())
-		if err != nil {
-			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
-		}
-	}
-	results, err := s.complianceDataStore.QueryControlResults(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return &v1.ComplianceControlResultsResponse{
-		Results: results,
 	}, nil
 }
 

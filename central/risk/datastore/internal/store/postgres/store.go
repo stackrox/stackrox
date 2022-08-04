@@ -4,33 +4,32 @@ package postgres
 
 import (
 	"context"
-	"reflect"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sync"
+	"gorm.io/gorm"
 )
 
 const (
-	baseTable  = "risk"
-	countStmt  = "SELECT COUNT(*) FROM risk"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM risk WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM risk WHERE Id = $1"
-	deleteStmt  = "DELETE FROM risk WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM risk"
-	getIDsStmt  = "SELECT Id FROM risk"
-	getManyStmt = "SELECT serialized FROM risk WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM risk WHERE Id = ANY($1::text[])"
+	baseTable = "risks"
 
 	batchAfter = 100
 
@@ -38,16 +37,15 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.Risk)(nil)), baseTable)
-	log    = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.RisksSchema
+	targetResource = resources.Risk
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -67,99 +65,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	mutex sync.Mutex
 }
 
-func createTableRisk(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists risk (
-    Id varchar,
-    Subject_Id varchar,
-    Subject_Namespace varchar,
-    Subject_ClusterId varchar,
-    Subject_Type integer,
-    Score numeric,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+// New returns a new Store instance using the provided sql instance.
+func New(db *pgxpool.Pool) Store {
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableRiskResults(ctx, db)
 }
 
-func createTableRiskResults(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists risk_Results (
-    risk_Id varchar,
-    idx integer,
-    Name varchar,
-    Score numeric,
-    PRIMARY KEY(risk_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (risk_Id) REFERENCES risk(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists riskResults_idx on risk_Results using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableRiskResultsFactors(ctx, db)
-}
-
-func createTableRiskResultsFactors(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists risk_Results_Factors (
-    risk_Id varchar,
-    risk_Results_idx integer,
-    idx integer,
-    Message varchar,
-    Url varchar,
-    PRIMARY KEY(risk_Id, risk_Results_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (risk_Id, risk_Results_idx) REFERENCES risk_Results(risk_Id, idx) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists riskResultsFactors_idx on risk_Results_Factors using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
+func insertIntoRisks(ctx context.Context, batch *pgx.Batch, obj *storage.Risk) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -169,7 +86,6 @@ func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetSubject().GetId(),
 		obj.GetSubject().GetNamespace(),
 		obj.GetSubject().GetClusterId(),
 		obj.GetSubject().GetType(),
@@ -177,81 +93,13 @@ func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO risk (Id, Subject_Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Subject_Id = EXCLUDED.Subject_Id, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type, Score = EXCLUDED.Score, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetResults() {
-		if err := insertIntoRiskResults(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from risk_Results where risk_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetResults()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoRiskResults(ctx context.Context, tx pgx.Tx, obj *storage.Risk_Result, risk_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		risk_Id,
-		idx,
-		obj.GetName(),
-		obj.GetScore(),
-	}
-
-	finalStr := "INSERT INTO risk_Results (risk_Id, idx, Name, Score) VALUES($1, $2, $3, $4) ON CONFLICT(risk_Id, idx) DO UPDATE SET risk_Id = EXCLUDED.risk_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Score = EXCLUDED.Score"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetFactors() {
-		if err := insertIntoRiskResultsFactors(ctx, tx, child, risk_Id, idx, childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from risk_Results_Factors where risk_Id = $1 AND risk_Results_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, risk_Id, idx, len(obj.GetFactors()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoRiskResultsFactors(ctx context.Context, tx pgx.Tx, obj *storage.Risk_Result_Factor, risk_Id string, risk_Results_idx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		risk_Id,
-		risk_Results_idx,
-		idx,
-		obj.GetMessage(),
-		obj.GetUrl(),
-	}
-
-	finalStr := "INSERT INTO risk_Results_Factors (risk_Id, risk_Results_idx, idx, Message, Url) VALUES($1, $2, $3, $4, $5) ON CONFLICT(risk_Id, risk_Results_idx, idx) DO UPDATE SET risk_Id = EXCLUDED.risk_Id, risk_Results_idx = EXCLUDED.risk_Results_idx, idx = EXCLUDED.idx, Message = EXCLUDED.Message, Url = EXCLUDED.Url"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO risks (Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type, Score = EXCLUDED.Score, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storage.Risk) error {
+func (s *storeImpl) copyFromRisks(ctx context.Context, tx pgx.Tx, objs ...*storage.Risk) error {
 
 	inputRows := [][]interface{}{}
 
@@ -264,8 +112,6 @@ func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 	copyCols := []string{
 
 		"id",
-
-		"subject_id",
 
 		"subject_namespace",
 
@@ -291,8 +137,6 @@ func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 
 			obj.GetId(),
 
-			obj.GetSubject().GetId(),
-
 			obj.GetSubject().GetNamespace(),
 
 			obj.GetSubject().GetClusterId(),
@@ -312,134 +156,13 @@ func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risk"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromRiskResults(ctx, tx, obj.GetId(), obj.GetResults()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromRiskResults(ctx context.Context, tx pgx.Tx, risk_Id string, objs ...*storage.Risk_Result) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"risk_id",
-
-		"idx",
-
-		"name",
-
-		"score",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			risk_Id,
-
-			idx,
-
-			obj.GetName(),
-
-			obj.GetScore(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risk_results"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-
-		if err = s.copyFromRiskResultsFactors(ctx, tx, risk_Id, idx, obj.GetFactors()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromRiskResultsFactors(ctx context.Context, tx pgx.Tx, risk_Id string, risk_Results_idx int, objs ...*storage.Risk_Result_Factor) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"risk_id",
-
-		"risk_results_idx",
-
-		"idx",
-
-		"message",
-
-		"url",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			risk_Id,
-
-			risk_Results_idx,
-
-			idx,
-
-			obj.GetMessage(),
-
-			obj.GetUrl(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risk_results_factors"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risks"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -451,19 +174,13 @@ func (s *storeImpl) copyFromRiskResultsFactors(ctx context.Context, tx pgx.Tx, r
 	}
 
 	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableRisk(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Risk) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "Risk")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Risk")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -471,7 +188,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Risk) error {
 		return err
 	}
 
-	if err := s.copyFromRisk(ctx, tx, objs...); err != nil {
+	if err := s.copyFromRisks(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -484,22 +201,27 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Risk) error {
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Risk) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "Risk")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Risk")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoRisks(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoRisk(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		if err := batchResults.Close(); err != nil {
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}
@@ -509,11 +231,43 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Risk) error {
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Risk) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Risk")
 
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
+		ClusterID(obj.GetSubject().GetClusterId()).Namespace(obj.GetSubject().GetNamespace())
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Risk) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Risk")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		var deniedIds []string
+		for _, obj := range objs {
+			subScopeChecker := scopeChecker.ClusterID(obj.GetSubject().GetClusterId()).Namespace(obj.GetSubject().GetNamespace())
+			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
+				return err
+			} else if !ok {
+				deniedIds = append(deniedIds, obj.GetId())
+			}
+		}
+		if len(deniedIds) != 0 {
+			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying risks with IDs [%s] was denied", strings.Join(deniedIds, ", "))
+		}
+	}
+
+	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+	// violations
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -526,36 +280,71 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Risk) error 
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Risk")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
 		return 0, err
 	}
-	return count, nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Risk")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return false, err
 	}
-	return exists, nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Risk, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Risk")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "Risk")
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return nil, false, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -566,45 +355,62 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Risk, bool, er
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Risk")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "Risk")
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.RiskIDs")
+	var sacQueryFilter *v1.Query
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
 	}
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
+	}
+
 	return ids, nil
 }
 
@@ -612,12 +418,32 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Risk, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Risk")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "Risk")
-	defer release()
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		return nil, nil, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -626,13 +452,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Risk,
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.Risk)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.Risk{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
@@ -657,32 +478,62 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Risk,
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Risk")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "Risk")
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Risk) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+		return err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		var msg storage.Risk
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
+		for _, data := range rows {
+			var msg storage.Risk
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
 		}
-		if err := fn(&msg); err != nil {
-			return err
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil
@@ -690,25 +541,19 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Risk) error) 
 
 //// Used for testing
 
-func dropTableRisk(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risk CASCADE")
-	dropTableRiskResults(ctx, db)
-
-}
-
-func dropTableRiskResults(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risk_Results CASCADE")
-	dropTableRiskResultsFactors(ctx, db)
-
-}
-
-func dropTableRiskResultsFactors(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risk_Results_Factors CASCADE")
+func dropTableRisks(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risks CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableRisk(ctx, db)
+	dropTableRisks(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

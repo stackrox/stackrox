@@ -256,7 +256,7 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 	}
 
 	csr := &cfcsr.CertificateRequest{
-		KeyRequest:   cfcsr.NewBasicKeyRequest(),
+		KeyRequest:   cfcsr.NewKeyRequest(),
 		SerialNumber: serial.String(),
 	}
 	csrBytes, keyBytes, err := cfcsr.ParseRequest(csr)
@@ -326,10 +326,8 @@ func RandomSerial() (*big.Int, error) {
 
 func generateIdentity(subj Subject, serial *big.Int) *storage.ServiceIdentity {
 	return &storage.ServiceIdentity{
-		Id:   subj.Identifier,
-		Type: subj.ServiceType,
-		Srl: &storage.ServiceIdentity_SerialStr{
-			SerialStr: serial.String(),
-		},
+		Id:        subj.Identifier,
+		Type:      subj.ServiceType,
+		SerialStr: serial.String(),
 	}
 }

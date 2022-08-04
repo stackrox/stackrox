@@ -1,13 +1,24 @@
-import { url as networkUrl, selectors as networkPageSelectors } from '../constants/NetworkPage';
-import { url as riskURL, selectors as riskPageSelectors } from '../constants/RiskPage';
+import { selectors as networkPageSelectors } from '../constants/NetworkPage';
+import selectors from '../selectors/index';
 import toastSelectors from '../selectors/toast';
 import navigationSelectors from '../selectors/navigation';
 
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
-import selectors from '../selectors/index';
+import {
+    viewRiskDeploymentByName,
+    viewRiskDeploymentInNetworkGraph,
+    visitRiskDeployments,
+} from '../helpers/risk';
+import {
+    visitNetworkGraph,
+    visitNetworkGraphFromLeftNav,
+    visitNetworkGraphWithMockedData,
+    visitNetworkGraphWithNamespaceFilter,
+} from '../helpers/networkGraph';
 
 function uploadYAMLFile(fileName, selector) {
+    cy.intercept('POST', api.network.simulate).as('postNetworkPolicySimulate');
     cy.fixture(fileName).then((fileContent) => {
         cy.get(selector).attachFile({
             fileContent,
@@ -16,85 +27,46 @@ function uploadYAMLFile(fileName, selector) {
             encoding: 'utf8',
         });
     });
-}
-
-function navigateToNetworkGraphWithMockedData() {
-    cy.server();
-
-    cy.fixture('network/networkGraph.json').as('networkGraphJson');
-    cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
-
-    cy.fixture('network/networkPolicies.json').as('networkPoliciesJson');
-    cy.route('GET', api.network.networkPoliciesGraph, '@networkPoliciesJson').as('networkPolicies');
-
-    cy.visit(networkUrl);
-    cy.wait('@networkGraph');
-    cy.wait('@networkPolicies');
+    cy.wait('@postNetworkPolicySimulate');
 }
 
 describe('Network page', () => {
     withAuth();
 
+    it('should visit using the left nav', () => {
+        visitNetworkGraphFromLeftNav();
+        cy.get('h1:contains("Network Graph")');
+    });
+
     it('should have selected item in nav bar', () => {
-        const networkNavigationLink = `${navigationSelectors.navLinks}:contains('Network')`;
-
-        navigateToNetworkGraphWithMockedData();
-
-        cy.get(networkNavigationLink).click();
-        cy.get(networkNavigationLink).should('have.class', 'pf-m-current');
+        visitNetworkGraph();
+        cy.get(`${navigationSelectors.navLinks}:contains('Network')`).should(
+            'have.class',
+            'pf-m-current'
+        );
     });
 
     it('should display a legend', () => {
-        navigateToNetworkGraphWithMockedData();
+        visitNetworkGraphWithMockedData();
 
-        cy.get(networkPageSelectors.legend.deployments)
-            .eq(0)
-            .children()
-            .should('have.class', 'icon-node');
+        const { deployments, namespaces, connections } = networkPageSelectors.legend;
 
-        cy.get(networkPageSelectors.legend.deployments)
-            .eq(1)
-            .children()
-            .should('have.attr', 'alt', 'deployment-external-connections');
-        cy.get(networkPageSelectors.legend.deployments)
-            .eq(2)
-            .children()
-            .children()
-            .should('have.class', 'icon-potential');
-        cy.get(networkPageSelectors.legend.deployments)
-            .eq(3)
-            .children()
-            .should('have.class', 'icon-node');
+        cy.get(`${deployments} *:nth-child(1) [alt="deployment"]`);
+        cy.get(`${deployments} *:nth-child(2) [alt="deployment-external-connections"]`);
+        cy.get(`${deployments} *:nth-child(3) [alt="deployment-allowed-connections"]`);
+        cy.get(`${deployments} *:nth-child(4) [alt="non-isolated-deployment-allowed"]`);
 
-        cy.get(networkPageSelectors.legend.namespaces)
-            .eq(0)
-            .children()
-            .should('have.attr', 'alt', 'namespace');
-        cy.get(networkPageSelectors.legend.namespaces)
-            .eq(1)
-            .children()
-            .should('have.attr', 'alt', 'namespace-allowed-connection');
-        cy.get(networkPageSelectors.legend.namespaces)
-            .eq(2)
-            .children()
-            .should('have.attr', 'alt', 'namespace-connection');
+        cy.get(`${namespaces} *:nth-child(1) [alt="namespace"]`);
+        cy.get(`${namespaces} *:nth-child(2) [alt="namespace-allowed-connection"]`);
+        cy.get(`${namespaces} *:nth-child(3) [alt="namespace-connection"]`);
 
-        cy.get(networkPageSelectors.legend.connections)
-            .eq(0)
-            .children()
-            .should('have.attr', 'alt', 'active-connection');
-        cy.get(networkPageSelectors.legend.connections)
-            .eq(1)
-            .children()
-            .should('have.attr', 'alt', 'allowed-connection');
-        cy.get(networkPageSelectors.legend.connections)
-            .eq(2)
-            .children()
-            .should('have.class', 'icon-ingress-egress');
+        cy.get(`${connections} *:nth-child(1) [alt="active-connection"]`);
+        cy.get(`${connections} *:nth-child(2) [alt="allowed-connection"]`);
+        cy.get(`${connections} *:nth-child(3) [alt="namespace-egress-ingress"]`);
     });
 
     it('should handle toggle click on simulator network policy button', () => {
-        navigateToNetworkGraphWithMockedData();
+        visitNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         cy.get(networkPageSelectors.buttons.viewActiveYamlButton).should('be.visible');
@@ -104,7 +76,7 @@ describe('Network page', () => {
     });
 
     it('should display expected toast message when uploaded yaml without namespace', () => {
-        navigateToNetworkGraphWithMockedData();
+        visitNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         uploadYAMLFile('network/policywithoutnamespace.yaml', 'input[type="file"]');
@@ -116,7 +88,7 @@ describe('Network page', () => {
     });
 
     it('should display display policies processed message when uploaded yaml with namespace', () => {
-        navigateToNetworkGraphWithMockedData();
+        visitNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         uploadYAMLFile('network/policywithnamespace.yaml', 'input[type="file"]');
@@ -126,39 +98,38 @@ describe('Network page', () => {
     });
 
     it('should show the network policy simulator screen after generating network policies', () => {
-        cy.visit(riskURL);
-        cy.get(selectors.table.rows).eq(0).click({ force: true });
-        cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton, { timeout: 10000 }).click();
+        visitRiskDeployments();
+        viewRiskDeploymentByName('central');
+        viewRiskDeploymentInNetworkGraph();
 
-        cy.get(networkPageSelectors.networkEntityTabbedOverlay.header, { timeout: 15000 }).should(
-            'be.visible'
-        );
+        cy.get(networkPageSelectors.networkEntityTabbedOverlay.header).should('be.visible');
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
+
+        cy.intercept('GET', api.network.generate).as('getNetworkPolicyGenerate');
+        cy.intercept('POST', api.network.simulate).as('getNetworkPolicySimulate');
         cy.get(networkPageSelectors.buttons.generateNetworkPolicies).click();
-        cy.get(networkPageSelectors.panels.simulatorPanel, { timeout: 10000 }).should('be.visible');
+        cy.wait(['@getNetworkPolicyGenerate', '@getNetworkPolicySimulate']);
+
+        cy.get(networkPageSelectors.panels.simulatorPanel).should('be.visible');
     });
 });
 
 describe('Network Deployment Details', () => {
     withAuth();
 
-    it('should show the port exposure levels using port configuration labels', () => {
-        cy.visit(riskURL);
-        cy.get(`${selectors.table.rows}:contains('central')`).click();
-        cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+    it('should show the deployment name and namespace', () => {
+        visitRiskDeployments();
+        viewRiskDeploymentByName('central');
+        viewRiskDeploymentInNetworkGraph();
+
         cy.get(`${selectors.tab.tabs}:contains('Details')`).click();
-        cy.get(`[data-testid="exposure"]:contains('ClusterIP')`);
-        cy.get(`[data-testid="level"]:contains('ClusterIP')`);
+        cy.get(`[data-testid="Deployment Name"]:contains('central')`);
+        cy.get(`[data-testid="Namespace"]:contains('stackrox')`);
     });
 });
 
 describe('Network Policy Simulator', () => {
     withAuth();
-
-    beforeEach(() => {
-        cy.server();
-        cy.route('POST', api.network.simulate).as('simulateGraph');
-    });
 
     it('should update the graph when generating and simulating network policies', () => {
         // this will get the deployments for the 'default' and 'docker' namespace
@@ -173,7 +144,8 @@ describe('Network Policy Simulator', () => {
             return deployments;
         }
 
-        cy.visit(networkUrl);
+        visitNetworkGraphWithNamespaceFilter('stackrox');
+
         cy.get(networkPageSelectors.buttons.allowedFilter).click();
         cy.getCytoscape('#cytoscapeContainer').then((cytoscape) => {
             const deployments = getDeployments(cytoscape);
@@ -182,9 +154,12 @@ describe('Network Policy Simulator', () => {
                 expect(deployment.hasClass('nonIsolated')).to.equal(true);
             });
             cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
+
+            cy.intercept('GET', api.network.generate).as('getNetworkPolicyGenerate');
+            cy.intercept('POST', api.network.simulate).as('getNetworkPolicySimulate');
             cy.get(networkPageSelectors.buttons.generateNetworkPolicies).click();
-            // wait for the graph to update with the new data
-            cy.wait('@simulateGraph');
+            cy.wait(['@getNetworkPolicyGenerate', '@getNetworkPolicySimulate']);
+
             cy.getCytoscape('#cytoscapeContainer').then((updatedCytoscape) => {
                 const simulatedDeployments = getDeployments(updatedCytoscape);
                 // After the simulated graph, we want to make sure all the deployments from 'default' and 'docker' namespaces are not non-isolated
@@ -200,9 +175,10 @@ describe('Network Flows Table', () => {
     withAuth();
 
     it('should show the proper table column headers for the network flows table', () => {
-        cy.visit(riskURL);
-        cy.get(`${selectors.table.rows}:contains('central')`).click();
-        cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        visitRiskDeployments();
+        viewRiskDeploymentByName('central');
+        viewRiskDeploymentInNetworkGraph();
+
         cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
         cy.get(`${selectors.table.th}:contains('Entity')`);
         cy.get(`${selectors.table.th}:contains('Traffic')`);

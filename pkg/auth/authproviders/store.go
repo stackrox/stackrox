@@ -8,7 +8,7 @@ import (
 
 // Store provides storage functionality for auth providers.
 type Store interface {
-	GetAllAuthProviders() ([]*storage.AuthProvider, error)
+	GetAllAuthProviders(ctx context.Context) ([]*storage.AuthProvider, error)
 
 	AddAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error
 	UpdateAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error

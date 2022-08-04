@@ -9,6 +9,7 @@ import objects.SortOption
 import org.junit.experimental.categories.Category
 import services.GraphQLService
 import services.ImageService
+import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Unroll
 import util.Env
@@ -75,11 +76,11 @@ class CSVTest extends BaseSpecification {
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
             .setName("nginx-deployment")
-            .setImage("nginx:1.9")
+            .setImage("quay.io/rhacs-eng/qa:nginx-1-9")
             .addLabel("app", "test")
 
     def setupSpec() {
-        ImageService.scanImage("nginx:1.9")
+        ImageService.scanImage("quay.io/rhacs-eng/qa:nginx-1-9")
         orchestrator.createDeployment(CVE_DEPLOYMENT)
         assert Services.waitForDeployment(CVE_DEPLOYMENT)
     }
@@ -95,6 +96,7 @@ class CSVTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify CVE CSV data scoped by entity is correct"() {
         when:
         "Query fixable CVEs from graphQL"
@@ -130,18 +132,18 @@ class CSVTest extends BaseSpecification {
             reader = new CSVReader(new InputStreamReader(response.body().asInputStream()))
             lines = reader.readAll()
         } catch (Exception e) {
-            e.printStackTrace()
+            log.error("Could not read response body", e)
         } finally {
             try {
                 if (reader != null) {
                     reader.close()
                 }
             } catch (IOException e) {
-                e.printStackTrace()
+                log.error("Could not close reader", e)
             }
         }
 
-        println "Number of CVEs received from CSV endpoint: " + lines.size()
+        log.info "Number of CVEs received from CSV endpoint: " + lines.size()
 
         def csvCVEs = new ArrayList<CVE>()
         for (int i = 1; i < lines.size(); i++) {
@@ -172,13 +174,13 @@ class CSVTest extends BaseSpecification {
 
         graphQLQuery                    | graphQLPayload | csvQuery
         FIXABLE_CVES_IN_IMAGE_QUERY     | [
-                id        : "sha256:54313b5c376892d55205f13d620bc3dcccc8e70e596d083953f95e94f071f6db",
+                id        : "sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f",
                 query: "",
                 // must scope without scope query since graphQL is hitting sub-resolver
                 scopeQuery: "",
                 vulnQuery : "Fixable:true",
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
-        ] | "Image Sha:sha256:54313b5c376892d55205f13d620bc3dcccc8e70e596d083953f95e94f071f6db+Fixable:true"
+        ] | "Image Sha:sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f+Fixable:true"
         FIXABLE_CVES_IN_COMPONENT_QUERY | [
                 // openssl 1.0.1k-3+deb8u5
                 id        : "b3BlbnNzbA:MS4wLjFrLTMrZGViOHU1",

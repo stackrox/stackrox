@@ -29,13 +29,17 @@ import (
 const (
 	fragmentCallbackURLPath = "/auth/response/oidc"
 
-	issuerConfigKey              = "issuer"
-	clientIDConfigKey            = "client_id"
-	clientSecretConfigKey        = "client_secret"
-	dontUseClientSecretConfigKey = "do_not_use_client_secret"
-	modeConfigKey                = "mode"
+	issuerConfigKey                    = "issuer"
+	clientIDConfigKey                  = "client_id"
+	clientSecretConfigKey              = "client_secret"
+	dontUseClientSecretConfigKey       = "do_not_use_client_secret"
+	modeConfigKey                      = "mode"
+	disableOfflineAccessScopeConfigKey = "disable_offline_access_scope"
 
 	userInfoExpiration = 5 * time.Minute
+
+	orgIDAttribute = "orgid"
+	orgAdminGroup  = "org_admin"
 )
 
 type nonceVerificationSetting int
@@ -302,7 +306,14 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 
 	b.idTokenVerifier = provider.Verifier(&oidc.Config{ClientID: clientID})
 
-	b.baseOauthConfig, err = createBaseOAuthConfig(clientID, clientSecret, provider.Endpoint(), issuerHelper, provider.SupportsScope(oidc.ScopeOfflineAccess))
+	disableOfflineAccessScope := config[disableOfflineAccessScopeConfigKey] == "true"
+	b.baseOauthConfig, err = createBaseOAuthConfig(
+		clientID,
+		clientSecret,
+		provider.Endpoint(),
+		issuerHelper,
+		!disableOfflineAccessScope && provider.SupportsScope(oidc.ScopeOfflineAccess),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -312,6 +323,9 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		clientIDConfigKey:     clientID,
 		clientSecretConfigKey: clientSecret,
 		modeConfigKey:         mode,
+	}
+	if disableOfflineAccessScope {
+		b.config[disableOfflineAccessScopeConfigKey] = "true"
 	}
 
 	return b, nil
@@ -562,12 +576,18 @@ func (p *backendImpl) Validate(context.Context, *tokens.Claims) error {
 // Helpers
 ///////////
 
-// UserInfo is an internal helper struct to unmarshal OIDC token info into.
+// userInfoType is an internal helper struct to unmarshal OIDC token info into.
 type userInfoType struct {
 	Name   string   `json:"name"`
 	EMail  string   `json:"email"`
 	UID    string   `json:"sub"`
 	Groups []string `json:"groups"`
+	// Every Red Hat SSO user belongs to exactly one organization, claim
+	// "account_id" represents that organisation. See more on the claims here:
+	// 	https://source.redhat.com/groups/public/it-user/it_user_team_wiki/topic_external_sso_enablements#attributes-needed
+	OrgID string `json:"account_id"`
+	// Claim "is_org_admin" is the claim that identifies organisation admins within sso.redhat.com.
+	IsOrgAdmin bool `json:"is_org_admin"`
 }
 
 func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim {
@@ -597,6 +617,14 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	// If using non-standard group information add them.
 	if len(userInfo.Groups) > 0 {
 		claim.Attributes[authproviders.GroupsAttribute] = userInfo.Groups
+	}
+
+	// Add sso.redhat.com attributes.
+	if userInfo.OrgID != "" {
+		claim.Attributes[orgIDAttribute] = []string{userInfo.OrgID}
+	}
+	if userInfo.IsOrgAdmin {
+		claim.Attributes[authproviders.GroupsAttribute] = append(claim.Attributes[authproviders.GroupsAttribute], orgAdminGroup)
 	}
 	return claim
 }

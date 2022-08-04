@@ -77,7 +77,7 @@ export const GET_IMAGE_VULNERABILITIES = gql`
             }
             vulnCount(query: $vulnsQuery)
             vulns(query: $vulnsQuery, pagination: $pagination) {
-                id: cve
+                id
                 cve
                 isFixable
                 severity

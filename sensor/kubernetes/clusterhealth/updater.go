@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -27,6 +28,9 @@ const (
 
 	admissionControlDeploymentName = "admission-control"
 	admissionControlContainerName  = "admission-control"
+
+	localScannerDeploymentName   = "scanner"
+	localScannerDBDeploymentName = "scanner-db"
 )
 
 var (
@@ -71,12 +75,14 @@ func (u *updaterImpl) run() {
 		case <-ticker.C:
 			collectorHealthInfo := u.getCollectorInfo()
 			admissionControlHealthInfo := u.getAdmissionControlInfo()
+			scannerHealthInfo := u.getLocalScannerInfo()
 			select {
 			case u.updates <- &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ClusterHealthInfo{
 					ClusterHealthInfo: &central.RawClusterHealthInfo{
 						CollectorHealthInfo:        collectorHealthInfo,
 						AdmissionControlHealthInfo: admissionControlHealthInfo,
+						ScannerHealthInfo:          scannerHealthInfo,
 					},
 				},
 			}:
@@ -154,6 +160,44 @@ func (u *updaterImpl) getAdmissionControlInfo() *storage.AdmissionControlHealthI
 	if len(result.StatusErrors) > 0 {
 		log.Errorf("Errors while getting admission control info: %v", result.StatusErrors)
 	}
+	return &result
+}
+
+func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
+	if !env.LocalImageScanningEnabled.BooleanSetting() {
+		return nil
+	}
+	var result storage.ScannerHealthInfo
+	// Local Scanner deployment is looked up in the same namespace as Sensor because that is how they should be deployed.
+	localScanner, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), localScannerDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner deployment in namespace %q", u.namespace))
+		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner deployment in namespace %q: %v", u.namespace, err))
+	} else {
+		result.TotalDesiredAnalyzerPodsOpt = &storage.ScannerHealthInfo_TotalDesiredAnalyzerPods{
+			TotalDesiredAnalyzerPods: localScanner.Status.Replicas,
+		}
+		result.TotalReadyAnalyzerPodsOpt = &storage.ScannerHealthInfo_TotalReadyAnalyzerPods{
+			TotalReadyAnalyzerPods: localScanner.Status.ReadyReplicas,
+		}
+	}
+	localScannerDB, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), localScannerDBDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner DB deployment in namespace %q", u.namespace))
+		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner DB deployment in namespace %q: %v", u.namespace, err))
+	} else {
+		result.TotalDesiredDbPodsOpt = &storage.ScannerHealthInfo_TotalDesiredDbPods{
+			TotalDesiredDbPods: localScannerDB.Status.Replicas,
+		}
+		result.TotalReadyDbPodsOpt = &storage.ScannerHealthInfo_TotalReadyDbPods{
+			TotalReadyDbPods: localScannerDB.Status.ReadyReplicas,
+		}
+	}
+
+	if len(result.StatusErrors) > 0 {
+		log.Errorf("Errors while getting local scanner info: %v", result.StatusErrors)
+	}
+
 	return &result
 }
 

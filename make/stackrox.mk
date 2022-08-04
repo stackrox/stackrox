@@ -2,6 +2,8 @@
 IMAGE ?= $(ROX_PROJECT)
 PROJECT_SUBDIR ?= $(ROX_PROJECT)
 BINARY ?= $(ROX_PROJECT)
+# Set to empty string to echo some command lines which are hidden by default.
+SILENT ?= @
 
 GO111MODULE := on
 export GO111MODULE
@@ -17,7 +19,7 @@ docs: generated-srcs
 	@echo
 	@echo 'Access your docs at http://localhost:6061/pkg/github.com/stackrox/rox/$(ROX_PROJECT)/'
 	@echo 'Hit CTRL-C to quit.'
-	@godoc -http=:6061
+	$(SILENT)godoc -http=:6061
 
 
 #############
@@ -35,12 +37,12 @@ posttest:
 .PHONY: test-common
 test-common:
 	@echo "+ $@"
-	@$(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v $(shell go list -e ./... | grep -v generated | grep -v integration-tests | grep -v vendor) 2>&1 | tee test.log
+	$(SILENT)$(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v $(shell go list -e ./... | grep -v generated | grep -v integration-tests | grep -v vendor) 2>&1 | tee test.log
 
 .PHONY: test-integration
 test-integration:
 	@echo "+ $@"
-	@GOTAGS=$(GOTAGS),test,integration $(TOPLEVEL)/scripts/go-test.sh -cover -v $(shell go list -e ./... | grep -v generated | grep -v integration-tests | grep -v vendor) 2>&1 | tee test.log
+	$(SILENT)GOTAGS=$(GOTAGS),test,integration $(TOPLEVEL)/scripts/go-test.sh -cover -v $(shell go list -e ./... | grep -v generated | grep -v integration-tests | grep -v vendor) 2>&1 | tee test.log
 
 .PHONY: test-all
 test-all: test-integration
@@ -48,7 +50,7 @@ test-all: test-integration
 GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN):
 	@echo "+ $@"
-	@cd $(TOPLEVEL)/tools/test/ && go install github.com/jstemmer/go-junit-report
+	$(SILENT)cd $(TOPLEVEL)/tools/test/ && go install github.com/jstemmer/go-junit-report/v2
 
 .PHONY: report
 report: $(GO_JUNIT_REPORT_BIN)

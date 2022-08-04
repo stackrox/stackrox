@@ -4,33 +4,29 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sync"
+	"gorm.io/gorm"
 )
 
 const (
-	baseTable  = "clusterinitbundles"
-	countStmt  = "SELECT COUNT(*) FROM clusterinitbundles"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusterinitbundles WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM clusterinitbundles WHERE Id = $1"
-	deleteStmt  = "DELETE FROM clusterinitbundles WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM clusterinitbundles"
-	getIDsStmt  = "SELECT Id FROM clusterinitbundles"
-	getManyStmt = "SELECT serialized FROM clusterinitbundles WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM clusterinitbundles WHERE Id = ANY($1::text[])"
+	baseTable = "cluster_init_bundles"
 
 	batchAfter = 100
 
@@ -38,16 +34,14 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.InitBundleMeta)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = pkgSchema.ClusterInitBundlesSchema
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -67,69 +61,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	mutex sync.Mutex
 }
 
-func createTableClusterinitbundles(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists clusterinitbundles (
-    Id varchar,
-    Name varchar,
-    CreatedAt timestamp,
-    CreatedBy_Id varchar,
-    CreatedBy_AuthProviderId varchar,
-    IsRevoked bool,
-    ExpiresAt timestamp,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+// New returns a new Store instance using the provided sql instance.
+func New(db *pgxpool.Pool) Store {
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableClusterinitbundlesAttributes(ctx, db)
 }
 
-func createTableClusterinitbundlesAttributes(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists clusterinitbundles_Attributes (
-    clusterinitbundles_Id varchar,
-    idx integer,
-    Key varchar,
-    Value varchar,
-    PRIMARY KEY(clusterinitbundles_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (clusterinitbundles_Id) REFERENCES clusterinitbundles(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists clusterinitbundlesAttributes_idx on clusterinitbundles_Attributes using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func insertIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, obj *storage.InitBundleMeta) error {
+func insertIntoClusterInitBundles(ctx context.Context, batch *pgx.Batch, obj *storage.InitBundleMeta) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -139,57 +82,16 @@ func insertIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, obj *storage.I
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetName(),
-		pgutils.NilOrTime(obj.GetCreatedAt()),
-		obj.GetCreatedBy().GetId(),
-		obj.GetCreatedBy().GetAuthProviderId(),
-		obj.GetIsRevoked(),
-		pgutils.NilOrTime(obj.GetExpiresAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusterinitbundles (Id, Name, CreatedAt, CreatedBy_Id, CreatedBy_AuthProviderId, IsRevoked, ExpiresAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, CreatedAt = EXCLUDED.CreatedAt, CreatedBy_Id = EXCLUDED.CreatedBy_Id, CreatedBy_AuthProviderId = EXCLUDED.CreatedBy_AuthProviderId, IsRevoked = EXCLUDED.IsRevoked, ExpiresAt = EXCLUDED.ExpiresAt, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetCreatedBy().GetAttributes() {
-		if err := insertIntoClusterinitbundlesAttributes(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from clusterinitbundles_Attributes where clusterinitbundles_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetCreatedBy().GetAttributes()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, obj *storage.UserAttribute, clusterinitbundles_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		clusterinitbundles_Id,
-		idx,
-		obj.GetKey(),
-		obj.GetValue(),
-	}
-
-	finalStr := "INSERT INTO clusterinitbundles_Attributes (clusterinitbundles_Id, idx, Key, Value) VALUES($1, $2, $3, $4) ON CONFLICT(clusterinitbundles_Id, idx) DO UPDATE SET clusterinitbundles_Id = EXCLUDED.clusterinitbundles_Id, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO cluster_init_bundles (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, objs ...*storage.InitBundleMeta) error {
+func (s *storeImpl) copyFromClusterInitBundles(ctx context.Context, tx pgx.Tx, objs ...*storage.InitBundleMeta) error {
 
 	inputRows := [][]interface{}{}
 
@@ -202,18 +104,6 @@ func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 	copyCols := []string{
 
 		"id",
-
-		"name",
-
-		"createdat",
-
-		"createdby_id",
-
-		"createdby_authproviderid",
-
-		"isrevoked",
-
-		"expiresat",
 
 		"serialized",
 	}
@@ -231,18 +121,6 @@ func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 
 			obj.GetId(),
 
-			obj.GetName(),
-
-			pgutils.NilOrTime(obj.GetCreatedAt()),
-
-			obj.GetCreatedBy().GetId(),
-
-			obj.GetCreatedBy().GetAuthProviderId(),
-
-			obj.GetIsRevoked(),
-
-			pgutils.NilOrTime(obj.GetExpiresAt()),
-
 			serialized,
 		})
 
@@ -254,72 +132,13 @@ func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"clusterinitbundles"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromClusterinitbundlesAttributes(ctx, tx, obj.GetId(), obj.GetCreatedBy().GetAttributes()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, clusterinitbundles_Id string, objs ...*storage.UserAttribute) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"clusterinitbundles_id",
-
-		"idx",
-
-		"key",
-
-		"value",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			clusterinitbundles_Id,
-
-			idx,
-
-			obj.GetKey(),
-
-			obj.GetValue(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"clusterinitbundles_attributes"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"cluster_init_bundles"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -331,19 +150,13 @@ func (s *storeImpl) copyFromClusterinitbundlesAttributes(ctx context.Context, tx
 	}
 
 	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableClusterinitbundles(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.InitBundleMeta) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "InitBundleMeta")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "InitBundleMeta")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -351,7 +164,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.InitBundleMet
 		return err
 	}
 
-	if err := s.copyFromClusterinitbundles(ctx, tx, objs...); err != nil {
+	if err := s.copyFromClusterInitBundles(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -364,22 +177,27 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.InitBundleMet
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.InitBundleMeta) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "InitBundleMeta")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "InitBundleMeta")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoClusterInitBundles(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoClusterinitbundles(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		if err := batchResults.Close(); err != nil {
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}
@@ -389,11 +207,29 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.InitBundleMeta)
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.InitBundleMeta) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "InitBundleMeta")
 
+	if ok, err := permissionCheckerSingleton().UpsertAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.InitBundleMeta) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "InitBundleMeta")
+
+	if ok, err := permissionCheckerSingleton().UpsertManyAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+	// violations
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -406,36 +242,51 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.InitBundleMe
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "InitBundleMeta")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
+	var sacQueryFilter *v1.Query
+
+	if ok, err := permissionCheckerSingleton().CountAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
-	return count, nil
+
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "InitBundleMeta")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	if ok, err := permissionCheckerSingleton().ExistsAllowed(ctx); err != nil || !ok {
+		return false, err
 	}
-	return exists, nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.InitBundleMeta, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "InitBundleMeta")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "InitBundleMeta")
-	defer release()
+	var sacQueryFilter *v1.Query
+	if ok, err := permissionCheckerSingleton().GetAllowed(ctx); err != nil || !ok {
+		return nil, false, err
+	}
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -446,45 +297,51 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.InitBundleMeta
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "InitBundleMeta")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "InitBundleMeta")
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	var sacQueryFilter *v1.Query
+	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
 		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.InitBundleMetaIDs")
-
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	var sacQueryFilter *v1.Query
+	if ok, err := permissionCheckerSingleton().GetIDsAllowed(ctx); err != nil || !ok {
+		return nil, err
+	}
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
 	}
+
 	return ids, nil
 }
 
@@ -492,12 +349,24 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.InitBundleMeta, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "InitBundleMeta")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "InitBundleMeta")
-	defer release()
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	var sacQueryFilter *v1.Query
+	if ok, err := permissionCheckerSingleton().GetManyAllowed(ctx); err != nil {
+		return nil, nil, err
+	} else if !ok {
+		return nil, nil, nil
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -506,13 +375,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.InitB
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.InitBundleMeta)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.InitBundleMeta{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
@@ -537,32 +401,48 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.InitB
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "InitBundleMeta")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "InitBundleMeta")
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	var sacQueryFilter *v1.Query
+	if ok, err := permissionCheckerSingleton().DeleteManyAllowed(ctx); err != nil {
 		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.InitBundleMeta) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
-	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	if ok, err := permissionCheckerSingleton().WalkAllowed(ctx); err != nil || !ok {
+		return err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		var msg storage.InitBundleMeta
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
+		for _, data := range rows {
+			var msg storage.InitBundleMeta
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
 		}
-		if err := fn(&msg); err != nil {
-			return err
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil
@@ -570,19 +450,19 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.InitBundleMet
 
 //// Used for testing
 
-func dropTableClusterinitbundles(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS clusterinitbundles CASCADE")
-	dropTableClusterinitbundlesAttributes(ctx, db)
-
-}
-
-func dropTableClusterinitbundlesAttributes(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS clusterinitbundles_Attributes CASCADE")
+func dropTableClusterInitBundles(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS cluster_init_bundles CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableClusterinitbundles(ctx, db)
+	dropTableClusterInitBundles(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

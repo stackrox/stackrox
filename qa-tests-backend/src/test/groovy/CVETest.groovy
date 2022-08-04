@@ -1,13 +1,13 @@
 import com.google.protobuf.util.Timestamps
-
 import groups.BAT
 import objects.Deployment
+import org.junit.experimental.categories.Category
 import services.GraphQLService
 import services.ImageService
-
-import org.junit.experimental.categories.Category
 import spock.lang.Ignore
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
+import util.Env
 
 class CVETest extends BaseSpecification {
     private static final GET_CVES_QUERY = """
@@ -208,7 +208,7 @@ class CVETest extends BaseSpecification {
         def resultRet = gqlService.Call(GET_CVES_QUERY,
                 [query: "Image:${image}+CVE:${cve}", scopeQuery: ""])
         assert resultRet.getCode() == 200
-        println "return code " + resultRet.getCode()
+        log.info "return code " + resultRet.getCode()
 
         then:
         "Verify specific CVE data"
@@ -254,7 +254,7 @@ class CVETest extends BaseSpecification {
 
         def resultRet = gqlService.Call(GET_CVES_QUERY, [query: "${query}", scopeQuery: ""])
         assert resultRet.getCode() == 200
-        println "return code " + resultRet.getCode()
+        log.info "return code " + resultRet.getCode()
 
         then:
         "Verify specific CVE data"
@@ -273,13 +273,20 @@ class CVETest extends BaseSpecification {
         where:
         "data inputs"
 
-        query                                                                  | cve             | checkImageCount
-        "Deployment:${CVE_DEPLOYMENT_NAME}+Image:nginx:1.9+CVE:CVE-2005-2541"  | "CVE-2005-2541" | true
-        "Label:name=cve-deployment+CVE:CVE-2005-2541"                          | "CVE-2005-2541" | true
-        "Image:nginx:1.9+CVE:CVE-2005-2541"                                    | "CVE-2005-2541" | true
-        "CVSS:10+CVE:CVE-2005-2541"                                            | "CVE-2005-2541" | false
-        "Component:tar+CVE:CVE-2005-2541"                                      | "CVE-2005-2541" | false
-        "CVE:CVE-2005-2541"                                                    | "CVE-2005-2541" | false
+        query                                                                  |
+                cve             | checkImageCount
+        "Deployment:${CVE_DEPLOYMENT_NAME}+Image:quay.io/rhacs-eng/qa:nginx-1-9+CVE:CVE-2005-2541"  |
+                "CVE-2005-2541" | true
+        "Label:name=cve-deployment+CVE:CVE-2005-2541"                          |
+                "CVE-2005-2541" | true
+        "Image:quay.io/rhacs-eng/qa:nginx-1-9+CVE:CVE-2005-2541"               |
+                "CVE-2005-2541" | true
+        "CVSS:10+CVE:CVE-2005-2541"                                            |
+                "CVE-2005-2541" | false
+        "Component:tar+CVE:CVE-2005-2541"                                      |
+                "CVE-2005-2541" | false
+        "CVE:CVE-2005-2541"                                                    |
+                "CVE-2005-2541" | false
     }
 
     @Unroll
@@ -413,6 +420,7 @@ class CVETest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable for entities when scoped by CVE is still correct"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"
@@ -432,6 +440,7 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable is correct when scoped (#digest, #fixable)"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"

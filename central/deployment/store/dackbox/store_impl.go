@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -31,8 +32,8 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) *StoreImpl {
 	}
 }
 
-// CountDeployments returns the number of deployments in dackbox.
-func (b *StoreImpl) CountDeployments() (int, error) {
+// Count returns the number of deployments in dackbox.
+func (b *StoreImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Deployment")
 
 	txn, err := b.dacky.NewReadOnlyTransaction()
@@ -49,8 +50,8 @@ func (b *StoreImpl) CountDeployments() (int, error) {
 	return count, nil
 }
 
-// GetDeploymentIDs returns the keys of all deployments stored in RocksDB.
-func (b *StoreImpl) GetDeploymentIDs() ([]string, error) {
+// GetIDs returns the keys of all deployments stored in RocksDB.
+func (b *StoreImpl) GetIDs(_ context.Context) ([]string, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
 
 	txn, err := b.dacky.NewReadOnlyTransaction()
@@ -67,8 +68,8 @@ func (b *StoreImpl) GetDeploymentIDs() ([]string, error) {
 	return ids, err
 }
 
-// ListDeployment returns ListDeployment with given id.
-func (b *StoreImpl) ListDeployment(id string) (deployment *storage.ListDeployment, exists bool, err error) {
+// GetListDeployment returns ListDeployment with given id.
+func (b *StoreImpl) GetListDeployment(ctx context.Context, id string) (deployment *storage.ListDeployment, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ListDeployment")
 
 	txn, err := b.dacky.NewReadOnlyTransaction()
@@ -85,8 +86,8 @@ func (b *StoreImpl) ListDeployment(id string) (deployment *storage.ListDeploymen
 	return msg.(*storage.ListDeployment), true, nil
 }
 
-// ListDeploymentsWithIDs returns list deployments with the given ids.
-func (b *StoreImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error) {
+// GetManyListDeployments returns list deployments with the given ids.
+func (b *StoreImpl) GetManyListDeployments(_ context.Context, ids ...string) ([]*storage.ListDeployment, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
 
 	txn, err := b.dacky.NewReadOnlyTransaction()
@@ -115,8 +116,8 @@ func (b *StoreImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeploy
 	return ret, missing, nil
 }
 
-// GetDeployment returns deployment with given id.
-func (b *StoreImpl) GetDeployment(id string) (deployment *storage.Deployment, exists bool, err error) {
+// Get returns deployment with given id.
+func (b *StoreImpl) Get(_ context.Context, id string) (deployment *storage.Deployment, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Deployment")
 
 	txn, err := b.dacky.NewReadOnlyTransaction()
@@ -133,8 +134,8 @@ func (b *StoreImpl) GetDeployment(id string) (deployment *storage.Deployment, ex
 	return msg.(*storage.Deployment), true, err
 }
 
-// GetDeploymentsWithIDs returns deployments with the given ids.
-func (b *StoreImpl) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment, []int, error) {
+// GetMany returns deployments with the given ids.
+func (b *StoreImpl) GetMany(_ context.Context, ids []string) ([]*storage.Deployment, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
 
 	txn, err := b.dacky.NewReadOnlyTransaction()
@@ -163,8 +164,8 @@ func (b *StoreImpl) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment,
 	return ret, missing, nil
 }
 
-// UpsertDeployment updates a deployment to dackbox.
-func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
+// Upsert updates a deployment to dackbox.
+func (b *StoreImpl) Upsert(_ context.Context, deployment *storage.Deployment) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "Deployment")
 
 	var imageKeys [][]byte
@@ -212,8 +213,8 @@ func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 	})
 }
 
-// RemoveDeployment deletes an deployment and it's list object counter-part.
-func (b *StoreImpl) RemoveDeployment(id string) error {
+// Delete deletes an deployment and it's list object counter-part.
+func (b *StoreImpl) Delete(_ context.Context, id string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
 	namespaceKey, allKeys := b.collectDeploymentKeys(id)
@@ -285,14 +286,4 @@ func convertDeploymentToListDeployment(d *storage.Deployment) *storage.ListDeplo
 		Created:   d.GetCreated(),
 		Priority:  d.GetPriority(),
 	}
-}
-
-// AckKeysIndexed is a stub for the store interface
-func (b *StoreImpl) AckKeysIndexed(_ ...string) error {
-	return nil
-}
-
-// GetKeysToIndex is a stub for the store interface
-func (b *StoreImpl) GetKeysToIndex() ([]string, error) {
-	return nil, nil
 }

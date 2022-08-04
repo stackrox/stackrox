@@ -1,0 +1,60 @@
+{
+  "data": {
+    "result": {
+      "id": "065fe8cb-d9af-4516-a91e-3941e9db58ca",
+      "annotations": [],
+      "clusterId": "e85849ca-60f9-4777-b251-c98ca45319bd",
+      "clusterName": "remote",
+      "externalIpAddresses": [],
+      "internalIpAddresses": ["10.0.0.5"],
+      "joinedAt": "2022-04-12T14:41:03Z",
+      "labels": [],
+      "containerRuntimeVersion": "cri-o://1.20.6-11.rhaos4.7.git76ea3d0.el8",
+      "kernelVersion": "4.18.0-305.40.2.el8_4.x86_64",
+      "kubeletVersion": "v1.20.14+0d60930",
+      "osImage": "Red Hat Enterprise Linux CoreOS 47.84.202203141332-0 (Ootpa)",
+      "name": "rt-04-12-ruthless-day-8vd4k-master-1",
+      "nodeStatus": "active",
+      "notes": ["MISSING_SCAN_DATA"],
+      "vulnCount": 0,
+      "priority": 1,
+      "topVuln": null,
+      "scan": {
+        "scanTime": "2022-04-12T15:51:56.591973883Z",
+        "notes": ["UNSUPPORTED"],
+        "components": [
+          {
+            "id": "Y3JpLW8:MS4yMC42LTExLnJoYW9zNC43LmdpdDc2ZWEzZDAuZWw4",
+            "name": "cri-o",
+            "priority": 0,
+            "version": "1.20.6-11.rhaos4.7.git76ea3d0.el8",
+            "__typename": "EmbeddedNodeScanComponent"
+          },
+          {
+            "id": "a2VybmVs:",
+            "name": "kernel",
+            "priority": 0,
+            "version": "",
+            "__typename": "EmbeddedNodeScanComponent"
+          },
+          {
+            "id": "a3ViZS1wcm94eQ:djEuMjAuMTQrMGQ2MDkzMA",
+            "name": "kube-proxy",
+            "priority": 0,
+            "version": "v1.20.14+0d60930",
+            "__typename": "EmbeddedNodeScanComponent"
+          },
+          {
+            "id": "a3ViZWxldA:djEuMjAuMTQrMGQ2MDkzMA",
+            "name": "kubelet",
+            "priority": 0,
+            "version": "v1.20.14+0d60930",
+            "__typename": "EmbeddedNodeScanComponent"
+          }
+        ],
+        "__typename": "NodeScan"
+      },
+      "__typename": "Node"
+    }
+  }
+}

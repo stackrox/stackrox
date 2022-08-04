@@ -5,60 +5,67 @@ set -euo pipefail
 
 # Runs all e2e tests. Derived from the workload of CircleCI gke-api-nongroovy-tests.
 
-TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-source "$TEST_ROOT/scripts/lib.sh"
-source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
-source "$TEST_ROOT/tests/scripts/setup-certs.sh"
-source "$TEST_ROOT/tests/e2e/lib.sh"
+source "$ROOT/scripts/lib.sh"
+source "$ROOT/scripts/ci/sensor-wait.sh"
+source "$ROOT/tests/scripts/setup-certs.sh"
+source "$ROOT/tests/e2e/lib.sh"
 
 test_e2e() {
-    info "Starting test"
+    info "Starting e2e tests"
 
-    DEPLOY_DIR="deploy/k8s"
-    QUAY_REPO="rhacs-eng"
-    if is_CI; then
-        REGISTRY="quay.io/$QUAY_REPO"
-    else
-        REGISTRY="stackrox"
-    fi
+    require_environment "KUBECONFIG"
+
+    export_test_environment
+
+    export SENSOR_HELM_DEPLOY=true
+    export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
+    export ROX_NETPOL_FIELDS=true
 
     test_preamble
+    setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
-    "$TEST_ROOT/tests/complianceoperator/create.sh"
+    "$ROOT/tests/complianceoperator/create.sh"
 
-    info "Deploying central"
-    "$TEST_ROOT/$DEPLOY_DIR/central.sh"
-    get_central_basic_auth_creds
-    wait_for_api
-    setup_client_TLS_certs
-
-    info "Deploying sensor"
-    "$TEST_ROOT/$DEPLOY_DIR/sensor.sh"
-    sensor_wait
+    deploy_stackrox
 
     prepare_for_endpoints_test
 
     run_roxctl_tests
-    run_roxctl_bats_tests "roxctl-test-output"
+    run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
+    store_test_results "roxctl-test-output" "roxctl-test-output"
+    [[ ! -f FAIL ]] || die "e2e tests failed"
 
     info "E2E API tests"
-    make -C tests
+    make -C tests || touch FAIL
+    store_test_results "tests/all-tests-results" "all-tests-results"
+    [[ ! -f FAIL ]] || die "e2e tests failed"
 
-    setup_proxy_tests
-    run_proxy_tests
+    info "Sensor k8s integration tests"
+    make sensor-integration-test || touch FAIL
+    store_test_results "test-output/sensor-integration.log" "sensor-integration"
+    [[ ! -f FAIL ]] || die "e2e tests failed"
 
-    collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_phase"
+    setup_proxy_tests "localhost"
+    run_proxy_tests "localhost"
+    cd "$ROOT"
+
+    collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
 
     info "E2E destructive tests"
-    make -C tests destructive-tests
+    make -C tests destructive-tests || touch FAIL
+    store_test_results "tests/destructive-tests-results" "destructive-tests-results"
+    [[ ! -f FAIL ]] || die "e2e tests failed"
 
     restore_56_1_backup
     wait_for_api
 
     info "E2E external backup tests"
-    make -C tests external-backup-tests
+    make -C tests external-backup-tests || touch FAIL
+    store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
+    [[ ! -f FAIL ]] || die "e2e tests failed"
 }
 
 test_preamble() {
@@ -81,24 +88,22 @@ test_preamble() {
         export MAIN_TAG
     fi
 
-    export MONITORING_SUPPORT=true
-    export SCANNER_SUPPORT=true
-    export LOAD_BALANCER=lb
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
-    export ROXDEPLOY_CONFIG_FILE_MAP="$TEST_ROOT/scripts/ci/endpoints/endpoints.yaml"
-    export ROX_NETWORK_DETECTION_BASELINE_SIMULATION=true
-    export ROX_NETWORK_DETECTION_BLOCKED_FLOWS=true
-    export SENSOR_HELM_DEPLOY=true
-    export ROX_ACTIVE_VULN_MANAGEMENT=true
-    export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
-    MONITORING_IMAGE="$REGISTRY/monitoring:$(cat "$TEST_ROOT"/MONITORING_VERSION)"
-    export MONITORING_IMAGE
-    SCANNER_IMAGE="$REGISTRY/scanner:$(cat "$TEST_ROOT"/SCANNER_VERSION)"
+    export ROXDEPLOY_CONFIG_FILE_MAP="$ROOT/scripts/ci/endpoints/endpoints.yaml"
+    
+    QUAY_REPO="rhacs-eng"
+    if is_CI; then
+        REGISTRY="quay.io/$QUAY_REPO"
+    else
+        REGISTRY="stackrox"
+    fi
+
+    SCANNER_IMAGE="$REGISTRY/scanner:$(cat "$ROOT"/SCANNER_VERSION)"
     export SCANNER_IMAGE
-    SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat "$TEST_ROOT"/SCANNER_VERSION)"
+    SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat "$ROOT"/SCANNER_VERSION)"
     export SCANNER_DB_IMAGE
 
-    export TRUSTED_CA_FILE="$TEST_ROOT/tests/bad-ca/untrusted-root-badssl-com.pem"
+    export TRUSTED_CA_FILE="$ROOT/tests/bad-ca/untrusted-root-badssl-com.pem"
 }
 
 prepare_for_endpoints_test() {
@@ -121,29 +126,35 @@ run_roxctl_bats_tests() {
     if (( $# != 2 )); then
       die "Error: run_roxctl_bats_tests requires 2 arguments: run_roxctl_bats_tests <test_output> <suite>"
     fi
-    [[ -d "$TEST_ROOT/tests/roxctl/bats-tests/$suite" ]] || die "Cannot find directory: $TEST_ROOT/tests/roxctl/bats-tests/$suite"
+    [[ -d "$ROOT/tests/roxctl/bats-tests/$suite" ]] || die "Cannot find directory: $ROOT/tests/roxctl/bats-tests/$suite"
 
     info "Running Bats e2e tests on development roxctl"
-    "$TEST_ROOT/tests/roxctl/bats-runner.sh" "$output" "$TEST_ROOT/tests/roxctl/bats-tests/$suite"
+    "$ROOT/tests/roxctl/bats-runner.sh" "$output" "$ROOT/tests/roxctl/bats-tests/$suite"
 }
 
 run_roxctl_tests() {
     info "Run roxctl tests"
 
-    "$TEST_ROOT/tests/roxctl/token-file.sh"
-    "$TEST_ROOT/tests/roxctl/slim-collector.sh"
-    "$TEST_ROOT/tests/roxctl/authz-trace.sh"
-    "$TEST_ROOT/tests/roxctl/istio-support.sh"
-    "$TEST_ROOT/tests/roxctl/helm-chart-generation.sh"
-    CA="$SERVICE_CA_FILE" "$TEST_ROOT/tests/yamls/roxctl_verification.sh"
+    "$ROOT/tests/roxctl/token-file.sh"
+    "$ROOT/tests/roxctl/slim-collector.sh"
+    "$ROOT/tests/roxctl/authz-trace.sh"
+    "$ROOT/tests/roxctl/istio-support.sh"
+    "$ROOT/tests/roxctl/helm-chart-generation.sh"
+    CA="$SERVICE_CA_FILE" "$ROOT/tests/yamls/roxctl_verification.sh"
 }
 
 setup_proxy_tests() {
     info "Setup for proxy tests"
 
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: setup_proxy_tests <server_name>"
+    fi
+
+    local server_name="$1"
+
     PROXY_CERTS_DIR="$(mktemp -d)"
     export PROXY_CERTS_DIR="$PROXY_CERTS_DIR"
-    "$TEST_ROOT/scripts/ci/proxy/deploy.sh"
+    "$ROOT/scripts/ci/proxy/deploy.sh" "${server_name}"
 
     # Try preventing kubectl port-forward from hitting the FD limit, see
     # https://github.com/kubernetes/kubernetes/issues/74551#issuecomment-910520361
@@ -160,8 +171,8 @@ setup_proxy_tests() {
     nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http2-plain 15443:443 </dev/null &>/dev/null &
     sleep 1
 
-    if ! grep central-proxy.stackrox.local /etc/hosts; then
-        sudo bash -c 'echo "127.0.0.1 central-proxy.stackrox.local" >>/etc/hosts'
+    if is_CIRCLECI && ! grep "${server_name}" /etc/hosts; then
+        sudo bash -c "echo 127.0.0.1 ${server_name} >>/etc/hosts"
     fi
 }
 
@@ -174,10 +185,16 @@ cleanup_proxy_tests() {
 run_proxy_tests() {
     info "Running proxy tests"
 
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: run_proxy_tests <server_name>"
+    fi
+
+    local server_name="$1"
+
     info "Test HTTP access to plain HTTP proxy"
     # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
     local license_status
-    license_status="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f 'http://central-proxy.stackrox.local:10080/v1/metadata' | jq -r '.licenseStatus')"
+    license_status="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f http://"${server_name}":10080/v1/metadata | jq -r '.licenseStatus')"
     echo "Got license status ${license_status} from server"
     [[ "$license_status" == "VALID" ]]
 
@@ -187,7 +204,7 @@ run_proxy_tests() {
         curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
         --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
         -f \
-        'https://central-proxy.stackrox.local:10443/v1/metadata' | jq -r '.licenseStatus')"
+        https://"${server_name}":10443/v1/metadata | jq -r '.licenseStatus')"
     echo "Got license status ${license_status} from server"
     [[ "$license_status" == "VALID" ]]
 
@@ -233,7 +250,7 @@ run_proxy_tests() {
         esac
 
         info "Testing roxctl access through ${name}..."
-        local endpoint="central-proxy.stackrox.local:${port}"
+        local endpoint="${server_name}:${port}"
         for endpoint_tgt in "${scheme}://${endpoint}" "${scheme}://${endpoint}/" "$endpoint"; do
         roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
             failures+=("$p")
@@ -257,7 +274,7 @@ run_proxy_tests() {
         fi
 
         done
-        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "central-proxy.stackrox.local:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
+        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${server_name}:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
         failures+=("${p},sensor-generate")
         echo "Done."
         rm -rf "/tmp/proxy-test-${port}"

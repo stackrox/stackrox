@@ -4,33 +4,30 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sync"
+	"gorm.io/gorm"
 )
 
 const (
-	baseTable  = "policy"
-	countStmt  = "SELECT COUNT(*) FROM policy"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM policy WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM policy WHERE Id = $1"
-	deleteStmt  = "DELETE FROM policy WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM policy"
-	getIDsStmt  = "SELECT Id FROM policy"
-	getManyStmt = "SELECT serialized FROM policy WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM policy WHERE Id = ANY($1::text[])"
+	baseTable = "policies"
 
 	batchAfter = 100
 
@@ -38,21 +35,21 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.Policy)(nil)), baseTable)
-	log    = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.PoliciesSchema
+	targetResource = resources.Policy
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.Policy, bool, error)
+	GetAll(ctx context.Context) ([]*storage.Policy, error)
 	Upsert(ctx context.Context, obj *storage.Policy) error
 	UpsertMany(ctx context.Context, objs []*storage.Policy) error
 	Delete(ctx context.Context, id string) error
@@ -67,278 +64,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	mutex sync.Mutex
 }
 
-func createTablePolicy(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists policy (
-    Id varchar,
-    Name varchar UNIQUE,
-    Description varchar,
-    Rationale varchar,
-    Remediation varchar,
-    Disabled bool,
-    Categories text[],
-    LifecycleStages int[],
-    EventSource integer,
-    Severity integer,
-    EnforcementActions int[],
-    Notifiers text[],
-    LastUpdated timestamp,
-    SORTName varchar,
-    SORTLifecycleStage varchar,
-    SORTEnforcement bool,
-    PolicyVersion varchar,
-    CriteriaLocked bool,
-    MitreVectorsLocked bool,
-    IsDefault bool,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+// New returns a new Store instance using the provided sql instance.
+func New(db *pgxpool.Pool) Store {
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTablePolicyWhitelists(ctx, db)
-	createTablePolicyExclusions(ctx, db)
-	createTablePolicyScope(ctx, db)
-	createTablePolicyPolicySections(ctx, db)
-	createTablePolicyMitreAttackVectors(ctx, db)
 }
 
-func createTablePolicyWhitelists(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists policy_Whitelists (
-    policy_Id varchar,
-    idx integer,
-    Name varchar,
-    Deployment_Name varchar,
-    Deployment_Scope_Cluster varchar,
-    Deployment_Scope_Namespace varchar,
-    Deployment_Scope_Label_Key varchar,
-    Deployment_Scope_Label_Value varchar,
-    Image_Name varchar,
-    Expiration timestamp,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists policyWhitelists_idx on policy_Whitelists using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTablePolicyExclusions(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists policy_Exclusions (
-    policy_Id varchar,
-    idx integer,
-    Name varchar,
-    Deployment_Name varchar,
-    Deployment_Scope_Cluster varchar,
-    Deployment_Scope_Namespace varchar,
-    Deployment_Scope_Label_Key varchar,
-    Deployment_Scope_Label_Value varchar,
-    Image_Name varchar,
-    Expiration timestamp,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists policyExclusions_idx on policy_Exclusions using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTablePolicyScope(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists policy_Scope (
-    policy_Id varchar,
-    idx integer,
-    Cluster varchar,
-    Namespace varchar,
-    Label_Key varchar,
-    Label_Value varchar,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists policyScope_idx on policy_Scope using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTablePolicyPolicySections(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists policy_PolicySections (
-    policy_Id varchar,
-    idx integer,
-    SectionName varchar,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists policyPolicySections_idx on policy_PolicySections using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTablePolicyPolicySectionsPolicyGroups(ctx, db)
-}
-
-func createTablePolicyPolicySectionsPolicyGroups(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists policy_PolicySections_PolicyGroups (
-    policy_Id varchar,
-    policy_PolicySections_idx integer,
-    idx integer,
-    FieldName varchar,
-    BooleanOperator integer,
-    Negate bool,
-    PRIMARY KEY(policy_Id, policy_PolicySections_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id, policy_PolicySections_idx) REFERENCES policy_PolicySections(policy_Id, idx) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists policyPolicySectionsPolicyGroups_idx on policy_PolicySections_PolicyGroups using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTablePolicyPolicySectionsPolicyGroupsValues(ctx, db)
-}
-
-func createTablePolicyPolicySectionsPolicyGroupsValues(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists policy_PolicySections_PolicyGroups_Values (
-    policy_Id varchar,
-    policy_PolicySections_idx integer,
-    policy_PolicySections_PolicyGroups_idx integer,
-    idx integer,
-    Value varchar,
-    PRIMARY KEY(policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx) REFERENCES policy_PolicySections_PolicyGroups(policy_Id, policy_PolicySections_idx, idx) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists policyPolicySectionsPolicyGroupsValues_idx on policy_PolicySections_PolicyGroups_Values using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTablePolicyMitreAttackVectors(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists policy_MitreAttackVectors (
-    policy_Id varchar,
-    idx integer,
-    Tactic varchar,
-    Techniques text[],
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists policyMitreAttackVectors_idx on policy_MitreAttackVectors using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error {
+func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Policy) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -350,268 +87,25 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 		obj.GetId(),
 		obj.GetName(),
 		obj.GetDescription(),
-		obj.GetRationale(),
-		obj.GetRemediation(),
 		obj.GetDisabled(),
 		obj.GetCategories(),
 		obj.GetLifecycleStages(),
-		obj.GetEventSource(),
 		obj.GetSeverity(),
 		obj.GetEnforcementActions(),
-		obj.GetNotifiers(),
 		pgutils.NilOrTime(obj.GetLastUpdated()),
 		obj.GetSORTName(),
 		obj.GetSORTLifecycleStage(),
 		obj.GetSORTEnforcement(),
-		obj.GetPolicyVersion(),
-		obj.GetCriteriaLocked(),
-		obj.GetMitreVectorsLocked(),
-		obj.GetIsDefault(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO policy (Id, Name, Description, Rationale, Remediation, Disabled, Categories, LifecycleStages, EventSource, Severity, EnforcementActions, Notifiers, LastUpdated, SORTName, SORTLifecycleStage, SORTEnforcement, PolicyVersion, CriteriaLocked, MitreVectorsLocked, IsDefault, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Rationale = EXCLUDED.Rationale, Remediation = EXCLUDED.Remediation, Disabled = EXCLUDED.Disabled, Categories = EXCLUDED.Categories, LifecycleStages = EXCLUDED.LifecycleStages, EventSource = EXCLUDED.EventSource, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, Notifiers = EXCLUDED.Notifiers, LastUpdated = EXCLUDED.LastUpdated, SORTName = EXCLUDED.SORTName, SORTLifecycleStage = EXCLUDED.SORTLifecycleStage, SORTEnforcement = EXCLUDED.SORTEnforcement, PolicyVersion = EXCLUDED.PolicyVersion, CriteriaLocked = EXCLUDED.CriteriaLocked, MitreVectorsLocked = EXCLUDED.MitreVectorsLocked, IsDefault = EXCLUDED.IsDefault, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetWhitelists() {
-		if err := insertIntoPolicyWhitelists(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from policy_Whitelists where policy_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetWhitelists()))
-	if err != nil {
-		return err
-	}
-	for childIdx, child := range obj.GetExclusions() {
-		if err := insertIntoPolicyExclusions(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from policy_Exclusions where policy_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetExclusions()))
-	if err != nil {
-		return err
-	}
-	for childIdx, child := range obj.GetScope() {
-		if err := insertIntoPolicyScope(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from policy_Scope where policy_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetScope()))
-	if err != nil {
-		return err
-	}
-	for childIdx, child := range obj.GetPolicySections() {
-		if err := insertIntoPolicyPolicySections(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from policy_PolicySections where policy_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicySections()))
-	if err != nil {
-		return err
-	}
-	for childIdx, child := range obj.GetMitreAttackVectors() {
-		if err := insertIntoPolicyMitreAttackVectors(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from policy_MitreAttackVectors where policy_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetMitreAttackVectors()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoPolicyWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, policy_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		policy_Id,
-		idx,
-		obj.GetName(),
-		obj.GetDeployment().GetName(),
-		obj.GetDeployment().GetScope().GetCluster(),
-		obj.GetDeployment().GetScope().GetNamespace(),
-		obj.GetDeployment().GetScope().GetLabel().GetKey(),
-		obj.GetDeployment().GetScope().GetLabel().GetValue(),
-		obj.GetImage().GetName(),
-		pgutils.NilOrTime(obj.GetExpiration()),
-	}
-
-	finalStr := "INSERT INTO policy_Whitelists (policy_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO policies (Id, Name, Description, Disabled, Categories, LifecycleStages, Severity, EnforcementActions, LastUpdated, SORTName, SORTLifecycleStage, SORTEnforcement, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Disabled = EXCLUDED.Disabled, Categories = EXCLUDED.Categories, LifecycleStages = EXCLUDED.LifecycleStages, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, LastUpdated = EXCLUDED.LastUpdated, SORTName = EXCLUDED.SORTName, SORTLifecycleStage = EXCLUDED.SORTLifecycleStage, SORTEnforcement = EXCLUDED.SORTEnforcement, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func insertIntoPolicyExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, policy_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		policy_Id,
-		idx,
-		obj.GetName(),
-		obj.GetDeployment().GetName(),
-		obj.GetDeployment().GetScope().GetCluster(),
-		obj.GetDeployment().GetScope().GetNamespace(),
-		obj.GetDeployment().GetScope().GetLabel().GetKey(),
-		obj.GetDeployment().GetScope().GetLabel().GetValue(),
-		obj.GetImage().GetName(),
-		pgutils.NilOrTime(obj.GetExpiration()),
-	}
-
-	finalStr := "INSERT INTO policy_Exclusions (policy_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoPolicyScope(ctx context.Context, tx pgx.Tx, obj *storage.Scope, policy_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		policy_Id,
-		idx,
-		obj.GetCluster(),
-		obj.GetNamespace(),
-		obj.GetLabel().GetKey(),
-		obj.GetLabel().GetValue(),
-	}
-
-	finalStr := "INSERT INTO policy_Scope (policy_Id, idx, Cluster, Namespace, Label_Key, Label_Value) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, Cluster = EXCLUDED.Cluster, Namespace = EXCLUDED.Namespace, Label_Key = EXCLUDED.Label_Key, Label_Value = EXCLUDED.Label_Value"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoPolicyPolicySections(ctx context.Context, tx pgx.Tx, obj *storage.PolicySection, policy_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		policy_Id,
-		idx,
-		obj.GetSectionName(),
-	}
-
-	finalStr := "INSERT INTO policy_PolicySections (policy_Id, idx, SectionName) VALUES($1, $2, $3) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, SectionName = EXCLUDED.SectionName"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetPolicyGroups() {
-		if err := insertIntoPolicyPolicySectionsPolicyGroups(ctx, tx, child, policy_Id, idx, childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from policy_PolicySections_PolicyGroups where policy_Id = $1 AND policy_PolicySections_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, policy_Id, idx, len(obj.GetPolicyGroups()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoPolicyPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, obj *storage.PolicyGroup, policy_Id string, policy_PolicySections_idx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		policy_Id,
-		policy_PolicySections_idx,
-		idx,
-		obj.GetFieldName(),
-		obj.GetBooleanOperator(),
-		obj.GetNegate(),
-	}
-
-	finalStr := "INSERT INTO policy_PolicySections_PolicyGroups (policy_Id, policy_PolicySections_idx, idx, FieldName, BooleanOperator, Negate) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(policy_Id, policy_PolicySections_idx, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, policy_PolicySections_idx = EXCLUDED.policy_PolicySections_idx, idx = EXCLUDED.idx, FieldName = EXCLUDED.FieldName, BooleanOperator = EXCLUDED.BooleanOperator, Negate = EXCLUDED.Negate"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetValues() {
-		if err := insertIntoPolicyPolicySectionsPolicyGroupsValues(ctx, tx, child, policy_Id, policy_PolicySections_idx, idx, childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from policy_PolicySections_PolicyGroups_Values where policy_Id = $1 AND policy_PolicySections_idx = $2 AND policy_PolicySections_PolicyGroups_idx = $3 AND idx >= $4"
-	_, err = tx.Exec(ctx, query, policy_Id, policy_PolicySections_idx, idx, len(obj.GetValues()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoPolicyPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, obj *storage.PolicyValue, policy_Id string, policy_PolicySections_idx int, policy_PolicySections_PolicyGroups_idx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		policy_Id,
-		policy_PolicySections_idx,
-		policy_PolicySections_PolicyGroups_idx,
-		idx,
-		obj.GetValue(),
-	}
-
-	finalStr := "INSERT INTO policy_PolicySections_PolicyGroups_Values (policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx, idx, Value) VALUES($1, $2, $3, $4, $5) ON CONFLICT(policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, policy_PolicySections_idx = EXCLUDED.policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx = EXCLUDED.policy_PolicySections_PolicyGroups_idx, idx = EXCLUDED.idx, Value = EXCLUDED.Value"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoPolicyMitreAttackVectors(ctx context.Context, tx pgx.Tx, obj *storage.Policy_MitreAttackVectors, policy_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		policy_Id,
-		idx,
-		obj.GetTactic(),
-		obj.GetTechniques(),
-	}
-
-	finalStr := "INSERT INTO policy_MitreAttackVectors (policy_Id, idx, Tactic, Techniques) VALUES($1, $2, $3, $4) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, Tactic = EXCLUDED.Tactic, Techniques = EXCLUDED.Techniques"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *storeImpl) copyFromPolicy(ctx context.Context, tx pgx.Tx, objs ...*storage.Policy) error {
+func (s *storeImpl) copyFromPolicies(ctx context.Context, tx pgx.Tx, objs ...*storage.Policy) error {
 
 	inputRows := [][]interface{}{}
 
@@ -629,23 +123,15 @@ func (s *storeImpl) copyFromPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 
 		"description",
 
-		"rationale",
-
-		"remediation",
-
 		"disabled",
 
 		"categories",
 
 		"lifecyclestages",
 
-		"eventsource",
-
 		"severity",
 
 		"enforcementactions",
-
-		"notifiers",
 
 		"lastupdated",
 
@@ -654,14 +140,6 @@ func (s *storeImpl) copyFromPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 		"sortlifecyclestage",
 
 		"sortenforcement",
-
-		"policyversion",
-
-		"criterialocked",
-
-		"mitrevectorslocked",
-
-		"isdefault",
 
 		"serialized",
 	}
@@ -683,23 +161,15 @@ func (s *storeImpl) copyFromPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 
 			obj.GetDescription(),
 
-			obj.GetRationale(),
-
-			obj.GetRemediation(),
-
 			obj.GetDisabled(),
 
 			obj.GetCategories(),
 
 			obj.GetLifecycleStages(),
 
-			obj.GetEventSource(),
-
 			obj.GetSeverity(),
 
 			obj.GetEnforcementActions(),
-
-			obj.GetNotifiers(),
 
 			pgutils.NilOrTime(obj.GetLastUpdated()),
 
@@ -708,14 +178,6 @@ func (s *storeImpl) copyFromPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 			obj.GetSORTLifecycleStage(),
 
 			obj.GetSORTEnforcement(),
-
-			obj.GetPolicyVersion(),
-
-			obj.GetCriteriaLocked(),
-
-			obj.GetMitreVectorsLocked(),
-
-			obj.GetIsDefault(),
 
 			serialized,
 		})
@@ -728,108 +190,13 @@ func (s *storeImpl) copyFromPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policy"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromPolicyWhitelists(ctx, tx, obj.GetId(), obj.GetWhitelists()...); err != nil {
-			return err
-		}
-		if err = s.copyFromPolicyExclusions(ctx, tx, obj.GetId(), obj.GetExclusions()...); err != nil {
-			return err
-		}
-		if err = s.copyFromPolicyScope(ctx, tx, obj.GetId(), obj.GetScope()...); err != nil {
-			return err
-		}
-		if err = s.copyFromPolicyPolicySections(ctx, tx, obj.GetId(), obj.GetPolicySections()...); err != nil {
-			return err
-		}
-		if err = s.copyFromPolicyMitreAttackVectors(ctx, tx, obj.GetId(), obj.GetMitreAttackVectors()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromPolicyWhitelists(ctx context.Context, tx pgx.Tx, policy_Id string, objs ...*storage.Exclusion) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"policy_id",
-
-		"idx",
-
-		"name",
-
-		"deployment_name",
-
-		"deployment_scope_cluster",
-
-		"deployment_scope_namespace",
-
-		"deployment_scope_label_key",
-
-		"deployment_scope_label_value",
-
-		"image_name",
-
-		"expiration",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			policy_Id,
-
-			idx,
-
-			obj.GetName(),
-
-			obj.GetDeployment().GetName(),
-
-			obj.GetDeployment().GetScope().GetCluster(),
-
-			obj.GetDeployment().GetScope().GetNamespace(),
-
-			obj.GetDeployment().GetScope().GetLabel().GetKey(),
-
-			obj.GetDeployment().GetScope().GetLabel().GetValue(),
-
-			obj.GetImage().GetName(),
-
-			pgutils.NilOrTime(obj.GetExpiration()),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policy_whitelists"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policies"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -841,379 +208,13 @@ func (s *storeImpl) copyFromPolicyWhitelists(ctx context.Context, tx pgx.Tx, pol
 	}
 
 	return err
-}
-
-func (s *storeImpl) copyFromPolicyExclusions(ctx context.Context, tx pgx.Tx, policy_Id string, objs ...*storage.Exclusion) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"policy_id",
-
-		"idx",
-
-		"name",
-
-		"deployment_name",
-
-		"deployment_scope_cluster",
-
-		"deployment_scope_namespace",
-
-		"deployment_scope_label_key",
-
-		"deployment_scope_label_value",
-
-		"image_name",
-
-		"expiration",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			policy_Id,
-
-			idx,
-
-			obj.GetName(),
-
-			obj.GetDeployment().GetName(),
-
-			obj.GetDeployment().GetScope().GetCluster(),
-
-			obj.GetDeployment().GetScope().GetNamespace(),
-
-			obj.GetDeployment().GetScope().GetLabel().GetKey(),
-
-			obj.GetDeployment().GetScope().GetLabel().GetValue(),
-
-			obj.GetImage().GetName(),
-
-			pgutils.NilOrTime(obj.GetExpiration()),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policy_exclusions"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromPolicyScope(ctx context.Context, tx pgx.Tx, policy_Id string, objs ...*storage.Scope) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"policy_id",
-
-		"idx",
-
-		"cluster",
-
-		"namespace",
-
-		"label_key",
-
-		"label_value",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			policy_Id,
-
-			idx,
-
-			obj.GetCluster(),
-
-			obj.GetNamespace(),
-
-			obj.GetLabel().GetKey(),
-
-			obj.GetLabel().GetValue(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policy_scope"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromPolicyPolicySections(ctx context.Context, tx pgx.Tx, policy_Id string, objs ...*storage.PolicySection) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"policy_id",
-
-		"idx",
-
-		"sectionname",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			policy_Id,
-
-			idx,
-
-			obj.GetSectionName(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policy_policysections"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-
-		if err = s.copyFromPolicyPolicySectionsPolicyGroups(ctx, tx, policy_Id, idx, obj.GetPolicyGroups()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, policy_Id string, policy_PolicySections_idx int, objs ...*storage.PolicyGroup) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"policy_id",
-
-		"policy_policysections_idx",
-
-		"idx",
-
-		"fieldname",
-
-		"booleanoperator",
-
-		"negate",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			policy_Id,
-
-			policy_PolicySections_idx,
-
-			idx,
-
-			obj.GetFieldName(),
-
-			obj.GetBooleanOperator(),
-
-			obj.GetNegate(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policy_policysections_policygroups"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-
-		if err = s.copyFromPolicyPolicySectionsPolicyGroupsValues(ctx, tx, policy_Id, policy_PolicySections_idx, idx, obj.GetValues()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, policy_Id string, policy_PolicySections_idx int, policy_PolicySections_PolicyGroups_idx int, objs ...*storage.PolicyValue) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"policy_id",
-
-		"policy_policysections_idx",
-
-		"policy_policysections_policygroups_idx",
-
-		"idx",
-
-		"value",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			policy_Id,
-
-			policy_PolicySections_idx,
-
-			policy_PolicySections_PolicyGroups_idx,
-
-			idx,
-
-			obj.GetValue(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policy_policysections_policygroups_values"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromPolicyMitreAttackVectors(ctx context.Context, tx pgx.Tx, policy_Id string, objs ...*storage.Policy_MitreAttackVectors) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"policy_id",
-
-		"idx",
-
-		"tactic",
-
-		"techniques",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			policy_Id,
-
-			idx,
-
-			obj.GetTactic(),
-
-			obj.GetTechniques(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policy_mitreattackvectors"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTablePolicy(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "Policy")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Policy")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -1221,7 +222,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error
 		return err
 	}
 
-	if err := s.copyFromPolicy(ctx, tx, objs...); err != nil {
+	if err := s.copyFromPolicies(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -1234,22 +235,27 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Policy) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "Policy")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Policy")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoPolicies(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoPolicy(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		if err := batchResults.Close(); err != nil {
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}
@@ -1259,11 +265,31 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Policy) error {
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Policy) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Policy")
 
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Policy")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+	// violations
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -1276,36 +302,59 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) erro
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Policy")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
 		return 0, err
 	}
-	return count, nil
+
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Policy")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return false, err
+	} else if !ok {
+		return false, nil
 	}
-	return exists, nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Policy, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Policy")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "Policy")
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return nil, false, err
+	} else if !ok {
+		return nil, false, nil
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -1315,46 +364,67 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Policy, bool, 
 	}
 	return &msg, true, nil
 }
+func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.Policy, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "Policy")
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+	var objs []*storage.Policy
+	err := s.Walk(ctx, func(obj *storage.Policy) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Policy")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "Policy")
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.PolicyIDs")
+	var sacQueryFilter *v1.Query
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
 	}
+
 	return ids, nil
 }
 
@@ -1362,12 +432,26 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Policy, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "Policy")
-	defer release()
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return nil, nil, err
+	} else if !ok {
+		return nil, nil, nil
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -1376,13 +460,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Polic
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.Policy)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.Policy{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
@@ -1407,32 +486,53 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Polic
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Policy")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "Policy")
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Policy) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
-	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return nil
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		var msg storage.Policy
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
+		for _, data := range rows {
+			var msg storage.Policy
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
 		}
-		if err := fn(&msg); err != nil {
-			return err
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil
@@ -1440,58 +540,29 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Policy) error
 
 //// Used for testing
 
-func dropTablePolicy(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policy CASCADE")
-	dropTablePolicyWhitelists(ctx, db)
-	dropTablePolicyExclusions(ctx, db)
-	dropTablePolicyScope(ctx, db)
-	dropTablePolicyPolicySections(ctx, db)
-	dropTablePolicyMitreAttackVectors(ctx, db)
-
-}
-
-func dropTablePolicyWhitelists(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policy_Whitelists CASCADE")
-
-}
-
-func dropTablePolicyExclusions(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policy_Exclusions CASCADE")
-
-}
-
-func dropTablePolicyScope(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policy_Scope CASCADE")
-
-}
-
-func dropTablePolicyPolicySections(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policy_PolicySections CASCADE")
-	dropTablePolicyPolicySectionsPolicyGroups(ctx, db)
-
-}
-
-func dropTablePolicyPolicySectionsPolicyGroups(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policy_PolicySections_PolicyGroups CASCADE")
-	dropTablePolicyPolicySectionsPolicyGroupsValues(ctx, db)
-
-}
-
-func dropTablePolicyPolicySectionsPolicyGroupsValues(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policy_PolicySections_PolicyGroups_Values CASCADE")
-
-}
-
-func dropTablePolicyMitreAttackVectors(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policy_MitreAttackVectors CASCADE")
+func dropTablePolicies(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policies CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTablePolicy(ctx, db)
+	dropTablePolicies(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces
+func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
+	return errors.New("unimplemented")
+}
+
+func (s *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
+	return errors.New("unimplemented")
+}
 
 // AckKeysIndexed acknowledges the passed keys were indexed
 func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {

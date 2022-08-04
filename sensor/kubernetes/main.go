@@ -4,12 +4,15 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/devmode"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
@@ -43,7 +46,15 @@ func main() {
 	} else {
 		sharedClientInterface = client.MustCreateInterface()
 	}
-	s, err := sensor.CreateSensor(sharedClientInterface, workloadManager)
+	centralConnFactory, err := centralclient.NewCentralConnectionFactory(env.CentralEndpoint.Setting())
+	if err != nil {
+		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing gRPC client to endpoint %s", env.CentralEndpoint.Setting()))
+	}
+
+	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
+		WithK8sClient(sharedClientInterface).
+		WithCentralConnectionFactory(centralConnFactory).
+		WithWorkloadManager(workloadManager))
 	utils.CrashOnError(err)
 
 	s.Start()

@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { find as createInitials } from 'initials';
+import createInitials from 'initials';
 
 export type AvatarProps = {
     /* URL to the avatar image */

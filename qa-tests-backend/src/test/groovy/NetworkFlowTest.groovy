@@ -243,12 +243,12 @@ class NetworkFlowTest extends BaseSpecification {
 
     def rebuildForRetries() {
         if (Helpers.getAttemptCount() > 1) {
-            println ">>>> Recreating test deployments prior to retest <<<<<"
+            log.info ">>>> Recreating test deployments prior to retest <<<<<"
             destroyDeployments()
             sleep(5000)
             createDeployments()
             sleep(5000)
-            println ">>>> Done <<<<<"
+            log.info ">>>> Done <<<<<"
         }
     }
 
@@ -264,7 +264,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         "Check for edge in network graph"
-        println "Checking for edge between ${SINGLECONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
+        log.info "Checking for edge between ${SINGLECONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
@@ -291,14 +291,14 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Check for edge between sensor and central"
-        println "Checking for edge between sensor and central"
+        log.info "Checking for edge between sensor and central"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sensorUid, centralUid)
         assert edges
 
         then:
         "Check for edge between collector and sensor, if collector is installed"
         if (collectorUid != null) {
-            println "Checking for edge between collector and sensor"
+            log.info "Checking for edge between collector and sensor"
             edges = NetworkGraphUtil.checkForEdge(collectorUid, sensorUid)
             assert edges
         }
@@ -317,7 +317,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         expect:
         "Check for edge in network graph"
-        println "Checking for edge between ${sourceDeployment} and ${targetDeployment}"
+        log.info "Checking for edge between ${sourceDeployment} and ${targetDeployment}"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
 
         assert edges
@@ -369,7 +369,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         "Check for edge in network graph"
-        println "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
+        log.info "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
@@ -431,13 +431,14 @@ class NetworkFlowTest extends BaseSpecification {
         assert targetUid != null
 
         when:
-        "Network graph is filtered by deployment A"
-        def graph = NetworkGraphService.getNetworkGraph(null, "Deployment:\"${TCPCONNECTIONSOURCE}\"", "")
+        "Check for edge in network graph"
+        log.info "Checking for edge between ${TCPCONNECTIONSOURCE} and ${TCPCONNECTIONTARGET}"
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
+        assert edges
 
         then:
-        "Edge between A and B should exist in network graph"
-        List<Edge> edges = NetworkGraphUtil.findEdges(graph, sourceUid, targetUid)
-        assert edges && edges.size() > 0
+        "Wait for collector update and fetch graph again to confirm short interval connections remain"
+        assert waitForEdgeUpdate(edges.get(0), 90)
     }
 
     @Category([NetworkFlowVisualization])
@@ -449,7 +450,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         expect:
         "Check for edge in network graph"
-        println "Checking for edge from ${EXTERNALDESTINATION} to external target"
+        log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
     }
@@ -478,22 +479,22 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         "ping the target deployment"
-        Response response
+        Response response = null
         Timer t = new Timer(12, 5)
         while (response?.statusCode() != 200 && t.IsValid()) {
             try {
-                println "trying ${targetUrl}..."
+                log.info "trying ${targetUrl}..."
                 response = given().get(targetUrl)
             } catch (Exception e) {
-                println "Failure calling ${targetUrl}. Trying again in 5 sec..."
+                log.warn("Failure calling ${targetUrl}. Trying again in 5 sec...", e)
             }
         }
         assert response?.getStatusCode() == 200
-        println response.asString()
+        log.info response.asString()
 
         then:
         "Check for edge in network graph"
-        println "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
+        log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
         List<Edge> edges =
                 NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
         assert edges
@@ -524,7 +525,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Check for edge in network graph"
-        println "Checking for edge from internal to ${NGINXCONNECTIONTARGET} using its external address"
+        log.info "Checking for edge from internal to ${NGINXCONNECTIONTARGET} using its external address"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(newDeployment.deploymentUid, deploymentUid, null, 180)
         assert edges
 
@@ -546,7 +547,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         expect:
         "Assert connection states"
-        println "Checking for NO edge between ${NOCONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
+        log.info "Checking for NO edge between ${NOCONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
         assert !NetworkGraphUtil.checkForEdge(sourceUid, targetUid, null, 30)
     }
 
@@ -586,7 +587,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         and:
         "The edge is found before blocked"
-        println "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
+        log.info "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
@@ -597,12 +598,12 @@ class NetworkFlowTest extends BaseSpecification {
                 .addPodSelector(["app":NGINXCONNECTIONTARGET])
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy)
-        println "Sleeping 60s to allow policy to propagate and flows to update after propagation"
+        log.info "Sleeping 60s to allow policy to propagate and flows to update after propagation"
         sleep 60000
 
         and:
         "Get the latest edge"
-        println "Checking for latest edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
+        log.info "Checking for latest edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
         edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
@@ -638,6 +639,11 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify generated network policies"() {
         // ROX-8785 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
+
+        // https://issues.redhat.com/browse/ROX-9949 -- fails on OSD
+        Assume.assumeFalse(ClusterService.isOpenShift3())
+        Assume.assumeFalse(ClusterService.isOpenShift4())
+
         given:
         "Get current state of network graph"
         NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()
@@ -684,12 +690,11 @@ class NetworkFlowTest extends BaseSpecification {
             def ingressNamespaceSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
                     it."spec"."ingress".get(0)."from".findAll { it.containsKey("namespaceSelector") } :
                     null
-
             if (allowAllIngress) {
-                println "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
+                log.info "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
                 assert it."spec"."ingress" == [[:]]
             } else if (outNodes.size() > 0) {
-                println "${deploymentName} has incoming connections - ensure podSelectors/namespaceSelectors match " +
+                log.info "${deploymentName} has incoming connections - ensure podSelectors/namespaceSelectors match " +
                         "sources from graph"
                 def sourceDeploymentsFromGraph = outNodes.findAll { it.deploymentName }*.deploymentName
                 def sourceDeploymentsFromNetworkPolicy = ingressPodSelectors.collect {
@@ -697,16 +702,19 @@ class NetworkFlowTest extends BaseSpecification {
                 }
                 def sourceNamespacesFromNetworkPolicy = ingressNamespaceSelectors.collect {
                     it."namespaceSelector"."matchLabels"."namespace.metadata.stackrox.io/name"
-                }
+                }.findAll { it != null }
+                sourceNamespacesFromNetworkPolicy.addAll(ingressNamespaceSelectors.collect {
+                    it."namespaceSelector"."matchLabels"."kubernetes.io/metadata.name"
+                }).findAll { it != null }
                 assert sourceDeploymentsFromNetworkPolicy.sort() == sourceDeploymentsFromGraph.sort()
                 if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
-                    println "Deployed namespaces do not contain all namespaces found in the network policy"
-                    println "The network policy:"
-                    print modification
+                    log.info "Deployed namespaces do not contain all namespaces found in the network policy"
+                    log.info "The network policy:"
+                    log.info modification.toString()
                 }
                 assert deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)
             } else {
-                println "${deploymentName} has no incoming connections - ensure ingress spec is empty"
+                log.info "${deploymentName} has no incoming connections - ensure ingress spec is empty"
                 assert it."spec"."ingress" == [] || it."spec"."ingress" == null
             }
         }
@@ -734,14 +742,14 @@ class NetworkFlowTest extends BaseSpecification {
         and:
         "Get existing network policies from orchestrator"
         def preExistingNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        println preExistingNetworkPolicies
+        log.info "${preExistingNetworkPolicies}"
 
         expect:
         "actual policies should exist in generated response depending on delete mode"
         def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, "Namespace:r/qa.*")
         assert !(NetworkPolicyService.applyGeneratedNetworkPolicy(modification) instanceof StatusRuntimeException)
         def appliedNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        println appliedNetworkPolicies
+        log.info "${appliedNetworkPolicies}"
 
         Yaml parser = new Yaml()
         List yamls = []
@@ -797,7 +805,7 @@ class NetworkFlowTest extends BaseSpecification {
                         instanceof StatusRuntimeException
         )
         def undoNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        println undoNetworkPolicies
+        log.info "${undoNetworkPolicies}"
         assert undoNetworkPolicies == preExistingNetworkPolicies
 
         cleanup:
@@ -884,7 +892,7 @@ class NetworkFlowTest extends BaseSpecification {
             prevEdge = newEdge
             sleep intervalSeconds * 1000
         }
-        println "Edge was never closed"
+        log.info "Edge was never closed"
         return false
     }
 
@@ -904,15 +912,15 @@ class NetworkFlowTest extends BaseSpecification {
             // considered as a new edge, hence the 0.2 default value.
             if (newEdge != null &&
                     newEdge.lastActiveTimestamp > edge.lastActiveTimestamp + (addSecondsToEdgeTimestamp * 1000)) {
-                println "Found updated edge in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
-                println "The updated edge is " +
+                log.info "Found updated edge in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
+                log.info "The updated edge is " +
                         "${((newEdge.lastActiveTimestamp - edge.lastActiveTimestamp)/1000) as Integer} " +
                         "seconds later"
                 return newEdge
             }
             sleep intervalSeconds * 1000
         }
-        println "SR did not detect updated edge in Network Flow graph"
+        log.info "SR did not detect updated edge in Network Flow graph"
         return null
     }
 

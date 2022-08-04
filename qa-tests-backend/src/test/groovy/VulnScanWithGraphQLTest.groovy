@@ -1,14 +1,17 @@
 import static org.junit.Assume.assumeFalse
 
+import org.apache.commons.lang3.StringUtils
+
 import groups.GraphQL
 import objects.Deployment
-import org.apache.commons.lang.StringUtils
 import services.GraphQLService
-import spock.lang.Shared
-import spock.lang.Unroll
-import org.junit.experimental.categories.Category
 import util.Env
 import util.Timer
+
+import org.junit.experimental.categories.Category
+import spock.lang.IgnoreIf
+import spock.lang.Shared
+import spock.lang.Unroll
 
 class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
@@ -130,11 +133,11 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         String uid = DEPLOYMENTS.find { it.name == depName }.deploymentUid
         assert uid != null
         def imageId = waitForValidImageID(uid)
-        println "image id ..." + imageId
+        log.info "image id ..." + imageId
         assert !StringUtils.isEmpty(imageId)
         def resultRet = gqlService.Call(GET_CVES_INFO_WITH_IMAGE_QUERY, [ id: imageId ])
         assert resultRet.getCode() == 200
-        println "return code " + resultRet.getCode()
+        log.info "return code " + resultRet.getCode()
         then:
         assert resultRet.getValue() != null
         def image = resultRet.getValue().image
@@ -149,6 +152,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
 
     @Unroll
     @Category(GraphQL)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify image info from #CVEID in GraphQL"() {
         when:
         "Fetch the results of the CVE,image from GraphQL "
@@ -170,20 +174,19 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         while (t.IsValid()) {
             def result2Ret = gqlService.Call(GET_IMAGE_INFO_FROM_VULN_QUERY, [id: cveId])
             assert result2Ret.getCode() == 200
-            println "return code " + result2Ret.getCode()
             if (result2Ret.getValue().result != null) {
-                println "images fetched from cve"
+                log.info "images fetched from cve"
                 return result2Ret
             }
         }
-        println "Unable to fetch images for $cveId in ${t.SecondsSince()} seconds"
+        log.info "Unable to fetch images for $cveId in ${t.SecondsSince()} seconds"
         return null
     }
 
     private String getImageIDFromDepId(String id) {
-        println "id " + id
+        log.info "id " + id
         def resultRet = gqlService.Call(DEP_QUERY, [ id: id ])
-        println "code " + resultRet.getCode()
+        log.info "code " + resultRet.getCode()
         assert resultRet.getCode() == 200
         String imageID
         assert resultRet.getValue() != null
@@ -191,7 +194,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         if (dep != null && dep.images != null) {
             for (Object img : dep.images) {
                 if (img.name != null && img.name.fullName.contains("struts") ) {
-                    println " img.name ..." + img.name
+                    log.info " img.name ..." + img.name
                     imageID = img.id
                     break
                 }
@@ -205,7 +208,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         for (List cves : vulns.cve) {
             numCVEs += cves.size()
         }
-        println "number of CVEs " + numCVEs
+        log.info "number of CVEs " + numCVEs
         return numCVEs
     }
 
@@ -215,12 +218,12 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         while (t.IsValid()) {
             imageID = getImageIDFromDepId(depID)
             if (!StringUtils.isEmpty(imageID)) {
-                println "imageID found using deployment query "
+                log.info "imageID found using deployment query "
                 return imageID
             }
-            println "imageID not found for ${depID} yet "
+            log.info "imageID not found for ${depID} yet "
         }
-        println "could not find  imageID from  ${depID} in ${t.SecondsSince()} seconds"
+        log.info "could not find  imageID from  ${depID} in ${t.SecondsSince()} seconds"
         return ""
     }
 

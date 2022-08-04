@@ -1,24 +1,21 @@
-import orchestratormanager.OrchestratorTypes
-
+import groups.BAT
+import groups.RUNTIME
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
-
-import groups.BAT
-import groups.RUNTIME
 import objects.Deployment
+import orchestratormanager.OrchestratorTypes
+import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ClusterService
-import util.Env
-
-import org.junit.experimental.categories.Category
 import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
+import util.Env
 
 @Stepwise
 class AttemptedAlertsTest extends BaseSpecification {
@@ -29,8 +26,8 @@ class AttemptedAlertsTest extends BaseSpecification {
             (DEP_NAMES[1]): createDeployment(DEP_NAMES[1], "nginx:latest"),
             (DEP_NAMES[2]): createDeployment(DEP_NAMES[2], "nginx:latest"),
             (DEP_NAMES[3]): createDeployment(DEP_NAMES[3], "nginx:latest"),
-            (DEP_NAMES[4]): createDeployment(DEP_NAMES[4], "nginx:1.14-alpine"),
-            (DEP_NAMES[5]): createDeployment(DEP_NAMES[5], "nginx:1.14-alpine"),
+            (DEP_NAMES[4]): createDeployment(DEP_NAMES[4], "quay.io/rhacs-eng/qa:nginx-1-14-alpine"),
+            (DEP_NAMES[5]): createDeployment(DEP_NAMES[5], "quay.io/rhacs-eng/qa:nginx-1-14-alpine"),
     ]
 
     static final private String LATEST_TAG_POLICY_NAME = "Latest tag"

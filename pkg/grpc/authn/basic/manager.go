@@ -30,7 +30,7 @@ func (m *Manager) SetHashFile(hashFile *htpasswd.HashFile) {
 // IdentityForCreds returns an identity for the given credentials.
 func (m *Manager) IdentityForCreds(ctx context.Context, username, password string, authProvider authproviders.Provider) (Identity, error) {
 	if !m.hashFile().Check(username, password) {
-		return nil, errox.NewErrNotAuthorized("invalid username and/or password")
+		return nil, errox.NotAuthorized.CausedBy("invalid username and/or password")
 	}
 
 	resolvedRoles, err := m.mapper.FromUserDescriptor(ctx, &permissions.UserDescriptor{

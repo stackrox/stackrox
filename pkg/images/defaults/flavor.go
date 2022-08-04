@@ -42,6 +42,11 @@ var (
 			isAllowedInReleaseBuild: true,
 			constructorFunc:         RHACSReleaseImageFlavor,
 		},
+		{
+			imageFlavorName:         ImageFlavorNameOpenSource,
+			isAllowedInReleaseBuild: true,
+			constructorFunc:         OpenSourceImageFlavor,
+		},
 	}
 
 	// imageFlavorMap contains allImageFlavors keyed by ImageFlavorName.
@@ -56,7 +61,8 @@ var (
 
 // ChartRepo contains information about where the Helm charts are published.
 type ChartRepo struct {
-	URL string
+	URL     string
+	IconURL string
 }
 
 // ImagePullSecrets represents the image pull secret defaults.
@@ -67,9 +73,11 @@ type ImagePullSecrets struct {
 // ImageFlavor represents default settings for pulling images.
 type ImageFlavor struct {
 	// MainRegistry is a registry for all images except of collector.
-	MainRegistry  string
-	MainImageName string
-	MainImageTag  string
+	MainRegistry       string
+	MainImageName      string
+	MainImageTag       string
+	CentralDBImageTag  string
+	CentralDBImageName string
 
 	// CollectorRegistry may be different from MainRegistry in case of stackrox.io.
 	CollectorRegistry      string
@@ -95,11 +103,13 @@ type ImageFlavor struct {
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
-		MainRegistry:  "docker.io/stackrox",
-		MainImageName: "main",
-		MainImageTag:  v.MainVersion,
+		MainRegistry:       "quay.io/rhacs-eng",
+		MainImageName:      "main",
+		MainImageTag:       v.MainVersion,
+		CentralDBImageTag:  v.MainVersion,
+		CentralDBImageName: "central-db",
 
-		CollectorRegistry:      "docker.io/stackrox",
+		CollectorRegistry:      "quay.io/rhacs-eng",
 		CollectorImageName:     "collector",
 		CollectorImageTag:      v.CollectorVersion + "-latest",
 		CollectorSlimImageName: "collector",
@@ -112,7 +122,8 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		ScannerDBSlimImageName: "scanner-db-slim",
 
 		ChartRepo: ChartRepo{
-			URL: "https://charts.stackrox.io",
+			URL:     "https://mirror.openshift.com/pub/rhacs/charts",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
@@ -125,9 +136,11 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 func StackRoxIOReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
-		MainRegistry:  "stackrox.io",
-		MainImageName: "main",
-		MainImageTag:  v.MainVersion,
+		MainRegistry:       "stackrox.io",
+		MainImageName:      "main",
+		MainImageTag:       v.MainVersion,
+		CentralDBImageTag:  v.MainVersion,
+		CentralDBImageName: "central-db",
 
 		CollectorRegistry:      "collector.stackrox.io",
 		CollectorImageName:     "collector",
@@ -142,7 +155,8 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 		ScannerDBSlimImageName: "scanner-db-slim",
 
 		ChartRepo: ChartRepo{
-			URL: "https://charts.stackrox.io",
+			URL:     "https://charts.stackrox.io",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: false,
@@ -155,9 +169,13 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 func RHACSReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
-		MainRegistry:           "registry.redhat.io/advanced-cluster-security",
-		MainImageName:          "rhacs-main-rhel8",
-		MainImageTag:           v.MainVersion,
+		MainRegistry:  "registry.redhat.io/advanced-cluster-security",
+		MainImageName: "rhacs-main-rhel8",
+		MainImageTag:  v.MainVersion,
+		/* TODO(ROX-9858): Create repo rhacs-central-db-rhel8 when starting building rhacs */
+		CentralDBImageTag:  v.MainVersion,
+		CentralDBImageName: "rhacs-central-db-rhel8",
+
 		CollectorRegistry:      "registry.redhat.io/advanced-cluster-security",
 		CollectorImageName:     "rhacs-collector-rhel8",
 		CollectorImageTag:      v.CollectorVersion,
@@ -171,7 +189,54 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel8",
 
 		ChartRepo: ChartRepo{
-			URL: "https://mirror.openshift.com/pub/rhacs/charts",
+			URL:     "https://mirror.openshift.com/pub/rhacs/charts",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
+		},
+		ImagePullSecrets: ImagePullSecrets{
+			AllowNone: true,
+		},
+		Versions: v,
+	}
+}
+
+// OpenSourceImageFlavor returns image values for `opensource` flavor. Opensource flavor can be used both in development
+// and in releases.
+// In non-release builds, i.e. in development, Collector and Scanner should have original tags so that developers don't
+// need to retag Collector and Scanner images every time they commit to this repo.
+// Release builds get unified tags like in other release image flavors.
+func OpenSourceImageFlavor() ImageFlavor {
+	v := version.GetAllVersionsDevelopment()
+	collectorTag := v.CollectorVersion + "-latest"
+	collectorSlimName := "collector"
+	collectorSlimTag := v.CollectorVersion + "-slim"
+	if buildinfo.ReleaseBuild {
+		v = version.GetAllVersionsUnified()
+		collectorTag = v.CollectorVersion
+		collectorSlimName = "collector-slim"
+		collectorSlimTag = v.CollectorVersion
+	}
+	return ImageFlavor{
+		MainRegistry:       "quay.io/stackrox-io",
+		MainImageName:      "main",
+		MainImageTag:       v.MainVersion,
+		CentralDBImageTag:  v.MainVersion,
+		CentralDBImageName: "central-db",
+
+		CollectorRegistry:      "quay.io/stackrox-io",
+		CollectorImageName:     "collector",
+		CollectorImageTag:      collectorTag,
+		CollectorSlimImageName: collectorSlimName,
+		CollectorSlimImageTag:  collectorSlimTag,
+
+		ScannerImageName:       "scanner",
+		ScannerSlimImageName:   "scanner-slim",
+		ScannerImageTag:        v.ScannerVersion,
+		ScannerDBImageName:     "scanner-db",
+		ScannerDBSlimImageName: "scanner-db-slim",
+
+		ChartRepo: ChartRepo{
+			URL:     "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
@@ -210,8 +275,27 @@ func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, 
 	if err := CheckImageFlavorName(flavorName, isReleaseBuild); err != nil {
 		return ImageFlavor{}, err
 	}
-	f := imageFlavorMap[flavorName]
-	return f.constructorFunc(), nil
+
+	return getImageFlavorByName(flavorName), nil
+}
+
+// GetImageFlavorNameFromEnv returns the value of the environment variable (ROX_IMAGE_FLAVOR)
+// providing development_build as default if no RealeseBuild and environment variable not set
+// This function will panic if running a ReleaseBuild and ROX_IMAGE_FLAVOR is not available
+func GetImageFlavorNameFromEnv() string {
+	envValue := strings.TrimSpace(imageFlavorEnv())
+	if envValue == "" && !buildinfo.ReleaseBuild {
+		envValue = ImageFlavorNameDevelopmentBuild
+		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", imageFlavorEnvName, ImageFlavorNameDevelopmentBuild)
+	}
+	err := CheckImageFlavorName(envValue, buildinfo.ReleaseBuild)
+	if err != nil {
+		// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
+		// build-time constant.
+		panicImageFlavorEnv(err)
+	}
+
+	return envValue
 }
 
 // GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR).
@@ -224,18 +308,16 @@ func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, 
 // roxctl should instead rely on different ways to determine which image defaults to use. Such as asking users to
 // provide a command-line argument.
 func GetImageFlavorFromEnv() ImageFlavor {
-	envValue := strings.TrimSpace(imageFlavorEnv())
-	if envValue == "" && !buildinfo.ReleaseBuild {
-		envValue = ImageFlavorNameDevelopmentBuild
-		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", imageFlavorEnvName, ImageFlavorNameDevelopmentBuild)
-	}
-	f, err := GetImageFlavorByName(envValue, buildinfo.ReleaseBuild)
-	if err != nil {
-		// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
-		// build-time constant.
-		log.Panicf("Incorrect image flavor in environment variable %s: %s", imageFlavorEnvName, err)
-	}
-	return f
+	envValue := GetImageFlavorNameFromEnv()
+	return getImageFlavorByName(envValue)
+}
+
+func getImageFlavorByName(name string) ImageFlavor {
+	return imageFlavorMap[name].constructorFunc()
+}
+
+func panicImageFlavorEnv(err error) {
+	log.Panicf("Incorrect image flavor in environment variable %s: %s", imageFlavorEnvName, err)
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.
@@ -262,6 +344,11 @@ func (f *ImageFlavor) MainImage() string {
 // MainImageNoTag is the container image repository (image name including registry, excluding tag) for the "main" image.
 func (f *ImageFlavor) MainImageNoTag() string {
 	return fmt.Sprintf("%s/%s", f.MainRegistry, f.MainImageName)
+}
+
+// CentralDBImage is the container image reference (full name) for the central-db image.
+func (f *ImageFlavor) CentralDBImage() string {
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.CentralDBImageName, f.CentralDBImageTag)
 }
 
 // CollectorFullImage is the container image reference (full name) for the "collector" image

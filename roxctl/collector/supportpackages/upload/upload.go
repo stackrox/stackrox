@@ -15,6 +15,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/probeupload"
@@ -176,7 +177,7 @@ func (cmd *collectorSPUploadCommand) uploadFilesFromPackage() error {
 	}
 
 	if len(probeFiles) == 0 {
-		return errors.New("the given support package contains no relevant files")
+		return errox.NotFound.New("the given support package contains no relevant files")
 	}
 
 	existingFiles, err := cmd.retrieveExistingProbeFiles(probeFiles)

@@ -1,14 +1,13 @@
 import com.google.protobuf.Timestamp
 import groups.NetworkFlowVisualization
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
+import java.util.concurrent.TimeUnit
 import objects.Deployment
 import objects.Edge
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.NetworkGraphService
 import util.NetworkGraphUtil
-
-import java.util.concurrent.TimeUnit
 
 class ExternalNetworkSourcesTest extends BaseSpecification {
     // One of the outputs of: dig storage.googleapis.com
@@ -59,7 +58,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         String deploymentUid = DEP_EXTERNALCONNECTION.deploymentUid
         assert deploymentUid != null
 
-        println "Create a external source containing Google's IP address"
+        log.info "Create a external source containing Google's IP address"
         String externalSourceName = "external-source"
         NetworkEntity externalSource = createNetworkEntityExternalSource(externalSourceName, GOOGLE_CIDR_31)
         String externalSourceID = externalSource?.getInfo()?.getId()
@@ -82,16 +81,16 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         String deploymentUid = DEP_EXTERNALCONNECTION.deploymentUid
         assert deploymentUid != null
 
-        println "Create a smaller network external source containing Google's IP address"
+        log.info "Create a smaller network external source containing Google's IP address"
         String externalSource31Name = "external-source-31"
         NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, GOOGLE_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
         assert externalSource31ID != null
 
-        println "Edge from deployment to external source ${externalSource31Name} should exist"
+        log.info "Edge from deployment to external source ${externalSource31Name} should exist"
         assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource31ID)
 
-        println "Create a supernet external source containing Google's IP address"
+        log.info "Create a supernet external source containing Google's IP address"
         String externalSource30Name = "external-source-30"
         NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, GOOGLE_CIDR_30)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
@@ -115,11 +114,11 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         when:
         "Supernet is added after subnet followed by subnet deletion"
 
-        println "Get ID of deployment which is communicating the external source"
+        log.info "Get ID of deployment which is communicating the external source"
         String deploymentUid = DEP_EXTERNALCONNECTION.deploymentUid
         assert deploymentUid != null
 
-        println "Create a smaller subnet network entities with Google's IP address"
+        log.info "Create a smaller subnet network entities with Google's IP address"
         String externalSource31Name = "external-source-31"
         NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, GOOGLE_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
@@ -129,7 +128,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         "Verify edge from deployment to subnet exists before subnet deletion"
         assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource31ID)
 
-        println "Add supernet and remove subnet"
+        log.info "Add supernet and remove subnet"
         String externalSource30Name = "external-source-30"
         NetworkEntity externalSource30 = createNetworkEntityExternalSource(externalSource30Name, GOOGLE_CIDR_30)
         String externalSource30ID = externalSource30?.getInfo()?.getId()
@@ -163,10 +162,10 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         String externalSource30ID = externalSource30?.getInfo()?.getId()
         assert externalSource30ID != null
 
-        println "Verify edge exists from deployment to supernet external source"
+        log.info "Verify edge exists from deployment to supernet external source"
         assert NetworkGraphUtil.checkForEdge(deploymentUid, externalSource30ID)
 
-        println "Add smaller subnet subnet external source"
+        log.info "Add smaller subnet subnet external source"
         String externalSource31Name = "external-source-31"
         NetworkEntity externalSource31 = createNetworkEntityExternalSource(externalSource31Name, GOOGLE_CIDR_31)
         String externalSource31ID = externalSource31?.getInfo()?.getId()
@@ -208,9 +207,9 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
         NetworkGraphService.deleteNetworkEntity(entityID)
     }
 
-    private static verifyNoEdge(String entityID1, String entityID2, Timestamp since) {
+    private verifyNoEdge(String entityID1, String entityID2, Timestamp since) {
         // First wait for some time to give time for network flow update
-        println "Wait a bit before checking graph to verify no edge..."
+        log.info "Wait a bit before checking graph to verify no edge..."
         TimeUnit.SECONDS.sleep(NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS*2)
         // Shorter timeout for verifying no edge to save test time
         return !NetworkGraphUtil.checkForEdge(

@@ -6,7 +6,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/pkg/errors"
 	activeComponentDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/index"
+	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	clusterCVEEdgeDackBox "github.com/stackrox/rox/central/clustercveedge/dackbox"
 	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
@@ -33,9 +33,11 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
+	rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 type bucketRef struct {
@@ -66,65 +68,74 @@ var (
 			wrapper:  clusterCVEEdgeIndex.Wrapper{},
 		},
 		{
-			bucket:   imagecomponentDackBox.Bucket,
-			reader:   imagecomponentDackBox.Reader,
-			category: v1.SearchCategory_IMAGE_COMPONENTS,
-			wrapper:  imagecomponentIndex.Wrapper{},
-		},
-		{
-			bucket:   imagecomponentEdgeDackBox.Bucket,
-			reader:   imagecomponentEdgeDackBox.Reader,
-			category: v1.SearchCategory_IMAGE_COMPONENT_EDGE,
-			wrapper:  imagecomponentEdgeIndex.Wrapper{},
-		},
-		{
-			bucket:   imageDackBox.Bucket,
-			reader:   imageDackBox.Reader,
-			category: v1.SearchCategory_IMAGES,
-			wrapper:  imageIndex.Wrapper{},
-		},
-		{
 			bucket:   activeComponentDackBox.Bucket,
 			reader:   activeComponentDackBox.Reader,
 			category: v1.SearchCategory_ACTIVE_COMPONENT,
 			wrapper:  activeComponentIndex.Wrapper{},
 		},
-		{
-			bucket:   deploymentDackBox.Bucket,
-			reader:   deploymentDackBox.Reader,
-			category: v1.SearchCategory_DEPLOYMENTS,
-			wrapper:  deploymentIndex.Wrapper{},
-		},
-		{
-			bucket:   nodeComponentEdgeDackBox.Bucket,
-			reader:   nodeComponentEdgeDackBox.Reader,
-			category: v1.SearchCategory_NODE_COMPONENT_EDGE,
-			wrapper:  nodeComponentEdgeIndex.Wrapper{},
-		},
-		{
-			bucket:   nodeDackBox.Bucket,
-			reader:   nodeDackBox.Reader,
-			category: v1.SearchCategory_NODES,
-			wrapper:  nodeIndex.Wrapper{},
-		},
-		{
-			bucket:   imageCVEEdgeDackbox.Bucket,
-			reader:   imageCVEEdgeDackbox.Reader,
-			category: v1.SearchCategory_IMAGE_VULN_EDGE,
-			wrapper:  imageCVEEdgeIndex.Wrapper{},
-		},
 	}
 )
 
+func init() {
+	if !features.PostgresDatastore.Enabled() {
+		migratedBuckets := []bucketRef{
+			{
+				bucket:   imagecomponentEdgeDackBox.Bucket,
+				reader:   imagecomponentEdgeDackBox.Reader,
+				category: v1.SearchCategory_IMAGE_COMPONENT_EDGE,
+				wrapper:  imagecomponentEdgeIndex.Wrapper{},
+			},
+			{
+				bucket:   imageDackBox.Bucket,
+				reader:   imageDackBox.Reader,
+				category: v1.SearchCategory_IMAGES,
+				wrapper:  imageIndex.Wrapper{},
+			},
+			{
+				bucket:   imagecomponentDackBox.Bucket,
+				reader:   imagecomponentDackBox.Reader,
+				category: v1.SearchCategory_IMAGE_COMPONENTS,
+				wrapper:  imagecomponentIndex.Wrapper{},
+			},
+			{
+				bucket:   deploymentDackBox.Bucket,
+				reader:   deploymentDackBox.Reader,
+				category: v1.SearchCategory_DEPLOYMENTS,
+				wrapper:  deploymentIndex.Wrapper{},
+			},
+			{
+				bucket:   imageCVEEdgeDackbox.Bucket,
+				reader:   imageCVEEdgeDackbox.Reader,
+				category: v1.SearchCategory_IMAGE_VULN_EDGE,
+				wrapper:  imageCVEEdgeIndex.Wrapper{},
+			},
+			{
+				bucket:   nodeDackBox.Bucket,
+				reader:   nodeDackBox.Reader,
+				category: v1.SearchCategory_NODES,
+				wrapper:  nodeIndex.Wrapper{},
+			},
+			{
+				bucket:   nodeComponentEdgeDackBox.Bucket,
+				reader:   nodeComponentEdgeDackBox.Reader,
+				category: v1.SearchCategory_NODE_COMPONENT_EDGE,
+				wrapper:  nodeComponentEdgeIndex.Wrapper{},
+			},
+		}
+		initializedBuckets = append(initializedBuckets, migratedBuckets...)
+	}
+}
+
 // Init runs all registered initialization functions.
-func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, registry indexer.WrapperRegistry, reindexBucket, dirtyBucket, reindexValue []byte) error {
+func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, dirtyBucket []byte) error {
 	synchronized := concurrency.NewSignal()
 
+	globalIndex := globalindex.GetGlobalIndex()
 	for _, initialized := range initializedBuckets {
 		// Register the wrapper to index the objects.
-		registry.RegisterWrapper(initialized.bucket, initialized.wrapper)
+		rawDackbox.RegisterIndex(initialized.bucket, initialized.wrapper)
 
-		if err := queueBucketForIndexing(dacky, indexQ, initialized.category, dirtyBucket, initialized.bucket, initialized.reader); err != nil {
+		if err := queueBucketForIndexing(dacky, globalIndex, indexQ, initialized.category, dirtyBucket, initialized.bucket, initialized.reader); err != nil {
 			return errors.Wrap(err, "unable to initialize dackbox, initialization function failed")
 		}
 
@@ -133,7 +144,7 @@ func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, registry indexer.W
 		indexQ.PushSignal(&synchronized)
 		synchronized.Wait()
 
-		if err := markInitialIndexingComplete(globalindex.GetGlobalIndex(), []byte(initialized.category.String())); err != nil {
+		if err := markInitialIndexingComplete(globalIndex, []byte(initialized.category.String())); err != nil {
 			return errors.Wrap(err, "setting initial indexing complete")
 		}
 	}
@@ -152,7 +163,7 @@ func needsInitialIndexing(index bleve.Index, bucket []byte) (bool, error) {
 	return !bytes.Equal([]byte("old"), data), nil
 }
 
-func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, category v1.SearchCategory, dirtyBucket, bucket []byte, reader crud.Reader) error {
+func queueBucketForIndexing(dacky *dackbox.DackBox, index bleve.Index, indexQ queue.WaitableQueue, category v1.SearchCategory, dirtyBucket, bucket []byte, reader crud.Reader) error {
 	defer debug.FreeOSMemory()
 
 	txn, err := dacky.NewReadOnlyTransaction()
@@ -164,7 +175,6 @@ func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, 
 	// Read all keys that need re-indexing.
 	var keys [][]byte
 
-	index := globalindex.GetGlobalIndex()
 	needsReindex, err := needsInitialIndexing(index, []byte(category.String()))
 	if err != nil {
 		return err

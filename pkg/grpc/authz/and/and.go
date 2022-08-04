@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
 
@@ -19,7 +20,7 @@ func (a *and) Authorized(ctx context.Context, fullMethodName string) error {
 		}
 	}
 	if len(errors) != 0 {
-		return errorhelpers.NewErrNotAuthorized(errorhelpers.NewErrorListWithErrors("some authorizer could not authorize this request:", errors).String())
+		return errox.NotAuthorized.CausedBy(errorhelpers.NewErrorListWithErrors("some authorizer could not authorize this request:", errors).String())
 	}
 	return nil
 }

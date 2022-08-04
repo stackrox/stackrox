@@ -14,12 +14,15 @@ const networkEntityTabbedOverlay = '[data-testid="network-entity-tabbed-overlay"
 
 export const selectors = {
     cytoscapeContainer: '#cytoscapeContainer',
+    networkGraphHeading: 'h1:contains("Network Graph")',
+    emptyStateSubheading:
+        '.pf-c-empty-state h2:contains("Please select at least one namespace from your cluster")',
     simulatorSuccessMessage: 'div[data-testid="message-body"]:contains("Policies processed")',
     panels: networkPanels,
     legend: {
-        deployments: '[data-testid="deployment-legend"] div',
-        namespaces: '[data-testid="namespace-legend"] div',
-        connections: '[data-testid="connection-legend"] div',
+        deployments: '[data-testid="deployment-legend"]',
+        namespaces: '[data-testid="namespace-legend"]',
+        connections: '[data-testid="connection-legend"]',
     },
     namespaces: {
         all: 'g.container > rect',
@@ -48,6 +51,7 @@ export const selectors = {
         allFilter: 'button[data-testid="network-connections-filter-all"]:contains("all")',
         hideNsEdgesFilter: '[data-testid="namespace-flows-filter"] button:contains("Hide")',
         stopSimulation: '.simulator-mode button:contains("Stop")',
+        confirmationButton: 'button:contains("Yes")',
     },
     detailsPanel: scopeSelectors(networkPanels.detailsPanel, {
         header: '[data-testid="network-details-panel-header"]',
@@ -59,4 +63,13 @@ export const selectors = {
     networkEntityTabbedOverlay: scopeSelectors(networkEntityTabbedOverlay, {
         header: '[data-testid="network-entity-tabbed-overlay-header"]',
     }),
+    toolbar: scopeSelectors('[data-testid="network-graph-toolbar"]', {
+        namespaceSelect: '.namespace-select > button',
+        filterSelect: search.multiSelectInput,
+    }),
+    errorOverlay: {
+        heading: 'h2:contains("An error has prevented the Network Graph from loading")',
+        message: (messageText) =>
+            `${selectors.errorOverlay.heading} + div *:contains("${messageText}")`,
+    },
 };

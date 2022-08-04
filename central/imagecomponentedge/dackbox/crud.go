@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -34,7 +35,9 @@ var (
 )
 
 func init() {
-	globaldb.RegisterBucket(Bucket, "Image Component Edge")
+	if !features.PostgresDatastore.Enabled() {
+		globaldb.RegisterBucket(Bucket, "Image Component Edge")
+	}
 }
 
 func keyFunc(msg proto.Message) []byte {

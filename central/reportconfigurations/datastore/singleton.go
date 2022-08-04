@@ -1,8 +1,6 @@
 package datastore
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/reportconfigurations/index"
@@ -26,7 +24,7 @@ func Singleton() DataStore {
 		var err error
 		var storage store.Store
 		if features.PostgresDatastore.Enabled() {
-			storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+			storage = postgres.New(globaldb.GetPostgres())
 		} else {
 			storage, err = reportConfigStore.New(globaldb.GetRocksDB())
 			utils.CrashOnError(err)

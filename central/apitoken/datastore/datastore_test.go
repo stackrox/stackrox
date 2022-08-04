@@ -24,6 +24,9 @@ type apiTokenDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
+	hasReadIntegrationCtx  context.Context
+	hasWriteIntegrationCtx context.Context
+
 	dataStore DataStore
 	storage   *storeMocks.MockStore
 
@@ -41,50 +44,79 @@ func (s *apiTokenDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.APIToken)))
 
+	s.hasReadIntegrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Integration)))
+	s.hasWriteIntegrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Integration)))
+
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.dataStore = New(s.storage)
 }
 
-func (s *apiTokenDataStoreTestSuite) TeardownTest() {
+func (s *apiTokenDataStoreTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
 func (s *apiTokenDataStoreTestSuite) TestAddToken() {
 	token := &storage.TokenMetadata{Id: "id"}
-	s.storage.EXPECT().Upsert(gomock.Any(), token).Return(nil)
+	s.storage.EXPECT().Upsert(gomock.Any(), token).Return(nil).MaxTimes(2)
 
 	s.NoError(s.dataStore.AddToken(s.hasWriteCtx, token))
+
+	token.Id = "id2"
+
+	s.NoError(s.dataStore.AddToken(s.hasWriteIntegrationCtx, token))
 }
 
 func (s *apiTokenDataStoreTestSuite) TestGetTokenOrNil() {
 	expectedToken := &storage.TokenMetadata{Id: "id"}
-	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil)
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil).MaxTimes(2)
 
 	token, err := s.dataStore.GetTokenOrNil(s.hasReadCtx, "id")
 	s.NoError(err)
 	s.Nil(token)
 
-	s.storage.EXPECT().Get(gomock.Any(), "id").Return(expectedToken, true, nil)
+	token, err = s.dataStore.GetTokenOrNil(s.hasReadIntegrationCtx, "id")
+	s.NoError(err)
+	s.Nil(token)
+
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(expectedToken, true, nil).MaxTimes(2)
 
 	token, err = s.dataStore.GetTokenOrNil(s.hasReadCtx, "id")
+	s.NoError(err)
+	s.Equal(expectedToken, token)
+
+	token, err = s.dataStore.GetTokenOrNil(s.hasReadIntegrationCtx, "id")
 	s.NoError(err)
 	s.Equal(expectedToken, token)
 }
 
 func (s *apiTokenDataStoreTestSuite) TestRevokeToken() {
 	expectedToken := &storage.TokenMetadata{Id: "id"}
-	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil)
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil).MaxTimes(2)
 
 	exists, err := s.dataStore.RevokeToken(s.hasWriteCtx, "id")
 	s.NoError(err)
 	s.False(exists)
 
-	s.storage.EXPECT().Get(gomock.Any(), "id").Return(expectedToken, true, nil)
+	exists, err = s.dataStore.RevokeToken(s.hasWriteIntegrationCtx, "id")
+	s.NoError(err)
+	s.False(exists)
+
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(expectedToken, true, nil).MaxTimes(2)
 	expectedToken.Revoked = true
-	s.storage.EXPECT().Upsert(gomock.Any(), expectedToken).Return(nil)
+	s.storage.EXPECT().Upsert(gomock.Any(), expectedToken).Return(nil).MaxTimes(2)
 
 	exists, err = s.dataStore.RevokeToken(s.hasWriteCtx, "id")
+	s.NoError(err)
+	s.True(exists)
+
+	exists, err = s.dataStore.RevokeToken(s.hasWriteIntegrationCtx, "id")
 	s.NoError(err)
 	s.True(exists)
 }

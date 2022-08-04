@@ -29,6 +29,19 @@ func GetProcessBaseline() *storage.ProcessBaseline {
 	}
 }
 
+// GetScopedProcessBaseline returns a mock ProcessBaseline belonging to the input scope.
+func GetScopedProcessBaseline(id string, clusterID string, namespace string) *storage.ProcessBaseline {
+	return &storage.ProcessBaseline{
+		Id: id,
+		Key: &storage.ProcessBaselineKey{
+			DeploymentId:  id,
+			ClusterId:     clusterID,
+			Namespace:     namespace,
+			ContainerName: id,
+		},
+	}
+}
+
 // GetProcessBaselineWithID returns an excluded scope with the ID filled out.
 func GetProcessBaselineWithID() *storage.ProcessBaseline {
 	baseline := GetProcessBaselineWithKey()

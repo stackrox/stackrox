@@ -10,18 +10,22 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
+	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 var (
 	processBaselineSAC = sac.ForResource(resources.ProcessWhitelist)
+
+	genDuration = env.BaselineGenerationDuration.DurationSetting()
 )
 
 type datastoreImpl struct {
@@ -31,6 +35,7 @@ type datastoreImpl struct {
 	baselineLock *concurrency.KeyedMutex
 
 	processBaselineResults processBaselineResultsStore.DataStore
+	processesDataStore     processIndicatorDatastore.DataStore
 }
 
 func (ds *datastoreImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error) {
@@ -76,11 +81,8 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(ctx context.Context, id stri
 	baseline.Id = id
 	baseline.Created = types.TimestampNow()
 	baseline.LastUpdate = baseline.GetCreated()
-	genDuration := env.BaselineGenerationDuration.DurationSetting()
-	lockTimestamp, err := types.TimestampProto(time.Now().Add(genDuration))
-	if err == nil {
-		baseline.StackRoxLockedTimestamp = lockTimestamp
-	}
+	baseline.StackRoxLockedTimestamp = ds.generateLockTimestamp()
+
 	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return id, errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
 	}
@@ -93,6 +95,21 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(ctx context.Context, id stri
 		return id, err
 	}
 	return id, nil
+}
+
+func (ds *datastoreImpl) addProcessBaselineLocked(ctx context.Context, baseline *storage.ProcessBaseline) (string, error) {
+	if err := ds.storage.Upsert(ctx, baseline); err != nil {
+		return baseline.GetId(), errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
+	}
+	if err := ds.indexer.AddProcessBaseline(baseline); err != nil {
+		err = errors.Wrapf(err, "inserting process baseline %q into index", baseline.GetId())
+		subErr := ds.storage.Delete(ctx, baseline.GetId())
+		if subErr != nil {
+			err = errors.Wrap(err, "error rolling back process process baseline addition")
+		}
+		return baseline.GetId(), err
+	}
+	return baseline.GetId(), nil
 }
 
 func (ds *datastoreImpl) removeProcessBaselineByID(ctx context.Context, id string) error {
@@ -205,7 +222,7 @@ func (ds *datastoreImpl) updateProcessBaselineAndSetTimestamp(ctx context.Contex
 	return ds.storage.Upsert(ctx, baseline)
 }
 
-func (ds *datastoreImpl) updateProcessBaselineElementsUnlocked(ctx context.Context, baseline *storage.ProcessBaseline, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
+func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, baseline *storage.ProcessBaseline, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
 	baselineMap := makeElementMap(baseline.GetElements())
 	graveyardMap := makeElementMap(baseline.GetElementGraveyard())
 
@@ -268,10 +285,10 @@ func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key 
 		return nil, err
 	}
 
-	return ds.updateProcessBaselineElementsUnlocked(ctx, baseline, addElements, removeElements, auto)
+	return ds.updateProcessBaselineElements(ctx, baseline, addElements, removeElements, auto)
 }
 
-func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
+func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool, lock bool) (*storage.ProcessBaseline, error) {
 	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).Allowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
@@ -292,7 +309,7 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 	}
 
 	if exists {
-		return ds.updateProcessBaselineElementsUnlocked(ctx, baseline, addElements, nil, auto)
+		return ds.updateProcessBaselineElements(ctx, baseline, addElements, nil, auto)
 	}
 
 	timestamp := types.TimestampNow()
@@ -300,14 +317,20 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 	for _, element := range addElements {
 		elements = append(elements, &storage.BaselineElement{Element: &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: element.GetProcessName()}}, Auto: auto})
 	}
+
 	baseline = &storage.ProcessBaseline{
-		Id:         id,
-		Key:        key,
-		Elements:   elements,
-		Created:    timestamp,
-		LastUpdate: timestamp,
+		Id:                      id,
+		Key:                     key,
+		Elements:                elements,
+		Created:                 timestamp,
+		LastUpdate:              timestamp,
+		StackRoxLockedTimestamp: timestamp,
 	}
-	_, err = ds.addProcessBaselineUnlocked(ctx, id, baseline)
+	if lock {
+		_, err = ds.addProcessBaselineLocked(ctx, baseline)
+	} else {
+		_, err = ds.addProcessBaselineUnlocked(ctx, id, baseline)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -346,6 +369,80 @@ func (ds *datastoreImpl) UserLockProcessBaseline(ctx context.Context, key *stora
 	return baseline, nil
 }
 
+func (ds *datastoreImpl) CreateUnlockedProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
+	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).Allowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, sac.ErrResourceAccessDenied
+	}
+
+	id, err := keyToID(key)
+	if err != nil {
+		return nil, err
+	}
+	ds.baselineLock.Lock(id)
+	defer ds.baselineLock.Unlock(id)
+
+	// See if we already have a baseline
+	baseline, exists, err := ds.GetProcessBaseline(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+
+	if exists {
+		return baseline, nil
+	}
+
+	// Get the list of processes
+	baselineList, err := ds.getProcessList(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the de-duped elements for the baseline
+	elements := make(map[string]*storage.BaselineItem, len(baselineList))
+
+	for _, indicator := range baselineList {
+		baselineItem := processBaselinePkg.BaselineItemFromProcess(indicator)
+
+		insertableElement := &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: baselineItem}}
+
+		elements[baselineItem] = insertableElement
+	}
+
+	baseElements := make([]*storage.BaselineElement, 0, len(elements))
+	for _, element := range elements {
+		baseElements = append(baseElements, &storage.BaselineElement{Element: &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: element.GetProcessName()}}, Auto: true})
+	}
+
+	// Build the baseline itself
+	timestamp := types.TimestampNow()
+	baseline = &storage.ProcessBaseline{
+		Id:         id,
+		Key:        key,
+		Elements:   baseElements,
+		Created:    timestamp,
+		LastUpdate: timestamp,
+	}
+
+	// Store the unlocked baseline.
+	_, err = ds.addProcessBaselineUnlocked(ctx, id, baseline)
+
+	return baseline, err
+}
+
+func (ds *datastoreImpl) getProcessList(ctx context.Context, key *storage.ProcessBaselineKey) ([]*storage.ProcessIndicator, error) {
+	// Simply use search to find the process indicators for the baseline key
+	return ds.processesDataStore.SearchRawProcessIndicators(
+		ctx,
+		pkgSearch.NewQueryBuilder().
+			AddExactMatches(pkgSearch.DeploymentID, key.GetDeploymentId()).
+			AddExactMatches(pkgSearch.ContainerName, key.GetContainerName()).
+			AddExactMatches(pkgSearch.Cluster, key.GetClusterId()).
+			ProtoQuery(),
+	)
+}
+
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(baseline *storage.ProcessBaseline) error) error {
 	if ok, err := processBaselineSAC.ReadAllowed(ctx); err != nil {
 		return err
@@ -371,4 +468,39 @@ func (ds *datastoreImpl) RemoveProcessBaselinesByIDs(ctx context.Context, ids []
 		}
 	}
 	return nil
+}
+
+func (ds *datastoreImpl) ClearProcessBaselines(ctx context.Context, ids []string) error {
+	// Get all the baselines we are interested in
+	baselines, _, err := ds.storage.GetMany(ctx, ids)
+	if err != nil {
+		return err
+	}
+
+	// Go through the baselines and clear them out
+	for _, baseline := range baselines {
+		if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(baseline.Key).Allowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
+
+		baseline.Elements = nil
+		baseline.ElementGraveyard = nil
+
+		// We need to extend the stackrox lock timestamp to re-observe the processes.
+		baseline.StackRoxLockedTimestamp = ds.generateLockTimestamp()
+		baseline.LastUpdate = types.TimestampNow()
+	}
+	return ds.storage.UpsertMany(ctx, baselines)
+}
+
+func (ds *datastoreImpl) generateLockTimestamp() *types.Timestamp {
+	lockTimestamp, err := types.TimestampProto(time.Now().Add(genDuration))
+	// This should not occur unless genDuration is in a bad state.  If that happens just
+	// set it to one hour in the future.
+	if err != nil {
+		lockTimestamp, _ = types.TimestampProto(time.Now().Add(1 * time.Hour))
+	}
+	return lockTimestamp
 }

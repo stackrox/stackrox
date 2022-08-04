@@ -6,10 +6,96 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+### Removed Features
+- ROX-11784: The `RenamePolicyCategory` and `DeletePolicyCategory` methods in the
+  `v1/policycategories` endpoint have been removed.
+### Deprecated Features
+### Technical Changes
+- ROX-11181: Any clusters that have been unhealthy (defined as central being unable to reach sensor running on those clusters) for a period of time will be automatically removed. By default, it will remove if it's been unhealthy for 90 days, however that can be configured in the System Configuration page or using the cluster API.
+  - Any cluster that is expected to be unavailable for a period of time (e.g. clusters used in disaster recovery), can be tagged with a customizable label. Clusters with those labels will never be removed automatically.
+
+## [3.71.0]
+
+- ROX-8051: The default collection method is changed from KernelModule to eBPF, following improved eBPF performance in collector.
+- ROX-11070: There have been changes made to the `v1/groups` API, including a deprecation:
+  - Each group will now have a new field, `props.id` which uniquely identifies it.
+  - Get / Update / Mutate / Remove of groups via the `props` field and without the `props.id` field being set is deprecated and will be removed in release 3.73.
+  - Get of groups via the `props` field and without the `props.id` field being set will fail if more than one group was found for the given `props` field.
+- ROX-11349: Updated rationale and remediation texts for default policy "Deployments should have at least one ingress Network Policy"
+- ROX-11443: The default value for `--include-snoozed` option of `roxctl image scan` command is set to `false`. The result of `roxctl image scan` execution without `--include-snoozed` flag will not include deferred CVEs anymore.
+- ROX-9292: The default expiration time of tokens issued by auth providers has been lowered to 12 hours.
+- ROX-9760: The deployment tab on violation detail now contains a list of network policies in the deployment's namespace.
+- ROX-9358: The diagnostic bundle includes notifiers, auth providers and auth provider groups, access control roles with attached permission set and access scope, and system configuration. Users with `DebugLogs` permission will be able to read listed entities from a generated diagnostic bundle regardless of their respective permissions.
+- ROX-10819: The documentation for API v1/notifiers ("GetNotifiers") previously stated that the request could be filtered by name or type. This is incorrect as this API never allowed filtering. The documentation has been fixed to reflect that.
+- ROX-9614: Add `file` query parameter to Central's `/api/extensions/scannerdefinitions`, allowing retrieval of individual files (not directories) from Scanner's Definition bundle using their full path within the archive. Add `sensorEndpoint` to Scanner's configmap, so Scanner in slim mode knows how to reach Sensor from its cluster.
+- ROX-9928: Policy "OpenShift: Advanced Cluster Security Central Admin Secret Accessed" renamed to "OpenShift: Central Admin Secret Accessed"
+- ROX-8277: changed UserAgent Header for all requests from stackrox operator to kubernetes API server to show appropriate version of the operator, for example: `rhacs-operator/v3.70.0 opensource (linux/amd64)`
+- `ids` field in `/v1/cves/suppress` and `/v1/cves/unsuppress` API payload will be renamed to `cves` in 72.0 release.
+- `cves.ids` field of `storage.VulnerabilityRequest` object, which is in the response of `VulnerabilityRequestService` endpoints, will be renamed to `cves.cves` in 72.0 release.
+- ROX-8520: Permissions for permission sets will be grouped for simplification. As a result, the following permissions will be deprecated in favor of a new permission:
+  - New permission `Access` will deprecate the permissions `AuthPlugin, AuthProvider, Group, Licenses, Role, User`.
+  - New permission `DeploymentExtension` will deprecate the permissions `Indicator, NetworkBaseline, ProcessWhitelist, Risk`.
+  - New permission `Integration` will deprecate the permissions `APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration`.
+  Each deprecated permission will be removed in a future release.
+- Permission `ImageComponent` is deprecated and will be superseded by the existing permission `Image`. Similar to the permission changes introduced with ROX-8520, `ImageComponent` will be removed in a future release.
+- /v1/telemetry and /v1/licenses endpoints, and related CLI functionality, are now deprecated and will be removed in 2 releases.
+  - These endpoints are deprecated as license files are not required to run the platform
+- `firstNodeOccurrence` field of `storage.Node` object, which is in the response of Node endpoints, has been removed.
+- `vulns` fields of `storage.Node` object, which is in the response payload of `v1/nodes` is deprecated and will be removed in future release.
+- `/v1/cves/suppress` and `/v1/cves/unsuppress` has been deprecated and will be removed in the future.
+  - Use `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` to snooze and unsnooze image  vulnerabilities.
+  - Use `/v1/nodecves/suppress` and `/v1/nodecves/unsuppress` to snooze and unsnooze node/host vulnerabilities.
+  - Use `/v1/clustercves/suppress` and `/v1/clustercves/unsuppress` to snooze and unsnooze platform (k8s, istio, and openshift) vulnerabilities.
+- /v1/compliance/results was never implemented and will be removed in this release
+- In release 73.0, the /v1/compliance/runresults endpoint will contain a slimmed down version of the ComplianceDomain object. This allows for greater scalability and reduced memory usage.
+- When the underlying database changes to Postgres the api `/db/restore` will no longer be a supported means for database restores.  At that time using `roxctl` will be the supported mechanism for database restores.
+- PodSecurityPolicies can be disabled when generating deployment bundles and when configuring the Helm charts. The Helm charts also support auto-sensing
+  availability of the PodSecurityPolicies API. PodSecurityPolicies must be disabled when deploying to Kubernetes >= v1.25.
+- ROX-11533: Fixed preferred node affinity for Central, Sensor and Scanner pods so that OpenShift Infra nodes are favored more than Compute nodes. Match expressions will also prefer not scheduling on Control Plane nodes on both Kubernetes and OpenShift clusters, including kube versions 1.25 and newer.
+- ROX-10948: A new default policy added to detect if a deployment is running with a container that has allowPrivilegeEscalation set to true. The policy is enabled by default.
+- ROX-10699: A new default policy added to detect if a deployment has any service that is externally exposed through any methods. The policy is disabled by default.
+- Scanner's "db" container no longer mounts the "scanner-db-password" secret. Instead, the init container, "init-db", mounts it.
+  - This means the configuration for the init container has been updated to include "POSTGRES_PASSWORD_FILE" and some volume mounts which are now required.
+- Debian 9 has reached EOL, so Scanner now marks Debian 9 images as stale.
+  - The Debian Security Tracker has also stopped tracking Debian 9 vulnerabilities, so there will be no more new Debian 9 vulnerabilities.
+
+## [70.0]
+
 - The default Admission Controller "fail open" timeout has been changed from 3 seconds to 20 seconds in Helm templates.
 - The maximum Admission Controller "fail open" timeout has been set at 25 seconds in Helm template verification performed by the Operator.
   - This change is *not* backwards compatible; if an existing Custom Resource sets the value to > 25 seconds, then it will fail validation in case operator is downgraded. This change is accepted because the operator is still in v1alpha1 and subject to change.
 - The admission webhook timeout is now set to the admission controller timeout plus 2 seconds.
+- The "Process Ancestor" search term has been deprecated.
+- Central will now respond with a 421 Misdirected Request status code to requests where the ServerName sent via TLS SNI
+  does not match the `:authority` (`Host`) header. This feature can be turned off by setting the environment variable
+  `ROX_ALLOW_MISDIRECTED_REQUESTS=true`.
+- Registry integrations for ECR are now auto-generated if the cluster's cloud provider is AWS, and the nodes' Instance IAM Role has policies granting access to ECR.  Customers can turn this feature off by disabling the EC2 instance metadata service in their nodes.
+- A new default policy added to detect Spring Cloud Function RCE vulnerability (CVE-2022-22963) and Spring Framework Spring4Shell RCE vulnerability (CVE-2022-22965).
+- Fixed permissions checks in the UI that prevented users with certain limited permissions from creating report configurations.
+- ROX-8957: A new default policy added to detect missing ingress NetworkPolicy associated with deployments. The policy is disabled by default.
+  - Two new policy criteria were added to alert on missing ingress or egress NetworkPolicy associations.
+- ROX-8789: Change operator catalog format from deprecated SQLite database format to new file-based format.
+- ROX-8331: Increase the front-end limit on rendered nodes in the Network Graph from 1100 to 2000
+- ROX-9792: Introduced central limit of 2000 nodes in a Network Graph to avoid out-of-memory crashes
+- ROX-9946: Fixed default permissions for the default Vuln Reporter role to exclude the modify permission on notifiers, since it is not needed for report creation.
+- Added AllowPrivilegeEscalation as a new policy criteria.
+- ROX-10038: Removed limit of 10 inclusions and 10 exclusions from policy form
+- ROX-10090: Made the username and password optional on the Artifactory integration form
+- ROX-10217: Remove format validation from the URL field of the generic webhook integration form
+- ROX-9435: Updated dryrun API to generate preview violations for disabled policies
+- Support for security policies that do not have a policyVersion or have versions prior to 1.1 will be removed. If you have externally stored older policies, they cannot be imported.
+- ROX-10021: RHCOS node support is dropped until major improvements are made in ROX-8944.
+  - The UI shows the node scanning notes in the same manner as image scanning notes.
+- ROX-10097: Updated the base for the docs image from `nginx-118:1-46` to `nginx-120:latest`.
+- ROX-10666: `FROM` option will be deprecated from `Disallowed Dockerfile line` policy field and removed in a future release. Any policies containing `Disallowed dockerfile line` policy field with `FROM` option must be updated to remove those policy sections. For more information, please refer "Known Issues" section in Red-Hat ACS 3.69 release notes.
+- ROX-10270: The `RenamePolicyCategory` and `DeletePolicyCategory` methods in the
+`v1/policycategories` endpoint have been deprecated, and will be removed in future releases.
+  - For questions about this change, please contact the Red Hat support team at support@redhat.com.
+- ROX-10018: The policy `OpenShift: Kubeadmin Secret Accessed` will no longer trigger if the request was from the default OpenShift `oauth-apiserver-sa` service account, because this is an expected access pattern for the OpenShift apiserver.
+- Violation tags and process tags are deprecated, and will be removed in version 3.72.0.
+- Users who do not want to include the RBAC factor in risk calculation can set
+  the "ROX_INCLUDE_RBAC_IN_RISK" environment variable to "false" in the Central deployment spec.
+- Kubernetes' PodSecurityPolicy API is deprecated which is why installation of PodSecurityPolicies will be disabled with version 3.71.0.
 
 ## [69.1]
 
@@ -44,8 +130,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - CVEs in Ubuntu images will no longer link to http://people.ubuntu.com/~ubuntu-security/cve/<CVE>. Now it links to https://ubuntu.com/security/<CVE>.
 - Setting ROX_DISABLE_AUTOGENERATED_REGISTRIES environment variable to true will ignore all new registry integrations from Sensors
 - Vulnerability snoozing and un-snoozing will not impact image and component risk. Furthermore, it will not impact `Image Vulnerabilities` risk factor for deployments.
-- Note that this only affects users who are storing their policies externally and keeping those policies in sync with Central. There is no action required for users who are not taking this approach.
-  - Support for system policies with `policyVersion` unset will be removed in 3.71. All such externally stored policies must be converted to policy version 1.0 or higher. To do so, import the policies into the system, and then export the previously imported policies. The exported policies will now be in supported policy version format (>=1.0), which can be ensured by checking the `policyVersion` field.
+- In 3.70, support for security policies that do not have a policyVersion will be removed. Therefore, if you have externally stored older policies (without policyVersion or version prior to 1.1), you must convert them to use policyVersion 1.1. To do this, import the old policies into RHACS and then export them again. You can check the policyVersion field for your stored policies to identify if they need conversion.
 - Vulnerability Risk Assessment: Deferral update requests that are in pending state can now be canceled.
 
 ## [68.0]

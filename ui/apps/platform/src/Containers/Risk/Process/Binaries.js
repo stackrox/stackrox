@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import ProcessComments from 'Containers/AnalystNotes/ProcessComments';
 import ProcessTags from 'Containers/AnalystNotes/ProcessTags';
 import ProcessSignal from './Signal';
 import BinaryCollapsible from './BinaryCollapsible';
@@ -20,14 +19,6 @@ function Binaries({ processes }) {
             <BinaryCollapsible commandLineArgs={args} key={args}>
                 <div className="pt-4 px-4">
                     <ProcessTags
-                        deploymentID={deploymentId}
-                        containerName={containerName}
-                        execFilePath={execFilePath}
-                        args={args}
-                    />
-                </div>
-                <div className="py-4 px-4">
-                    <ProcessComments
                         deploymentID={deploymentId}
                         containerName={containerName}
                         execFilePath={execFilePath}

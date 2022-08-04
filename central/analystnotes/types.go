@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -40,14 +39,4 @@ func (k *ProcessNoteKey) Validate() error {
 		return errors.Errorf("invalid process key %v: has missing fields", k)
 	}
 	return nil
-}
-
-// ProcessToKey converts a process indicator to the key used for comments.
-func ProcessToKey(indicator *storage.ProcessIndicator) *ProcessNoteKey {
-	return &ProcessNoteKey{
-		DeploymentID:  indicator.GetDeploymentId(),
-		ContainerName: indicator.GetContainerName(),
-		ExecFilePath:  indicator.GetSignal().GetExecFilePath(),
-		Args:          indicator.GetSignal().GetArgs(),
-	}
 }

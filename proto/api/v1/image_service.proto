@@ -52,6 +52,15 @@ message GetImageVulnerabilitiesInternalRequest {
     repeated scannerV1.Note notes            = 5;
 }
 
+message EnrichLocalImageInternalRequest {
+    string                  image_id         = 1;
+    storage.ImageName       image_name       = 2;
+    storage.ImageMetadata   metadata         = 3;
+    storage.ImageSignature  image_signature  = 4;
+    scannerV1.Components    components       = 5;
+    repeated scannerV1.Note notes            = 6;
+}
+
 message DeleteImagesRequest {
     RawQuery query   = 1;
     bool     confirm = 2;
@@ -144,9 +153,14 @@ service ImageService {
     // ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
     rpc ScanImageInternal (ScanImageInternalRequest) returns (ScanImageInternalResponse);
 
-    // GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
-    rpc GetImageVulnerabilitiesInternal (GetImageVulnerabilitiesInternalRequest) returns (ScanImageInternalResponse);
+    // Deprecated: GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
+    rpc GetImageVulnerabilitiesInternal (GetImageVulnerabilitiesInternalRequest) returns (ScanImageInternalResponse) {
+        option deprecated = true;
+    };
 
+    // EnrichLocalImageInternal is used solely by the Sensor to send enrichment requests for local images. This
+    // includes the image's vulnerabilities as well as the signature verification data.
+    rpc EnrichLocalImageInternal (EnrichLocalImageInternalRequest) returns (ScanImageInternalResponse);
     // InvalidateScanAndRegistryCaches removes the image metadata cache.
     rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {
         option (google.api.http) = {

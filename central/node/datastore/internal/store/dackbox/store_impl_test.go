@@ -1,19 +1,18 @@
 package dackbox
 
 import (
+	"context"
 	"testing"
 
 	"github.com/gogo/protobuf/types"
 	cveStore "github.com/stackrox/rox/central/cve/store"
 	cveDackBoxStore "github.com/stackrox/rox/central/cve/store/dackbox"
 	"github.com/stackrox/rox/central/node/datastore/internal/store"
-	nodeCVEEdgeStore "github.com/stackrox/rox/central/nodecveedge/store"
-	nodeCVEEdgeDackBox "github.com/stackrox/rox/central/nodecveedge/store/dackbox"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
@@ -28,9 +27,8 @@ type NodeStoreTestSuite struct {
 	db    *rocksdb.RocksDB
 	dacky *dackbox.DackBox
 
-	store            store.Store
-	cveStorage       cveStore.Store
-	nodeCVEEdgeStore nodeCVEEdgeStore.Store
+	store      store.Store
+	cveStorage cveStore.Store
 }
 
 func (suite *NodeStoreTestSuite) SetupSuite() {
@@ -43,7 +41,6 @@ func (suite *NodeStoreTestSuite) SetupSuite() {
 	}
 	suite.store = New(suite.dacky, concurrency.NewKeyFence(), false)
 	suite.cveStorage = cveDackBoxStore.New(suite.dacky, concurrency.NewKeyFence())
-	suite.nodeCVEEdgeStore = nodeCVEEdgeDackBox.New(suite.dacky)
 }
 
 func (suite *NodeStoreTestSuite) TearDownSuite() {
@@ -51,6 +48,8 @@ func (suite *NodeStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *NodeStoreTestSuite) TestNodes() {
+	ctx := sac.WithAllAccess(context.Background())
+
 	nodes := []*storage.Node{
 		{
 			Id:         "id1",
@@ -111,18 +110,17 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 
 	// Test Add
 	for _, d := range nodes {
-		suite.NoError(suite.store.Upsert(d))
+		suite.NoError(suite.store.Upsert(ctx, d))
 	}
 
 	for _, d := range nodes {
-		got, exists, err := suite.store.GetNode(d.GetId())
+		got, exists, err := suite.store.Get(ctx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		// Upsert sets `createdAt` for every CVE that doesn't already exist in the store, which should be same as (*storage.Node).LastUpdated.
 		for _, component := range d.GetScan().GetComponents() {
 			for _, vuln := range component.GetVulns() {
 				vuln.FirstSystemOccurrence = got.GetLastUpdated()
-				vuln.FirstNodeOccurrence = got.GetLastUpdated()
 				vuln.VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 				vuln.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 			}
@@ -131,20 +129,12 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	}
 
 	// Check that the CVEs were written with the correct timestamp.
-	vuln, _, err := suite.cveStorage.Get("cve1")
+	vuln, _, err := suite.cveStorage.Get(ctx, "cve1")
 	suite.NoError(err)
 	suite.Equal(nodes[0].GetLastUpdated(), vuln.GetCreatedAt())
-	vuln, _, err = suite.cveStorage.Get("cve2")
+	vuln, _, err = suite.cveStorage.Get(ctx, "cve2")
 	suite.NoError(err)
 	suite.Equal(nodes[0].GetLastUpdated(), vuln.GetCreatedAt())
-
-	// Check that the Node CVE Edges were written with the correct timestamp.
-	nodeCVEEdge, _, err := suite.nodeCVEEdgeStore.Get(edges.EdgeID{ParentID: "id1", ChildID: "cve1"}.ToString())
-	suite.NoError(err)
-	suite.Equal(nodes[0].GetLastUpdated(), nodeCVEEdge.GetFirstNodeOccurrence())
-	nodeCVEEdge, _, err = suite.nodeCVEEdgeStore.Get(edges.EdgeID{ParentID: "id1", ChildID: "cve1"}.ToString())
-	suite.NoError(err)
-	suite.Equal(nodes[0].GetLastUpdated(), nodeCVEEdge.GetFirstNodeOccurrence())
 
 	// Test Update
 	for _, d := range nodes {
@@ -152,18 +142,18 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	}
 
 	for _, d := range nodes {
-		suite.NoError(suite.store.Upsert(d))
+		suite.NoError(suite.store.Upsert(ctx, d))
 	}
 
 	for _, d := range nodes {
-		got, exists, err := suite.store.GetNode(d.GetId())
+		got, exists, err := suite.store.Get(ctx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(d, got)
 	}
 
 	// Test Count
-	count, err := suite.store.CountNodes()
+	count, err := suite.store.Count(ctx)
 	suite.NoError(err)
 	suite.Equal(len(nodes), count)
 
@@ -173,8 +163,8 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	cloned.Name = "newname"
 	cloned.Scan.Components = nil
 	cloned.RiskScore = 100
-	suite.NoError(suite.store.Upsert(cloned))
-	got, exists, err := suite.store.GetNode(cloned.GetId())
+	suite.NoError(suite.store.Upsert(ctx, cloned))
+	got, exists, err := suite.store.Get(ctx, cloned.GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	// Since the scan is not outdated, node update does not go through.
@@ -204,13 +194,12 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 		},
 	}
 
-	suite.NoError(suite.store.Upsert(nodes[1]))
+	suite.NoError(suite.store.Upsert(ctx, nodes[1]))
 
-	got, exists, err = suite.store.GetNode(nodes[1].GetId())
+	got, exists, err = suite.store.Get(ctx, nodes[1].GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = nodes[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
-	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].FirstNodeOccurrence = got.GetLastUpdated()
 	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 	suite.Equal(nodes[1], got)
@@ -222,40 +211,35 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 			VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 		})
 
-	suite.NoError(suite.store.Upsert(nodes[0]))
+	suite.NoError(suite.store.Upsert(ctx, nodes[0]))
 
-	got, exists, err = suite.store.GetNode(nodes[0].GetId())
+	got, exists, err = suite.store.Get(ctx, nodes[0].GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = nodes[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
-	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].FirstNodeOccurrence = nodes[0].GetScan().GetComponents()[1].GetVulns()[0].FirstNodeOccurrence
 	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 	suite.Equal(nodes[0], got)
 
 	// Test Delete
 	for _, d := range nodes {
-		err := suite.store.Delete(d.GetId())
+		err := suite.store.Delete(ctx, d.GetId())
 		suite.NoError(err)
 	}
 
 	// Test Count
-	count, err = suite.store.CountNodes()
+	count, err = suite.store.Count(ctx)
 	suite.NoError(err)
 	suite.Equal(0, count)
 
 	// Check that the CVEs are removed.
-	count, err = suite.cveStorage.Count()
-	suite.NoError(err)
-	suite.Equal(0, count)
-
-	// Check that the Node CVE Edges are removed.
-	count, err = suite.nodeCVEEdgeStore.Count()
+	count, err = suite.cveStorage.Count(ctx)
 	suite.NoError(err)
 	suite.Equal(0, count)
 }
 
 func (suite *NodeStoreTestSuite) TestNodeUpsert() {
+	ctx := sac.WithAllAccess(context.Background())
 	node := &storage.Node{
 		Id:         "id1",
 		Name:       "name1",
@@ -307,8 +291,8 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 		RiskScore: 30,
 	}
 
-	suite.NoError(suite.store.Upsert(node))
-	storedNode, exists, err := suite.store.GetNode(node.GetId())
+	suite.NoError(suite.store.Upsert(ctx, node))
+	storedNode, exists, err := suite.store.Get(ctx, node.GetId())
 	suite.NoError(err)
 	suite.True(exists)
 
@@ -322,8 +306,8 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 
 	expectedNode := newNode.Clone()
 
-	suite.NoError(suite.store.Upsert(newNode))
-	storedNode, exists, err = suite.store.GetNode(newNode.GetId())
+	suite.NoError(suite.store.Upsert(ctx, newNode))
+	storedNode, exists, err = suite.store.Get(ctx, newNode.GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	suite.True(expectedNode.GetLastUpdated().Compare(storedNode.GetLastUpdated()) < 0)
@@ -334,13 +318,13 @@ func (suite *NodeStoreTestSuite) TestNodeUpsert() {
 	node.Scan.ScanTime = types.TimestampNow()
 	expectedNode.Scan.ScanTime = node.GetScan().GetScanTime()
 
-	suite.NoError(suite.store.Upsert(node))
-	storedNode, exists, err = suite.store.GetNode(node.GetId())
+	suite.NoError(suite.store.Upsert(ctx, node))
+	storedNode, exists, err = suite.store.Get(ctx, node.GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	suite.True(expectedNode.GetLastUpdated().Compare(storedNode.GetLastUpdated()) < 0)
 	expectedNode.LastUpdated = storedNode.GetLastUpdated()
 	suite.Equal(expectedNode, storedNode)
 
-	suite.NoError(suite.store.Delete(node.GetId()))
+	suite.NoError(suite.store.Delete(ctx, node.GetId()))
 }

@@ -1,18 +1,16 @@
 import static org.junit.Assume.assumeFalse
-
-import io.stackrox.proto.storage.RoleOuterClass
-import services.GraphQLService
-
 import groups.BAT
-import org.junit.experimental.categories.Category
-
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
+import io.stackrox.proto.storage.RoleOuterClass
+import org.junit.experimental.categories.Category
 import services.ApiTokenService
 import services.BaseService
+import services.GraphQLService
 import services.ImageIntegrationService
 import services.ImageService
 import services.RoleService
-import services.SACService
+
+import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Unroll
 import util.Env
@@ -20,8 +18,6 @@ import util.Env
 @Category(BAT)
 class VulnMgmtSACTest extends BaseSpecification {
     static final private String NONE = "None"
-    static final private String ALLACCESSTOKEN = "allAccessToken"
-    static final private String NOACCESSTOKEN = "noAccess"
     static final private String CENTOS_IMAGE = "quay.io/rhacs-eng/qa:centos7-base"
 
     static final private String NODE_ROLE = "node-role"
@@ -66,7 +62,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         def testRole = RoleService.createRoleWithScopeAndPermissionSet(name,
             UNRESTRICTED_SCOPE_ID, resourceToAccess)
         assert RoleService.getRole(testRole.name)
-        println "Created Role:\n${testRole}"
+        log.info "Created Role:\n${testRole}"
     }
 
     def setupSpec() {
@@ -106,12 +102,11 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify role based scoping on vuln mgmt: #roleName #baseQuery"() {
         when:
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
-        disableAuthzPlugin()
-
         def gqlService = new GraphQLService()
         def baseVulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: baseQuery])
         assert baseVulnCallResult.hasNoErrors()
@@ -146,6 +141,7 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify permissions on vuln mgmt: role with no CVE permissions is rejected"() {
         when:
         "Get CVEs via GraphQL"
@@ -154,48 +150,6 @@ class VulnMgmtSACTest extends BaseSpecification {
 
         then:
         assert !vulnCallResult.hasNoErrors()
-    }
-
-    @Retry(count = 0)
-    @Unroll
-    def "Verify SAC on vuln mgmt shared objects: #tokenName #baseQuery"() {
-        when:
-        "Get Node CVEs and components"
-        BaseService.useBasicAuth()
-        SACService.addAuthPlugin()
-
-        def gqlService = new GraphQLService()
-        def baseVulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: baseQuery])
-        assert baseVulnCallResult.hasNoErrors()
-        def baseComponentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: baseQuery])
-        assert baseComponentCallResult.hasNoErrors()
-
-        and:
-        gqlService = new GraphQLService(getToken(tokenName, NODE_IMAGE_ROLE))
-        def vulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: ""])
-        assert vulnCallResult.hasNoErrors()
-        def componentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: ""])
-        assert componentCallResult.hasNoErrors()
-
-        then:
-        baseVulnCallResult.code == vulnCallResult.code
-        extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
-
-        baseComponentCallResult.code == componentCallResult.code
-        extractCVEsAndSort(baseComponentCallResult.value) == extractCVEsAndSort(componentCallResult.value)
-
-        cleanup:
-        "Cleanup"
-        BaseService.useBasicAuth()
-
-        where:
-        "Data inputs are: "
-        tokenName                    | baseQuery
-        NOACCESSTOKEN                | "Node:thisdoesntexist"
-        ALLACCESSTOKEN               | ""
-        "nodes-only"                 | "Node:*"
-        "images-only"                | "Image:*"
-        "images-and-nodes-only"      | "Component:*"
     }
 
     private static Boolean skipThisTest() {

@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -67,10 +67,10 @@ func (s *serviceImpl) TLSChallenge(ctx context.Context, req *v1.TLSChallengeRequ
 	sensorChallenge := req.GetChallengeToken()
 	sensorChallengeBytes, err := base64.URLEncoding.DecodeString(sensorChallenge)
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "challenge token must be a valid base64 string: %s", err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "challenge token must be a valid base64 string: %s", err)
 	}
 	if len(sensorChallengeBytes) != centralsensor.ChallengeTokenLength {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "base64 decoded challenge token must be %d bytes long, got %s", centralsensor.ChallengeTokenLength, sensorChallenge)
+		return nil, errors.Wrapf(errox.InvalidArgs, "base64 decoded challenge token must be %d bytes long, got %s", centralsensor.ChallengeTokenLength, sensorChallenge)
 	}
 
 	// Create central challenge token

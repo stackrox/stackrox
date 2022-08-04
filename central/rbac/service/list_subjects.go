@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -64,7 +64,7 @@ func getFilteredSubjectsByRoleBinding(rawQuery *v1.RawQuery, bindings []*storage
 	var parsed *v1.Query
 	parsed, err := search.ParseQuery(subjectQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	return GetFilteredSubjects(parsed, subjectsToFilter)
 }

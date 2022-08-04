@@ -1,63 +1,84 @@
 #!/usr/bin/env bash
+set -eou pipefail
 
 DEFAULT_KUBECONFIG="$HOME/.kube/config"
+DEMO_LIFESPAN=72h
 
 MENU_OPTIONS=()
 ARTIFACTS_DIR="artifacts"
 
 main() {
-  local action="${1}"
-  local cluster_prefix="${2:-os4-9-demo}"
-  local cluster_name="${cluster_prefix}-${RELEASE//./-}-rc${RC_NUMBER}"
-  PS3="Choose action: "
-  if [[ -n "$action" ]]; then
-    exec_option "$action" "$cluster_prefix"
-    exit 0
-  fi
+  local action="${1:-}"
   MENU_OPTIONS=(
-    "Merge kubeconfigs"
+    "Merge kubeconfigs for RC OpenShift cluster"
+    "Merge kubeconfigs for qa GKE cluster"
     "Remove kubeconfigs for non-existing clusters"
-    "Generate Slack message for cluster '${cluster_name}'"
-    "Create new RC OpenShift cluster '${cluster_name}'"
+    "Generate Slack message for RC OpenShift cluster"
+    "Generate Slack message for qa GKE cluster"
+    "Create new RC OpenShift cluster"
+    "Create new qa GKE cluster"
+    "Create new long-running cluster"
     "Quit"
   )
+  if [[ -n "$action" ]]; then
+    exec_option "$action"
+    exit 0
+  fi
+  PS3="Choose action: "
   RED='\033[0;31m'
   NC='\033[0m' # No Color
   echo -e "${RED}WARNING:${NC} some of these scripts may be outdated, bleeding-edge, or not working. Read the code before you run them to be on the safe side."
   select ans in "${MENU_OPTIONS[@]}"
   do
-    exec_option "$ans" "$cluster_prefix"
+    exec_option "$ans"
   done
 }
 
 exec_option() {
   local num_options="${#MENU_OPTIONS[@]}"
-  local cluster_prefix="$2"
   local last_option="$((num_options-1))"
   case "$1" in
     "${MENU_OPTIONS[$last_option]}"|"$((last_option+1))"|q|Q) exit 0;;&
     "${MENU_OPTIONS[0]}"|1)
-        [[ -n "$cluster_prefix" ]] || die "cluster_prefix required"
-        merge_kubeconfigs "$cluster_prefix" "$DEFAULT_KUBECONFIG"
+        cluster_name="$(get_cluster_name openshift)"
+        merge_kubeconfigs "$cluster_name" "$DEFAULT_KUBECONFIG"
         exit 0
         ;;
     "${MENU_OPTIONS[1]}"|2)
-        [[ -n "$cluster_prefix" ]] || die "cluster_prefix required"
-        cleanup_artifacts "$DEFAULT_KUBECONFIG"
+        cluster_name="$(get_cluster_name gke)"
+        merge_kubeconfigs "$cluster_name" "$DEFAULT_KUBECONFIG"
         exit 0
         ;;
     "${MENU_OPTIONS[2]}"|3)
-        [[ -n "$cluster_prefix" ]] || die "cluster_prefix required"
-        generate_slack_message "$cluster_prefix"
+        cleanup_artifacts  "$DEFAULT_KUBECONFIG"
         exit 0
         ;;
     "${MENU_OPTIONS[3]}"|4)
-        [[ -n "$cluster_prefix" ]] || die "cluster_prefix required"
-        create_rc_openshift_cluster "$cluster_prefix"
+        generate_slack_message_for_openshift
+        exit 0
+        ;;
+    "${MENU_OPTIONS[4]}"|5)
+        generate_slack_message_for_gke
+        exit 0
+        ;;
+    "${MENU_OPTIONS[5]}"|6)
+        create_rc_openshift_cluster
+        exit 0
+        ;;
+    "${MENU_OPTIONS[6]}"|7)
+        create_qa_gke_cluster
+        exit 0
+        ;;
+    "${MENU_OPTIONS[7]}"|8)
+        create_long_running_cluster
         exit 0
         ;;
     *) echo "invalid option: '$1'";;
   esac
+}
+
+check_docker_login() {
+  docker system info | grep Username
 }
 
 cluster_ready() {
@@ -65,32 +86,128 @@ cluster_ready() {
   infractl get "$cluster_name" | grep -xq "Status:      READY"
 }
 
+check_cluster_status() {
+  local cluster_name="$1"
+  status="$( infractl get "$cluster_name" | awk '{if ($1 == "Status:") print $2}' )"
+
+  echo "$status"
+}
+
+does_cluster_exist() {
+  local cluster_name="$1"
+  nline="$({ infractl get "$cluster_name" 2> /dev/null || true; } | wc -l)"
+  if (("$nline" == 0)); then
+    return 1
+  else
+    status="$(check_cluster_status "$cluster_name")"
+    if [[ "$status" == "FINISHED" ]]; then
+      return 1
+    else
+      return 0
+    fi
+  fi
+}
+
+wait_for_cluster_to_be_ready() {
+  local cluster_name="$1"
+
+  while ! cluster_ready "${cluster_name}"; do
+    echo "Cluster ${cluster_name} not ready yet. Waiting 15 seconds..."
+    sleep 15
+  done
+}
+
+ensure_cluster_exists() {
+  local cluster_name="$1"
+
+  infractl get "${cluster_name}" || die "cluster '${cluster_name}' not found"
+}
+
+wait_for_pods_to_be_ready() {
+  while true; do
+    ready_containers="$(kubectl -n stackrox get pod -o jsonpath='{.items[*].status.containerStatuses[?(@.ready == true)]}')"
+    not_ready_containers="$(kubectl -n stackrox get pod -o jsonpath='{.items[*].status.containerStatuses[?(@.ready == false)]}')"
+    if [[ -n "$ready_containers" && -z "$not_ready_containers" ]]; then
+      break
+    fi
+    sleep 5
+  done
+}
+
+wait_for_pods_with_name() {
+  local name=$1
+
+  while true; do
+    npod="$({ kubectl -n stackrox get pod | grep "$name" || true; } | wc -l)"
+    if ((npod > 0)); then
+      break
+    fi
+    sleep 5
+  done
+}
+
+wait_for_pods_with_names() {
+  for name in "$@"; do
+    wait_for_pods_with_name "$name"
+  done
+  wait_for_pods_to_be_ready
+}
+
+fetch_artifacts() {
+  local cluster_name="$1"
+
+  infractl artifacts "${cluster_name}" --download-dir "${ARTIFACTS_DIR}/${cluster_name}" > /dev/null 2>&1
+  while ! test -d "${ARTIFACTS_DIR}/${cluster_name}"; do
+    echo "Waiting until artifacts download"
+    sleep 5
+  done
+}
+
+get_cluster_postfix() {
+  echo "${RELEASE//./-}-${PATCH_NUMBER}-rc${RC_NUMBER}"
+}
+
+get_cluster_prefix() {
+  local cluster_type="$1"
+
+  if [[ "$cluster_type" == "openshift" ]]; then
+    echo "os4-9-demo"
+  elif [[ "$cluster_type" == "gke" ]]; then
+    echo "qa-demo"
+  elif [[ "$cluster_type" == "long-running" ]]; then
+    echo "$cluster_type"
+  else
+    die "Unknown cluster type: $cluster_type"
+  fi
+}
+
+get_cluster_name() {
+  local cluster_type="$1"
+
+  cluster_prefix="$(get_cluster_prefix "$cluster_type")"
+  cluster_postfix="$(get_cluster_postfix)"
+  cluster_name="${cluster_prefix}-${cluster_postfix}"
+
+  echo "$cluster_name"
+}
+
 create_rc_openshift_cluster() {
   require_binary infractl
   require_binary oc
 
-  local cluster_prefix="$1"
   [[ -n "${INFRA_TOKEN}" ]] || die "INFRA_TOKEN is not set"
+  [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
+  [[ -n "$RELEASE" ]] || die "RELEASE undefined"
 
-  export CLUSTER_NAME="${cluster_prefix}-${RELEASE//./-}-rc${RC_NUMBER}"
-  infractl create openshift-4-demo "${CLUSTER_NAME}" --lifespan 168h --arg openshift-version=ocp/stable-4.9 || echo "Cluster creation already started or the cluster already exists"
-  ## wait
-  while ! cluster_ready "${CLUSTER_NAME}"; do
-    echo "Cluster ${CLUSTER_NAME} not ready yet. Waiting 15 seconds..."
-    sleep 15
-  done
+  CLUSTER_NAME="$(get_cluster_name openshift)"
+  export CLUSTER_NAME
+  infractl create openshift-4-demo "${CLUSTER_NAME}" --lifespan "$DEMO_LIFESPAN" --arg openshift-version=ocp/stable-4.9 || echo "Cluster creation already started or the cluster already exists"
 
-  # ensure cluster exists
-  infractl get "${CLUSTER_NAME}" || die "cluster '${CLUSTER_NAME}' not found"
-  # fetch artifacts
-  infractl artifacts "${CLUSTER_NAME}" -d "${ARTIFACTS_DIR}/${CLUSTER_NAME}" > /dev/null 2>&1
+  wait_for_cluster_to_be_ready "$CLUSTER_NAME"
+  ensure_cluster_exists "$CLUSTER_NAME"
+  fetch_artifacts "$CLUSTER_NAME"
 
-  while ! test -d "${ARTIFACTS_DIR}/${CLUSTER_NAME}"; do
-    echo "Wainting until artifacts download"
-    sleep 5
-  done
-
-  merge_kubeconfigs "$cluster_prefix" "$DEFAULT_KUBECONFIG"
+  merge_kubeconfigs "$CLUSTER_NAME" "$DEFAULT_KUBECONFIG"
   export KUBECONFIG="$DEFAULT_KUBECONFIG"
   kubectl config use-context "ctx-${CLUSTER_NAME}" || die "cannot switch kubectl context to ctx-${CLUSTER_NAME}"
 
@@ -98,18 +215,105 @@ create_rc_openshift_cluster() {
   oc login --username="$OPENSHIFT_CONSOLE_USERNAME" --password="$OPENSHIFT_CONSOLE_PASSWORD"
 
   export MAIN_TAG="${RELEASE}.0-rc.${RC_NUMBER}"
-  oc -n stackrox set image deploy/central "central=docker.io/stackrox/main:${MAIN_TAG}"
+  oc -n stackrox set image deploy/central "central=quay.io/rhacs-eng/main:${MAIN_TAG}"
   oc -n stackrox patch hpa/scanner -p '{"spec":{"minReplicas":2}}'
-  oc -n stackrox set image deploy/scanner "scanner=docker.io/stackrox/scanner:${MAIN_TAG}"
-  oc -n stackrox set image deploy/scanner-db "db=docker.io/stackrox/scanner-db:${MAIN_TAG}"
-  oc -n stackrox set image deploy/scanner-db "init-db=docker.io/stackrox/scanner-db:${MAIN_TAG}"
+  oc -n stackrox set image deploy/scanner "scanner=quay.io/rhacs-eng/scanner:${MAIN_TAG}"
+  oc -n stackrox set image deploy/scanner-db "db=quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"
+  oc -n stackrox set image deploy/scanner-db "init-db=quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"
   oc -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","env":[{"name":"POD_NAMESPACE","valueFrom":{"fieldRef":{"fieldPath":"metadata.namespace"}}}],"volumeMounts":[{"name":"cache","mountPath":"/var/cache/stackrox"}]}],"volumes":[{"name":"cache","emptyDir":{}}]}}}}'
-  oc -n stackrox set image deploy/sensor "sensor=docker.io/stackrox/main:${MAIN_TAG}"
-  oc -n stackrox set image ds/collector "compliance=docker.io/stackrox/main:${MAIN_TAG}"
-  oc -n stackrox set image ds/collector "collector=docker.io/stackrox/collector:${MAIN_TAG}"
-  oc -n stackrox set image deploy/admission-control "admission-control=docker.io/stackrox/main:${MAIN_TAG}"
+  oc -n stackrox set image deploy/sensor "sensor=quay.io/rhacs-eng/main:${MAIN_TAG}"
+  oc -n stackrox set image ds/collector "compliance=quay.io/rhacs-eng/main:${MAIN_TAG}"
+  oc -n stackrox set image ds/collector "collector=quay.io/rhacs-eng/collector:${MAIN_TAG}"
+  oc -n stackrox set image deploy/admission-control "admission-control=quay.io/rhacs-eng/main:${MAIN_TAG}"
 
   oc -n stackrox get deploy,pods -o wide
+}
+
+create_qa_gke_cluster() {
+  require_binary infractl
+
+  [[ -n "${INFRA_TOKEN}" ]] || die "INFRA_TOKEN is not set"
+
+  CLUSTER_NAME="$(get_cluster_name gke)"
+  export CLUSTER_NAME
+
+  if does_cluster_exist "$CLUSTER_NAME"; then
+    echo "Cluster $CLUSTER_NAME already exists"
+  else
+    infractl create qa-demo "${CLUSTER_NAME}" --arg "main-image=quay.io/rhacs-eng/main:${RELEASE}.${PATCH_NUMBER}-rc.${RC_NUMBER}" --lifespan "$DEMO_LIFESPAN"
+  fi
+
+  wait_for_cluster_to_be_ready "$CLUSTER_NAME"
+  ensure_cluster_exists "$CLUSTER_NAME"
+  fetch_artifacts "$CLUSTER_NAME"
+
+  export KUBECONFIG="${ARTIFACTS_DIR}/${CLUSTER_NAME}/kubeconfig"
+
+  kubectl -n stackrox get pods
+}
+
+create_long_running_cluster() {
+
+  [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
+  [[ -n "$RELEASE" ]] || die "RELEASE undefined"
+  [[ -n "$PATCH_NUMBER" ]] || die "PATCH_NUMBER undefined"
+  check_docker_login || die "Run docker login"
+
+  CLUSTER_NAME="$(get_cluster_name long-running)"
+  export CLUSTER_NAME
+
+  echo "cluster_name= $CLUSTER_NAME"
+  
+  status="$(check_cluster_status "$CLUSTER_NAME")"
+  
+  if does_cluster_exist "$CLUSTER_NAME"; then
+      echo "Unable to create cluster, it exists already"
+  else
+      infractl create gke-default $CLUSTER_NAME --lifespan 168h --arg nodes=5 --wait --slack-me
+  fi
+  
+  # Set your local kubectl context to the remote cluster once the above completes successfully.
+  infractl get $CLUSTER_NAME --json | jq '.Connect' -r | bash
+
+  echo "Connected to cluster"
+  
+  export MAIN_IMAGE_TAG="${RELEASE}.${PATCH_NUMBER}-rc.${RC_NUMBER}"
+  export API_ENDPOINT="localhost:8000"
+  
+  export STORAGE=pvc # Backing storage
+  export STORAGE_CLASS=faster # Runs on an SSD type
+  export STORAGE_SIZE=100 # 100G
+  export MONITORING_SUPPORT=true # Runs monitoring
+  export LOAD_BALANCER=lb
+  
+  toplevel_dir="$(git rev-parse --show-toplevel)"
+  "$toplevel_dir/deploy/k8s/central.sh" # Launches central
+  wait_for_pods_with_names central scanner
+  echo "Launched central"
+  
+  # Open port-forward to central, e.g. with
+  kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
+  sleep 60
+  
+  export ROX_ADMIN_USERNAME=admin
+  
+  export ROX_ADMIN_PASSWORD="$(cat "$toplevel_dir"/deploy/k8s/central-deploy/password)"
+  export ROX_PASSWORD="$ROX_ADMIN_PASSWORD"
+
+  "$toplevel_dir/deploy/k8s/sensor.sh"
+  wait_for_pods_with_names collector sensor
+  echo "Launched sensor"
+
+  kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
+  kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD=long-running
+  wait_for_pods_to_be_ready
+  
+  kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
+  wait_for_pods_to_be_ready
+
+  cd "$toplevel_dir"
+
+  "$(scale/launch_workload.sh np-load)"
 }
 
 cleanup_artifacts() {
@@ -131,8 +335,7 @@ cleanup_artifacts() {
 }
 
 merge_kubeconfigs() {
-  local DIR_PREFIX="${1:-os4-9-demo}"
-  [[ -n "$DIR_PREFIX" ]] || die "DIR_PREFIX missing. Usage: merge_kubeconfigs <DIR_PREFIX> <KUBECONFIG_PATH>"
+  local cluster_name="$1"
 
   local kubeconfig_location="${2:-"$DEFAULT_KUBECONFIG"}"
     # remove ':' from prefix and suffix
@@ -153,8 +356,7 @@ merge_kubeconfigs() {
 
   [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
   [[ -n "$RELEASE" ]] || die "RELEASE undefined"
-  CLUSTER_NAME="${DIR_PREFIX}-${RELEASE//./-}-rc${RC_NUMBER}"
-  DIR="${ARTIFACTS_DIR}/${CLUSTER_NAME}"
+  DIR="${ARTIFACTS_DIR}/${cluster_name}"
   [[ -d "$DIR" ]] || die "DIR not found: '$DIR'"
 
   # KUBECONFIGS_STR contains list of paths (concatenated with ':') to kubeconfig files
@@ -209,17 +411,17 @@ merge_kubeconfigs() {
   kubectl config get-contexts
 }
 
-generate_slack_message() {
-  local DIR_PREFIX="${1:-os4-9-demo}"
+generate_slack_message_for_openshift() {
+  local cluster_name
+  cluster_name="$(get_cluster_name openshift)"
   [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
   [[ -n "$RELEASE" ]] || die "RELEASE undefined"
 
-  DIR="${ARTIFACTS_DIR}/$DIR_PREFIX-${RELEASE//./-}-rc${RC_NUMBER}"
+  DIR="${ARTIFACTS_DIR}/$cluster_name"
   [[ -d "$DIR" ]] || die "DIR not found: '$DIR'"
 
   . "${DIR}/dotenv"
 
-  [[ -n "$CLUSTER_NAME" ]] || die "CLUSTER_NAME undefined"
   [[ -n "$OPENSHIFT_CONSOLE_USERNAME" ]] || die "OPENSHIFT_CONSOLE_USERNAME undefined"
   [[ -n "$OPENSHIFT_CONSOLE_PASSWORD" ]] || die "OPENSHIFT_CONSOLE_PASSWORD undefined"
   [[ -n "$OPENSHIFT_VERSION" ]] || die "OPENSHIFT_VERSION undefined"
@@ -237,6 +439,24 @@ Password: \`${OPENSHIFT_CONSOLE_PASSWORD}\`
 :computer: Central: $(cat "${DIR}/url-stackrox")
 Username: \`admin\`
 Password: \`$(cat "${DIR}/admin-password")\`
+EOF
+}
+
+generate_slack_message_for_gke() {
+  local cluster_name
+  cluster_name="$(get_cluster_name gke)"
+  [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
+  [[ -n "$RELEASE" ]] || die "RELEASE undefined"
+
+  DIR="${ARTIFACTS_DIR}/$cluster_name"
+  [[ -d "$DIR" ]] || die "DIR not found: '$DIR'"
+
+  [[ -f "${DIR}/url" ]] || die "url file not found in ${DIR}"
+
+  cat <<-EOF
+:qke: GKE cluster with \`${RELEASE}-rc${RC_NUMBER}\`
+
+url: \`$(cat "${DIR}/url")\`
 EOF
 }
 

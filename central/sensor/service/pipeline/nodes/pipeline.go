@@ -7,8 +7,8 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	countMetrics "github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/node/globaldatastore"
-	"github.com/stackrox/rox/central/node/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -72,8 +72,8 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetNode() != nil
 }
 
-func (p *pipelineImpl) processRemove(store store.Store, n *storage.Node) error {
-	return store.RemoveNode(n.GetId())
+func (p *pipelineImpl) processRemove(ds datastore.DataStore, n *storage.Node) error {
+	return ds.RemoveNode(n.GetId())
 }
 
 // Run runs the pipeline template on the input and returns the output.

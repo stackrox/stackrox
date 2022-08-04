@@ -9,38 +9,24 @@ import { accessControlLabels } from 'messages/common';
 import { getEntityPath } from './accessControlPaths';
 
 export type AccessControlBreadcrumbsProps = {
-    entityType?: AccessControlEntityType;
+    entityType: AccessControlEntityType;
     entityName?: string;
-    isDisabled?: boolean;
-    isList?: boolean;
 };
 
 function AccessControlBreadcrumbs({
     entityType,
     entityName,
-    isDisabled,
-    isList,
 }: AccessControlBreadcrumbsProps): ReactElement {
-    let entityTypeBreadcrumb;
     const entityTypeLabel = entityType ? pluralize(accessControlLabels[entityType]) : null;
-    if (entityType) {
-        entityTypeBreadcrumb =
-            isDisabled || isList ? (
-                <BreadcrumbItem isActive>{entityTypeLabel}</BreadcrumbItem>
-            ) : (
-                <BreadcrumbItemLink to={getEntityPath(entityType)}>
-                    {entityTypeLabel}
-                </BreadcrumbItemLink>
-            );
-    }
 
     return (
         <>
-            <PageSection variant="light">
+            <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItem isActive>Access Control</BreadcrumbItem>
-                    {entityTypeBreadcrumb}
-                    {entityName && <BreadcrumbItem isActive>{entityName}</BreadcrumbItem>}
+                    <BreadcrumbItemLink to={getEntityPath(entityType)}>
+                        {entityTypeLabel}
+                    </BreadcrumbItemLink>
+                    {entityName && <BreadcrumbItem>{entityName}</BreadcrumbItem>}
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />

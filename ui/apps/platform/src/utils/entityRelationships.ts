@@ -28,9 +28,14 @@ export const useCaseEntityMap = {
     [useCaseTypes.VULN_MANAGEMENT]: [
         entityTypes.POLICY,
         entityTypes.CVE,
+        entityTypes.IMAGE_CVE,
+        entityTypes.NODE_CVE,
+        entityTypes.CLUSTER_CVE,
         ...baseEntities,
         entityTypes.IMAGE,
         entityTypes.COMPONENT,
+        entityTypes.IMAGE_COMPONENT,
+        entityTypes.NODE_COMPONENT,
     ],
 };
 
@@ -62,10 +67,15 @@ export const entityGroupMap = {
     [entityTypes.NAMESPACE]: entityGroups.APPLICATION_RESOURCES,
     [entityTypes.IMAGE]: entityGroups.APPLICATION_RESOURCES,
     [entityTypes.COMPONENT]: entityGroups.APPLICATION_RESOURCES,
+    [entityTypes.NODE_COMPONENT]: entityGroups.APPLICATION_RESOURCES,
+    [entityTypes.IMAGE_COMPONENT]: entityGroups.APPLICATION_RESOURCES,
 
     [entityTypes.POLICY]: entityGroups.SECURITY,
     [entityTypes.CONTROL]: entityGroups.SECURITY,
     [entityTypes.CVE]: entityGroups.SECURITY,
+    [entityTypes.NODE_CVE]: entityGroups.SECURITY,
+    [entityTypes.IMAGE_CVE]: entityGroups.SECURITY,
+    [entityTypes.CLUSTER_CVE]: entityGroups.SECURITY,
 };
 
 type EntityRelationshipData = {
@@ -80,13 +90,15 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.CLUSTER]: {
         children: [entityTypes.NODE, entityTypes.NAMESPACE, entityTypes.ROLE],
         parents: [],
-        matches: [entityTypes.CONTROL],
+        matches: [entityTypes.CONTROL, entityTypes.CLUSTER_CVE],
         // TODO: add CVE entity type and filter by k8s accordingly
         // matches: [entityTypes.CONTROL, entityTypes.CVE],
         // extendedMatches: [entityTypes.POLICY]
     },
     [entityTypes.NODE]: {
-        children: [entityTypes.COMPONENT],
+        // @TODO: Uncomment this once we're using the new entity
+        // children: [entityTypes.NODE_COMPONENT],
+        children: [entityTypes.COMPONENT, entityTypes.NODE_COMPONENT],
         parents: [entityTypes.CLUSTER],
         matches: [entityTypes.CONTROL],
     },
@@ -107,7 +119,9 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
         ],
     },
     [entityTypes.IMAGE]: {
-        children: [entityTypes.COMPONENT],
+        // @TODO: Uncomment this once we're using the new entity
+        // children: [entityTypes.IMAGE_COMPONENT],
+        children: [entityTypes.COMPONENT, entityTypes.IMAGE_COMPONENT],
         parents: [],
         matches: [entityTypes.DEPLOYMENT],
     },
@@ -117,12 +131,42 @@ const entityRelationshipMap: Record<string, EntityRelationshipData> = {
         matches: [entityTypes.IMAGE, entityTypes.CVE, entityTypes.NODE],
         extendedMatches: [entityTypes.DEPLOYMENT],
     },
-    // technically this CVE entity type encompasses node CVEs, image/component CVEs, k8s CVEs (for clusters)
+    [entityTypes.NODE_COMPONENT]: {
+        children: [],
+        parents: [],
+        matches: [entityTypes.NODE_CVE, entityTypes.NODE],
+        extendedMatches: [],
+    },
+    [entityTypes.IMAGE_COMPONENT]: {
+        children: [],
+        parents: [],
+        matches: [entityTypes.IMAGE, entityTypes.IMAGE_CVE],
+        extendedMatches: [entityTypes.DEPLOYMENT],
+    },
+    // TODO: remove this old CVE entity type which encompasses node CVEs, image/component CVEs, k8s CVEs (for clusters)
     [entityTypes.CVE]: {
         children: [],
         parents: [],
         matches: [entityTypes.COMPONENT],
         extendedMatches: [entityTypes.IMAGE, entityTypes.DEPLOYMENT, entityTypes.NODE],
+    },
+    [entityTypes.IMAGE_CVE]: {
+        children: [],
+        parents: [],
+        matches: [entityTypes.IMAGE_COMPONENT],
+        extendedMatches: [entityTypes.IMAGE, entityTypes.DEPLOYMENT],
+    },
+    [entityTypes.NODE_CVE]: {
+        children: [],
+        parents: [],
+        matches: [entityTypes.NODE_COMPONENT],
+        extendedMatches: [entityTypes.NODE],
+    },
+    [entityTypes.CLUSTER_CVE]: {
+        children: [],
+        parents: [],
+        matches: [],
+        extendedMatches: [entityTypes.CLUSTER],
     },
     [entityTypes.CONTROL]: {
         children: [],

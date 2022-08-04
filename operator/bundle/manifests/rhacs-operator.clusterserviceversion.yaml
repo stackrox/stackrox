@@ -13,7 +13,7 @@ metadata:
       : \"my-cluster\"\n    }\n  }\n]"
     capabilities: Seamless Upgrades
     categories: Security
-    containerImage: docker.io/stackrox/stackrox-operator:0.0.1
+    containerImage: quay.io/stackrox-io/stackrox-operator:0.0.1
     createdAt: '1999-12-31T23:59:59Z'
     description: Red Hat Advanced Cluster Security (RHACS) operator provisions the
       services necessary to secure each of your OpenShift and Kubernetes clusters.
@@ -36,22 +36,16 @@ spec:
       name: centrals.platform.stackrox.io
       resources:
       - kind: Deployment
-        name: central
+        name: ''
         version: v1
       - kind: Route
-        name: central
+        name: ''
         version: v1
       - kind: Secret
-        name: central-htpasswd
+        name: ''
         version: v1
       - kind: Service
-        name: central-loadbalancer
-        version: v1
-      - kind: Deployment
-        name: scanner
-        version: v1
-      - kind: Deployment
-        name: scanner-db
+        name: ''
         version: v1
       specDescriptors:
       - description: Settings for the Central component, which is responsible for
@@ -100,6 +94,11 @@ spec:
           and private key here.
         displayName: User-facing TLS certificate secret
         path: central.defaultTLSSecret
+      - description: Configures monitoring endpoint for Central. The monitoring endpoint
+          allows other services to collect metrics from Central, provided in Prometheus
+          compatible format.
+        displayName: Monitoring
+        path: central.monitoring
       - description: Configures how Central should store its persistent data. You
           can choose between using a persistent volume claim (recommended default),
           and a host path.
@@ -171,6 +170,11 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.nodePort.enabled:true
       - displayName: Enabled
         path: central.exposure.route.enabled
+      - description: Expose Central's monitoring endpoint. A new service, "monitoring",
+          with port 9090, will be created as well as a network policy allowing inbound
+          connections to the port.
+        displayName: Expose Endpoint
+        path: central.monitoring.exposeEndpoint
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
           storage location of persistent data. Recommended for most users.
         displayName: Persistent volume claim
@@ -307,6 +311,12 @@ spec:
         path: productVersion
       - displayName: Central
         path: central
+      - description: AdminPasswordSecretReference contains reference for the admin
+          password
+        displayName: Admin Password Secret Reference
+        path: central.adminPassword.adminPasswordSecretReference
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
       version: v1alpha1
     - description: SecuredCluster is the configuration template for the secured cluster
         services. These include Sensor, which is responsible for the connection to
@@ -318,14 +328,11 @@ spec:
       kind: SecuredCluster
       name: securedclusters.platform.stackrox.io
       resources:
-      - kind: Deployment
-        name: admission-control
-        version: v1
       - kind: DaemonSet
-        name: collector
+        name: ''
         version: v1
       - kind: Deployment
-        name: sensor
+        name: ''
         version: v1
       specDescriptors:
       - description: 'The unique name of this cluster, as it will be shown in the
@@ -778,7 +785,7 @@ spec:
                 - name: RELATED_IMAGE_COLLECTOR_FULL
                 - name: RELATED_IMAGE_ROXCTL
                 - name: RELATED_IMAGE_DOCS
-                image: docker.io/stackrox/stackrox-operator:0.0.1
+                image: quay.io/stackrox-io/stackrox-operator:0.0.1
                 livenessProbe:
                   httpGet:
                     path: /healthz

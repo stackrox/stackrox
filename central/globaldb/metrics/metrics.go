@@ -44,6 +44,11 @@ func init() {
 		InlineBucketInuse,
 		BoltDBSize,
 		RocksDBSize,
+		PostgresTableCounts,
+		PostgresIndexSize,
+		PostgresTableTotalSize,
+		PostgresTableDataSize,
+		PostgresToastSize,
 	)
 }
 
@@ -137,6 +142,41 @@ var (
 		Name:      "rocksdb_db_size",
 		Help:      "bytes being used by RocksDB",
 	})
+
+	PostgresTableCounts = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_table_size",
+		Help:      "estimated number of rows in the table",
+	}, []string{"Table"})
+
+	PostgresIndexSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_table_index_bytes",
+		Help:      "bytes being used by indexes for a table",
+	}, []string{"Table"})
+
+	PostgresTableTotalSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_table_total_bytes",
+		Help:      "bytes being used by the table overall",
+	}, []string{"Table"})
+
+	PostgresTableDataSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_table_data_bytes",
+		Help:      "bytes being used by the data for a table",
+	}, []string{"Table"})
+
+	PostgresToastSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_table_toast_bytes",
+		Help:      "bytes being used by toast for a table",
+	}, []string{"Table"})
 )
 
 // SetGaugeInt sets a value for a gauge from an int

@@ -10,7 +10,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message ExternalBackup {
-    string           id              = 1;
+    string           id              = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string           name            = 2;
     string           type            = 3;
     storage.Schedule schedule        = 4;

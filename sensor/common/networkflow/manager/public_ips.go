@@ -98,7 +98,7 @@ func (m *publicIPsManager) regenerateAndPushPublicIPsProto() {
 
 		if ipV4 := netIP.To4(); ipV4 != nil {
 			publicIPsList.Ipv4Addresses = append(publicIPsList.Ipv4Addresses, binary.BigEndian.Uint32(ipV4))
-		} else if netIP != nil && len(netIP) == 16 { // Genuine IPv6 address
+		} else if len(netIP) == 16 { // Genuine IPv6 address
 			high := binary.BigEndian.Uint64(netIP[:8])
 			low := binary.BigEndian.Uint64(netIP[8:])
 			publicIPsList.Ipv6Addresses = append(publicIPsList.Ipv6Addresses, high, low)

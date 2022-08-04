@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/stringutils"
 	admission "k8s.io/api/admission/v1"
@@ -104,7 +105,11 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 		}
 
 		getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-			return s.allRuntimePoliciesDetector.DetectForDeploymentAndKubeEvent(deployment, imgs, event)
+			enhancedDeployment := booleanpolicy.EnhancedDeployment{
+				Deployment: dep,
+				Images:     imgs,
+			}
+			return s.allRuntimePoliciesDetector.DetectForDeploymentAndKubeEvent(enhancedDeployment, event)
 		}
 
 		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
@@ -124,7 +129,7 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 		go m.waitForDeploymentAndDetect(s, event)
 	}
 
-	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeploymentAndKubeEvent(&storage.Deployment{}, nil, event)
+	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeploymentAndKubeEvent(booleanpolicy.EnhancedDeployment{}, event)
 	if err != nil {
 		return nil, false, err
 	}
@@ -163,7 +168,11 @@ func (m *manager) waitForDeploymentAndDetect(s *state, event *storage.Kubernetes
 		}
 
 		getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-			return s.runtimeDetectorForPoliciesWithDeployFields.DetectForDeploymentAndKubeEvent(dep, imgs, event)
+			enhancedDeployment := booleanpolicy.EnhancedDeployment{
+				Deployment: dep,
+				Images:     imgs,
+			}
+			return s.runtimeDetectorForPoliciesWithDeployFields.DetectForDeploymentAndKubeEvent(enhancedDeployment, event)
 		}
 
 		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)

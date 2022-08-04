@@ -1,5 +1,6 @@
 package services
 
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.api.v1.SecretServiceGrpc
@@ -8,6 +9,7 @@ import io.stackrox.proto.storage.SecretOuterClass
 import io.stackrox.proto.storage.SecretOuterClass.ListSecret
 import util.Timer
 
+@Slf4j
 class SecretService extends BaseService {
 
     static getSecretClient() {
@@ -24,12 +26,12 @@ class SecretService extends BaseService {
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             if (getSecret(id) != null ) {
-                println "SR found secret ${id} within ${t.SecondsSince()}s"
+                log.debug "SR found secret ${id} within ${t.SecondsSince()}s"
                 return true
             }
-            println "Retrying in ${intervalSeconds}..."
+            log.debug "Retrying in ${intervalSeconds}..."
         }
-        println "SR did not detect the secret ${id}"
+        log.warn "SR did not detect the secret ${id}"
         return false
     }
 
@@ -42,11 +44,10 @@ class SecretService extends BaseService {
                 SecretOuterClass.Secret sec = getSecretClient().getSecret(ResourceByID.newBuilder().setId(id).build())
                 return sec
             } catch (Exception e) {
-                println "Exception checking for getting the secret ${id}, retrying...:"
-                println e.toString()
+                log.debug("Exception checking for getting the secret ${id}, retrying...", e)
             }
         }
-        println "Failed to add secret ${id} after waiting ${t.SecondsSince()} seconds"
+        log.warn "Failed to add secret ${id} after waiting ${t.SecondsSince()} seconds"
         return null
     }
 

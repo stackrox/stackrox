@@ -17,13 +17,12 @@ type storeCreator func(t *testing.T) (store.Store, func(t *testing.T))
 
 func createRocksDBStore(t *testing.T) (store.Store, func(t *testing.T)) {
 	testRocksDB := rocksdbtest.RocksDBForT(t)
-	rocksStore, err := rocksdb.NewStore(testRocksDB)
+	rocksStore, err := rocksdb.New(testRocksDB)
 	require.NoError(t, err)
-
 	tearDown := func(t *testing.T) {
 		rocksdbtest.TearDownRocksDB(testRocksDB)
 	}
-	return rocksStore, tearDown
+	return store.NewStore(rocksStore), tearDown
 }
 
 func TestClusterInitStore(t *testing.T) {

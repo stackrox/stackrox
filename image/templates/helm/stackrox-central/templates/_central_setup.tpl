@@ -11,6 +11,7 @@
 
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ $centralCfg.image) }}
+{{ include "srox.configureImage" (list $ $centralCfg.dbImage) }}
 
 {{/* Admin password */}}
 {{ include "srox.configurePassword" (list $ "central.adminPassword" "admin") }}

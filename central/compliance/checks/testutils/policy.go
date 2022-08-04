@@ -1,9 +1,11 @@
 package testutils
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -30,24 +32,57 @@ func (l *LightPolicy) convert() *storage.Policy {
 		Id:       stringutils.OrDefault(l.ID, uuid.NewV4().String()),
 		Name:     l.Name,
 		Disabled: l.Disabled,
-		Fields: &storage.PolicyFields{
-			ImageName: &storage.ImageNamePolicy{Registry: l.ImageRegistry},
-			Cve:       l.CVE,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ImageRegistry,
+						Values: []*storage.PolicyValue{
+							{
+								Value: l.ImageRegistry,
+							},
+						},
+					},
+					{
+						FieldName: fieldnames.CVE,
+						Values: []*storage.PolicyValue{
+							{
+								Value: l.CVE,
+							},
+						},
+					},
+				},
+			},
 		},
-		Notifiers: l.Notifiers,
+		Notifiers:     l.Notifiers,
+		PolicyVersion: "1.1",
 	}
 	if l.CVSSGreaterThan > 0 {
-		p.Fields.Cvss = &storage.NumericalPolicy{Value: l.CVSSGreaterThan}
+		s := fmt.Sprintf("> %0.3f", l.CVSSGreaterThan)
+		p.PolicySections[0].PolicyGroups = append(p.PolicySections[0].PolicyGroups, &storage.PolicyGroup{
+			FieldName: fieldnames.CVSS,
+			Values: []*storage.PolicyValue{
+				{
+					Value: s,
+				},
+			},
+		})
 	}
 	if l.EnvKey != "" || l.EnvValue != "" {
-		p.Fields.Env = &storage.KeyValuePolicy{Key: l.EnvKey, Value: l.EnvValue}
+		p.PolicySections[0].PolicyGroups = append(p.PolicySections[0].PolicyGroups, &storage.PolicyGroup{
+			FieldName: fieldnames.EnvironmentVariable,
+			Values: []*storage.PolicyValue{
+				{
+					Value: fmt.Sprintf("=%s=%s", l.EnvKey, l.EnvValue),
+				},
+			},
+		})
 	}
 	if l.Enforced {
 		p.EnforcementActions = append(p.EnforcementActions, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
 	}
-	if err := policyversion.EnsureConvertedToLatest(p); err != nil {
-		panic(err)
-	}
+
 	return p
 }
 

@@ -23,7 +23,18 @@ func ForResource(resourceMD permissions.ResourceMetadata) ForResourceHelper {
 
 // ScopeChecker returns the scope checker for accessing the given resource in the specified way.
 func (h ForResourceHelper) ScopeChecker(ctx context.Context, am storage.Access, keys ...ScopeKey) ScopeChecker {
-	return GlobalAccessScopeChecker(ctx).AccessMode(am).Resource(h.resourceMD.GetResource()).SubScopeChecker(keys...)
+	resourceScopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(am).Resource(
+		h.resourceMD).SubScopeChecker(keys...)
+
+	if h.resourceMD.GetReplacingResource() == nil {
+		return resourceScopeChecker
+	}
+	// Conditionally create a OR scope checker if a replacing resource is given. This way we check access to either
+	// the old resource OR the replacing resource, keeping backwards-compatibility.
+	return NewOrScopeChecker(
+		resourceScopeChecker,
+		GlobalAccessScopeChecker(ctx).AccessMode(am).
+			Resource(h.resourceMD.ReplacingResource).SubScopeChecker(keys...))
 }
 
 // AccessAllowed checks if in the given context, we have access of the specified kind to the resource or
@@ -45,7 +56,15 @@ func (h ForResourceHelper) WriteAllowed(ctx context.Context, keys ...ScopeKey) (
 // MustCreateSearchHelper creates and returns a search helper with the given options, or panics if the
 // search helper could not be created.
 func (h ForResourceHelper) MustCreateSearchHelper(options search.OptionsMap) SearchHelper {
-	searchHelper, err := NewSearchHelper(h.resourceMD, options)
+	searchHelper, err := NewSearchHelper(h.resourceMD, options, h.ScopeChecker)
+	utils.CrashOnError(err)
+	return searchHelper
+}
+
+// MustCreatePgSearchHelper creates and returns a search helper with the given options, or panics if the
+// search helper could not be created.
+func (h ForResourceHelper) MustCreatePgSearchHelper() SearchHelper {
+	searchHelper, err := NewPgSearchHelper(h.resourceMD, h.ScopeChecker)
 	utils.CrashOnError(err)
 	return searchHelper
 }

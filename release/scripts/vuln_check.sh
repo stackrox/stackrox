@@ -37,12 +37,14 @@ function compare_fixable_vulns {
   local count=1
 
   echo "Getting scan status for ${image_name}"
+  wait=30
+  count=0
   scan_present=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
   until [ "$scan_present" = "scanned" ] || [ "$count" -gt 100 ]; do
-    echo "Waiting for scan to complete..."
+    echo "${count} Waiting ${wait}s for scan to complete..."
     scan_present=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
     count=$((count+1))
-    sleep 15
+    sleep $wait
   done
 
   # if scan never completes, print error message, mark image as failed, and move on to the next
@@ -51,7 +53,7 @@ function compare_fixable_vulns {
     FAIL_SCRIPT=true
   else
     echo "Trying to get any fixable vulns for ${image_name}"
-    CURRENT_FIXABLE=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.data.Layer.Features | .[] | select(.Vulnerabilities != null) | .Vulnerabilities | .[] | select(.FixedBy != null) | .Name')
+    CURRENT_FIXABLE=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.data.Layer.Features | .[] | select(.Vulnerabilities != null) | .Vulnerabilities | .[] | select(.FixedBy | . != null and . != "") | .Name')
 
     # fail the check if fixable vulns are found that are not allowed
     if [[ -n "$CURRENT_FIXABLE" ]]; then
@@ -102,12 +104,15 @@ compare_fixable_vulns "docs" "$DOCS_PRERELEASE_TAG"
 
 # check collector images
 compare_fixable_vulns "collector" "${COLLECTOR_TAG}-slim"
+compare_fixable_vulns "collector" "${COLLECTOR_TAG}"
 
 # check scanner images
 compare_fixable_vulns "scanner" "$SCANNER_TAG"
+compare_fixable_vulns "scanner-slim" "$SCANNER_TAG"
 
 # check scanner-db images
 compare_fixable_vulns "scanner-db" "$SCANNER_TAG"
+compare_fixable_vulns "scanner-db-slim" "$SCANNER_TAG"
 
 # if fixable vulns found, return 1 so CI can fail the job
 [ "$FAIL_SCRIPT" = true ] && exit 1 || exit 0

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,10 +19,17 @@ type mockResponseWriter struct {
 	bytes.Buffer
 
 	statusCode int
+	headers    http.Header
+}
+
+func newMockResponseWriter() *mockResponseWriter {
+	return &mockResponseWriter{
+		headers: make(http.Header),
+	}
 }
 
 func (m *mockResponseWriter) Header() http.Header {
-	return make(http.Header)
+	return m.headers
 }
 
 func (m *mockResponseWriter) WriteHeader(statusCode int) {
@@ -30,6 +38,14 @@ func (m *mockResponseWriter) WriteHeader(statusCode int) {
 
 func mustGetRequest(t *testing.T) *http.Request {
 	centralURL := "https://central.stackrox.svc/scannerdefinitions?uuid=e799c68a-671f-44db-9682-f24248cd0ffe"
+	req, err := http.NewRequest(http.MethodGet, centralURL, nil)
+	require.NoError(t, err)
+
+	return req
+}
+
+func mustGetRequestWithFile(t *testing.T, file string) *http.Request {
+	centralURL := fmt.Sprintf("https://central.stackrox.svc/scannerdefinitions?uuid=e799c68a-671f-44db-9682-f24248cd0ffe&file=%s", file)
 	req, err := http.NewRequest(http.MethodGet, centralURL, nil)
 	require.NoError(t, err)
 
@@ -56,8 +72,8 @@ func TestServeHTTP_Offline_Get(t *testing.T) {
 
 	// No scanner defs found.
 	req := mustGetRequest(t)
-	var w mockResponseWriter
-	h.ServeHTTP(&w, req)
+	w := newMockResponseWriter()
+	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotFound, w.statusCode)
 
 	// Add scanner defs.
@@ -67,7 +83,7 @@ func TestServeHTTP_Offline_Get(t *testing.T) {
 	require.NoError(t, err)
 
 	w.Reset()
-	h.ServeHTTP(&w, req)
+	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.statusCode)
 	assert.Equal(t, "Hello, World!", w.String())
 }
@@ -78,16 +94,23 @@ func TestServeHTTP_Online_Get(t *testing.T) {
 		offlineVulnDefsDir: tmpDir,
 	})
 
-	var w mockResponseWriter
+	w := newMockResponseWriter()
 
 	// Should not get anything.
 	req := mustGetBadRequest(t)
-	h.ServeHTTP(&w, req)
+	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotFound, w.statusCode)
 
+	// Should get file from online update.
+	req = mustGetRequestWithFile(t, "manifest.json")
+	w.Reset()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.statusCode)
+	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+	assert.Regexpf(t, `{"since":".*","until":".*"}`, w.String(), "content did not match")
 	// Should get online update.
 	req = mustGetRequest(t)
-	h.ServeHTTP(&w, req)
+	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.statusCode)
 
 	// Write offline definitions.
@@ -102,7 +125,7 @@ func TestServeHTTP_Online_Get(t *testing.T) {
 
 	// Served the offline dump, as it is more recent.
 	w.Reset()
-	h.ServeHTTP(&w, req)
+	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.statusCode)
 	assert.Equal(t, "Hello, World!", w.String())
 
@@ -111,14 +134,14 @@ func TestServeHTTP_Online_Get(t *testing.T) {
 
 	// Serve the online dump, as it is now more recent.
 	w.Reset()
-	h.ServeHTTP(&w, req)
+	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.statusCode)
 	assert.NotEqual(t, "Hello, World!", w.String())
 
 	// File is unmodified.
 	req.Header.Set(ifModifiedSinceHeader, time.Now().UTC().Format(http.TimeFormat))
 	w.Reset()
-	h.ServeHTTP(&w, req)
+	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotModified, w.statusCode)
 	assert.Empty(t, w.String())
 }

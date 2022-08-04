@@ -10,7 +10,7 @@ image:
   collector:
     name: [< required "" .CollectorFullImageRemote >]
     slimName: [< required "" .CollectorSlimImageRemote >]
-  [< if and (not .KubectlOutput) (.FeatureFlags.ROX_LOCAL_IMAGE_SCANNING) >]
+  [< if (not .KubectlOutput) >]
   scanner:
     name: [< required "" .ScannerSlimImageRemote >]
     tag: [< required "" .ScannerImageTag >]
@@ -25,7 +25,7 @@ image:
     registry: {{ ._rox.image.registry }}
   collector:
     registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
-  [< if and (not .KubectlOutput) (.FeatureFlags.ROX_LOCAL_IMAGE_SCANNING) >]
+  [< if (not .KubectlOutput) >]
   scanner:
     registry: {{ ._rox.image.registry }}
   scannerDb:
@@ -46,7 +46,7 @@ image:
     {{- else }}
     repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
     {{- end }}
-  [< if and (not .KubectlOutput) (.FeatureFlags.ROX_LOCAL_IMAGE_SCANNING) >]
+  [< if (not .KubectlOutput) >]
   scanner:
     repository: {{ list ._rox.image.scanner.registry ._rox.image.scanner.name | compact | join "/" }}
   scannerDb:
@@ -99,7 +99,7 @@ image:
     fullRef: {{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}
   collector:
     fullRef: {{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}
-  [< if and (not .KubectlOutput) (.FeatureFlags.ROX_LOCAL_IMAGE_SCANNING) >]
+  [< if (not .KubectlOutput) >]
   scanner:
     fullRef: {{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}
   scannerDb:

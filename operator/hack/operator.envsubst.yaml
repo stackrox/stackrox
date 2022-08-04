@@ -27,7 +27,7 @@ spec:
   startingCSV: rhacs-operator.v${OPERATOR_VERSION}
   config:
     env:
-    # TODO(ROX-7740): Remove these once we have a single dev+CI repo.
+    # TODO(ROX-11808): these are provided for compatibility with versions 71 and older. Remove after we release 72.
     - name: ROX_OPERATOR_MAIN_REGISTRY
       value: "${IMAGE_REGISTRY}"
     - name: ROX_OPERATOR_COLLECTOR_REGISTRY

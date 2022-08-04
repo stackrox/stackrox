@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"fmt"
 
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
 	"github.com/stackrox/rox/central/cve/edgefields"
@@ -95,7 +94,7 @@ func (ds *searcherImpl) searchListDeployments(ctx context.Context, q *v1.Query) 
 	}
 
 	ids := search.ResultsToIDs(results)
-	deployments, missingIndices, err := ds.storage.ListDeploymentsWithIDs(ids...)
+	deployments, missingIndices, err := ds.storage.GetManyListDeployments(ctx, ids...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -123,7 +122,7 @@ func (ds *searcherImpl) searchDeployments(ctx context.Context, q *v1.Query) ([]*
 	}
 
 	ids := search.ResultsToIDs(results)
-	deployments, _, err := ds.storage.GetDeploymentsWithIDs(ids...)
+	deployments, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -143,18 +142,6 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (res int, err er
 		res, err = ds.searcher.Count(inner, q)
 	})
 	return res, err
-}
-
-// ConvertDeployment returns proto search result from a deployment object and the internal search result
-func convertDeployment(deployment *storage.ListDeployment, result search.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_DEPLOYMENTS,
-		Id:             deployment.GetId(),
-		Name:           deployment.GetName(),
-		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-		Location:       fmt.Sprintf("/%s/%s", deployment.GetCluster(), deployment.GetNamespace()),
-	}
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.

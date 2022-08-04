@@ -47,7 +47,7 @@ func (j *JSONPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error)
 	}
 }
 
-// Validate verifies whether the current configuration can be used to create an ObjectPrinter. It will return an error
+// validate verifies whether the current configuration can be used to create an ObjectPrinter. It will return an error
 // if it is not possible
 func (j *JSONPrinterFactory) validate() error {
 	return nil

@@ -1,92 +1,144 @@
 import { url as dashboardUrl, selectors } from '../constants/DashboardPage';
+import { url as riskUrl } from '../constants/RiskPage';
 
-import { url as violationsUrl } from '../constants/ViolationsPage';
 import {
-    url as complianceUrl,
-    selectors as complianceSelectors,
-} from '../constants/CompliancePage';
+    url as violationsUrl,
+    selectors as violationsSelectors,
+} from '../constants/ViolationsPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import { hasFeatureFlag } from '../helpers/features';
+import { visitMainDashboard, visitMainDashboardViaRedirectFromUrl } from '../helpers/main';
+import baseSelectors from '../selectors/index';
+
+// For future redesign of main dashboard, separate tests for these requests into a separate file.
+
+const alertsSummaryCountsByCluster0 = { groups: [] };
+
+const alertsSummaryCountsByCluster1 = {
+    groups: [
+        {
+            group: 'Kubernetes Cluster 0',
+            counts: [
+                { severity: 'LOW_SEVERITY', count: '2' },
+                { severity: 'MEDIUM_SEVERITY', count: '1' },
+                { severity: 'CRITICAL_SEVERITY', count: '0' },
+            ],
+        },
+    ],
+};
+
+const alertsSummaryCountsByCluster2 = {
+    groups: [
+        {
+            group: 'Kubernetes Cluster 0',
+            counts: [
+                { severity: 'LOW_SEVERITY', count: '2' },
+                { severity: 'MEDIUM_SEVERITY', count: '1' },
+            ],
+        },
+        {
+            group: 'Kubernetes Cluster 1',
+            counts: [
+                { severity: 'HIGH_SEVERITY', count: '10' },
+                { severity: 'CRITICAL_SEVERITY', count: '5' },
+            ],
+        },
+    ],
+};
 
 describe('Dashboard page', () => {
+    before(function beforeHook() {
+        if (hasFeatureFlag('ROX_SECURITY_METRICS_PHASE_ONE')) {
+            this.skip();
+        }
+    });
+
     withAuth();
 
-    it('should select item in nav bar', () => {
-        cy.visit(dashboardUrl);
+    // Skip tests for elements which seem less likely to have a counterpart in future design.
+
+    it('should select item in left nav', () => {
+        visitMainDashboard();
+
         cy.get(selectors.navLink).should('have.class', 'pf-m-current');
+    });
+
+    it('should render navbar with Dashboard selected', () => {
+        visitMainDashboardViaRedirectFromUrl('/');
+
+        cy.get(selectors.navLink).should('have.class', 'pf-m-current');
+    });
+
+    it('should have the summary counts in the top header', () => {
+        visitMainDashboard();
+
+        const { summaryCount: summaryCountSelector } = selectors;
+        cy.get(`${summaryCountSelector}:nth-child(1):contains("Cluster")`);
+        cy.get(`${summaryCountSelector}:nth-child(2):contains("Node")`);
+        cy.get(`${summaryCountSelector}:nth-child(3):contains("Violation")`);
+        cy.get(`${summaryCountSelector}:nth-child(4):contains("Deployment")`);
+        cy.get(`${summaryCountSelector}:nth-child(5):contains("Image")`);
+        cy.get(`${summaryCountSelector}:nth-child(6):contains("Secret")`);
     });
 
     it('should display system violations tiles', () => {
         cy.intercept('GET', api.alerts.countsByCluster, {
-            fixture: 'alerts/countsByCluster-single.json',
-        }).as('alertsByCluster');
+            body: alertsSummaryCountsByCluster1,
+        }).as('getAlertsCountsByCluster');
+        visitMainDashboard();
+        cy.wait('@getAlertsCountsByCluster');
 
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByCluster');
-
-        cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
-
-        cy.get('@riskTiles').spread((aCritical, aHigh, aMedium, aLow) => {
-            cy.wrap(aLow).should('have.text', '2Low');
-            cy.wrap(aMedium).should('have.text', '1Medium');
-            cy.wrap(aHigh).should('have.text', '0High');
-            cy.wrap(aCritical).should('have.text', '0Critical');
-        });
+        cy.get(`${selectors.severityTile}:contains("2Low")`);
+        cy.get(`${selectors.severityTile}:contains("1Medium")`);
+        cy.get(`${selectors.severityTile}:contains("0High")`);
+        cy.get(`${selectors.severityTile}:contains("0Critical")`);
     });
 
     it('should not navigate to the violations page when clicking the critical severity risk tile', () => {
-        cy.visit(dashboardUrl);
-        cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
+        // For future design of main dashboard: Why not? A link is valid, even if no violations right now.
 
-        cy.get('@riskTiles').first().click();
-        cy.location().should((location) => {
-            expect(location.pathname).to.eq(dashboardUrl);
-        });
+        cy.intercept('GET', api.alerts.countsByCluster, {
+            body: alertsSummaryCountsByCluster1,
+        }).as('getAlertsCountsByCluster');
+        visitMainDashboard();
+        cy.wait('@getAlertsCountsByCluster');
+
+        cy.get(`${selectors.severityTile}:contains("Critical")`).click();
+        cy.location('pathname').should('eq', dashboardUrl);
     });
 
     it('should navigate to violations page when clicking the low severity tile', () => {
-        cy.visit(dashboardUrl);
-        cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
+        visitMainDashboard();
 
-        cy.get('@riskTiles').last().click();
-        cy.location().should((location) => {
-            expect(location.pathname).to.eq(violationsUrl);
-            expect(location.search).to.eq('?severity=LOW_SEVERITY');
-        });
-    });
+        // Click on the "Low" severity tile to link to the Violations page, and then ensure
+        // the number of filtered Violations matches what was displayed on the Dashboard
+        cy.get(`${selectors.severityTile}:contains("Low")`).then(([lowSeverityTile]) => {
+            const lowSeverityCount = Number(lowSeverityTile.innerText.replace(/\D.*/, ''));
 
-    it('should navigate to compliance standards page when clicking on standard', () => {
-        cy.visit(dashboardUrl);
-        cy.get(selectors.sectionHeaders.compliance).should('exist');
-        cy.get(selectors.chart.legendLink).click();
-        cy.location().should((location) => {
-            expect(location.href).to.include(complianceUrl.list.standards.CIS_Docker_v1_2_0);
+            cy.wrap(lowSeverityTile).click();
+
+            cy.location('pathname').should('eq', violationsUrl);
+            cy.location('search').should('eq', '?s[Severity]=LOW_SEVERITY');
+            cy.get(violationsSelectors.resultsFoundHeader(lowSeverityCount));
         });
-        cy.get(complianceSelectors.list.table.header).should('exist');
     });
 
     it('should display violations by cluster chart for single cluster', () => {
         cy.intercept('GET', api.alerts.countsByCluster, {
-            fixture: 'alerts/countsByCluster-single.json',
-        }).as('alertsByCluster');
+            body: alertsSummaryCountsByCluster1,
+        }).as('getAlertsCountsByCluster');
+        visitMainDashboard();
+        cy.wait('@getAlertsCountsByCluster');
 
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByCluster');
+        cy.get(selectors.chart.xAxis).should('contain', 'Kubernetes Cluster 0');
 
-        cy.get(selectors.sectionHeaders.violationsByClusters).next().as('chart');
-
-        cy.get('@chart').within(() => {
-            cy.get(selectors.chart.xAxis).should('contain', 'Kubernetes Cluster 0');
-            cy.get(selectors.chart.grid).spread((grid) => {
-                // from alerts fixture : low = 2, medium = 1, therefore medium's height should be twice less
-                const { height } = grid.getBBox();
-                cy.get(selectors.chart.lowSeverityBar).should('have.attr', 'height', `${height}`);
-                cy.get(selectors.chart.medSeverityBar).should(
-                    'have.attr',
-                    'height',
-                    `${height / 2}`
-                );
-            });
+        // For future design of main dashboard: Accessible data does not need tricky assertions.
+        cy.get(selectors.chart.grid).then(([grid]) => {
+            // from alerts fixture : low = 2, medium = 1, therefore medium's height should be twice less
+            const { height } = grid.getBBox();
+            cy.get(selectors.chart.lowSeverityBar).should('have.attr', 'height', `${height}`);
+            cy.get(selectors.chart.medSeverityBar).should('have.attr', 'height', `${height / 2}`);
         });
 
         // TODO: validate clicking on any bar (for some reason '.click()' doesn't simply work for D3 chart)
@@ -94,34 +146,28 @@ describe('Dashboard page', () => {
 
     it('should display violations by cluster chart for two clusters', () => {
         cy.intercept('GET', api.alerts.countsByCluster, {
-            fixture: 'alerts/countsByCluster-couple.json',
-        }).as('alertsByCluster');
+            body: alertsSummaryCountsByCluster2,
+        }).as('getAlertsCountsByCluster');
+        visitMainDashboard();
+        cy.wait('@getAlertsCountsByCluster');
 
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByCluster');
-
-        cy.get(selectors.sectionHeaders.violationsByClusters)
-            .next()
-            .find(selectors.chart.xAxis)
-            .should('contain', 'Kubernetes Cluster 1');
+        cy.get(selectors.chart.xAxis).should('contain', 'Kubernetes Cluster 1');
     });
 
-    it('should display events by time charts', () => {
+    it.skip('should display events by time charts', () => {
         cy.intercept('GET', api.dashboard.timeseries, {
             fixture: 'alerts/alertsByTimeseries.json',
-        }).as('alertsByTimeseries');
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByTimeseries');
+        });
+        visitMainDashboard();
         cy.get(selectors.sectionHeaders.eventsByTime).next().find(selectors.timeseries);
     });
 
-    it('should display violations category chart', () => {
+    it.skip('should display violations category chart', () => {
         cy.intercept('GET', api.alerts.countsByCategory, {
             fixture: 'alerts/countsByCategory.json',
-        }).as('alertsByCategory');
+        });
 
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByCategory');
+        visitMainDashboard();
 
         cy.get(selectors.sectionHeaders.securityBestPractices).next().as('chart');
         cy.get('@chart').find(selectors.chart.legendItem).should('have.text', 'Low');
@@ -130,50 +176,44 @@ describe('Dashboard page', () => {
     });
 
     it('should display top risky deployments', () => {
-        cy.intercept('GET', api.risks.riskyDeployments, {
-            fixture: 'risks/riskyDeployments.json',
-        }).as('riskyDeployments');
+        const { table } = baseSelectors;
 
-        cy.visit(dashboardUrl);
-        cy.wait('@riskyDeployments');
+        visitMainDashboard();
 
-        cy.get(selectors.sectionHeaders.topRiskyDeployments).next().as('list');
+        // Gets the list of top risky deployments on the dashboard and checks to
+        // see that the order matches on the Risk page.
+        cy.get(`${selectors.sectionHeaders.topRiskyDeployments} + div li`).then(($deployments) => {
+            cy.intercept('GET', api.risks.riskyDeployments).as('riskyDeployments');
+            cy.get(selectors.buttons.viewAll).click();
+            cy.wait('@riskyDeployments');
+            cy.get('h1:contains("Risk")');
+            cy.location('pathname').should('eq', riskUrl);
 
-        // Should only display the top 5 risky deployments
-        cy.get('@list').find('li').should('have.length', 5);
-
-        cy.get(selectors.buttons.viewAll).click();
-        cy.url().should('match', /\/main\/risk/);
-
-        // TODO: validate clicking on any sector (for some reason '.click()' isn't stable for D3 chart)
+            $deployments.each((i, elem) => {
+                const deploymentName = elem.innerText.replace(/\n.*/, '');
+                const nthGroup = `${table.body} ${table.group}:nth-child(${i + 1})`;
+                const firstCell = `${table.cells}:nth-child(1)`;
+                cy.get(`${nthGroup} ${firstCell}:contains("${deploymentName}")`);
+            });
+        });
     });
 
-    it('should display a search input with only the cluster search modifier', () => {
+    it.skip('should display a search input with only the cluster search modifier', () => {
         cy.visit(dashboardUrl);
         cy.get(selectors.searchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.searchInput).type('remote{enter}', { force: true });
     });
 
     it('should show the proper empty states', () => {
-        cy.intercept('GET', api.alerts.countsByCategory, {
-            body: { groups: [] },
-        }).as('alertsByCategory');
         cy.intercept('GET', api.alerts.countsByCluster, {
-            body: { groups: [] },
-        }).as('alertsByCluster');
+            body: alertsSummaryCountsByCluster0,
+        }).as('getAlertsCountsByCluster');
+        visitMainDashboard();
+        cy.wait('@getAlertsCountsByCluster');
 
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByCategory');
-        cy.wait('@alertsByCluster');
-
-        cy.get(selectors.sectionHeaders.securityBestPractices).should('not.exist');
-        cy.get(selectors.sectionHeaders.devopsBestPractices).should('not.exist');
-
-        cy.get(selectors.sectionHeaders.violationsByClusters)
-            .next()
-            .should(
-                'have.text',
-                'No data available. Please ensure your cluster is properly configured.'
-            );
+        cy.get(selectors.chart.resultsMessage).should(
+            'have.text',
+            'No data available. Please ensure your cluster is properly configured.'
+        );
     });
 });

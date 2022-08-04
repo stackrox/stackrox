@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -9,13 +10,17 @@ import (
 	"github.com/stackrox/rox/migrator/compact"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/option"
+	"github.com/stackrox/rox/migrator/postgreshelper"
 	"github.com/stackrox/rox/migrator/replica"
 	"github.com/stackrox/rox/migrator/rockshelper"
 	"github.com/stackrox/rox/migrator/runner"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -51,23 +56,34 @@ func run() error {
 		return nil
 	}
 
-	dbm, err := replica.Scan(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion)
-	if err != nil {
-		return errors.Wrap(err, "fail to scan replicas")
+	// TODO: ROX-9884, ROX-10700 -- turn off replicas and migrations until Postgres updates complete.
+	if !features.PostgresDatastore.Enabled() {
+		dbm, err := replica.Scan(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion)
+		if err != nil {
+			return errors.Wrap(err, "fail to scan replicas")
+		}
+
+		replicaName, replicaPath, err := dbm.GetReplicaToMigrate()
+		if err != nil {
+			return err
+		}
+		option.MigratorOptions.DBPathBase = replicaPath
+		if err = upgrade(conf); err != nil {
+			return err
+		}
+		if err = dbm.Persist(replicaName); err != nil {
+			return err
+		}
+	} else {
+		var gormDB *gorm.DB
+		gormDB, err := postgreshelper.Load(conf)
+		if err != nil {
+			return errors.Wrap(err, "failed to connect to postgres DB")
+		}
+		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
+		log.WriteToStderr("Applied all table schemas.")
 	}
 
-	replica, replicaPath, err := dbm.GetReplicaToMigrate()
-	if err != nil {
-		return err
-	}
-	option.MigratorOptions.DBPathBase = replicaPath
-	if err = upgrade(conf); err != nil {
-		return err
-	}
-
-	if err = dbm.Persist(replica); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -98,9 +114,19 @@ func upgrade(conf *config.Config) error {
 			rocksdb.Close()
 		}
 	}()
+
+	var gormDB *gorm.DB
+	if features.PostgresDatastore.Enabled() {
+		gormDB, err = postgreshelper.Load(conf)
+		if err != nil {
+			return errors.Wrap(err, "failed to connect to postgres DB")
+		}
+	}
+
 	err = runner.Run(&types.Databases{
 		BoltDB:  boltDB,
 		RocksDB: rocksdb,
+		GormDB:  gormDB,
 	})
 	if err != nil {
 		return errors.Wrap(err, "migrations failed")

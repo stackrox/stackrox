@@ -3,6 +3,8 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "gogoproto/gogo.proto";
+
 package storage;
 
 // Next Tag: 10
@@ -17,7 +19,7 @@ message ComplianceOperatorCheckResult {
         NOT_APPLICABLE = 6;
         INCONSISTENT   = 7;
     }
-    string              id           = 1;
+    string              id           = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              check_id     = 2;
     string              check_name   = 3;
     string              cluster_id   = 4;
@@ -30,7 +32,7 @@ message ComplianceOperatorCheckResult {
 
 // Next Tag: 9
 message ComplianceOperatorProfile {
-    string              id          = 1;
+    string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              profile_id  = 2;
     string              name        = 3;
     string              cluster_id  = 4;
@@ -45,7 +47,7 @@ message ComplianceOperatorProfile {
 
 // Next Tag: 10
 message ComplianceOperatorRule {
-    string              id          = 1;
+    string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              rule_id     = 2;
     string              name        = 3;
     string              cluster_id  = 4;
@@ -58,7 +60,7 @@ message ComplianceOperatorRule {
 
 // Next Tag: 7
 message ComplianceOperatorScanSettingBinding {
-    string              id          = 1;
+    string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              name        = 2;
     string              cluster_id  = 3;
     map<string, string> labels      = 4;
@@ -70,7 +72,7 @@ message ComplianceOperatorScanSettingBinding {
 }
 
 message ComplianceOperatorScan {
-    string              id          = 1;
+    string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              name        = 2;
     string              cluster_id  = 3;
     string              profile_id  = 4;

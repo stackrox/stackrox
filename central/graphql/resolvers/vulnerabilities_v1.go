@@ -8,12 +8,11 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -76,8 +75,8 @@ func (evr *EmbeddedVulnerabilityResolver) ID(ctx context.Context) graphql.ID {
 	return graphql.ID(evr.data.GetCve())
 }
 
-// Cve returns the CVE string (which is effectively an id)
-func (evr *EmbeddedVulnerabilityResolver) Cve(ctx context.Context) string {
+// CVE returns the CVE string (which is effectively an id)
+func (evr *EmbeddedVulnerabilityResolver) CVE(ctx context.Context) string {
 	return evr.data.GetCve()
 }
 
@@ -276,7 +275,29 @@ func (evr *EmbeddedVulnerabilityResolver) NodeCount(ctx context.Context, args Ra
 	return nodeLoader.CountFromQuery(ctx, query)
 }
 
-func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, cve *schema.NVDCVEFeedJSON10DefCVEItem, ct converter.CVEType) (int, int, error) {
+// Clusters returns resolvers for clusters affected by cluster vulnerability.
+func (evr *EmbeddedVulnerabilityResolver) Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "Clusters")
+
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), evr.vulnRawQuery())
+	return evr.root.Clusters(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+// ClusterCount returns a number of clusters affected by cluster vulnerability.
+func (evr *EmbeddedVulnerabilityResolver) ClusterCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "ClusterCount")
+
+	if err := readClusters(ctx); err != nil {
+		return 0, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), evr.vulnRawQuery())
+	return evr.root.ClusterCount(ctx, RawQuery{Query: &query})
+}
+
+func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, cve *schema.NVDCVEFeedJSON10DefCVEItem, ct utils.CVEType) (int, int, error) {
 	clusters, err := resolver.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return 0, 0, err
@@ -292,7 +313,7 @@ func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, c
 	return len(affectedClusters), len(clusters), nil
 }
 
-func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
+func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct utils.CVEType) (int, int, error) {
 	clusters, err := evr.root.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return 0, 0, err
@@ -358,11 +379,11 @@ func (evr *EmbeddedVulnerabilityResolver) EnvImpact(ctx context.Context) (float6
 
 		switch vulnType {
 		case storage.EmbeddedVulnerability_K8S_VULNERABILITY:
-			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.K8s)
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, utils.K8s)
 		case storage.EmbeddedVulnerability_ISTIO_VULNERABILITY:
-			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.Istio)
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, utils.Istio)
 		case storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY:
-			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.OpenShift)
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, utils.OpenShift)
 		case storage.EmbeddedVulnerability_IMAGE_VULNERABILITY:
 			n, d, err = evr.getEnvImpactComponentsForImages(ctx)
 		case storage.EmbeddedVulnerability_NODE_VULNERABILITY:
@@ -462,9 +483,6 @@ func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, q
 
 // ActiveState shows the activeness of a vulnerability in a deployment context.
 func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, _ RawQuery) (*activeStateResolver, error) {
-	if !features.ActiveVulnManagement.Enabled() {
-		return nil, nil
-	}
 	deploymentID := getDeploymentScope(nil, ctx, evr.ctx)
 	if deploymentID == "" {
 		return nil, nil

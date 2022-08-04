@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"github.com/joelanford/helm-operator/pkg/extensions"
+	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"

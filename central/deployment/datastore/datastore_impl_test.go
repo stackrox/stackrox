@@ -68,23 +68,23 @@ func (suite *DeploymentDataStoreTestSuite) TestTags() {
 		suite.riskStore, nil, suite.filter, ranking.NewRanker(),
 		ranking.NewRanker(), ranking.NewRanker())
 
-	suite.storage.EXPECT().GetDeployment("blah").Return(nil, false, nil)
+	suite.storage.EXPECT().Get(suite.ctx, "blah").Return(nil, false, nil)
 	suite.NoError(datastore.AddTagsToProcessKey(suite.ctx, getCommentKey("blah"), []string{"new", "tag", "in-both"}))
 
-	suite.storage.EXPECT().GetDeployment("exists").Return(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing"}}, true, nil)
-	suite.storage.EXPECT().UpsertDeployment(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "in-both", "new", "tag"}, Priority: 1}).Return(nil)
+	suite.storage.EXPECT().Get(suite.ctx, "exists").Return(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing"}}, true, nil)
+	suite.storage.EXPECT().Upsert(suite.ctx, &storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "in-both", "new", "tag"}, Priority: 1}).Return(nil)
 	suite.NoError(datastore.AddTagsToProcessKey(suite.ctx, getCommentKey("exists"), []string{"new", "tag", "in-both"}))
 	mutatedExistsKey := getCommentKey("exists")
 	mutatedExistsKey.ExecFilePath = "MUTATED"
-	suite.storage.EXPECT().GetDeployment("exists").Return(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "in-both", "new", "tag"}}, true, nil)
+	suite.storage.EXPECT().Get(suite.ctx, "exists").Return(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "in-both", "new", "tag"}}, true, nil)
 	suite.NoError(datastore.AddTagsToProcessKey(suite.ctx, mutatedExistsKey, []string{"in-both"}))
 
 	tags, err := datastore.GetTagsForProcessKey(suite.ctx, getCommentKey("exists"))
 	suite.Require().NoError(err)
 	suite.Equal([]string{"in-both", "new", "tag"}, tags)
 
-	suite.storage.EXPECT().GetDeployment("exists").Return(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "new", "tag", "in-both"}}, true, nil)
-	suite.storage.EXPECT().UpsertDeployment(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "in-both"}, Priority: 1}).Return(nil)
+	suite.storage.EXPECT().Get(suite.ctx, "exists").Return(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "new", "tag", "in-both"}}, true, nil)
+	suite.storage.EXPECT().Upsert(suite.ctx, &storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "in-both"}, Priority: 1}).Return(nil)
 	suite.NoError(datastore.RemoveTagsFromProcessKey(suite.ctx, getCommentKey("exists"), []string{"new", "tag", "in-both"}))
 	tags, err = datastore.GetTagsForProcessKey(suite.ctx, getCommentKey("exists"))
 	suite.Require().NoError(err)
@@ -127,11 +127,11 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	}
 
 	suite.searcher.EXPECT().Search(gomock.Any(), search.EmptyQuery()).Return([]search.Result{{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"}}, nil)
-	suite.storage.EXPECT().GetDeployment(deployments[0].Id).Return(deployments[0], true, nil)
-	suite.storage.EXPECT().GetDeployment(deployments[1].Id).Return(deployments[1], true, nil)
-	suite.storage.EXPECT().GetDeployment(deployments[2].Id).Return(deployments[2], true, nil)
-	suite.storage.EXPECT().GetDeployment(deployments[3].Id).Return(nil, false, nil)
-	suite.storage.EXPECT().GetDeployment(deployments[4].Id).Return(nil, false, errors.New("fake error"))
+	suite.storage.EXPECT().Get(gomock.Any(), deployments[0].Id).Return(deployments[0], true, nil)
+	suite.storage.EXPECT().Get(gomock.Any(), deployments[1].Id).Return(deployments[1], true, nil)
+	suite.storage.EXPECT().Get(gomock.Any(), deployments[2].Id).Return(deployments[2], true, nil)
+	suite.storage.EXPECT().Get(gomock.Any(), deployments[3].Id).Return(nil, false, nil)
+	suite.storage.EXPECT().Get(gomock.Any(), deployments[4].Id).Return(nil, false, errors.New("fake error"))
 
 	ds.initializeRanker()
 

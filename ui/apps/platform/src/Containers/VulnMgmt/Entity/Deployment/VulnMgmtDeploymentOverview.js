@@ -11,7 +11,7 @@ import Tab from 'Components/Tab';
 import entityTypes from 'constants/entityTypes';
 import PolicyViolationsBySeverity from 'Containers/VulnMgmt/widgets/PolicyViolationsBySeverity';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
-import RecentlyDetectedVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedVulnerabilities';
+import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedImageVulnerabilities';
 import MostCommonVulnerabiltiesInDeployment from 'Containers/VulnMgmt/widgets/MostCommonVulnerabiltiesInDeployment';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -105,7 +105,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         );
     } else {
         deploymentFindingsContent = (
-            <div className="flex pdf-page pdf-stretch pdf-new rounded relative rounded mb-4 ml-4 mr-4">
+            <div className="flex pdf-page pdf-stretch pdf-new relative rounded mb-4 ml-4 mr-4">
                 <BinderTabs>
                     <Tab title="Policies">
                         <TableWidget
@@ -156,7 +156,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                             <CvesByCvssScore entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
-                            <RecentlyDetectedVulnerabilities entityContext={currentEntity} />
+                            <RecentlyDetectedImageVulnerabilities entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
                             <MostCommonVulnerabiltiesInDeployment deploymentId={id} />

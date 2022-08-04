@@ -12,11 +12,15 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate/mocks"
+	"github.com/stackrox/rox/central/clusterinit/store"
 	rocksdbStore "github.com/stackrox/rox/central/clusterinit/store/rocksdb"
 	"github.com/stackrox/rox/central/clusters"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -118,9 +122,9 @@ func (s *clusterInitBackendTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	m := mocks.NewMockProvider(s.mockCtrl)
 	s.rocksDB = rocksdbtest.RocksDBForT(s.T())
-	store, err := rocksdbStore.NewStore(s.rocksDB)
+	rocksdbStore, err := rocksdbStore.New(s.rocksDB)
 	s.Require().NoError(err)
-	s.backend = newBackend(store, m)
+	s.backend = newBackend(store.NewStore(rocksdbStore), m)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	s.certProvider = m
 
@@ -378,6 +382,101 @@ func (s *clusterInitBackendTestSuite) TestIssuingAfterRevoking() {
 	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
 	_, err = s.backend.Issue(ctx, name)
 	s.Require().NoError(err)
+}
+
+func (s *clusterInitBackendTestSuite) TestCheckAccess() {
+	cases := map[string]struct {
+		ctx         context.Context
+		access      storage.Access
+		shouldFail  bool
+		expectedErr error
+	}{
+		"read access to both ServiceIdentity and APIToken should allow read access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.APIToken))),
+			access: storage.Access_READ_ACCESS,
+		},
+		"read access to both ServiceIdentity and APIToken should not allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.APIToken))),
+			access:      storage.Access_READ_WRITE_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
+		"read access to both Administration and Integration should allow read access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
+			access: storage.Access_READ_ACCESS,
+		},
+		"read access to both Administration and Integration should not allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
+			access:      storage.Access_READ_WRITE_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
+		"read access to only ServiceIdentity should not allow read access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.ServiceIdentity))),
+			access:      storage.Access_READ_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
+		"read access to only APIToken should not allow read access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.APIToken))),
+			access:      storage.Access_READ_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
+		"write access to both should allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.ServiceIdentity, resources.APIToken))),
+			access: storage.Access_READ_WRITE_ACCESS,
+		},
+		"write access to both replacing resources should allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
+			access: storage.Access_READ_WRITE_ACCESS,
+		},
+		"write access to only ServiceIdentity should not allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.ServiceIdentity))),
+			access:      storage.Access_READ_WRITE_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
+		"write access to only APIToken should not allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.APIToken))),
+			access:      storage.Access_READ_WRITE_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			err := access.CheckAccess(c.ctx, c.access)
+			if c.shouldFail {
+				s.Require().Error(err)
+				s.ErrorIs(err, c.expectedErr)
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
 }
 
 func (s *clusterInitBackendTestSuite) TearDownTest() {

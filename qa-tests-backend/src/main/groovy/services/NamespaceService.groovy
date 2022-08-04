@@ -1,11 +1,13 @@
 package services
 
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.NamespaceServiceGrpc
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.Namespace
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.GetNamespaceRequest
 import util.Timer
 
+@Slf4j
 class NamespaceService extends BaseService {
 
     static getNamespaceClient() {
@@ -19,7 +21,7 @@ class NamespaceService extends BaseService {
         try {
             return getNamespaceClient().getNamespace(Common.ResourceByID.newBuilder().setId(id).build())
         } catch (Exception e) {
-            println "Could not find namespace ${id}: ${e.message}"
+            log.error("Could not find namespace ${id}", e)
         }
         return null
     }
@@ -29,12 +31,12 @@ class NamespaceService extends BaseService {
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             if (getNamespace(id) != null ) {
-                println "SR found namespace ${id} within ${t.SecondsSince()}s"
+                log.debug "SR found namespace ${id} within ${t.SecondsSince()}s"
                 return true
             }
-            println "Retrying in ${intervalSeconds}..."
+            log.debug "Retrying in ${intervalSeconds}..."
         }
-        println "SR did not detect the namespace ${id}"
+        log.warn "SR did not detect the namespace ${id}"
         return false
     }
 

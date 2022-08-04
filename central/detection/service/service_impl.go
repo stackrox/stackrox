@@ -8,10 +8,8 @@ import (
 	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	deployConfScheme "github.com/openshift/client-go/apps/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	centralDetection "github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -23,9 +21,10 @@ import (
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -34,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
@@ -69,8 +69,7 @@ var (
 func init() {
 	metav1.AddToGroupVersion(workloadScheme, k8sSchema.GroupVersion{Version: "v1"})
 	pkgUtils.Must(errors.Wrap(scheme.AddToScheme(workloadScheme), "failed to load scheme"))
-	pkgUtils.Must(errors.Wrap(deployConfScheme.AddToScheme(workloadScheme), "failed to load scheme"))
-	pkgUtils.Must(errors.Wrap(k8sutil.AddLegacyOpenshiftAppsToScheme(workloadScheme), "failed to load scheme"))
+	pkgUtils.Must(errors.Wrap(k8sutil.AddOpenShiftSchemes(workloadScheme), "failed to load openshift schemes"))
 }
 
 // serviceImpl provides APIs for alerts.
@@ -78,7 +77,6 @@ type serviceImpl struct {
 	policySet          detection.PolicySet
 	imageEnricher      enricher.ImageEnricher
 	imageDatastore     imageDatastore.DataStore
-	cveDatastore       cveDataStore.DataStore
 	riskManager        manager.Manager
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
@@ -94,7 +92,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	apiV1.RegisterDetectionServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
+// RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
 	return apiV1.RegisterDetectionServiceHandler(ctx, mux, conn)
 }
@@ -126,7 +124,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		}
 	}
 	if image.GetName() == nil {
-		return nil, errors.New("image or image_name must be specified")
+		return nil, errox.InvalidArgs.CausedBy("image or image_name must be specified")
 	}
 	// This is a workaround for those who post the full image, but don't fill in fullname
 	if name := image.GetName(); name != nil && name.GetFullName() == "" {
@@ -135,11 +133,11 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 
 	img := types.ToImage(image)
 
-	eCtx := enricher.EnrichmentContext{}
+	enrichmentContext := enricher.EnrichmentContext{}
 	if req.GetNoExternalMetadata() {
-		eCtx.FetchOpt = enricher.NoExternalMetadata
+		enrichmentContext.FetchOpt = enricher.NoExternalMetadata
 	}
-	enrichResult, err := s.imageEnricher.EnrichImage(eCtx, img)
+	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +168,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 }
 
 func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories ...string) (*apiV1.DeployDetectionResponse_Run, error) {
-	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(enrichmentContext, deployment)
+	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(ctx, enrichmentContext, deployment)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +188,10 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
-	alerts, err := s.detector.Detect(detectionCtx, deployment, images, filter)
+	alerts, err := s.detector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
+		Deployment: deployment,
+		Images:     images,
+	}, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -205,65 +206,90 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}, nil
 }
 
-func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, eCtx enricher.EnrichmentContext, obj k8sRuntime.Object, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
+func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, obj k8sRuntime.Object, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
 	if !kubernetes.IsDeploymentResource(obj.GetObjectKind().GroupVersionKind().Kind) {
 		return nil, nil
 	}
 
 	deployment, err := resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Could not convert to deployment from resource: %v", err)
+		return nil, errox.InvalidArgs.New("could not convert to deployment from resource").CausedBy(err)
 	}
-	return s.enrichAndDetect(ctx, eCtx, deployment, policyCategories...)
+	return s.enrichAndDetect(ctx, enrichmentContext, deployment, policyCategories...)
 }
 
-func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
+func getObjectsFromYAML(yamlString string) (objects []k8sRuntime.Object, ignoredObjectRefs []string, err error) {
 	reader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBufferString(yamlString)))
-	var objects []k8sRuntime.Object
 	for {
 		yamlBytes, err := reader.Read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Failed to read YAML with err: %v", err)
+			return nil, nil,
+				errox.InvalidArgs.New("failed to read yaml").CausedBy(err)
 		}
 		obj, _, err := workloadDeserializer.Decode(yamlBytes, nil, nil)
 		if err != nil {
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "could not parse YAML: %v", err)
-		}
-		if list, ok := obj.(*coreV1.List); ok {
-			listResources, err := getObjectsFromList(list)
+			// Only return errors if the resource's schema is not registered.
+			if !k8sRuntime.IsNotRegisteredError(err) {
+				return nil, nil,
+					errox.InvalidArgs.New("could not parse yaml").CausedBy(err)
+			}
+			// Save the ignored object, so we can return it to the caller and skip it.
+			ignoredObj, err := getIgnoredObjectRefFromYAML(string(yamlBytes))
 			if err != nil {
-				return nil, err
+				return nil, nil,
+					errox.InvariantViolation.New("could not get ignored object").CausedBy(err)
+			}
+			ignoredObjectRefs = append(ignoredObjectRefs, ignoredObj)
+			continue
+		}
+
+		if list, ok := obj.(*coreV1.List); ok {
+			listResources, ignoredObjs, err := getObjectsFromList(list)
+			if err != nil {
+				return nil, nil, err
 			}
 			objects = append(objects, listResources...)
+			ignoredObjectRefs = append(ignoredObjectRefs, ignoredObjs...)
 		} else {
 			objects = append(objects, obj)
 		}
 	}
-	return objects, nil
+	return objects, ignoredObjectRefs, nil
 }
 
-func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, error) {
+func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, []string, error) {
 	objects := make([]k8sRuntime.Object, 0, len(list.Items))
+	var ignoredObjectsRefs []string
 	for i, item := range list.Items {
 		obj, _, err := workloadDeserializer.Decode(item.Raw, nil, nil)
-		if err != nil {
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Could not decode item %d in the list: %v", i, err)
+		if err == nil {
+			objects = append(objects, obj)
+			continue
 		}
-		objects = append(objects, obj)
+
+		if !k8sRuntime.IsNotRegisteredError(err) {
+			return nil, nil,
+				errox.InvalidArgs.Newf("could not decode item %d in the list", i).CausedBy(err)
+		}
+		ignoredObjRef, err := getIgnoredObjectRefFromYAML(string(item.Raw))
+		if err != nil {
+			return nil, nil, errox.InvariantViolation.New("could not get ignored object").CausedBy(err)
+		}
+		ignoredObjectsRefs = append(ignoredObjectsRefs, ignoredObjRef)
 	}
-	return objects, nil
+	return objects, ignoredObjectsRefs, nil
 }
 
-// DetectDeployTime runs detection on a deployment
+// DetectDeployTimeFromYAML runs detection on a deployment.
 func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.DeployYAMLDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetYaml() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "yaml field must be specified in detection request")
+		return nil, errox.InvalidArgs.CausedBy("yaml field must be specified in detection request")
 	}
 
-	resources, err := getObjectsFromYAML(req.GetYaml())
+	resources, ignoredObjectRefs, err := getObjectsFromYAML(req.GetYaml())
 	if err != nil {
 		return nil, err
 	}
@@ -279,14 +305,15 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	for _, r := range resources {
 		run, err := s.runDeployTimeDetect(ctx, eCtx, r, req.GetPolicyCategories())
 		if err != nil {
-			return nil, errors.Errorf("Unable to convert object: %v", err)
+			return nil, errox.InvalidArgs.New("unable to convert object").CausedBy(err)
 		}
 		if run != nil {
 			runs = append(runs, run)
 		}
 	}
 	return &apiV1.DeployDetectionResponse{
-		Runs: runs,
+		Runs:              runs,
+		IgnoredObjectRefs: ignoredObjectRefs,
 	}, nil
 }
 
@@ -308,16 +335,17 @@ func (s *serviceImpl) populateDeploymentWithClusterInfo(ctx context.Context, clu
 		return err
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "cluster with ID %q does not exist", clusterID)
+		return errox.InvalidArgs.Newf("cluster with ID %q does not exist", clusterID)
 	}
 	deployment.ClusterId = clusterID
 	deployment.ClusterName = clusterName
 	return nil
 }
 
+// DetectDeployTime runs detection on a deployment.
 func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetDeployment() == nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Deployment must be passed to deploy time detection")
+		return nil, errox.InvalidArgs.CausedBy("deployment must be passed to deploy time detection")
 	}
 	if err := s.populateDeploymentWithClusterInfo(ctx, req.GetClusterId(), req.GetDeployment()); err != nil {
 		return nil, err
@@ -362,4 +390,12 @@ func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDet
 			run,
 		},
 	}, nil
+}
+
+func getIgnoredObjectRefFromYAML(yaml string) (string, error) {
+	unstructured, err := k8sutil.UnstructuredFromYAML(yaml)
+	if err != nil {
+		return "", err
+	}
+	return k8sobjects.RefOf(unstructured).String(), nil
 }

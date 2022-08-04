@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -75,10 +74,7 @@ func (suite *ImageComponentSearchTestSuite) SetupSuite() {
 		suite.FailNow("failed to create dackbox", err.Error())
 	}
 
-	suite.blevePath, err = os.MkdirTemp("", "")
-	if err != nil {
-		suite.FailNow("failed to create dir for bleve", err.Error())
-	}
+	suite.blevePath = suite.T().TempDir()
 	blevePath := filepath.Join(suite.blevePath, "scorch.bleve")
 	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
 	if err != nil {
@@ -110,7 +106,6 @@ func (suite *ImageComponentSearchTestSuite) SetupSuite() {
 }
 
 func (suite *ImageComponentSearchTestSuite) TearDownSuite() {
-	_ = os.RemoveAll(suite.blevePath)
 	rocksdbtest.TearDownRocksDB(suite.db)
 }
 
@@ -141,7 +136,7 @@ func (suite *ImageComponentSearchTestSuite) TestBasicSearchImage() {
 	suite.Len(results, 3)
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp1", "ver1"),
+		ID:    scancomponent.ComponentID("comp1", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 
@@ -151,7 +146,7 @@ func (suite *ImageComponentSearchTestSuite) TestBasicSearchImage() {
 	suite.Len(results, 1)
 
 	expectedComponent := &storage.ImageComponent{
-		Id:      scancomponent.ComponentID("comp1", "ver1"),
+		Id:      scancomponent.ComponentID("comp1", "ver1", ""),
 		Name:    "comp1",
 		Version: "ver1",
 		Source:  storage.SourceType_OS,
@@ -200,7 +195,7 @@ func (suite *ImageComponentSearchTestSuite) TestBasicSearchNode() {
 	suite.Len(results, 3)
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp1", "ver1"),
+		ID:    scancomponent.ComponentID("comp1", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 
@@ -210,7 +205,7 @@ func (suite *ImageComponentSearchTestSuite) TestBasicSearchNode() {
 	suite.Len(results, 1)
 
 	expectedComponent := &storage.ImageComponent{
-		Id:      scancomponent.ComponentID("comp1", "ver1"),
+		Id:      scancomponent.ComponentID("comp1", "ver1", ""),
 		Name:    "comp1",
 		Version: "ver1",
 		Source:  storage.SourceType_INFRASTRUCTURE,

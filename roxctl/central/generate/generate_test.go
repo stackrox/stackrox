@@ -3,7 +3,6 @@ package generate
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -16,7 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,9 +36,7 @@ const (
 )
 
 func TestRestoreKeysAndCerts(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "testGenerate")
-	require.NoError(t, err)
-	defer func() { _ = os.RemoveAll(tmpDir) }()
+	tmpDir := t.TempDir()
 
 	testutils.SetExampleVersion(t)
 	buildTestutils.SetBuildTimestamp(t, time.Now())
@@ -84,8 +82,8 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 		},
 	}
 
-	io, _, _, _ := environment.TestIO()
-	logger := environment.NewLogger(io, printer.DefaultColorPrinter())
+	io, _, _, _ := io.TestIO()
+	logger := logger.NewLogger(io, printer.DefaultColorPrinter())
 
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {

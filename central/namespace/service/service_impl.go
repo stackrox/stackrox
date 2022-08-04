@@ -14,7 +14,7 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -51,7 +51,7 @@ func (s *serviceImpl) GetNamespaces(ctx context.Context, req *v1.GetNamespaceReq
 	rawQuery := req.GetQuery()
 	parsedQuery, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	// Fill in pagination. MaxInt32 preserves previous functionality
 	paginated.FillPagination(parsedQuery, rawQuery.GetPagination(), math.MaxInt32)
@@ -67,14 +67,14 @@ func (s *serviceImpl) GetNamespaces(ctx context.Context, req *v1.GetNamespaceReq
 
 func (s *serviceImpl) GetNamespace(ctx context.Context, req *v1.ResourceByID) (*v1.Namespace, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "ID cannot be empty")
+		return nil, errors.Wrap(errox.InvalidArgs, "ID cannot be empty")
 	}
 	resolvedNS, found, err := namespace.ResolveByID(ctx, req.GetId(), s.datastore, s.deployments, s.secrets, s.networkPolicies)
 	if err != nil {
 		return nil, errors.Errorf("Failed to retrieve namespace: %v", err)
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Namespace '%s' not found", req.GetId())
+		return nil, errors.Wrapf(errox.InvalidArgs, "Namespace '%s' not found", req.GetId())
 	}
 	return resolvedNS, nil
 }

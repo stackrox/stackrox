@@ -2,9 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import * as Icon from 'react-feather';
 import PropTypes from 'prop-types';
-import { selectors } from 'reducers';
-import { connect } from 'react-redux';
-import { createSelector, createStructuredSelector } from 'reselect';
 
 import dateFns from 'date-fns';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -81,15 +78,4 @@ TopRiskyDeployments.propTypes = {
     ).isRequired,
 };
 
-const getTopRiskyDeployments = createSelector([selectors.getFilteredDeployments], (deployments) => {
-    const deploymentsOnly = deployments.map(
-        (deploymentWithProcessInfo) => deploymentWithProcessInfo.deployment
-    );
-    return deploymentsOnly.sort((a, b) => a.priority - b.priority).slice(0, 5);
-});
-
-const mapStateToProps = createStructuredSelector({
-    deployments: getTopRiskyDeployments,
-});
-
-export default connect(mapStateToProps, null)(TopRiskyDeployments);
+export default TopRiskyDeployments;

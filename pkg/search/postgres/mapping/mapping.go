@@ -24,3 +24,17 @@ func RegisterCategoryToTable(category v1.SearchCategory, table *walker.Schema) {
 func GetTableFromCategory(category v1.SearchCategory) *walker.Schema {
 	return categoryToTableMap[category]
 }
+
+// GetAllRegisteredSchemas returns all registered schemas.
+func GetAllRegisteredSchemas() []*walker.Schema {
+	allSchemas := make([]*walker.Schema, 0, len(categoryToTableMap))
+	for _, schema := range categoryToTableMap {
+		allSchemas = append(allSchemas, schema)
+	}
+	return allSchemas
+}
+
+// UnregisterCategory removes record for specified search category.
+func UnregisterCategory(category v1.SearchCategory) {
+	delete(categoryToTableMap, category)
+}

@@ -8,7 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
@@ -108,7 +108,7 @@ func filterNamespacedFields(query *v1.Query, cves []*storage.CVE) ([]*storage.CV
 func needsPostSorting(query *v1.Query) bool {
 	for _, so := range query.GetPagination().GetSortOptions() {
 		switch so.GetField() {
-		case search.Severity.String(), search.CVSS.String():
+		case search.Severity.String(), search.CVSS.String(), search.CVE.String(), search.ImpactScore.String():
 			return true
 		default:
 			return false
@@ -147,6 +147,32 @@ func sortNamespacedFields(query *v1.Query, cves []*storage.CVE) ([]*storage.CVE,
 			}
 			return result
 		})
+	case search.CVE.String():
+		sort.Slice(cves, func(i, j int) bool {
+			var result bool
+			if cves[i].GetId() != cves[j].GetId() {
+				result = cves[i].GetId() < cves[j].GetId()
+			} else {
+				result = cves[i].GetSeverity() < cves[j].GetSeverity()
+			}
+			if sortOption.Reversed {
+				return !result
+			}
+			return result
+		})
+	case search.ImpactScore.String():
+		sort.Slice(cves, func(i, j int) bool {
+			var result bool
+			if cves[i].GetImpactScore() != cves[j].GetImpactScore() {
+				result = cves[i].GetImpactScore() < cves[j].GetImpactScore()
+			} else {
+				result = cves[i].GetSeverity() < cves[j].GetSeverity()
+			}
+			if sortOption.Reversed {
+				return !result
+			}
+			return result
+		})
 	}
 	return cves, nil
 }
@@ -167,13 +193,97 @@ func (resolver *cVEResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error
 }
 
 func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("vulnerabilityV2 not supported on postgres.")
+	}
+	vulnResolver, err := resolver.unwrappedVulnerabilityV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return vulnResolver, nil
+}
+
+func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("vulnerabilitiesV2 not supported on postgres.")
+	}
+	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]VulnerabilityResolver, 0, len(vulnResolvers))
+	for _, res := range vulnResolvers {
+		res.ctx = ctx
+		ret = append(ret, res)
+	}
+	return ret, nil
+}
+
+func (resolver *Resolver) imageVulnerabilityV2(ctx context.Context, args IDQuery) (ImageVulnerabilityResolver, error) {
+	vulnResolver, err := resolver.unwrappedVulnerabilityV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return vulnResolver, nil
+}
+
+// imageVulnerabilitiesV2 wraps the resolvers as ImageVulnerabilityResolver objects to restrict the supported API
+func (resolver *Resolver) imageVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]ImageVulnerabilityResolver, 0, len(vulnResolvers))
+	for _, res := range vulnResolvers {
+		res.ctx = ctx
+		ret = append(ret, res)
+	}
+	return ret, err
+}
+
+func (resolver *Resolver) nodeVulnerabilityV2(ctx context.Context, args IDQuery) (NodeVulnerabilityResolver, error) {
+	vulnResolver, err := resolver.unwrappedVulnerabilityV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return vulnResolver, nil
+}
+
+func (resolver *Resolver) nodeVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]NodeVulnerabilityResolver, 0, len(vulnResolvers))
+	for _, res := range vulnResolvers {
+		res.ctx = ctx
+		ret = append(ret, res)
+	}
+	return ret, nil
+}
+
+func (resolver *Resolver) clusterVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
+	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]ClusterVulnerabilityResolver, 0, len(vulnResolvers))
+	for _, res := range vulnResolvers {
+		res.ctx = ctx
+		ret = append(ret, res)
+	}
+	return ret, nil
+}
+
+func (resolver *Resolver) unwrappedVulnerabilityV2(ctx context.Context, args IDQuery) (*cVEResolver, error) {
 	if err := readCVEs(ctx); err != nil {
 		return nil, err
 	}
 	vuln, exists, err := resolver.CVEDataStore.Get(ctx, string(*args.ID))
 	if err != nil {
 		return nil, err
-	} else if !exists {
+	}
+	if !exists {
 		return nil, errors.Errorf("cve not found: %s", string(*args.ID))
 	}
 	vulnResolver, err := resolver.wrapCVE(vuln, true, nil)
@@ -184,7 +294,10 @@ func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args IDQuery) (Vu
 	return vulnResolver, nil
 }
 
-func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+func (resolver *Resolver) unwrappedVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]*cVEResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
+	}
 	if err := readCVEs(ctx); err != nil {
 		return nil, err
 	}
@@ -202,10 +315,26 @@ func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQ
 	if err != nil {
 		return nil, err
 	}
-	return resolver.vulnerabilitiesV2Query(ctx, query)
+	return resolver.unwrappedVulnerabilitiesV2Query(ctx, query)
 }
 
 func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.Query) ([]VulnerabilityResolver, error) {
+	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]VulnerabilityResolver, 0, len(vulnResolvers))
+	for _, res := range vulnResolvers {
+		res.ctx = ctx
+		ret = append(ret, res)
+	}
+	return ret, nil
+}
+
+func (resolver *Resolver) unwrappedVulnerabilitiesV2Query(ctx context.Context, query *v1.Query) ([]*cVEResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
+	}
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err
@@ -255,12 +384,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 	}
 
 	vulnResolvers, err := resolver.wrapCVEs(vulns, err)
-	ret := make([]VulnerabilityResolver, 0, len(vulns))
-	for _, resolver := range vulnResolvers {
-		resolver.ctx = ctx
-		ret = append(ret, resolver)
-	}
-	return ret, err
+	return vulnResolvers, err
 }
 
 func (resolver *Resolver) vulnerabilityCountV2(ctx context.Context, args RawQuery) (int32, error) {
@@ -276,6 +400,9 @@ func (resolver *Resolver) vulnerabilityCountV2(ctx context.Context, args RawQuer
 }
 
 func (resolver *Resolver) vulnerabilityCountV2Query(ctx context.Context, query *v1.Query) (int32, error) {
+	if features.PostgresDatastore.Enabled() {
+		return 0, errors.New("attempted to invoke legacy datastores with postgres enabled")
+	}
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return 0, err
@@ -308,6 +435,9 @@ func (resolver *Resolver) vulnCounterV2(ctx context.Context, args RawQuery) (*Vu
 }
 
 func (resolver *Resolver) vulnCounterV2Query(ctx context.Context, query *v1.Query) (*VulnerabilityCounterResolver, error) {
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
+	}
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err
@@ -325,7 +455,15 @@ func (resolver *Resolver) vulnCounterV2Query(ctx context.Context, query *v1.Quer
 		return nil, err
 	}
 
-	return mapCVEsToVulnerabilityCounter(fixableVulns, unFixableCVEs), nil
+	return mapCVEsToVulnerabilityCounter(cveToVulnerabilityWithSeverity(fixableVulns), cveToVulnerabilityWithSeverity(unFixableCVEs)), nil
+}
+
+func cveToVulnerabilityWithSeverity(in []*storage.CVE) []VulnerabilityWithSeverity {
+	ret := make([]VulnerabilityWithSeverity, len(in))
+	for i, vuln := range in {
+		ret[i] = vuln
+	}
+	return ret
 }
 
 func (resolver *Resolver) k8sVulnerabilityV2(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
@@ -366,12 +504,16 @@ func (resolver *cVEResolver) ID(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *cVEResolver) Cve(ctx context.Context) string {
+func (resolver *cVEResolver) CVE(ctx context.Context) string {
 	return resolver.data.GetId()
 }
 
 func (resolver *cVEResolver) getCVEQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).ProtoQuery()
+}
+
+func (resolver *cVEResolver) getCVERawQuery() string {
+	return search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).Query()
 }
 
 // IsFixable returns whether vulnerability is fixable by any component.
@@ -395,7 +537,7 @@ func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, 
 	}
 	if cve.ContainsClusterCVE(resolver.data.GetTypes()) {
 		query := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, true).ProtoQuery())
-		count, err := resolver.root.clusterCVEEdgeDataStore.Count(ctx, query)
+		count, err := resolver.root.ClusterCVEEdgeDataStore.Count(ctx, query)
 		if err != nil {
 			return false, err
 		}
@@ -406,7 +548,7 @@ func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, 
 	return false, nil
 }
 
-func (resolver *cVEResolver) addVulnScopeContext(ctx context.Context) context.Context {
+func (resolver *cVEResolver) withVulnerabilityScope(ctx context.Context) context.Context {
 	return scoped.Context(ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
 		Level: v1.SearchCategory_VULNERABILITIES,
@@ -425,7 +567,7 @@ func (resolver *cVEResolver) getEnvImpactComponentsForImages(ctx context.Context
 	if err != nil {
 		return 0, 0, err
 	}
-	withThisCVECount, err := deploymentLoader.CountFromQuery(resolver.addVulnScopeContext(ctx), search.EmptyQuery())
+	withThisCVECount, err := deploymentLoader.CountFromQuery(resolver.withVulnerabilityScope(ctx), search.EmptyQuery())
 	if err != nil {
 		return 0, 0, err
 	}
@@ -444,7 +586,7 @@ func (resolver *cVEResolver) getEnvImpactComponentsForNodes(ctx context.Context)
 	if err != nil {
 		return 0, 0, err
 	}
-	withThisCVECount, err := nodeLoader.CountFromQuery(resolver.addVulnScopeContext(ctx), search.EmptyQuery())
+	withThisCVECount, err := nodeLoader.CountFromQuery(resolver.withVulnerabilityScope(ctx), search.EmptyQuery())
 	if err != nil {
 		return 0, 0, err
 	}
@@ -461,11 +603,11 @@ func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 
 		switch vulnType {
 		case storage.CVE_K8S_CVE:
-			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, converter.K8s)
+			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, utils.K8s)
 		case storage.CVE_ISTIO_CVE:
-			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, converter.Istio)
+			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, utils.Istio)
 		case storage.CVE_OPENSHIFT_CVE:
-			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, converter.OpenShift)
+			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, utils.OpenShift)
 		case storage.CVE_IMAGE_CVE:
 			n, d, err = resolver.getEnvImpactComponentsForImages(ctx)
 		case storage.CVE_NODE_CVE:
@@ -489,7 +631,7 @@ func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 	return float64(numerator) / float64(denominator), nil
 }
 
-func (resolver *cVEResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
+func (resolver *cVEResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct utils.CVEType) (int, int, error) {
 	clusters, err := resolver.root.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return 0, 0, err
@@ -520,7 +662,7 @@ func (resolver *cVEResolver) LastScanned(ctx context.Context) (*graphql.Time, er
 		},
 	}
 
-	images, err := imageLoader.FromQuery(resolver.addVulnScopeContext(ctx), q)
+	images, err := imageLoader.FromQuery(resolver.withVulnerabilityScope(ctx), q)
 	if err != nil || len(images) == 0 {
 		return nil, err
 	} else if len(images) > 1 {
@@ -591,6 +733,36 @@ func (resolver *cVEResolver) ComponentCount(ctx context.Context, args RawQuery) 
 		return 0, err
 	}
 	return componentLoader.CountFromQuery(resolver.addScopeContext(query))
+}
+
+func (resolver *cVEResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "ImageComponents")
+	return resolver.root.ImageComponents(resolver.withVulnerabilityScope(ctx), args)
+}
+
+func (resolver *cVEResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "ImageComponentCount")
+	return resolver.root.ImageComponentCount(resolver.withVulnerabilityScope(ctx), args)
+}
+
+// NodeComponents are the node components that contain the CVE/Vulnerability.
+func (resolver *cVEResolver) NodeComponents(_ context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponents")
+	if features.PostgresDatastore.Enabled() {
+		return nil, errors.New("unexpected access to legacy component datastore with postgres enabled")
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+	return resolver.root.NodeComponents(resolver.withVulnerabilityScope(resolver.ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+// NodeComponentCount is the number of node components that contain the CVE/Vulnerability.
+func (resolver *cVEResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponentCount")
+	if features.PostgresDatastore.Enabled() {
+		return 0, errors.New("unexpected access to legacy component datastore with postgres enabled")
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+	return resolver.root.NodeComponentCount(resolver.withVulnerabilityScope(resolver.ctx), RawQuery{Query: &query})
 }
 
 // Images are the images that contain the CVE/Vulnerability.
@@ -694,6 +866,28 @@ func (resolver *cVEResolver) NodeCount(ctx context.Context, args RawQuery) (int3
 	return nodeLoader.CountFromQuery(resolver.addScopeContext(query))
 }
 
+// Clusters returns resolvers for clusters affected by cluster vulnerability.
+func (resolver *cVEResolver) Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "Clusters")
+
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+	return resolver.root.Clusters(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+// ClusterCount returns a number of clusters affected by cluster vulnerability.
+func (resolver *cVEResolver) ClusterCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "ClusterCount")
+
+	if err := readClusters(ctx); err != nil {
+		return 0, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+	return resolver.root.ClusterCount(ctx, RawQuery{Query: &query})
+}
+
 // These return dummy values, as they should not be accessed from the top level vuln resolver, but the embedded
 // version instead.
 
@@ -741,7 +935,7 @@ func (resolver *cVEResolver) getClusterFixedByVersion(_ context.Context) (string
 	}
 
 	edgeID := edges.EdgeID{ParentID: scope.ID, ChildID: resolver.data.GetId()}.ToString()
-	edge, found, err := resolver.root.clusterCVEEdgeDataStore.Get(resolver.ctx, edgeID)
+	edge, found, err := resolver.root.ClusterCVEEdgeDataStore.Get(resolver.ctx, edgeID)
 	if err != nil || !found {
 		return "", err
 	}
@@ -783,9 +977,6 @@ func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuer
 
 // ActiveState shows the activeness of a vulnerability in a deployment context.
 func (resolver *cVEResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
-	if !features.ActiveVulnManagement.Enabled() {
-		return nil, nil
-	}
 	scopeQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -867,11 +1058,15 @@ func (resolver *cVEResolver) VulnerabilityState(ctx context.Context) string {
 	return storage.VulnerabilityState_OBSERVED.String()
 }
 
+func (resolver *cVEResolver) OperatingSystem(ctx context.Context) string {
+	return ""
+}
+
 func (resolver *cVEResolver) addScopeContext(query *v1.Query) (context.Context, *v1.Query) {
 	ctx := resolver.ctx
 	scope, ok := scoped.GetScope(ctx)
 	if !ok {
-		return resolver.addVulnScopeContext(ctx), query
+		return resolver.withVulnerabilityScope(ctx), query
 	}
 	// If the scope is not set to vulnerabilities then
 	// we need to add a query to scope the search to the current vuln

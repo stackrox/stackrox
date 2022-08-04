@@ -10,7 +10,11 @@ metadata:
     {{- include "srox.labels" (list . "application" "stackrox") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "application" "stackrox") | nindent 4 }}
-    kubernetes-engine.cloud.google.com/icon: "data:image/png;base64,{{ .Files.Get "assets/icon.png" | b64enc }}"
+    {{ if eq ._rox.image.registry "quay.io/stackrox-io" }}
+    kubernetes-engine.cloud.google.com/icon: "data:image/png;base64,{{ .Files.Get "assets/StackRox_icon.png" | b64enc }}"
+    {{ else }}
+    kubernetes-engine.cloud.google.com/icon: "data:image/png;base64,{{ .Files.Get "assets/Red_Hat-Hat_icon.png" | b64enc }}"
+    {{ end }}
 spec:
   descriptor:
     type: StackRox
@@ -111,6 +115,8 @@ spec:
       kind: StorageClass
     - group: networking.istio.io
       kind: DestinationRule
+{{- if ._rox.system.enablePodSecurityPolicies }}
     - group: policy
       kind: PodSecurityPolicy
+{{- end }}
 {{- end }}

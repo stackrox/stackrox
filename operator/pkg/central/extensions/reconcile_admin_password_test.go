@@ -67,6 +67,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 				require.NotNil(t, status.Central)
 				require.NotNil(t, status.Central.AdminPassword)
 				assert.Contains(t, status.Central.AdminPassword.Info, "A password for the 'admin' user has been automatically generated and stored")
+				assert.Contains(t, *status.Central.AdminPassword.SecretReference, "central-htpasswd")
 			},
 		},
 		"If a central-htpasswd secret with a password exists, no password should be generated": {
@@ -75,6 +76,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 				require.NotNil(t, status.Central)
 				require.NotNil(t, status.Central.AdminPassword)
 				assert.Contains(t, status.Central.AdminPassword.Info, "A user-defined central-htpasswd secret was found, containing htpasswd-encoded credentials.")
+				assert.Contains(t, *status.Central.AdminPassword.SecretReference, htpasswdWithSomePassword.Name)
 			},
 		},
 		"If a central-htpasswd secret with no password exists, no password should be generated and the user should be informed that basic auth is disabled": {
@@ -83,6 +85,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 				require.NotNil(t, status.Central)
 				require.NotNil(t, status.Central.AdminPassword)
 				assert.Contains(t, status.Central.AdminPassword.Info, "Login with username/password has been disabled")
+				assert.Empty(t, status.Central.AdminPassword.SecretReference)
 			},
 		},
 		"If a secret with a plaintext password is referenced, a central-htpasswd secret should be created accordingly": {
@@ -103,6 +106,12 @@ func TestReconcileAdminPassword(t *testing.T) {
 					assert.True(t, hf.Check(basic.DefaultUsername, "foobarbaz"))
 				},
 			},
+			VerifyStatus: func(t *testing.T, status *platform.CentralStatus) {
+				require.NotNil(t, status.Central)
+				require.NotNil(t, status.Central.AdminPassword)
+				assert.Contains(t, status.Central.AdminPassword.Info, "The admin password is configured to match")
+				assert.Contains(t, *status.Central.AdminPassword.SecretReference, "my-password")
+			},
 		},
 		"If a secret is referenced and password generation is disabled create central-htpasswd": {
 			Spec: platform.CentralSpec{
@@ -119,6 +128,12 @@ func TestReconcileAdminPassword(t *testing.T) {
 					require.NotNil(t, data)
 				},
 			},
+			VerifyStatus: func(t *testing.T, status *platform.CentralStatus) {
+				require.NotNil(t, status.Central)
+				require.NotNil(t, status.Central.AdminPassword)
+				assert.Contains(t, status.Central.AdminPassword.Info, "The admin password is configured to match")
+				assert.Contains(t, *status.Central.AdminPassword.SecretReference, "my-password")
+			},
 		},
 		"If password generation is disabled no secret should be created": {
 			Spec: platform.CentralSpec{
@@ -131,6 +146,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 				require.NotNil(t, status.Central)
 				require.NotNil(t, status.Central.AdminPassword)
 				assert.Equal(t, status.Central.AdminPassword.Info, "Password generation has been disabled, if you want to enable it set spec.central.adminPasswordGenerationDisabled to false.")
+				assert.Empty(t, status.Central.AdminPassword.SecretReference)
 			},
 		},
 	}
@@ -143,4 +159,78 @@ func TestReconcileAdminPassword(t *testing.T) {
 			testSecretReconciliation(t, reconcileAdminPassword, c)
 		})
 	}
+}
+
+func TestUpdateStatus(t *testing.T) {
+	secretName := "secret name"
+	secretInfo := "some info"
+
+	cases := map[string]struct {
+		status       *platform.CentralStatus
+		reconcileRun *reconcileAdminPasswordExtensionRun
+		shouldReturn bool
+	}{
+		"should return false if both Info and SecretReference are up-to-date": {
+			status: &platform.CentralStatus{
+				Central: &platform.CentralComponentStatus{
+					AdminPassword: &platform.AdminPasswordStatus{
+						Info:            secretInfo,
+						SecretReference: &secretName,
+					},
+				},
+			},
+			reconcileRun: &reconcileAdminPasswordExtensionRun{
+				infoUpdate:         secretInfo,
+				passwordSecretName: secretName,
+			},
+			shouldReturn: false,
+		},
+		"should return true if Info is not equal to infoUpdate": {
+			status: &platform.CentralStatus{
+				Central: &platform.CentralComponentStatus{
+					AdminPassword: &platform.AdminPasswordStatus{
+						Info: "some info",
+					},
+				},
+			},
+			reconcileRun: &reconcileAdminPasswordExtensionRun{
+				infoUpdate: "other info",
+			},
+			shouldReturn: true,
+		},
+		"should return true if SecretReference is not equal to passwordSecretName": {
+			status: &platform.CentralStatus{
+				Central: &platform.CentralComponentStatus{
+					AdminPassword: &platform.AdminPasswordStatus{
+						Info:            secretInfo,
+						SecretReference: &secretName,
+					},
+				},
+			},
+			reconcileRun: &reconcileAdminPasswordExtensionRun{
+				infoUpdate:         secretInfo,
+				passwordSecretName: "other secret name",
+			},
+			shouldReturn: true,
+		},
+		"should return false if status is empty": {
+			status:       &platform.CentralStatus{},
+			reconcileRun: &reconcileAdminPasswordExtensionRun{},
+			shouldReturn: false,
+		},
+	}
+
+	for name, c := range cases {
+		c := c
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			result := c.reconcileRun.updateStatus(c.status)
+			assert.Equal(t, c.shouldReturn, result)
+			assert.Equal(t, c.status.Central.AdminPassword.Info, c.reconcileRun.infoUpdate)
+			if c.status.Central.AdminPassword.SecretReference != nil {
+				assert.Equal(t, *c.status.Central.AdminPassword.SecretReference, c.reconcileRun.passwordSecretName)
+			}
+		})
+	}
+
 }

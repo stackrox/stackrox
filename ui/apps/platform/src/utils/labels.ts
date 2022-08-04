@@ -40,9 +40,9 @@ export function getIsValidLabelKey(key: string): boolean {
     return prefix.split('.').every((subdomain) => subdomainRegExp.test(subdomain));
 }
 
-export function getIsValidLabelValue(value: string): boolean {
+export function getIsValidLabelValue(value: string, isLabelRequired?: boolean): boolean {
     if (value.length === 0) {
-        return true; // value can be empty
+        return !isLabelRequired; // value can be empty
     }
 
     if (value.length > 63) {

@@ -20,6 +20,7 @@ type violationPrinter struct {
 var (
 	policyFieldsToPrinters = map[string][]violationPrinter{
 		fieldnames.AddCaps:                      {{required: set.NewStringSet(search.AddCapabilities.String()), printerFuncKey: printer.AddCapabilityKey}},
+		fieldnames.AllowPrivilegeEscalation:     {{required: set.NewStringSet(search.AllowPrivilegeEscalation.String()), printerFuncKey: printer.AllowPrivilegeEscalationKey}},
 		fieldnames.AppArmorProfile:              {{required: set.NewStringSet(search.AppArmorProfile.String()), printerFuncKey: printer.AppArmorProfileKey}},
 		fieldnames.AutomountServiceAccountToken: {{required: set.NewStringSet(search.AutomountServiceAccountToken.String()), printerFuncKey: printer.AutomountServiceAccountTokenKey}},
 		fieldnames.CVE:                          {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
@@ -51,6 +52,8 @@ var (
 		fieldnames.ImageSignatureVerifiedBy:     {{required: set.NewStringSet(augmentedobjs.ImageSignatureVerifiedCustomTag), printerFuncKey: printer.ImageSignatureVerifiedKey}},
 		fieldnames.LivenessProbeDefined:         {{required: set.NewStringSet(search.LivenessProbeDefined.String()), printerFuncKey: printer.LivenessProbeDefinedKey}},
 		fieldnames.MinimumRBACPermissions:       {{required: set.NewStringSet(search.ServiceAccountPermissionLevel.String()), printerFuncKey: printer.RbacKey}},
+		fieldnames.HasIngressNetworkPolicy:      {{required: set.NewStringSet(augmentedobjs.HasIngressPolicyCustomTag), printerFuncKey: printer.HasIngressNetworkPolicyKey}},
+		fieldnames.HasEgressNetworkPolicy:       {{required: set.NewStringSet(augmentedobjs.HasEgressPolicyCustomTag), printerFuncKey: printer.HasEgressNetworkPolicyKey}},
 		fieldnames.MountPropagation:             {{required: set.NewStringSet(search.MountPropagation.String()), printerFuncKey: printer.VolumeKey}},
 		fieldnames.Namespace:                    {{required: set.NewStringSet(search.Namespace.String()), printerFuncKey: printer.NamespaceKey}},
 		fieldnames.PortExposure:                 {{required: set.NewStringSet(search.ExposureLevel.String()), printerFuncKey: printer.PortExposureKey}},
@@ -78,8 +81,9 @@ var (
 	// runtime policy fields
 	requiredProcessFields = set.NewFrozenStringSet(search.ProcessName.String(), search.ProcessAncestor.String(),
 		search.ProcessUID.String(), search.ProcessArguments.String(), augmentedobjs.NotInProcessBaselineCustomTag)
-	requiredKubeEventFields   = set.NewFrozenStringSet(augmentedobjs.KubernetesAPIVerbCustomTag, augmentedobjs.KubernetesResourceCustomTag)
-	requiredNetworkFlowFields = set.NewFrozenStringSet(augmentedobjs.NotInNetworkBaselineCustomTag)
+	requiredKubeEventFields     = set.NewFrozenStringSet(augmentedobjs.KubernetesAPIVerbCustomTag, augmentedobjs.KubernetesResourceCustomTag)
+	requiredNetworkFlowFields   = set.NewFrozenStringSet(augmentedobjs.NotInNetworkBaselineCustomTag)
+	requiredNetworkPolicyFields = set.NewFrozenStringSet(augmentedobjs.HasEgressPolicyCustomTag, augmentedobjs.HasIngressPolicyCustomTag)
 )
 
 func containsAllRequiredFields(fieldMap map[string][]string, required set.StringSet) bool {
@@ -141,6 +145,17 @@ func checkForNetworkFlowViolation(result *evaluator.Result) bool {
 	return false
 }
 
+func checkForNetworkPolicyViolation(result *evaluator.Result) bool {
+	for _, fieldMap := range result.Matches {
+		for k := range fieldMap {
+			if requiredNetworkPolicyFields.Contains(k) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Render creates violation messages based on evaluation results
 func Render(
 	section *storage.PolicySection,
@@ -148,7 +163,8 @@ func Render(
 	indicator *storage.ProcessIndicator,
 	kubeEvent *storage.KubernetesEvent,
 	networkFlow *augmentedobjs.NetworkFlowDetails,
-) ([]*storage.Alert_Violation, bool, bool, bool, error) {
+	networkPolicy *augmentedobjs.NetworkPoliciesApplied,
+) ([]*storage.Alert_Violation, bool, bool, bool, bool, error) {
 	errorList := errorhelpers.NewErrorList("violation printer")
 	messages := set.NewStringSet()
 	for _, fieldMap := range result.Matches {
@@ -169,17 +185,25 @@ func Render(
 	isProcessViolation := indicator != nil && checkForProcessViolation(result)
 	isKubeOrAuditEventViolation := kubeEvent != nil && checkForKubeEventViolation(result)
 	isNetworkFlowViolation := networkFlow != nil && checkForNetworkFlowViolation(result)
+	isNetworkPolicyViolation := networkPolicy != nil && checkForNetworkPolicyViolation(result)
 	if len(messages) == 0 && !isProcessViolation && !isKubeOrAuditEventViolation && !isNetworkFlowViolation {
 		errorList.AddError(errors.New("missing messages"))
 	}
 
+	alertType := storage.Alert_Violation_GENERIC
+	if isNetworkPolicyViolation {
+		alertType = storage.Alert_Violation_NETWORK_POLICY
+	}
 	alertViolations := make([]*storage.Alert_Violation, 0, len(messages))
 	// Sort messages for consistency in output. This is important because we
 	// depend on these messages being equal when deduping updates to alerts.
 	for _, message := range messages.AsSortedSlice(func(i, j string) bool {
 		return i < j
 	}) {
-		alertViolations = append(alertViolations, &storage.Alert_Violation{Message: message})
+		alertViolations = append(alertViolations, &storage.Alert_Violation{
+			Message: message,
+			Type:    alertType,
+		})
 	}
-	return alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, errorList.ToError()
+	return alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, errorList.ToError()
 }

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	errNoProviderArg    = errors.New("provider ID/name parameter required")
-	errProviderNotFound = errors.New("provider doesn't exist")
+	errNoProviderArg    = errox.InvalidArgs.New("provider ID/name parameter required")
+	errProviderNotFound = errox.NotFound.New("provider doesn't exist")
 )
 
 type centralUserPkiDeleteCommand struct {
@@ -46,7 +46,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := flags.CheckConfirmation(cmd); err != nil {
+			if err := flags.CheckConfirmation(cmd, cliEnvironment.Logger(), cliEnvironment.InputOutput()); err != nil {
 				return err
 			}
 			return deleteProvider()

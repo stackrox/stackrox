@@ -7,6 +7,7 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import VulnMgmtNamespaceOverview from './VulnMgmtNamespaceOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -26,6 +27,9 @@ const VulnMgmtNamespace = ({
     setRefreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const overviewQuery = gql`
         query getNamespace(
@@ -60,10 +64,19 @@ const VulnMgmtNamespace = ({
                     }
                 }
                 policyCount(query: $policyQuery)
-                vulnCount
-                deploymentCount: numDeployments # numDeployments is pre-calculated in namespace resolver
+                deploymentCount
                 imageCount
+                ${
+                    showVMUpdates
+                        ? `
+                imageComponentCount
+                imageVulnerabilityCount
+                `
+                        : `
                 componentCount
+                vulnCount
+                `
+                }
             }
         }
     `;

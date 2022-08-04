@@ -2,10 +2,45 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"text/template"
 	"unicode"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
+
+func parseReferencesAndInjectPeerSchemas(schema *walker.Schema, refs []string) (parsedRefs []parsedReference) {
+	schemasByObjType := make(map[string]*walker.Schema, len(refs))
+	parsedRefs = make([]parsedReference, 0, len(refs))
+	for _, ref := range refs {
+		var refTable, refObjType string
+		if strings.Contains(ref, ":") {
+			refTable, refObjType = stringutils.Split2(ref, ":")
+		} else {
+			refObjType = ref
+			refTable = pgutils.NamingStrategy.TableName(stringutils.GetAfter(refObjType, "."))
+		}
+
+		refMsgType := proto.MessageType(refObjType)
+		if refMsgType == nil {
+			log.Fatalf("could not find message for type: %s", refObjType)
+		}
+		refSchema := walker.Walk(refMsgType, refTable)
+		schemasByObjType[refObjType] = refSchema
+		parsedRefs = append(parsedRefs, parsedReference{
+			TypeName: refObjType,
+			Table:    refTable,
+		})
+	}
+	schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+		return schemasByObjType[fmt.Sprintf("storage.%s", messageTypeName)]
+	})
+	return parsedRefs
+}
 
 func splitWords(s string) []string {
 	var words []string
@@ -68,9 +103,22 @@ func valueExpansion(size int) string {
 	return strings.Join(all, ", ")
 }
 
+func concatWith(strs []string, sep string) string {
+	return strings.Join(strs, sep)
+}
+
 var funcMap = template.FuncMap{
-	"lowerCamelCase": lowerCamelCase,
-	"upperCamelCase": upperCamelCase,
-	"valueExpansion": valueExpansion,
-	"lowerCase":      strings.ToLower,
+	"lowerCamelCase":               lowerCamelCase,
+	"upperCamelCase":               upperCamelCase,
+	"valueExpansion":               valueExpansion,
+	"lowerCase":                    strings.ToLower,
+	"storageToResource":            storageToResource,
+	"concatWith":                   concatWith,
+	"searchFieldNameInOtherSchema": searchFieldNameInOtherSchema,
+	"pluralType": func(s string) string {
+		if s[len(s)-1] == 'y' {
+			return fmt.Sprintf("%sies", strings.TrimSuffix(s, "y"))
+		}
+		return fmt.Sprintf("%ss", s)
+	},
 }

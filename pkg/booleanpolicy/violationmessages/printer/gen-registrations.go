@@ -4,6 +4,7 @@ package printer
 
 const (
 	AddCapabilityKey                = "addCapability"
+	AllowPrivilegeEscalationKey     = "allowPrivilegeEscalation"
 	AppArmorProfileKey              = "appArmorProfile"
 	AutomountServiceAccountTokenKey = "automountServiceAccountToken"
 	ComponentKey                    = "component"
@@ -13,6 +14,8 @@ const (
 	DisallowedImageLabelKey         = "disallowedImageLabel"
 	DropCapabilityKey               = "dropCapability"
 	EnvKey                          = "env"
+	HasEgressNetworkPolicyKey       = "hasEgressNetworkPolicy"
+	HasIngressNetworkPolicyKey      = "hasIngressNetworkPolicy"
 	HostIPCKey                      = "hostIPC"
 	HostNetworkKey                  = "hostNetwork"
 	HostPIDKey                      = "hostPID"
@@ -47,6 +50,7 @@ const (
 
 func init() {
 	registerFunc(AddCapabilityKey, addCapabilityPrinter)
+	registerFunc(AllowPrivilegeEscalationKey, allowPrivilegeEscalationPrinter)
 	registerFunc(AppArmorProfileKey, appArmorProfilePrinter)
 	registerFunc(AutomountServiceAccountTokenKey, automountServiceAccountTokenPrinter)
 	registerFunc(ComponentKey, componentPrinter)
@@ -56,6 +60,8 @@ func init() {
 	registerFunc(DisallowedImageLabelKey, disallowedImageLabelPrinter)
 	registerFunc(DropCapabilityKey, dropCapabilityPrinter)
 	registerFunc(EnvKey, envPrinter)
+	registerFunc(HasEgressNetworkPolicyKey, hasEgressNetworkPolicyPrinter)
+	registerFunc(HasIngressNetworkPolicyKey, hasIngressNetworkPolicyPrinter)
 	registerFunc(HostIPCKey, hostIPCPrinter)
 	registerFunc(HostNetworkKey, hostNetworkPrinter)
 	registerFunc(HostPIDKey, hostPIDPrinter)

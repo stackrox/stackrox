@@ -1,15 +1,7 @@
 import React, { ReactElement } from 'react';
 import { FormSelectOption } from '@patternfly/react-core';
 
-export const daysOfWeek = [
-    'Sunday',
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-];
+import { daysOfWeek } from '../../utils/integrationUtils';
 
 function ScheduleWeeklyOptions(): ReactElement {
     return (

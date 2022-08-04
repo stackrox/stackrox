@@ -1,13 +1,12 @@
 package signatures
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
 	stdLog "log"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
@@ -16,18 +15,19 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry"
 	"github.com/google/go-containerregistry/pkg/v1/random"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	dockerRegistry "github.com/heroku/docker-registry-client/registry"
+	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/pkg/oci/mutate"
 	ociremote "github.com/sigstore/cosign/pkg/oci/remote"
 	"github.com/sigstore/cosign/pkg/oci/static"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/logging"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 const (
@@ -53,16 +53,8 @@ func (m *mockRegistry) Config() *registryTypes.Config {
 	return m.cfg
 }
 
-type mockLogSink struct {
-	io.Writer
-}
-
-func (cw mockLogSink) Close() error {
-	return nil
-}
-
-func (cw mockLogSink) Sync() error {
-	return nil
+func (m *mockRegistry) Name() string {
+	return "mock registry"
 }
 
 // registryServerWithImage creates a local registry that can be accessed via a httptest.Server during tests with an
@@ -164,7 +156,7 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 		},
 	}
 
-	f := &cosignPublicKeySignatureFetcher{}
+	f := newCosignPublicKeySignatureFetcher()
 	mockConfig := &registryTypes.Config{
 		Username: "",
 		Password: "",
@@ -182,31 +174,18 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 	require.NoError(t, err, "setting up registry")
 	defer registryServer.Close()
 
-	cases := map[string]struct {
-		registry registryTypes.ImageRegistry
-		img      string
-	}{
-		"non-existing repository": {
-			registry: &mockRegistry{cfg: &registryTypes.Config{}},
-			img:      fmt.Sprintf("%s/%s", registryServer.Listener.Addr().String(), "some/private/repo"),
-		},
-		"failed parse reference": {
-			img: "fa@wrongreference",
-		},
-	}
-	f := &cosignPublicKeySignatureFetcher{}
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			cimg, err := imgUtils.GenerateImageFromString("nginx")
-			require.NoError(t, err, "creating test image")
-			cimg.Name.FullName = c.img
-			img := types.ToImage(cimg)
-			res, err := f.FetchSignatures(context.Background(), img, c.registry)
-			assert.Nil(t, res)
-			require.Error(t, err)
-			assert.False(t, retry.IsRetryable(err))
-		})
-	}
+	f := newCosignPublicKeySignatureFetcher()
+
+	cimg, err := imgUtils.GenerateImageFromString("nginx")
+	require.NoError(t, err, "creating test image")
+
+	// Fail with a non-retryable error when an image is given with a wrong reference.
+	cimg.Name.FullName = "fa@wrongreference"
+	img := types.ToImage(cimg)
+	res, err := f.FetchSignatures(context.Background(), img, nil)
+	assert.Nil(t, res)
+	require.Error(t, err)
+	assert.False(t, retry.IsRetryable(err))
 }
 
 func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
@@ -218,32 +197,177 @@ func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
 	require.NoError(t, err, "creating test image")
 	img := types.ToImage(cimg)
 
-	f := &cosignPublicKeySignatureFetcher{}
+	f := newCosignPublicKeySignatureFetcher()
 	reg := &mockRegistry{cfg: &registryTypes.Config{}}
 
-	// Create a mock logger to check that no error is written to the log.
-	var output bytes.Buffer
-	bWriter := bufio.NewWriter(&output)
-	cfg := zap.NewProductionConfig()
-	err = zap.RegisterSink("customwriter", func(url *url.URL) (zap.Sink, error) {
-		return mockLogSink{bWriter}, nil
-	})
 	require.NoError(t, err)
-	customPath := fmt.Sprintf("%s:whatever", "customwriter")
-	cfg.OutputPaths = []string{customPath}
-	l, err := cfg.Build()
-	require.NoError(t, err)
-	logger := &logging.Logger{
-		SugaredLogger: l.Sugar(),
-	}
-
-	stdLogger := log
-	log = logger
-	defer func() { log = stdLogger }()
-
 	result, err := f.FetchSignatures(context.Background(), img, reg)
 	assert.NoError(t, err)
 	assert.Nil(t, result)
-	require.NoError(t, bWriter.Flush(), "writing log output")
-	assert.Empty(t, output.String())
+}
+
+func TestIsMissingSignatureError(t *testing.T) {
+	notFoundErr := dockerRegistry.HttpStatusError{
+		Response: &http.Response{
+			StatusCode: http.StatusNotFound,
+		},
+	}
+	unauthorizedErr := dockerRegistry.HttpStatusError{
+		Response: &http.Response{
+			StatusCode: http.StatusUnauthorized,
+		},
+	}
+
+	emptyResponseErr := dockerRegistry.HttpStatusError{}
+
+	cases := map[string]struct {
+		err              error
+		missingSignature bool
+	}{
+		"cosign error for missing signatures should indicate missing signature": {
+			err:              errors.New("no signatures associated with test image"),
+			missingSignature: true,
+		},
+		"registry error with status code not found should indicate missing signature": {
+			err: errors.Wrap(&url.Error{
+				Err: &notFoundErr,
+			}, "something went wrong"),
+			missingSignature: true,
+		},
+		"registry error without response should not indicate missing signature": {
+			err: errors.Wrap(&url.Error{
+				Err: &emptyResponseErr,
+			}, "something went wrong"),
+		},
+		"registry error with status code unauthorized should not indicate missing signature": {
+			err: errors.Wrap(&url.Error{
+				Err: &unauthorizedErr,
+			}, "something went wrong"),
+		},
+		"wrapped registry error with status code not found should indicate missing signature": {
+			err:              fmt.Errorf("something went wrong %w", &url.Error{Err: &notFoundErr}),
+			missingSignature: true,
+		},
+		"wraooed registry error with status code unauthorized should not indicate missing signature": {
+			err: fmt.Errorf("something went wrong %w", &url.Error{Err: &unauthorizedErr}),
+		},
+		"transport error with status code unauthorized should not indicate missing signature": {
+			err: &transport.Error{
+				StatusCode: http.StatusUnauthorized,
+			},
+		},
+		"transport error with status code not found should indicate missing signature": {
+			err: &transport.Error{
+				StatusCode: http.StatusNotFound,
+			},
+			missingSignature: true,
+		},
+		"neither registry nor cosign error": {
+			err: errors.New("something error"),
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.missingSignature, isMissingSignatureError(c.err))
+		})
+	}
+}
+
+func TestIsUnauthorizedError(t *testing.T) {
+	notFoundErr := dockerRegistry.HttpStatusError{
+		Response: &http.Response{
+			StatusCode: http.StatusNotFound,
+		},
+	}
+	unauthorizedErr := dockerRegistry.HttpStatusError{
+		Response: &http.Response{
+			StatusCode: http.StatusUnauthorized,
+		},
+	}
+	forbiddenErr := dockerRegistry.HttpStatusError{
+		Response: &http.Response{
+			StatusCode: http.StatusForbidden,
+		},
+	}
+
+	emptyResponseErr := dockerRegistry.HttpStatusError{}
+
+	cases := map[string]struct {
+		err               error
+		unauthorizedError bool
+	}{
+		"registry error with status code not found should not indicate unauthorized error": {
+			err: errors.Wrap(&url.Error{
+				Err: &notFoundErr,
+			}, "something went wrong"),
+		},
+		"registry error without response should not indicate unauthorized error": {
+			err: errors.Wrap(&url.Error{
+				Err: &emptyResponseErr,
+			}, "something went wrong"),
+		},
+		"registry error with status code unauthorized should indicate unauthorized error": {
+			err: errors.Wrap(&url.Error{
+				Err: &unauthorizedErr,
+			}, "something went wrong"),
+			unauthorizedError: true,
+		},
+		"registry error with status code forbidden should indicate unauthorized error": {
+			err: errors.Wrap(&url.Error{
+				Err: &forbiddenErr,
+			}, "something went wrong"),
+			unauthorizedError: true,
+		},
+		"transport error with status code unauthorized should indicate unauthorized error": {
+			err: &transport.Error{
+				StatusCode: http.StatusUnauthorized,
+			},
+			unauthorizedError: true,
+		},
+		"transport error with status code not found should not indicate unauthorized error": {
+			err: &transport.Error{
+				StatusCode: http.StatusNotFound,
+			},
+		},
+		"transport error with status code forbidden should indicate unauthorized error": {
+			err: &transport.Error{
+				StatusCode: http.StatusForbidden,
+			},
+			unauthorizedError: true,
+		},
+		"neither transport nor registry error": {
+			err: errors.New("some random error"),
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.unauthorizedError, isUnauthorizedError(c.err))
+		})
+	}
+}
+
+func TestOptionsFromRegistry(t *testing.T) {
+	cases := map[string]struct {
+		registry             registryTypes.Registry
+		expectedNumOfOptions int
+	}{
+		"empty config settings should not lead to options": {
+			registry: &mockRegistry{cfg: &registryTypes.Config{}},
+		},
+		"only username set should not create options": {
+			registry: &mockRegistry{cfg: &registryTypes.Config{Username: "test"}},
+		},
+		"username + password set should create options": {
+			registry:             &mockRegistry{cfg: &registryTypes.Config{Username: "test", Password: "test"}},
+			expectedNumOfOptions: 1,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Len(t, optionsFromRegistry(c.registry), c.expectedNumOfOptions)
+		})
+	}
 }

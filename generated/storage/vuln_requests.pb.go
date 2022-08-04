@@ -698,6 +698,8 @@ func (m *VulnerabilityRequest) Clone() *VulnerabilityRequest {
 }
 
 type VulnerabilityRequest_CVEs struct {
+	// These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+	// For example, CVE-2021-44832.
 	Ids                  []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty" search:"CVE"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

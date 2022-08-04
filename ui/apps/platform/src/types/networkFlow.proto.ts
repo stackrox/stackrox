@@ -25,7 +25,7 @@ export type NetworkEndpointProperties = {
 
 export type NetworkEntity = {
     info: NetworkEntityInfo;
-    scope: NetworkEntityScope;
+    scope: NetworkEntityScope | null;
 };
 
 /*

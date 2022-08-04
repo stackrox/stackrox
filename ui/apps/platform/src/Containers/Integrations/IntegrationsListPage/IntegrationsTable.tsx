@@ -15,13 +15,14 @@ import pluralize from 'pluralize';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
 import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
-import DownloadCAConfigBundle from '../ClusterInitBundles/DownloadCAConfigBundle';
+import DownloadCAConfigBundle from './DownloadCAConfigBundle';
 
 function getNewButtonText(type) {
     if (type === 'apitoken') {
@@ -37,17 +38,18 @@ type IntegrationsTableProps = {
     integrations: Integration[];
     hasMultipleDelete: boolean;
     onDeleteIntegrations: (integration) => void;
+    onTriggerBackup: (integrationId) => void;
 };
 
 function IntegrationsTable({
     integrations,
     hasMultipleDelete,
     onDeleteIntegrations,
+    onTriggerBackup,
 }: IntegrationsTableProps): React.ReactElement {
     const permissions = useIntegrationPermissions();
     const { source, type } = useParams();
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
-    const columns = [...tableColumnDescriptor[source][type]];
     const {
         selected,
         allRowsSelected,
@@ -57,6 +59,14 @@ function IntegrationsTable({
         onSelectAll,
         getSelectedIds,
     } = useTableSelection<Integration>(integrations);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    const columns = tableColumnDescriptor[source][type].filter((integration) => {
+        if (typeof integration.featureFlagDependency === 'string') {
+            return isFeatureFlagEnabled(integration.featureFlagDependency);
+        }
+        return true;
+    });
 
     const isAPIToken = getIsAPIToken(source, type);
     const isClusterInitBundle = getIsClusterInitBundle(source, type);
@@ -139,7 +149,14 @@ function IntegrationsTable({
                         <Tbody>
                             {integrations.map((integration, rowIndex) => {
                                 const { id } = integration;
+                                const canTriggerBackup =
+                                    integration.type === 's3' || integration.type === 'gcs';
                                 const actionItems = [
+                                    {
+                                        title: 'Trigger backup',
+                                        onClick: () => onTriggerBackup(integration.id),
+                                        isHidden: !canTriggerBackup,
+                                    },
                                     {
                                         title: (
                                             <Link to={getPathToEdit(source, type, id)}>

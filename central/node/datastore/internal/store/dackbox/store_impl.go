@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
@@ -12,8 +13,8 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	"github.com/stackrox/rox/central/node/datastore/internal/store"
+	"github.com/stackrox/rox/central/node/datastore/internal/store/common"
 	nodeComponentEdgeDackBox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
-	nodeCVEEdgeDackBox "github.com/stackrox/rox/central/nodecveedge/dackbox"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -44,7 +45,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, noUpdateTimestam
 }
 
 // Exists returns if a node exists in the DB with the given id.
-func (b *storeImpl) Exists(id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -59,37 +60,8 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 	return exists, nil
 }
 
-// GetNodes returns all nodes regardless of request
-func (b *storeImpl) GetNodes() ([]*storage.Node, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, typ)
-
-	branch, err := b.dacky.NewReadOnlyTransaction()
-	if err != nil {
-		return nil, err
-	}
-	defer branch.Discard()
-
-	keys, err := nodeDackBox.Reader.ReadKeysIn(nodeDackBox.Bucket, branch)
-	if err != nil {
-		return nil, err
-	}
-
-	nodes := make([]*storage.Node, 0, len(keys))
-	for _, key := range keys {
-		node, err := b.readNode(branch, nodeDackBox.BucketHandler.GetID(key))
-		if err != nil {
-			return nil, err
-		}
-		if node != nil {
-			nodes = append(nodes, node)
-		}
-	}
-
-	return nodes, nil
-}
-
 // CountNodes returns the number of nodes currently stored in the DB.
-func (b *storeImpl) CountNodes() (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, typ)
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -107,7 +79,7 @@ func (b *storeImpl) CountNodes() (int, error) {
 }
 
 // GetNode returns the node with given id.
-func (b *storeImpl) GetNode(id string) (*storage.Node, bool, error) {
+func (b *storeImpl) Get(_ context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, typ)
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -124,7 +96,7 @@ func (b *storeImpl) GetNode(id string) (*storage.Node, bool, error) {
 }
 
 // GetNodeMetadata returns the node with the given id without component/CVE data.
-func (b *storeImpl) GetNodeMetadata(id string) (*storage.Node, bool, error) {
+func (b *storeImpl) GetNodeMetadata(_ context.Context, id string) (*storage.Node, bool, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, metadataType)
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -141,7 +113,7 @@ func (b *storeImpl) GetNodeMetadata(id string) (*storage.Node, bool, error) {
 }
 
 // GetNodesBatch returns nodes with given ids.
-func (b *storeImpl) GetNodesBatch(ids []string) ([]*storage.Node, []int, error) {
+func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Node, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, typ)
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -167,7 +139,7 @@ func (b *storeImpl) GetNodesBatch(ids []string) ([]*storage.Node, []int, error) 
 }
 
 // Upsert writes a node to the DB, overwriting previous data.
-func (b *storeImpl) Upsert(node *storage.Node) error {
+func (b *storeImpl) Upsert(_ context.Context, node *storage.Node) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, typ)
 
 	iTime := protoTypes.TimestampNow()
@@ -184,7 +156,7 @@ func (b *storeImpl) Upsert(node *storage.Node) error {
 	}
 
 	// If the node scan is not updated, skip updating that part in DB, i.e. rewriting components and cves.
-	parts := Split(node, scanUpdated)
+	parts := common.Split(node, scanUpdated)
 
 	clusterKey := clusterDackBox.BucketHandler.GetKey(node.GetClusterId())
 	keysToUpdate := append(gatherKeysForNodeParts(parts), clusterKey)
@@ -262,7 +234,7 @@ func (b *storeImpl) toUpsert(node *storage.Node) (*storage.Node, bool, bool, err
 }
 
 // Delete deletes a node and all its data.
-func (b *storeImpl) Delete(id string) error {
+func (b *storeImpl) Delete(_ context.Context, id string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, typ)
 
 	keyTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -292,19 +264,19 @@ func (b *storeImpl) IncTxnCount() error {
 // Writing a node to the DB and graph.
 //////////////////////////////////////
 
-func gatherKeysForNodeParts(parts *NodeParts) [][]byte {
+func gatherKeysForNodeParts(parts *common.NodeParts) [][]byte {
 	var allKeys [][]byte
-	allKeys = append(allKeys, nodeDackBox.BucketHandler.GetKey(parts.node.GetId()))
-	for _, componentParts := range parts.children {
-		allKeys = append(allKeys, componentDackBox.BucketHandler.GetKey(componentParts.component.GetId()))
-		for _, cveParts := range componentParts.children {
-			allKeys = append(allKeys, cveDackBox.BucketHandler.GetKey(cveParts.cve.GetId()))
+	allKeys = append(allKeys, nodeDackBox.BucketHandler.GetKey(parts.Node.GetId()))
+	for _, componentParts := range parts.Children {
+		allKeys = append(allKeys, componentDackBox.BucketHandler.GetKey(componentParts.Component.GetId()))
+		for _, cveParts := range componentParts.Children {
+			allKeys = append(allKeys, cveDackBox.BucketHandler.GetKey(cveParts.CVE.GetId()))
 		}
 	}
 	return allKeys
 }
 
-func (b *storeImpl) writeNodeParts(parts *NodeParts, clusterKey []byte, iTime *protoTypes.Timestamp, scanUpdated bool) error {
+func (b *storeImpl) writeNodeParts(parts *common.NodeParts, clusterKey []byte, iTime *protoTypes.Timestamp, scanUpdated bool) error {
 	dackTxn, err := b.dacky.NewTransaction()
 	if err != nil {
 		return err
@@ -313,27 +285,23 @@ func (b *storeImpl) writeNodeParts(parts *NodeParts, clusterKey []byte, iTime *p
 
 	var componentKeys [][]byte
 	// Update the node components and cves iff the node upsert has updated scan.
-	// Note: In such cases, the loops in following block will not be entered anyways since len(parts.children) and len(parts.nodeCVEEdges) is 0.
+	// Note: In such cases, the loops in following block will not be entered anyway since len(parts.Children) is 0.
 	// This is more for good readability amidst the complex code.
 	if scanUpdated {
-		for _, componentData := range parts.children {
+		for _, componentData := range parts.Children {
 			componentKey, err := b.writeComponentParts(dackTxn, componentData, iTime)
 			if err != nil {
 				return err
 			}
 			componentKeys = append(componentKeys, componentKey)
 		}
-
-		if err := b.writeNodeCVEEdges(dackTxn, parts.nodeCVEEdges, iTime); err != nil {
-			return err
-		}
 	}
 
-	if err := nodeDackBox.Upserter.UpsertIn(nil, parts.node, dackTxn); err != nil {
+	if err := nodeDackBox.Upserter.UpsertIn(nil, parts.Node, dackTxn); err != nil {
 		return err
 	}
 
-	nodeKey := nodeDackBox.KeyFunc(parts.node)
+	nodeKey := nodeDackBox.KeyFunc(parts.Node)
 
 	dackTxn.Graph().AddRefs(clusterKey, nodeKey)
 
@@ -345,29 +313,9 @@ func (b *storeImpl) writeNodeParts(parts *NodeParts, clusterKey []byte, iTime *p
 	return dackTxn.Commit()
 }
 
-func (b *storeImpl) writeNodeCVEEdges(txn *dackbox.Transaction, edges map[string]*storage.NodeCVEEdge, iTime *protoTypes.Timestamp) error {
-	for _, edge := range edges {
-		// If node-cve edge exists, it means we have already determined and stored its first node occurrence.
-		// If not, this is the first node occurrence.
-		if exists, err := nodeCVEEdgeDackBox.Reader.ExistsIn(nodeCVEEdgeDackBox.BucketHandler.GetKey(edge.GetId()), txn); err != nil {
-			return err
-		} else if exists {
-			continue
-		}
-
-		edge.FirstNodeOccurrence = iTime
-
-		if err := nodeCVEEdgeDackBox.Upserter.UpsertIn(nil, edge, txn); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *ComponentParts, iTime *protoTypes.Timestamp) ([]byte, error) {
+func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *common.ComponentParts, iTime *protoTypes.Timestamp) ([]byte, error) {
 	var cveKeys [][]byte
-	for _, cveData := range parts.children {
+	for _, cveData := range parts.Children {
 		cveKey, err := b.writeCVEParts(txn, cveData, iTime)
 		if err != nil {
 			return nil, err
@@ -375,11 +323,11 @@ func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *Compone
 		cveKeys = append(cveKeys, cveKey)
 	}
 
-	componentKey := componentDackBox.KeyFunc(parts.component)
-	if err := nodeComponentEdgeDackBox.Upserter.UpsertIn(nil, parts.edge, txn); err != nil {
+	componentKey := componentDackBox.KeyFunc(parts.Component)
+	if err := nodeComponentEdgeDackBox.Upserter.UpsertIn(nil, parts.Edge, txn); err != nil {
 		return nil, err
 	}
-	if err := componentDackBox.Upserter.UpsertIn(nil, parts.component, txn); err != nil {
+	if err := componentDackBox.Upserter.UpsertIn(nil, parts.Component, txn); err != nil {
 		return nil, err
 	}
 
@@ -387,43 +335,43 @@ func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *Compone
 	return componentKey, nil
 }
 
-func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *CVEParts, iTime *protoTypes.Timestamp) ([]byte, error) {
-	if err := componentCVEEdgeDackBox.Upserter.UpsertIn(nil, parts.edge, txn); err != nil {
+func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *common.CVEParts, iTime *protoTypes.Timestamp) ([]byte, error) {
+	if err := componentCVEEdgeDackBox.Upserter.UpsertIn(nil, parts.Edge, txn); err != nil {
 		return nil, err
 	}
 
-	currCVEMsg, err := cveDackBox.Reader.ReadIn(cveDackBox.BucketHandler.GetKey(parts.cve.GetId()), txn)
+	currCVEMsg, err := cveDackBox.Reader.ReadIn(cveDackBox.BucketHandler.GetKey(parts.CVE.GetId()), txn)
 	if err != nil {
 		return nil, err
 	}
 	if currCVEMsg != nil {
 		currCVE := currCVEMsg.(*storage.CVE)
-		parts.cve.Suppressed = currCVE.GetSuppressed()
-		parts.cve.CreatedAt = currCVE.GetCreatedAt()
-		parts.cve.SuppressActivation = currCVE.GetSuppressActivation()
-		parts.cve.SuppressExpiry = currCVE.GetSuppressExpiry()
+		parts.CVE.Suppressed = currCVE.GetSuppressed()
+		parts.CVE.CreatedAt = currCVE.GetCreatedAt()
+		parts.CVE.SuppressActivation = currCVE.GetSuppressActivation()
+		parts.CVE.SuppressExpiry = currCVE.GetSuppressExpiry()
 
-		parts.cve.Types = cveUtil.AddCVETypeIfAbsent(currCVE.GetTypes(), storage.CVE_NODE_CVE)
+		parts.CVE.Types = cveUtil.AddCVETypeIfAbsent(currCVE.GetTypes(), storage.CVE_NODE_CVE)
 
-		if parts.cve.DistroSpecifics == nil {
-			parts.cve.DistroSpecifics = make(map[string]*storage.CVE_DistroSpecific)
+		if parts.CVE.DistroSpecifics == nil {
+			parts.CVE.DistroSpecifics = make(map[string]*storage.CVE_DistroSpecific)
 		}
 		for k, v := range currCVE.GetDistroSpecifics() {
-			parts.cve.DistroSpecifics[k] = v
+			parts.CVE.DistroSpecifics[k] = v
 		}
 	} else {
-		parts.cve.CreatedAt = iTime
+		parts.CVE.CreatedAt = iTime
 
 		// Populate the types slice for the new CVE.
-		parts.cve.Types = []storage.CVE_CVEType{storage.CVE_NODE_CVE}
+		parts.CVE.Types = []storage.CVE_CVEType{storage.CVE_NODE_CVE}
 	}
 
-	parts.cve.Type = storage.CVE_UNKNOWN_CVE
+	parts.CVE.Type = storage.CVE_UNKNOWN_CVE
 
-	if err := cveDackBox.Upserter.UpsertIn(nil, parts.cve, txn); err != nil {
+	if err := cveDackBox.Upserter.UpsertIn(nil, parts.CVE, txn); err != nil {
 		return nil, err
 	}
-	return cveDackBox.KeyFunc(parts.cve), nil
+	return cveDackBox.KeyFunc(parts.CVE), nil
 }
 
 // Deleting a node and it's keys from the graph.
@@ -461,12 +409,6 @@ func (b *storeImpl) deleteNodeKeys(keys *nodeKeySet) error {
 		}
 	}
 
-	for _, nodeCVEEdgeKey := range keys.nodeCVEEdgeKeys {
-		if err := nodeCVEEdgeDackBox.Deleter.DeleteIn(nodeCVEEdgeKey, deleteTxn); err != nil {
-			return err
-		}
-	}
-
 	// Delete the references from cluster to node.
 	deleteTxn.Graph().DeleteRefsTo(keys.nodeKey)
 
@@ -501,15 +443,14 @@ func (b *storeImpl) readNode(txn *dackbox.Transaction, id string) (*storage.Node
 		return nil, err
 	}
 
-	return Merge(parts), nil
+	return common.Merge(parts), nil
 }
 
 type nodeKeySet struct {
-	nodeKey         []byte
-	clusterKey      []byte
-	componentKeys   []*componentKeySet
-	nodeCVEEdgeKeys [][]byte
-	allKeys         [][]byte
+	nodeKey       []byte
+	clusterKey    []byte
+	componentKeys []*componentKeySet
+	allKeys       [][]byte
 }
 
 type componentKeySet struct {
@@ -524,9 +465,9 @@ type cveKeySet struct {
 	cveKey              []byte
 }
 
-func (b *storeImpl) readNodeParts(txn *dackbox.Transaction, keys *nodeKeySet) (*NodeParts, error) {
+func (b *storeImpl) readNodeParts(txn *dackbox.Transaction, keys *nodeKeySet) (*common.NodeParts, error) {
 	// Read the objects for the keys.
-	parts := &NodeParts{nodeCVEEdges: make(map[string]*storage.NodeCVEEdge)}
+	parts := &common.NodeParts{}
 	msg, err := nodeDackBox.Reader.ReadIn(keys.nodeKey, txn)
 	if err != nil {
 		return nil, err
@@ -534,9 +475,9 @@ func (b *storeImpl) readNodeParts(txn *dackbox.Transaction, keys *nodeKeySet) (*
 	if msg == nil {
 		return nil, nil
 	}
-	parts.node = msg.(*storage.Node)
+	parts.Node = msg.(*storage.Node)
 	for _, component := range keys.componentKeys {
-		componentPart := &ComponentParts{}
+		componentPart := &common.ComponentParts{}
 		compEdgeMsg, err := nodeComponentEdgeDackBox.Reader.ReadIn(component.nodeComponentEdgeKey, txn)
 		if err != nil {
 			return nil, err
@@ -551,8 +492,8 @@ func (b *storeImpl) readNodeParts(txn *dackbox.Transaction, keys *nodeKeySet) (*
 		if compMsg == nil {
 			continue
 		}
-		componentPart.edge = compEdgeMsg.(*storage.NodeComponentEdge)
-		componentPart.component = compMsg.(*storage.ImageComponent)
+		componentPart.Edge = compEdgeMsg.(*storage.NodeComponentEdge)
+		componentPart.Component = compMsg.(*storage.ImageComponent)
 		for _, cve := range component.cveKeys {
 			cveEdgeMsg, err := componentCVEEdgeDackBox.Reader.ReadIn(cve.componentCVEEdgeKey, txn)
 			if err != nil {
@@ -569,31 +510,12 @@ func (b *storeImpl) readNodeParts(txn *dackbox.Transaction, keys *nodeKeySet) (*
 				continue
 			}
 			cve := cveMsg.(*storage.CVE)
-			componentPart.children = append(componentPart.children, &CVEParts{
-				edge: cveEdgeMsg.(*storage.ComponentCVEEdge),
-				cve:  cve,
+			componentPart.Children = append(componentPart.Children, &common.CVEParts{
+				Edge: cveEdgeMsg.(*storage.ComponentCVEEdge),
+				CVE:  cve,
 			})
 		}
-		parts.children = append(parts.children, componentPart)
-	}
-
-	// Gather all the edges from node to cves and store it as a map from CVE IDs to *storage.NodeCVEEdge object.
-	for _, nodeCVEEdgeKey := range keys.nodeCVEEdgeKeys {
-		nodeCVEEdgeMsg, err := nodeCVEEdgeDackBox.Reader.ReadIn(nodeCVEEdgeKey, txn)
-		if err != nil {
-			return nil, err
-		}
-
-		if nodeCVEEdgeMsg == nil {
-			continue
-		}
-
-		nodeCVEEdge := nodeCVEEdgeMsg.(*storage.NodeCVEEdge)
-		edgeID, err := edges.FromString(nodeCVEEdge.GetId())
-		if err != nil {
-			return nil, err
-		}
-		parts.nodeCVEEdges[edgeID.ChildID] = nodeCVEEdge
+		parts.Children = append(parts.Children, componentPart)
 	}
 	return parts, nil
 }
@@ -637,17 +559,6 @@ func gatherKeysForNode(txn *dackbox.Transaction, nodeID string) (*nodeKeySet, er
 		allKeys = append(allKeys, component.componentKey)
 		allKeys = append(allKeys, component.nodeComponentEdgeKey)
 	}
-
-	for cveID := range allCVEsSet {
-		nodeCVEEdgeID := edges.EdgeID{
-			ParentID: nodeID,
-			ChildID:  cveID,
-		}.ToString()
-		nodeCVEEdgeKey := nodeCVEEdgeDackBox.BucketHandler.GetKey(nodeCVEEdgeID)
-		ret.nodeCVEEdgeKeys = append(ret.nodeCVEEdgeKeys, nodeCVEEdgeKey)
-		allKeys = append(allKeys, nodeCVEEdgeKey)
-	}
-
 	clusterKeys := clusterDackBox.BucketHandler.GetFilteredRefsFrom(txn.Graph(), ret.nodeKey)
 	allKeys = append(allKeys, clusterKeys...)
 

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -57,21 +58,23 @@ func (s *globalDataStore) GetAllClusterNodeStores(ctx context.Context, writeAcce
 		clusterIDs.Add(node.GetClusterId())
 	}
 
-	if ok, err := nodesSAC.AccessAllowed(ctx, accessMode); err != nil {
-		return nil, err
-	} else if !ok {
-		scopeChecker := nodesSAC.ScopeChecker(ctx, accessMode)
-		// Pass 1: Mark requests for all clusters as pending
-		for clusterID := range clusterIDs {
-			scopeChecker.TryAllowed(sac.ClusterScopeKey(clusterID))
-		}
-		if err := scopeChecker.PerformChecks(ctx); err != nil {
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err := nodesSAC.AccessAllowed(ctx, accessMode); err != nil {
 			return nil, err
-		}
-		// Pass 2: Filter out clusters for which we have no access.
-		for clusterID := range clusterIDs {
-			if scopeChecker.TryAllowed(sac.ClusterScopeKey(clusterID)) != sac.Allow {
-				clusterIDs.Remove(clusterID)
+		} else if !ok {
+			scopeChecker := nodesSAC.ScopeChecker(ctx, accessMode)
+			// Pass 1: Mark requests for all clusters as pending
+			for clusterID := range clusterIDs {
+				scopeChecker.TryAllowed(sac.ClusterScopeKey(clusterID))
+			}
+			if err := scopeChecker.PerformChecks(ctx); err != nil {
+				return nil, err
+			}
+			// Pass 2: Filter out clusters for which we have no access.
+			for clusterID := range clusterIDs {
+				if scopeChecker.TryAllowed(sac.ClusterScopeKey(clusterID)) != sac.Allow {
+					clusterIDs.Remove(clusterID)
+				}
 			}
 		}
 	}
@@ -80,21 +83,23 @@ func (s *globalDataStore) GetAllClusterNodeStores(ctx context.Context, writeAcce
 	for clusterID := range clusterIDs {
 		dataStores[clusterID] = newDatastoreShim(clusterID, s.datastore)
 	}
-
 	return dataStores, nil
 }
 
 func (s *globalDataStore) GetClusterNodeStore(ctx context.Context, clusterID string, writeAccess bool) (datastore.DataStore, error) {
-	accessMode := storage.Access_READ_ACCESS
-	if writeAccess {
-		accessMode = storage.Access_READ_WRITE_ACCESS
+	if !features.PostgresDatastore.Enabled() {
+		accessMode := storage.Access_READ_ACCESS
+		if writeAccess {
+			accessMode = storage.Access_READ_WRITE_ACCESS
+		}
+
+		if ok, err := nodesSAC.AccessAllowed(ctx, accessMode, sac.ClusterScopeKey(clusterID)); err != nil {
+			return nil, err
+		} else if !ok {
+			return nil, sac.ErrResourceAccessDenied
+		}
 	}
 
-	if ok, err := nodesSAC.AccessAllowed(ctx, accessMode, sac.ClusterScopeKey(clusterID)); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
-	}
 	return newDatastoreShim(clusterID, s.datastore), nil
 }
 
@@ -104,10 +109,12 @@ func (s *globalDataStore) RemoveClusterNodeStores(ctx context.Context, clusterID
 		return nil
 	}
 
-	if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
+	if !features.PostgresDatastore.Enabled() {
+		if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDs...).ProtoQuery()

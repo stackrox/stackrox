@@ -76,14 +76,14 @@ class K8sRbacTest extends BaseSpecification {
             }
 
             if (!k8sMatch) {
-                println "SR serviceaccount ${sa.name} has no k8s match"
-                println "SR serviceaccount: " + sa
+                log.info "SR serviceaccount ${sa.name} has no k8s match"
+                log.info "SR serviceaccount: " + sa
                 K8sServiceAccount nameOnlyMatch = orchestratorSAs.find {
                     it.name == sa.name &&
                             it.namespace == sa.namespace
                 }
                 if (nameOnlyMatch) {
-                    println "K8S serviceaccount: " + nameOnlyMatch.dump()
+                    log.info "K8S serviceaccount: " + nameOnlyMatch.dump()
                 }
             }
 
@@ -110,7 +110,7 @@ class K8sRbacTest extends BaseSpecification {
                 .setName(DEPLOYMENT_NAME)
                 .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
                 .setServiceAccountName(SERVICE_ACCOUNT_NAME)
-                .setImage("nginx:1.15.4-alpine")
+                .setImage("quay.io/rhacs-eng/qa:nginx-1-15-4-alpine")
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(deployment)
         assert Services.waitForDeployment(deployment)
@@ -162,7 +162,7 @@ class K8sRbacTest extends BaseSpecification {
 
             assert stackroxRoles.size() == orchestratorRoles.size()
             for (Rbac.K8sRole stackroxRole : stackroxRoles) {
-                println "Looking for SR Role: ${stackroxRole.name} (${stackroxRole.namespace})"
+                log.info "Looking for SR Role: ${stackroxRole.name} (${stackroxRole.namespace})"
                 K8sRole role = orchestratorRoles.find {
                     it.name == stackroxRole.name &&
                             it.clusterRole == stackroxRole.clusterRole &&

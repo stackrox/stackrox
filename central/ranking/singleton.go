@@ -64,8 +64,16 @@ func ImageRanker() *Ranker {
 	return imageRanker
 }
 
-// ComponentRanker returns the instance of ranker that ranks image and node components.
+// ComponentRanker returns the instance of ranker that ranks image components.
 func ComponentRanker() *Ranker {
+	componentOnce.Do(func() {
+		componentRanker = NewRanker()
+	})
+	return componentRanker
+}
+
+// NodeComponentRanker returns the instance of ranker that ranks node components.
+func NodeComponentRanker() *Ranker {
 	componentOnce.Do(func() {
 		componentRanker = NewRanker()
 	})

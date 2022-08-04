@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +20,7 @@ var (
 )
 
 func TestStore(t *testing.T) {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(t)
 	config, err := pgxpool.ParseConfig(source)
@@ -29,7 +30,10 @@ func TestStore(t *testing.T) {
 	t.Cleanup(pool.Close)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	gormDB := pgtest.OpenGormDB(t, source)
+	defer pgtest.CloseGormDB(t, gormDB)
+	store := CreateTableAndNewStore(ctx, pool, gormDB)
 
 	testStruct := singleKey.Clone()
 	dep, exists, err := store.Get(ctx, testStruct.GetKey())

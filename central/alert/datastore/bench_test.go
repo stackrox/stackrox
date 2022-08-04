@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	commentsStore "github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
@@ -23,17 +22,17 @@ func BenchmarkDBs(b *testing.B) {
 		defer rocksdbtest.TearDownRocksDB(db)
 
 		require.NoError(b, err)
-		benchmarkLoad(b, store.NewFullStore(rocksDBStore.New(db)), nil)
+		benchmarkLoad(b, rocksDBStore.New(db))
 	})
 }
 
-func benchmarkLoad(b *testing.B, s store.Store, c commentsStore.Store) {
+func benchmarkLoad(b *testing.B, s store.Store) {
 	ctx := context.TODO()
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	require.NoError(b, err)
 	idx := index.New(tmpIndex)
 
-	datastore, err := New(s, c, idx, search.New(s, idx))
+	datastore, err := New(s, idx, search.New(s, idx))
 	require.NoError(b, err)
 	datastoreImpl := datastore.(*datastoreImpl)
 

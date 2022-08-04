@@ -1,0 +1,3324 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "",
+  "editable": true,
+  "gnetId": 14765,
+  "graphTooltip": 0,
+  "iteration": 1657209308530,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 82,
+      "panels": [],
+      "title": "Summary",
+      "type": "row"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": "${datasource}",
+      "description": "Number of connected Sensors. This equals the number of secured clusters.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": ":("
+                },
+                "1": {
+                  "text": ":)"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 15,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.5.15",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "count(count by (ClusterID) (rox_central_cluster_metrics_node_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"} > 0))",
+          "format": "time_series",
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Sensors",
+      "type": "stat"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": "${datasource}",
+      "description": "gRPC success rate",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 12,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.5.15",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "1 - ((sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Internal\"}[$__rate_interval])) + sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unknown\"}[$__rate_interval])) + sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unavailable\"}[$__rate_interval])) + sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unimplemented\"}[$__rate_interval]))) / sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval]))) OR on() vector(1)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Success",
+      "type": "stat"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": "${datasource}",
+      "description": "gRPC throughput",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 14,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.5.15",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Throughput",
+      "type": "stat"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": "${datasource}",
+      "description": "gRPC 95% latency percentile",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "index": 0,
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 75,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.5.15",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(0.95, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (le)\n)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "95%",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Latency P95",
+      "type": "stat"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 72,
+      "panels": [
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": -1,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "stepBefore",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "wait time"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "s"
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 7
+          },
+          "id": 70,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "hidden",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "avg(increase(process_cpu_seconds_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[1m]))",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "Value",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "CPU Usage",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 7
+          },
+          "id": 34,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "avg(go_memstats_alloc_bytes{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "bytes allocated",
+              "metric": "go_memstats_alloc_bytes",
+              "refId": "A",
+              "step": 4
+            },
+            {
+              "exemplar": true,
+              "expr": "avg(go_memstats_stack_inuse_bytes{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "stack inuse",
+              "metric": "go_memstats_stack_inuse_bytes",
+              "refId": "B",
+              "step": 4
+            },
+            {
+              "exemplar": true,
+              "expr": "avg(go_memstats_heap_inuse_bytes{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "heap inuse",
+              "metric": "go_memstats_heap_inuse_bytes",
+              "refId": "C",
+              "step": 4
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Memory Usage",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 15
+          },
+          "id": 32,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "hidden",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "avg(go_goroutines{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "Value",
+              "metric": "go_goroutines",
+              "refId": "A",
+              "step": 4
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Goroutines",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 15
+          },
+          "id": 30,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "avg(go_gc_duration_seconds{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}) by (quantile)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{quantile}}",
+              "metric": "go_gc_duration_seconds",
+              "refId": "A",
+              "step": 4
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "GC Duration",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Go Metrics",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 74,
+      "panels": [
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 8
+          },
+          "id": 76,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"OK\"}[$__rate_interval]))\n/ sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "OK",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "(sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"InvalidArgument\"}[$__rate_interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"NotFound\"}[$__rate_interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"AlreadyExists\"}[$__rate_interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unauthenticated\"}[$__rate_interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"PermissionDenied\"}[$__rate_interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"FailedPrecondition\"}[$__rate_interval]))\n)/ sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval]))",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "ClientError",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "(sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Internal\"}[$__rate_interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unknown\"}[$__rate_interval])) + \nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unavailable\"}[$__rate_interval])) +\nsum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\",grpc_code=\"Unimplemented\"}[$__rate_interval]))\n)/ sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval]))",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "ServerError",
+              "refId": "C"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Status",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 8
+          },
+          "id": 26,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (grpc_code)\n/ ignoring(grpc_code) group_left sum(rate(grpc_server_handled_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{grpc_code}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Status Distribution",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 16
+          },
+          "id": 2,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (grpc_service)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{grpc_service}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Throughput",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 16
+          },
+          "id": 78,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (grpc_service) \n/ ignoring(grpc_service) group_left sum(rate(grpc_server_started_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{grpc_service}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Request Distribution",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 24
+          },
+          "id": 77,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.95, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (grpc_service,le)\n)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{grpc_service}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Latency P95",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 24
+          },
+          "id": 16,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(1, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (le)\n)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "max",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.99, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "99%",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.95, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "95%",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.50, \n  sum(rate(grpc_server_handling_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",grpc_type=\"unary\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "50%",
+              "refId": "D"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Latency Percentiles",
+          "type": "timeseries"
+        }
+      ],
+      "title": "gRPC Metrics",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 99,
+      "panels": [
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 9
+          },
+          "id": 100,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",code=~\"2\\\\d\\\\d\"}[$__rate_interval])) / sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "2xx",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",code=~\"3\\\\d\\\\d\"}[$__rate_interval])) / sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "3xx",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",code=~\"4\\\\d\\\\d\"}[$__rate_interval])) / sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "4xx",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",code=~\"5\\\\d\\\\d\"}[$__rate_interval])) / sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "5xx",
+              "refId": "D"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Status",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 9
+          },
+          "id": 106,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (code)\n/ ignoring(code) group_left sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{code}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Status Distribution",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 17
+          },
+          "id": 105,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (method,path)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{method}} {{path}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Throughput",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 17
+          },
+          "id": 101,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (method,path) \n/ ignoring(method,path) group_left sum(rate(http_incoming_requests_total{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{method}} {{path}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Request Distribution",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 25
+          },
+          "id": 102,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.95, \n  sum(rate(http_incoming_request_duration_histogram_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (method,path,le)\n)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{method}} {{path}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Latency P95",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 25
+          },
+          "id": 103,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.0.6",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(1, \n  sum(rate(http_incoming_request_duration_histogram_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "max",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.99, \n  sum(rate(http_incoming_request_duration_histogram_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "99%",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.95, \n  sum(rate(http_incoming_request_duration_histogram_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "95%",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.5, \n  sum(rate(http_incoming_request_duration_histogram_seconds_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "50%",
+              "refId": "D"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Latency Percentiles",
+          "type": "timeseries"
+        }
+      ],
+      "title": "REST Metrics",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 94,
+      "panels": [
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 10
+          },
+          "id": 95,
+          "links": [],
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(1,  sum(rate(rox_central_graphql_query_duration_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "max",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.99,  sum(rate(rox_central_graphql_query_duration_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "99%",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.95,  sum(rate(rox_central_graphql_query_duration_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "95%",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.50,  sum(rate(rox_central_graphql_query_duration_bucket{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (le)\n)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "50%",
+              "refId": "D"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Query Duration Percentiles",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 10
+          },
+          "id": 96,
+          "links": [],
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (Operation) (rate(rox_central_graphql_op_duration_sum{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "Operation: {{Operation}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Operation Duration",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 18
+          },
+          "id": 97,
+          "links": [],
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(rox_central_graphql_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])) by (Operation) \n/ ignoring(Operation) group_left sum(rate(rox_central_graphql_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "Operation: {{Operation}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Operation Distribution",
+          "type": "timeseries"
+        }
+      ],
+      "title": "GraphQL Metrics",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 89,
+      "panels": [
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "stepBefore",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 11
+          },
+          "id": 91,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "hidden",
+              "placement": "bottom"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "count(count by (ClusterID) (rox_central_cluster_metrics_node_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"} > 0))",
+              "interval": "",
+              "legendFormat": "Value",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Secured Cluster - Sensors",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "stepBefore",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 11
+          },
+          "id": 104,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (ClusterID) (rox_central_cluster_metrics_node_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
+              "interval": "",
+              "legendFormat": "ClusterID: {{ClusterID}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Secured Cluster - Nodes",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "stepBefore",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 19
+          },
+          "id": 92,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.15",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (ClusterID) (rox_central_cluster_metrics_cpu_capacity{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"})",
+              "interval": "",
+              "legendFormat": "ClusterID: {{ClusterID}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Secured Cluster - CPU Capacity",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Billing Metrics",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "id": 84,
+      "panels": [
+        {
+          "datasource": "${datasource}",
+          "description": "Number of key/value pairs in each bucket.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "id": 6,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.4.5",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "rox_central_bolt_bucket_key_n{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}",
+              "interval": "",
+              "legendFormat": "{{Bucket}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Bolt Object Count",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "description": "RocksDB prefix size (equivalent to bolt bucket).",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "Prefix size",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "id": 8,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.4.5",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "rox_central_rocksdb_prefix_size{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}",
+              "interval": "",
+              "legendFormat": "{{Prefix}}",
+              "refId": "A"
+            }
+          ],
+          "title": "RocksDB Object Count",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "description": "Number of key/value pairs in each bucket.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 21
+          },
+          "id": 86,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.4.5",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "rox_central_bolt_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"}",
+              "interval": "",
+              "legendFormat": "Operation: {{Operation}}, Type: {{Type}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Bolt Operation Count",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "description": "Number of key/value pairs in each bucket.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 12,
+            "y": 21
+          },
+          "id": 87,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.4.5",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "rox_central_rocksdb_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"}",
+              "interval": "",
+              "legendFormat": "Operation: {{Operation}}, Type: {{Type}}",
+              "refId": "A"
+            }
+          ],
+          "title": "RocksDB Operation Count",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 30
+          },
+          "id": 10,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.4.5",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "exemplar": true,
+              "expr": "rox_central_bolt_op_duration_sum{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"} / rox_central_bolt_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"}",
+              "interval": "",
+              "legendFormat": "Operation: {{Operation}}, Type: {{Type}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Bolt Avg Operation Duration",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 12,
+            "y": 30
+          },
+          "id": 85,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.4.5",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "exemplar": true,
+              "expr": "rox_central_rocksdb_op_duration_sum{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"} / rox_central_rocksdb_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"}",
+              "interval": "",
+              "legendFormat": "Operation: {{Operation}}, Type: {{Type}}",
+              "refId": "A"
+            }
+          ],
+          "title": "RocksDB Avg Operation Duration",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 39
+          },
+          "id": 18,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.4.5",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "exemplar": true,
+              "expr": "rox_central_index_op_duration_sum{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"} / rox_central_index_op_duration_count{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\",Operation=~\"$Operation\",Type=~\"$Type\"}",
+              "interval": "",
+              "legendFormat": "Operation: {{Operation}}, Type: {{Type}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Indexer Operation Duration",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${datasource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "decbytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 12,
+            "y": 39
+          },
+          "id": 20,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.4.5",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "rox_central_bolt_db_size{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}",
+              "interval": "",
+              "legendFormat": "Bolt",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "rox_central_rocksdb_db_size{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}",
+              "interval": "",
+              "legendFormat": "RocksDB",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "rox_central_bleve_index_CurOnDiskBytes{namespace=\"$namespace\",job=~\"$job\",instance=~\"$instance\"}",
+              "interval": "",
+              "legendFormat": "Bleve, Index: {{Index}}",
+              "refId": "C"
+            }
+          ],
+          "title": "DB and Index Disk Consumption",
+          "type": "timeseries"
+        }
+      ],
+      "title": "DB Metrics",
+      "type": "row"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [
+    "rhacs",
+    "gRPC",
+    "go"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "Prometheus",
+          "value": "Prometheus"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "stackrox",
+          "value": "stackrox"
+        },
+        "datasource": "${datasource}",
+        "definition": "label_values(namespace)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Namespace",
+        "multi": false,
+        "name": "namespace",
+        "options": [],
+        "query": {
+          "query": "label_values(namespace)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "central"
+          ],
+          "value": [
+            "central"
+          ]
+        },
+        "datasource": "${datasource}",
+        "definition": "label_values(go_memstats_alloc_bytes,job)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "job",
+        "multi": true,
+        "name": "job",
+        "options": [],
+        "query": {
+          "query": "label_values(go_memstats_alloc_bytes,job)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "${datasource}",
+        "definition": "label_values(process_cpu_seconds_total{job=\"central\"}, instance)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "instance",
+        "multi": true,
+        "name": "instance",
+        "options": [],
+        "query": {
+          "query": "label_values(process_cpu_seconds_total{job=\"central\"}, instance)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "${datasource}",
+        "definition": "label_values(Operation)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": null,
+        "multi": true,
+        "name": "Operation",
+        "options": [],
+        "query": {
+          "query": "label_values(Operation)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "${datasource}",
+        "definition": "label_values(Type)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": null,
+        "multi": true,
+        "name": "Type",
+        "options": [],
+        "query": {
+          "query": "label_values(Type)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {
+    "hidden": false,
+    "refresh_intervals": [
+      "15s",
+      "30s",
+      "1m",
+      "5m",
+      "10m",
+      "15m"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "",
+  "title": "RHACS Dataplane - Central Metrics",
+  "uid": "gn38yKZnk",
+  "version": 1
+}

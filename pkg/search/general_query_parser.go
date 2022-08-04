@@ -43,7 +43,7 @@ func getFieldMap(query string) map[FieldLabel][]string {
 	fieldMap := make(map[FieldLabel][]string, len(pairs))
 	for _, pair := range pairs {
 		key, commaSeparatedValues, valid := parsePair(pair, false)
-		if !valid || !FieldLabelSet.Contains(strings.ToLower(key)) {
+		if !valid || !IsValidFieldLabel(key) {
 			continue
 		}
 		values := strings.Split(commaSeparatedValues, ",")
@@ -56,7 +56,7 @@ func getFieldMap(query string) map[FieldLabel][]string {
 func ParseFieldMap(query string) (map[FieldLabel][]string, error) {
 	fieldMap := getFieldMap(query)
 	if len(fieldMap) == 0 {
-		return nil, errox.NewErrInvalidArgs("after parsing, query is empty")
+		return nil, errox.InvalidArgs.CausedBy("after parsing, query is empty")
 	}
 	return fieldMap, nil
 }
@@ -69,7 +69,7 @@ func SortFieldLabels(fieldLabels []FieldLabel) []FieldLabel {
 	return fieldLabels
 }
 
-// Parse parses the input query.
+// parse parses the input query.
 func (pi generalQueryParser) parse(input string) (*v1.Query, error) {
 	// Handle empty input query case.
 	fieldMap := getFieldMap(input)

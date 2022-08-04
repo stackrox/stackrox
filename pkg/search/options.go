@@ -13,8 +13,6 @@ type FieldLabel string
 
 // This block enumerates all valid FieldLabels.
 var (
-	FieldLabelSet = set.NewStringSet()
-
 	// DocID is a special value for document identifier in the Bleve index.
 	// Every document we put in the index has identifier. In most cases we simply get this identifier from
 	// entity.GetId(), unless the getter is overridden in the call to blevebindings-wrapper with --id-func argument.
@@ -34,18 +32,22 @@ var (
 	SensorStatus           = newFieldLabel("Sensor Status")
 	CollectorStatus        = newFieldLabel("Collector Status")
 	AdmissionControlStatus = newFieldLabel("Admission Control Status")
+	ScannerStatus          = newFieldLabel("Scanner Status")
+	LastContactTime        = newFieldLabel("Last Contact")
 
-	PolicyID       = newFieldLabel("Policy ID")
-	Enforcement    = newFieldLabel("Enforcement")
-	PolicyName     = newFieldLabel("Policy")
+	PolicyID           = newFieldLabel("Policy ID")
+	Enforcement        = newFieldLabel("Enforcement")
+	PolicyName         = newFieldLabel("Policy")
+	PolicyCategoryName = newFieldLabel("Policy Category")
+
 	LifecycleStage = newFieldLabel("Lifecycle Stage")
 	Description    = newFieldLabel("Description")
 	Category       = newFieldLabel("Category")
 	Severity       = newFieldLabel("Severity")
 	Disabled       = newFieldLabel("Disabled")
 
+	CVEID              = newFieldLabel("CVE ID")
 	CVE                = newFieldLabel("CVE")
-	CVECount           = newFieldLabel("CVE Count")
 	CVEType            = newFieldLabel("CVE Type")
 	CVEPublishedOn     = newFieldLabel("CVE Published On")
 	CVECreatedTime     = newFieldLabel("CVE Created Time")
@@ -57,7 +59,6 @@ var (
 
 	Component                     = newFieldLabel("Component")
 	ComponentID                   = newFieldLabel("Component ID")
-	ComponentCount                = newFieldLabel("Component Count")
 	ComponentVersion              = newFieldLabel("Component Version")
 	ComponentSource               = newFieldLabel("Component Source")
 	ComponentLocation             = newFieldLabel("Component Location")
@@ -71,7 +72,8 @@ var (
 	ImageCreatedTime              = newFieldLabel("Image Created Time")
 	ImageName                     = newFieldLabel("Image")
 	ImageSHA                      = newFieldLabel("Image Sha")
-	ImageSignatureVerified        = newFieldLabel("Image Signature Verified")
+	ImageSignatureFetchedTime     = newFieldLabel("Image Signature Fetched Time")
+	ImageSignatureVerifiedBy      = newFieldLabel("Image Signature Verified By")
 	ImageRegistry                 = newFieldLabel("Image Registry")
 	ImageRemote                   = newFieldLabel("Image Remote")
 	ImageScanTime                 = newFieldLabel("Image Scan Time")
@@ -94,14 +96,15 @@ var (
 
 	// Deployment related fields
 	AddCapabilities              = newFieldLabel("Add Capabilities")
+	AllowPrivilegeEscalation     = newFieldLabel("Allow Privilege Escalation")
 	AppArmorProfile              = newFieldLabel("AppArmor Profile")
 	AutomountServiceAccountToken = newFieldLabel("Automount Service Account Token")
 	Annotation                   = newFieldLabel("Annotation")
 	CPUCoresLimit                = newFieldLabel("CPU Cores Limit")
 	CPUCoresRequest              = newFieldLabel("CPU Cores Request")
 	ContainerID                  = newFieldLabel("Container ID")
-	ContainerName                = newFieldLabel("Container Name")
 	ContainerImageDigest         = newFieldLabel("Container Image Digest")
+	ContainerName                = newFieldLabel("Container Name")
 	DeploymentID                 = newFieldLabel("Deployment ID")
 	DeploymentName               = newFieldLabel("Deployment")
 	DeploymentType               = newFieldLabel("Deployment Type")
@@ -132,10 +135,6 @@ var (
 	Priority                      = newFieldLabel("Priority")
 	ClusterPriority               = newFieldLabel("Cluster Risk Priority")
 	NamespacePriority             = newFieldLabel("Namespace Risk Priority")
-	NodePriority                  = newFieldLabel("Node Risk Priority")
-	DeploymentPriority            = newFieldLabel("Deployment Risk Priority")
-	ImagePriority                 = newFieldLabel("Image Risk Priority")
-	ComponentPriority             = newFieldLabel("Component Risk Priority")
 	Privileged                    = newFieldLabel("Privileged")
 	ProcessTag                    = newFieldLabel("Process Tag")
 	ReadOnlyRootFilesystem        = newFieldLabel("Read Only Root Filesystem")
@@ -240,10 +239,18 @@ var (
 	SORTEnforcement    = newFieldLabel("SORT_Enforcement")
 
 	// Following are derived fields
-	NamespaceCount  = newFieldLabel("Namespace Count")
-	DeploymentCount = newFieldLabel("Deployment Count")
-	ImageCount      = newFieldLabel("Image Count")
-	NodeCount       = newFieldLabel("Node Count")
+	// Count-based derived fields. These fields are supported only in pagination.
+	NamespaceCount  = newDerivedFieldLabel("Namespace Count", NamespaceID, CountDerivationType)
+	DeploymentCount = newDerivedFieldLabel("Deployment Count", DeploymentID, CountDerivationType)
+	ImageCount      = newDerivedFieldLabel("Image Count", ImageSHA, CountDerivationType)
+	NodeCount       = newDerivedFieldLabel("Node Count", NodeID, CountDerivationType)
+	ComponentCount  = newDerivedFieldLabel("Component Count", ComponentID, CountDerivationType)
+	CVECount        = newDerivedFieldLabel("CVE Count", CVEID, CountDerivationType)
+	// Translative derived fields with reversed sorting. These fields are supported only in pagination.
+	NodePriority       = newDerivedFieldLabel("Node Risk Priority", NodeRiskScore, SimpleReverseSortDerivationType)
+	DeploymentPriority = newDerivedFieldLabel("Deployment Risk Priority", DeploymentRiskScore, SimpleReverseSortDerivationType)
+	ImagePriority      = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
+	ComponentPriority  = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
 
 	// External network sources fields
 	DefaultExternalSource = newFieldLabel("Default External Source")
@@ -264,8 +271,13 @@ var (
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
 	UserName                    = newFieldLabel("User Name")
 
+	ComplianceDomainID             = newFieldLabel("Compliance Domain ID")
+	ComplianceRunID                = newFieldLabel("Compliance Run ID")
+	ComplianceRunFinishedTimestamp = newFieldLabel("Compliance Run Finished Timestamp")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
+	TestKey2              = newFieldLabel("Test Key 2")
 	TestName              = newFieldLabel("Test Name")
 	TestString            = newFieldLabel("Test String")
 	TestStringSlice       = newFieldLabel("Test String Slice")
@@ -285,16 +297,119 @@ var (
 	TestNestedInt64       = newFieldLabel("Test Nested Int64")
 	TestNested2Int64      = newFieldLabel("Test Nested Int64 2")
 	TestOneofNestedString = newFieldLabel("Test Oneof Nested String")
+
+	TestGrandparentID        = newFieldLabel("Test Grandparent ID")
+	TestGrandparentVal       = newFieldLabel("Test Grandparent Val")
+	TestGrandparentEmbedded  = newFieldLabel("Test Grandparent Embedded")
+	TestGrandparentEmbedded2 = newFieldLabel("Test Grandparent Embedded2")
+	TestGrandparentRiskScore = newFieldLabel("Test Grandparent Risk Score")
+	TestParent1ID            = newFieldLabel("Test Parent1 ID")
+	TestParent1Val           = newFieldLabel("Test Parent1 Val")
+	TestChild1ID             = newFieldLabel("Test Child1 ID")
+	TestChild1Val            = newFieldLabel("Test Child1 Val")
+	TestGrandchild1ID        = newFieldLabel("Test Grandchild1 ID")
+	TestGrandchild1Val       = newFieldLabel("Test Grandchild1 Val")
+	TestGGrandchild1ID       = newFieldLabel("Test GGrandchild1 ID")
+	TestGGrandchild1Val      = newFieldLabel("Test GGrandchild1 Val")
+	TestG2Grandchild1ID      = newFieldLabel("Test G2Grandchild1 ID")
+	TestG2Grandchild1Val     = newFieldLabel("Test G2Grandchild1 Val")
+	TestG3Grandchild1ID      = newFieldLabel("Test G3Grandchild1 ID")
+	TestG3Grandchild1Val     = newFieldLabel("Test G3Grandchild1 Val")
+	TestParent2ID            = newFieldLabel("Test Parent2 ID")
+	TestParent2Val           = newFieldLabel("Test Parent2 Val")
+	TestChild2ID             = newFieldLabel("Test Child2 ID")
+	TestChild2Val            = newFieldLabel("Test Child2 Val")
+	TestParent3ID            = newFieldLabel("Test Parent3 ID")
+	TestParent3Val           = newFieldLabel("Test Parent3 Val")
+	TestParent4ID            = newFieldLabel("Test Parent4 ID")
+	TestParent4Val           = newFieldLabel("Test Parent4 Val")
+	TestChild1P4ID           = newFieldLabel("Test Child1P4 ID")
+	TestChild1P4Val          = newFieldLabel("Test Child1P4 Val")
+
+	TestShortCircuitID = newFieldLabel("Test ShortCircuit ID")
+
+	// Derived test fields
+	TestGrandparentCount    = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
+	TestParent1Count        = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
+	TestChild1Count         = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
+	TestGrandParentPriority = newDerivedFieldLabel("Test Grandparent Priority", TestGrandparentRiskScore, SimpleReverseSortDerivationType)
 )
 
-func newFieldLabel(s string) FieldLabel {
-	if added := FieldLabelSet.Add(s); !added {
+func init() {
+	derivedFields = set.NewStringSet()
+	derivationsByField = make(map[string]map[string]DerivationType)
+	for k, metadata := range allFieldLabels {
+		if metadata != nil {
+			derivedFields.Add(strings.ToLower(k))
+			derivedFromLower := strings.ToLower(string(metadata.DerivedFrom))
+			subMap, exists := derivationsByField[derivedFromLower]
+			if !exists {
+				subMap = make(map[string]DerivationType)
+				derivationsByField[derivedFromLower] = subMap
+			}
+			subMap[k] = metadata.DerivationType
+		}
+	}
+}
+
+var (
+	allFieldLabels     = make(map[string]*DerivedFieldLabelMetadata)
+	derivationsByField map[string]map[string]DerivationType
+	derivedFields      set.StringSet
+)
+
+// IsValidFieldLabel returns whether this is a known, valid field label.
+func IsValidFieldLabel(s string) bool {
+	_, ok := allFieldLabels[strings.ToLower(s)]
+	return ok
+}
+
+// GetFieldsDerivedFrom gets the fields derived from the given search field.
+func GetFieldsDerivedFrom(s string) map[string]DerivationType {
+	return derivationsByField[strings.ToLower(s)]
+}
+
+// IsDerivedField returns if the search field is a derived field or not.
+func IsDerivedField(s string) bool {
+	return derivedFields.Contains(strings.ToLower(s))
+}
+
+func newFieldLabelWithMetadata(s string, metadata *DerivedFieldLabelMetadata) FieldLabel {
+	lowerS := strings.ToLower(s)
+	if _, exists := allFieldLabels[lowerS]; exists {
 		log.Fatalf("Field label %q has already been added", s)
 	}
-	FieldLabelSet.Add(strings.ToLower(s))
+	allFieldLabels[lowerS] = metadata
 	return FieldLabel(s)
+}
+
+func newFieldLabel(s string) FieldLabel {
+	return newFieldLabelWithMetadata(s, nil)
+}
+
+func newDerivedFieldLabel(s string, derivedFrom FieldLabel, derivationType DerivationType) FieldLabel {
+	return newFieldLabelWithMetadata(s, &DerivedFieldLabelMetadata{
+		DerivedFrom:    derivedFrom,
+		DerivationType: derivationType,
+	})
 }
 
 func (f FieldLabel) String() string {
 	return string(f)
 }
+
+// DerivedFieldLabelMetadata includes metadata showing that a field is derived.
+type DerivedFieldLabelMetadata struct {
+	DerivedFrom    FieldLabel
+	DerivationType DerivationType
+}
+
+// DerivationType represents a type of derivation.
+//go:generate stringer -type=DerivationType
+type DerivationType int
+
+// This block enumerates all supported derivation types.
+const (
+	CountDerivationType DerivationType = iota
+	SimpleReverseSortDerivationType
+)

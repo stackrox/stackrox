@@ -9,7 +9,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -68,18 +67,49 @@ func (mr *MockDataStoreMockRecorder) GetNotifier(ctx, id interface{}) *gomock.Ca
 }
 
 // GetNotifiers mocks base method.
-func (m *MockDataStore) GetNotifiers(ctx context.Context, request *v1.GetNotifiersRequest) ([]*storage.Notifier, error) {
+func (m *MockDataStore) GetNotifiers(ctx context.Context) ([]*storage.Notifier, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNotifiers", ctx, request)
+	ret := m.ctrl.Call(m, "GetNotifiers", ctx)
 	ret0, _ := ret[0].([]*storage.Notifier)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNotifiers indicates an expected call of GetNotifiers.
-func (mr *MockDataStoreMockRecorder) GetNotifiers(ctx, request interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetNotifiers(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifiers", reflect.TypeOf((*MockDataStore)(nil).GetNotifiers), ctx, request)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifiers", reflect.TypeOf((*MockDataStore)(nil).GetNotifiers), ctx)
+}
+
+// GetScrubbedNotifier mocks base method.
+func (m *MockDataStore) GetScrubbedNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScrubbedNotifier", ctx, id)
+	ret0, _ := ret[0].(*storage.Notifier)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetScrubbedNotifier indicates an expected call of GetScrubbedNotifier.
+func (mr *MockDataStoreMockRecorder) GetScrubbedNotifier(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScrubbedNotifier", reflect.TypeOf((*MockDataStore)(nil).GetScrubbedNotifier), ctx, id)
+}
+
+// GetScrubbedNotifiers mocks base method.
+func (m *MockDataStore) GetScrubbedNotifiers(ctx context.Context) ([]*storage.Notifier, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScrubbedNotifiers", ctx)
+	ret0, _ := ret[0].([]*storage.Notifier)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetScrubbedNotifiers indicates an expected call of GetScrubbedNotifiers.
+func (mr *MockDataStoreMockRecorder) GetScrubbedNotifiers(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScrubbedNotifiers", reflect.TypeOf((*MockDataStore)(nil).GetScrubbedNotifiers), ctx)
 }
 
 // RemoveNotifier mocks base method.

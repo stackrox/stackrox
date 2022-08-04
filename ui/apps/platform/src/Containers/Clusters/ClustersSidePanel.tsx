@@ -14,11 +14,13 @@ import { useTheme } from 'Containers/ThemeProvider';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import {
-    getClusterById,
+    fetchClusterWithRetentionInformation,
     saveCluster,
     downloadClusterYaml,
-    fetchKernelSupportAvailable,
+    getClusterDefaults,
 } from 'services/ClustersService';
+import { Cluster } from 'types/cluster.proto';
+import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
@@ -29,16 +31,7 @@ import {
     wizardSteps,
     centralEnvDefault,
 } from './cluster.helpers';
-import { Cluster, ClusterManagerType } from './clusterTypes';
-
-function fetchCentralEnv() {
-    return fetchKernelSupportAvailable().then((kernelSupportAvailable) => {
-        return {
-            kernelSupportAvailable,
-            successfullyFetched: true,
-        };
-    });
-}
+import { CentralEnv, ClusterManagerType } from './clusterTypes';
 
 const requiredKeys = ['name', 'type', 'mainImage', 'centralApiEndpoint'];
 
@@ -62,20 +55,13 @@ type MessageState = {
 function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const metadata = useMetadata();
 
-    const defaultCluster = cloneDeep(newClusterDefault);
-    const envAwareClusterDefault = {
-        ...defaultCluster,
-        mainImage: metadata.releaseBuild ? 'stackrox.io/main' : 'stackrox/main',
-        collectorImage: metadata.releaseBuild
-            ? 'collector.stackrox.io/collector'
-            : 'stackrox/collector',
-    };
+    const defaultCluster = cloneDeep(newClusterDefault) as unknown as Cluster;
 
     const { isDarkMode } = useTheme();
-    const [selectedCluster, setSelectedCluster] = useState<Partial<Cluster> | null>(
-        envAwareClusterDefault
-    );
-    const [centralEnv, setCentralEnv] = useState(centralEnvDefault);
+    const [selectedCluster, setSelectedCluster] = useState<Cluster>(defaultCluster);
+    const [clusterRetentionInfo, setClusterRetentionInfo] =
+        useState<DecommissionedClusterRetentionInfo>(null);
+    const [centralEnv, setCentralEnv] = useState<CentralEnv>(centralEnvDefault);
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
     const [loadingCounter, setLoadingCounter] = useState(0);
     const [messageState, setMessageState] = useState<MessageState | null>(null);
@@ -89,7 +75,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     function unselectCluster() {
         setSubmissionError('');
         setSelectedClusterId('');
-        setSelectedCluster(envAwareClusterDefault);
+        setSelectedCluster(defaultCluster);
         setMessageState(null);
         setIsBlocked(false);
         setWizardStep(wizardSteps.FORM);
@@ -107,13 +93,25 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
             const clusterIdToRetrieve = selectedClusterId;
 
             setLoadingCounter((prev) => prev + 1);
-            fetchCentralEnv()
-                .then((freshCentralEnv) => {
-                    setCentralEnv(freshCentralEnv);
+            getClusterDefaults()
+                .then((clusterDefaults) => {
+                    const {
+                        mainImageRepository: mainImage,
+                        collectorImageRepository: collectorImage,
+                        kernelSupportAvailable,
+                    } = clusterDefaults;
+
+                    setCentralEnv({
+                        kernelSupportAvailable,
+                        successfullyFetched: true,
+                    });
+
                     if (clusterIdToRetrieve === 'new') {
                         const updatedCluster = {
                             ...selectedCluster,
-                            slimCollector: freshCentralEnv.kernelSupportAvailable,
+                            mainImage,
+                            collectorImage,
+                            slimCollector: kernelSupportAvailable,
                         };
                         setSelectedCluster(updatedCluster);
                     }
@@ -127,12 +125,14 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                 setMessageState(null);
                 setIsBlocked(false);
                 // don't want to cache or memoize, because we always want the latest real-time data
-                getClusterById(clusterIdToRetrieve)
-                    .then((cluster) => {
+                fetchClusterWithRetentionInformation(clusterIdToRetrieve)
+                    .then((clusterResponse) => {
+                        const { cluster } = clusterResponse;
                         // eslint-disable-next-line no-param-reassign
                         // cluster.managedBy = 'MANAGER_TYPE_MANUAL';
                         // TODO: refactor to use useReducer effect
                         setSelectedCluster(cluster);
+                        setClusterRetentionInfo(clusterResponse.clusterRetentionInfo);
 
                         // stop polling after contact is established
                         if (selectedCluster?.healthStatus?.lastContact) {
@@ -246,8 +246,14 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         if (wizardStep === wizardSteps.FORM) {
             setMessageState(null);
             setSubmissionError('');
-            saveCluster(selectedCluster as Cluster)
+            saveCluster(selectedCluster)
                 .then((response) => {
+                    /*
+                    setSelectedCluster(response.cluster);
+                    setClusterRetentionInfo(clusterResponse.clusterRetentionInfo);
+                    */
+                    // TODO After saveCluster returns response without normalize,
+                    // something like the preceding commented lines should replace the following:
                     const newId = response.response.result.cluster; // really is nested like this
                     const clusterWithId = { ...selectedCluster, id: newId };
                     setSelectedCluster(clusterWithId);
@@ -356,7 +362,8 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                         <ClusterEditForm
                             centralEnv={centralEnv}
                             centralVersion={metadata.version}
-                            selectedCluster={selectedCluster as Cluster}
+                            clusterRetentionInfo={clusterRetentionInfo}
+                            selectedCluster={selectedCluster}
                             managerType={managerType(selectedCluster)}
                             handleChange={onChange}
                             handleChangeLabels={handleChangeLabels}

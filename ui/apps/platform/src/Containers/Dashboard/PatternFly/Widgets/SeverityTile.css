@@ -1,0 +1,11 @@
+.pf-severity-tile {
+  border-width: 6px 1px 1px 1px;
+  border-style: solid;
+  border-color: var(--pf-global--BorderColor--100);
+  border-top-color: var(--pf-severity-tile-color);
+}
+
+.pf-severity-tile:hover {
+  border-color: var(--pf-global--BorderColor--200);
+  border-top-color: var(--pf-severity-tile-color);
+}

@@ -1,16 +1,17 @@
 import queryString from 'qs';
-import { normalize } from 'normalizr';
 
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
 import { Deployment, ListDeployment } from 'types/deployment.proto';
 import { ContainerNameAndBaselineStatus } from 'types/processBaseline.proto';
 import { Risk } from 'types/risk.proto';
+import { SearchFilter } from 'types/search';
 import {
-    ORCHESTRATOR_COMPONENT_KEY,
-    orchestratorComponentOption,
-} from 'Containers/Navigation/OrchestratorComponentsToggle';
+    ORCHESTRATOR_COMPONENTS_KEY,
+    orchestratorComponentsOption,
+} from 'utils/orchestratorComponents';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import axios from './instance';
-import { deployment as deploymentSchema, deploymentDetail } from './schemas';
 
 const deploymentsUrl = '/v1/deploymentswithprocessinfo';
 const deploymentByIdUrl = '/v1/deployments';
@@ -18,14 +19,53 @@ const deploymentWithRiskUrl = '/v1/deploymentswithrisk';
 const deploymentsCountUrl = '/v1/deploymentscount';
 
 function shouldHideOrchestratorComponents() {
-    // for openshift filterting toggle
-    return localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true';
+    // for openshift filtering toggle
+    return localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true';
+}
+
+/**
+ * Fetches list of registered deployments.
+ *
+ * Changes from the 'legacy' version of this same function:
+ * - returns a 'cancel' function to abort the request
+ * - uses the new `SearchFilter` type instead of `RestSearchOption`
+ * - Does not implicitly read the value of "shouldHideOrchestratorComponents"
+ */
+export function fetchDeployments(
+    searchFilter: SearchFilter,
+    sortOption: Record<string, string>,
+    page: number,
+    pageSize: number
+): CancellableRequest<ListDeploymentWithProcessInfo[]> {
+    const offset = page * pageSize;
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const queryObject: Record<
+        string,
+        string | Record<string, number | string | Record<string, string>>
+    > = {
+        pagination: {
+            offset,
+            limit: pageSize,
+            sortOption,
+        },
+    };
+    if (query) {
+        queryObject.query = query;
+    }
+    const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsUrl}?${params}`, {
+                signal,
+            })
+            .then((response) => response?.data?.deployments ?? [])
+    );
 }
 
 /**
  * Fetches list of registered deployments.
  */
-export function fetchDeployments(
+export function fetchDeploymentsLegacy(
     options: RestSearchOption[] = [],
     sortOption: Record<string, string>,
     page: number,
@@ -34,7 +74,7 @@ export function fetchDeployments(
     const offset = page * pageSize;
     let searchOptions: RestSearchOption[] = options;
     if (shouldHideOrchestratorComponents()) {
-        searchOptions = [...options, ...orchestratorComponentOption];
+        searchOptions = [...options, ...orchestratorComponentsOption];
     }
     const query = searchOptionsToQuery(searchOptions);
     const queryObject: Record<
@@ -67,7 +107,7 @@ export type ListDeploymentWithProcessInfo = {
 export function fetchDeploymentsCount(options: RestSearchOption[]): Promise<number> {
     let searchOptions: RestSearchOption[] = options;
     if (shouldHideOrchestratorComponents()) {
-        searchOptions = [...options, ...orchestratorComponentOption];
+        searchOptions = [...options, ...orchestratorComponentsOption];
     }
     const query = searchOptionsToQuery(searchOptions);
     const queryObject =
@@ -108,46 +148,3 @@ type DeploymentWithRisk = {
     deployment: Deployment;
     risk: Risk;
 };
-
-/**
- * Fetches list of registered deployments.
- *
- * TODO: Delete after (its only call in) deploymentSagas has been deleted.
- */
-export function fetchDeploymentsLegacy(options: RestSearchOption[]): Promise<{
-    response: {
-        entities: { deployment: Record<string, ListDeploymentWithProcessInfo> };
-        result: string[];
-    };
-}> {
-    let searchOptions = options;
-    if (shouldHideOrchestratorComponents()) {
-        searchOptions = [...options, ...orchestratorComponentOption];
-    }
-    const query = searchOptionsToQuery(searchOptions);
-    const params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
-    return axios
-        .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsUrl}?${params}`)
-        .then((response) => ({
-            response: normalize(response?.data?.deployments ?? [], [deploymentSchema]),
-        }));
-}
-
-/**
- * Fetches a deployment by its ID.
- *
- * TODO: Delete after (its only call in) deploymentSagas has been deleted.
- */
-export function fetchDeploymentLegacy(id: string): Promise<{
-    response: {
-        entities: { deployment: Record<string, Deployment> };
-        result: string;
-    };
-}> {
-    if (!id) {
-        throw new Error('Deployment ID must be specified');
-    }
-    return axios.get<Deployment>(`${deploymentByIdUrl}/${id}`).then((response) => ({
-        response: normalize({ deployment: response.data }, deploymentDetail),
-    }));
-}

@@ -22,13 +22,13 @@ sensor_wait() {
       fi
       echo "Sensor replicas: $(jq '.status.replicas' <<<"${sensor_json}")"
       echo "Sensor readyReplicas: $(jq '.status.readyReplicas' <<<"${sensor_json}")"
-      if (( $(date '+%s') - start_time > 300 )); then
+      if (( $(date '+%s') - start_time > 600 )); then
         kubectl -n stackrox get pod -o wide
         kubectl -n stackrox get deploy -o wide
-        echo >&2 "Timed out after 5m"
+        echo >&2 "Timed out after 10m"
         exit 1
       fi
-      sleep 5
+      sleep 10
     done
     echo "Sensor is running"
 
@@ -47,7 +47,7 @@ sensor_wait() {
         echo >&2 "Timed out after 10m"
         exit 1
       fi
-      sleep 5
+      sleep 10
     done
     echo "Collectors are running"
 }

@@ -7,8 +7,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/central/clusters"
-	licenseManager "github.com/stackrox/rox/central/license/manager"
-	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
 	probeUploadManager "github.com/stackrox/rox/central/probeupload/manager"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -68,7 +66,7 @@ func (s *probeSources) AnyAvailable(ctx context.Context) (bool, error) {
 	return false, finalErr
 }
 
-func (s *probeSources) initializeStandardSources(probeUploadManager probeUploadManager.Manager, licenseMgr licenseManager.LicenseManager) {
+func (s *probeSources) initializeStandardSources(probeUploadManager probeUploadManager.Manager) {
 	s.probeSources = make([]probeupload.ProbeSource, 0, 2)
 	s.probeSources = append(s.probeSources, probeUploadManager)
 	if env.OfflineModeEnv.BooleanSetting() {
@@ -80,18 +78,6 @@ func (s *probeSources) initializeStandardSources(probeUploadManager probeUploadM
 	}
 
 	opts := kocache.Options{}
-	if licenseMgr != nil {
-		opts.ModifyRequest = func(req *http.Request) {
-			customerID := licenseMgr.GetActiveLicense().GetMetadata().GetLicensedForId()
-			if customerID == "" {
-				return
-			}
-			q := req.URL.Query()
-			q.Set("cid", customerID)
-			req.URL.RawQuery = q.Encode()
-		}
-	}
-
 	httpClient := &http.Client{
 		Transport: proxy.RoundTripper(),
 		Timeout:   httpTimeout,
@@ -102,7 +88,7 @@ func (s *probeSources) initializeStandardSources(probeUploadManager probeUploadM
 // Singleton returns the singleton instance for the ProbeSources entity.
 func Singleton() ProbeSources {
 	instanceInit.Do(func() {
-		instance.initializeStandardSources(probeUploadManager.Singleton(), licenseSingletons.ManagerSingleton())
+		instance.initializeStandardSources(probeUploadManager.Singleton())
 	})
 	return &instance
 }

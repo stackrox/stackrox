@@ -1,14 +1,18 @@
 package services
 
 import common.Constants
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.NotifierServiceGrpc
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.NotifierOuterClass
 import util.Env
 
+@Slf4j
 class NotifierService extends BaseService {
-    private static final PAGERDUTY_API_KEY = "fix-me-ROX-7589-and-this-should-be-secret"
+    // FIXME(ROX-7589): this should be secret
+    // private static final PAGERDUTY_API_KEY = Env.mustGetPagerdutyApiKey()
+    private static final String PAGERDUTY_API_KEY = null
 
     // SLACK_MAIN_WEBHOOK is the webhook URL for #slack-test
     public static final SLACK_MAIN_WEBHOOK = Env.mustGetSlackMainWebhook()
@@ -20,13 +24,7 @@ class NotifierService extends BaseService {
     }
 
     static addNotifier(NotifierOuterClass.Notifier notifier) {
-        try {
-            return getNotifierClient().postNotifier(notifier)
-        } catch (Exception e) {
-            println "Failed to add notifier..."
-            e.printStackTrace()
-            throw e
-        }
+        return getNotifierClient().postNotifier(notifier)
     }
 
     static testNotifier(NotifierOuterClass.Notifier notifier) {
@@ -34,7 +32,7 @@ class NotifierService extends BaseService {
             getNotifierClient().testNotifier(notifier)
             return true
         } catch (Exception e) {
-            println e.toString()
+            log.error("error testing notifier", e)
             return false
         }
     }
@@ -48,7 +46,7 @@ class NotifierService extends BaseService {
                             .build()
             )
         } catch (Exception e) {
-            println e.toString()
+            log.error("error deleting notifier", e)
         }
     }
 
@@ -85,8 +83,8 @@ class NotifierService extends BaseService {
             Boolean enableTLS,
             String caCert,
             Boolean skipTLSVerification,
-            Boolean auditLoggingEnabled)  {
-        NotifierOuterClass.GenericOrBuilder genericBuilder =  NotifierOuterClass.Generic.newBuilder()
+            Boolean auditLoggingEnabled) {
+        NotifierOuterClass.GenericOrBuilder genericBuilder = NotifierOuterClass.Generic.newBuilder()
                 .setEndpoint("http://webhookserver.stackrox:8080")
                 .setCaCert(caCert)
                 .setSkipTLSVerify(skipTLSVerification)
@@ -94,8 +92,8 @@ class NotifierService extends BaseService {
                 .setUsername("admin")
                 .setPassword("admin")
                 .addHeaders(
-                Common.KeyValuePair.newBuilder().setKey("headerkey").setValue("headervalue").build()
-        )
+                        Common.KeyValuePair.newBuilder().setKey("headerkey").setValue("headervalue").build()
+                )
                 .addExtraFields(Common.KeyValuePair.newBuilder().setKey("fieldkey").setValue("fieldvalue").build())
         if (enableTLS) {
             genericBuilder.setEndpoint("https://webhookserver.stackrox:8443")
@@ -164,7 +162,7 @@ class NotifierService extends BaseService {
     static NotifierOuterClass.Notifier getSplunkIntegrationConfig(
             boolean legacy,
             String serviceName,
-            String name)  throws Exception {
+            String name) throws Exception {
         String splunkIntegration = "splunk-Integration"
         String prePackagedToken = "00000000-0000-0000-0000-000000000000"
 
@@ -193,7 +191,7 @@ class NotifierService extends BaseService {
     static NotifierOuterClass.Notifier getSyslogIntegrationConfig(
             String serviceName,
             int port,
-            String name)  throws Exception {
+            String name) throws Exception {
         String syslogIntegration = "syslog-Integration"
 
         return NotifierOuterClass.Notifier.newBuilder()

@@ -1,5 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { format } from 'date-fns';
+import { Formik } from 'formik';
 import pluralize from 'pluralize';
 import { Power, Edit } from 'react-feather';
 
@@ -15,18 +16,16 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
-import { getDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
+import { getCurriedDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
 import { updatePolicyDisabledState } from 'services/PoliciesService';
 import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
-import BooleanPolicySection from 'Containers/Policies/Wizard/Form/BooleanPolicySection';
+import BooleanPolicySection from 'Containers/Policies/Wizard/Step3/BooleanPolicyLogicSection';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getExcludedNamesByType } from 'utils/policyUtils';
 import { pluralizeHas } from 'utils/textUtils';
-import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
+import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import MitreAttackVectors from 'Containers/MitreAttackVectors';
-import {
-    FormSection,
-    FormSectionBody,
-} from 'Containers/Policies/Wizard/Form/PolicyDetailsForm/FormSection';
+import { FormSection, FormSectionBody } from './FormSection';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
@@ -55,6 +54,7 @@ const emptyPolicy = {
 const noop = () => {};
 const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyPolicy, ...data };
@@ -80,7 +80,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     } = safeData;
     const [currentDisabledState, setCurrentDisabledState] = useState(disabled);
 
-    const initialValues = preFormatPolicyFields(safeData);
+    const initialValues = getClientWizardPolicy(safeData);
 
     function togglePolicy() {
         updatePolicyDisabledState(id, !currentDisabledState).then(() => {
@@ -214,6 +214,8 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
             />
         );
     } else {
+        const getDeploymentTableColumns = getCurriedDeploymentTableColumns(isFeatureFlagEnabled);
+
         policyFindingsContent = (
             <div className="pdf-page pdf-stretch pdf-new flex shadow rounded relativebg-base-100 mb-4 mx-4">
                 <TableWidget
@@ -346,11 +348,9 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                     header="Policy Criteria"
                                     className="pdf-page pdf-stretch h-full"
                                 >
-                                    <BooleanPolicySection
-                                        readOnly
-                                        hasHeader={false}
-                                        initialValues={initialValues}
-                                    />
+                                    <Formik initialValues={initialValues} onSubmit={() => {}}>
+                                        {() => <BooleanPolicySection readOnly />}
+                                    </Formik>
                                 </Widget>
                             </div>
                         )}

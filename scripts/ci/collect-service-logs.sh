@@ -49,7 +49,12 @@ main() {
     for object in deployments services pods secrets serviceaccounts validatingwebhookconfigurations catalogsources subscriptions clusterserviceversions; do
         # A feel good command before pulling logs
         echo ">>> ${object} <<<"
-        kubectl -n "${namespace}" get "${object}" -o wide
+        out="$(mktemp)"
+        if ! kubectl -n "${namespace}" get "${object}" -o wide > "$out" 2>&1; then
+            echo "Cannot get $object in $namespace: $(cat "$out")"
+            continue
+        fi
+        cat "$out"
 
         mkdir -p "${log_dir}/${object}"
 

@@ -1,8 +1,13 @@
 import { selectors as vulnManagementSelectors } from '../constants/VulnManagementPage';
 
-export const hasExpectedHeaderColumns = (colNames) => {
-    colNames.forEach((col) => {
-        cy.get(`${vulnManagementSelectors.tableColumn}:contains('${col}')`);
+const idColumnOffset = 1;
+export const hasExpectedHeaderColumns = (colNames, additionalColumnsToSkip = 0) => {
+    colNames.forEach((col, idx) => {
+        cy.get(
+            `.rt-th.leading-normal:nth-child(${
+                idx + idColumnOffset + additionalColumnsToSkip + 1
+            }) > div:contains('${col}')`
+        );
     });
 };
 
@@ -26,27 +31,35 @@ function validateDataInEntityListPage(entityCountAndName, entityURL) {
 }
 
 function validateLinksInListPage(col, parentUrl) {
-    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`, {
+        timeout: 8000,
+    })
         .invoke('text')
         .then((value) => {
-            cy.get(
-                `${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`
-            ).click({
-                force: true,
-            });
+            cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+                .first()
+                .click({
+                    force: true,
+                });
             validateDataInEntityListPage(value, parentUrl);
         });
 }
 
 function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
-    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`, {
+        timeout: 8000,
+    })
         .invoke('text')
         .then((value) => {
             cy.get(colSelector).eq(0).click({ force: true });
             let entitySelector;
             const col1 = col.toLowerCase();
-            if (col1.includes('image')) {
-                entitySelector = vulnManagementSelectors.imageTileLink;
+            cy.log(`col1: ${col1}`);
+            cy.log(`col1.includes('node'): ${col1.includes('node')}`);
+            if (col1.includes('image component')) {
+                entitySelector = vulnManagementSelectors.imageComponentTileLink;
+            } else if (col1.includes('node component')) {
+                entitySelector = vulnManagementSelectors.nodeComponentTileLink;
             } else if (col1.includes('deployment')) {
                 entitySelector = vulnManagementSelectors.deploymentTileLink;
             } else if (col1.includes('namespace')) {
@@ -55,9 +68,14 @@ function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
                 entitySelector = vulnManagementSelectors.componentTileLink;
             } else if (col1.includes('cve')) {
                 entitySelector = vulnManagementSelectors.cveTileLink;
+            } else if (col1.includes('node')) {
+                entitySelector = vulnManagementSelectors.nodeTileLink;
+            } else if (col1.includes('image')) {
+                entitySelector = vulnManagementSelectors.imageTileLink;
             } else {
                 entitySelector = vulnManagementSelectors.getTileLink(col.toUpperCase());
             }
+            cy.log(`entitySelector: ${entitySelector}`);
             cy.get(entitySelector)
                 .find(vulnManagementSelectors.tileLinkText)
                 .contains(parseInt(value, 10));
@@ -69,7 +87,9 @@ function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
 }
 
 function validateTabsInEntityPage(parentUrl, colSelector, col) {
-    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+    cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`, {
+        timeout: 8000,
+    })
         .invoke('text')
         .then((value) => {
             cy.get(colSelector).eq(0).click({ force: true });
@@ -94,7 +114,7 @@ function validateCVETileLinksInSidePanel(parentUrl) {
             // not reusing a predefined selector below, because we had made this function so DRY,
             //   we created a false positive that was labyrinthine to track down
             //   see: https://engblog.nextdoor.com/how-to-dry-up-your-tests-without-making-mummies-of-them-7de79a8e3df1
-            cy.get('[data-testid="CVE-tile-link"]:contains("CVE")')
+            cy.get('[data-testid="tile-content"]:contains("CVE")')
                 .find(vulnManagementSelectors.tileLinkValue)
                 .contains('CVE');
             cy.get(vulnManagementSelectors.tileLinkText).contains(cveCount);
@@ -159,8 +179,10 @@ function validateFixableTabLinksInEntityPage(parentUrl) {
         if (fixableCount > 0) {
             cy.get(vulnManagementSelectors.tableBodyColumn).eq(0).click({ force: true });
             if (!parentUrl.includes('components')) {
-                cy.get(vulnManagementSelectors.tabButton, { timeout: 6000 })
-                    .contains('Fixable CVEs')
+                cy.get(`${vulnManagementSelectors.tabButton}:contains("Fixable")`, {
+                    timeout: 6000,
+                })
+                    .first()
                     .click();
             }
             cy.get(vulnManagementSelectors.getSidePanelTabHeader('fixable')).contains(fixableCount);

@@ -13,7 +13,7 @@ import (
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
 	clusterStoreMocks "github.com/stackrox/rox/central/cluster/store/cluster/mocks"
-	clusterHealthStoreMocks "github.com/stackrox/rox/central/cluster/store/cluster_health_status/mocks"
+	clusterHealthStoreMocks "github.com/stackrox/rox/central/cluster/store/clusterhealth/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -244,6 +245,9 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsGet() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesGetAll() {
+	if features.PostgresDatastore.Enabled() {
+		suite.T().Skip("Skipping enforces get all test in postgres mode")
+	}
 	suite.clusters.EXPECT().GetMany(gomock.Any(), []string{}).Return(nil, nil, nil)
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
 	suite.healthStatuses.EXPECT().GetMany(gomock.Any(), gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
@@ -268,6 +272,9 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsGetAll() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesCount() {
+	if features.PostgresDatastore.Enabled() {
+		suite.T().Skip("Skipping search test in postgres mode")
+	}
 	suite.clusters.EXPECT().Count(suite.hasWriteCtx).Times(0)
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
 
@@ -382,6 +389,9 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsUpdateClusterStatus() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesSearch() {
+	if features.PostgresDatastore.Enabled() {
+		suite.T().Skip("Skipping search test in postgres mode")
+	}
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
 
 	clusters, err := suite.clusterDataStore.Search(suite.hasNoneCtx, search.EmptyQuery())

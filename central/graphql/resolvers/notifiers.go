@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -27,7 +26,7 @@ func (resolver *Resolver) Notifiers(ctx context.Context) ([]*notifierResolver, e
 		return nil, err
 	}
 	return resolver.wrapNotifiers(
-		resolver.NotifierStore.GetNotifiers(ctx, &v1.GetNotifiersRequest{}))
+		resolver.NotifierStore.GetScrubbedNotifiers(ctx))
 }
 
 // Notifier gets a single notifier by ID
@@ -37,5 +36,5 @@ func (resolver *Resolver) Notifier(ctx context.Context, args struct{ graphql.ID 
 		return nil, err
 	}
 	return resolver.wrapNotifier(
-		resolver.NotifierStore.GetNotifier(ctx, string(args.ID)))
+		resolver.NotifierStore.GetScrubbedNotifier(ctx, string(args.ID)))
 }

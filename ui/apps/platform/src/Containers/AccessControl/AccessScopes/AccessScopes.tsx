@@ -158,13 +158,13 @@ function AccessScopes(): ReactElement {
                     <AccessControlHeaderActionBar
                         displayComponent={
                             <AccessControlDescription>
-                                Add predefined sets of authorized Kubernetes resources that users
+                                Create predefined sets of authorized Kubernetes resources that users
                                 should be able to access
                             </AccessControlDescription>
                         }
                         actionComponent={
                             <Button variant="primary" onClick={handleCreate}>
-                                Add access scope
+                                Create access scope
                             </Button>
                         }
                     />
@@ -172,9 +172,7 @@ function AccessScopes(): ReactElement {
             ) : (
                 <AccessControlBreadcrumbs
                     entityType={entityType}
-                    entityName={action === 'create' ? 'Add access scope' : accessScope?.name}
-                    isDisabled={hasAction}
-                    isList={isList}
+                    entityName={action === 'create' ? 'Create access scope' : accessScope?.name}
                 />
             )}
             {alertAccessScopes}

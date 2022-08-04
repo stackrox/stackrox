@@ -1,12 +1,12 @@
 import { url as apidocsUrl } from '../constants/ApiReferencePage';
-import { baseURL as complianceUrl } from '../constants/CompliancePage';
-import { url as dashboardUrl, selectors as dashboardSelectors } from '../constants/DashboardPage';
-import { url as networkUrl } from '../constants/NetworkPage';
 import { url as userUrl } from '../constants/UserPage';
-import { url as violationsUrl } from '../constants/ViolationsPage';
 import selectors from '../constants/GeneralPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import { visitComplianceDashboard, visitComplianceEntities } from '../helpers/compliance';
+import { visitMainDashboard, visitMainDashboardFromLeftNav } from '../helpers/main';
+import { visitNetworkGraph } from '../helpers/networkGraph';
+import { visitViolations, visitViolationsWithUncaughtException } from '../helpers/violations';
 
 //
 // Sanity / general checks for UI being up and running
@@ -21,55 +21,31 @@ describe('General sanity checks', () => {
         const productNameRegExp = '(Red Hat Advanced Cluster Security|StackRox)';
 
         it('for Dashboard', () => {
-            cy.intercept('POST', api.dashboard.summaryCounts).as('summaryCounts');
-            cy.visit(dashboardUrl);
-            cy.wait('@summaryCounts');
+            visitMainDashboard();
 
             cy.title().should('match', new RegExp(`Dashboard | ${productNameRegExp}`));
         });
 
         it('for Network Graph', () => {
-            cy.intercept('GET', api.network.networkGraph).as('networkGraph');
-            cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
-            cy.visit(networkUrl);
-            cy.wait(['@networkGraph', '@networkPolicies']);
+            visitNetworkGraph();
 
             cy.title().should('match', new RegExp(`Network Graph | ${productNameRegExp}`));
         });
 
         it('for Violations', () => {
-            cy.intercept('GET', api.alerts.alerts).as('alerts');
-            cy.intercept('GET', api.alerts.alertscount).as('alertsCount');
-            cy.visit(violationsUrl);
-            cy.wait(['@alerts', '@alertsCount']);
+            visitViolations();
 
             cy.title().should('match', new RegExp(`Violations | ${productNameRegExp}`));
         });
 
-        it('for Violations with side panel open', () => {
-            cy.intercept('GET', api.alerts.alertById).as('alertById');
-            cy.visit('/main/violations/1234');
-            cy.wait('@alertById'); // 404
-
-            cy.title().should('match', new RegExp(`Violations | ${productNameRegExp}`)); // Violation not found.
-        });
-
         it('for Compliance Dashboard', () => {
-            const getAggregatedResults = api.graphql(
-                api.compliance.graphqlOps.getAggregatedResults
-            );
-            cy.intercept('POST', getAggregatedResults).as('getAggregatedResults');
-            cy.visit(complianceUrl);
-            cy.wait('@getAggregatedResults');
+            visitComplianceDashboard();
 
             cy.title().should('match', new RegExp(`Compliance | ${productNameRegExp}`));
         });
 
         it('for Compliance Namespaces', () => {
-            const namespaces = api.graphql(api.compliance.graphqlOps.namespaces);
-            cy.intercept('POST', namespaces).as('namespaces');
-            cy.visit(`${complianceUrl}/namespaces`);
-            cy.wait('@namespaces');
+            visitComplianceEntities('namespaces');
 
             cy.title().should('match', new RegExp(`Compliance - Namespace | ${productNameRegExp}`));
         });
@@ -93,37 +69,7 @@ describe('General sanity checks', () => {
         });
     });
 
-    it('should render navbar with Dashboard selected', () => {
-        cy.intercept('POST', api.dashboard.summaryCounts).as('summaryCounts');
-        cy.visit('/');
-        cy.wait('@summaryCounts');
-
-        // redirect should happen
-        cy.location('pathname').should('eq', dashboardUrl);
-
-        // Dashboard is selected
-        cy.get(selectors.navLinks.first).should('have.class', 'pf-m-current');
-        cy.get(selectors.navLinks.first).contains('Dashboard');
-
-        // nothing else is selected
-        cy.get(selectors.navLinks.others).should('not.have.class', 'pf-m-current');
-    });
-
-    it('should have the summary counts in the top header', () => {
-        cy.intercept('POST', api.dashboard.summaryCounts).as('summaryCounts');
-        cy.visit(dashboardUrl);
-        cy.wait('@summaryCounts');
-
-        const { summaryCount: summaryCountSelector } = dashboardSelectors;
-        cy.get(`${summaryCountSelector}:nth-child(1):contains("Cluster")`);
-        cy.get(`${summaryCountSelector}:nth-child(2):contains("Node")`);
-        cy.get(`${summaryCountSelector}:nth-child(3):contains("Violation")`);
-        cy.get(`${summaryCountSelector}:nth-child(4):contains("Deployment")`);
-        cy.get(`${summaryCountSelector}:nth-child(5):contains("Image")`);
-        cy.get(`${summaryCountSelector}:nth-child(6):contains("Secret")`);
-    });
-
-    // TODO: Fix for ROX-6826
+    // TODO: Fix interactive steps for ROX-6826 and merge with the preceding tests to replace visit with assertion about apidocsUrl.
     xit('should go to API docs', () => {
         cy.visit('/');
         cy.get(selectors.navLinks.apidocs).as('apidocs');
@@ -133,18 +79,14 @@ describe('General sanity checks', () => {
     });
 
     it('should allow to navigate to another page after exception happens on a page', () => {
-        cy.intercept('GET', api.alerts.alerts, {
-            body: { alerts: [{ id: 'broken one' }] },
-        }).as('alerts');
-
-        cy.visit(violationsUrl);
-        cy.wait('@alerts');
+        // Test fails with uncaught exception in local deployment.
+        visitViolationsWithUncaughtException();
 
         cy.get(selectors.errorBoundary).contains(
             "We're sorry — something's gone wrong. The error has been logged."
         );
 
-        cy.get(selectors.navLinks.first).click();
+        visitMainDashboardFromLeftNav();
         cy.get(selectors.errorBoundary).should('not.exist'); // error screen should be gone
     });
 });

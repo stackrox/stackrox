@@ -8,8 +8,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -37,8 +38,9 @@ type providerImpl struct {
 	backendCreationDone        concurrency.ErrorSignal
 	lastBackendCreationAttempt time.Time
 
-	roleMapper permissions.RoleMapper
-	issuer     tokens.Issuer
+	roleMapper        permissions.RoleMapper
+	issuer            tokens.Issuer
+	attributeVerifier user.AttributeVerifier
 
 	doNotStore bool
 
@@ -117,7 +119,7 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 
 	// Backend factories are not guaranteed to survive product upgrades or restarts.
 	if p.backendFactory == nil {
-		return nil, errorhelpers.NewErrInvariantViolation(
+		return nil, errox.InvariantViolation.CausedBy(
 			"the backend for this authentication provider cannot be instantiated;" +
 				" this is probably because of a recent upgrade or a configuration change")
 	}
@@ -196,6 +198,13 @@ func (p *providerImpl) Issuer() tokens.Issuer {
 	defer p.mutex.RUnlock()
 
 	return p.issuer
+}
+
+func (p *providerImpl) AttributeVerifier() user.AttributeVerifier {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	return p.attributeVerifier
 }
 
 // Modifier functions.

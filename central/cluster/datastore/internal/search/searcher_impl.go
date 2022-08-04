@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/stackrox/rox/central/cluster/index"
 	"github.com/stackrox/rox/central/cluster/index/mappings"
@@ -79,17 +78,6 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 // Count returns the number of search results from the query
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.formattedSearcher.Count(ctx, q)
-}
-
-func convertCluster(cluster *storage.Cluster, result search.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_CLUSTERS,
-		Id:             cluster.GetId(),
-		Name:           cluster.GetName(),
-		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-		Location:       fmt.Sprintf("/%s", cluster.GetName()),
-	}
 }
 
 // Helper functions which format our searching.

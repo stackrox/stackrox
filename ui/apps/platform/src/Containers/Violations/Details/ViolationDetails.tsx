@@ -1,7 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 
-import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
 import ViolationTags from './AnalystNotes/ViolationTags';
 import DeploytimeMessages from './DeploytimeMessages';
 import RuntimeMessages from './RuntimeMessages';
@@ -58,9 +57,6 @@ function ViolationDetails({
                 </FlexItem>
                 <FlexItem data-testid="violation-tags">
                     <ViolationTags resourceId={violationId} />
-                </FlexItem>
-                <FlexItem data-testid="violation-comments">
-                    <ViolationComments resourceId={violationId} />
                 </FlexItem>
             </Flex>
         </Flex>

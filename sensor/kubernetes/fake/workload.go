@@ -7,7 +7,20 @@ type DeploymentWorkload struct {
 	DeploymentType string `yaml:"deploymentType"`
 	NumDeployments int    `yaml:"numDeployments"`
 
+	NumLabels int `yaml:"numLabels"`
+
 	PodWorkload PodWorkload `yaml:"podWorkload"`
+
+	UpdateInterval    time.Duration `yaml:"updateInterval"`
+	LifecycleDuration time.Duration `yaml:"lifecycleDuration"`
+	NumLifecycles     int           `yaml:"numLifecycles"`
+}
+
+// NetworkPolicyWorkload defines a workload of networkPolicy objects
+type NetworkPolicyWorkload struct {
+	NumNetworkPolicies int `yaml:"numNetworkPolicies"`
+
+	NumLabels int `yaml:"numLabels"`
 
 	UpdateInterval    time.Duration `yaml:"updateInterval"`
 	LifecycleDuration time.Duration `yaml:"lifecycleDuration"`
@@ -56,8 +69,10 @@ type RBACWorkload struct {
 
 // Workload is the definition of a scale workload
 type Workload struct {
-	DeploymentWorkload []DeploymentWorkload `yaml:"deploymentWorkload"`
-	NodeWorkload       NodeWorkload         `yaml:"nodeWorkload"`
-	NetworkWorkload    NetworkWorkload      `yaml:"networkWorkload"`
-	RBACWorkload       RBACWorkload         `yaml:"rbacWorkload"`
+	DeploymentWorkload    []DeploymentWorkload    `yaml:"deploymentWorkload"`
+	NetworkPolicyWorkload []NetworkPolicyWorkload `yaml:"networkPolicyWorkload"`
+	NodeWorkload          NodeWorkload            `yaml:"nodeWorkload"`
+	NetworkWorkload       NetworkWorkload         `yaml:"networkWorkload"`
+	RBACWorkload          RBACWorkload            `yaml:"rbacWorkload"`
+	NumNamespaces         int                     `yaml:"numNamespaces"`
 }

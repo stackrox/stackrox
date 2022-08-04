@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -99,7 +100,7 @@ func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
 	return f.FieldIsOfType(fieldName, AuditLogEvent)
 }
 
-// FindFieldMetadata searches for a policy criteria field by name and returns the field metadata
+// findFieldMetadata searches for a policy criteria field by name and returns the field metadata
 func (f *FieldMetadata) findFieldMetadata(fieldName string, config *validateConfiguration) (*metadataAndQB, error) {
 	field := f.fieldsToQB[fieldName]
 	if field == nil {
@@ -171,6 +172,15 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{},
 		negationForbidden,
 	)
+
+	f.registerFieldMetadata(fieldnames.AllowPrivilegeEscalation,
+		querybuilders.ForFieldLabel(search.AllowPrivilegeEscalation),
+		violationmessages.ContainerContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
 	f.registerFieldMetadata(fieldnames.AppArmorProfile,
 		querybuilders.ForFieldLabelRegex(search.AppArmorProfile),
@@ -276,7 +286,10 @@ func initializeFieldMetadata() FieldMetadata {
 	f.registerFieldMetadata(fieldnames.DockerfileLine,
 		querybuilders.ForCompound(augmentedobjs.DockerfileLineCustomTag, 2),
 		violationmessages.ImageContextFields,
-		func(*validateConfiguration) *regexp.Regexp {
+		func(c *validateConfiguration) *regexp.Regexp {
+			if c.disallowFromInDockerfileLine {
+				return dockerfileLineValueRegexNoFrom
+			}
 			return dockerfileLineValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
@@ -395,13 +408,13 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
 	f.registerFieldMetadata(fieldnames.ImageSignatureVerifiedBy,
-		querybuilders.ForFieldLabel(augmentedobjs.ImageSignatureVerifiedCustomTag),
+		querybuilders.ForImageSignatureVerificationStatus(),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
 			return signatureIntegrationIDValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{})
+		[]RuntimeFieldType{}, negationForbidden)
 
 	f.registerFieldMetadata(fieldnames.ImageTag,
 		querybuilders.ForFieldLabelRegex(search.ImageTag),
@@ -798,6 +811,26 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden,
 	)
+
+	if features.NetworkPolicySystemPolicy.Enabled() {
+		f.registerFieldMetadata(fieldnames.HasIngressNetworkPolicy,
+			querybuilders.ForFieldLabel(augmentedobjs.HasIngressPolicyCustomTag), nil,
+			func(*validateConfiguration) *regexp.Regexp {
+				return booleanValueRegex
+			},
+			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+			[]RuntimeFieldType{}, operatorsForbidden,
+		)
+
+		f.registerFieldMetadata(fieldnames.HasEgressNetworkPolicy,
+			querybuilders.ForFieldLabel(augmentedobjs.HasEgressPolicyCustomTag), nil,
+			func(*validateConfiguration) *regexp.Regexp {
+				return booleanValueRegex
+			},
+			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+			[]RuntimeFieldType{}, operatorsForbidden,
+		)
+	}
 
 	return f
 }

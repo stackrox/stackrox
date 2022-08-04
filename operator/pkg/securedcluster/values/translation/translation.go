@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"strconv"
 
 	// Required for the usage of go:embed below.
 	_ "embed"
@@ -14,7 +15,6 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
-	"github.com/stackrox/rox/pkg/features"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
@@ -72,7 +72,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	return helmUtil.CoalesceTables(baseValues, imageOverrideVals, valsFromCR), nil
 }
 
-// Translate translates a SecuredCluster CR into helm values.
+// translate translates a SecuredCluster CR into helm values.
 func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (chartutil.Values, error) {
 	t.setDefaults(&sc)
 
@@ -91,9 +91,12 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	customize := translation.NewValuesBuilder()
 
-	if sc.Spec.Sensor != nil {
-		v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor))
+	scannerAutoSenseConfig, err := scanner.AutoSenseLocalScannerConfig(ctx, t.client, sc)
+	if err != nil {
+		return nil, err
 	}
+
+	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig))
 
 	if sc.Spec.AdmissionControl != nil {
 		v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl))
@@ -107,11 +110,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.AddChild("collector", t.getCollectorValues(sc.Spec.PerNode))
 	}
 
-	if features.LocalImageScanning.Enabled() {
-		v.AddChild("scanner", t.getLocalScannerComponentValues(ctx, sc))
-	}
+	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig))
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
+
 	v.AddChild("customize", &customize)
 	v.AddChild("meta", getMetaValues(sc))
 	v.AddAllFrom(translation.GetMisc(sc.Spec.Misc))
@@ -167,12 +169,18 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.Secur
 	return nil
 }
 
-func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec) *translation.ValuesBuilder {
+func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, config scanner.AutoSenseResult) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
-	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
-	sv.SetStringMap("nodeSelector", sensor.NodeSelector)
-	sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, sensor.Tolerations))
+	if sensor != nil {
+		sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
+		sv.SetStringMap("nodeSelector", sensor.NodeSelector)
+		sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, sensor.Tolerations))
+	}
+
+	if config.EnableLocalImageScanning {
+		sv.SetPathValue("localImageScanning.enabled", strconv.FormatBool(config.EnableLocalImageScanning))
+	}
 
 	return &sv
 }
@@ -303,16 +311,11 @@ func (t Translator) getComplianceContainerValues(compliance *platform.ContainerS
 	return &cv
 }
 
-func (t Translator) getLocalScannerComponentValues(ctx context.Context, securedCluster platform.SecuredCluster) *translation.ValuesBuilder {
+func (t Translator) getLocalScannerComponentValues(securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 	s := securedCluster.Spec.Scanner
 
-	enabled, err := scanner.AutoSenseLocalScannerSupport(ctx, t.client, securedCluster)
-	if err != nil {
-		sv.SetError(err)
-	} else {
-		sv.SetBoolValue("disable", !enabled)
-	}
+	sv.SetBoolValue("disable", !config.DeployScannerResources)
 
 	translation.SetScannerAnalyzerValues(&sv, s.Analyzer)
 	translation.SetScannerDBValues(&sv, s.DB)

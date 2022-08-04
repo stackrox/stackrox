@@ -4,7 +4,6 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-import "storage/cve.proto";
 import "storage/vulnerability.proto";
 import "gogoproto/gogo.proto";
 
@@ -38,7 +37,7 @@ message Image {
     bool                            is_cluster_local            = 17;
 
     reserved 6;  // was map<string,string> clusterns_scopes
-    int64                           priority                    = 11;
+    int64                           priority                    = 11 [(gogoproto.moretags) = 'search:"Image Risk Priority,hidden"'];
     float                           risk_score                  = 12 [(gogoproto.moretags) = "search:\"Image Risk Score,hidden\""];
     oneof set_top_cvss {
         float                       top_cvss                    = 13 [(gogoproto.moretags) = "search:\"Image Top CVSS,store\""];
@@ -169,7 +168,8 @@ message ImageMetadata {
 }
 
 message ImageSignature {
-    repeated Signature signatures = 1;
+    repeated Signature signatures                  = 1;
+    google.protobuf.Timestamp fetched              = 2 [(gogoproto.moretags) = "search:\"Image Signature Fetched Time,hidden\""];
 }
 
 message Signature {
@@ -232,25 +232,6 @@ message ListImage {
 
     reserved 9;  // was map<string, string> clusterns_scopes
     int64 priority                         = 10;
-}
-
-message ImageComponentEdge {
-    // base 64 encoded Image:Component ids.
-    string    id          = 1;
-
-    /// Layer that contains this component
-    oneof has_layer_index {
-        int32 layer_index = 2;
-    }
-
-    string    location    = 3 [(gogoproto.moretags) = "search:\"Component Location,store,hidden\""];
-}
-
-message ImageCVEEdge {
-    // base 64 encoded Image:CVE ids.
-    string                    id                     = 1;
-    google.protobuf.Timestamp first_image_occurrence = 2 [(gogoproto.moretags) = "search:\"First Image Occurrence Timestamp,hidden\""];
-    VulnerabilityState        state                  = 3 [(gogoproto.moretags) = "search:\"Vulnerability State\""];
 }
 
 message WatchedImage {

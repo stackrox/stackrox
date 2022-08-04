@@ -28,6 +28,8 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type SuppressCVERequest struct {
+	// These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+	// For example, CVE-2021-44832.
 	Ids                  []string        `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
 	Duration             *types.Duration `protobuf:"bytes,3,opt,name=duration,proto3" json:"duration,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
@@ -101,6 +103,8 @@ func (m *SuppressCVERequest) Clone() *SuppressCVERequest {
 }
 
 type UnsuppressCVERequest struct {
+	// These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+	// For example, CVE-2021-44832.
 	Ids                  []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -172,27 +176,35 @@ func init() {
 func init() { proto.RegisterFile("api/v1/cve_service.proto", fileDescriptor_257c48a61826e50f) }
 
 var fileDescriptor_257c48a61826e50f = []byte{
-	// 320 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x48, 0x2c, 0xc8, 0xd4,
-	0x2f, 0x33, 0xd4, 0x4f, 0x2e, 0x4b, 0x8d, 0x2f, 0x4e, 0x2d, 0x2a, 0xcb, 0x4c, 0x4e, 0xd5, 0x2b,
-	0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2a, 0x33, 0x94, 0x92, 0x49, 0xcf, 0xcf, 0x4f, 0xcf, 0x49,
-	0xd5, 0x07, 0x29, 0x4a, 0xcc, 0xcb, 0xcb, 0x2f, 0x49, 0x2c, 0xc9, 0xcc, 0xcf, 0x2b, 0x86, 0xa8,
-	0x90, 0x92, 0x83, 0xca, 0x82, 0x79, 0x49, 0xa5, 0x69, 0xfa, 0x29, 0xa5, 0x45, 0x60, 0x05, 0x50,
-	0x79, 0x21, 0xa8, 0xd9, 0xa9, 0xb9, 0x05, 0x25, 0x95, 0x10, 0x31, 0xa5, 0x64, 0x2e, 0xa1, 0xe0,
-	0xd2, 0x82, 0x82, 0xa2, 0xd4, 0xe2, 0x62, 0xe7, 0x30, 0xd7, 0xa0, 0xd4, 0xc2, 0xd2, 0xd4, 0xe2,
-	0x12, 0x21, 0x01, 0x2e, 0xe6, 0xcc, 0x94, 0x62, 0x09, 0x46, 0x05, 0x66, 0x0d, 0xce, 0x20, 0x10,
-	0x53, 0xc8, 0x94, 0x8b, 0x03, 0x66, 0x9a, 0x04, 0xb3, 0x02, 0xa3, 0x06, 0xb7, 0x91, 0xa4, 0x1e,
-	0xc4, 0x3a, 0x3d, 0x98, 0x75, 0x7a, 0x2e, 0x50, 0x05, 0x41, 0x70, 0xa5, 0x5e, 0x2c, 0x1c, 0x4c,
-	0x02, 0xcc, 0x4a, 0x1a, 0x5c, 0x22, 0xa1, 0x79, 0xc5, 0x44, 0x58, 0x63, 0xb4, 0x85, 0x91, 0x8b,
-	0xcb, 0x39, 0xcc, 0x35, 0x18, 0xe2, 0x73, 0x21, 0x7f, 0x2e, 0x1e, 0x24, 0xd7, 0x15, 0x0b, 0x89,
-	0xe9, 0x95, 0x19, 0xea, 0x61, 0xba, 0x57, 0x8a, 0x13, 0x24, 0xee, 0x0a, 0xf2, 0x96, 0x92, 0x4c,
-	0xd3, 0xe5, 0x27, 0x93, 0x99, 0xc4, 0x8c, 0x04, 0xa1, 0xa1, 0x58, 0xac, 0x0f, 0xb3, 0xd8, 0x8a,
-	0x51, 0x4b, 0x28, 0x94, 0x8b, 0x0f, 0xc5, 0x25, 0xc5, 0x42, 0x12, 0x20, 0xad, 0xd8, 0x5c, 0x87,
-	0x6c, 0xa8, 0x1c, 0xd8, 0x50, 0x09, 0x23, 0x61, 0xb8, 0xa1, 0xa5, 0x79, 0x48, 0xc6, 0x3a, 0xe9,
-	0x9d, 0x78, 0x24, 0xc7, 0x78, 0xe1, 0x91, 0x1c, 0xe3, 0x83, 0x47, 0x72, 0x8c, 0x33, 0x1e, 0xcb,
-	0x31, 0x70, 0x49, 0x64, 0xe6, 0xeb, 0x15, 0x97, 0x24, 0x26, 0x67, 0x17, 0xe5, 0x57, 0x40, 0x42,
-	0x48, 0x2f, 0xb1, 0x20, 0x53, 0xaf, 0xcc, 0x30, 0x8a, 0xa9, 0xcc, 0x30, 0x82, 0x21, 0x89, 0x0d,
-	0x2c, 0x66, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff, 0x7f, 0xab, 0x26, 0xc2, 0xf0, 0x01, 0x00, 0x00,
+	// 442 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0xc1, 0x8a, 0xd3, 0x40,
+	0x18, 0xc7, 0x3b, 0x89, 0x48, 0x3b, 0x4a, 0x6d, 0x47, 0xad, 0x31, 0xd6, 0x58, 0x23, 0x42, 0xf1,
+	0x30, 0x21, 0x23, 0x5e, 0x3c, 0x5a, 0x7b, 0xd0, 0x83, 0x42, 0x6b, 0x8b, 0x16, 0x41, 0xd2, 0x64,
+	0x2c, 0xc1, 0x36, 0x13, 0x33, 0x49, 0xd0, 0xab, 0xaf, 0xe0, 0xc5, 0x07, 0xf1, 0x01, 0x04, 0x2f,
+	0xbb, 0xb7, 0x85, 0x7d, 0x81, 0xa5, 0xbb, 0x0f, 0xb2, 0xcc, 0x24, 0x2d, 0xc9, 0x66, 0x0f, 0xdb,
+	0xde, 0x92, 0x6f, 0xbe, 0xfc, 0xfe, 0xff, 0xdf, 0x40, 0xa0, 0xe6, 0x84, 0xbe, 0x95, 0xda, 0x96,
+	0x9b, 0xd2, 0x2f, 0x9c, 0x46, 0xa9, 0xef, 0x52, 0x1c, 0x46, 0x2c, 0x66, 0x48, 0x49, 0x6d, 0xbd,
+	0xbb, 0x60, 0x6c, 0xb1, 0xa4, 0x96, 0x58, 0x72, 0x82, 0x80, 0xc5, 0x4e, 0xec, 0xb3, 0x80, 0x67,
+	0x1b, 0xba, 0x91, 0x9f, 0xca, 0xb7, 0x79, 0xf2, 0xd5, 0xf2, 0x92, 0x48, 0x2e, 0xe4, 0xe7, 0x28,
+	0x67, 0xd3, 0x55, 0x18, 0xff, 0xcc, 0x66, 0xa6, 0x0b, 0xd1, 0x38, 0x09, 0xc3, 0x88, 0x72, 0x3e,
+	0x98, 0x0e, 0x47, 0xf4, 0x7b, 0x42, 0x79, 0x8c, 0x5a, 0x50, 0xf5, 0x3d, 0xae, 0x81, 0x9e, 0xda,
+	0x6f, 0x8c, 0xc4, 0x23, 0x7a, 0x01, 0xeb, 0x1b, 0x9a, 0xa6, 0xf6, 0x40, 0xff, 0x06, 0xb9, 0x8f,
+	0xb3, 0x38, 0xbc, 0x89, 0xc3, 0xaf, 0xf3, 0x85, 0xd1, 0x76, 0xf5, 0xed, 0xb5, 0xba, 0xd2, 0x52,
+	0xcd, 0x3e, 0xbc, 0x33, 0x09, 0xf8, 0x15, 0x62, 0xc8, 0x5f, 0x00, 0xe1, 0x60, 0x3a, 0x1c, 0x67,
+	0xe6, 0xe8, 0x3d, 0xbc, 0x59, 0x68, 0xc7, 0x51, 0x07, 0xa7, 0x36, 0xae, 0xf6, 0xd5, 0x1b, 0x62,
+	0x3e, 0x14, 0x5a, 0x66, 0xf7, 0xd7, 0xf1, 0xd9, 0x6f, 0xa5, 0x43, 0xda, 0xf9, 0x2d, 0x72, 0x6b,
+	0x13, 0xfc, 0x12, 0x3c, 0x43, 0x13, 0xd8, 0x2c, 0x35, 0xe1, 0x48, 0x13, 0x9f, 0x5e, 0xd6, 0xae,
+	0x08, 0x35, 0x24, 0x54, 0x23, 0xb7, 0xb7, 0xd0, 0x24, 0x28, 0x60, 0xc9, 0x7f, 0x00, 0x6f, 0xbd,
+	0x59, 0x39, 0x0b, 0x5a, 0xe8, 0xfe, 0x61, 0xf7, 0xee, 0x8f, 0x65, 0xcc, 0x03, 0xd2, 0x11, 0x31,
+	0xbe, 0xe0, 0x55, 0x04, 0x66, 0xfb, 0x09, 0x3c, 0x91, 0xe4, 0x87, 0x44, 0x2b, 0x93, 0xcb, 0x16,
+	0xff, 0x00, 0x6c, 0xbe, 0x63, 0x5e, 0x51, 0x62, 0xbc, 0xbb, 0x44, 0x4f, 0x46, 0xe9, 0xe4, 0xae,
+	0x88, 0x0a, 0x98, 0x57, 0x75, 0xf8, 0xb4, 0x9f, 0x83, 0x29, 0xc1, 0x5d, 0x72, 0xaf, 0x04, 0x2e,
+	0x2b, 0x1c, 0x02, 0xd8, 0x1e, 0x2c, 0x13, 0x1e, 0xd3, 0xa8, 0x60, 0x31, 0xdd, 0xdd, 0xa2, 0x74,
+	0x61, 0x6e, 0x46, 0xac, 0x88, 0x7c, 0xde, 0x4f, 0xe4, 0xa9, 0x64, 0x3f, 0x22, 0xfa, 0x45, 0x76,
+	0xc9, 0xe5, 0x15, 0x3e, 0x58, 0x1b, 0xe0, 0x68, 0x6d, 0x80, 0x93, 0xb5, 0x01, 0xfe, 0x9c, 0x1a,
+	0x35, 0xa8, 0xf9, 0x0c, 0xf3, 0xd8, 0x71, 0xbf, 0x45, 0xec, 0x47, 0xf6, 0xdb, 0x61, 0x27, 0xf4,
+	0x71, 0x6a, 0xcf, 0x94, 0xd4, 0xfe, 0x58, 0x9b, 0x5f, 0x97, 0xb3, 0xe7, 0xe7, 0x01, 0x00, 0x00,
+	0xff, 0xff, 0x50, 0x03, 0xaf, 0xc4, 0x45, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -209,7 +221,7 @@ const _ = grpc.SupportPackageIsVersion6
 type CVEServiceClient interface {
 	// SuppressCVE suppresses cves.
 	SuppressCVEs(ctx context.Context, in *SuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
-	// UnsuppressCVE unsuppresse    s cves.
+	// UnsuppressCVE unsuppresses cves.
 	UnsuppressCVEs(ctx context.Context, in *UnsuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -243,7 +255,7 @@ func (c *cVEServiceClient) UnsuppressCVEs(ctx context.Context, in *UnsuppressCVE
 type CVEServiceServer interface {
 	// SuppressCVE suppresses cves.
 	SuppressCVEs(context.Context, *SuppressCVERequest) (*Empty, error)
-	// UnsuppressCVE unsuppresse    s cves.
+	// UnsuppressCVE unsuppresses cves.
 	UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error)
 }
 
@@ -309,6 +321,342 @@ var _CVEService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnsuppressCVEs",
 			Handler:    _CVEService_UnsuppressCVEs_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/v1/cve_service.proto",
+}
+
+// ImageCVEServiceClient is the client API for ImageCVEService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
+type ImageCVEServiceClient interface {
+	// SuppressCVE suppresses image cves.
+	SuppressCVEs(ctx context.Context, in *SuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
+	// UnsuppressCVE unsuppresses image cves.
+	UnsuppressCVEs(ctx context.Context, in *UnsuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
+}
+
+type imageCVEServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewImageCVEServiceClient(cc grpc.ClientConnInterface) ImageCVEServiceClient {
+	return &imageCVEServiceClient{cc}
+}
+
+func (c *imageCVEServiceClient) SuppressCVEs(ctx context.Context, in *SuppressCVERequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v1.ImageCVEService/SuppressCVEs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *imageCVEServiceClient) UnsuppressCVEs(ctx context.Context, in *UnsuppressCVERequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v1.ImageCVEService/UnsuppressCVEs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ImageCVEServiceServer is the server API for ImageCVEService service.
+type ImageCVEServiceServer interface {
+	// SuppressCVE suppresses image cves.
+	SuppressCVEs(context.Context, *SuppressCVERequest) (*Empty, error)
+	// UnsuppressCVE unsuppresses image cves.
+	UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error)
+}
+
+// UnimplementedImageCVEServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedImageCVEServiceServer struct {
+}
+
+func (*UnimplementedImageCVEServiceServer) SuppressCVEs(ctx context.Context, req *SuppressCVERequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SuppressCVEs not implemented")
+}
+func (*UnimplementedImageCVEServiceServer) UnsuppressCVEs(ctx context.Context, req *UnsuppressCVERequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsuppressCVEs not implemented")
+}
+
+func RegisterImageCVEServiceServer(s *grpc.Server, srv ImageCVEServiceServer) {
+	s.RegisterService(&_ImageCVEService_serviceDesc, srv)
+}
+
+func _ImageCVEService_SuppressCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SuppressCVERequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ImageCVEServiceServer).SuppressCVEs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.ImageCVEService/SuppressCVEs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ImageCVEServiceServer).SuppressCVEs(ctx, req.(*SuppressCVERequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ImageCVEService_UnsuppressCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnsuppressCVERequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ImageCVEServiceServer).UnsuppressCVEs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.ImageCVEService/UnsuppressCVEs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ImageCVEServiceServer).UnsuppressCVEs(ctx, req.(*UnsuppressCVERequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _ImageCVEService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "v1.ImageCVEService",
+	HandlerType: (*ImageCVEServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SuppressCVEs",
+			Handler:    _ImageCVEService_SuppressCVEs_Handler,
+		},
+		{
+			MethodName: "UnsuppressCVEs",
+			Handler:    _ImageCVEService_UnsuppressCVEs_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/v1/cve_service.proto",
+}
+
+// NodeCVEServiceClient is the client API for NodeCVEService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
+type NodeCVEServiceClient interface {
+	// SuppressCVE suppresses node cves.
+	SuppressCVEs(ctx context.Context, in *SuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
+	// UnsuppressCVE unsuppresses node cves.
+	UnsuppressCVEs(ctx context.Context, in *UnsuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
+}
+
+type nodeCVEServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewNodeCVEServiceClient(cc grpc.ClientConnInterface) NodeCVEServiceClient {
+	return &nodeCVEServiceClient{cc}
+}
+
+func (c *nodeCVEServiceClient) SuppressCVEs(ctx context.Context, in *SuppressCVERequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v1.NodeCVEService/SuppressCVEs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeCVEServiceClient) UnsuppressCVEs(ctx context.Context, in *UnsuppressCVERequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v1.NodeCVEService/UnsuppressCVEs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// NodeCVEServiceServer is the server API for NodeCVEService service.
+type NodeCVEServiceServer interface {
+	// SuppressCVE suppresses node cves.
+	SuppressCVEs(context.Context, *SuppressCVERequest) (*Empty, error)
+	// UnsuppressCVE unsuppresses node cves.
+	UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error)
+}
+
+// UnimplementedNodeCVEServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedNodeCVEServiceServer struct {
+}
+
+func (*UnimplementedNodeCVEServiceServer) SuppressCVEs(ctx context.Context, req *SuppressCVERequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SuppressCVEs not implemented")
+}
+func (*UnimplementedNodeCVEServiceServer) UnsuppressCVEs(ctx context.Context, req *UnsuppressCVERequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsuppressCVEs not implemented")
+}
+
+func RegisterNodeCVEServiceServer(s *grpc.Server, srv NodeCVEServiceServer) {
+	s.RegisterService(&_NodeCVEService_serviceDesc, srv)
+}
+
+func _NodeCVEService_SuppressCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SuppressCVERequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeCVEServiceServer).SuppressCVEs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.NodeCVEService/SuppressCVEs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeCVEServiceServer).SuppressCVEs(ctx, req.(*SuppressCVERequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeCVEService_UnsuppressCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnsuppressCVERequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeCVEServiceServer).UnsuppressCVEs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.NodeCVEService/UnsuppressCVEs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeCVEServiceServer).UnsuppressCVEs(ctx, req.(*UnsuppressCVERequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _NodeCVEService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "v1.NodeCVEService",
+	HandlerType: (*NodeCVEServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SuppressCVEs",
+			Handler:    _NodeCVEService_SuppressCVEs_Handler,
+		},
+		{
+			MethodName: "UnsuppressCVEs",
+			Handler:    _NodeCVEService_UnsuppressCVEs_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/v1/cve_service.proto",
+}
+
+// ClusterCVEServiceClient is the client API for ClusterCVEService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
+type ClusterCVEServiceClient interface {
+	// SuppressCVE suppresses cluster cves.
+	SuppressCVEs(ctx context.Context, in *SuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
+	// UnsuppressCVE unsuppresses cluster cves.
+	UnsuppressCVEs(ctx context.Context, in *UnsuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
+}
+
+type clusterCVEServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewClusterCVEServiceClient(cc grpc.ClientConnInterface) ClusterCVEServiceClient {
+	return &clusterCVEServiceClient{cc}
+}
+
+func (c *clusterCVEServiceClient) SuppressCVEs(ctx context.Context, in *SuppressCVERequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v1.ClusterCVEService/SuppressCVEs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clusterCVEServiceClient) UnsuppressCVEs(ctx context.Context, in *UnsuppressCVERequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v1.ClusterCVEService/UnsuppressCVEs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ClusterCVEServiceServer is the server API for ClusterCVEService service.
+type ClusterCVEServiceServer interface {
+	// SuppressCVE suppresses cluster cves.
+	SuppressCVEs(context.Context, *SuppressCVERequest) (*Empty, error)
+	// UnsuppressCVE unsuppresses cluster cves.
+	UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error)
+}
+
+// UnimplementedClusterCVEServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedClusterCVEServiceServer struct {
+}
+
+func (*UnimplementedClusterCVEServiceServer) SuppressCVEs(ctx context.Context, req *SuppressCVERequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SuppressCVEs not implemented")
+}
+func (*UnimplementedClusterCVEServiceServer) UnsuppressCVEs(ctx context.Context, req *UnsuppressCVERequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsuppressCVEs not implemented")
+}
+
+func RegisterClusterCVEServiceServer(s *grpc.Server, srv ClusterCVEServiceServer) {
+	s.RegisterService(&_ClusterCVEService_serviceDesc, srv)
+}
+
+func _ClusterCVEService_SuppressCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SuppressCVERequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterCVEServiceServer).SuppressCVEs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.ClusterCVEService/SuppressCVEs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterCVEServiceServer).SuppressCVEs(ctx, req.(*SuppressCVERequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ClusterCVEService_UnsuppressCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnsuppressCVERequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterCVEServiceServer).UnsuppressCVEs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.ClusterCVEService/UnsuppressCVEs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterCVEServiceServer).UnsuppressCVEs(ctx, req.(*UnsuppressCVERequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _ClusterCVEService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "v1.ClusterCVEService",
+	HandlerType: (*ClusterCVEServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SuppressCVEs",
+			Handler:    _ClusterCVEService_SuppressCVEs_Handler,
+		},
+		{
+			MethodName: "UnsuppressCVEs",
+			Handler:    _ClusterCVEService_UnsuppressCVEs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

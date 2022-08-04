@@ -7,8 +7,105 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
+# State
+STATE_DEPLOYED="/tmp/state_deployed"
+
 source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
+
+deploy_stackrox() {
+    deploy_central
+
+    get_central_basic_auth_creds
+    wait_for_api
+    setup_client_TLS_certs
+
+    deploy_sensor
+    sensor_wait
+
+    # Bounce collectors to avoid restarts on initial module pull
+    kubectl -n stackrox delete pod -l app=collector --grace-period=0
+
+    sensor_wait
+
+    touch "${STATE_DEPLOYED}"
+}
+
+# export_test_environment() - Persist environment variables for the remainder of
+# this context (context == whatever pod or VM this test is running in)
+# Existing settings are maintained to allow override for different test flavors.
+export_test_environment() {
+    ci_export ADMISSION_CONTROLLER_UPDATES "${ADMISSION_CONTROLLER_UPDATES:-true}"
+    ci_export ADMISSION_CONTROLLER "${ADMISSION_CONTROLLER:-true}"
+    ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-ebpf}"
+    ci_export GCP_IMAGE_TYPE "${GCP_IMAGE_TYPE:-COS}"
+    ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
+    ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
+    ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
+    ci_export SCANNER_SUPPORT "${SCANNER_SUPPORT:-true}"
+
+    ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
+    ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
+    ci_export ROX_DECOMMISSIONED_CLUSTER_RETENTION "${ROX_DECOMMISSIONED_CLUSTER_RETENTION:-true}"
+    ci_export ROX_NEW_POLICY_CATEGORIES "${ROX_NEW_POLICY_CATEGORIES:-true}"
+    ci_export ROX_POLICIES_PATTERNFLY "${ROX_POLICIES_PATTERNFLY:-true}"
+    ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
+    ci_export ROX_SECURITY_METRICS_PHASE_ONE "${ROX_SECURITY_METRICS_PHASE_ONE:-true}"
+    ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
+    ci_export ROX_FRONTEND_VM_UPDATES "${ROX_FRONTEND_VM_UPDATES:-true}"
+}
+
+deploy_central() {
+    info "Deploying central"
+
+    # If we're running a nightly build or race condition check, then set CGO_CHECKS=true so that central is
+    # deployed with strict checks
+    if is_nightly_run || pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
+        ci_export CGO_CHECKS "true"
+    fi
+
+    if pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
+        ci_export IS_RACE_BUILD "true"
+    fi
+
+    if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
+        if pr_has_label ci-helm-deploy; then
+            ci_export OUTPUT_FORMAT helm
+        fi
+    fi
+
+    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+    "$ROOT/${DEPLOY_DIR}/central.sh"
+}
+
+deploy_sensor() {
+    info "Deploying sensor"
+
+    ci_export ROX_AFTERGLOW_PERIOD "15"
+    if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
+        echo "Deploying Sensor using Helm ..."
+        ci_export SENSOR_HELM_DEPLOY "true"
+        ci_export ADMISSION_CONTROLLER "true"
+    else
+        echo "Deploying sensor using kubectl ... "
+        if [[ -n "${IS_RACE_BUILD:-}" ]]; then
+            # builds with -race are slow at generating the sensor bundle
+            # https://stack-rox.atlassian.net/browse/ROX-6987
+            ci_export ROXCTL_TIMEOUT "60s"
+        fi
+    fi
+
+    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+    "$ROOT/${DEPLOY_DIR}/sensor.sh"
+
+    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
+        # Sensor is CPU starved under OpenShift causing all manner of test failures:
+        # https://stack-rox.atlassian.net/browse/ROX-5334
+        # https://stack-rox.atlassian.net/browse/ROX-6891
+        # et al.
+        kubectl -n stackrox set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
+    fi
+}
 
 get_central_basic_auth_creds() {
     info "Getting central basic auth creds"
@@ -99,7 +196,22 @@ check_stackrox_logs() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (See ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+    fi
+
+    check_for_stackrox_restarts "$dir"
+    check_for_errors_in_stackrox_logs "$dir"
+}
+
+check_for_stackrox_restarts() {
+        if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: check_for_stackrox_restarts <dir>"
+    fi
+
+    local dir="$1"
+
+    if [[ ! -d "$dir/stackrox/pods" ]]; then
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
     local previous_logs
@@ -107,9 +219,21 @@ check_stackrox_logs() {
     if [[ -n "$previous_logs" ]]; then
         echo >&2 "Previous logs found"
         # shellcheck disable=SC2086
-        if ! scripts/ci/logcheck/check-restart-logs.sh upgrade-tests $previous_logs; then
+        if ! scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME:-${CIRCLE_JOB}}" $previous_logs; then
             exit 1
         fi
+    fi
+}
+
+check_for_errors_in_stackrox_logs() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: check_for_errors_in_stackrox_logs <dir>"
+    fi
+
+    local dir="$1"
+
+    if [[ ! -d "$dir/stackrox/pods" ]]; then
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
     local logs
@@ -120,7 +244,7 @@ check_stackrox_logs() {
     if [[ -n "$filtered" ]]; then
         # shellcheck disable=SC2086
         if ! scripts/ci/logcheck/check.sh $filtered; then
-            die "Found at least one suspicious log file entry."
+            die "ERROR: Found at least one suspicious log file entry."
         fi
     fi
 }
@@ -134,48 +258,69 @@ collect_and_check_stackrox_logs() {
 
     info "Will collect stackrox logs to $dir and check them"
 
-    ./scripts/ci/collect-service-logs.sh stackrox "$dir"
+    "$TEST_ROOT/scripts/ci/collect-service-logs.sh" stackrox "$dir"
 
     check_stackrox_logs "$dir"
 }
 
+# remove_existing_stackrox_resources() This exists for smoother repeat runs of
+# system tests against the same cluster.
 remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
 
-    kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait || true
-    # openshift specific:
-    kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait || true
-    kubectl delete -R -f scripts/ci/psp --wait || true
-    kubectl delete ns stackrox --wait || true
-    helm uninstall monitoring || true
-    helm uninstall central || true
-    helm uninstall scanner || true
-    helm uninstall sensor || true
-    kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait || true
+    (
+        kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait
+        # openshift specific:
+        kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait
+        kubectl delete -R -f scripts/ci/psp --wait
+        kubectl delete ns stackrox --wait
+        helm uninstall monitoring
+        helm uninstall central
+        helm uninstall scanner
+        helm uninstall sensor
+        kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait
+    # (prefix output to avoid triggering prow log focus)
+    ) 2>&1 | sed -e 's/^/out: /' || true
 }
 
+# When working as expected it takes less than one minute for the API server to
+# reach ready. Often times out on OSD. If this call fails in CI we need to
+# identify the source of pull/scheduling latency, request throttling, etc.
+# I tried increasing the timeout from 5m to 20m for OSD but it did not help.
 wait_for_api() {
-    info "Waiting for central to start"
+    info "Waiting for Central to start"
 
     start_time="$(date '+%s')"
+    max_seconds=300
+
     while true; do
         central_json="$(kubectl -n stackrox get deploy/central -o json)"
-        if [[ "$(echo "${central_json}" | jq '.status.replicas')" == 1 && "$(echo "${central_json}" | jq '.status.readyReplicas')" == 1 ]]; then
+        replicas="$(jq '.status.replicas' <<<"$central_json")"
+        ready_replicas="$(jq '.status.readyReplicas' <<<"$central_json")"
+        curr_time="$(date '+%s')"
+        elapsed_seconds=$(( curr_time - start_time ))
+
+        # Ready case
+        if [[ "$replicas" == 1 && "$ready_replicas" == 1 ]]; then
+            sleep 30
             break
         fi
-        if (($(date '+%s') - start_time > 300)); then
+
+        # Timeout case
+        if (( elapsed_seconds > max_seconds )); then
             kubectl -n stackrox get pod -o wide
             kubectl -n stackrox get deploy -o wide
-            echo >&2 "Timed out after 5m"
+            echo >&2 "wait_for_api() timeout after $max_seconds seconds."
             exit 1
         fi
-        echo -n .
-        sleep 1
+
+        # Otherwise report and retry
+        echo "waiting ($elapsed_seconds/$max_seconds)"
+        sleep 5
     done
 
-    echo "Central is running"
-
-    info "Waiting for centrals API"
+    info "Central deployment is ready."
+    info "Waiting for Central API endpoint"
 
     API_HOSTNAME=localhost
     API_PORT=8000
@@ -186,7 +331,8 @@ wait_for_api() {
     fi
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     METADATA_URL="https://${API_ENDPOINT}/v1/metadata"
-    echo "METADATA_URL is set to ${METADATA_URL}"
+    info "METADATA_URL is set to ${METADATA_URL}"
+
     set +e
     NUM_SUCCESSES_IN_A_ROW=0
     SUCCESSES_NEEDED_IN_A_ROW=3
@@ -200,7 +346,7 @@ wait_for_api() {
             if [[ "${NUM_SUCCESSES_IN_A_ROW}" == "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
                 break
             fi
-            echo "Status is now: ${status}"
+            info "Status is now: ${status}"
             sleep 2
             continue
         fi
@@ -210,10 +356,10 @@ wait_for_api() {
     done
     echo
     if [[ "${NUM_SUCCESSES_IN_A_ROW}" != "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
-        echo "Failed to connect to Central. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
-        echo "port-forwards:"
+        info "Failed to connect to Central. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
+        info "port-forwards:"
         pgrep port-forward
-        echo "pods:"
+        info "pods:"
         kubectl -n stackrox get pod
         exit 1
     fi
@@ -233,6 +379,39 @@ restore_56_1_backup() {
     gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
+}
+
+db_backup_and_restore_test() {
+    info "Running a central database backup and restore test"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: db_backup_and_restore_test <output dir>"
+    fi
+
+    local output_dir="$1"
+    info "Backing up to ${output_dir}"
+    mkdir -p "$output_dir"
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
+
+    if [[ ! -e DB_TEST_FAIL ]]; then
+        if [ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]; then
+            info "Restoring from ${output_dir}/postgres_db_*"
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
+        else
+            info "Restoring from ${output_dir}/stackrox_db_*"
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
+        fi
+    fi
+
+    [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
+}
+
+handle_e2e_progress_failures() {
+    info "Checking for deployment failure"
+
+    if [[ ! -f "${STATE_DEPLOYED}" ]]; then
+        save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

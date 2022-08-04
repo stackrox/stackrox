@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/joelanford/helm-operator/pkg/extensions"
+	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	utils "github.com/stackrox/rox/operator/pkg/utils"

@@ -1,3 +1,6 @@
+//go:build sql_integration
+// +build sql_integration
+
 package postgres
 
 import (
@@ -17,51 +20,86 @@ var (
 	deploymentBaseSchema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 )
 
+func TestReplaceVars(t *testing.T) {
+	cases := []struct {
+		query  string
+		result string
+	}{
+		{
+			query:  "",
+			result: "",
+		},
+		{
+			"$$",
+			"$1",
+		},
+		{
+			query:  "select * from table where column > $$ and true",
+			result: "select * from table where column > $1 and true",
+		},
+		{
+			"$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$",
+			"$1 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.query, func(t *testing.T) {
+			assert.Equal(t, c.result, replaceVars(c.query))
+		})
+	}
+}
+
+func BenchmarkReplaceVars(b *testing.B) {
+	veryLongString := strings.Repeat("$$ ", 1000)
+	b.Run("short", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			replaceVars("$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$")
+		}
+	})
+	b.Run("long", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			replaceVars(veryLongString)
+		}
+	})
+}
+
 func TestMultiTableQueries(t *testing.T) {
 	t.Parallel()
 
+	deploymentBaseSchema.SetOptionsMap(mappings.OptionsMap)
 	for _, c := range []struct {
-		desc     string
-		q        *v1.Query
-		expected *query
+		desc                 string
+		q                    *v1.Query
+		expectedQueryPortion string
+		expectedFrom         string
+		expectedWhere        string
+		expectedData         []interface{}
+		expectedJoinTables   []string
 	}{
 		{
-			desc: "base schema query",
-			q:    search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expected: &query{
-				Select: selectQuery{
-					Query: "select deployments.Id",
-				},
-				From:  "deployments",
-				Where: "(deployments.Name = $$)",
-				Data:  []interface{}{"central"},
-			},
+			desc:          "base schema query",
+			q:             search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedFrom:  "deployments",
+			expectedWhere: "deployments.Name = $$",
+			expectedData:  []interface{}{"central"},
 		},
 		{
-			desc: "child schema query",
-			q:    search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
-			expected: &query{
-				Select: selectQuery{
-					Query: "select deployments.Id",
-				},
-				From:  "deployments, deployments_Containers",
-				Where: "(deployments_Containers.Image_Name_FullName = $$ and deployments.Id = deployments_Containers.deployments_Id)",
-				Data:  []interface{}{"stackrox"},
-			},
+			desc:               "child schema query",
+			q:                  search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+			expectedFrom:       "deployments",
+			expectedWhere:      "deployments_containers.Image_Name_FullName = $$",
+			expectedJoinTables: []string{"deployments_containers"},
+			expectedData:       []interface{}{"stackrox"},
 		},
 		{
 			desc: "base schema and child schema conjunction query",
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.ImageName, "stackrox").
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expected: &query{
-				Select: selectQuery{
-					Query: "select deployments.Id",
-				},
-				From:  "deployments, deployments_Containers",
-				Where: "((deployments.Name = $$) and (deployments_Containers.Image_Name_FullName = $$ and deployments.Id = deployments_Containers.deployments_Id))",
-				Data:  []interface{}{"central", "stackrox"},
-			},
+			expectedFrom:       "deployments",
+			expectedWhere:      "(deployments.Name = $$ and deployments_containers.Image_Name_FullName = $$)",
+			expectedJoinTables: []string{"deployments_containers"},
+			expectedData:       []interface{}{"central", "stackrox"},
 		},
 		{
 			desc: "base schema and child schema disjunction query",
@@ -69,14 +107,11 @@ func TestMultiTableQueries(t *testing.T) {
 				search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
 				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			),
-			expected: &query{
-				Select: selectQuery{
-					Query: "select deployments.Id",
-				},
-				From:  "deployments, deployments_Containers",
-				Where: "((deployments_Containers.Image_Name_FullName = $$ and deployments.Id = deployments_Containers.deployments_Id) or (deployments.Name = $$))",
-				Data:  []interface{}{"central", "stackrox"},
-			},
+
+			expectedFrom:       "deployments",
+			expectedWhere:      "(deployments_containers.Image_Name_FullName = $$ or deployments.Name = $$)",
+			expectedJoinTables: []string{"deployments_containers"},
+			expectedData:       []interface{}{"central", "stackrox"},
 		},
 		{
 			desc: "multiple child schema query",
@@ -84,14 +119,11 @@ func TestMultiTableQueries(t *testing.T) {
 				search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
 				search.NewQueryBuilder().AddExactMatches(search.PortProtocol, "tcp").ProtoQuery(),
 			),
-			expected: &query{
-				Select: selectQuery{
-					Query: "select deployments.Id",
-				},
-				From:  "deployments, deployments_Containers, deployments_Ports",
-				Where: "((deployments_Containers.Image_Name_FullName = $$ and deployments.Id = deployments_Containers.deployments_Id) and (deployments_Ports.Protocol = $$ and deployments.Id = deployments_Ports.deployments_Id))",
-				Data:  []interface{}{"tcp", "stackrox"},
-			},
+
+			expectedFrom:       "deployments",
+			expectedWhere:      "(deployments_containers.Image_Name_FullName = $$ and deployments_ports.Protocol = $$)",
+			expectedJoinTables: []string{"deployments_containers", "deployments_ports"},
+			expectedData:       []interface{}{"tcp", "stackrox"},
 		},
 		{
 			desc: "multiple child schema disjunction query",
@@ -99,14 +131,10 @@ func TestMultiTableQueries(t *testing.T) {
 				search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
 				search.NewQueryBuilder().AddExactMatches(search.PortProtocol, "tcp").ProtoQuery(),
 			),
-			expected: &query{
-				Select: selectQuery{
-					Query: "select deployments.Id",
-				},
-				From:  "deployments, deployments_Containers, deployments_Ports",
-				Where: "((deployments_Containers.Image_Name_FullName = $$ and deployments.Id = deployments_Containers.deployments_Id) or (deployments_Ports.Protocol = $$ and deployments.Id = deployments_Ports.deployments_Id))",
-				Data:  []interface{}{"tcp", "stackrox"},
-			},
+			expectedFrom:       "deployments",
+			expectedWhere:      "(deployments_containers.Image_Name_FullName = $$ or deployments_ports.Protocol = $$)",
+			expectedJoinTables: []string{"deployments_containers", "deployments_ports"},
+			expectedData:       []interface{}{"tcp", "stackrox"},
 		},
 		{
 			desc: "base schema and child schema disjunction query; bool+match",
@@ -114,35 +142,48 @@ func TestMultiTableQueries(t *testing.T) {
 				search.NewQueryBuilder().AddBools(search.Privileged, true).ProtoQuery(),
 				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			),
-			expected: &query{
-				Select: selectQuery{
-					Query: "select deployments.Id",
-				},
-				From:  "deployments, deployments_Containers",
-				Where: "((deployments_Containers.SecurityContext_Privileged = $$ and deployments.Id = deployments_Containers.deployments_Id) or (deployments.Name = $$))",
-				Data:  []interface{}{"central", "true"},
-			},
+			expectedFrom:       "deployments",
+			expectedWhere:      "(deployments_containers.SecurityContext_Privileged = $$ or deployments.Name = $$)",
+			expectedJoinTables: []string{"deployments_containers"},
+			expectedData:       []interface{}{"central", "true"},
 		},
 		{
-			desc: "negated child schema query",
-			q:    search.NewQueryBuilder().AddStrings(search.ImageName, "!central").ProtoQuery(),
-			expected: &query{
-				Select: selectQuery{
-					Query: "select deployments.Id",
-				},
-				From:  "deployments, deployments_Containers",
-				Where: "(NOT (deployments_Containers.Image_Name_FullName ilike $$) and deployments.Id = deployments_Containers.deployments_Id)",
-				Data:  []interface{}{"central%"},
-			},
+			desc:               "negated child schema query",
+			q:                  search.NewQueryBuilder().AddStrings(search.ImageName, "!central").ProtoQuery(),
+			expectedFrom:       "deployments",
+			expectedWhere:      "NOT (deployments_containers.Image_Name_FullName ilike $$)",
+			expectedJoinTables: []string{"deployments_containers"},
+			expectedData:       []interface{}{"central%"},
+		},
+		{
+			desc:          "nil query",
+			q:             nil,
+			expectedFrom:  "deployments",
+			expectedWhere: "",
+			expectedData:  []interface{}{},
+		},
+		{
+			desc: "id and match non query",
+			q: search.ConjunctionQuery(
+				search.NewQueryBuilder().AddDocIDs("123").ProtoQuery(),
+				search.MatchNoneQuery(),
+			),
+			expectedFrom:  "deployments",
+			expectedWhere: "(deployments.Id = ANY($$::text[]) and false)",
+			expectedData:  []interface{}{[]string{"123"}},
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
-			actual, err := standardizeQueryAndPopulatePath(c.q, mappings.OptionsMap, deploymentBaseSchema, GET)
+			actual, err := standardizeQueryAndPopulatePath(c.q, deploymentBaseSchema, SEARCH)
 			assert.NoError(t, err)
-			assert.Equal(t, c.expected.Select, actual.Select)
-			assert.ElementsMatch(t, strings.Split(c.expected.From, ", "), strings.Split(actual.From, ", "))
-			assert.Equal(t, c.expected.Where, actual.Where)
-			assert.ElementsMatch(t, c.expected.Data, actual.Data)
+			assert.Equal(t, c.expectedFrom, actual.From)
+			assert.Equal(t, c.expectedWhere, actual.Where)
+			assert.ElementsMatch(t, c.expectedData, actual.Data)
+			var actualJoins []string
+			for _, join := range actual.InnerJoins {
+				actualJoins = append(actualJoins, join.rightTable)
+			}
+			assert.ElementsMatch(t, c.expectedJoinTables, actualJoins)
 		})
 	}
 }

@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -21,9 +22,6 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-	// TODO: Need to setup sac for Image Components correctly instead of relying on global access.
-	imagesSAC = sac.ForResource(resources.Image)
-	nodesSac  = sac.ForResource(resources.Node)
 )
 
 type datastoreImpl struct {
@@ -59,12 +57,14 @@ func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Que
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComponent, bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
-		return nil, false, err
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err := ds.filterReadable(ctx, []string{id})
+		if err != nil || len(filteredIDs) != 1 {
+			return nil, false, err
+		}
 	}
 
-	component, found, err := ds.storage.Get(id)
+	component, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -74,12 +74,14 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComp
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
-		return false, err
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err := ds.filterReadable(ctx, []string{id})
+		if err != nil || len(filteredIDs) != 1 {
+			return false, err
+		}
 	}
 
-	found, err := ds.storage.Exists(id)
+	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
 	}
@@ -87,70 +89,21 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ImageComponent, error) {
-	filteredIDs, err := ds.filterReadable(ctx, ids)
-	if err != nil {
-		return nil, err
+	if !features.PostgresDatastore.Enabled() {
+		var err error
+		ids, err = ds.filterReadable(ctx, ids)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	components, _, err := ds.storage.GetBatch(filteredIDs)
+	components, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	ds.updateImageComponentPriority(components...)
 	return components, nil
-}
-
-// UpsertImage dedupes the image with the underlying storage and adds the image to the index.
-func (ds *datastoreImpl) Upsert(ctx context.Context, imagecomponents ...*storage.ImageComponent) error {
-	if len(imagecomponents) == 0 {
-		return nil
-	}
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		if ok, err := nodesSac.WriteAllowed(ctx); err != nil {
-			return err
-		} else if !ok {
-			return sac.ErrResourceAccessDenied
-		}
-	}
-
-	// Update image components with latest risk score
-	for _, component := range imagecomponents {
-		component.RiskScore = ds.imageComponentRanker.GetScoreForID(component.GetId())
-	}
-
-	return ds.storage.Upsert(imagecomponents...)
-}
-
-func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		if ok, err := nodesSac.WriteAllowed(ctx); err != nil {
-			return err
-		} else if !ok {
-			return sac.ErrResourceAccessDenied
-		}
-	}
-
-	if err := ds.storage.Delete(ids...); err != nil {
-		return err
-	}
-
-	deleteRiskCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk),
-		))
-
-	for _, id := range ids {
-		if err := ds.risks.RemoveRisk(deleteRiskCtx, id, storage.RiskSubjectType_IMAGE_COMPONENT); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (ds *datastoreImpl) initializeRankers() {
@@ -165,7 +118,7 @@ func (ds *datastoreImpl) initializeRankers() {
 	}
 
 	for _, id := range pkgSearch.ResultsToIDs(results) {
-		component, found, err := ds.storage.Get(id)
+		component, found, err := ds.storage.Get(readCtx, id)
 		if err != nil {
 			log.Error(err)
 			continue

@@ -70,7 +70,7 @@ func (ds *searcherImpl) SearchRawNodes(ctx context.Context, q *v1.Query) ([]*sto
 		return nil, err
 	}
 
-	nodes, _, err := ds.storage.GetNodesBatch(search.ResultsToIDs(results))
+	nodes, _, err := ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (ds *searcherImpl) searchNodes(ctx context.Context, q *v1.Query) ([]*storag
 	nodes := make([]*storage.Node, 0, len(results))
 	newResults := make([]search.Result, 0, len(results))
 	for _, result := range results {
-		node, exists, err := ds.storage.GetNode(result.ID)
+		node, exists, err := ds.storage.Get(ctx, result.ID)
 		if err != nil {
 			return nil, nil, err
 		}

@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -54,7 +54,7 @@ func (s *serviceImpl) ReconciliationStatsByCluster(context.Context, *central.Emp
 
 func (s *serviceImpl) URLHasValidCert(ctx context.Context, req *central.URLHasValidCertRequest) (*central.URLHasValidCertResponse, error) {
 	if !strings.HasPrefix(req.GetUrl(), "https://") {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "url %q must start with https", req.GetUrl())
+		return nil, errors.Wrapf(errox.InvalidArgs, "url %q must start with https", req.GetUrl())
 	}
 	_, err := s.client.Get(req.GetUrl())
 	if err == nil {

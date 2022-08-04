@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -20,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
-	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/compliance"
@@ -33,16 +31,16 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
-	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
+	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
-	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/localscanner"
@@ -57,7 +55,7 @@ var (
 )
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
-func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager) (*sensor.Sensor, error) {
+func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
 
 	var helmManagedConfig *central.HelmManagedConfigInit
@@ -87,31 +85,27 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		}
 	}
 
-	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes())
+	deploymentIdentification := fetchDeploymentIdentification(context.Background(), cfg.k8sClient.Kubernetes())
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager()
 
-	o := orchestrator.New(client.Kubernetes())
+	o := orchestrator.New(cfg.k8sClient.Kubernetes())
 	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager)
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
-	enforcer, err := enforcer.New(client)
+	enforcer, err := enforcer.New(cfg.k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating enforcer")
 	}
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
-	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager)
-	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector, k8sNodeName.Setting()))
+	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager, resources.NetworkPolicySingleton())
+	resourceListener := listener.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter)
+	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, resourceListener)
 
-	upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating upgrade command handler")
-	}
-
-	imageService := image.NewService(imageCache)
+	imageService := image.NewService(imageCache, registry.Singleton())
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	// Create Process Pipeline
@@ -124,17 +118,25 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		admCtrlMsgForwarder,
 		enforcer,
 		networkFlowManager,
-		networkpolicies.NewCommandHandler(client.Kubernetes()),
-		clusterstatus.NewUpdater(client),
-		clusterhealth.NewUpdater(client.Kubernetes(), 0),
+		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
+		clusterstatus.NewUpdater(cfg.k8sClient),
+		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
+		clustermetrics.New(cfg.k8sClient.Kubernetes()),
 		complianceCommandHandler,
 		processSignals,
-		telemetry.NewCommandHandler(client.Kubernetes()),
-		upgradeCmdHandler,
+		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
 		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
+	}
+
+	if !cfg.localSensor {
+		upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating upgrade command handler")
+		}
+		components = append(components, upgradeCmdHandler)
 	}
 
 	sensorNamespace, err := satoken.LoadNamespaceFromFile()
@@ -150,30 +152,27 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	}
 
 	if admCtrlSettingsMgr != nil {
-		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
+		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
 	}
 
-	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
-	if err != nil {
-		return nil, errors.Wrap(err, "creating central client")
-	}
-
-	if features.LocalImageScanning.Enabled() && securedClusterIsNotManagedManually(helmManagedConfig) && env.UseLocalScanner.BooleanSetting() {
+	// Local scanner can be started even if scanner-tls certs are available in the same namespace because
+	// it ignores secrets not owned by Sensor.
+	if securedClusterIsNotManagedManually(helmManagedConfig) && env.LocalImageScanningEnabled.BooleanSetting() {
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
-			localscanner.NewLocalScannerTLSIssuer(client.Kubernetes(), sensorNamespace, podName))
+			localscanner.NewLocalScannerTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
 	}
 
 	s := sensor.NewSensor(
 		configHandler,
 		policyDetector,
 		imageService,
-		centralClient,
+		cfg.centralConnFactory,
 		components...,
 	)
 
-	if workloadHandler != nil {
-		workloadHandler.SetSignalHandlers(processPipeline, networkFlowManager)
+	if cfg.workloadManager != nil {
+		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
 	}
 
 	networkFlowService := service.NewService(networkFlowManager)
@@ -189,7 +188,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		apiServices = append(apiServices, admissioncontroller.NewManagementService(admCtrlSettingsMgr, admissioncontroller.AlertHandlerSingleton()))
 	}
 
-	apiServices = append(apiServices, certdistribution.NewService(client.Kubernetes(), sensorNamespace))
+	apiServices = append(apiServices, certdistribution.NewService(cfg.k8sClient.Kubernetes(), sensorNamespace))
 
 	s.AddAPIServices(apiServices...)
 	return s, nil

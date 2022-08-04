@@ -118,6 +118,11 @@ function AuthProviders(): ReactElement {
         history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
     }
 
+    function getProviderLabel(): string {
+        const provider = availableProviderTypes.find(({ value }) => value === type) ?? {};
+        return (provider.label as string) ?? 'auth';
+    }
+
     const selectedAuthProvider = authProviders.find(({ id }) => id === entityId);
     const hasAction = Boolean(action);
     const isList = typeof entityId !== 'string' && !hasAction;
@@ -158,7 +163,7 @@ function AuthProviders(): ReactElement {
                                             toggleIndicator={CaretDownIcon}
                                             isPrimary
                                         >
-                                            Add auth provider
+                                            Create auth provider
                                         </DropdownToggle>
                                     }
                                     isOpen={isCreateMenuOpen}
@@ -172,10 +177,10 @@ function AuthProviders(): ReactElement {
                 <AccessControlBreadcrumbs
                     entityType={entityType}
                     entityName={
-                        action === 'create' ? 'Add auth provider' : selectedAuthProvider?.name
+                        action === 'create'
+                            ? `Create ${getProviderLabel()} provider`
+                            : selectedAuthProvider?.name
                     }
-                    isDisabled={hasAction}
-                    isList={isList}
                 />
             )}
             <PageSection variant={isList ? 'default' : 'light'}>

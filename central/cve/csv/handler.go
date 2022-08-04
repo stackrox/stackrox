@@ -1,66 +1,29 @@
 package csv
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
-	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
-	cveMappings "github.com/stackrox/rox/central/cve/mappings"
+	csvCommon "github.com/stackrox/rox/central/cve/common/csv"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
-	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
-	nsMappings "github.com/stackrox/rox/central/namespace/index/mappings"
-	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search"
-	deploymentMappings "github.com/stackrox/rox/pkg/search/options/deployments"
-	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/search/parser"
-	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	nsOnlyOptionsMap = search.Difference(nsMappings.OptionsMap, clusterMappings.OptionsMap)
-
-	deploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap,
-		search.CombineOptionsMaps(
-			clusterMappings.OptionsMap,
-			nsMappings.OptionsMap,
-			imageMappings.OptionsMap))
-
-	imageOnlyOptionsMap = search.Difference(
-		imageMappings.OptionsMap,
-		search.CombineOptionsMaps(
-			imageComponentEdgeMappings.OptionsMap,
-			componentMappings.OptionsMap,
-			componentCVEEdgeMappings.OptionsMap,
-			cveMappings.OptionsMap,
-		),
-	)
-
-	nodeOnlyOptionsMap = search.Difference(
-		nodeMappings.OptionsMap,
-		search.CombineOptionsMaps(
-			imageComponentEdgeMappings.OptionsMap,
-			componentMappings.OptionsMap,
-			componentCVEEdgeMappings.OptionsMap,
-			cveMappings.OptionsMap,
-		),
-	)
-
 	once       sync.Once
-	csvHandler *handlerImpl
+	csvHandler *csvCommon.HandlerImpl
 
 	csvHeader = []string{
 		"CVE",
@@ -79,34 +42,23 @@ var (
 	}
 )
 
-type handlerImpl struct {
-	resolver       *resolvers.Resolver
-	searchWrappers []*searchWrapper
-}
-
 func initialize() {
 	csvHandler = newHandler(resolvers.New())
 }
 
-func newHandler(resolver *resolvers.Resolver) *handlerImpl {
-	return &handlerImpl{
-		resolver: resolver,
+func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
+	return csvCommon.NewCSVHandler(
+		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
-		searchWrappers: []*searchWrapper{
-			{v1.SearchCategory_IMAGE_COMPONENTS, componentMappings.OptionsMap, resolver.ImageComponentDataStore},
-			{v1.SearchCategory_IMAGES, imageOnlyOptionsMap, resolver.ImageDataStore},
-			{v1.SearchCategory_DEPLOYMENTS, deploymentOnlyOptionsMap, resolver.DeploymentDataStore},
-			{v1.SearchCategory_NAMESPACES, nsOnlyOptionsMap, resolver.NamespaceDataStore},
-			{v1.SearchCategory_NODES, nodeOnlyOptionsMap, resolver.NodeGlobalDataStore},
-			{v1.SearchCategory_CLUSTERS, clusterMappings.OptionsMap, resolver.ClusterDataStore},
+		[]*csvCommon.SearchWrapper{
+			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS, componentMappings.OptionsMap, resolver.ImageComponentDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGES, csvCommon.ImageOnlyOptionsMap, resolver.ImageDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, csvCommon.DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_NAMESPACES, csvCommon.NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_NODES, csvCommon.NodeOnlyOptionsMap, resolver.NodeGlobalDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, clusterMappings.OptionsMap, resolver.ClusterDataStore),
 		},
-	}
-}
-
-type searchWrapper struct {
-	category   v1.SearchCategory
-	optionsMap search.OptionsMap
-	searcher   search.Searcher
+	)
 }
 
 type cveRow struct {
@@ -167,7 +119,7 @@ func CVECSVHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx, err := csvHandler.getScopeContext(loaders.WithLoaderContext(r.Context()), query)
+		ctx, err := csvHandler.GetScopeContext(loaders.WithLoaderContext(r.Context()), query)
 		if err != nil {
 			csv.WriteError(w, http.StatusInternalServerError, err)
 			log.Errorf("unable to determine resource scope for query %q: %v", query.String(), err)
@@ -175,7 +127,12 @@ func CVECSVHandler() http.HandlerFunc {
 		}
 
 		rawQuery, paginatedQuery := resolvers.V1RawQueryAsResolverQuery(rQuery)
-		vulnResolvers, err := csvHandler.resolver.Vulnerabilities(ctx, paginatedQuery)
+		res := csvHandler.GetResolver()
+		if res == nil {
+			csv.WriteError(w, http.StatusInternalServerError, err)
+			log.Errorf("Unexpected value (nil) for resolver in Handler")
+		}
+		vulnResolvers, err := res.Vulnerabilities(ctx, paginatedQuery)
 		if err != nil {
 			csv.WriteError(w, http.StatusInternalServerError, err)
 			log.Errorf("unable to get vulnerabilities for csv export: %v", err)
@@ -190,7 +147,7 @@ func CVECSVHandler() http.HandlerFunc {
 		for _, d := range vulnResolvers {
 			var errorList errorhelpers.ErrorList
 			dataRow := cveRow{}
-			dataRow.cveID = d.Cve(ctx)
+			dataRow.cveID = d.CVE(ctx)
 			dataRow.cveTypes = strings.Join(d.VulnerabilityTypes(), " ")
 			isFixable, err := d.IsFixable(ctx, rawQuery)
 			if err != nil {
@@ -249,37 +206,4 @@ func CVECSVHandler() http.HandlerFunc {
 
 		output.Write(w, "cve_export")
 	}
-}
-
-func (h *handlerImpl) getScopeContext(ctx context.Context, query *v1.Query) (context.Context, error) {
-	if _, ok := scoped.GetScope(ctx); ok {
-		return ctx, nil
-	}
-
-	cloned := query.Clone()
-	// Remove pagination since we are only determining the resource category which should scope the query.
-	cloned.Pagination = nil
-	for _, searchWrapper := range h.searchWrappers {
-		// Filter the query by resource categories to determine the category that should scope the query.
-		// Note that the resource categories are ordered from COMPONENTS to CLUSTERS.
-		filteredQ, _ := search.FilterQueryWithMap(cloned, searchWrapper.optionsMap)
-		if filteredQ == nil {
-			continue
-		}
-
-		result, err := searchWrapper.searcher.Search(ctx, filteredQ)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(result) == 0 {
-			continue
-		}
-
-		// Add searchWrapper only if we get exactly one match. Currently only scoping by one resource is supported in search.
-		if len(result) == 1 {
-			return scoped.Context(ctx, scoped.Scope{Level: searchWrapper.category, ID: result[0].ID}), nil
-		}
-	}
-	return ctx, nil
 }

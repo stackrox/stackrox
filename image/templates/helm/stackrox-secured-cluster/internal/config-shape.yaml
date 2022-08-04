@@ -72,6 +72,11 @@ sensor:
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
+  localImageScanning:
+    # Enables the local image scanning feature in Sensor. This disabled if local image scanning should not be used to prevent
+    # sensor reaching out to a scanner instance.
+    # This setting does not relate to the scanner deployment configuration which configures whether scanner should be deployed.
+    enabled: null # bool
 admissionControl:
   listenOnCreates: null # bool
   listenOnUpdates: null # bool
@@ -146,3 +151,4 @@ meta:
     extraAPIResources: null # [string]
 system:
   createSCCs: null # bool
+  enablePodSecurityPolicies: null # bool

@@ -20,7 +20,7 @@ function createPDFContainerElement() {
 }
 
 /**
- * Creates a header HTML element that will contain the StackRox logo, PDF title, and the current time
+ * Creates a header HTML element that will contain the product logo, PDF title, and the current time
  *  @param {string} pdfTitle - The title to display in the top right section of the header
  *  @param {string} timestamp - The timestamp to display in the top right section of the header
  *  @param {string} logoSrc - The full path to the logo image to use as part of the header.

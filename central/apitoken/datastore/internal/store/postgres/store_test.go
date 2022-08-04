@@ -8,25 +8,27 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
-type ApitokensStoreSuite struct {
+type ApiTokensStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	testDB      *pgtest.TestPostgres
 }
 
-func TestApitokensStore(t *testing.T) {
-	suite.Run(t, new(ApitokensStoreSuite))
+func TestApiTokensStore(t *testing.T) {
+	suite.Run(t, new(ApiTokensStoreSuite))
 }
 
-func (s *ApitokensStoreSuite) SetupTest() {
+func (s *ApiTokensStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -34,24 +36,27 @@ func (s *ApitokensStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
+
+	s.testDB = pgtest.ForT(s.T())
+	s.store = New(s.testDB.Pool)
 }
 
-func (s *ApitokensStoreSuite) TearDownTest() {
+func (s *ApiTokensStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE api_tokens CASCADE")
+	s.T().Log("api_tokens", tag)
+	s.NoError(err)
+}
+
+func (s *ApiTokensStoreSuite) TearDownSuite() {
+	s.testDB.Teardown(s.T())
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ApitokensStoreSuite) TestStore() {
-	ctx := context.Background()
+func (s *ApiTokensStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
-
-	Destroy(ctx, pool)
-	store := New(ctx, pool)
+	store := s.store
 
 	tokenMetadata := &storage.TokenMetadata{}
 	s.NoError(testutils.FullInit(tokenMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -61,6 +66,8 @@ func (s *ApitokensStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundTokenMetadata)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, tokenMetadata))
 	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
@@ -69,12 +76,16 @@ func (s *ApitokensStoreSuite) TestStore() {
 
 	tokenMetadataCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(tokenMetadataCount, 1)
+	s.Equal(1, tokenMetadataCount)
+	tokenMetadataCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(tokenMetadataCount)
 
 	tokenMetadataExists, err := store.Exists(ctx, tokenMetadata.GetId())
 	s.NoError(err)
 	s.True(tokenMetadataExists)
 	s.NoError(store.Upsert(ctx, tokenMetadata))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, tokenMetadata), sac.ErrResourceAccessDenied)
 
 	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
@@ -86,6 +97,7 @@ func (s *ApitokensStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTokenMetadata)
+	s.ErrorIs(store.Delete(withNoAccessCtx, tokenMetadata.GetId()), sac.ErrResourceAccessDenied)
 
 	var tokenMetadatas []*storage.TokenMetadata
 	for i := 0; i < 200; i++ {
@@ -98,5 +110,5 @@ func (s *ApitokensStoreSuite) TestStore() {
 
 	tokenMetadataCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(tokenMetadataCount, 200)
+	s.Equal(200, tokenMetadataCount)
 }

@@ -23,58 +23,81 @@ import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import { types as deploymentTypes } from 'reducers/deployments';
 import { types as locationActionTypes } from 'reducers/routes';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import timeWindowToDate from 'utils/timeWindows';
 import queryService from 'utils/queryService';
 import { filterModes } from 'constants/networkFilterModes';
-import { getDeployment } from './deploymentSagas';
 
-// get generators
-function* getNetworkGraphs(clusterId, query) {
+function* getFlowGraph(clusterId, namespaces, query, timeWindow, includePorts) {
+    let flowGraph;
     try {
-        const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
-        const modification = yield select(selectors.getNetworkPolicyModification);
+        const req = yield call(
+            service.fetchNetworkFlowGraph,
+            clusterId,
+            namespaces,
+            query,
+            timeWindowToDate(timeWindow),
+            includePorts
+        );
+        flowGraph = req.response;
+    } catch (error) {
+        yield put(backendNetworkActions.fetchNetworkFlowGraph.failure(error));
+    }
 
-        const includePorts = true;
+    return flowGraph;
+}
 
-        const [{ response: flowGraph }, { response: policyGraph }] = yield all([
-            call(
-                service.fetchNetworkFlowGraph,
-                clusterId,
-                query,
-                timeWindowToDate(timeWindow),
-                includePorts
-            ),
-            call(service.fetchNetworkPolicyGraph, clusterId, query, modification, includePorts),
-        ]);
+function* getPolicyGraph(clusterId, namespaces, query, modification, includePorts) {
+    let policyGraph;
+    try {
+        const req = yield call(
+            service.fetchNetworkPolicyGraph,
+            clusterId,
+            namespaces,
+            query,
+            modification,
+            includePorts
+        );
+        policyGraph = req.response;
+    } catch (error) {
+        // On error, such as when an applied yaml is invalid, attempt to revert to the
+        // previous successful policyGraph response
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
+        policyGraph = yield select(selectors.getNetworkPolicyGraph);
+    }
+
+    return policyGraph;
+}
+
+function* getNetworkGraphs(clusterId, namespaces, query) {
+    // Do not query the backend for network graph updates if no namespace is selected
+    if (!namespaces.length) {
+        return;
+    }
+
+    const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
+    const modification = yield select(selectors.getNetworkPolicyModification);
+
+    const flowGraph = yield call(getFlowGraph, clusterId, namespaces, query, timeWindow, true);
+    const policyGraph = yield call(
+        getPolicyGraph,
+        clusterId,
+        namespaces,
+        query,
+        modification,
+        true
+    );
+
+    if (policyGraph && flowGraph) {
         yield put(graphNetworkActions.setNetworkEdgeMap(flowGraph, policyGraph));
         yield put(graphNetworkActions.setNetworkNodeMap(flowGraph, policyGraph));
         yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
-        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
         yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
-    } catch (error) {
-        yield put(notificationActions.addNotification(error.response.data.error));
-        yield put(notificationActions.removeOldestNotification());
-        // if network flow graph fails
-        const policyGraph = yield select(selectors.getNetworkPolicyGraph);
-        if (policyGraph) {
-            yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
-        }
-    }
-}
-
-function* getSelectedDeployment({ params }) {
-    yield call(getDeployment, params);
-}
-
-export function* getNetworkPolicies({ params }) {
-    try {
-        const result = yield call(service.fetchNetworkPolicies, params);
-        yield put(backendNetworkActions.fetchNetworkPolicies.success(result.response, { params }));
-    } catch (error) {
-        yield put(backendNetworkActions.fetchNetworkPolicies.failure(error));
+        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
+    } else if (policyGraph) {
+        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
     }
 }
 
@@ -163,21 +186,23 @@ function* sendNetworkModificationApplication() {
 // misc action generators
 function* filterNetworkPageBySearch() {
     const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+    const selectedNamespaces = yield select(selectors.getSelectedNamespaceFilters);
     const searchOptions = yield select(selectors.getNetworkSearchOptions);
     if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
         return;
     }
     if (clusterId) {
         const filters = searchOptionsToQuery(searchOptions);
-        yield fork(getNetworkGraphs, clusterId, filters);
+        yield fork(getNetworkGraphs, clusterId, selectedNamespaces, filters);
     }
 }
 
 function* filterNetworkPageByBaselineSimulation() {
     const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+    const selectedNamespaces = yield select(selectors.getSelectedNamespaceFilters);
     const node = yield select(selectors.getSelectedNode);
     const filter = queryService.objectToWhereClause({ Deployment: node.name });
-    yield fork(getNetworkGraphs, clusterId, filter);
+    yield fork(getNetworkGraphs, clusterId, selectedNamespaces, filter);
     /*
      * We want to switch to the allowed filter when showing the simulated state because we want to
      * show the possible added, removed, modified edges
@@ -246,6 +271,10 @@ function* generateNetworkModification() {
     }
 }
 
+function* resetNamespaceFilters() {
+    yield put(graphNetworkActions.setSelectedNamespaceFilters([]));
+}
+
 // watch generators
 function* watchLocation() {
     let pollTask = null;
@@ -270,14 +299,6 @@ function* watchLocation() {
 
 function* watchNetworkSearchOptions() {
     yield takeLatest(searchNetworkTypes.SET_SEARCH_OPTIONS, filterNetworkPageBySearch);
-}
-
-function* watchFetchDeploymentRequest() {
-    yield takeLatest(deploymentTypes.FETCH_DEPLOYMENT.REQUEST, getSelectedDeployment);
-}
-
-function* watchNetworkPoliciesRequest() {
-    yield takeLatest(backendNetworkTypes.FETCH_NETWORK_POLICIES.REQUEST, getNetworkPolicies);
 }
 
 function* watchApplyNetworkPolicyModification() {
@@ -309,7 +330,14 @@ function* watchGenerateNetworkModification() {
 }
 
 function* watchSelectNetworkCluster() {
-    yield takeLatest(graphNetworkTypes.SELECT_NETWORK_CLUSTER_ID, filterNetworkPageBySearch);
+    yield all([
+        takeLatest(graphNetworkTypes.SELECT_NETWORK_CLUSTER_ID, filterNetworkPageBySearch),
+        takeLatest(graphNetworkTypes.SELECT_NETWORK_CLUSTER_ID, resetNamespaceFilters),
+    ]);
+}
+
+function* watchSetSelectNamespaceFilters() {
+    yield takeLatest(graphNetworkTypes.SET_SELECTED_NAMESPACE_FILTERS, filterNetworkPageBySearch);
 }
 
 function* watchSetActivityTimeWindow() {
@@ -345,12 +373,11 @@ export default function* network() {
     yield all([
         takeEveryNewlyMatchedLocation(networkPath, loadNetworkPage),
         fork(watchNetworkSearchOptions),
-        fork(watchNetworkPoliciesRequest),
-        fork(watchFetchDeploymentRequest),
         fork(watchActiveNetworkModification),
         fork(watchUndoNetworkModification),
         fork(watchGenerateNetworkModification),
         fork(watchSelectNetworkCluster),
+        fork(watchSetSelectNamespaceFilters),
         fork(watchSetActivityTimeWindow),
         fork(watchNetworkNodesUpdate),
         fork(watchNetworkPolicyModification),

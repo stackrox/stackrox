@@ -1,44 +1,99 @@
 import * as api from '../constants/apiEndpoints';
-import { clustersUrl } from '../constants/ClustersPage';
-import { url as dashboardUrl } from '../constants/DashboardPage';
-import navigation from '../selectors/navigation';
+import { clustersUrl, selectors } from '../constants/ClustersPage';
+
+import { visitFromLeftNavExpandable } from './nav';
+import { interactAndWaitForResponses } from './request';
+import { visit } from './visit';
+
+const routeMatcherMap = {
+    'sensorupgrades/config': {
+        method: 'GET',
+        url: api.clusters.sensorUpgradesConfig,
+    },
+    clusters: {
+        method: 'GET',
+        url: api.clusters.list,
+    },
+    'cluster-defaults': {
+        method: 'GET',
+        url: api.clusters.clusterDefaults,
+    },
+};
 
 // Navigation
 
-export function visitClustersFromLeftNav() {
-    cy.intercept('POST', api.graphql(api.general.graphqlOps.summaryCounts)).as('getSummaryCounts');
-    cy.visit(dashboardUrl);
-    cy.wait('@getSummaryCounts');
+/*
+ * Reach clusters by interaction from another container.
+ * For example, click View All button from System Health.
+ */
+export function reachClusters(interactionCallback, staticResponseMap) {
+    interactAndWaitForResponses(interactionCallback, { routeMatcherMap }, staticResponseMap);
 
-    cy.intercept('GET', api.clusters.list).as('getClusters');
-    cy.get(navigation.navExpandablePlatformConfiguration).click();
-    cy.get(
-        `${navigation.navExpandablePlatformConfiguration} + ${navigation.nestedNavLinks}:contains("Clusters")`
-    ).click();
-    cy.wait('@getClusters');
+    cy.get(selectors.clustersListHeading).contains('Clusters');
 }
 
-export function visitClusters() {
-    cy.intercept('GET', api.clusters.list).as('getClusters');
-    cy.visit(clustersUrl);
-    cy.wait('@getClusters');
+export function visitClustersFromLeftNav() {
+    visitFromLeftNavExpandable('Platform Configuration', 'Clusters', { routeMatcherMap });
+
+    cy.get(selectors.clustersListHeading).contains('Clusters');
+}
+
+export function visitClusters(staticResponseMap) {
+    visit(clustersUrl, { routeMatcherMap }, staticResponseMap);
+
+    cy.get(selectors.clustersListHeading).contains('Clusters');
+}
+
+export function visitClustersWithFixture(fixturePath) {
+    visitClusters({
+        clusters: { fixture: fixturePath },
+    });
+}
+
+export function visitClusterById(clusterId, staticResponseMap) {
+    const routeMatcherMapClusterById = {
+        'cluster-defaults': {
+            method: 'GET',
+            url: api.clusters.clusterDefaults,
+        },
+        cluster: {
+            method: 'GET',
+            url: `${api.clusters.list}/${clusterId}`,
+        },
+    };
+    visit(
+        `${clustersUrl}/${clusterId}`,
+        { routeMatcherMap: routeMatcherMapClusterById },
+        staticResponseMap
+    );
+
+    cy.get(selectors.clustersListHeading).contains('Clusters');
 }
 
 export function visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, datetimeISOString) {
-    cy.fixture(fixturePath).then(({ clusters }) => {
-        cy.intercept('GET', api.clusters.list, {
-            body: { clusters },
-        }).as('getClusters');
-        cy.intercept('GET', api.metadata, {
-            body: metadata,
-        }).as('getMetadata');
+    cy.intercept('GET', api.metadata, {
+        body: metadata,
+    }).as('metadata');
 
-        // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
-        const currentDatetime = new Date(datetimeISOString);
-        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+    // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
+    const currentDatetime = new Date(datetimeISOString);
+    cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
-        cy.visit(clustersUrl);
-        cy.wait(['@getClusters', '@getMetadata']);
+    visitClustersWithFixture(fixturePath);
+
+    cy.wait('@metadata');
+}
+
+export function visitClusterByNameWithFixture(clusterName, fixturePath) {
+    cy.fixture(fixturePath).then(({ clusters, clusterIdToRetentionInfo }) => {
+        const cluster = clusters.find(({ name }) => name === clusterName);
+        const clusterRetentionInfo = clusterIdToRetentionInfo[cluster.id] ?? null;
+
+        visitClusterById(cluster.id, {
+            cluster: { body: { cluster, clusterRetentionInfo } },
+        });
+
+        cy.get(selectors.clusterSidePanelHeading).contains(clusterName);
     });
 }
 
@@ -48,24 +103,23 @@ export function visitClusterByNameWithFixtureMetadataDatetime(
     metadata,
     datetimeISOString
 ) {
-    cy.fixture(fixturePath).then(({ clusters }) => {
-        cy.intercept('GET', api.clusters.list, {
-            body: { clusters },
-        }).as('getClusters');
+    cy.fixture(fixturePath).then(({ clusters, clusterIdToRetentionInfo }) => {
         cy.intercept('GET', api.metadata, {
             body: metadata,
-        }).as('getMetadata');
+        }).as('metadata');
 
         const cluster = clusters.find(({ name }) => name === clusterName);
-        cy.intercept('GET', api.clusters.single, {
-            body: { cluster },
-        }).as('getCluster');
+        const clusterRetentionInfo = clusterIdToRetentionInfo[cluster.id] ?? null;
 
         // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
         const currentDatetime = new Date(datetimeISOString);
         cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
-        cy.visit(`${clustersUrl}/${cluster.id}`);
-        cy.wait(['@getClusters', '@getCluster', '@getMetadata']);
+        visitClusterById(cluster.id, {
+            cluster: { body: { cluster, clusterRetentionInfo } },
+        });
+
+        cy.wait(['@metadata']);
+        cy.get(selectors.clusterSidePanelHeading).contains(clusterName);
     });
 }

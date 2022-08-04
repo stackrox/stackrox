@@ -16,7 +16,6 @@ import DateTimeField from 'Components/DateTimeField';
 import LabelChip from 'Components/LabelChip';
 import Menu from 'Components/Menu';
 import TableCountLinks from 'Components/workflow/TableCountLinks';
-import CveType from 'Components/CveType';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -31,9 +30,15 @@ import removeEntityContextColumns from 'utils/tableUtils';
 import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
 import { snoozeDurations, durations } from 'constants/timeWindows';
-import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import {
+    VULN_CVE_LIST_FRAGMENT,
+    IMAGE_CVE_LIST_FRAGMENT,
+    NODE_CVE_LIST_FRAGMENT,
+    CLUSTER_CVE_LIST_FRAGMENT,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 import CVSSSeverityLabel from 'Components/CVSSSeverityLabel';
+import CveType from 'Components/CveType';
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 import { getFilteredCVEColumns } from './ListCVEs.utils';
@@ -47,7 +52,14 @@ export const defaultCveSort = [
 
 export function getCveTableColumns(workflowState) {
     // to determine whether to show the counts as links in the table when not in pure CVE state
-    const inFindingsSection = workflowState.getCurrentEntity().entityType !== entityTypes.CVE;
+    const currentEntityType = workflowState.getCurrentEntity().entityType;
+    const isCveType = [
+        entityTypes.CVE, // TODO: remove this type after it's removed from workflow
+        entityTypes.IMAGE_CVE,
+        entityTypes.NODE_CVE,
+        entityTypes.CLUSTER_CVE,
+    ].includes(currentEntityType);
+    const inFindingsSection = !isCveType;
 
     const tableColumns = [
         {
@@ -273,15 +285,62 @@ const VulnMgmtCves = ({
 
     const workflowState = useContext(workflowStateContext);
 
-    const CVES_QUERY = gql`
-        query getCves($query: String, $scopeQuery: String, $pagination: Pagination) {
-            results: vulnerabilities(query: $query, pagination: $pagination) {
-                ...cveFields
-            }
-            count: vulnerabilityCount(query: $query)
+    const cveType = workflowState.getCurrentEntityType();
+
+    let cveQuery = '';
+
+    switch (cveType) {
+        case entityTypes.NODE_CVE: {
+            cveQuery = gql`
+                query getNodeCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                    results: nodeVulnerabilities(query: $query, pagination: $pagination) {
+                        ...nodeCVEFields
+                    }
+                    count: nodeVulnerabilityCount(query: $query)
+                }
+                ${NODE_CVE_LIST_FRAGMENT}
+            `;
+            break;
         }
-        ${VULN_CVE_LIST_FRAGMENT}
-    `;
+        case entityTypes.CLUSTER_CVE: {
+            cveQuery = gql`
+                query getClusterCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                    results: clusterVulnerabilities(query: $query, pagination: $pagination) {
+                        ...clusterCVEFields
+                    }
+                    count: clusterVulnerabilityCount(query: $query)
+                }
+                ${CLUSTER_CVE_LIST_FRAGMENT}
+            `;
+            break;
+        }
+        case entityTypes.IMAGE_CVE: {
+            cveQuery = gql`
+                query getImageCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                    results: imageVulnerabilities(query: $query, pagination: $pagination) {
+                        ...imageCVEFields
+                    }
+                    count: imageVulnerabilityCount(query: $query)
+                }
+                ${IMAGE_CVE_LIST_FRAGMENT}
+            `;
+            break;
+        }
+        // TODO: remove the deprecated one-CVE-to-rule-them-all type, and move default case to IMAGE_CVE
+        case entityTypes.CVE:
+        default: {
+            cveQuery = gql`
+                query getCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                    results: vulnerabilities(query: $query, pagination: $pagination) {
+                        ...cveFields
+                    }
+                    count: vulnerabilityCount(query: $query)
+                }
+                ${VULN_CVE_LIST_FRAGMENT}
+            `;
+            break;
+        }
+    }
 
     const viewingSuppressed = getViewStateFromSearch(search, cveSortFields.SUPPRESSED);
 
@@ -481,10 +540,10 @@ const VulnMgmtCves = ({
             <WorkflowListPage
                 data={data}
                 totalResults={totalResults}
-                query={CVES_QUERY}
+                query={cveQuery}
                 queryOptions={queryOptions}
                 idAttribute="cve"
-                entityListType={entityTypes.CVE}
+                entityListType={cveType}
                 getTableColumns={getCveTableColumns}
                 selectedRowId={selectedRowId}
                 search={search}

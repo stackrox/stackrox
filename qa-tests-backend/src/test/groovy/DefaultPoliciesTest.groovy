@@ -1,23 +1,18 @@
 import static Services.getPolicies
 import static Services.waitForViolation
-
-import io.grpc.StatusRuntimeException
-
-import spock.lang.IgnoreIf
-import spock.lang.Retry
-import spock.lang.Shared
-import services.AlertService
-import services.PolicyService
-import services.FeatureFlagService
-import services.ImageIntegrationService
 import common.Constants
+import groups.BAT
+import groups.SMOKE
+import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
+import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
+import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
+import io.stackrox.proto.storage.DeploymentOuterClass
+import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
@@ -25,25 +20,26 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.RiskOuterClass
 import io.stackrox.proto.storage.RiskOuterClass.Risk.Result
-import io.stackrox.proto.storage.DeploymentOuterClass
-import io.stackrox.proto.storage.ImageOuterClass
-import services.DeploymentService
-import services.ImageService
-import util.Env
-import util.Helpers
-import util.SlackUtil
-
-import org.junit.Assume
-
-import groups.BAT
-import groups.SMOKE
-import org.junit.experimental.categories.Category
-import spock.lang.Stepwise
-import spock.lang.Unroll
+import java.util.stream.Collectors
 import objects.Deployment
 import objects.GCRImageIntegration
 import objects.Service
-import java.util.stream.Collectors
+import org.junit.Assume
+import org.junit.experimental.categories.Category
+import services.AlertService
+import services.DeploymentService
+import services.FeatureFlagService
+import services.ImageIntegrationService
+import services.ImageService
+import services.PolicyService
+import spock.lang.IgnoreIf
+import spock.lang.Retry
+import spock.lang.Shared
+import spock.lang.Stepwise
+import spock.lang.Unroll
+import util.Env
+import util.Helpers
+import util.SlackUtil
 
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
 class DefaultPoliciesTest extends BaseSpecification {
@@ -95,7 +91,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(NGINX_1_10)
-            .setImage("docker.io/nginx:1.10")
+            .setImage("quay.io/rhacs-eng/qa:docker-io-nginx-1-10")
             .addLabel("app", "test"),
         new Deployment()
             .setName(GCR_NGINX)
@@ -120,8 +116,10 @@ class DefaultPoliciesTest extends BaseSpecification {
                         PolicySection.newBuilder().addPolicyGroups(
                                 PolicyGroup.newBuilder()
                                         .setFieldName("Fixed By")
-                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(".*"))
-                        )
+                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(".*")
+                                        .build())
+                                .build()
+                        ).build()
                 ).build()
         anyFixedPolicyId = PolicyService.createNewPolicy(anyFixedPolicy)
         assert anyFixedPolicyId
@@ -171,7 +169,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             PolicyService.patchPolicy(
                     PolicyServiceOuterClass.PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(false).build()
             )
-            println "Temporarily enabled policy '${policyName}'"
+            log.info "Temporarily enabled policy '${policyName}'"
             policyEnabled = true
         }
 
@@ -186,7 +184,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             PolicyService.patchPolicy(
                     PolicyServiceOuterClass.PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(true).build()
             )
-            println "Re-disabled policy '${policyName}'"
+            log.info "Re-disabled policy '${policyName}'"
         }
 
         where:
@@ -235,7 +233,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         def violations = AlertService.getViolations(
                 ListAlertsRequest.newBuilder().setQuery("Namespace:stackrox,Violation State:*").build()
         )
-        println "${violations.size()} violation(s) were found in the stackrox namespace"
+        log.info "${violations.size()} violation(s) were found in the stackrox namespace"
         def unexpectedViolations = violations.findAll {
             def deploymentName = it.deployment.name
             def policyName = it.policy.name
@@ -244,7 +242,7 @@ class DefaultPoliciesTest extends BaseSpecification {
                     !Constants.VIOLATIONS_ALLOWLIST.get(deploymentName).contains(policyName)) &&
                     !Constants.VIOLATIONS_BY_POLICY_ALLOWLIST.contains(policyName)
         }
-        println "${unexpectedViolations.size()} violation(s) were not expected"
+        log.info "${unexpectedViolations.size()} violation(s) were not expected"
         if (unexpectedViolations.isEmpty()) {
             return
         }
@@ -280,7 +278,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             }
             catch (Exception e) {
                 hadGetErrors = true
-                println "Could not get the deployment with id ${it.deployment.id}, name ${it.deployment.name}: ${e}"
+                log.info "Could not get the deployment with id ${it.deployment.id}, name ${it.deployment.name}: ${e}"
                 return it
             }
 
@@ -301,7 +299,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
         if (imageFixableVulnMap.isEmpty()) {
             assert !hadGetErrors
-            println "There are no fixable vulns to report"
+            log.info "There are no fixable vulns to report"
             return
         }
 
@@ -358,7 +356,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             sleep 2000
         }
         riskResult != null
-        println "Risk Factor found in ${System.currentTimeMillis() - start}ms: ${riskFactor}"
+        log.info "Risk Factor found in ${System.currentTimeMillis() - start}ms: ${riskFactor}"
         riskResult.score <= maxScore
         riskResult.score >= 1.0f
 
@@ -390,13 +388,13 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Number of Components in Image"   | 1.5f     | null |
                 "Image \"quay.io/rhacs-eng/qa:struts-app\"" +
-                " contains 16[67] components" | []
+                " contains 169 components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
-
-        "RBAC Configuration"              | 1.0f     |
-                "Deployment is configured to automatically mount a token for service account \"default\"" | null |
-                []
+        // TODO(ROX-9637)
+//         "RBAC Configuration"              | 1.0f     |
+//                 "Deployment is configured to automatically mount a token for service account \"default\"" | null |
+//                 []
     }
 
     @Category(BAT)
@@ -419,19 +417,39 @@ class DefaultPoliciesTest extends BaseSpecification {
                     exists = true
                 }
                 catch (StatusRuntimeException e) {
-                    println "Cannot get the policy associated with the alert: ${e}"
-                    println violation
+                    log.info "Cannot get the policy associated with the alert: ${e}"
+                    log.info violation.toString()
                 }
                  exists
-        }.collect()
+             }.filter { alert ->
+                // The OpenShift: Kubeadmin Secret Accessed policy can sometimes get triggered
+                // by the CI. This happens when the CI scripts use kubectl to pull resources
+                // to save on a test failure. Ignore this alert iff _all_ violations was by kube:admin
+                // using kubectl. Do not ignore for any other violations.
+                // See https://issues.redhat.com/browse/ROX-10018
+                def noKubectlViolation = true
+                if (alert.policy.getName() == "OpenShift: Kubeadmin Secret Accessed") {
+                    noKubectlViolation = !AlertService.getViolation(alert.id).getViolationsList().
+                        stream().allMatch { v ->
+                            def user = v.getKeyValueAttrs().getAttrsList().find { a ->
+                                a.getKey() == "Username" && a.getValue() == "kube:admin"
+                            }
+                            def ua = v.getKeyValueAttrs().getAttrsList().find { a ->
+                                a.getKey() == "User Agent" && a.getValue().startsWith("kubectl/")
+                            }
+                            user != null && ua != null
+                        }
+                }
+                noKubectlViolation
+            }.collect()
 
         if (nonWhitelistedKubeSystemViolations.size() != 0) {
             nonWhitelistedKubeSystemViolations.forEach {
                 violation ->
-                println "An unexpected kube-system violation:"
-                println violation
-                println "The policy details:"
-                println Services.getPolicy(violation.policy.id)
+                log.info "An unexpected kube-system violation:"
+                log.info violation.toString()
+                log.info "The policy details:"
+                log.info Services.getPolicy(violation.policy.id).toString()
             }
         }
 

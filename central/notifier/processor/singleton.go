@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -35,7 +34,7 @@ func initialize() {
 
 	// When alerts are generated, we will want to notify.
 	pr = New(ns, reporter.Singleton())
-	protoNotifiers, err := datastore.Singleton().GetNotifiers(ctx, &v1.GetNotifiersRequest{})
+	protoNotifiers, err := datastore.Singleton().GetNotifiers(ctx)
 	if err != nil {
 		log.Panicf("unable to fetch notifiers: %v", err)
 	}

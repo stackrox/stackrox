@@ -150,7 +150,7 @@ describe('Notifiers Test', () => {
             getInputByLabel('Email server').type('smtp.example.com:465');
             getInputByLabel('Username').clear().type('scooby');
             getInputByLabel('Password').clear().type('monkey');
-            getInputByLabel('From').clear().type('ACS');
+            getInputByLabel('From').clear().type('Scooby');
             getInputByLabel('Sender').clear().type('scooby@doo.com', {
                 parseSpecialCharSequences: false,
             });
@@ -183,8 +183,7 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.save).should('be.disabled');
 
             // Step 2, check fields for invalid formats, or conditional validation
-            getInputByLabel('Endpoint').type('example').blur();
-            getHelperElementByLabel('Endpoint').contains('Endpoint must be a valid URL');
+            getInputByLabel('Endpoint').type('example.com:3000/hooks/123').blur();
 
             getInputByLabel('Username').type('neo').blur();
             getInputByLabel('Password').type(' ').blur();
@@ -200,7 +199,7 @@ describe('Notifiers Test', () => {
 
             // Step 3, check valid from and save
             getInputByLabel('Integration name').clear().type(integrationName);
-            getInputByLabel('Endpoint').clear().type('example.com:3000/hooks/123');
+            getInputByLabel('Endpoint').clear().type('service-name');
             getInputByLabel('CA certificate (optional)').type(sampleCert, { delay: 1 });
             getInputByLabel('Skip TLS verification').click();
             getInputByLabel('Enable audit logging').click();

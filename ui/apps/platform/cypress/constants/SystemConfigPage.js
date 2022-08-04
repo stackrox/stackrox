@@ -11,9 +11,9 @@ const selectors = {
         logout: '.pf-c-page__header-tools-item button:contains("Log out")',
     },
     pageHeader: {
-        editButton: '[data-testid="edit-btn"]',
-        cancelButton: '[data-testid="cancel-btn"]',
-        saveButton: '[data-testid="save-btn"]',
+        editButton: 'button:contains("Edit")',
+        cancelButton: 'button:contains("Cancel")',
+        saveButton: 'button:contains("Save")',
     },
     header: {
         widget: '[data-testid="header-config"]',
@@ -56,15 +56,11 @@ const selectors = {
     },
     dataRetention: {
         widget: '[data-testid="data-retention-config"]',
-        allRuntimeViolationsBox: '[data-testid="number-box"]:contains("All Runtime Violations")',
+        allRuntimeViolationsBox: '.pf-c-card:contains("All runtime violations")',
         deletedRuntimeViolationsBox:
-            '[data-testid="number-box"]:contains("Runtime Violations For Deleted Deployments")',
-        resolvedDeployViolationsBox:
-            '[data-testid="number-box"]:contains("Resolved Deploy-Phase Violations")',
-        imagesBox: '[data-testid="number-box"]:contains("Images No Longer Deployed")',
-    },
-    downloadTelemetry: {
-        link: '[data-testid="download-telemetry"] a:contains("System Health")',
+            '.pf-c-card:contains("Runtime violations for deleted deployments")',
+        resolvedDeployViolationsBox: '.pf-c-card:contains("Resolved deploy-phase violations")',
+        imagesBox: '.pf-c-card:contains("Images no longer deployed")',
     },
 };
 

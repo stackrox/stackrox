@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -45,6 +46,8 @@ type NetworkGraphServiceTestSuite struct {
 	tested    *serviceImpl
 
 	mockCtrl *gomock.Controller
+
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *NetworkGraphServiceTestSuite) SetupTest() {
@@ -59,10 +62,13 @@ func (s *NetworkGraphServiceTestSuite) SetupTest() {
 	s.networkTreeMgr = networkTreeMocks.NewMockManager(s.mockCtrl)
 
 	s.tested = newService(s.flows, s.entities, s.networkTreeMgr, s.deployments, s.clusters, s.graphConfig)
+
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *NetworkGraphServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
+	s.envIsolator.RestoreAll()
 }
 
 func (s *NetworkGraphServiceTestSuite) TestFailsIfClusterIsNotSet() {
@@ -170,18 +176,22 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	//   - flows between deployments in namespace foo and bar and masked deployments depX, depZ, and depW
 	//   - flows es1 - depA, es2 - depA
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.OneStepSCC{
-		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
-			sac.ResourceScopeKey(resources.Deployment.Resource): sac.AllowFixedScopes(
-				sac.ClusterScopeKeys("mycluster"),
-				sac.NamespaceScopeKeys("foo", "bar", "baz"),
-			),
-			sac.ResourceScopeKey(resources.NetworkGraph.Resource): sac.AllowFixedScopes(
-				sac.ClusterScopeKeys("mycluster"),
-				sac.NamespaceScopeKeys("foo", "baz", "far"),
-			),
-		},
-	})
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+			sac.TestScopeMap{
+				storage.Access_READ_ACCESS: {
+					resources.Deployment.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "bar", "baz"}},
+						},
+					},
+					resources.NetworkGraph.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "baz", "far"}},
+						},
+					},
+				},
+			}))
 
 	ts := types.TimestampNow()
 	req := &v1.NetworkGraphRequest{
@@ -199,6 +209,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 		sac.ClusterScopeKey("mycluster"),
 	})
 
+	s.deployments.EXPECT().Count(gomock.Any(), gomock.Any()).Return(5, nil)
 	s.deployments.EXPECT().SearchListDeployments(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
 		[]*storage.ListDeployment{
 			{
@@ -476,6 +487,7 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 		},
 	}
 
+	s.deployments.EXPECT().Count(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(len(relevantDeployments), nil)
 	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(relevantDeployments, nil)
 
 	es1ID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/20")
@@ -789,4 +801,55 @@ func (s *NetworkGraphServiceTestSuite) TestNetworkGraphConfiguration() {
 		},
 	})
 	s.NoError(err)
+}
+
+func (s *NetworkGraphServiceTestSuite) TestReturnErrorIfNumberOfNodesExceedsLimit() {
+	testCases := map[string]struct {
+		deploymentCount int
+		envValue        string
+		expectedMax     int
+	}{
+		"Default": {
+			deploymentCount: 2001,
+			envValue:        "",
+			expectedMax:     2000,
+		},
+		"Specific Env value": {
+			deploymentCount: 1001,
+			envValue:        "1000",
+			expectedMax:     1000,
+		},
+		"Incorrect env value shouldn't panic": {
+			deploymentCount: 2001,
+			envValue:        "dummy",
+			expectedMax:     2000,
+		},
+	}
+
+	for name, testCase := range testCases {
+		s.Run(name, func() {
+			if testCase.envValue != "" {
+				s.envIsolator.Setenv(maxNumberOfDeploymentsInGraphEnv.EnvVar(), testCase.envValue)
+			}
+
+			s.deployments.EXPECT().Count(gomock.Any(), gomock.Any()).Return(testCase.deploymentCount, nil)
+
+			ctx := sac.WithAllAccess(context.Background())
+
+			ts := types.TimestampNow()
+			req := &v1.NetworkGraphRequest{
+				ClusterId: "mycluster",
+				Query:     "Namespace: foo,bar,far",
+				Since:     ts,
+			}
+
+			_, err := s.tested.GetNetworkGraph(ctx, req)
+			s.Errorf(
+				err,
+				"number of deployments (%d) exceeds maximum allowed for Network Graph: %d",
+				testCase.deploymentCount,
+				testCase.expectedMax,
+			)
+		})
+	}
 }

@@ -1,0 +1,52 @@
+# OSD (openshift dedicated) clusters disallow updates to the 'anyuid' scc.
+#
+# This 'qatest-anyuid' resource is a copy of 'anyuid' as gathered via:
+# `oc get scc anyuid -o yaml | kfilter`
+#
+# The 'qatest-anyuid' is augmented in test setup in:
+# //stackrox/qa-tests-backend/src/main/groovy/orchestratormanager/OpenShift.groovy
+
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: qatest-anyuid
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    kubernetes.io/description: qatest-anyuid is a copy of anyuid to be
+      augmented with capabilities required for testing. The Groovy based test
+      harness augments qatest-anyuid capabilities in the test environment setup
+      stage.
+    release.openshift.io/create-only: "false"
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: false
+allowedCapabilities: null
+defaultAddCapabilities: null
+fsGroup:
+  type: RunAsAny
+groups:
+- system:cluster-admins
+priority: 10
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+- MKNOD
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+users: []
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- persistentVolumeClaim
+- projected
+- secret

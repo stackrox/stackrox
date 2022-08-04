@@ -1,0 +1,90 @@
+{
+    "go-unit-tests": {
+        "run_with_labels": [],
+        "skip_with_label": "",
+        "run_with_changed_path": "^.*$",
+        "changed_path_to_ignore": "^ui/",
+        "run_on_master": "true",
+        "run_on_tags": "true"
+    },
+    "go-unit-tests-release": {
+        "run_with_labels": [],
+        "skip_with_label": "",
+        "run_with_changed_path": "^.*$",
+        "changed_path_to_ignore": "^ui/",
+        "run_on_master": "true",
+        "run_on_tags": "true"
+    },
+    "go-postgres-tests": {
+        "run_with_labels": [],
+        "skip_with_label": "",
+        "run_with_changed_path": "^.*$",
+        "changed_path_to_ignore": "^ui/",
+        "run_on_master": "true",
+        "run_on_tags": "true"
+    },
+    "shell-unit-tests": {
+        "run_with_labels": [],
+        "skip_with_label": "",
+        "run_with_changed_path": "^.*$",
+        "changed_path_to_ignore": "^ui/",
+        "run_on_master": "true",
+        "run_on_tags": "true"
+    },
+    "ui-unit-tests": {
+        "run_with_labels": [],
+        "skip_with_label": "",
+        "run_with_changed_path": "^ui/",
+        "changed_path_to_ignore": "",
+        "run_on_master": "false",
+        "run_on_tags": "true"
+    },
+    "gke-qa-e2e-tests": {
+        "run_with_labels": [],
+        "skip_with_label": "ci-no-qa-tests",
+        "run_with_changed_path": "^.*$",
+        "changed_path_to_ignore": "^ui/",
+        "run_on_master": "true",
+        "run_on_tags": "true"
+    },
+    "gke-nongroovy-e2e-tests": {
+        "run_with_labels": [],
+        "skip_with_label": "ci-no-nongroovy-tests",
+        "run_with_changed_path": "^.*$",
+        "changed_path_to_ignore": "^ui/",
+        "run_on_master": "true",
+        "run_on_tags": "true"
+    },
+    "gke-postgres-qa-e2e-tests": {
+        "run_with_labels": ["ci-postgres-tests"],
+        "skip_with_label": "",
+        "run_with_changed_path": "^.*$",
+        "changed_path_to_ignore": "^ui/",
+        "run_on_master": "true",
+        "run_on_tags": "false"
+    },
+    "gke-upgrade-tests": {
+        "run_with_labels": ["ci-upgrade-tests"],
+        "skip_with_label": "ci-no-upgrade-tests",
+        "run_with_changed_path": "^migrator/.*$|^image/",
+        "changed_path_to_ignore": "",
+        "run_on_master": "true",
+        "run_on_tags": "true"
+    },
+    "gke-ui-e2e-tests": {
+        "run_with_labels": [],
+        "skip_with_label": "ci-no-ui-tests",
+        "run_with_changed_path": "^ui/",
+        "changed_path_to_ignore": "",
+        "run_on_master": "true",
+        "run_on_tags": "true"
+    },
+    "gke-race-condition-qa-e2e-tests": {
+        "run_with_labels": ["ci-race-condition-tests"],
+        "skip_with_label": "",
+        "run_with_changed_path": "",
+        "changed_path_to_ignore": "",
+        "run_on_master": "true",
+        "run_on_tags": "true"
+    }
+}

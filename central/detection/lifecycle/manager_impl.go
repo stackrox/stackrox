@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/deployment/queue"
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/lifecycle/metrics"
@@ -21,12 +23,14 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/process/filter"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -37,6 +41,8 @@ var (
 	lifecycleMgrCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image, resources.Indicator, resources.Policy, resources.ProcessWhitelist, resources.Namespace)))
+
+	genDuration = env.BaselineGenerationDuration.DurationSetting()
 )
 
 type processBaselineKey struct {
@@ -58,12 +64,14 @@ type managerImpl struct {
 	deletedDeploymentsCache expiringcache.Cache
 	processFilter           filter.Filter
 
-	queuedIndicators map[string]*storage.ProcessIndicator
+	queuedIndicators           map[string]*storage.ProcessIndicator
+	deploymentObservationQueue queue.DeploymentObservationQueue
 
 	indicatorQueueLock   sync.Mutex
 	flushProcessingLock  concurrency.TransparentMutex
 	indicatorRateLimiter *rate.Limiter
 	indicatorFlushTicker *time.Ticker
+	baselineFlushTicker  *time.Ticker
 
 	policyAlertsLock          sync.RWMutex
 	removedOrDisabledPolicies set.StringSet
@@ -124,12 +132,35 @@ func (m *managerImpl) flushQueuePeriodically() {
 	}
 }
 
+func (m *managerImpl) flushBaselineQueuePeriodically() {
+	defer m.baselineFlushTicker.Stop()
+	for range m.baselineFlushTicker.C {
+		m.flushBaselineQueue()
+	}
+}
+
 func indicatorToBaselineKey(indicator *storage.ProcessIndicator) processBaselineKey {
 	return processBaselineKey{
 		deploymentID:  indicator.GetDeploymentId(),
 		containerName: indicator.GetContainerName(),
 		clusterID:     indicator.GetClusterId(),
 		namespace:     indicator.GetNamespace(),
+	}
+}
+
+func (m *managerImpl) flushBaselineQueue() {
+	for {
+		// ObservationEnd is in the future so we have nothing to do at this time
+		head := m.deploymentObservationQueue.Peek()
+		if head == nil || protoutils.After(head.ObservationEnd, types.TimestampNow()) {
+			return
+		}
+
+		// Grab the first deployment to baseline.
+		// NOTE:  This is the only place from which Pull is called.
+		deployment := m.deploymentObservationQueue.Pull()
+
+		m.addBaseline(deployment.DeploymentID)
 	}
 }
 
@@ -162,12 +193,35 @@ func (m *managerImpl) flushIndicatorQueue() {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
 
-	if features.ActiveVulnManagement.Enabled() {
-		m.processAggregator.Add(indicatorSlice)
-	}
+	m.processAggregator.Add(indicatorSlice)
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
 
+	m.buildMapAndCheckBaseline(indicatorSlice)
+}
+
+func (m *managerImpl) addToIndicatorQueue(indicator *storage.ProcessIndicator) {
+	m.indicatorQueueLock.Lock()
+	defer m.indicatorQueueLock.Unlock()
+
+	m.queuedIndicators[indicator.GetId()] = indicator
+}
+
+func (m *managerImpl) addBaseline(deploymentID string) {
+	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
+
+	// Simply use search to find the process indicators for the deployment
+	indicatorSlice, _ := m.processesDataStore.SearchRawProcessIndicators(
+		lifecycleMgrCtx,
+		search.NewQueryBuilder().
+			AddExactMatches(search.DeploymentID, deploymentID).
+			ProtoQuery(),
+	)
+
+	m.buildMapAndCheckBaseline(indicatorSlice)
+}
+
+func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.ProcessIndicator) {
 	// Group the processes into particular baseline segments
 	baselineMap := make(map[processBaselineKey][]*storage.ProcessIndicator)
 	for _, indicator := range indicatorSlice {
@@ -182,13 +236,6 @@ func (m *managerImpl) flushIndicatorQueue() {
 	}
 }
 
-func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator) {
-	m.indicatorQueueLock.Lock()
-	defer m.indicatorQueueLock.Unlock()
-
-	m.queuedIndicators[indicator.GetId()] = indicator
-}
-
 func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
 	key := &storage.ProcessBaselineKey{
 		DeploymentId:  baselineKey.deploymentID,
@@ -201,6 +248,12 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	baseline, exists, err := m.baselines.GetProcessBaseline(lifecycleMgrCtx, key)
 	if err != nil {
 		return false, err
+	}
+
+	// If the baseline does not exist AND this deployment is in the observation period, we
+	// need not process further at this time.
+	if !exists && m.deploymentObservationQueue.InObservation(key.GetDeploymentId()) {
+		return false, nil
 	}
 
 	existingProcess := set.NewStringSet()
@@ -225,7 +278,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		return false, nil
 	}
 	if !exists {
-		_, err = m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true)
+		_, err = m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true)
 		return false, err
 	}
 
@@ -234,9 +287,11 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	if userBaseline || roxBaseline {
 		// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
 		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
-		return userBaseline, nil
+	} else {
+		// So we have a baseline, but not locked.  Now we need to add these elements to the unlocked baseline
+		_, err = m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true)
 	}
-	_, err = m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true)
+
 	return userBaseline, err
 }
 
@@ -251,11 +306,16 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error 
 		return nil
 	}
 	metrics.ProcessFilterCounterInc("Added")
-	m.addToQueue(indicator)
+
+	observationEnd, _ := types.TimestampProto(time.Now().Add(genDuration))
+	m.deploymentObservationQueue.Push(&queue.DeploymentObservation{DeploymentID: indicator.GetDeploymentId(), InObservation: true, ObservationEnd: observationEnd})
+
+	m.addToIndicatorQueue(indicator)
 
 	if m.indicatorRateLimiter.Allow() {
 		go m.flushIndicatorQueue()
 	}
+
 	return nil
 }
 
@@ -350,7 +410,14 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 
 func (m *managerImpl) DeploymentRemoved(deploymentID string) error {
 	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithDeploymentID(deploymentID, true))
+
+	m.deploymentObservationQueue.RemoveDeployment(deploymentID)
+
 	return err
+}
+
+func (m *managerImpl) RemoveDeploymentFromObservation(deploymentID string) {
+	m.deploymentObservationQueue.RemoveFromObservation(deploymentID)
 }
 
 func (m *managerImpl) RemovePolicy(policyID string) error {

@@ -6,66 +6,118 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 // All resource types that we want to define (for the purposes of enforcing
 // API permissions) must be defined here.
-// KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER.
+//
+// Description for each type and the meaning of the respective Read and Write
+// operations is available in
+//     "ui/apps/platform/src/Containers/AccessControl/PermissionSets/ResourceDescription.tsx"
+//
+// UI defines possible values for resource type in
+//     "ui/apps/platform/src/types/roleResources.ts"
+//
+// Each time you touch the list below, you likely need to update both
+// aforementioned files.
+//
+// KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER (case-sensitive).
 var (
-	APIToken                         = newResourceMetadata("APIToken", permissions.GlobalScope)
-	Alert                            = newResourceMetadata("Alert", permissions.NamespaceScope)
-	AllComments                      = newResourceMetadata("AllComments", permissions.GlobalScope)
-	AuthPlugin                       = newResourceMetadata("AuthPlugin", permissions.GlobalScope)
-	AuthProvider                     = newResourceMetadata("AuthProvider", permissions.GlobalScope)
-	BackupPlugins                    = newResourceMetadata("BackupPlugins", permissions.GlobalScope)
-	Cluster                          = newResourceMetadata("Cluster", permissions.ClusterScope)
-	Compliance                       = newResourceMetadata("Compliance", permissions.ClusterScope)
-	ComplianceRunSchedule            = newResourceMetadata("ComplianceRunSchedule", permissions.GlobalScope)
-	ComplianceRuns                   = newResourceMetadata("ComplianceRuns", permissions.ClusterScope)
-	Config                           = newResourceMetadata("Config", permissions.GlobalScope)
-	CVE                              = newResourceMetadata("CVE", permissions.NamespaceScope)
-	DebugLogs                        = newResourceMetadata("DebugLogs", permissions.GlobalScope)
-	Deployment                       = newResourceMetadata("Deployment", permissions.NamespaceScope)
-	Detection                        = newResourceMetadata("Detection", permissions.GlobalScope)
-	Group                            = newResourceMetadata("Group", permissions.GlobalScope)
-	Image                            = newResourceMetadata("Image", permissions.NamespaceScope)
-	ImageComponent                   = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
-	ImageIntegration                 = newResourceMetadata("ImageIntegration", permissions.GlobalScope)
-	Indicator                        = newResourceMetadata("Indicator", permissions.NamespaceScope)
+	// Access is the new resource grouping all access related resources.
+	Access = newResourceMetadata("Access", permissions.GlobalScope)
+	// Administration is the new resource grouping all administration-like resources.
+	Administration = newResourceMetadata("Administration", permissions.GlobalScope)
+	Alert          = newResourceMetadata("Alert", permissions.NamespaceScope)
+	// SAC check is not performed directly on CVE resource. It exists here for postgres sac generation to pass.
+	CVE     = newResourceMetadata("CVE", permissions.NamespaceScope)
+	Cluster = newResourceMetadata("Cluster", permissions.ClusterScope)
+	// SAC check is not performed directly on ClusterCVE resource. It exists here for postgres sac generation to pass.
+	ClusterCVE = newResourceMetadata("ClusterCVE", permissions.ClusterScope)
+	Compliance = newResourceMetadata("Compliance", permissions.ClusterScope)
+	Deployment = newResourceMetadata("Deployment", permissions.NamespaceScope)
+	// DeploymentExtension is the new resource grouping all deployment extending resources.
+	DeploymentExtension = newResourceMetadata("DeploymentExtension", permissions.NamespaceScope)
+	Detection           = newResourceMetadata("Detection", permissions.GlobalScope)
+	Image               = newResourceMetadata("Image", permissions.NamespaceScope)
+
+	// Integration is the new  resource grouping all integration resources.
+	Integration                      = newResourceMetadata("Integration", permissions.GlobalScope)
 	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
 	K8sRoleBinding                   = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
 	K8sSubject                       = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
-	Licenses                         = newResourceMetadata("Licenses", permissions.GlobalScope)
 	Namespace                        = newResourceMetadata("Namespace", permissions.NamespaceScope)
-	NetworkBaseline                  = newResourceMetadata("NetworkBaseline", permissions.NamespaceScope)
 	NetworkGraph                     = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
-	NetworkGraphConfig               = newResourceMetadata("NetworkGraphConfig", permissions.GlobalScope)
 	NetworkPolicy                    = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
 	Node                             = newResourceMetadata("Node", permissions.ClusterScope)
-	Notifier                         = newResourceMetadata("Notifier", permissions.GlobalScope)
 	Policy                           = newResourceMetadata("Policy", permissions.GlobalScope)
-	ProbeUpload                      = newResourceMetadata("ProbeUpload", permissions.GlobalScope)
-	ProcessWhitelist                 = newResourceMetadata("ProcessWhitelist", permissions.NamespaceScope)
-	Role                             = newResourceMetadata("Role", permissions.GlobalScope)
-	Risk                             = newResourceMetadata("Risk", permissions.NamespaceScope)
-	ScannerBundle                    = newResourceMetadata("ScannerBundle", permissions.GlobalScope)
-	ScannerDefinitions               = newResourceMetadata("ScannerDefinitions", permissions.GlobalScope)
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
-	SensorUpgradeConfig              = newResourceMetadata("SensorUpgradeConfig", permissions.GlobalScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
-	ServiceIdentity                  = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
-	SignatureIntegration             = newResourceMetadataWithFeatureFlag("SignatureIntegration", permissions.GlobalScope, features.ImageSignatureVerification)
-	User                             = newResourceMetadata("User", permissions.GlobalScope)
-	VulnerabilityManagementRequests  = newResourceMetadata("VulnerabilityManagementRequests", permissions.GlobalScope)
-	VulnerabilityManagementApprovals = newResourceMetadata("VulnerabilityManagementApprovals", permissions.GlobalScope)
-	VulnerabilityReports             = newResourceMetadataWithFeatureFlag("VulnerabilityReports", permissions.GlobalScope, features.VulnReporting)
-	WatchedImage                     = newResourceMetadata("WatchedImage", permissions.GlobalScope)
+	VulnerabilityManagementApprovals = newResourceMetadata("VulnerabilityManagementApprovals",
+		permissions.GlobalScope)
+	VulnerabilityManagementRequests = newResourceMetadata("VulnerabilityManagementRequests",
+		permissions.GlobalScope)
+	VulnerabilityReports = newResourceMetadata("VulnerabilityReports", permissions.GlobalScope)
+	WatchedImage         = newResourceMetadata("WatchedImage", permissions.GlobalScope)
 
-	// Internal Resources
+	// To-be-deprecated resources. For now, the resources should still be used in favor of the newly
+	// introduced ones.
+
+	AllComments = newDeprecatedResourceMetadata("AllComments", permissions.GlobalScope,
+		Administration)
+	APIToken     = newDeprecatedResourceMetadata("APIToken", permissions.GlobalScope, Integration)
+	AuthPlugin   = newDeprecatedResourceMetadata("AuthPlugin", permissions.GlobalScope, Access)
+	AuthProvider = newDeprecatedResourceMetadata("AuthProvider", permissions.GlobalScope,
+		Access)
+	BackupPlugins = newDeprecatedResourceMetadata("BackupPlugins", permissions.GlobalScope,
+		Integration)
+	ComplianceRuns = newDeprecatedResourceMetadata("ComplianceRuns", permissions.ClusterScope,
+		Compliance)
+	ComplianceRunSchedule = newDeprecatedResourceMetadata("ComplianceRunSchedule",
+		permissions.GlobalScope, Administration)
+	Config = newDeprecatedResourceMetadata("Config", permissions.GlobalScope,
+		Administration)
+	DebugLogs = newDeprecatedResourceMetadata("DebugLogs", permissions.GlobalScope,
+		Administration)
+	Group            = newDeprecatedResourceMetadata("Group", permissions.GlobalScope, Access)
+	ImageComponent   = newDeprecatedResourceMetadata("ImageComponent", permissions.NamespaceScope, Image)
+	ImageIntegration = newDeprecatedResourceMetadata("ImageIntegration",
+		permissions.GlobalScope, Integration)
+	Indicator = newDeprecatedResourceMetadata("Indicator", permissions.NamespaceScope,
+		DeploymentExtension)
+	Licenses        = newDeprecatedResourceMetadata("Licenses", permissions.GlobalScope, Access)
+	NetworkBaseline = newDeprecatedResourceMetadata("NetworkBaseline",
+		permissions.NamespaceScope, DeploymentExtension)
+	NetworkGraphConfig = newDeprecatedResourceMetadata("NetworkGraphConfig",
+		permissions.GlobalScope, Administration)
+	Notifier = newDeprecatedResourceMetadata("Notifier", permissions.GlobalScope,
+		Integration)
+	ProbeUpload = newDeprecatedResourceMetadata("ProbeUpload", permissions.GlobalScope,
+		Administration)
+	ProcessWhitelist = newDeprecatedResourceMetadata("ProcessWhitelist",
+		permissions.NamespaceScope, DeploymentExtension)
+	Risk = newDeprecatedResourceMetadata("Risk", permissions.NamespaceScope,
+		DeploymentExtension)
+	Role          = newDeprecatedResourceMetadata("Role", permissions.GlobalScope, Access)
+	ScannerBundle = newDeprecatedResourceMetadata("ScannerBundle",
+		permissions.GlobalScope, Administration)
+	ScannerDefinitions = newDeprecatedResourceMetadata("ScannerDefinitions",
+		permissions.GlobalScope, Administration)
+	SensorUpgradeConfig = newDeprecatedResourceMetadata("SensorUpgradeConfig",
+		permissions.GlobalScope, Administration)
+	ServiceIdentity = newDeprecatedResourceMetadata("ServiceIdentity",
+		permissions.GlobalScope, Administration)
+	SignatureIntegration = newDeprecatedResourceMetadata("SignatureIntegration",
+		permissions.GlobalScope, Integration)
+	User = newDeprecatedResourceMetadata("User", permissions.GlobalScope, Access)
+
+	// Internal Resources.
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
+	InstallationInfo   = newInternalResourceMetadata("InstallationInfo", permissions.GlobalScope)
+	Version            = newInternalResourceMetadata("Version", permissions.GlobalScope)
 
-	resourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
+	resourceToMetadata         = make(map[permissions.Resource]permissions.ResourceMetadata)
+	disabledResourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
+	internalResourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
 )
 
 func newResourceMetadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
@@ -77,22 +129,59 @@ func newResourceMetadata(name permissions.Resource, scope permissions.ResourceSc
 	return md
 }
 
-func newResourceMetadataWithFeatureFlag(name permissions.Resource, scope permissions.ResourceScope, flag features.FeatureFlag) permissions.ResourceMetadata {
+func newDeprecatedResourceMetadata(name permissions.Resource, scope permissions.ResourceScope,
+	replacingResourceMD permissions.ResourceMetadata) permissions.ResourceMetadata {
+	md := permissions.ResourceMetadata{
+		Resource:          name,
+		Scope:             scope,
+		ReplacingResource: &replacingResourceMD,
+	}
+	resourceToMetadata[name] = md
+	return md
+}
+
+/*
+Commented for now, uncomment in case you need to register a resource guarded behind a feature flag.
+func newResourceMetadataWithFeatureFlag(name permissions.Resource, scope permissions.ResourceScope,
+	flag features.FeatureFlag) permissions.ResourceMetadata {
+	md := permissions.ResourceMetadata{
+		Resource:          name,
+		Scope:             scope,
+	}
+	if flag.Enabled() {
+		resourceToMetadata[name] = md
+	} else {
+		disabledResourceToMetadata[name] = md
+	}
+	return md
+}
+*/
+
+/*
+Commented for now, uncomment in case you need to register a deprecated resource guarded behind a feature flag.
+func newDeprecatedResourceMetadataWithFeatureFlag(name permissions.Resource, scope permissions.ResourceScope,
+	replacingResourceMD permissions.ResourceMetadata, flag features.FeatureFlag) permissions.ResourceMetadata {
+	md := permissions.ResourceMetadata{
+		Resource:          name,
+		Scope:             scope,
+		ReplacingResource: &replacingResourceMD,
+	}
+	if flag.Enabled() {
+		resourceToMetadata[name] = md
+	} else {
+		disabledResourceToMetadata[name] = md
+	}
+	return md
+}
+*/
+
+func newInternalResourceMetadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
 	md := permissions.ResourceMetadata{
 		Resource: name,
 		Scope:    scope,
 	}
-	if flag.Enabled() {
-		resourceToMetadata[name] = md
-	}
+	internalResourceToMetadata[name] = md
 	return md
-}
-
-func newInternalResourceMetadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
-	return permissions.ResourceMetadata{
-		Resource: name,
-		Scope:    scope,
-	}
 }
 
 // ListAll returns a list of all resources.
@@ -108,6 +197,30 @@ func ListAll() []permissions.Resource {
 func ListAllMetadata() []permissions.ResourceMetadata {
 	metadatas := make([]permissions.ResourceMetadata, 0, len(resourceToMetadata))
 	for _, metadata := range resourceToMetadata {
+		metadatas = append(metadatas, metadata)
+	}
+	sort.SliceStable(metadatas, func(i, j int) bool {
+		return string(metadatas[i].Resource) < string(metadatas[j].Resource)
+	})
+	return metadatas
+}
+
+// ListAllDisabledMetadata returns a list of all resource metadata that are currently disable by feature flag.
+func ListAllDisabledMetadata() []permissions.ResourceMetadata {
+	metadatas := make([]permissions.ResourceMetadata, 0, len(disabledResourceToMetadata))
+	for _, metadata := range disabledResourceToMetadata {
+		metadatas = append(metadatas, metadata)
+	}
+	sort.SliceStable(metadatas, func(i, j int) bool {
+		return string(metadatas[i].Resource) < string(metadatas[j].Resource)
+	})
+	return metadatas
+}
+
+// ListAllInternalMetadata returns a list of all resource metadata that are internal only
+func ListAllInternalMetadata() []permissions.ResourceMetadata {
+	metadatas := make([]permissions.ResourceMetadata, 0, len(internalResourceToMetadata))
+	for _, metadata := range internalResourceToMetadata {
 		metadatas = append(metadatas, metadata)
 	}
 	sort.SliceStable(metadatas, func(i, j int) bool {

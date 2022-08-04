@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/joelanford/helm-operator/pkg/extensions"
+	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
@@ -69,7 +69,11 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	if err := r.ReconcileSecret(ctx, "scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db secret")
 	}
+	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
+}
 
+//lint:ignore U1000 ignore unused method. TODO(ROX-9969): remove lint ignore after the init-bundle cert rotation stabilization.
+func (r createCentralTLSExtensionRun) reconcileInitBundleSecrets(ctx context.Context, shouldDelete bool) error {
 	bundleSecretShouldExist, err := r.shouldBundleSecretsExist(ctx, shouldDelete)
 	if err != nil {
 		return err
@@ -87,7 +91,6 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 			return errors.Wrapf(err, "reconciling %s secret", secretName)
 		}
 	}
-
 	return nil
 }
 

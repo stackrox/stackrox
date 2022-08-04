@@ -20,7 +20,7 @@ import {
     createPermissionSet,
     deletePermissionSet,
     fetchPermissionSets,
-    fetchResourcesAsArray,
+    fetchResources,
     fetchRolesAsArray,
     updatePermissionSet,
 } from 'services/RolesService';
@@ -83,7 +83,7 @@ function PermissionSets(): ReactElement {
 
         setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertResources(null);
-        fetchResourcesAsArray()
+        fetchResources()
             .then((resourcesFetched) => {
                 setResources(resourcesFetched);
             })
@@ -185,13 +185,13 @@ function PermissionSets(): ReactElement {
                     <AccessControlHeaderActionBar
                         displayComponent={
                             <AccessControlDescription>
-                                Add predefined sets of application level permissions that users have
-                                when interacting with the platform
+                                Create predefined sets of application level permissions that users
+                                have when interacting with the platform
                             </AccessControlDescription>
                         }
                         actionComponent={
                             <Button variant="primary" onClick={handleCreate}>
-                                Add permission set
+                                Create permission set
                             </Button>
                         }
                     />
@@ -199,9 +199,7 @@ function PermissionSets(): ReactElement {
             ) : (
                 <AccessControlBreadcrumbs
                     entityType={entityType}
-                    entityName={action === 'create' ? 'Add permission set' : permissionSet?.name}
-                    isDisabled={hasAction}
-                    isList={isList}
+                    entityName={action === 'create' ? 'Create permission set' : permissionSet?.name}
                 />
             )}
             {alertPermissionSets}

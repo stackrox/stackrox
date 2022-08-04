@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-table-bindings-wrapper --type=storage.SimpleAccessScope --table=simpleaccessscopes
+//go:generate pg-table-bindings-wrapper --type=storage.SimpleAccessScope --migration-seq 52 --migrate-from rocksdb

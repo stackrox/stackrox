@@ -9,7 +9,8 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -52,7 +53,7 @@ func (cmd *clusterDeleteCommand) Construct(args []string, cbr *cobra.Command) er
 
 func (cmd *clusterDeleteCommand) Validate() error {
 	if cmd.name == "" {
-		return errorhelpers.ErrInvalidArgs
+		return common.ErrInvalidCommandOption
 	}
 	return nil
 }
@@ -79,7 +80,7 @@ func (cmd *clusterDeleteCommand) Delete() error {
 	}
 	if cluster == nil {
 		cmd.env.Logger().ErrfLn("Cluster with name %q not found. Valid clusters are [ %s ]", cmd.name, strings.Join(validClusters, " | "))
-		return errorhelpers.ErrNotFound
+		return errox.NotFound
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)

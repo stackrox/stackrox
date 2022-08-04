@@ -1,0 +1,37 @@
+<configuration>
+    <withJansi>true</withJansi>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%gray(%d{HH:mm:ss}) | %highlight(%-5level) | %-25logger{0} | %m%n%rEx{full,
+                com.sun,
+                com.jayway.restassured.internal,
+                groovy.lang,
+                io.grpc.stub,
+                io.fabric8.kubernetes.client.dsl.internal,
+                java.base,
+                java.lang,
+                java.util.concurrent,
+                okhttp3.internal,
+                org.codehaus.groovy,
+                org.gradle,
+                org.junit.internal,
+                org.spockframework,
+                sun.reflect,
+                worker.org.gradle,
+            }
+            </pattern>
+        </encoder>
+    </appender>
+
+    <logger name="services" level="DEBUG"/>
+    <logger name="orchestratormanager" level="DEBUG"/>
+    <logger name="util" level="DEBUG"/>
+    <logger name="objects" level="DEBUG"/>
+    <logger name="common" level="DEBUG"/>
+    <logger name="test" level="DEBUG"/>
+
+    <!-- control the level of output here -->
+    <root level="ERROR">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>

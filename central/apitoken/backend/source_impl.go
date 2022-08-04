@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
@@ -111,5 +112,9 @@ func (s *sourceImpl) Active() bool {
 }
 
 func (s *sourceImpl) MarkAsActive() error {
+	return nil
+}
+
+func (s *sourceImpl) AttributeVerifier() user.AttributeVerifier {
 	return nil
 }

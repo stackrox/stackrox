@@ -34,8 +34,7 @@ func (s *managerTestSuite) SetupSuite() {
 	ca, err := certgen.GenerateCA()
 	s.Require().NoError(err)
 
-	testCertDir, err := os.MkdirTemp("", "tlsconfig-manager-test-")
-	s.Require().NoError(err)
+	testCertDir := s.T().TempDir()
 
 	caFile := filepath.Join(testCertDir, "ca.pem")
 	s.Require().NoError(os.WriteFile(caFile, ca.CertPEM(), 0644))

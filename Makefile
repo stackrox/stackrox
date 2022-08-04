@@ -4,30 +4,48 @@ ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 
+# Set to empty string to echo some command lines which are hidden by default.
+SILENT ?= @
+
+# UNIT_TEST_IGNORE ignores a set of file patterns from the unit test make command.
+# the pattern is passed to: grep -Ev
+#  usage: "path/to/ignored|another/path"
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests"
+
 ifeq ($(TAG),)
+ifeq (,$(wildcard CI_TAG))
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
+else
+TAG=$(shell cat CI_TAG)
 endif
+endif
+
+# Set expiration on Quay.io for non-release tags.
+ifeq ($(findstring x,$(TAG)),x)
+QUAY_TAG_EXPIRATION=13w
+else
+QUAY_TAG_EXPIRATION=never
+endif
+
+ROX_PRODUCT_BRANDING ?= STACKROX_BRANDING
 
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
-# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
-# The value is assigned as following:
-# 1. Use environment variable if provided.
-# 2. If makefile variable GOTAGS is contains "release", use "stackrox.io".
-# 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
-ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "stackrox.io"; else echo "development_build"; fi)
+# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs, opensource.
+ROX_IMAGE_FLAVOR ?= $(shell \
+	if [[ "$(ROX_PRODUCT_BRANDING)" == "STACKROX_BRANDING" ]]; then \
+	  echo "opensource"; \
+	elif [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then \
+	  echo "stackrox.io"; \
+	else \
+	  echo "development_build"; \
+	fi)
 
-BUILD_IMAGE_VERSION=$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
-BUILD_IMAGE := quay.io/rhacs-eng/apollo-ci:$(BUILD_IMAGE_VERSION)
-MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
-DOCS_IMAGE_BASE := stackrox/docs
-
-ifdef CI
-    QUAY_REPO := rhacs-eng
-    MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
-    DOCS_IMAGE_BASE := quay.io/$(QUAY_REPO)/docs
+DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
+ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
+	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
 endif
 
-DOCS_IMAGE = $(DOCS_IMAGE_BASE):$(shell make --quiet --no-print-directory docs-tag)
+DOCS_IMAGE = $(DEFAULT_IMAGE_REGISTRY)/docs:$(shell make --quiet --no-print-directory docs-tag)
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 
@@ -45,6 +63,15 @@ DEBUG_BUILD ?= no
 # The latter is painfully slow on Mac OS X with Docker Desktop, so we default to using a
 # standalone volume in that case, and to bind mounting otherwise.
 UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+
+BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
+ifeq ($(UNAME_S),Darwin)
+ifeq ($(UNAME_M),arm64)
+	# TODO(ROX-12064) build these images in the CI pipeline
+	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.44-arm64
+endif
+endif
 
 ifeq ($(UNAME_S),Darwin)
 BIND_GOCACHE ?= 0
@@ -66,9 +93,8 @@ else
 GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
 endif
 
-SSH_AUTH_SOCK_MAGIC_PATH := /run/host-services/ssh-auth.sock
-LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(SSH_AUTH_SOCK_MAGIC_PATH):$(SSH_AUTH_SOCK_MAGIC_PATH) -e SSH_AUTH_SOCK=$(SSH_AUTH_SOCK_MAGIC_PATH) -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated -v $(HOME)/.ssh:/root/.ssh:ro -v $(HOME)/.gitconfig:/root/.gitconfig:ro
-GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go
+LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
+GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go -e GOCACHE=/linux-gocache
 
 null :=
 space := $(null) $(null)
@@ -88,18 +114,13 @@ $(GOLANGCILINT_BIN): deps
 
 EASYJSON_BIN := $(GOBIN)/easyjson
 $(EASYJSON_BIN): deps
-	@echo "+ $@"
+	$(SILENT)echo "+ $@"
 	go install github.com/mailru/easyjson/easyjson
-
-STATICCHECK_BIN := $(GOBIN)/staticcheck
-$(STATICCHECK_BIN): deps
-	@echo "+ $@"
-	@cd tools/linters/ && go install honnef.co/go/tools/cmd/staticcheck
 
 GOVERALLS_BIN := $(GOBIN)/goveralls
 $(GOVERALLS_BIN): deps
 	@echo "+ $@"
-	@cd tools/test/ && go install github.com/mattn/goveralls
+	$(SILENT)cd tools/test/ && go install github.com/mattn/goveralls
 
 ROXVET_BIN := $(GOBIN)/roxvet
 .PHONY: $(ROXVET_BIN)
@@ -125,32 +146,18 @@ $(GENNY_BIN): deps
 GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN): deps
 	@echo "+ $@"
-	@cd tools/test/ && go install github.com/jstemmer/go-junit-report
+	$(SILENT)cd tools/test/ && go install github.com/jstemmer/go-junit-report/v2
 
 PROTOLOCK_BIN := $(GOBIN)/protolock
 $(PROTOLOCK_BIN): deps
 	@echo "+ $@"
-	@cd tools/linters/ && go install github.com/nilslice/protolock/cmd/protolock
+	$(SILENT)cd tools/linters/ && go install github.com/nilslice/protolock/cmd/protolock
 
 ###########
 ## Style ##
 ###########
 .PHONY: style
 style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style
-
-# staticcheck is useful, but extremely computationally intensive on some people's machines.
-# Therefore, to allow people to continue running `make style`, staticcheck is not run along with
-# the other style targets by default, when running locally.
-# It is always run in CI.
-# To run it locally along with the other style targets, you can `export RUN_STATIC_CHECK=true`.
-# If you want to run just staticcheck, you can, of course, just `make staticcheck`.
-ifdef CI
-style: staticcheck
-endif
-
-ifdef RUN_STATIC_CHECK
-style: staticcheck
-endif
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCILINT_BIN)
@@ -159,11 +166,11 @@ ifdef CI
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
 	@echo "Running with no tags..."
-	golangci-lint run
+	golangci-lint run --timeout 8m0s
 	@echo "Running with release tags..."
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
-	golangci-lint run --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+	golangci-lint run --timeout 8m0s --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 else
 	golangci-lint run --fix
 	golangci-lint run --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
@@ -182,13 +189,8 @@ ui-lint:
 .PHONY: ci-config-validate
 ci-config-validate:
 	@echo "+ $@"
-	@circleci diagnostic > /dev/null 2>&1 || (echo "Must first set CIRCLECI_CLI_TOKEN or run circleci setup"; exit 1)
+	$(SILENT)circleci diagnostic > /dev/null 2>&1 || (echo "Must first set CIRCLECI_CLI_TOKEN or run circleci setup"; exit 1)
 	circleci config validate --org-slug gh/stackrox
-
-.PHONY: staticcheck
-staticcheck: $(STATICCHECK_BIN)
-	@echo "+ $@"
-	@$(BASE_DIR)/tools/staticcheck-wrap.sh ./...
 
 .PHONY: fast-central-build
 fast-central-build:
@@ -199,7 +201,7 @@ fast-central-build:
 fast-central: deps
 	@echo "+ $@"
 	docker run --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
-	@$(BASE_DIR)/scripts/k8s/kill-pod.sh central
+	$(SILENT)$(BASE_DIR)/scripts/k8s/kill-pod.sh central
 
 # fast is a dev mode options when using local dev
 # it will automatically restart Central if there are any changes
@@ -211,7 +213,7 @@ fast-sensor: sensor-build-dockerized
 
 .PHONY: fast-sensor-kubernetes
 fast-sensor-kubernetes: sensor-kubernetes-build-dockerized
-	@$(BASE_DIR)/scripts/k8s/kill-pod.sh sensor
+	$(SILENT)$(BASE_DIR)/scripts/k8s/kill-pod.sh sensor
 
 .PHONY: fast-migrator
 fast-migrator:
@@ -226,7 +228,7 @@ fast-migrator-build:
 .PHONY: check-service-protos
 check-service-protos:
 	@echo "+ $@"
-	@$(BASE_DIR)/tools/check-service-protos/run.sh
+	$(SILENT)$(BASE_DIR)/tools/check-service-protos/run.sh
 
 .PHONY: no-large-files
 no-large-files:
@@ -235,24 +237,24 @@ no-large-files:
 .PHONY: storage-protos-compatible
 storage-protos-compatible: $(PROTOLOCK_BIN)
 	@echo "+ $@"
-	@protolock status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
+	$(SILENT)protolock status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
 
 .PHONY: blanks
 blanks:
 	@echo "+ $@"
 ifdef CI
-	@git grep -L '^// Code generated by .* DO NOT EDIT\.' -- '*.go' | xargs -n 1000 $(BASE_DIR)/tools/import_validate.py
+	$(SILENT)git grep -L '^// Code generated by .* DO NOT EDIT\.' -- '*.go' | xargs -n 1000 $(BASE_DIR)/tools/import_validate.py
 else
-	@git grep -L '^// Code generated by .* DO NOT EDIT\.' -- '*.go' | xargs -n 1000 $(BASE_DIR)/tools/fix-blanks.sh
+	$(SILENT)git grep -L '^// Code generated by .* DO NOT EDIT\.' -- '*.go' | xargs -n 1000 $(BASE_DIR)/tools/fix-blanks.sh
 endif
 
 .PHONY: newlines
 newlines:
 	@echo "+ $@"
 ifdef CI
-	@git grep --cached -Il '' | xargs $(BASE_DIR)/tools/check-newlines.sh
+	$(SILENT)git grep --cached -Il '' | xargs $(BASE_DIR)/tools/check-newlines.sh
 else
-	@git grep --cached -Il '' | xargs $(BASE_DIR)/tools/check-newlines.sh --fix
+	$(SILENT)git grep --cached -Il '' | xargs $(BASE_DIR)/tools/check-newlines.sh --fix
 endif
 
 .PHONY: init-githooks
@@ -275,15 +277,15 @@ include make/protogen.mk
 .PHONY: go-easyjson-srcs
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
-	@easyjson -pkg pkg/docker/types/types.go
-	@easyjson -pkg pkg/docker/types/container.go
-	@easyjson -pkg pkg/docker/types/image.go
-	@easyjson -pkg pkg/compliance/compress/compress.go
+	$(SILENT)easyjson -pkg pkg/docker/types/types.go
+	$(SILENT)easyjson -pkg pkg/docker/types/container.go
+	$(SILENT)easyjson -pkg pkg/docker/types/image.go
+	$(SILENT)easyjson -pkg pkg/compliance/compress/compress.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:
 	@echo "+ $@"
-	@find . -name '*_easyjson.go' -exec rm {} \;
+	$(SILENT)find . -name '*_easyjson.go' -exec rm {} \;
 
 .PHONY: go-generated-srcs
 go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
@@ -292,8 +294,8 @@ go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(ST
 
 proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"
-	@touch proto-generated-srcs
-	@$(MAKE) clean-obsolete-protos
+	$(SILENT)touch proto-generated-srcs
+	$(SILENT)$(MAKE) clean-obsolete-protos
 
 clean-proto-generated-srcs:
 	@echo "+ $@"
@@ -304,24 +306,24 @@ generated-srcs: go-generated-srcs
 
 deps: $(BASE_DIR)/go.sum tools/linters/go.sum tools/test/go.sum
 	@echo "+ $@"
-	@touch deps
+	$(SILENT)touch deps
 
 %/go.sum: %/go.mod
-	@cd $*
+	$(SILENT)cd $*
 	@echo "+ $@"
-	@$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
-	@test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
-	@go mod tidy
+	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
+	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
+	$(SILENT)go mod tidy
 ifdef CI
-	@git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
+	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 	go mod verify
 endif
-	@touch $@
+	$(SILENT)touch $@
 
 .PHONY: clean-deps
 clean-deps:
 	@echo "+ $@"
-	@rm -f deps
+	$(SILENT)rm -f deps
 
 .PHONY: clean-obsolete-protos
 clean-obsolete-protos:
@@ -345,8 +347,8 @@ build-prep: deps
 
 .PHONY: cli-build
 cli-build: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
 ifdef CI
 	RACE=0 CGO_ENABLED=0 GOOS=windows $(GOBUILD) ./roxctl
 endif
@@ -358,10 +360,10 @@ cli: cli-build
 	chmod u+w $(GOPATH)/bin/roxctl
 
 cli-linux: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
 
 cli-darwin: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
 
 upgrader: bin/$(HOST_OS)/upgrader
 
@@ -373,15 +375,15 @@ bin/%/admission-control: build-prep
 
 .PHONY: build-volumes
 build-volumes:
-	@docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
-	@docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
+	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
+	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
 
 .PHONY: main-builder-image
 main-builder-image: build-volumes
 	@echo "+ $@"
-	@# Ensure that the go version in the image matches the expected version
+	$(SILENT)# Ensure that the go version in the image matches the expected version
 	# If the next line fails, you need to update the go version in rox-ci-image/images/stackrox-build.Dockerfile
-	grep -q "$(shell cat EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
+	grep -q "$(shell head -n 1 EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
 
 .PHONY: main-build
 main-build: build-prep main-build-dockerized
@@ -439,7 +441,7 @@ webhookserver-build: build-prep
 .PHONY: mock-grpc-server-build
 mock-grpc-server-build: build-prep
 	@echo "+ $@"
-	$(GOBUILD) integration-tests/mock-grpc-server
+	CGO_ENABLED=0 $(GOBUILD) integration-tests/mock-grpc-server
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
@@ -455,13 +457,13 @@ UNIT_TEST_PACKAGES ?= ./...
 .PHONY: test-prep
 test-prep:
 	@echo "+ $@"
-	@mkdir -p test-output
+	$(SILENT)mkdir -p test-output
 
 .PHONY: go-unit-tests
 go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
+		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee test-output/test.log
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
 	for encoding in console json; do \
@@ -470,18 +472,26 @@ go-unit-tests: build-prep test-prep
 		done; \
 	done
 
+.PHONE: sensor-integration-test
+sensor-integration-test: build-prep test-prep
+	set -eo pipefail ; \
+	for package in $(shell git ls-files ./sensor/tests | grep '_test.go' | xargs -n 1 dirname | uniq | sort | sed -e 's/sensor\/tests\///'); do \
+		CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
+		| tee test-output/$$(echo $$package | sed -e 's/\//\_/').integration.log; \
+	done \
+
 .PHONY: go-postgres-unit-tests
 go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
+	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
+		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee test-output/test.log
 
 .PHONY: shell-unit-tests
 shell-unit-tests:
 	@echo "+ $@"
-	@mkdir -p shell-test-output
+	$(SILENT)mkdir -p shell-test-output
 	bats --print-output-on-failure --verbose-run --recursive --report-formatter junit --output shell-test-output scripts
 
 .PHONY: ui-build
@@ -500,8 +510,11 @@ ui-test:
 test: go-unit-tests ui-test shell-unit-tests
 
 .PHONY: integration-unit-tests
-integration-unit-tests: build-prep
-	 GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 $(shell go list ./... | grep  "registries\|scanners\|notifiers")
+integration-unit-tests: build-prep test-prep
+	set -o pipefail ; \
+	GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 -v \
+		$(shell go list ./... | grep  "registries\|scanners\|notifiers") \
+		| tee test-output/test.log
 
 generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 	$(BASE_DIR)/scripts/generate-junit-reports.sh
@@ -514,17 +527,6 @@ generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 .PHONY: image
 image: main-image
 
-monitoring/static-bin/%: image/static-bin/%
-	mkdir -p "$(dir $@)"
-	cp -fLp $< $@
-
-.PHONY: monitoring-build-context
-monitoring-build-context: monitoring/static-bin/save-dir-contents monitoring/static-bin/restore-all-dir-contents
-
-.PHONY: monitoring-image
-monitoring-image: monitoring-build-context
-	scripts/ensure_image.sh $(MONITORING_IMAGE) monitoring/Dockerfile monitoring/
-
 .PHONY: all-builds
 all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
 
@@ -535,20 +537,26 @@ main-image: all-builds
 $(CURDIR)/image/rhel/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
+.PHONY: $(CURDIR)/image/rhel/Dockerfile.gen
+$(CURDIR)/image/rhel/Dockerfile.gen:
+	ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+	LABEL_VERSION=$(TAG) \
+	LABEL_RELEASE=$(TAG) \
+	QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
+	envsubst '$${ROX_IMAGE_FLAVOR} $${LABEL_VERSION} $${LABEL_RELEASE} $${QUAY_TAG_EXPIRATION}' \
+	< $(CURDIR)/image/rhel/Dockerfile.envsubst > $(CURDIR)/image/rhel/Dockerfile.gen
+
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz central-db-image
+docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image central-db-image \
+                         $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/rhel/Dockerfile.gen
 	docker build \
 		-t stackrox/main:$(TAG) \
-		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
-		--file image/rhel/Dockerfile \
-		--label version=$(TAG) \
-		--label release=$(TAG) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
+		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
+		--file image/rhel/Dockerfile.gen \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
-ifdef CI
-	docker tag stackrox/main:$(TAG) quay.io/$(QUAY_REPO)/main:$(TAG)
-endif
 
 .PHONY: docs-image
 docs-image:
@@ -558,16 +566,19 @@ docs-image:
 docker-build-data-image: docs-image
 	docker build -t stackrox-data:$(TAG) \
 	    --build-arg DOCS_IMAGE=$(DOCS_IMAGE) \
+		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/ \
 		--file image/stackrox-data.Dockerfile
 
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
-	cp -f bin/linux/roxctl image/bin/roxctl-linux
-	docker build -t stackrox/roxctl:$(TAG) -f image/roxctl.Dockerfile image/
-ifdef CI
-	docker tag stackrox/roxctl:$(TAG) quay.io/$(QUAY_REPO)/roxctl:$(TAG)
-endif
+	cp -f bin/linux/roxctl image/roxctl/roxctl-linux
+	docker build \
+		-t stackrox/roxctl:$(TAG) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
+		-f image/roxctl/Dockerfile \
+		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
+		image/roxctl
 
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
@@ -587,17 +598,19 @@ endif
 	cp bin/linux/upgrader          image/bin/sensor-upgrader
 	cp bin/linux/admission-control image/bin/admission-control
 	cp bin/linux/collection        image/bin/compliance
+	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
+	find image/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 
 
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir: copy-go-binaries-to-image-dir
 	cp -r ui/build image/ui/
 ifdef CI
-	@[ -d image/THIRD_PARTY_NOTICES ] || { echo "image/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
+	$(SILENT)[ -d image/THIRD_PARTY_NOTICES ] || { echo "image/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
 else
-	@[ -f image/THIRD_PARTY_NOTICES ] || mkdir -p image/THIRD_PARTY_NOTICES
+	$(SILENT)[ -f image/THIRD_PARTY_NOTICES ] || mkdir -p image/THIRD_PARTY_NOTICES
 endif
-	@[ -d image/docs ] || { echo "Generated docs not found in image/docs. They are required for build."; exit 1; }
+	$(SILENT)[ -d image/docs ] || { echo "Generated docs not found in image/docs. They are required for build."; exit 1; }
 
 .PHONY: scale-image
 scale-image: scale-build clean-image
@@ -606,35 +619,45 @@ scale-image: scale-build clean-image
 	cp bin/linux/profiler scale/image/bin/profiler
 	cp bin/linux/chaos scale/image/bin/chaos
 	chmod +w scale/image/bin/*
-	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
-	docker tag stackrox/scale:$(TAG) quay.io/$(QUAY_REPO)/scale:$(TAG)
+	docker build \
+		-t stackrox/scale:$(TAG) \
+		-t quay.io/rhacs-eng/scale:$(TAG) \
+		-f scale/image/Dockerfile scale
 
 webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
 	cp bin/linux/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
-	docker build -t stackrox/webhookserver:1.2 -f webhookserver/Dockerfile webhookserver
-	docker tag stackrox/webhookserver:1.2 quay.io/$(QUAY_REPO)/webhookserver:1.2
+	docker build \
+		-t stackrox/webhookserver:1.2 \
+		-t quay.io/rhacs-eng/webhookserver:1.2 \
+		-f webhookserver/Dockerfile webhookserver
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image
 	cp bin/linux/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
-	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
-	docker tag stackrox/grpc-server:$(TAG) quay.io/$(QUAY_REPO)/grpc-server:$(TAG)
+	docker build \
+		-t stackrox/grpc-server:$(TAG) \
+		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
+		integration-tests/mock-grpc-server/image
 
 $(CURDIR)/image/postgres/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
 
+.PHONY: $(CURDIR)/image/postgres/Dockerfile.gen
+$(CURDIR)/image/postgres/Dockerfile.gen:
+	ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+	envsubst '$${ROX_IMAGE_FLAVOR}' \
+	< $(CURDIR)/image/postgres/Dockerfile.envsubst > $(CURDIR)/image/postgres/Dockerfile.gen
+
 .PHONY: central-db-image
-central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
+central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz $(CURDIR)/image/postgres/Dockerfile.gen
 	docker build \
 		-t stackrox/central-db:$(TAG) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
-		--file image/postgres/Dockerfile \
+		--file image/postgres/Dockerfile.gen \
 		image/postgres
-ifdef CI
-	docker tag stackrox/central-db:$(TAG) quay.io/$(QUAY_REPO)/central-db:$(TAG)
-endif
 	@echo "Built central-db image with tag $(TAG)"
 
 ###########
@@ -669,6 +692,14 @@ endif
 image-flavor:
 	@echo $(ROX_IMAGE_FLAVOR)
 
+.PHONY: default-image-registry
+default-image-registry:
+	@echo $(DEFAULT_IMAGE_REGISTRY)
+
+.PHONY: product-branding
+product-branding:
+	@echo $(ROX_PRODUCT_BRANDING)
+
 .PHONY: ossls-audit
 ossls-audit: deps
 	ossls version
@@ -695,17 +726,18 @@ GET_DEVTOOLS_CMD := $(MAKE) -qp | sed -e '/^\# Not a target:$$/{ N; d; }' | egre
 .PHONY: clean-dev-tools
 clean-dev-tools:
 	@echo "+ $@"
-	@$(GET_DEVTOOLS_CMD) | xargs rm -fv
+	$(SILENT)$(GET_DEVTOOLS_CMD) | xargs rm -fv
 
 .PHONY: reinstall-dev-tools
 reinstall-dev-tools: clean-dev-tools
 	@echo "+ $@"
-	@$(MAKE) install-dev-tools
+	$(SILENT)$(MAKE) install-dev-tools
 
 .PHONY: install-dev-tools
 install-dev-tools:
 	@echo "+ $@"
-	@$(GET_DEVTOOLS_CMD) | xargs $(MAKE)
+	$(SILENT)test -n "$(GOPATH)" || { echo "Set GOPATH before installing dev tools"; exit 1; }
+	$(SILENT)$(GET_DEVTOOLS_CMD) | xargs $(MAKE)
 ifeq ($(UNAME_S),Darwin)
 	@echo "Please manually install RocksDB if you haven't already. See README for details"
 endif
@@ -714,18 +746,18 @@ endif
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
-	@go vet -vettool "$(ROXVET_BIN)" $(shell go list -e ./... | grep -v 'operator/pkg/clientset')
+	$(SILENT)go vet -vettool "$(ROXVET_BIN)" $(shell go list -e ./... | grep -v 'operator/pkg/clientset')
 
 ##########
 ## Misc ##
 ##########
 .PHONY: clean-offline-bundle
 clean-offline-bundle:
-	@find scripts/offline-bundle -name '*.img' -delete -o -name '*.tgz' -delete -o -name 'bin' -type d -exec rm -r "{}" \;
+	$(SILENT)find scripts/offline-bundle -name '*.img' -delete -o -name '*.tgz' -delete -o -name 'bin' -type d -exec rm -r "{}" \;
 
 .PHONY: offline-bundle
 offline-bundle: clean-offline-bundle
-	@./scripts/offline-bundle/create.sh
+	$(SILENT)./scripts/offline-bundle/create.sh
 
 .PHONY: ui-publish-packages
 ui-publish-packages:

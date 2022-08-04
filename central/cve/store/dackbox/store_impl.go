@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -29,7 +30,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) store.Store {
 	}
 }
 
-func (b *storeImpl) Exists(id string) (bool, error) {
+func (b *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -44,7 +45,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 	return exists, nil
 }
 
-func (b *storeImpl) Count() (int, error) {
+func (b *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "CVE")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -61,28 +62,7 @@ func (b *storeImpl) Count() (int, error) {
 	return count, nil
 }
 
-func (b *storeImpl) GetAll() ([]*storage.CVE, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "CVE")
-
-	dackTxn, err := b.dacky.NewReadOnlyTransaction()
-	if err != nil {
-		return nil, err
-	}
-	defer dackTxn.Discard()
-
-	msgs, err := vulnDackBox.Reader.ReadAllIn(vulnDackBox.Bucket, dackTxn)
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]*storage.CVE, 0, len(msgs))
-	for _, msg := range msgs {
-		ret = append(ret, msg.(*storage.CVE))
-	}
-
-	return ret, nil
-}
-
-func (b *storeImpl) Get(id string) (cve *storage.CVE, exists bool, err error) {
+func (b *storeImpl) Get(ctx context.Context, id string) (cve *storage.CVE, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "CVE")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -99,7 +79,7 @@ func (b *storeImpl) Get(id string) (cve *storage.CVE, exists bool, err error) {
 	return msg.(*storage.CVE), true, err
 }
 
-func (b *storeImpl) GetBatch(ids []string) ([]*storage.CVE, []int, error) {
+func (b *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "CVE")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -130,7 +110,7 @@ func (b *storeImpl) GetBatch(ids []string) ([]*storage.CVE, []int, error) {
 	return ret, missing, nil
 }
 
-func (b *storeImpl) Upsert(cves ...*storage.CVE) error {
+func (b *storeImpl) Upsert(ctx context.Context, cves ...*storage.CVE) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "CVE")
 
 	keysToUpsert := make([][]byte, 0, len(cves))
@@ -175,7 +155,7 @@ func (b *storeImpl) upsertNoBatch(cves ...*storage.CVE) error {
 	return nil
 }
 
-func (b *storeImpl) Delete(ids ...string) error {
+func (b *storeImpl) Delete(ctx context.Context, ids ...string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "CVE")
 
 	keysToUpsert := make([][]byte, 0, len(ids))

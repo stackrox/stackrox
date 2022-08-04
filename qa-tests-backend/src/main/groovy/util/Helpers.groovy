@@ -1,6 +1,7 @@
 package util
 
 import common.Constants
+import groovy.util.logging.Slf4j
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
@@ -9,6 +10,7 @@ import org.junit.AssumptionViolatedException
 import org.spockframework.runtime.SpockAssertionError
 
 // Helpers defines useful helper methods. Is mixed in to every object in order to be visible everywhere.
+@Slf4j
 class Helpers {
     private static final int MAX_RETRY_ATTEMPTS = 2
     private static int retryAttempt = 0
@@ -18,7 +20,7 @@ class Helpers {
             try {
                 return closure()
             } catch (Exception | PowerAssertionError | SpockAssertionError t) {
-                println "Caught exception: ${t}. Retrying in ${pauseSecs}s"
+                log.debug("Caught exception. Retrying in ${pauseSecs}s", t)
             }
             sleep pauseSecs * 1000
         }
@@ -29,17 +31,33 @@ class Helpers {
         evaluateWithRetry(ignored, retries, pauseSecs, closure)
     }
 
+    static <V> V evaluateWithK8sClientRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
+        for (int i = 0; i < retries; i++) {
+            try {
+                return closure()
+            } catch (io.fabric8.kubernetes.client.KubernetesClientException t) {
+                log.debug("Caught k8 client exception. Retrying in ${pauseSecs}s", t)
+            }
+            sleep pauseSecs * 1000
+        }
+        return closure()
+    }
+
+    static <V> void withK8sClientRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
+        evaluateWithK8sClientRetry(ignored, retries, pauseSecs, closure)
+    }
+
     static boolean determineRetry(Throwable failure) {
         if (failure instanceof AssumptionViolatedException) {
-            println "Skipping retry for: " + failure
+            log.debug "Skipping retry for: " + failure
             return false
         }
 
         retryAttempt++
         def willRetry = retryAttempt <= MAX_RETRY_ATTEMPTS
         if (willRetry) {
-            println "An exception occurred which will cause a retry: " + failure
-            println "Test Failed... Attempting Retry #${retryAttempt}"
+            log.debug("An exception occurred which will cause a retry: ", failure)
+            log.debug "Test Failed... Attempting Retry #${retryAttempt}"
         }
         return willRetry
     }
@@ -71,18 +89,18 @@ class Helpers {
 
     static void collectDebugForFailure(Throwable exception) {
         if (!Env.IN_CI) {
-            println "Won't collect logs when not in CI"
+            log.info "Won't collect logs when not in CI"
             return
         }
 
         if (exception && (exception instanceof AssumptionViolatedException ||
-                exception.getMessage().contains("org.junit.AssumptionViolatedException"))) {
-            println "Won't collect logs for: ${exception.getMessage()}"
+                exception.getMessage()?.contains("org.junit.AssumptionViolatedException"))) {
+            log.info("Won't collect logs for: ${exception.getMessage()}", exception)
             return
         }
 
         if (exception) {
-            println "An exception occurred in test: ${exception.getMessage()}"
+            log.error("An exception occurred in test: ${exception.getMessage()}", exception)
         }
 
         try {
@@ -91,31 +109,31 @@ class Helpers {
 
             def debugDir = new File(Constants.FAILURE_DEBUG_DIR)
             if (debugDir.exists() && debugDir.listFiles().size() >= Constants.FAILURE_DEBUG_LIMIT) {
-                println "${sdf.format(date)} Debug capture limit reached. Not collecting for this failure."
+                log.info "${sdf.format(date)} Debug capture limit reached. Not collecting for this failure."
                 return
             }
 
             def collectionDir = debugDir.getAbsolutePath() + "/" + UUID.randomUUID()
 
-            println "${sdf.format(date)} Will collect various stackrox logs for this failure under ${collectionDir}/"
+            log.debug "${sdf.format(date)} Will collect various stackrox logs for this failure under ${collectionDir}/"
 
             shellCmd("./scripts/ci/collect-service-logs.sh stackrox ${collectionDir}/stackrox-k8s-logs")
             shellCmd("./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/qa-k8s-logs")
             shellCmd("./scripts/grab-data-from-central.sh ${collectionDir}/central-data")
         }
         catch (Exception e) {
-            println "Could not collect logs: ${e}"
+            log.error( "Could not collect logs", e)
         }
     }
 
     // collectImageScanForDebug(image) - a best effort debug tool to get a complete image scan.
     static void collectImageScanForDebug(String image, String saveName) {
         if (!Env.IN_CI) {
-            println "Won't collect image scans when not in CI"
+            log.info "Won't collect image scans when not in CI"
             return
         }
 
-        println "Will scan ${image} to ${saveName}"
+        log.debug "Will scan ${image} to ${saveName}"
 
         try {
             Path imageScans = Paths.get(Constants.FAILURE_DEBUG_DIR).resolve("image-scans")
@@ -130,13 +148,11 @@ class Helpers {
             proc.waitFor()
 
             if (proc.exitValue() != 0) {
-                println "Failed to scan the image."
-                println "Stderr: $serr"
-                println "Exit: ${proc.exitValue()}"
+                log.warn "Failed to scan the image. Exit: ${proc.exitValue()}\nStderr: $serr"
             }
         }
         catch (Exception e) {
-            println "Could not collect image details: ${e}"
+            log.error("Could not collect image details", e)
         }
     }
 
@@ -145,9 +161,6 @@ class Helpers {
         def proc = cmd.execute(null, new File(".."))
         proc.consumeProcessOutput(sout, serr)
         proc.waitFor()
-        println "Ran: ${cmd}"
-        println "Stdout: $sout"
-        println "Stderr: $serr"
-        println "Exit: ${proc.exitValue()}"
+        log.debug "Ran: ${cmd}\nExit: ${proc.exitValue()}\nStdout: $sout\nStderr: $serr"
     }
 }

@@ -11,6 +11,8 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	allowMisdirectedRequestsEnv = env.RegisterBooleanSetting("ROX_ALLOW_MISDIRECTED_REQUESTS", false)
 )
 
 func loadAllConfigs() ([]EndpointConfig, error) {
@@ -59,6 +61,7 @@ func InstantiateAll(tlsMgr tlsconfig.Manager) ([]*grpc.EndpointConfig, error) {
 				return nil, errors.Wrapf(err, "instantiating required endpoint listening at %q", endpointCfg.Listen)
 			}
 		} else {
+			instantiatedCfg.DenyMisdirectedRequests = !allowMisdirectedRequestsEnv.BooleanSetting()
 			instantiatedCfgs = append(instantiatedCfgs, instantiatedCfg)
 		}
 	}

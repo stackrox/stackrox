@@ -1,8 +1,5 @@
-import { connect } from 'react-redux';
 import React from 'react';
 import PropTypes from 'prop-types';
-import { createStructuredSelector } from 'reselect';
-import { selectors } from 'reducers';
 
 import { Line } from 'recharts';
 import Slider from 'react-slick';
@@ -151,8 +148,4 @@ AlertsByTimeseriesChart.defaultProps = {
     alertsByTimeseries: [],
 };
 
-const mapStateToProps = createStructuredSelector({
-    alertsByTimeseries: selectors.getAlertsByTimeseries,
-});
-
-export default connect(mapStateToProps, null)(AlertsByTimeseriesChart);
+export default AlertsByTimeseriesChart;

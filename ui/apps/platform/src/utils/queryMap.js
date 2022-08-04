@@ -8,7 +8,7 @@ import { DEPLOYMENT_QUERY, DEPLOYMENTS_QUERY, DEPLOYMENT_NAME } from 'queries/de
 import { K8S_ROLES_QUERY, K8S_ROLE_QUERY, ROLE_NAME } from 'queries/role';
 import { SECRET_QUERY, SECRETS_QUERY, SECRET_NAME } from 'queries/secret';
 import { CLUSTER_QUERY, CLUSTERS_QUERY, CLUSTER_NAME } from 'queries/cluster';
-import { CVE_NAME } from 'queries/cve';
+import { CVE_NAME, IMAGE_CVE_NAME, NODE_CVE_NAME, CLUSTER_CVE_NAME } from 'queries/cve';
 import { NAMESPACE_QUERY, NAMESPACES_QUERY, NAMESPACE_NAME } from 'queries/namespace';
 import { POLICY_QUERY, POLICIES_QUERY, POLICY_NAME } from 'queries/policy';
 import { CONTROL_QUERY, CONTROL_NAME } from 'queries/controls';
@@ -16,7 +16,7 @@ import { IMAGE_QUERY, IMAGES_QUERY, IMAGE_NAME } from 'queries/image';
 import { NODES_QUERY, NODE_QUERY, NODE_NAME } from 'queries/node';
 import { SUBJECTS_QUERY, SUBJECT_QUERY, SUBJECT_NAME } from 'queries/subject';
 
-import COMPONENT_NAME from 'queries/components';
+import { COMPONENT_NAME, NODE_COMPONENT_NAME, IMAGE_COMPONENT_NAME } from 'queries/components';
 
 export const entityQueryMap = {
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT_QUERY,
@@ -48,6 +48,9 @@ export const entityListQueryMap = {
 
 export const entityNameQueryMap = {
     [entityTypes.CVE]: CVE_NAME,
+    [entityTypes.IMAGE_CVE]: IMAGE_CVE_NAME,
+    [entityTypes.NODE_CVE]: NODE_CVE_NAME,
+    [entityTypes.CLUSTER_CVE]: CLUSTER_CVE_NAME,
     [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT_NAME,
     [entityTypes.SECRET]: SECRET_NAME,
     [entityTypes.DEPLOYMENT]: DEPLOYMENT_NAME,
@@ -60,4 +63,6 @@ export const entityNameQueryMap = {
     [entityTypes.POLICY]: POLICY_NAME,
     [entityTypes.SUBJECT]: SUBJECT_NAME,
     [entityTypes.COMPONENT]: COMPONENT_NAME,
+    [entityTypes.NODE_COMPONENT]: NODE_COMPONENT_NAME,
+    [entityTypes.IMAGE_COMPONENT]: IMAGE_COMPONENT_NAME,
 };

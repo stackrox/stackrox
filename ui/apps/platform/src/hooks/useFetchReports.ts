@@ -2,9 +2,9 @@ import { useState } from 'react';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { fetchReports, fetchReportsCount } from 'services/ReportsService';
-import { RestSortOption } from 'services/sortOption';
 import { RestSearchOption } from 'services/searchOptionsToQuery';
 import { ReportConfiguration } from 'types/report.proto';
+import { ApiSortOption } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { convertToRestSearch } from 'utils/searchUtils';
 
@@ -21,7 +21,7 @@ type Result = {
  */
 function useFetchReports(
     filteredSearch: Record<string, string>,
-    sortOption: RestSortOption,
+    sortOption: ApiSortOption,
     currentPage: number,
     perPage: number
 ): Result {

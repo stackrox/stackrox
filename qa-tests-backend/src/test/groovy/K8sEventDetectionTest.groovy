@@ -84,7 +84,7 @@ class K8sEventDetectionTest extends BaseSpecification {
             assert violations != null && violations.size() == 1
             def fullViolation = AlertService.getViolation(violations.get(0).getId())
             assert fullViolation
-            print "Violation for ${violatingDeploymentName} while checking for" +
+            log.info "Violation for ${violatingDeploymentName} while checking for" +
                 "${expectedK8sViolationsCount} violations: ${fullViolation}"
             def k8sSubViolations = fullViolation.getViolationsList().findAll {
                 it.getType() == AlertOuterClass.Alert.Violation.Type.K8S_EVENT
@@ -110,7 +110,7 @@ class K8sEventDetectionTest extends BaseSpecification {
             if (violatingDeploymentNames.any { it == deploymentName }) {
                 continue
             }
-            println "Checking that deployment ${deploymentName} does NOT have a violation"
+            log.info "Checking that deployment ${deploymentName} does NOT have a violation"
             def deployment = DEPLOYMENTS.find { it.name == deploymentName }
             assert deployment
             assert Services.checkForNoViolationsByDeploymentID(deployment.deploymentUid, policyName)

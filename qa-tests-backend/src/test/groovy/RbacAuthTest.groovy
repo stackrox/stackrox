@@ -1,8 +1,10 @@
 import groups.BAT
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.storage.NetworkPolicyOuterClass
+import io.stackrox.proto.storage.RoleOuterClass
 import org.junit.experimental.categories.Category
 import services.ApiTokenService
 import services.AuthProviderService
@@ -11,8 +13,6 @@ import services.ClusterService
 import services.NetworkPolicyService
 import services.ProcessService
 import services.RoleService
-import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
-import io.stackrox.proto.storage.RoleOuterClass
 import spock.lang.Shared
 import spock.lang.Unroll
 
@@ -64,7 +64,6 @@ spec:
 
     def setupSpec() {
         BaseService.useBasicAuth()
-        disableAuthzPlugin()
         AuthproviderService.GetAuthProvidersResponse providers = AuthProviderService.getAuthProviders()
         basicAuthServiceId = providers.authProvidersList.find { it.type == "basic" }?.id
     }
@@ -121,7 +120,7 @@ spec:
         def testRole = RoleService.createRoleWithScopeAndPermissionSet("Automation Role",
             UNRESTRICTED_SCOPE_ID, resourceAccess)
         assert RoleService.getRole(testRole.name)
-        println "Created Role:\n${testRole}"
+        log.info "Created Role:\n${testRole}"
 
         and:
         "Create test API token in that role"
@@ -133,10 +132,10 @@ spec:
         for (String resource : resourceTest) {
             def readFunction = RESOURCE_FUNCTION_MAP.get(resource).get(RoleOuterClass.Access.READ_ACCESS)
             def writeFunction = RESOURCE_FUNCTION_MAP.get(resource).get(RoleOuterClass.Access.READ_WRITE_ACCESS)
-            println "Testing read function for ${resource}"
+            log.info "Testing read function for ${resource}"
             def read = hasReadAccess(resource, resourceAccess) == canDo(readFunction, token.token)
             assert read
-            println "Testing write function for ${resource}"
+            log.info "Testing write function for ${resource}"
             def write = hasWriteAccess(resource, resourceAccess) == canDo(writeFunction, token.token)
             assert write
         }
@@ -191,7 +190,7 @@ spec:
             def role = RoleService.createRoleWithScopeAndPermissionSet("View ${it}",
                 UNRESTRICTED_SCOPE_ID, resourceToAccess)
             assert RoleService.getRole(role.name)
-            println "Created Role:\n${role.name}"
+            log.info "Created Role:\n${role.name}"
             role
         }
         assert roles.size() == 2
@@ -208,7 +207,7 @@ spec:
         then:
         "Call to RPC method should succeed iff token represents union role"
         for (def token : tokens) {
-            println "Checking behavior with token ${token.metadata.name}"
+            log.info "Checking behavior with token ${token.metadata.name}"
             assert canDo({
                 ProcessService.getGroupedProcessByDeploymentAndContainer("unknown")
             }, token.token, true) == (token.metadata.rolesCount > 1)
@@ -217,7 +216,7 @@ spec:
         and:
         "MyPermissions API should return the union of permissions"
         for (def token : tokens) {
-            println "Checking permissions for token ${token.metadata.name}"
+            log.info "Checking permissions for token ${token.metadata.name}"
             assert myPermissions(token.token).resourceToAccessMap.size() == token.metadata.rolesList.size()
         }
 

@@ -2,7 +2,6 @@ package scan
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"time"
 
@@ -16,8 +15,10 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -76,7 +77,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "the --force flag ignores Central's cache for the scan and forces a fresh re-pull from Scanner")
-	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", true, "the --include-snoozed flag returns both snoozed and unsnoozed CVEs if set to false")
+	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "the --include-snoozed flag returns both snoozed and unsnoozed CVEs if set")
 	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
 
@@ -113,7 +114,7 @@ func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *print
 	i.timeout = flags.Timeout(cmd)
 
 	if err := imageUtils.IsValidImageString(i.image); err != nil {
-		return errox.NewErrInvalidArgs(err.Error())
+		return common.ErrInvalidCommandOption.CausedBy(err)
 	}
 
 	// There is a case where cobra is not printing the deprecation warning to stderr, when a deprecated flag is not
@@ -141,7 +142,7 @@ func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *print
 // provided values
 func (i *imageScanCommand) Validate() error {
 	if i.image == "" {
-		return errox.NewErrInvalidArgs("no image name specified via the -i or --image flag")
+		return errox.InvalidArgs.New("no image name specified via the -i or --image flag")
 	}
 
 	// Only verify the legacy output format if no printer is constructed, thus the new output format is not used
@@ -210,7 +211,7 @@ func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 // via a printer.ObjectPrinter
 func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 	if i.printer == nil {
-		return legacyPrintFormat(imageResult, i.format, i.env.InputOutput().Out)
+		return legacyPrintFormat(imageResult, i.format, i.env.InputOutput().Out(), i.env.Logger())
 	}
 
 	cveSummary := newCVESummaryForPrinting(imageResult.GetScan())
@@ -232,7 +233,7 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 }
 
 // print summary of amount of CVEs found
-func printCVESummary(image string, cveSummary map[string]int, out environment.Logger) {
+func printCVESummary(image string, cveSummary map[string]int, out logger.Logger) {
 	out.PrintfLn("Scan results for image: %s", image)
 	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		totalComponentsMapKey, cveSummary[totalComponentsMapKey],
@@ -244,7 +245,7 @@ func printCVESummary(image string, cveSummary map[string]int, out environment.Lo
 }
 
 // print warning with amount of CVEs found in components
-func printCVEWarning(numOfVulns int, numOfComponents int, out environment.Logger) {
+func printCVEWarning(numOfVulns int, numOfComponents int, out logger.Logger) {
 	if numOfVulns != 0 {
 		out.WarnfLn("A total of %d vulnerabilities were found in %d components",
 			numOfVulns, numOfComponents)
@@ -253,7 +254,7 @@ func printCVEWarning(numOfVulns int, numOfComponents int, out environment.Logger
 
 // TODO(ROX-8303): remove this once we have fully deprecated the legacy output format
 // print CVE scan result in legacy output format
-func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer) error {
+func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer, logger logger.Logger) error {
 	switch format {
 	case "csv":
 		return PrintCSV(imageResult, out)
@@ -266,7 +267,7 @@ func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer)
 			return errors.Wrap(err, "could not marshal image result")
 		}
 
-		fmt.Fprintln(out, jsonResult)
+		logger.PrintfLn(jsonResult)
 	}
 	return nil
 }

@@ -8,6 +8,8 @@ import { useTheme } from 'Containers/ThemeProvider';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import ExportButton from 'Components/ExportButton';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
+import entityTypes from 'constants/entityTypes';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import entityLabels from 'messages/entity';
 import useCaseLabels from 'messages/useCase';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
@@ -20,7 +22,15 @@ import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap, ListComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowListPageLayout = ({ location }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const useCaseEntityMap = getUseCaseEntityMap();
+    if (isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES')) {
+        const newTypes = useCaseEntityMap['vulnerability-management'].filter(
+            (entityType) => entityType !== entityTypes.COMPONENT
+        );
+        useCaseEntityMap['vulnerability-management'] = newTypes;
+    }
+
     const { isDarkMode } = useTheme();
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
@@ -66,6 +76,23 @@ const WorkflowListPageLayout = ({ location }) => {
         entityContext[entityType] = entityId;
     }
 
+    // TODO: remove all this feature flag check after VM updates have been live for one release
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const useCaseOptions = useCaseEntityMap[useCase].filter((option) => {
+        if (showVmUpdates) {
+            if (option === entityTypes.CVE) {
+                return false;
+            }
+        } else if (
+            option === entityTypes.IMAGE_CVE ||
+            option === entityTypes.NODE_CVE ||
+            option === entityTypes.CLUSTER_CVE
+        ) {
+            return false;
+        }
+        return true;
+    });
+
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-col relative h-full">
@@ -86,7 +113,7 @@ const WorkflowListPageLayout = ({ location }) => {
                             />
                         </div>
                         <div className="flex items-center pl-2">
-                            <EntitiesMenu text="All Entities" options={useCaseEntityMap[useCase]} />
+                            <EntitiesMenu text="All Entities" options={useCaseOptions} />
                         </div>
                     </div>
                 </PageHeader>

@@ -31,5 +31,7 @@ func init() {
 		k8sObjectProcessingDuration,
 		postgresOperationHistogramVec,
 		acquireDBConnHistogramVec,
+		clusterMetricsNodeCountGaugeVec,
+		clusterMetricsCPUCapacityGaugeVec,
 	)
 }

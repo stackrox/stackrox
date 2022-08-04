@@ -14,13 +14,17 @@ source "$TEST_ROOT/tests/scripts/setup-certs.sh"
 source "$TEST_ROOT/tests/e2e/lib.sh"
 
 test_upgrade() {
-    info "Starting test"
+    info "Starting upgrade test"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: test_upgrade <log-output-dir>"
     fi
 
     local log_output_dir="$1"
+
+    require_environment "KUBECONFIG"
+
+    export_test_environment
 
     REPO_FOR_TIME_TRAVEL="/tmp/rox-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
@@ -31,9 +35,8 @@ test_upgrade() {
         REGISTRY="stackrox"
     fi
 
+    export OUTPUT_FORMAT="helm"
     export STORAGE="pvc"
-    export LOAD_BALANCER="lb"
-    export MONITORING_SUPPORT="false"
     export CLUSTER_TYPE_FOR_TEST=K8S
     require_environment "LONGTERM_LICENSE"
     export ROX_LICENSE_KEY="${LONGTERM_LICENSE}"
@@ -44,7 +47,6 @@ test_upgrade() {
 
     preamble
     setup_deployment_env false false
-    install_built_roxctl_in_gopath
     remove_existing_stackrox_resources
 
     info "Deploying central"
@@ -85,7 +87,7 @@ preamble() {
         fi
         (cd "$REPO_FOR_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
     else
-        (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone git@github.com:stackrox/stackrox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
+        (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
     fi
 
     if is_CI; then
@@ -226,7 +228,7 @@ install_metrics_server_and_deactivate() {
     echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
     local success=0
     for i in $(seq 1 10); do
-        if kubectl api-resources | grep metrics.k8s.io; then
+        if kubectl api-resources 2>&1 | sed -e 's/^/out: /' | grep metrics.k8s.io; then
             success=1
             break
         fi
@@ -242,13 +244,13 @@ install_metrics_server_and_deactivate() {
     # shellcheck disable=SC2034
     for i in $(seq 1 10); do
         kubectl api-resources >stdout.out 2>stderr.out || true
-        if grep 'metrics.k8s.io.*the server is currently unable to handle the request' stderr.out; then
+        if grep -q 'metrics.k8s.io.*the server is currently unable to handle the request' stderr.out; then
             success=1
             break
         fi
         echo "metrics.k8s.io still in API resources. Will try again..."
         cat stdout.out
-        cat stderr.out
+        sed -e 's/^/out: /' < stderr.out # (prefix output to avoid triggering prow log focus)
         sleep 5
     done
     [[ "$success" -eq 1 ]]
@@ -331,41 +333,42 @@ test_upgrade_paths() {
 
     cd "$TEST_ROOT"
 
+    kubectl -n stackrox set env deploy/central ROX_NETPOL_FIELDS="true"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
     wait_for_api
 
-    validate_upgrade "central upgrade to 3.63.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "00-3-63-x-to-current" "central upgrade to 3.63.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     force_rollback
     wait_for_api
 
     cd "$REPO_FOR_TIME_TRAVEL"
 
-    validate_upgrade "forced rollback to 3.63.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "01-current-back-to-3-63-x" "forced rollback to 3.63.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     cd "$TEST_ROOT"
 
-    set_images_to_current
+    helm_upgrade_to_current
     wait_for_api
 
     info "Waiting for scanner to be ready"
     wait_for_scanner_to_be_ready
 
-    validate_upgrade "upgrade after rollback" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "02-after_rollback" "upgrade after rollback" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     collect_and_check_stackrox_logs "$log_output_dir" "00_initial_check"
 
     validate_db_backup_and_restore
     wait_for_api
 
-    validate_upgrade "after DB backup and restore (pre bounce)" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "03-after-DB-backup-restore-pre-bounce" "after DB backup and restore (pre bounce)" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
     collect_and_check_stackrox_logs "$log_output_dir" "01_pre_bounce"
 
     info "Bouncing central"
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
 
-    validate_upgrade "after DB backup and restore (post bounce)" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "04-after-DB-backup-restore-post-bounce" "after DB backup and restore (post bounce)" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
     collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce"
 
     info "Fetching a sensor bundle for cluster 'remote'"
@@ -385,7 +388,9 @@ test_upgrade_paths() {
     wait_for_central_reconciliation
 
     info "Running smoke tests"
-    CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test
+    CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
+    store_qa_test_results "upgrade-paths-smoke-tests"
+    [[ ! -f FAIL ]] || die "Smoke tests failed"
 
     collect_and_check_stackrox_logs "$log_output_dir" "03_final"
 }
@@ -398,7 +403,11 @@ deploy_earlier_central() {
     chmod +x "bin/$TEST_HOST_OS/roxctl"
     PATH="bin/$TEST_HOST_OS:$PATH" command -v roxctl
     PATH="bin/$TEST_HOST_OS:$PATH" roxctl version
-    PATH="bin/$TEST_HOST_OS:$PATH" MAIN_IMAGE_TAG="$EARLIER_TAG" ./deploy/k8s/central.sh
+    PATH="bin/$TEST_HOST_OS:$PATH" \
+    MAIN_IMAGE_TAG="$EARLIER_TAG" \
+    SCANNER_IMAGE="$REGISTRY/scanner:$(cat SCANNER_VERSION)" \
+    SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
+    ./deploy/k8s/central.sh
 
     get_central_basic_auth_creds
 }
@@ -410,20 +419,23 @@ restore_backup_test() {
 }
 
 validate_upgrade() {
-    if [[ "$#" -ne 2 ]]; then
-        die "missing args. usage: validate_upgrade <stage> <upgrade_cluster_id>"
+    if [[ "$#" -ne 3 ]]; then
+        die "missing args. usage: validate_upgrade <stage name> <stage description> <upgrade_cluster_id>"
     fi
 
-    local stage="$1"
-    local upgrade_cluster_id="$2"
+    local stage_name="$1"
+    local stage_description="$2"
+    local upgrade_cluster_id="$3"
     local policies_dir="../pkg/defaults/policies/files"
 
-    info "Validating the upgrade with upgrade tests: $stage"
+    info "Validating the upgrade with upgrade tests: $stage_description"
 
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" \
         UPGRADE_CLUSTER_ID="$upgrade_cluster_id" \
         POLICIES_JSON_RELATIVE_PATH="$policies_dir" \
-        make -C qa-tests-backend upgrade-test
+        make -C qa-tests-backend upgrade-test || touch FAIL
+    store_qa_test_results "validate-upgrade-tests-${stage_name}"
+    [[ ! -f FAIL ]] || die "Upgrade tests failed"
 }
 
 force_rollback() {
@@ -432,10 +444,10 @@ force_rollback() {
     local upgradeStatus
     upgradeStatus="$(curl -sSk -X GET -u "admin:$ROX_PASSWORD" "https://$API_ENDPOINT/v1/centralhealth/upgradestatus")"
     echo "upgrade status: $upgradeStatus"
-    [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" == "$(make --quiet tag)" ]]
-    [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" == "$FORCE_ROLLBACK_VERSION" ]]
-    [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" == "true" ]]
-    [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceAvailableForRollbackAfterUpgrade' -r)" -gt "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceRequiredForRollbackAfterUpgrade' -r)" ]]
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "$(make --quiet tag)"
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"
+    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" "true"
+    test_gt_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceAvailableForRollbackAfterUpgrade' -r)" "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceRequiredForRollbackAfterUpgrade' -r)"
 
     kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - >/tmp/force_rollback_patch
     local central_config
@@ -448,12 +460,16 @@ force_rollback() {
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
 }
 
-set_images_to_current() {
-    info "Setting images to the current tag"
+helm_upgrade_to_current() {
+    info "Helm upgrade to current"
 
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
-    kubectl -n stackrox set image deploy/scanner "scanner=$REGISTRY/scanner:$(cat SCANNER_VERSION)"
-    kubectl -n stackrox set image deploy/scanner-db "*=$REGISTRY/scanner-db:$(cat SCANNER_VERSION)"
+    # Get opensource charts and convert to development_build to support release builds
+    roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
+    sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+
+    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart
+
+    kubectl -n stackrox get deploy -o wide
 }
 
 validate_db_backup_and_restore() {

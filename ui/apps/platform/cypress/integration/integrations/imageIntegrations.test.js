@@ -94,39 +94,6 @@ describe('Image Integrations Test', () => {
         saveImageIntegrationType(integrationType);
     });
 
-    it('should create a new Anchore integration', () => {
-        const integrationName = generateNameWithDate('Anchore Test');
-        const integrationType = 'anchore';
-        visitImageIntegrationType(integrationType);
-        cy.get(selectors.buttons.newIntegration).click();
-
-        // Step 0, should start out with disabled Save and Test buttons
-        cy.get(selectors.buttons.test).should('be.disabled');
-        cy.get(selectors.buttons.save).should('be.disabled');
-
-        // Step 1, check empty fields
-        getInputByLabel('Integration name').type(' ');
-        getInputByLabel('Endpoint').type(' ');
-        getInputByLabel('Username').type(' ');
-        getInputByLabel('Password').type(' ').blur();
-
-        getHelperElementByLabel('Integration name').contains('An integration name is required');
-        getHelperElementByLabel('Endpoint').contains('An endpoint is required');
-        getHelperElementByLabel('Username').contains('A username is required');
-        getHelperElementByLabel('Password').contains('A password is required');
-        cy.get(selectors.buttons.test).should('be.disabled');
-        cy.get(selectors.buttons.save).should('be.disabled');
-
-        // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(integrationName);
-        getInputByLabel('Endpoint').clear().type('test.endpoint');
-        getInputByLabel('Username').clear().type('admin');
-        getInputByLabel('Password').clear().type('password');
-
-        cy.get(selectors.buttons.test).should('be.enabled');
-        saveImageIntegrationType(integrationType);
-    });
-
     it('should create a new Amazon ECR integration', () => {
         const integrationName = generateNameWithDate('Amazon ECR Test');
         const integrationType = 'ecr';
@@ -239,12 +206,10 @@ describe('Image Integrations Test', () => {
 
         // Step 1, check empty fields
         getInputByLabel('Integration name').type(' ');
-        getInputByLabel('Endpoint').type(' ');
-        getInputByLabel('Password').type(' ').blur();
+        getInputByLabel('Endpoint').type(' ').blur();
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Endpoint').contains('An endpoint is required');
-        getHelperElementByLabel('Password').contains('A password is required');
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
 
@@ -255,42 +220,6 @@ describe('Image Integrations Test', () => {
         getInputByLabel('Password').type('password');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        saveImageIntegrationType(integrationType);
-    });
-
-    it('should create a new Docker Trusted Registry integration', () => {
-        const integrationName = generateNameWithDate('Docker Trusted Registry Test');
-        const integrationType = 'dtr';
-        visitImageIntegrationType(integrationType);
-        cy.get(selectors.buttons.newIntegration).click();
-
-        // Step 0, should start out with disabled Save and Test buttons
-        cy.get(selectors.buttons.test).should('be.disabled');
-        cy.get(selectors.buttons.save).should('be.disabled');
-
-        // Step 1, check empty fields
-        getInputByLabel('Integration name').type(' ');
-        getInputByLabel('Endpoint').type(' ');
-        getInputByLabel('Username').type(' ');
-        getInputByLabel('Password').type(' ').blur();
-
-        getHelperElementByLabel('Integration name').contains('An integration name is required');
-        getHelperElementByLabel('Endpoint').contains('An endpoint is required');
-        getHelperElementByLabel('Username').contains('A username is required');
-        getHelperElementByLabel('Password').contains('A password is required');
-        cy.get(selectors.buttons.test).should('be.disabled');
-        cy.get(selectors.buttons.save).should('be.disabled');
-
-        // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(integrationName);
-        getSelectButtonByLabel('Type').click();
-        getSelectOption('Registry').click();
-        getInputByLabel('Endpoint').clear().type('test.endpoint');
-        getInputByLabel('Username').clear().type('admin');
-        getInputByLabel('Password').type('password');
-
-        cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
         saveImageIntegrationType(integrationType);
     });
 
@@ -379,38 +308,6 @@ describe('Image Integrations Test', () => {
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').clear().type('password');
-
-        cy.get(selectors.buttons.test).should('be.enabled');
-        saveImageIntegrationType(integrationType);
-    });
-
-    it('should create a new Tenable integration', () => {
-        const integrationName = generateNameWithDate('Tenable Test');
-        const integrationType = 'tenable';
-        visitImageIntegrationType(integrationType);
-        cy.get(selectors.buttons.newIntegration).click();
-
-        // Step 0, should start out with disabled Save and Test buttons
-        cy.get(selectors.buttons.test).should('be.disabled');
-        cy.get(selectors.buttons.save).should('be.disabled');
-
-        // Step 1, check empty fields
-        getInputByLabel('Integration name').type(' ');
-        getInputByLabel('Access key').type(' ');
-        getInputByLabel('Secret key').type(' ').blur();
-
-        getHelperElementByLabel('Integration name').contains('An integration name is required');
-        getHelperElementByLabel('Access key').contains('An access key is required');
-        getHelperElementByLabel('Secret key').contains('A secret key is required');
-        cy.get(selectors.buttons.test).should('be.disabled');
-        cy.get(selectors.buttons.save).should('be.disabled');
-
-        // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(integrationName);
-        getSelectButtonByLabel('Type').click();
-        getSelectOption('Registry').click();
-        getInputByLabel('Access key').clear().type('12345');
-        getInputByLabel('Secret key').clear().type('12345');
 
         cy.get(selectors.buttons.test).should('be.enabled');
         saveImageIntegrationType(integrationType);

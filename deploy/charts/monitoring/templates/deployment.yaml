@@ -33,79 +33,37 @@ spec:
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/compute
-                    operator: In
-                    values:
-                    - "true"
+                    operator: Exists
             - weight: 75
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/infra
-                    operator: NotIn
-                    values:
-                    - "true"
+                    operator: DoesNotExist
+            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
             - weight: 100
               preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/master
-                    operator: NotIn
-                    values:
-                    - "true"
+                    operator: DoesNotExist
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
       {{- end}}
       serviceAccount: monitoring
+      # The uid and gid are set to make `/var/prometheus` writable. See https://github.com/prometheus/prometheus/issues/5976.
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 2000
       containers:
-      - name: influxdb
-        image: {{ required "An image is required" .Values.image }}
-        lifecycle:
-          postStart:
-            exec:
-              command: ["/bin/sh", "-c", "/influx-post-start.sh"]
-        command:
-        - /influxd
-        resources:
-          {{- toYaml .Values.resources | nindent 10 }}
-        securityContext:
-          capabilities:
-            drop: ["NET_RAW"]
-          readOnlyRootFilesystem: true
-        volumeMounts:
-          - name: influxdb-config-volume
-            mountPath: /etc/influxdb/
-            readOnly: true
-          - name: data-volume
-            mountPath: /var/lib/influxdb
-      - name: telegraf-proxy
-        image: {{ required "An image is required" .Values.image }}
-        command:
-        - /telegraf
-        ports:
-        - name: api
-          containerPort: 443
-        resources:
-          requests:
-            memory: "100Mi"
-            cpu: "100m"
-          limits:
-            memory: "200Mi"
-            cpu: "200m"
-        securityContext:
-          capabilities:
-            drop: ["NET_RAW"]
-          readOnlyRootFilesystem: true
-        volumeMounts:
-          - name: monitoring-db-volume
-            mountPath: /run/secrets/stackrox.io/monitoring/certs/
-            readOnly: true
-          - name: telegraf-proxy-config-volume
-            mountPath: /etc/telegraf
-            readOnly: true
       - name: grafana
-        image: {{ required "An image is required" .Values.image }}
-        command:
-        - /grafana-entrypoint.sh
-        - /run.sh
-        ports:
-        - name: api
-          containerPort: 3000
+        image: {{ required "A Grafana image is required" .Values.grafanaImage }}
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
         resources:
           requests:
             memory: "100Mi"
@@ -113,34 +71,44 @@ spec:
           limits:
             memory: "500Mi"
             cpu: "500m"
+        volumeMounts:
+          - name: grafana-config-volume
+            mountPath: /etc/grafana
+            readOnly: true
+          - name: grafana-datasources-volume
+            mountPath: /etc/grafana/provisioning/datasources
+            readOnly: true
+          - name: grafana-dashboards-volume
+            mountPath: /etc/grafana/provisioning/dashboards
+            readOnly: true
+          - name: monitoring-ui-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/certs/
+            readOnly: true
+          - name: grafana-var-volume
+            mountPath: /var/lib/grafana
+      - name: prometheus
+        image: {{ required "A Prometheus image is required" .Values.prometheusImage }}
+        command: ["/bin/prometheus"]
+        # The arguments are set explicitly such that the data path is `/var/prometheus`,
+        # because it allows write access under read only root file systems.
+        args:
+          - "--config.file=/etc/prometheus/prometheus.yml"
+          - "--storage.tsdb.path=/var/prometheus"
+          - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+          - "--web.console.templates=/usr/share/prometheus/consoles"
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
           readOnlyRootFilesystem: true
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
         volumeMounts:
-          - name: grafana-config-volume
-            mountPath: /etc/grafana
-          - name: monitoring-ui-volume
-            mountPath: /run/secrets/stackrox.io/monitoring/certs/
+          - name: prometheus-config-volume
+            mountPath: /etc/prometheus
             readOnly: true
-          - name: monitoring-password-volume
-            mountPath: /run/secrets/stackrox.io/monitoring/secrets/
-            readOnly: true
-          - name: data-volume
-            mountPath: /var/lib/grafana
+          - name: prometheus-data-volume
+            mountPath: /var/prometheus
       volumes:
-      - name: grafana-config-volume
-        emptyDir: {}
-      - name: monitoring-db-volume
-        secret:
-          secretName: monitoring
-          items:
-            - key: monitoring-db-cert.pem
-              path: cert.pem
-            - key: monitoring-db-key.pem
-              path: key.pem
-            - key: monitoring-ca.pem
-              path: ca.pem
       - name: monitoring-ui-volume
         secret:
           secretName: monitoring
@@ -149,19 +117,21 @@ spec:
               path: cert.pem
             - key: monitoring-ui-key.pem
               path: key.pem
-      - name: monitoring-password-volume
-        secret:
-          secretName: monitoring
-          items:
-            - key: monitoring-password
-              path: password
-      - name: influxdb-config-volume
+      - name: grafana-config-volume
         configMap:
-          name: influxdb
-      - name: telegraf-proxy-config-volume
+          name: grafana-config
+      - name: grafana-datasources-volume
         configMap:
-          name: telegraf-proxy
-      - name: data-volume
+          name: grafana-datasources
+      - name: grafana-dashboards-volume
+        configMap:
+          name: grafana-dashboards
+      - name: grafana-var-volume
+        emptyDir: {}
+      - name: prometheus-config-volume
+        configMap:
+          name: prometheus
+      - name: prometheus-data-volume
         {{- if eq .Values.persistence.type "hostpath" }}
         hostPath:
           path: {{ required "A persistence host path must be specified" .Values.persistence.hostPath }}

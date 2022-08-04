@@ -9,11 +9,9 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
-	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
@@ -44,11 +43,10 @@ const (
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
 // objects.
 type datastoreImpl struct {
-	storage         store.Store
-	commentsStorage commentsstore.Store
-	indexer         index.Indexer
-	searcher        search.Searcher
-	keyedMutex      *concurrency.KeyedMutex
+	storage    store.Store
+	indexer    index.Indexer
+	searcher   search.Searcher
+	keyedMutex *concurrency.KeyedMutex
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
@@ -219,14 +217,6 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	errorList := errorhelpers.NewErrorList("deleting alert")
 	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		errorList.AddError(err)
-	} else {
-		for _, id := range ids {
-			err := ds.commentsStorage.RemoveAlertComments(id)
-			if err != nil {
-				err = errors.Wrapf(err, "deleting comments of alert %q", id)
-				errorList.AddError(err)
-			}
-		}
 	}
 	if err := ds.indexer.DeleteListAlerts(ids); err != nil {
 		errorList.AddError(err)
@@ -236,80 +226,6 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	}
 
 	return errorList.ToError()
-}
-
-func (ds *datastoreImpl) GetAlertComments(ctx context.Context, alertID string) (comments []*storage.Comment, err error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "GetAlertComments")
-	_, exists, err := ds.GetAlert(ctx, alertID)
-	if err != nil || !exists {
-		return nil, err
-	}
-
-	return ds.commentsStorage.GetCommentsForAlert(alertID)
-}
-
-func (ds *datastoreImpl) AddAlertComment(ctx context.Context, request *storage.Comment) (string, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "AddAlertComment")
-	alert, exists, err := ds.GetAlert(ctx, request.GetResourceId())
-	if err != nil || !exists {
-		return "", err
-	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
-		return "", sac.ErrResourceAccessDenied
-	}
-
-	request.User = analystnotes.UserFromContext(ctx)
-	return ds.commentsStorage.AddAlertComment(request)
-}
-
-func (ds *datastoreImpl) UpdateAlertComment(ctx context.Context, request *storage.Comment) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpdateAlertComment")
-	alert, exists, err := ds.GetAlert(ctx, request.GetResourceId())
-	if err != nil || !exists {
-		return err
-	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	user := analystnotes.UserFromContext(ctx)
-	existingComment, err := ds.commentsStorage.GetComment(request.GetResourceId(), request.GetCommentId())
-	if err != nil {
-		return errors.Wrap(err, "failed to get the alert comment")
-	}
-	if existingComment == nil {
-		return errors.Errorf("cannot update comment %q for alert %q: it does not exist", request.GetCommentId(), request.GetResourceId())
-	}
-	if !analystnotes.CommentIsModifiableUser(user, existingComment) {
-		return errors.New("user cannot modify comment: permission denied")
-	}
-	request.User = user
-	return ds.commentsStorage.UpdateAlertComment(request)
-}
-
-func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, alertID, commentID string) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "RemoveAlertComment")
-	alert, exists, err := ds.GetAlert(ctx, alertID)
-	if err != nil || !exists {
-		return err
-	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	existingComment, err := ds.commentsStorage.GetComment(alertID, commentID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get the alert comment")
-	}
-	if existingComment == nil {
-		// Comment has already been deleted, all good
-		return nil
-	}
-	if !analystnotes.CommentIsDeletable(ctx, existingComment) {
-		return errors.New("user cannot delete comment: permission denied")
-	}
-
-	return ds.commentsStorage.RemoveAlertComment(alertID, commentID)
 }
 
 func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, tags []string) ([]string, error) {
@@ -418,7 +334,7 @@ func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
 	log.Infof("[STARTUP] Found %d alerts to index", len(alertIDs))
 	alertBatcher := batcher.New(len(alertIDs), alertBatchSize)
 	for start, end, valid := alertBatcher.Next(); valid; start, end, valid = alertBatcher.Next() {
-		listAlerts, _, err := ds.storage.GetListAlerts(ctx, alertIDs[start:end])
+		listAlerts, _, err := ds.getListAlerts(ctx, alertIDs[start:end])
 		if err != nil {
 			return err
 		}
@@ -449,6 +365,9 @@ func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
 }
 
 func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
 	defer debug.FreeOSMemory()
 
 	needsFullIndexing, err := ds.indexer.NeedsInitialIndexing()
@@ -471,7 +390,7 @@ func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 
 	alertBatcher := batcher.New(len(keysToIndex), alertBatchSize)
 	for start, end, valid := alertBatcher.Next(); valid; start, end, valid = alertBatcher.Next() {
-		listAlerts, missingIndices, err := ds.storage.GetListAlerts(ctx, keysToIndex[start:end])
+		listAlerts, missingIndices, err := ds.getListAlerts(ctx, keysToIndex[start:end])
 		if err != nil {
 			return err
 		}
@@ -500,6 +419,18 @@ func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 	return nil
 }
 
+func (ds *datastoreImpl) getListAlerts(ctx context.Context, ids []string) ([]*storage.ListAlert, []int, error) {
+	alerts, missingIndices, err := ds.storage.GetMany(ctx, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	listAlerts := make([]*storage.ListAlert, 0, len(ids))
+	for _, alert := range alerts {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+	}
+	return listAlerts, missingIndices, nil
+}
+
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert) error) error {
 	if ok, err := alertSAC.ReadAllowed(ctx); err != nil {
 		return err
@@ -507,5 +438,8 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Walk(ctx, fn)
+	return ds.storage.Walk(ctx, func(alert *storage.Alert) error {
+		listAlert := convert.AlertToListAlert(alert)
+		return fn(listAlert)
+	})
 }

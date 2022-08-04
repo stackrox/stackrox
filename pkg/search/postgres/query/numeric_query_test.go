@@ -1,14 +1,14 @@
 package pgsearch
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseNumericPrefix(t *testing.T) {
-	var cases = []struct {
+	cases := []struct {
 		value          string
 		expectedPrefix string
 		expectedValue  string
@@ -43,71 +43,45 @@ func TestParseNumericPrefix(t *testing.T) {
 	}
 }
 
-func TestNumberDelta(t *testing.T) {
-	num1 := 4.6
-	num2 := 9.8
-	num3 := float64(7)
-	var cases = []struct {
-		name          string
-		value         float64
-		prefix        string
-		expectedQuery string
-		expectedValue string
+func TestNumericQuery(t *testing.T) {
+	const colName = "blah"
+	cases := []struct {
+		value               string
+		expectedWhereClause string
+		expectedValues      []interface{}
+		expectErr           bool
 	}{
-		{
-			name:          fmt.Sprintf("less than %v", num1),
-			value:         num1,
-			prefix:        "<",
-			expectedQuery: "blah < $$",
-			expectedValue: "4.60",
-		},
-		{
-			name:          fmt.Sprintf("less than or equals to %v", num1),
-			value:         num1,
-			prefix:        "<=",
-			expectedQuery: "blah <= $$",
-			expectedValue: "4.60",
-		},
-		{
-			name:          fmt.Sprintf("equals to %v", num1),
-			value:         num1,
-			prefix:        "=",
-			expectedQuery: "blah = $$",
-			expectedValue: "4.60",
-		},
-		{
-			name:          fmt.Sprintf("equals to %v", num1),
-			value:         num1,
-			expectedQuery: "blah = $$",
-			expectedValue: "4.60",
-		},
-		{
-			name:          fmt.Sprintf("greater than or equals to %v", num1),
-			value:         num1,
-			prefix:        ">=",
-			expectedQuery: "blah >= $$",
-			expectedValue: "4.60",
-		},
-		{
-			name:          fmt.Sprintf("greater than to %v", num2),
-			value:         num2,
-			prefix:        ">",
-			expectedQuery: "blah > $$",
-			expectedValue: "9.80",
-		},
-		{
-			name:          fmt.Sprintf("integer equal %v", num3),
-			value:         num3,
-			expectedQuery: "blah = $$",
-			expectedValue: "7",
-		},
+		{value: "<4.60", expectedWhereClause: "blah < $$", expectedValues: []interface{}{"4.6"}},
+		{value: "<=4.60", expectedWhereClause: "blah <= $$", expectedValues: []interface{}{"4.6"}},
+		{value: "=4.60", expectedWhereClause: "blah = $$", expectedValues: []interface{}{"4.6"}},
+		{value: "==4.60", expectedWhereClause: "blah = $$", expectedValues: []interface{}{"4.6"}},
+		{value: ">=4.60", expectedWhereClause: "blah >= $$", expectedValues: []interface{}{"4.6"}},
+		{value: ">9.80", expectedWhereClause: "blah > $$", expectedValues: []interface{}{"9.8"}},
+		{value: "7", expectedWhereClause: "blah = $$", expectedValues: []interface{}{"7"}},
+		{value: ">1", expectedWhereClause: "blah > $$", expectedValues: []interface{}{"1"}},
+		{value: "-1", expectedWhereClause: "blah = $$", expectedValues: []interface{}{"-1"}},
+		{value: "1-2", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []interface{}{"1", "2"}},
+		{value: "-1--2", expectErr: true},
+		{value: "-2--1", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []interface{}{"-2", "-1"}},
+		{value: "-2.9124--1.2", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []interface{}{"-2.91", "-1.2"}},
+		{value: "-2-1", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []interface{}{"-2", "1"}},
+		{value: "1.2-2.992", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []interface{}{"1.2", "2.99"}},
+		{value: "1-1", expectErr: true},
+		{value: "2-1", expectErr: true},
 	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			actual := createNumericQuery("blah", c.prefix, c.value)
-			assert.Equal(t, c.expectedQuery, actual.Query)
-			assert.Equal(t, []interface{}{c.expectedValue}, actual.Values)
+	for _, testCase := range cases {
+		t.Run(testCase.value, func(t *testing.T) {
+			actual, err := newNumericQuery(&queryAndFieldContext{
+				qualifiedColumnName: colName,
+				value:               testCase.value,
+			})
+			if testCase.expectErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expectedWhereClause, actual.Where.Query)
+			assert.Equal(t, testCase.expectedValues, actual.Where.Values)
 		})
 	}
 }

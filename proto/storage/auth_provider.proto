@@ -3,12 +3,14 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "gogoproto/gogo.proto";
+
 package storage;
 
 // Next Tag: 9
 message AuthProvider {
-    string id                   = 1;
-    string name                 = 2;
+    string id                   = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string name                 = 2 [(gogoproto.moretags) = 'sql:"unique"'];
     string type                 = 3;
     string ui_endpoint          = 4;
     bool enabled                = 5;
@@ -22,4 +24,15 @@ message AuthProvider {
     // not ui_endpoint.
     repeated string extra_ui_endpoints = 9;
     bool active                 = 10;
+
+    // RequiredAttribute allows to specify a set of attributes which ALL are required to be returned
+    // by the auth provider.
+    // If any attribute is missing within the external claims of the token issued by Central, the
+    // authentication request to this IdP is considered failed.
+    message RequiredAttribute {
+        string attribute_key   = 1;
+        string attribute_value = 2;
+    }
+    // EXPERIMENTAL.
+    repeated RequiredAttribute required_attributes = 11;
 }

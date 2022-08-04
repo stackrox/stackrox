@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"golang.org/x/net/http2"
 )
 
@@ -25,8 +27,8 @@ type roxctlClientImpl struct {
 }
 
 // GetRoxctlHTTPClient returns a new instance of RoxctlHTTPClient with the given configuration
-func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure bool) (RoxctlHTTPClient, error) {
-	tlsConf, err := tlsConfigForCentral()
+func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure bool, log logger.Logger) (RoxctlHTTPClient, error) {
+	tlsConf, err := tlsConfigForCentral(log)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating TLS configuration for central")
 	}
@@ -47,7 +49,7 @@ func GetRoxctlHTTPClient(timeout time.Duration, forceHTTP1 bool, useInsecure boo
 		Transport: transport,
 	}
 
-	auth, err := newAuth()
+	auth, err := newAuth(log)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +74,7 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 		if err != nil {
 			return nil, errors.Wrapf(err, "Expected status code %d, but received %d. Additionally, there was an error reading the response", code, resp.StatusCode)
 		}
-		return nil, errors.Errorf("Expected status code %d, but received %d. Response Body: %s", code, resp.StatusCode, string(data))
+		return nil, errox.InvariantViolation.Newf("expected status code %d, but received %d. Response Body: %s", code, resp.StatusCode, string(data))
 	}
 
 	return resp, nil
@@ -99,7 +101,7 @@ func (client *roxctlClientImpl) NewReq(method string, path string, body io.Reade
 	}
 
 	if req.URL.Scheme != "https" && !client.useInsecure {
-		return nil, errors.Errorf("URL %v uses insecure scheme %q, use --insecure flags to enable sending credentials", req.URL, req.URL.Scheme)
+		return nil, errox.InvalidArgs.Newf("URL %v uses insecure scheme %q, use --insecure flags to enable sending credentials", req.URL, req.URL.Scheme)
 	}
 	err = client.a.SetAuth(req)
 	if err != nil {

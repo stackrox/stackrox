@@ -25,10 +25,10 @@ function VulnMgmtCreateReportPage(): ReactElement {
                     <BreadcrumbItemLink to={vulnManagementReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
-                    <BreadcrumbItem isActive>Create a vulnerability report</BreadcrumbItem>
+                    <BreadcrumbItem isActive>Create an image vulnerability report</BreadcrumbItem>
                 </Breadcrumb>
                 <TextContent>
-                    <Title headingLevel="h1">Create a vulnerability report</Title>
+                    <Title headingLevel="h1">Create an image vulnerability report</Title>
                     <Text component="p">
                         Configure reports, define reporting scopes, and assign distribution lists to
                         report on vulnerabilities across the organization.

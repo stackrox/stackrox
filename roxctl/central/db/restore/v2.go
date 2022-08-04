@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
@@ -26,7 +26,7 @@ const (
 var (
 	// ErrV2RestoreNotSupported is the error returned to indicate that the server does not support the new
 	// backup/restore mechanism.
-	ErrV2RestoreNotSupported = errors.New("server does not support V2 restore functionality")
+	ErrV2RestoreNotSupported = errox.InvariantViolation.New("server does not support V2 restore functionality")
 )
 
 type centralDbRestoreCommand struct {
@@ -76,17 +76,17 @@ func validate(cbr *cobra.Command, args []string) error {
 		return cbr.Usage()
 	}
 	if len(args) > 1 {
-		return errors.WithMessagef(errorhelpers.ErrInvalidArgs, "too many positional arguments (%d given)", len(args))
+		return errox.InvalidArgs.Newf("too many positional arguments (%d given)", len(args))
 	}
 	if file, _ := cbr.Flags().GetString("file"); file != "" {
-		return errors.WithMessage(errorhelpers.ErrInvalidArgs, "legacy --file flag must not be used in conjunction with a positional argument")
+		return errox.InvalidArgs.New("legacy --file flag must not be used in conjunction with a positional argument")
 	}
 	return nil
 }
 
 func (cmd *centralDbRestoreCommand) construct(cbr *cobra.Command, args []string) error {
 	cmd.confirm = func() error {
-		return flags.CheckConfirmation(cbr)
+		return flags.CheckConfirmation(cbr, cmd.env.Logger(), cmd.env.InputOutput())
 	}
 	cmd.timeout = flags.Timeout(cbr)
 	if cmd.file == "" {
@@ -97,7 +97,7 @@ func (cmd *centralDbRestoreCommand) construct(cbr *cobra.Command, args []string)
 
 func (cmd *centralDbRestoreCommand) validate() error {
 	if cmd.file == "" {
-		return errors.WithMessage(errorhelpers.ErrInvalidArgs, "file to restore from must be specified")
+		return errox.InvalidArgs.New("file to restore from must be specified")
 	}
 	return nil
 }
@@ -108,7 +108,7 @@ func findManifestFile(fileName string, manifest *v1.DBExportManifest) (*v1.DBExp
 			return mfFile, idx, nil
 		}
 	}
-	return nil, 0, errors.Errorf("file %s not found in manifest", fileName)
+	return nil, 0, errox.NotFound.Newf("file %s not found in manifest", fileName)
 }
 
 func dataReadersForManifest(file *os.File, manifest *v1.DBExportManifest) ([]func() io.Reader, error) {
@@ -145,15 +145,15 @@ func dataReadersForManifest(file *os.File, manifest *v1.DBExportManifest) ([]fun
 		}
 
 		if manifestFile.GetEncoding() != expectedCompressionType {
-			return nil, errors.Errorf("file %s is encoded as %v in ZIP file, but expected as %v per manifest", entry.Name, expectedCompressionType, manifestFile.GetEncoding())
+			return nil, errox.InvalidArgs.Newf("file %s is encoded as %v in ZIP file, but expected as %v per manifest", entry.Name, expectedCompressionType, manifestFile.GetEncoding())
 		}
 
 		if manifestFile.GetEncodedSize() != expectedEncodedSize {
-			return nil, errors.Errorf("file %s has an encoded length of %d in the ZIP file, but expected to be %d per manifest", entry.Name, expectedEncodedSize, manifestFile.GetEncodedSize())
+			return nil, errox.InvalidArgs.Newf("file %s has an encoded length of %d in the ZIP file, but expected to be %d per manifest", entry.Name, expectedEncodedSize, manifestFile.GetEncodedSize())
 		}
 
 		if manifestFile.GetDecodedCrc32() != entry.CRC32 {
-			return nil, errors.Errorf("file %s has mismatching CRC32 checksum: %x in ZIP file versus %x in manifest", entry.Name, entry.CRC32, manifestFile.GetDecodedCrc32())
+			return nil, errox.InvalidArgs.Newf("file %s has mismatching CRC32 checksum: %x in ZIP file versus %x in manifest", entry.Name, entry.CRC32, manifestFile.GetDecodedCrc32())
 		}
 
 		var readerFunc func() io.Reader
@@ -180,7 +180,7 @@ func dataReadersForManifest(file *os.File, manifest *v1.DBExportManifest) ([]fun
 
 	for idx, manifestFile := range manifest.GetFiles() {
 		if readers[idx] == nil {
-			return nil, errors.Errorf("file %s has no associated data reader", manifestFile.GetName())
+			return nil, errox.NotFound.Newf("file %s has no associated data reader", manifestFile.GetName())
 		}
 	}
 

@@ -290,24 +290,29 @@ func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgTo
 }
 
 // getPolicySyncMsgFromPolicies prepares given policies for delivery to sensor. If:
-//   - sensor's policy version is unknown -> guess Version1,
-//   - sensor's policy version is older than central's -> attempt to downgrade
-//     all policies to sensor's version,
-//   - otherwise -> forward policies unmodified.
-//
-// If there is any error during the downgrade, pass the affected policies as-is.
+//   - sensor's policy version is unknown -> send version 1.1
+//   - sensor's policy version is less than the minimum supported by central (see policyversion.MinimumSupportedVersion()), send version 1.1
+//   - sensor's policy version is < current version -> downgrade to sensor's version
+//   - sensor's policy version is >= current version -> send policies untouched
 func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Policy) (*central.MsgToSensor, error) {
 	// Older sensors do not broadcast the policy version they support, so if we
-	// observe an empty string, we guess the version at Version1 and persist it.
-	sensorPolicyVersionStr := stringutils.FirstNonEmpty(c.sensorHello.GetPolicyVersion(), policyversion.Version1().String())
+	// observe an empty string, we guess the version at version 1.1 and persist it.
+	sensorPolicyVersionStr := stringutils.FirstNonEmpty(c.sensorHello.GetPolicyVersion(),
+		policyversion.CurrentVersion().String())
 
 	// Forward policies as is if we don't understand sensor's version.
 	if sensorPolicyVersion, err := policyversion.FromString(sensorPolicyVersionStr); err != nil {
-		log.Errorf("Cannot understand sensor's policy version %q: %v", sensorPolicyVersionStr, err)
+		log.Errorf("Cannot understand sensor's policy version %q, will assume version %q: %v", sensorPolicyVersionStr,
+			policyversion.CurrentVersion().String(), err)
 	} else {
-		// Downgrade all policies if necessary. If we can't downgrade one,
-		// we likely can't convert any of them, so no need to spam the log.
-		if policyversion.Compare(policyversion.CurrentVersion(), sensorPolicyVersion) > 0 {
+		if policyversion.Compare(sensorPolicyVersion, policyversion.MinimumSupportedVersion()) < 0 {
+			// If sensor doesn't support a minimum version (which will change as we deprecate older versions),
+			// Then just log error and move on.
+			log.Errorf("Sensor is running an older version of policy (%q) which has been deprecated and is no longer supported. Upgrade sensor to a version which supports %q",
+				sensorPolicyVersionStr, policyversion.CurrentVersion().String())
+		} else if policyversion.Compare(policyversion.CurrentVersion(), sensorPolicyVersion) > 0 {
+			// Downgrade all policies if necessary. If we can't downgrade one,
+			// we likely can't convert any of them, so no need to spam the log.
 			log.Infof("Downgrading %d policies from central's version %q to sensor's version %q",
 				len(policies), policyversion.CurrentVersion().String(), sensorPolicyVersion.String())
 
@@ -328,6 +333,7 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 
 			policies = downgradedPolicies
 		}
+		// Otherwise, sensor supports the same version or newer as central
 	}
 
 	return &central.MsgToSensor{

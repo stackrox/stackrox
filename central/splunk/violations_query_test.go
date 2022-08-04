@@ -13,19 +13,16 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.etcd.io/bbolt"
 )
 
 // testDataStore contains all things that need to be created and disposed in order to use Alerts datastore.DataStore in
 // tests.
 type testDataStore struct {
 	rocksDB  *rocksdb.RocksDB
-	boltDB   *bbolt.DB
 	index    bleve.Index
 	alertsDS datastore.DataStore
 }
@@ -33,23 +30,21 @@ type testDataStore struct {
 // makeDS creates a new temp datastore with only provided alerts for use in tests.
 func makeDS(t *testing.T, alerts []*storage.Alert) testDataStore {
 	rocksDB := rocksdbtest.RocksDBForT(t)
-	boltDB := testutils.DBForT(t)
 
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
-	alertsDS := datastore.NewWithDb(rocksDB, boltDB, bleveIndex)
+	alertsDS := datastore.NewWithDb(rocksDB, bleveIndex)
 
 	err = alertsDS.UpsertAlerts(context.Background(), alerts)
 	require.NoError(t, err)
 
-	return testDataStore{rocksDB: rocksDB, boltDB: boltDB, index: bleveIndex, alertsDS: alertsDS}
+	return testDataStore{rocksDB: rocksDB, index: bleveIndex, alertsDS: alertsDS}
 }
 
 // teardown cleans up test datastore.
 func (d *testDataStore) teardown(t *testing.T) {
 	d.rocksDB.Close()
-	testutils.TearDownDB(d.boltDB)
 	err := d.index.Close()
 	assert.NoError(t, err)
 }

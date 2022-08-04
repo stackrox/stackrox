@@ -42,25 +42,7 @@ export const validationSchema = yup.object().shape({
         docker: yup.object().shape({
             endpoint: yup.string().trim().required('An endpoint is required'),
             username: yup.string(),
-            password: yup
-                .string()
-                .test(
-                    'password-test',
-                    'A password is required',
-                    (value, context: yup.TestContext) => {
-                        const requirePasswordField =
-                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                            // @ts-ignore
-                            context?.from[2]?.value?.updatePassword || false;
-
-                        if (!requirePasswordField) {
-                            return true;
-                        }
-
-                        const trimmedValue = value?.trim();
-                        return !!trimmedValue;
-                    }
-                ),
+            password: yup.string(),
             insecure: yup.bool(),
         }),
         skipTestIntegration: yup.bool(),
@@ -171,13 +153,11 @@ function ArtifactoryIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Username"
-                        isRequired
                         fieldId="config.docker.username"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
-                            isRequired
                             type="text"
                             id="config.docker.username"
                             value={values.config.docker.username}
@@ -205,7 +185,6 @@ function ArtifactoryIntegrationForm({
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        isRequired={values.updatePassword}
                         label="Password"
                         fieldId="config.docker.password"
                         touched={touched}
@@ -222,7 +201,7 @@ function ArtifactoryIntegrationForm({
                             placeholder={
                                 values.updatePassword
                                     ? ''
-                                    : 'Currently-stored password will be used.'
+                                    : 'Any currently-stored password will be used.'
                             }
                         />
                     </FormLabelGroup>

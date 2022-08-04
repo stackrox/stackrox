@@ -12,7 +12,7 @@ import (
 	loopMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	nodeMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
@@ -176,7 +176,7 @@ func TestValidateIntegration(t *testing.T) {
 
 	_, err := s.TestUpdatedImageIntegration(testCtx, request)
 	assert.Error(t, err)
-	assert.EqualError(t, err, errors.Wrap(errorhelpers.ErrInvalidArgs, "the request doesn't have a valid integration config type").Error())
+	assert.EqualError(t, err, errors.Wrap(errox.InvalidArgs, "the request doesn't have a valid integration config type").Error())
 
 	dockerConfig := &storage.DockerConfig{
 		Endpoint: "endpoint",

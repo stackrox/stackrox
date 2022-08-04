@@ -15,10 +15,11 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/mocks"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -305,7 +306,7 @@ func (s *imageScanTestSuite) TestConstruct() {
 		"invalid printer factory should return an error": {
 			printerFactory: invalidObjPrinterFactory,
 			shouldFail:     true,
-			error:          errorhelpers.ErrInvalidArgs,
+			error:          errox.InvalidArgs,
 		},
 	}
 
@@ -359,8 +360,8 @@ func (s *imageScanTestSuite) TestDeprecationNote() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			imgScanCmd := s.defaultImageScanCommand
-			io, _, _, errOut := environment.TestIO()
-			imgScanCmd.env = environment.NewCLIEnvironment(io, printer.DefaultColorPrinter())
+			io, _, _, errOut := io.TestIO()
+			imgScanCmd.env = environment.NewTestCLIEnvironment(s.T(), io, printer.DefaultColorPrinter())
 			cmd := Command(imgScanCmd.env)
 			cmd.Flags().Duration("timeout", 1*time.Minute, "")
 			cmd.Flag("format").Changed = c.formatChanged
@@ -398,13 +399,13 @@ func (s *imageScanTestSuite) TestValidate() {
 		},
 		"invalid image name should result in an error": {
 			image: "c:",
-			error: errorhelpers.ErrInvalidArgs,
+			error: errox.InvalidArgs,
 		},
 		"wrong legacy output format should result in an error when new output format IS NOT used": {
 			image:        s.defaultImageScanCommand.image,
 			legacyFormat: "table",
 			shouldFail:   true,
-			error:        errorhelpers.ErrInvalidArgs,
+			error:        errox.InvalidArgs,
 		},
 		"wrong legacy output format should NOT result in an error when new output format IS used": {
 			image:        s.defaultImageScanCommand.image,
@@ -586,4 +587,12 @@ func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatT
 			s.Assert().Equal(string(expectedOutput), out.String())
 		})
 	}
+}
+
+func (s *imageScanTestSuite) TestScan_IncludeSnoozed() {
+	s.Run("disabled by default", func() {
+		envMock, _, _ := s.newTestMockEnvironmentWithConn(nil)
+		cobraCommand := Command(envMock)
+		s.Equal("false", cobraCommand.Flag("include-snoozed").Value.String())
+	})
 }

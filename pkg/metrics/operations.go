@@ -18,6 +18,7 @@ const (
 	Get
 	GetAll
 	GetMany
+	GetFlowsForDeployment
 
 	// Special operation currently used only for processes.
 	GetGrouped
@@ -30,8 +31,10 @@ const (
 	Rename
 	Remove
 	RemoveMany
+	RemoveFlowsByDeployment
 
 	Search
+	Sync
 
 	Update
 	UpdateMany

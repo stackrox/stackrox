@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	commentsStoreMocks "github.com/stackrox/rox/central/alert/datastore/internal/commentsstore/mocks"
 	indexMocks "github.com/stackrox/rox/central/alert/datastore/internal/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/alert/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/alert/datastore/internal/store/mocks"
@@ -17,15 +16,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,11 +38,10 @@ type alertDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	dataStore       DataStore
-	storage         *storeMocks.MockStore
-	commentsStorage *commentsStoreMocks.MockStore
-	indexer         *indexMocks.MockIndexer
-	searcher        *searchMocks.MockSearcher
+	dataStore DataStore
+	storage   *storeMocks.MockStore
+	indexer   *indexMocks.MockIndexer
+	searcher  *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller
 }
@@ -65,16 +58,16 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.commentsStorage = commentsStoreMocks.NewMockStore(s.mockCtrl)
-	s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
-
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
-	s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 
+	if !features.PostgresDatastore.Enabled() {
+		s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
+		s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+	}
+
 	var err error
-	s.dataStore, err = New(s.storage, s.commentsStorage, s.indexer, s.searcher)
+	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
 	s.Require().NoError(err)
 }
 
@@ -201,11 +194,10 @@ type alertDataStoreWithSACTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	dataStore       DataStore
-	storage         *storeMocks.MockStore
-	commentsStorage *commentsStoreMocks.MockStore
-	indexer         *indexMocks.MockIndexer
-	searcher        *searchMocks.MockSearcher
+	dataStore DataStore
+	storage   *storeMocks.MockStore
+	indexer   *indexMocks.MockIndexer
+	searcher  *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller
 }
@@ -223,14 +215,15 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.commentsStorage = commentsStoreMocks.NewMockStore(s.mockCtrl)
-	s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
-
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
-	s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+
+	if !features.PostgresDatastore.Enabled() {
+		s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
+		s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+	}
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 	var err error
-	s.dataStore, err = New(s.storage, s.commentsStorage, s.indexer, s.searcher)
+	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
 	s.NoError(err)
 }
 
@@ -254,122 +247,6 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleEnforced() {
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	s.Equal(storage.ViolationState_ACTIVE, fakeAlert.GetState())
-}
-
-func (s *alertDataStoreTestSuite) TestGetAlertCommentsAllowed() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	fakeComment := alerttest.NewFakeAlertComment()
-	s.commentsStorage.EXPECT().GetCommentsForAlert(alerttest.FakeAlertID).Return([]*storage.Comment{fakeComment}, nil)
-
-	_, err := s.dataStore.GetAlertComments(s.hasReadCtx, alerttest.FakeAlertID)
-	s.NoError(err)
-}
-
-func (s *alertDataStoreWithSACTestSuite) TestGetAlertCommentsEnforced() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	// No lookup should happen on the comments storage, due to insufficient access.
-
-	comments, err := s.dataStore.GetAlertComments(s.hasNoneCtx, alerttest.FakeAlertID)
-	s.NoError(err)
-	s.Empty(comments)
-}
-
-func (s *alertDataStoreWithSACTestSuite) TestAddCommentAllowed() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.commentsStorage.EXPECT().AddAlertComment(alerttest.NewFakeAlertComment())
-
-	_, err := s.dataStore.AddAlertComment(s.hasWriteCtx, alerttest.NewFakeAlertComment())
-	s.NoError(err)
-}
-
-func (s *alertDataStoreWithSACTestSuite) TestAddAlertCommentEnforced() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	// No call should happen on the comments store, due to insufficient access.
-
-	_, err := s.dataStore.AddAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-}
-
-func (s *alertDataStoreWithSACTestSuite) TestUpdateCommentAllowed() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.commentsStorage.EXPECT().GetComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(alerttest.NewFakeAlertComment(), nil)
-	s.commentsStorage.EXPECT().UpdateAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
-
-	err := s.dataStore.UpdateAlertComment(s.hasWriteCtx, alerttest.NewFakeAlertComment())
-	s.NoError(err)
-}
-
-func (s *alertDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID string, resourceWithAccess ...permissions.ResourceWithAccess) context.Context {
-	identity := mocks.NewMockIdentity(s.mockCtrl)
-	identity.EXPECT().UID().AnyTimes().Return(userID)
-	identity.EXPECT().FullName().AnyTimes().Return(userID)
-	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
-	identity.EXPECT().User().AnyTimes().Return(nil)
-	dummyRole := roletest.NewResolvedRoleWithDenyAll("Dummy", nil)
-	identity.EXPECT().Roles().AnyTimes().Return([]permissions.ResolvedRole{dummyRole})
-	identity.EXPECT().Permissions().AnyTimes().Return(utils.FromResourcesWithAccess(resourceWithAccess...))
-
-	return authn.ContextWithIdentity(ctx, identity, s.T())
-}
-
-func (s *alertDataStoreTestSuite) TestAlertAccessControl() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil).AnyTimes()
-	s.commentsStorage.EXPECT().GetComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(
-		&storage.Comment{User: &storage.Comment_User{Id: "1"}}, nil,
-	).AnyTimes()
-
-	uid1Ctx := s.ctxWithUIDAndRole(s.hasWriteCtx, "1")
-	uid2Ctx := s.ctxWithUIDAndRole(s.hasWriteCtx, "2")
-	uid2ButAdminCtx := s.ctxWithUIDAndRole(s.hasWriteCtx, "2", resources.AllResourcesModifyPermissions()...)
-
-	fakeComment := alerttest.NewFakeAlertComment()
-	s.commentsStorage.EXPECT().UpdateAlertComment(testutils.PredMatcher("check comment", func(comment *storage.Comment) bool {
-		return comment.GetCommentMessage() == alerttest.FakeAlertCommentMessage && comment.GetUser().GetId() == "1"
-	})).Return(nil)
-	s.NoError(s.dataStore.UpdateAlertComment(uid1Ctx, fakeComment))
-	s.Error(s.dataStore.UpdateAlertComment(uid2Ctx, fakeComment))
-	// Admin cannot update other people's comments.
-	s.Error(s.dataStore.UpdateAlertComment(uid2ButAdminCtx, fakeComment))
-
-	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Times(2).Return(nil)
-	s.Error(s.dataStore.RemoveAlertComment(uid2Ctx, alerttest.FakeAlertID, alerttest.FakeCommentID))
-	s.NoError(s.dataStore.RemoveAlertComment(uid1Ctx, alerttest.FakeAlertID, alerttest.FakeCommentID))
-	// Admin can delete other people's comments.
-	s.NoError(s.dataStore.RemoveAlertComment(uid2ButAdminCtx, alerttest.FakeAlertID, alerttest.FakeCommentID))
-}
-
-func (s *alertDataStoreWithSACTestSuite) TestUpdateAlertCommentEnforced() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	// No access to comments storage due to insufficient permissions.
-
-	err := s.dataStore.UpdateAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-}
-
-func (s *alertDataStoreWithSACTestSuite) TestRemoveCommentAllowed() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.commentsStorage.EXPECT().GetComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(alerttest.NewFakeAlertComment(), nil)
-	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(nil)
-
-	err := s.dataStore.RemoveAlertComment(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.FakeCommentID)
-	s.NoError(err)
-}
-
-func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertCommentEnforced() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().Get(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	// No access to comments storage due to insufficient permissions.
-
-	err := s.dataStore.RemoveAlertComment(s.hasReadCtx, alerttest.FakeAlertID, alerttest.FakeCommentID)
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed() {
@@ -447,10 +324,9 @@ func TestAlertReindexSuite(t *testing.T) {
 type AlertReindexSuite struct {
 	suite.Suite
 
-	storage         *storeMocks.MockStore
-	commentsStorage *commentsStoreMocks.MockStore
-	indexer         *indexMocks.MockIndexer
-	searcher        *searchMocks.MockSearcher
+	storage  *storeMocks.MockStore
+	indexer  *indexMocks.MockIndexer
+	searcher *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller
 }
@@ -463,15 +339,22 @@ func (suite *AlertReindexSuite) SetupTest() {
 }
 
 func (suite *AlertReindexSuite) TestReconciliationFullReindex() {
+	if features.PostgresDatastore.Enabled() {
+		return
+	}
+
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(true, nil)
 
-	alert1 := convert.AlertToListAlert(fixtures.GetAlertWithID("A"))
-	alert2 := convert.AlertToListAlert(fixtures.GetAlertWithID("B"))
+	fullAlert1 := fixtures.GetAlertWithID("A")
+	fullAlert2 := fixtures.GetAlertWithID("B")
+	alert1 := convert.AlertToListAlert(fullAlert1)
+	alert2 := convert.AlertToListAlert(fullAlert2)
 
+	alerts := []*storage.Alert{fullAlert1, fullAlert2}
 	listAlerts := []*storage.ListAlert{alert1, alert2}
 
 	suite.storage.EXPECT().GetIDs(gomock.Any()).Return([]string{"A", "B"}, nil)
-	suite.storage.EXPECT().GetListAlerts(gomock.Any(), []string{"A", "B"}).Return(listAlerts, nil, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B"}).Return(alerts, nil, nil)
 	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
 
 	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"D", "E"}, nil)
@@ -479,37 +362,43 @@ func (suite *AlertReindexSuite) TestReconciliationFullReindex() {
 
 	suite.indexer.EXPECT().MarkInitialIndexingComplete().Return(nil)
 
-	_, err := New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher)
+	_, err := New(suite.storage, suite.indexer, suite.searcher)
 	suite.NoError(err)
 }
 
 func (suite *AlertReindexSuite) TestReconciliationPartialReindex() {
+	if features.PostgresDatastore.Enabled() {
+		return
+	}
 	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+	fullAlert1 := fixtures.GetAlertWithID("A")
+	fullAlert2 := fixtures.GetAlertWithID("B")
+	fullAlert3 := fixtures.GetAlertWithID("C")
+	alert1 := convert.AlertToListAlert(fullAlert1)
+	alert2 := convert.AlertToListAlert(fullAlert2)
+	alert3 := convert.AlertToListAlert(fullAlert3)
 
-	alert1 := convert.AlertToListAlert(fixtures.GetAlertWithID("A"))
-	alert2 := convert.AlertToListAlert(fixtures.GetAlertWithID("B"))
-	alert3 := convert.AlertToListAlert(fixtures.GetAlertWithID("C"))
-
+	alerts := []*storage.Alert{fullAlert1, fullAlert2, fullAlert3}
 	listAlerts := []*storage.ListAlert{alert1, alert2, alert3}
 
-	suite.storage.EXPECT().GetListAlerts(gomock.Any(), []string{"A", "B", "C"}).Return(listAlerts, nil, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(alerts, nil, nil)
 	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
 
-	_, err := New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher)
+	_, err := New(suite.storage, suite.indexer, suite.searcher)
 	suite.NoError(err)
-
 	// Make listAlerts just A,B so C should be deleted
-	listAlerts = listAlerts[:1]
+	alerts2 := []*storage.Alert{fullAlert1, fullAlert2}
+	listAlerts2 := []*storage.ListAlert{alert1, alert2}
 	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
-	suite.storage.EXPECT().GetListAlerts(gomock.Any(), []string{"A", "B", "C"}).Return(listAlerts, []int{2}, nil)
-	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(alerts2, []int{2}, nil)
+	suite.indexer.EXPECT().AddListAlerts(listAlerts2).Return(nil)
 	suite.indexer.EXPECT().DeleteListAlerts([]string{"C"}).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
 
-	_, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher)
+	_, err = New(suite.storage, suite.indexer, suite.searcher)
 	suite.NoError(err)
 }

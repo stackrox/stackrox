@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -56,29 +55,36 @@ func (c *mockServer) Recv() (*central.MsgFromSensor, error) {
 	return nil, nil
 }
 
-// TestGetPolicySyncMsgFromPolicies verifies that the sensor connection is
-// capable of downgrading policies to the version known of the underlying
-// sensor. The test uses specific policy versions and not a general approach.
-func (s *testSuite) TestGetPolicySyncMsgFromPolicies() {
-	centralVersion := policyversion.CurrentVersion()
-	sensorVersion := policyversion.Version1()
-	sensorHello := &central.SensorHello{
-		PolicyVersion: sensorVersion.String(),
-	}
+func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumVersion() {
 	sensorMockConn := &sensorConnection{
-		sensorHello: sensorHello,
-	}
-	policy := &storage.Policy{
-		PolicyVersion: centralVersion.String(),
+		sensorHello: &central.SensorHello{
+			PolicyVersion: "1",
+		},
 	}
 
-	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{policy})
+	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{{PolicyVersion: policyversion.CurrentVersion().String()}})
 	s.NoError(err)
 
 	policySync := msg.GetPolicySync()
 	s.Require().NotNil(policySync)
 	s.NotEmpty(policySync.Policies)
-	s.Equal(sensorVersion.String(), policySync.Policies[0].GetPolicyVersion())
+	s.Equal(policyversion.CurrentVersion().String(), policySync.Policies[0].GetPolicyVersion())
+}
+
+func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeInvalidVersions() {
+	sensorMockConn := &sensorConnection{
+		sensorHello: &central.SensorHello{
+			PolicyVersion: "this ain't a version",
+		},
+	}
+
+	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{{PolicyVersion: policyversion.CurrentVersion().String()}})
+	s.NoError(err)
+
+	policySync := msg.GetPolicySync()
+	s.Require().NotNil(policySync)
+	s.NotEmpty(policySync.Policies)
+	s.Equal(policyversion.CurrentVersion().String(), policySync.Policies[0].GetPolicyVersion())
 }
 
 func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
@@ -123,10 +129,6 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 }
 
 func (s *testSuite) TestIssueLocalScannerCerts() {
-	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
-	if !features.LocalImageScanning.Enabled() {
-		s.T().Skip()
-	}
 	namespace, clusterID, requestID := "namespace", "clusterID", "requestID"
 	testCases := map[string]struct {
 		requestID  string

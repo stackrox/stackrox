@@ -77,6 +77,7 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 
 	regs := rs.getRegistries(namespace)
 	err = regs.UpdateImageIntegration(&storage.ImageIntegration{
+		Id:         registry,
 		Name:       registry,
 		Type:       "docker",
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
@@ -122,4 +123,11 @@ func (rs *Store) GetRegistryForImage(image *storage.ImageName) (registryTypes.Re
 	}
 
 	return nil, errors.Errorf("Unknown image registry: %q", reg)
+}
+
+// HasRegistryForImage returns true when the registry store has the registry
+// for the given image.
+func (rs *Store) HasRegistryForImage(image *storage.ImageName) bool {
+	reg, err := rs.GetRegistryForImage(image)
+	return reg != nil && err == nil
 }

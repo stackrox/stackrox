@@ -1,15 +1,6 @@
-import axios from './instance';
+import { SignatureIntegration } from 'types/signatureIntegration.proto';
 
-export type SignatureIntegration = {
-    id: string;
-    name: string;
-    cosign: {
-        publicKeys: {
-            name: string;
-            publicKeyPemEnc: string;
-        }[];
-    };
-};
+import axios from './instance';
 
 export function fetchSignatureIntegrations(): Promise<SignatureIntegration[]> {
     return axios

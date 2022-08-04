@@ -29,7 +29,7 @@ type flowDataStoreImpl struct {
 }
 
 func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-	flows, ts, err := fds.storage.GetAllFlows(since)
+	flows, ts, err := fds.storage.GetAllFlows(ctx, since)
 	if err != nil {
 		return nil, types.Timestamp{}, nil
 	}
@@ -42,7 +42,7 @@ func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *types.Time
 }
 
 func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-	flows, ts, err := fds.storage.GetMatchingFlows(pred, since)
+	flows, ts, err := fds.storage.GetMatchingFlows(ctx, pred, since)
 	if err != nil {
 		return nil, types.Timestamp{}, nil
 	}
@@ -52,6 +52,21 @@ func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*s
 		return nil, types.Timestamp{}, err
 	}
 	return flows, ts, nil
+}
+
+func (fds *flowDataStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID string, adjustForGraph bool) ([]*storage.NetworkFlow, error) {
+	flows, err := fds.storage.GetFlowsForDeployment(ctx, deploymentID)
+	if err != nil {
+		return nil, err
+	}
+
+	if adjustForGraph {
+		flows, err = fds.adjustFlowsForGraphConfig(ctx, flows)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return flows, nil
 }
 
 func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(ctx context.Context, flows []*storage.NetworkFlow) ([]*storage.NetworkFlow, error) {
@@ -93,7 +108,7 @@ func (fds *flowDataStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.
 		filtered = append(filtered, flow)
 	}
 
-	return fds.storage.UpsertFlows(filtered, lastUpdateTS)
+	return fds.storage.UpsertFlows(ctx, filtered, lastUpdateTS)
 }
 
 func (fds *flowDataStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
@@ -105,7 +120,7 @@ func (fds *flowDataStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id s
 		return sac.ErrResourceAccessDenied
 	}
 
-	return fds.storage.RemoveFlowsForDeployment(id)
+	return fds.storage.RemoveFlowsForDeployment(ctx, id)
 }
 
 func (fds *flowDataStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
@@ -114,5 +129,5 @@ func (fds *flowDataStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchF
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return fds.storage.RemoveMatchingFlows(keyMatchFn, valueMatchFn)
+	return fds.storage.RemoveMatchingFlows(ctx, keyMatchFn, valueMatchFn)
 }

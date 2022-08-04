@@ -4,33 +4,32 @@ package postgres
 
 import (
 	"context"
-	"reflect"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sync"
+	"gorm.io/gorm"
 )
 
 const (
-	baseTable  = "rolebindings"
-	countStmt  = "SELECT COUNT(*) FROM rolebindings"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM rolebindings WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM rolebindings WHERE Id = $1"
-	deleteStmt  = "DELETE FROM rolebindings WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM rolebindings"
-	getIDsStmt  = "SELECT Id FROM rolebindings"
-	getManyStmt = "SELECT serialized FROM rolebindings WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM rolebindings WHERE Id = ANY($1::text[])"
+	baseTable = "role_bindings"
 
 	batchAfter = 100
 
@@ -38,16 +37,15 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.K8SRoleBinding)(nil)), baseTable)
-	log    = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.RoleBindingsSchema
+	targetResource = resources.K8sRoleBinding
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -67,76 +65,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	mutex sync.Mutex
 }
 
-func createTableRolebindings(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists rolebindings (
-    Id varchar,
-    Name varchar,
-    Namespace varchar,
-    ClusterId varchar,
-    ClusterName varchar,
-    ClusterRole bool,
-    Labels jsonb,
-    Annotations jsonb,
-    CreatedAt timestamp,
-    RoleId varchar,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+// New returns a new Store instance using the provided sql instance.
+func New(db *pgxpool.Pool) Store {
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableRolebindingsSubjects(ctx, db)
 }
 
-func createTableRolebindingsSubjects(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists rolebindings_Subjects (
-    rolebindings_Id varchar,
-    idx integer,
-    Id varchar,
-    Kind integer,
-    Name varchar,
-    Namespace varchar,
-    ClusterId varchar,
-    ClusterName varchar,
-    PRIMARY KEY(rolebindings_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (rolebindings_Id) REFERENCES rolebindings(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists rolebindingsSubjects_idx on rolebindings_Subjects using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func insertIntoRolebindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRoleBinding) error {
+func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.K8SRoleBinding) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -153,57 +93,43 @@ func insertIntoRolebindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole
 		obj.GetClusterRole(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
-		pgutils.NilOrTime(obj.GetCreatedAt()),
 		obj.GetRoleId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO rolebindings (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, CreatedAt, RoleId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, CreatedAt = EXCLUDED.CreatedAt, RoleId = EXCLUDED.RoleId, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO role_bindings (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIdx, child := range obj.GetSubjects() {
-		if err := insertIntoRolebindingsSubjects(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoRoleBindingsSubjects(ctx, batch, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from rolebindings_Subjects where rolebindings_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetSubjects()))
-	if err != nil {
-		return err
-	}
+	query = "delete from role_bindings_subjects where role_bindings_Id = $1 AND idx >= $2"
+	batch.Queue(query, obj.GetId(), len(obj.GetSubjects()))
 	return nil
 }
 
-func insertIntoRolebindingsSubjects(ctx context.Context, tx pgx.Tx, obj *storage.Subject, rolebindings_Id string, idx int) error {
+func insertIntoRoleBindingsSubjects(ctx context.Context, batch *pgx.Batch, obj *storage.Subject, role_bindings_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		rolebindings_Id,
+		role_bindings_Id,
 		idx,
-		obj.GetId(),
 		obj.GetKind(),
 		obj.GetName(),
-		obj.GetNamespace(),
-		obj.GetClusterId(),
-		obj.GetClusterName(),
 	}
 
-	finalStr := "INSERT INTO rolebindings_Subjects (rolebindings_Id, idx, Id, Kind, Name, Namespace, ClusterId, ClusterName) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(rolebindings_Id, idx) DO UPDATE SET rolebindings_Id = EXCLUDED.rolebindings_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
+	finalStr := "INSERT INTO role_bindings_subjects (role_bindings_Id, idx, Kind, Name) VALUES($1, $2, $3, $4) ON CONFLICT(role_bindings_Id, idx) DO UPDATE SET role_bindings_Id = EXCLUDED.role_bindings_Id, idx = EXCLUDED.idx, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name"
+	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromRolebindings(ctx context.Context, tx pgx.Tx, objs ...*storage.K8SRoleBinding) error {
+func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx pgx.Tx, objs ...*storage.K8SRoleBinding) error {
 
 	inputRows := [][]interface{}{}
 
@@ -230,8 +156,6 @@ func (s *storeImpl) copyFromRolebindings(ctx context.Context, tx pgx.Tx, objs ..
 		"labels",
 
 		"annotations",
-
-		"createdat",
 
 		"roleid",
 
@@ -265,8 +189,6 @@ func (s *storeImpl) copyFromRolebindings(ctx context.Context, tx pgx.Tx, objs ..
 
 			obj.GetAnnotations(),
 
-			pgutils.NilOrTime(obj.GetCreatedAt()),
-
 			obj.GetRoleId(),
 
 			serialized,
@@ -280,14 +202,13 @@ func (s *storeImpl) copyFromRolebindings(ctx context.Context, tx pgx.Tx, objs ..
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"rolebindings"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"role_bindings"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -298,9 +219,10 @@ func (s *storeImpl) copyFromRolebindings(ctx context.Context, tx pgx.Tx, objs ..
 		}
 	}
 
-	for _, obj := range objs {
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromRolebindingsSubjects(ctx, tx, obj.GetId(), obj.GetSubjects()...); err != nil {
+		if err = s.copyFromRoleBindingsSubjects(ctx, tx, obj.GetId(), obj.GetSubjects()...); err != nil {
 			return err
 		}
 	}
@@ -308,7 +230,7 @@ func (s *storeImpl) copyFromRolebindings(ctx context.Context, tx pgx.Tx, objs ..
 	return err
 }
 
-func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx, rolebindings_Id string, objs ...*storage.Subject) error {
+func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx pgx.Tx, role_bindings_Id string, objs ...*storage.Subject) error {
 
 	inputRows := [][]interface{}{}
 
@@ -316,21 +238,13 @@ func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx,
 
 	copyCols := []string{
 
-		"rolebindings_id",
+		"role_bindings_id",
 
 		"idx",
-
-		"id",
 
 		"kind",
 
 		"name",
-
-		"namespace",
-
-		"clusterid",
-
-		"clustername",
 	}
 
 	for idx, obj := range objs {
@@ -339,21 +253,13 @@ func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx,
 
 		inputRows = append(inputRows, []interface{}{
 
-			rolebindings_Id,
+			role_bindings_Id,
 
 			idx,
-
-			obj.GetId(),
 
 			obj.GetKind(),
 
 			obj.GetName(),
-
-			obj.GetNamespace(),
-
-			obj.GetClusterId(),
-
-			obj.GetClusterName(),
 		})
 
 		// if we hit our batch size we need to push the data
@@ -361,7 +267,7 @@ func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx,
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"rolebindings_subjects"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"role_bindings_subjects"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -375,17 +281,11 @@ func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx,
 	return err
 }
 
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableRolebindings(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.K8SRoleBinding) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "K8SRoleBinding")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "K8SRoleBinding")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -393,7 +293,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.K8SRoleBindin
 		return err
 	}
 
-	if err := s.copyFromRolebindings(ctx, tx, objs...); err != nil {
+	if err := s.copyFromRoleBindings(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -406,22 +306,27 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.K8SRoleBindin
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.K8SRoleBinding) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "K8SRoleBinding")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "K8SRoleBinding")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
+		batch := &pgx.Batch{}
+		if err := insertIntoRoleBindings(ctx, batch, obj); err != nil {
 			return err
 		}
-
-		if err := insertIntoRolebindings(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		if err := batchResults.Close(); err != nil {
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
+		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
 	}
@@ -431,11 +336,43 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.K8SRoleBinding)
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.K8SRoleBinding) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "K8SRoleBinding")
 
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
+		ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.K8SRoleBinding) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "K8SRoleBinding")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		var deniedIds []string
+		for _, obj := range objs {
+			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
+				return err
+			} else if !ok {
+				deniedIds = append(deniedIds, obj.GetId())
+			}
+		}
+		if len(deniedIds) != 0 {
+			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying k8SRoleBindings with IDs [%s] was denied", strings.Join(deniedIds, ", "))
+		}
+	}
+
+	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+	// violations
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -448,36 +385,71 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.K8SRoleBindi
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "K8SRoleBinding")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
 		return 0, err
 	}
-	return count, nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "K8SRoleBinding")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return false, err
 	}
-	return exists, nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "K8SRoleBinding")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "K8SRoleBinding")
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return nil, false, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -488,45 +460,62 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.K8SRoleBinding
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "K8SRoleBinding")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "K8SRoleBinding")
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.K8SRoleBindingIDs")
+	var sacQueryFilter *v1.Query
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
 	}
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
+	}
+
 	return ids, nil
 }
 
@@ -534,12 +523,32 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.K8SRoleBinding, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "K8SRoleBinding")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "K8SRoleBinding")
-	defer release()
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		return nil, nil, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -548,13 +557,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.K8SRo
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.K8SRoleBinding)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.K8SRoleBinding{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
@@ -579,32 +583,62 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.K8SRo
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "K8SRoleBinding")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "K8SRoleBinding")
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
 		return err
 	}
-	return nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.K8SRoleBinding) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		return pgutils.ErrNilIfNoRows(err)
+		return err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
 		}
-		var msg storage.K8SRoleBinding
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
+		for _, data := range rows {
+			var msg storage.K8SRoleBinding
+			if err := proto.Unmarshal(data, &msg); err != nil {
+				return err
+			}
+			if err := fn(&msg); err != nil {
+				return err
+			}
 		}
-		if err := fn(&msg); err != nil {
-			return err
+		if len(rows) != cursorBatchSize {
+			break
 		}
 	}
 	return nil
@@ -612,19 +646,25 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.K8SRoleBindin
 
 //// Used for testing
 
-func dropTableRolebindings(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS rolebindings CASCADE")
-	dropTableRolebindingsSubjects(ctx, db)
+func dropTableRoleBindings(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS role_bindings CASCADE")
+	dropTableRoleBindingsSubjects(ctx, db)
 
 }
 
-func dropTableRolebindingsSubjects(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS rolebindings_Subjects CASCADE")
+func dropTableRoleBindingsSubjects(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS role_bindings_subjects CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableRolebindings(ctx, db)
+	dropTableRoleBindings(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

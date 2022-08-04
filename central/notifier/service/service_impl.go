@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -74,29 +75,27 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetNotifier retrieves all registries that matches the request filters
 func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID) (*storage.Notifier, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "notifier id must be provided")
+		return nil, errors.Wrap(errox.InvalidArgs, "notifier id must be provided")
 	}
-	notifier, exists, err := s.storage.GetNotifier(ctx, request.GetId())
+	notifier, exists, err := s.storage.GetScrubbedNotifier(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "notifier %v not found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "notifier %v not found", request.GetId())
 	}
-	secrets.ScrubSecretsFromStructWithReplacement(notifier, secrets.ScrubReplacementStr)
+
 	return notifier, nil
 }
 
 // GetNotifiers retrieves all notifiers that match the request filters
-func (s *serviceImpl) GetNotifiers(ctx context.Context, request *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error) {
-	notifiers, err := s.storage.GetNotifiers(ctx, request)
+func (s *serviceImpl) GetNotifiers(ctx context.Context, _ *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error) {
+	scrubbedNotifiers, err := s.storage.GetScrubbedNotifiers(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for _, n := range notifiers {
-		secrets.ScrubSecretsFromStructWithReplacement(n, secrets.ScrubReplacementStr)
-	}
-	return &v1.GetNotifiersResponse{Notifiers: notifiers}, nil
+
+	return &v1.GetNotifiersResponse{Notifiers: scrubbedNotifiers}, nil
 }
 
 func validateNotifier(notifier *storage.Notifier) error {
@@ -127,14 +126,14 @@ func (s *serviceImpl) PutNotifier(ctx context.Context, notifier *storage.Notifie
 // UpdateNotifier updates a notifier configuration
 func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNotifierRequest) (*v1.Empty, error) {
 	if err := validateNotifier(request.GetNotifier()); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if err := s.reconcileUpdateNotifierRequest(ctx, request); err != nil {
 		return nil, err
 	}
 	notifierCreator, ok := notifiers.Registry[request.GetNotifier().GetType()]
 	if !ok {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "notifier type %v is not a valid notifier type", request.GetNotifier().GetType())
+		return nil, errors.Wrapf(errox.InvalidArgs, "notifier type %v is not a valid notifier type", request.GetNotifier().GetType())
 	}
 	upgradeNotifierConfig(request.GetNotifier())
 	notifier, err := notifierCreator(request.GetNotifier())
@@ -151,15 +150,15 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 // PostNotifier inserts a new registry into the system if it doesn't already exist
 func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifier) (*storage.Notifier, error) {
 	if err := validateNotifier(request); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if request.GetId() != "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "id field should be empty when posting a new notifier")
+		return nil, errors.Wrap(errox.InvalidArgs, "id field should be empty when posting a new notifier")
 	}
 	upgradeNotifierConfig(request)
 	notifier, err := notifiers.CreateNotifier(request)
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	id, err := s.storage.AddNotifier(ctx, request)
 	if err != nil {
@@ -182,14 +181,14 @@ func (s *serviceImpl) TestNotifier(ctx context.Context, notifier *storage.Notifi
 // TestUpdatedNotifier tests to see if the config is setup properly
 func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.UpdateNotifierRequest) (*v1.Empty, error) {
 	if err := validateNotifier(request.GetNotifier()); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if err := s.reconcileUpdateNotifierRequest(ctx, request); err != nil {
 		return nil, err
 	}
 	notifier, err := notifiers.CreateNotifier(request.GetNotifier())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	defer func() {
 		if err := notifier.Close(ctx); err != nil {
@@ -198,7 +197,7 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 	}()
 
 	if err := notifier.Test(ctx); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	return &v1.Empty{}, nil
 }
@@ -206,7 +205,7 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 // DeleteNotifier deletes a notifier from the system
 func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNotifierRequest) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "notifier id must be provided")
+		return nil, errors.Wrap(errox.InvalidArgs, "notifier id must be provided")
 	}
 
 	n, err := s.GetNotifier(ctx, &v1.ResourceByID{Id: request.GetId()})
@@ -256,20 +255,20 @@ func (s *serviceImpl) reconcileUpdateNotifierRequest(ctx context.Context, update
 		return nil
 	}
 	if updateRequest.GetNotifier() == nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "request is missing notifier config")
+		return errors.Wrap(errox.InvalidArgs, "request is missing notifier config")
 	}
 	if updateRequest.GetNotifier().GetId() == "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "id required for stored credential reconciliation")
+		return errors.Wrap(errox.InvalidArgs, "id required for stored credential reconciliation")
 	}
 	existingNotifierConfig, exists, err := s.storage.GetNotifier(ctx, updateRequest.GetNotifier().GetId())
 	if err != nil {
 		return err
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "notifier integration %s not found", updateRequest.GetNotifier().GetId())
+		return errors.Wrapf(errox.NotFound, "notifier integration %s not found", updateRequest.GetNotifier().GetId())
 	}
 	if err := reconcileNotifierConfigWithExisting(updateRequest.GetNotifier(), existingNotifierConfig); err != nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	return nil
 }

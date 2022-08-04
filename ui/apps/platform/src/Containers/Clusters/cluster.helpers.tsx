@@ -61,7 +61,7 @@ export const clusterTablePollingInterval = 5000; // milliseconds
 export const clusterDetailPollingInterval = 3000; // milliseconds
 
 const defaultNewClusterType = 'KUBERNETES_CLUSTER';
-const defaultCollectionMethod = 'KERNEL_MODULE';
+const defaultCollectionMethod = 'EBPF';
 
 export const newClusterDefault = {
     id: undefined,
@@ -179,6 +179,13 @@ export const delayedCollectorStatusStyle = {
 
 // Special case for Admission Control when Sensor is UNHEALTHY or DELAYED.
 export const delayedAdmissionControlStatusStyle = {
+    Icon: InfoCircleIcon,
+    bgColor: 'bg-base-200',
+    fgColor: 'text-base-700',
+};
+
+// Special case for Scanner when Sensor is UNHEALTHY or DELAYED.
+export const delayedScannerStatusStyle = {
     Icon: InfoCircleIcon,
     bgColor: 'bg-base-200',
     fgColor: 'text-base-700',
@@ -342,6 +349,19 @@ const resolveThresholds = (expiryStatus: CertExpiryStatus) => {
     return certDurationDays <= shortLivedCertMaxDays
         ? shortLivedCertThresholds
         : longLivedCertThresholds;
+};
+
+/*
+ * Adapt health status categories to certificate expiration.
+ */
+export const getClusterDeletionStatus = (daysUntilDeletion: number) => {
+    if (daysUntilDeletion < 7) {
+        return 'UNHEALTHY';
+    }
+    if (daysUntilDeletion < 30) {
+        return 'DEGRADED';
+    }
+    return 'UNINITIALIZED';
 };
 
 /*

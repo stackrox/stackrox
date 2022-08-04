@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,22 +10,28 @@ import (
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
+	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
+	converterV2 "github.com/stackrox/rox/central/cve/converter/v2"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 type istioCVEManager struct {
 	nvdCVEs      map[string]*schema.NVDCVEFeedJSON10DefCVEItem
 	embeddedCVEs []*storage.EmbeddedVulnerability
 
-	clusterDataStore    clusterDataStore.DataStore
-	cveDataStore        cveDataStore.DataStore
-	clusterCVEDataStore clusterCVEEdgeDataStore.DataStore
-	cveMatcher          *cveMatcher.CVEMatcher
+	clusterDataStore        clusterDataStore.DataStore
+	clusterCVEDataStore     clusterCVEDataStore.DataStore
+	clusterCVEEdgeDataStore clusterCVEEdgeDataStore.DataStore
+	legacyCVEDataStore      cveDataStore.DataStore
+	cveMatcher              *cveMatcher.CVEMatcher
 
 	mutex sync.Mutex
 }
@@ -61,20 +68,32 @@ func (m *istioCVEManager) setCVEs(cves []*storage.EmbeddedVulnerability, nvdCVEs
 }
 
 func (m *istioCVEManager) updateCVEs(newCVEs []*schema.NVDCVEFeedJSON10DefCVEItem) error {
-	cves, err := converter.NvdCVEsToEmbeddedCVEs(newCVEs, converter.Istio)
+	cves, err := utils.NvdCVEsToEmbeddedCVEs(newCVEs, utils.Istio)
 	if err != nil {
 		return err
 	}
 
 	m.setCVEs([]*storage.EmbeddedVulnerability{}, newCVEs)
+	if features.PostgresDatastore.Enabled() {
+		return m.updateCVEsInPostgres(cves)
+	}
 	return m.updateCVEsInDB(cves)
 }
 
-func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnerability) error {
-	cves := converter.EmbeddedCVEsToProtoCVEs("", embeddedCVEs...)
-	newCVEs := make([]converter.ClusterCVEParts, 0, len(cves))
+func (m *istioCVEManager) updateCVEsInPostgres(embeddedCVEs []*storage.EmbeddedVulnerability) error {
+	cves := make([]*storage.ClusterCVE, 0, len(embeddedCVEs))
+	for _, from := range embeddedCVEs {
+		cves = append(cves, utils.EmbeddedVulnerabilityToClusterCVE(storage.CVE_ISTIO_CVE, from))
+	}
+
+	newCVEs := make([]converterV2.ClusterCVEParts, 0, len(cves))
 	for _, cve := range cves {
-		clusters, err := m.cveMatcher.GetAffectedClusters(cveElevatedCtx, m.getNVDCVE(cve.GetId()))
+		nvdCVE := m.getNVDCVE(cve.GetCveBaseInfo().GetCve())
+		if m.getNVDCVE(cve.GetCveBaseInfo().GetCve()) == nil {
+			continue
+		}
+
+		clusters, err := m.cveMatcher.GetAffectedClusters(allAccessCtx, nvdCVE)
 		if err != nil {
 			return err
 		}
@@ -83,24 +102,50 @@ func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnera
 			continue
 		}
 
-		fixVersions := strings.Join(converter.GetFixedVersions(m.getNVDCVE(cve.GetId())), ",")
+		fixVersions := strings.Join(utils.GetFixedVersions(nvdCVE), ",")
+		newCVEs = append(newCVEs, converterV2.NewClusterCVEParts(cve, clusters, fixVersions))
+	}
+
+	return m.clusterCVEDataStore.UpsertClusterCVEsInternal(allAccessCtx, storage.CVE_ISTIO_CVE, newCVEs...)
+	// Reconciliation is performed in postgres store.
+}
+
+func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnerability) error {
+	cves := utils.EmbeddedCVEsToProtoCVEs("", embeddedCVEs...)
+	newCVEs := make([]converter.ClusterCVEParts, 0, len(cves))
+	for _, cve := range cves {
+		nvdCVE := m.getNVDCVE(cve.GetId())
+		if nvdCVE == nil {
+			continue
+		}
+
+		clusters, err := m.cveMatcher.GetAffectedClusters(allAccessCtx, nvdCVE)
+		if err != nil {
+			return err
+		}
+
+		if len(clusters) == 0 {
+			continue
+		}
+
+		fixVersions := strings.Join(utils.GetFixedVersions(nvdCVE), ",")
 		newCVEs = append(newCVEs, converter.NewClusterCVEParts(cve, clusters, fixVersions))
 	}
 
-	if err := m.clusterCVEDataStore.Upsert(cveElevatedCtx, newCVEs...); err != nil {
+	if err := m.clusterCVEEdgeDataStore.Upsert(allAccessCtx, newCVEs...); err != nil {
 		return err
 	}
-	return reconcileCVEsInDB(m.cveDataStore, m.clusterCVEDataStore, storage.CVE_ISTIO_CVE, newCVEs)
+	return reconcileCVEsInDB(m.legacyCVEDataStore, m.clusterCVEEdgeDataStore, storage.CVE_ISTIO_CVE, newCVEs)
 }
 
 // reconcileOnlineModeCVEs fetches new CVEs from definitions.stackrox.io and reconciles them
 func (m *istioCVEManager) reconcileOnlineModeCVEs(forceUpdate bool) error {
-	paths, err := getPaths(converter.Istio)
+	paths, err := getPaths(utils.Istio)
 	if err != nil {
 		return err
 	}
 
-	urls, err := getUrls(converter.Istio)
+	urls, err := getUrls(utils.Istio)
 	if err != nil {
 		return err
 	}
@@ -110,12 +155,12 @@ func (m *istioCVEManager) reconcileOnlineModeCVEs(forceUpdate bool) error {
 		return nil
 	}
 
-	url, err := maybeAddLicenseIDAsQueryParam(urls.cveChecksumURL)
+	endpoint, err := urlfmt.FullyQualifiedURL(urls.cveURL, url.Values{})
 	if err != nil {
 		return err
 	}
 
-	remoteCVEChecksumBytes, err := httputil.HTTPGet(url)
+	remoteCVEChecksumBytes, err := httputil.HTTPGet(endpoint)
 	if err != nil {
 		return err
 	}
@@ -127,12 +172,12 @@ func (m *istioCVEManager) reconcileOnlineModeCVEs(forceUpdate bool) error {
 		return nil
 	}
 
-	url, err = maybeAddLicenseIDAsQueryParam(urls.cveURL)
+	endpoint, err = urlfmt.FullyQualifiedURL(urls.cveURL, url.Values{})
 	if err != nil {
 		return err
 	}
 
-	data, err := httputil.HTTPGet(url)
+	data, err := httputil.HTTPGet(endpoint)
 	if err != nil {
 		return err
 	}
@@ -158,7 +203,7 @@ func (m *istioCVEManager) reconcileOnlineModeCVEs(forceUpdate bool) error {
 
 // reconcileOfflineModeCVEs reads the scanner bundle zip and updates the CVEs
 func (m *istioCVEManager) reconcileOfflineModeCVEs(zipPath string, forceUpdate bool) error {
-	paths, err := getPaths(converter.Istio)
+	paths, err := getPaths(utils.Istio)
 	if err != nil {
 		return err
 	}

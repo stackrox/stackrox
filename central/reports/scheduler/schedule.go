@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -22,24 +21,21 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"gopkg.in/robfig/cron.v2"
 )
 
 const (
 	numDeploymentsLimit = 50
-)
-
-var (
-	log = logging.LoggerForModule()
 
 	reportDataQuery = `query getVulnReportData($scopequery: String, 
 							$cvequery: String, $pagination: Pagination) {
@@ -53,16 +49,16 @@ var (
 									name {
 										full_name:fullName
 									}
-									components {
+									imageComponents {
 										name
-										vulns(query: $cvequery) {
+										imageVulnerabilities(query: $cvequery) {
 											...cveFields
 										}
 									}
 								}
 							}
 						}
-	fragment cveFields on EmbeddedVulnerability {
+	fragment cveFields on ImageVulnerability {
         cve
 	    severity
         fixedByVersion
@@ -72,12 +68,16 @@ var (
     }`
 
 	vulnReportEmailTemplate = `
-	Red Hat Advanced Cluster Security for Kubernetes has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
+	{{.BrandedProductName}} has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
 
 	To address these findings, please review the impacted software packages in the container images running within deployments you are responsible for and update them to a version containing the fix, if one is available.`
 
 	noVulnsFoundEmailTemplate = `
-	Red Hat Advanced Cluster Security for Kubernetes has found zero vulnerabilities associated with the running container images owned by your organization.`
+	{{.BrandedProductName}} has found zero vulnerabilities associated with the running container images owned by your organization.`
+)
+
+var (
+	log = logging.LoggerForModule()
 
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
@@ -119,8 +119,9 @@ type ReportRequest struct {
 }
 
 type reportEmailFormat struct {
-	WhichVulns string
-	DateStr    string
+	BrandedProductName string
+	WhichVulns         string
+	DateStr            string
 }
 
 // New instantiates a new cron scheduler and supports adding and removing report configurations
@@ -285,12 +286,16 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	}
 	// If it is an empty report, do not send an attachment in the final notification email and the email body
 	// will indicate that no vulns were found
-	messageText := noVulnsFoundEmailTemplate
-	if zippedCSVData != nil {
-		messageText, err = formatMessage(rc)
-		if err != nil {
-			return errors.Wrap(err, "error formatting the report email text")
-		}
+
+	templateStr := vulnReportEmailTemplate
+	if zippedCSVData == nil {
+		// If it is an empty report, the email body will indicate that no vulns were found
+		templateStr = noVulnsFoundEmailTemplate
+	}
+
+	messageText, err := formatMessage(rc, templateStr, time.Now())
+	if err != nil {
+		return errors.Wrap(err, "error formatting the report email text")
 	}
 
 	if err = retry.WithRetry(func() error {
@@ -310,25 +315,21 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	return nil
 }
 
-func formatMessage(rc *storage.ReportConfiguration) (string, error) {
+func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date time.Time) (string, error) {
 	data := &reportEmailFormat{
-		WhichVulns: "for all vulnerabilities",
-		DateStr:    time.Now().Format("January 02, 2006"),
+		BrandedProductName: branding.GetProductName(),
+		WhichVulns:         "for all vulnerabilities",
+		DateStr:            date.Format("January 02, 2006"),
 	}
 	if rc.GetVulnReportFilters().SinceLastReport && rc.GetLastSuccessfulRunTime() != nil {
 		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
 			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
 	}
-	tmpl, err := template.New("emailBody").Parse(vulnReportEmailTemplate)
+	tmpl, err := template.New("emailBody").Parse(emailTemplate)
 	if err != nil {
 		return "", err
 	}
-	var tpl bytes.Buffer
-	err = tmpl.Execute(&tpl, data)
-	if err != nil {
-		return "", err
-	}
-	return tpl.String(), nil
+	return templates.ExecuteToString(tmpl, data)
 }
 
 func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuery) ([]common.Result, error) {
@@ -374,9 +375,6 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 }
 
 func (s *scheduler) Start() {
-	if !features.VulnReporting.Enabled() {
-		return
-	}
 	go s.runReports()
 }
 

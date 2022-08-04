@@ -17,6 +17,8 @@ func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
 		MainRegistry:           "test.registry",
 		MainImageName:          "main",
 		MainImageTag:           "1.2.3",
+		CentralDBImageTag:      "1.2.4",
+		CentralDBImageName:     "central-db",
 		CollectorRegistry:      "test.registry",
 		CollectorImageName:     "collector",
 		CollectorImageTag:      "3.2.1-latest",
@@ -28,7 +30,8 @@ func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
 		ChartRepo: defaults.ChartRepo{
-			URL: "some.url/path/to/chart",
+			URL:     "some.url/path/to/chart",
+			IconURL: "some.url/path/to/icon.png",
 		},
 		ImagePullSecrets: defaults.ImagePullSecrets{
 			AllowNone: false,

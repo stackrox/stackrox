@@ -8,7 +8,7 @@ import "api/v1/pagination.proto";
 
 package v1;
 
-// Next available tag: 37
+// Next available tag: 47
 enum SearchCategory {
     SEARCH_UNSET              = 0;
     ALERTS                    = 1;
@@ -26,15 +26,17 @@ enum SearchCategory {
     CLUSTERS                  = 8;
     NAMESPACES                = 9;
     NODES                     = 10;
+    NODE_COMPONENTS           = 38;
     NODE_VULN_EDGE            = 28;
     NODE_COMPONENT_EDGE       = 29;
+    NODE_COMPONENT_CVE_EDGE   = 33;
     COMPLIANCE_STANDARD       = 11;
     COMPLIANCE_CONTROL_GROUP  = 12;
     COMPLIANCE_CONTROL        = 13;
     SERVICE_ACCOUNTS          = 14;
     ROLES                     = 15;
     ROLEBINDINGS              = 16;
-    REPORT_CONFIGURATIONS     = 33;
+    REPORT_CONFIGURATIONS     = 37;
     PROCESS_BASELINES         = 17;
     SUBJECTS                  = 18;
     RISKS                     = 19;
@@ -46,6 +48,14 @@ enum SearchCategory {
     CLUSTER_VULN_EDGE         = 24;
     NETWORK_ENTITY            = 26;
     VULN_REQUEST              = 32;
+    NETWORK_BASELINE          = 39;
+    NETWORK_POLICIES          = 40;
+    PROCESS_BASELINE_RESULTS  = 41;
+    COMPLIANCE_METADATA       = 42;
+    COMPLIANCE_RESULTS        = 43;
+    COMPLIANCE_DOMAIN         = 44;
+    CLUSTER_HEALTH            = 45;
+    POLICY_CATEGORIES         = 46;
 }
 
 enum SearchDataType {

@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-table-bindings-wrapper --type=storage.ProcessIndicator --table=process_indicators --search-category PROCESS_INDICATORS --options-path pkg/search/options/processindicators
+//go:generate pg-table-bindings-wrapper --type=storage.ProcessIndicator --search-category PROCESS_INDICATORS --migration-seq 42 --migrate-from rocksdb

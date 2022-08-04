@@ -7,6 +7,9 @@
 # dropped (e.g. 3.0.61.1 -> 3.61.1) and development version ".x" is changed to ".0" (e.g. 3.0.61.x-123 -> 3.0.61.0-123).
 VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g' | sed -E 's@^3.0.([[:digit:]]+\.[[:digit:]]+)(-)?@3.\1\2@g')
 
+# Set to empty string to echo some command lines which are hidden by default.
+SILENT ?= @
+
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "preview,fast,stable")
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
@@ -28,9 +31,12 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+# Set to "--skip-build" to avoid the "docker build" part in index-build target.
+SKIP_INDEX_DOCKER_BUILD ?=
+
 # IMAGE_REPO is the repository (server and namespace) into which the operator images will get pushed.
-IMAGE_REPO ?= docker.io/stackrox
-# IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
+IMAGE_REPO ?= $(shell $(MAKE) --quiet --no-print-directory -C .. default-image-registry)
+# IMAGE_TAG_BASE defines the quay.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
 IMAGE_TAG_BASE ?= $(IMAGE_REPO)/stackrox-operator
 
@@ -58,11 +64,15 @@ SCORECARD_STORAGE_IMAGE_BASE ?= quay.io/rhacs-eng/mirror-busybox
 SCORECARD_STORAGE_IMAGE_TAG ?= @sha256:fe9664ceda9c13b7fd65f5bc3c0bca5060de3a66fedc39d33926b573599da3b7
 SCORECARD_STORAGE_IMAGE ?= $(SCORECARD_STORAGE_IMAGE_BASE):$(SCORECARD_STORAGE_IMAGE_TAG)
 
-# Increase the scorecard wait time from (default) 30s to 40s, since we experienced some time out issues in the past.
-SCORECARD_WAIT_TIME_DURATION ?= 40s
+# Increase the scorecard wait time from (default) 30s to 5m, since we experienced some time out issues in the past.
+SCORECARD_WAIT_TIME_DURATION ?= 5m
 
 # SCORECARD_ARGS should be passed to any invocation of "$(OPERATOR_SDK) scorecard".
-SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SCORECARD_WAIT_TIME_DURATION)"
+# TODO(ROX-11889): The `--namespace default` is a workaround for failures such as the following when running in a pod:
+# TODO(ROX-11889):   Error: error running tests error creating ConfigMap namespaces "ci-op-05qx07r3" not found
+# TODO(ROX-11889): These seem to happen despite unsetting the $NAMESPACE environment variable.
+# TODO(ROX-11889): Figure out where scorecard gets the namespace name from, elliminate this source, and remove the flag here.
+SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SCORECARD_WAIT_TIME_DURATION)" --verbose --namespace default
 
 # TEST_NAMESPACE is where the operator is installed for e2e tests by CI.
 TEST_NAMESPACE ?= stackrox-operator
@@ -122,6 +132,9 @@ tag: ## Print the correct operator version (== image tag).
 image-flavor: ## Print the current image flavor.
 	@echo $(ROX_IMAGE_FLAVOR)
 
+image-tag-base: ## Print current image tag base.
+	@echo $(IMAGE_TAG_BASE)
+
 # `everything` and `all` are separate targets.
 # `everything` pushes images. `all` is the default target that's executed when you simply run `make` without arguments.
 # If `all` would push images, parameter-less `make` execution would have side-effect of pushing images to registry
@@ -154,8 +167,9 @@ operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(OPERATOR_SDK) $${OPERATOR_SDK_URL}
 
-KUTTL_VERSION = 0.11.0
-KUTTL_UPSTREAM = kudobuilder
+# TODO(porridge): change back to kudobuilder release once https://github.com/kudobuilder/kuttl/issues/371 is fixed
+KUTTL_VERSION = 0.11.0-verbose-resource
+KUTTL_UPSTREAM = porridge
 KUTTL ?= $(PROJECT_DIR)/bin/kubectl-kuttl-$(KUTTL_VERSION)
 .PHONY: kuttl
 kuttl: ## Download kuttl.
@@ -163,14 +177,6 @@ kuttl: ## Download kuttl.
 	KUTTL_URL=https://github.com/$(KUTTL_UPSTREAM)/kuttl/releases/download/v$(KUTTL_VERSION)/kubectl-kuttl_$(KUTTL_VERSION)_$(OS)_$${ARCH} ;\
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(KUTTL) $${KUTTL_URL}
-
-OPM_VERSION = 1.17.5
-OPM = $(PROJECT_DIR)/bin/opm-$(OPM_VERSION)
-.PHONY: opm
-opm: ## Download opm.
-	@OPM_URL=https://github.com/operator-framework/operator-registry/releases/download/v$(OPM_VERSION)/$(OS)-$$(go env GOARCH)-opm ;\
-	$(GET_GITHUB_RELEASE_FN); \
-	get_github_release $(OPM) $${OPM_URL}
 
 ENVTEST = $(PROJECT_DIR)/bin/setup-envtest
 envtest: ## Download envtest-setup locally if necessary.
@@ -188,7 +194,7 @@ GET_GITHUB_RELEASE_FN = get_github_release() { \
 
 # go-get-tool will 'go get -d' any package $2 and install it to $(PROJECT_DIR)/bin unless $1 already exists.
 define go-get-tool
-@[ -f $(1) ] || { \
+$(SILENT)[ -f $(1) ] || { \
 set -e ;\
 TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
@@ -232,27 +238,27 @@ validate-crs:
 
 test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
+	KUTTL=$(KUTTL) ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
 
 test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	SKIP_MANAGER_START=1 $(KUTTL) test
+	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} SKIP_MANAGER_START=1 $(KUTTL) test
 
 test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	SKIP_MANAGER_START=1 \
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
-	KUTTL=$(KUTTL) $(KUTTL) test --config kuttl-test.yaml tests/upgrade
+	KUTTL=$(KUTTL) REAL_KUBECONFIG=$${KUBECONFIG} $(KUTTL) test --config kuttl-test.yaml tests/upgrade
 
-stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on DockerHub. Used by Helm chart.
+stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
 # Create stackrox namespace if not exists.
 	echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "stackrox" } }' | kubectl apply -f -
 # Create stackrox image pull secret in stackrox namespace.
-	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox docker.io | kubectl -n stackrox apply -f -
+	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox quay.io | kubectl -n stackrox apply -f -
 
 .PHONY: check-ci-setup
 check-ci-setup: ## Make sure this target is not started in CI environment.
-	@if [ -n "$$CI" ]; then echo "Setup error: operator should be installed and started by OLM." >&2; exit 1; fi
+	$(SILENT)if [ -n "$$CI" ]; then echo "Setup error: operator should be installed and started by OLM." >&2; exit 1; fi
 
 .PHONY: run
 run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
@@ -267,8 +273,9 @@ ensure-rox-main-image-exists:
 build: generate fmt vet ## Build operator local binary.
 	../scripts/go-build-file.sh ./main.go bin/manager
 
-docker-build: test ## Build docker image with the operator.
-	@( \
+.PHONY: smuggled-status-sh
+smuggled-status-sh:
+	$(SILENT)( \
 		`# status.sh file is used by scripts/go-build.sh which we try to run in the docker container.` \
 		`# status.sh needs git repo, make and Makefile and who knows what else but its actual output is simple.` \
 		`# Here we grab the output and create a new build/status.sh from it. That file will be copied into the` \
@@ -283,14 +290,29 @@ docker-build: test ## Build docker image with the operator.
 		`# Verify that the resulting status.sh is actually runnable` \
 		"$${smuggled_status_sh}" ;\
 	)
+
+.PHONY: check-expected-go-version
+check-expected-go-version:
+	$(SILENT)expected=$$(head -n 1 ../EXPECTED_GO_VERSION | sed 's/go//'); \
+	actual=$$(grep '^FROM golang' Dockerfile | awk '{print $$2}' | cut -d: -f2); \
+	[ "$${expected}" = "$${actual}" ] || { echo "../EXPECTED_GO_VERSION $${expected}, Dockerfile $${actual}; please update to match"; exit 1; }
+
+docker-build: check-expected-go-version test smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
 		-t ${IMG} \
-		--ssh default=${SSH_AUTH_SOCK} \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		-f Dockerfile \
 		..
 
 ##@ Deployment
+
+.PHONY: olm-install
+olm-install: operator-sdk ## Install OLM on Kubernetes cluster
+	$(OPERATOR_SDK) olm install
+
+.PHONY: olm-uninstall
+olm-uninstall: operator-sdk ## Uninstall OLM previously installed on Kubernetes cluster
+	$(OPERATOR_SDK) olm uninstall
 
 .PHONY: install
 install: check-ci-setup manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
@@ -317,19 +339,28 @@ undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s clust
 deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION)
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION)
+
+.PHONY: deploy-dirty-tag-via-olm
+deploy-dirty-tag-via-olm: ## Deploy operator dirty tagged image to the cluster using OLM.
+# This target ignores filter for dirty tagged images.
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION)
 
 .PHONY: deploy-previous-via-olm
 deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLM.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	@replaced_version_no_v=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.v(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
+	$(SILENT)replaced_version_no_v=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.v(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
 	set -x ;\
-	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION) $${replaced_version_no_v}
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION) $${replaced_version_no_v}
 
 .PHONY: upgrade-via-olm
 upgrade-via-olm: kuttl
 	KUTTL=$(KUTTL) ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(VERSION)
+
+.PHONY: upgrade-dirty-tag-via-olm
+upgrade-dirty-tag-via-olm: kuttl
+	KUTTL=$(KUTTL) ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(VERSION)
 
 ##@ Bundle and Index build
 
@@ -343,10 +374,10 @@ ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
 # Version is hardcoded to 0.0.1 here because otherwise git-versioned files are changed which we want to avoid.
 # The correct version is updated later.
-# Likewise, we hardcode the image reference to docker.io/stackrox/stackrox-operator. If this is overridden via
+# Likewise, we hardcode the image reference to quay.io/stackrox-io/stackrox-operator. If this is overridden via
 # the IMG_REPO environment variable, the final reference will be injected in the bundle-post-process step.
 	$(OPERATOR_SDK) generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=docker.io/stackrox/stackrox-operator:0.0.1
+	cd config/manager && $(KUSTOMIZE) edit set image controller=quay.io/stackrox-io/stackrox-operator:0.0.1
 	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image scorecard-test=quay.io/operator-framework/scorecard-test:v$(OPERATOR_SDK_VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version 0.0.1 $(BUNDLE_METADATA_OPTS)
 # Delete lines that copy the original bundle files in bundle.Dockerfile (we can't just use `rm` in scratch image).
@@ -401,25 +432,22 @@ bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in t
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
-index-build: opm bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundle. Bundle image must be pushed beforehand.
-# If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise
-# `opm index add` fails with an error like this:
-#  Invalid bundle rhacs-operator.v3.63.0-73-g7aab09c265-dirty, replaces nonexistent bundle rhacs-operator.v3.62.0
-# We assume that the index for the replaced bundle is already in the registry with the same tag and so we tell opm to
-# pull previous index image and use it as a base when building the current index image.
-# The sed expression below should extract everything after the first dot in `replaces:` value.
-# E.g. `  replaces: rhacs-operator.v3.62.0` -> `v3.62.0`
-	@set -euo pipefail ;\
+index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
+# If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise,
+# validation of the index fails because more than one version is identified as the head of the channel. An example of an
+# error: `multiple channel heads found in graph: rhacs-operator.v3.67.0, rhacs-operator.v3.69.0`
+# We assume that the index for the replaced bundle is already in the registry with the same tag and so we use previous
+# index image as a base when building the current index image. The sed expression below should extract everything after
+# the first dot in `replaces:` value. E.g. `  replaces: rhacs-operator.v3.62.0` -> `v3.62.0`
+	$(SILENT)set -euo pipefail ;\
 	replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
-	if [[ -n "$$replaced_version" ]]; then \
-		previous_index="$(INDEX_IMG_BASE):$${replaced_version}" ;\
-		previous_index_arg="--from-index $${previous_index}" ;\
-		echo "Detected that this bundle updates (replaces) version $$replaced_version. Will use index image $${previous_index} as the base for the current one." ;\
-	else \
-		previous_index_arg="" ;\
-	fi ;\
-	set -x ;\
-	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain $(OPM) index add --bundles $(BUNDLE_IMG) --tag $(INDEX_IMG) $${previous_index_arg} --build-tool docker
+	./hack/build-index-image.sh \
+		--base-index-tag "$(INDEX_IMG_BASE):$${replaced_version}" \
+		--index-tag "$(INDEX_IMG)" \
+		--bundle-tag "$(BUNDLE_IMG)" \
+		--replaced-version "$${replaced_version}" \
+		--clean-output-dir \
+		$(SKIP_INDEX_DOCKER_BUILD)
 
 ##@ Push images
 

@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/image/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -51,6 +50,7 @@ func (resolver *imageScanResolver) ComponentCount(ctx context.Context, args RawQ
 
 // EmbeddedImageScanComponentResolver resolves data about an image scan component.
 type EmbeddedImageScanComponentResolver struct {
+	os          string
 	root        *Resolver
 	lastScanned *protoTypes.Timestamp
 	data        *storage.EmbeddedImageScanComponent
@@ -74,7 +74,7 @@ func (eicr *EmbeddedImageScanComponentResolver) License(ctx context.Context) (*l
 
 // ID returns a unique identifier for the component.
 func (eicr *EmbeddedImageScanComponentResolver) ID(ctx context.Context) graphql.ID {
-	return graphql.ID(scancomponent.ComponentID(eicr.data.GetName(), eicr.data.GetVersion()))
+	return graphql.ID(scancomponent.ComponentID(eicr.data.GetName(), eicr.data.GetVersion(), eicr.os))
 }
 
 // Name returns the name of the component.
@@ -113,13 +113,13 @@ func (eicr *EmbeddedImageScanComponentResolver) RiskScore(ctx context.Context) f
 }
 
 // LayerIndex is the index in the parent image.
-func (eicr *EmbeddedImageScanComponentResolver) LayerIndex() *int32 {
+func (eicr *EmbeddedImageScanComponentResolver) LayerIndex() (*int32, error) {
 	w, ok := eicr.data.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
 	if !ok {
-		return nil
+		return nil, nil
 	}
 	v := w.LayerIndex
-	return &v
+	return &v, nil
 }
 
 // LastScanned is the last time the component was scanned in an image.
@@ -258,14 +258,14 @@ func (eicr *EmbeddedImageScanComponentResolver) DeploymentCount(ctx context.Cont
 // ActiveState shows the activeness of a component in a deployment context.
 func (eicr *EmbeddedImageScanComponentResolver) ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error) {
 	deploymentID := deploymentctx.FromContext(ctx)
-	if !features.ActiveVulnManagement.Enabled() || deploymentID == "" {
+	if deploymentID == "" {
 		return nil, nil
 	}
 	if eicr.data.GetSource() != storage.SourceType_OS {
 		return &activeStateResolver{root: eicr.root, state: Undetermined}, nil
 	}
 
-	acID := acConverter.ComposeID(deploymentID, scancomponent.ComponentID(eicr.data.GetName(), eicr.data.GetVersion()))
+	acID := acConverter.ComposeID(deploymentID, scancomponent.ComponentID(eicr.data.GetName(), eicr.data.GetVersion(), eicr.os))
 	found, err := eicr.root.ActiveComponent.Exists(ctx, acID)
 	if err != nil {
 		return nil, err
@@ -404,9 +404,10 @@ func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, quer
 			if !componentPred.Matches(component) {
 				continue
 			}
-			thisComponentID := scancomponent.ComponentID(component.GetName(), component.GetVersion())
+			thisComponentID := scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem())
 			if _, exists := idToComponent[thisComponentID]; !exists {
 				idToComponent[thisComponentID] = &EmbeddedImageScanComponentResolver{
+					os:   image.GetScan().GetOperatingSystem(),
 					root: root,
 					data: component,
 				}

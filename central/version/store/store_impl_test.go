@@ -1,12 +1,18 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/central/version/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/tecbot/gorocksdb"
@@ -22,23 +28,44 @@ type VersionStoreTestSuite struct {
 
 	boltDB  *bolt.DB
 	rocksDB *rocksdb.RocksDB
+	pgStore postgres.Store
+	pool    *pgxpool.Pool
+	ctx     context.Context
 	store   Store
 }
 
 func (suite *VersionStoreTestSuite) SetupTest() {
-	boltDB, err := bolthelper.NewTemp(suite.T().Name() + ".db")
-	suite.Require().NoError(err, "Failed to make BoltDB")
+	if features.PostgresDatastore.Enabled() {
+		source := pgtest.GetConnectionString(suite.T())
+		config, err := pgxpool.ParseConfig(source)
+		suite.Require().NoError(err)
+		suite.ctx = sac.WithAllAccess(context.Background())
+		pool, _ := pgxpool.ConnectConfig(suite.ctx, config)
+		suite.pool = pool
 
-	rocksDB := rocksdbtest.RocksDBForT(suite.T())
+		suite.store = NewPostgres(pool)
+	} else {
+		boltDB, err := bolthelper.NewTemp(suite.T().Name() + ".db")
+		suite.Require().NoError(err, "Failed to make BoltDB")
 
-	suite.boltDB = boltDB
-	suite.rocksDB = rocksDB
-	suite.store = New(boltDB, rocksDB)
+		rocksDB := rocksdbtest.RocksDBForT(suite.T())
+
+		suite.boltDB = boltDB
+		suite.rocksDB = rocksDB
+		suite.store = New(boltDB, rocksDB)
+	}
 }
 
 func (suite *VersionStoreTestSuite) TearDownTest() {
-	suite.NoError(suite.boltDB.Close())
-	suite.rocksDB.Close()
+	if features.PostgresDatastore.Enabled() {
+		postgres.Destroy(suite.ctx, suite.pool)
+		if suite.pool != nil {
+			suite.pool.Close()
+		}
+	} else {
+		suite.NoError(suite.boltDB.Close())
+		suite.rocksDB.Close()
+	}
 }
 
 func (suite *VersionStoreTestSuite) TestVersionStore() {
@@ -56,6 +83,10 @@ func (suite *VersionStoreTestSuite) TestVersionStore() {
 }
 
 func (suite *VersionStoreTestSuite) TestVersionMismatch() {
+	if features.PostgresDatastore.Enabled() {
+		suite.T().Skip("Skip TestVersionMismatch as it does not apply to Postgres")
+		suite.T().SkipNow()
+	}
 	boltVersion := &storage.Version{SeqNum: 2, Version: "Version 2"}
 	boltVersionBytes, err := boltVersion.Marshal()
 	suite.Require().NoError(err)

@@ -297,14 +297,14 @@ ruleset {
     UseAssertTrueInsteadOfNegation 
     
     // rulesets/logging.xml
-    LoggerForDifferentClass 
-    LoggerWithWrongModifiers 
-    LoggingSwallowsStacktrace 
-    MultipleLoggers 
-    // PrintStackTrace
-    // Println
-    // SystemErrPrint
-    // SystemOutPrint
+    // LoggerForDifferentClass
+    // LoggerWithWrongModifiers
+    LoggingSwallowsStacktrace
+    // MultipleLoggers
+    PrintStackTrace
+    Println
+    SystemErrPrint
+    SystemOutPrint
     
     // rulesets/naming.xml
     AbstractClassName 

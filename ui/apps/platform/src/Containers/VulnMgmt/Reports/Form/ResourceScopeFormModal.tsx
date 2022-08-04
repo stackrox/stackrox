@@ -96,6 +96,7 @@ function ResourceScopeFormModal({
 
     return (
         <Modal
+            aria-label="Create new resource scope"
             variant={ModalVariant.large}
             header={header}
             isOpen={isOpen}

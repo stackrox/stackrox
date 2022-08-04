@@ -28,3 +28,15 @@ area/postgres:
 - pkg/search/postgres/**/*
 - tools/generate-helpers/pg-table-bindings/**/*
 - tools/generate-helpers/pg-table-bindings-wrapper
+ci-postgres-tests:
+- central/globaldb/postgres.go
+- image/postgres/**/*
+- pkg/postgres/**/*
+- pkg/search/postgres/**/*
+- tools/generate-helpers/pg-table-bindings/**/*
+- tools/generate-helpers/pg-table-bindings-wrapper
+ci-upgrade-tests:
+- pkg/defaults/policies/**/*
+ci-all-qa-tests:
+- COLLECTOR_VERSION
+- SCANNER_VERSION

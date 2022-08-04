@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NYTimes/gziphandler"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
@@ -31,10 +32,15 @@ import (
 	complianceManager "github.com/stackrox/rox/central/compliance/manager"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
+	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
+	clusterCVEService "github.com/stackrox/rox/central/cve/cluster/service"
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
+	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
+	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
+	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
 	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
@@ -51,6 +57,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	dbAuthz "github.com/stackrox/rox/central/globaldb/authz"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
+	"github.com/stackrox/rox/central/globaldb/v2backuprestore/restore"
 	backupRestoreService "github.com/stackrox/rox/central/globaldb/v2backuprestore/service"
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
@@ -65,7 +72,6 @@ import (
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/jwt"
 	licenseService "github.com/stackrox/rox/central/license/service"
-	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
@@ -78,6 +84,7 @@ import (
 	networkFlowService "github.com/stackrox/rox/central/networkgraph/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
@@ -86,6 +93,7 @@ import (
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyService "github.com/stackrox/rox/central/policy/service"
+	policyCategoryService "github.com/stackrox/rox/central/policycategory/service"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
@@ -103,7 +111,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
-	sacService "github.com/stackrox/rox/central/sac/service"
 	"github.com/stackrox/rox/central/sac/transitional"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
@@ -127,6 +134,7 @@ import (
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
+	vStore "github.com/stackrox/rox/central/version/store"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	"github.com/stackrox/rox/generated/storage"
@@ -161,10 +169,12 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/osutils"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
 
@@ -231,6 +241,22 @@ func main() {
 
 	devmode.StartOnDevBuilds("central")
 
+	if features.PostgresDatastore.Enabled() {
+		sourceMap, config, err := pgconfig.GetPostgresConfig()
+		if err != nil {
+			log.Errorf("Unable to get Postgres DB config: %v", err)
+			return
+		}
+		// Check to see if a restore DB exists, if so use it.
+		if restore.CheckIfRestoreDBExists(config) {
+			// Now flip the restore DB to be the primary DB
+			err := restore.SwitchToRestoredDB(sourceMap, config)
+			if err != nil {
+				log.Errorf("Unable to switch to restored DB: %v", err)
+			}
+		}
+	}
+
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	ensureDB()
 
@@ -246,19 +272,20 @@ func main() {
 	pkgMetrics.NewDefaultHTTPServer().RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
-	licenseMgr := licenseSingletons.ManagerSingleton()
-	_, err := licenseMgr.Initialize()
-	if err != nil {
-		log.Warnf("Could not initialize license manager: %v", err)
-	}
-
 	go startGRPCServer()
 
 	waitForTerminationSignal()
 }
 
 func ensureDB() {
-	err := version.Ensure(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
+	var versionStore vStore.Store
+	if features.PostgresDatastore.Enabled() {
+		versionStore = vStore.NewPostgres(globaldb.GetPostgres())
+	} else {
+		versionStore = vStore.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
+	}
+
+	err := version.Ensure(versionStore)
 	if err != nil {
 		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
 	}
@@ -294,13 +321,17 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		complianceService.Singleton(),
 		configService.Singleton(),
 		credentialExpiryService.Singleton(),
-		cveService.Singleton(),
 		debugService.New(
 			clusterDataStore.Singleton(),
 			connection.ManagerSingleton(),
 			gatherers.Singleton(),
 			logimbueStore.Singleton(),
 			authzTraceSink,
+			registry,
+			groupDataStore.Singleton(),
+			roleDataStore.Singleton(),
+			configDS.Singleton(),
+			notifierDS.Singleton(),
 		),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
@@ -309,7 +340,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		helmcharts.NewService(),
 		imageService.Singleton(),
 		iiService.Singleton(),
-		licenseService.New(false, licenseSingletons.ManagerSingleton()),
+		licenseService.New(),
 		integrationHealthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),
@@ -326,31 +357,33 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		processIndicatorService.Singleton(),
 		processBaselineService.Singleton(),
 		rbacService.Singleton(),
+		reportConfigurationService.Singleton(),
+		reportService.Singleton(),
 		roleService.Singleton(),
-		sacService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
 		sensorUpgradeControlService.Singleton(),
 		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),
+		signatureIntegrationService.Singleton(),
 		siService.Singleton(),
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnRequestService.Singleton(),
 	}
-
-	if features.VulnReporting.Enabled() {
-		servicesToRegister = append(servicesToRegister,
-			reportConfigurationService.Singleton(),
-			reportService.Singleton())
+	if features.PostgresDatastore.Enabled() {
+		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
+		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
+		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
+	} else {
+		servicesToRegister = append(servicesToRegister, cveService.Singleton())
 	}
 
-	if features.ImageSignatureVerification.Enabled() {
-		servicesToRegister = append(servicesToRegister, signatureIntegrationService.Singleton())
+	if features.NewPolicyCategories.Enabled() {
+		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
 	}
-
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
@@ -565,18 +598,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			Route:         "/db/backup",
-			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), false),
-			Compression:   true,
-		},
-		{
-			Route:         "/api/extensions/backup",
-			Authorizer:    user.WithRole(role.Admin),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), true),
-			Compression:   true,
-		},
-		{
 			Route:         "/db/restore",
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
@@ -647,6 +668,40 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	}
 
+	if features.PostgresDatastore.Enabled() {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/db/backup",
+			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), false),
+			Compression:   true,
+		})
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/extensions/backup",
+			Authorizer:    user.WithRole(role.Admin),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), true),
+			Compression:   true,
+		})
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/export/csv/node/cve",
+			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment), permissions.View(resources.Node)),
+			ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
+			Compression:   true,
+		})
+	} else {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/db/backup",
+			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, false),
+			Compression:   true,
+		})
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/extensions/backup",
+			Authorizer:    user.WithRole(role.Admin),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, true),
+			Compression:   true,
+		})
+	}
+
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/api/extensions/clusters/helm-config.yaml",
 		Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster))),
@@ -655,19 +710,29 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	})
 
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
+	// Only grant compression to well-known content types. It should capture files
+	// worthy of compression in definition's bundle. Ignore all other types (e.g.,
+	// `.zip` for the bundle itself).
+	definitionsFileGzipHandler, err := gziphandler.GzipHandlerWithOpts(gziphandler.ContentTypes([]string{
+		"application/json",
+		"application/yaml",
+		"text/plain",
+	}))
+	utils.CrashOnError(err)
 	customRoutes = append(customRoutes,
 		routes.CustomRoute{
 			Route: scannerDefinitionsRoute,
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
-				or.ScannerOr(user.With(permissions.View(resources.ScannerDefinitions))): {
+				or.SensorOrAuthorizer(
+					or.ScannerOr(
+						user.With(permissions.View(resources.ScannerDefinitions)))): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
 				},
 				user.With(permissions.Modify(resources.ScannerDefinitions)): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodPost),
 				},
 			}),
-			ServerHandler: scannerDefinitionsHandler.Singleton(),
-			Compression:   false,
+			ServerHandler: definitionsFileGzipHandler(scannerDefinitionsHandler.Singleton()),
 		},
 	)
 
@@ -709,11 +774,8 @@ func waitForTerminationSignal() {
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "gargage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
+		{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
-	}
-
-	if features.VulnReporting.Enabled() {
-		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"})
 	}
 
 	var wg sync.WaitGroup

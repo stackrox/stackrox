@@ -131,7 +131,7 @@ func TestLocalScannerTLSIssuerRefresherFailureStartFailure(t *testing.T) {
 
 	startErr := fixture.tlsIssuer.Start()
 
-	assert.NoError(t, startErr)
+	require.Error(t, startErr)
 	fixture.assertMockExpectations(t)
 }
 
@@ -145,7 +145,7 @@ func TestLocalScannerTLSIssuerStartAlreadyStartedFailure(t *testing.T) {
 	secondStartErr := fixture.tlsIssuer.Start()
 
 	assert.NoError(t, startErr)
-	assert.NoError(t, secondStartErr)
+	require.Error(t, secondStartErr)
 	fixture.assertMockExpectations(t)
 }
 
@@ -164,7 +164,7 @@ func TestLocalScannerTLSIssuerFetchSensorDeploymentOwnerRefErrorStartFailure(t *
 
 			startErr := fixture.tlsIssuer.Start()
 
-			assert.NoError(t, startErr)
+			require.Error(t, startErr)
 			fixture.assertMockExpectations(t)
 		})
 	}

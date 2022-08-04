@@ -2,6 +2,7 @@ package scan
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -9,6 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -20,77 +23,98 @@ var (
 	ErrNoLocalScanner = errors.New("No local Scanner connection")
 
 	log = logging.LoggerForModule()
+
+	// Used for testing purposes only to not require setting up registry / scanner.
+	// NOTE: If you change these, make sure to also change the respective values within the tests.
+	scanImg                  = scanImage
+	fetchSignaturesWithRetry = signatures.FetchImageSignaturesWithRetries
+	getMatchingRegistry      = registry.Singleton().GetRegistryForImage
+	scannerClientSingleton   = scannerclient.GRPCClientSingleton
 )
 
-// ScanImage runs the pipeline required to scan an image with a local Scanner.
-//nolint:revive
-func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
-	// 1. Check if Central already knows about this image.
-	// If Central already knows about it, then return its results.
-	img, err := centralClient.GetImage(ctx, &v1.GetImageRequest{
-		Id:               ci.GetId(),
-		StripDescription: true,
-	})
-	if err == nil {
-		return img, nil
-	}
+// EnrichLocalImage will enrich a cluster-local image with scan results from local scanner as well as signatures
+// from the cluster-local registry. Afterwards, missing enriched data such as signature verification results and image
+// vulnerabilities will be fetched from central, returning the fully enriched image.
+// It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
+func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
+	imgName := ci.GetName().GetFullName()
 
-	// The image either does not exist in Central yet or there was some other error when reaching out.
-	// Attempt to scan locally.
-
-	// 2. Check if there is a local Scanner.
+	// Check if there is a local Scanner.
 	// No need to continue if there is no local Scanner.
-	scannerClient := scannerclient.GRPCClientSingleton()
+	scannerClient := scannerClientSingleton()
 	if scannerClient == nil {
 		return nil, ErrNoLocalScanner
 	}
 
-	// 3. Find the registry in which this image lives.
-	reg, err := registry.Singleton().GetRegistryForImage(ci.GetName())
+	// Find the associated registry of the image.
+	matchingRegistry, err := getMatchingRegistry(ci.GetName())
 	if err != nil {
-		return nil, errors.Wrap(err, "determining image registry")
+		return nil, errors.Wrapf(err, "determining image registry for image %q", imgName)
 	}
 
-	name := ci.GetName().GetFullName()
+	log.Debugf("Received matching registry for image %q: %q", imgName, matchingRegistry.Name())
+
 	image := types.ToImage(ci)
-
-	// 4. Retrieve the metadata for the image from the registry.
-	metadata, err := reg.Metadata(image)
+	// Retrieve the image's metadata.
+	metadata, err := matchingRegistry.Metadata(image)
 	if err != nil {
-		log.Debugf("Failed to get metadata for image %s: %v", name, err)
-		return nil, errors.Wrap(err, "getting image metadata")
+		log.Debugf("Failed fetching image metadata for image %q: %v", imgName, err)
+		return nil, errors.Wrapf(err, "fetching image metadata for image %q", imgName)
 	}
-	log.Debugf("Retrieved metadata for image %s: %v", name, metadata)
 
-	// 5. Get the image analysis from the local Scanner.
-	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, reg.Config())
+	log.Debugf("Received metadata for image %q: %v", imgName, metadata)
+
+	// Scan the image via local scanner.
+	scannerResp, err := scanImg(ctx, image, matchingRegistry, scannerClient)
 	if err != nil {
-		return nil, errors.Wrapf(err, "scanning image %s", name)
-	}
-	if scanResp.GetStatus() != scannerV1.ScanStatus_SUCCEEDED {
-		return nil, errors.Wrapf(err, "scan failed for image %s", name)
+		log.Debugf("Scan for image %q failed: %v", imgName, err)
+		return nil, errors.Wrapf(err, "scanning image %q locally", imgName)
 	}
 
-	// Image ID may not exist, if this image is not from an active deployment
-	// (for example the Admission Controller checks the image prior to deployment).
-	// Try to determine the SHA with best-effort.
-	sha := utils.GetSHAFromIDAndMetadata(image.GetId(), metadata)
+	// Fetch signatures from cluster-local registry.
+	sigs, err := fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image,
+		matchingRegistry)
+	if err != nil {
+		log.Debugf("Failed fetching signatures for image %q: %v", imgName, err)
+		return nil, errors.Wrapf(err, "fetching signature for image %q from registry %q",
+			imgName, matchingRegistry.Name())
+	}
 
-	// 6. Get the image's vulnerabilities from Central.
-	centralResp, err := centralClient.GetImageVulnerabilitiesInternal(ctx, &v1.GetImageVulnerabilitiesInternalRequest{
-		ImageId:        sha,
+	// Retrieve the image ID with best-effort from image and metadata.
+	imgID := utils.GetSHAFromIDAndMetadata(image.GetId(), metadata)
+
+	// Send local enriched data to central to receive a fully enrich image. This includes image vulnerabilities and
+	// signature verification results.
+	centralResp, err := centralClient.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{
+		ImageId:        imgID,
 		ImageName:      image.GetName(),
 		Metadata:       metadata,
-		IsClusterLocal: image.GetIsClusterLocal(),
-		Components:     scanResp.GetComponents(),
-		Notes:          scanResp.GetNotes(),
+		Components:     scannerResp.GetComponents(),
+		Notes:          scannerResp.GetNotes(),
+		ImageSignature: &storage.ImageSignature{Signatures: sigs},
 	})
 	if err != nil {
-		log.Debugf("Unable to retrieve image vulnerabilities for %s: %v", name, err)
-		return nil, errors.Wrapf(err, "retrieving image vulnerabilities for %s", name)
+		log.Debugf("Unable to enrich image %q: %v", imgName, err)
+		return nil, errors.Wrapf(err, "enriching image %q via central", imgName)
 	}
-	log.Debugf("Retrieved image vulnerabilities for %s", name)
 
-	// 7. Return the completely scanned image.
+	log.Debugf("Retrieved image enrichment results for %q", imgName)
+
 	return centralResp.GetImage(), nil
+}
+
+// scanImage will scan the given image and return its components.
+func scanImage(ctx context.Context, image *storage.Image,
+	registry registryTypes.Registry, scannerClient *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+	// Get the image analysis from the local Scanner.
+	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config())
+	if err != nil {
+		return nil, err
+	}
+	// Return an error indicating a non-successful scan result.
+	if scanResp.GetStatus() != scannerV1.ScanStatus_SUCCEEDED {
+		return nil, fmt.Errorf("scan failed with status %q", scanResp.GetStatus().String())
+	}
+
+	return scanResp, nil
 }

@@ -6,11 +6,12 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cve/datastore"
+	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -18,13 +19,17 @@ import (
 var cveLoaderType = reflect.TypeOf(storage.CVE{})
 
 func init() {
+	if features.PostgresDatastore.Enabled() {
+		return
+	}
+	// TODO: [ROX-11257, ROX-11258, ROX-11259] Replace this cve loader.
 	RegisterTypeFactory(reflect.TypeOf(storage.CVE{}), func() interface{} {
-		return NewCVELoader(datastore.Singleton())
+		return NewCVELoader(legacyImageCVEDataStore.Singleton())
 	})
 }
 
 // NewCVELoader creates a new loader for cve data.
-func NewCVELoader(ds datastore.DataStore) CVELoader {
+func NewCVELoader(ds legacyImageCVEDataStore.DataStore) CVELoader {
 	return &cveLoaderImpl{
 		loaded: make(map[string]*storage.CVE),
 		ds:     ds,
@@ -45,7 +50,7 @@ type CVELoader interface {
 	FromIDs(ctx context.Context, ids []string) ([]*storage.CVE, error)
 	FromID(ctx context.Context, id string) (*storage.CVE, error)
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.CVE, error)
-
+	GetIDs(ctx context.Context, query *v1.Query) ([]string, error)
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
 	CountAll(ctx context.Context) (int32, error)
 }
@@ -55,7 +60,7 @@ type cveLoaderImpl struct {
 	lock   sync.RWMutex
 	loaded map[string]*storage.CVE
 
-	ds datastore.DataStore
+	ds legacyImageCVEDataStore.DataStore
 }
 
 func enrich(distro string, value *storage.CVE) {
@@ -65,7 +70,7 @@ func enrich(distro string, value *storage.CVE) {
 		value.CvssV3 = specifics.GetCvssV3()
 		value.Severity = specifics.GetSeverity()
 	} else {
-		value.Severity = cvss.VulnToSeverity(value)
+		value.Severity = cvss.VulnToSeverity(cvss.NewFromCVE(value))
 	}
 }
 
@@ -94,6 +99,14 @@ func (idl *cveLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*st
 		return nil, err
 	}
 	return idl.FromIDs(ctx, search.ResultsToIDs(results))
+}
+
+func (idl *cveLoaderImpl) GetIDs(ctx context.Context, query *v1.Query) ([]string, error) {
+	results, err := idl.ds.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return search.ResultsToIDs(results), nil
 }
 
 func (idl *cveLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {

@@ -6,9 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -74,10 +72,6 @@ func alwaysInsecureCheckTLS(_ context.Context, _ string) (bool, error) {
 }
 
 func TestOpenShiftRegistrySecret_311(t *testing.T) {
-	testutils.RunWithFeatureFlagEnabled(t, features.LocalImageScanning, testOpenShiftRegistrySecret311)
-}
-
-func testOpenShiftRegistrySecret311(t *testing.T) {
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d := newSecretDispatcher(regStore)
 
@@ -119,10 +113,6 @@ func testOpenShiftRegistrySecret311(t *testing.T) {
 }
 
 func TestOpenShiftRegistrySecret_4x(t *testing.T) {
-	testutils.RunWithFeatureFlagEnabled(t, features.LocalImageScanning, testOpenShiftRegistrySecret4x)
-}
-
-func testOpenShiftRegistrySecret4x(t *testing.T) {
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d := newSecretDispatcher(regStore)
 

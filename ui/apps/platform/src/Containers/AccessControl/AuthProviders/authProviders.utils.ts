@@ -1,4 +1,9 @@
-import { AuthProvider, AuthProviderConfig, Group } from 'services/AuthService';
+import {
+    AuthProvider,
+    AuthProviderConfig,
+    AuthProviderRequiredAttributes,
+    Group,
+} from 'services/AuthService';
 
 export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;
@@ -62,7 +67,7 @@ function populateDefaultValues(authProvider: AuthProvider): AuthProvider {
     newInitialValues.groups = Array.isArray(authProvider.groups) ? [...authProvider.groups] : [];
     newInitialValues.groups.push({
         roleName: '',
-        props: { authProviderId: '', key: '', value: '' },
+        props: { authProviderId: '', key: '', value: '', id: '' },
     });
 
     return newInitialValues;
@@ -82,8 +87,26 @@ export function getInitialAuthProviderValues(authProvider: AuthProvider): Displa
 }
 
 export function transformValuesBeforeSaving(
-    values: Record<string, string | string[] | boolean | AuthProviderConfig | Group[] | undefined>
-): Record<string, string | string[] | boolean | AuthProviderConfig | Group[] | undefined> {
+    values: Record<
+        string,
+        | string
+        | string[]
+        | boolean
+        | AuthProviderConfig
+        | AuthProviderRequiredAttributes[]
+        | Group[]
+        | undefined
+    >
+): Record<
+    string,
+    | string
+    | string[]
+    | boolean
+    | AuthProviderConfig
+    | AuthProviderRequiredAttributes[]
+    | Group[]
+    | undefined
+> {
     if (values.type === 'oidc') {
         const alteredConfig = { ...(values.config as AuthProviderConfig) };
 
@@ -173,7 +196,7 @@ export function mergeGroupsWithAuthProviders(
 }
 
 export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): string {
-    let defaultRoleGroups = groups.filter(
+    const defaultRoleGroups = groups.filter(
         (group) =>
             group.props &&
             group.props.authProviderId &&
@@ -184,10 +207,5 @@ export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): str
     if (defaultRoleGroups.length) {
         return defaultRoleGroups[0].roleName;
     }
-    // if there is no default role specified for this auth provider then use the global default role
-    defaultRoleGroups = groups.filter((group) => !group.props);
-    if (defaultRoleGroups.length) {
-        return defaultRoleGroups[0].roleName;
-    }
-    return 'Admin';
+    return id ? 'None' : 'Admin';
 }

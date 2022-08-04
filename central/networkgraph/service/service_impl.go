@@ -19,7 +19,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -89,13 +89,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v1.GetExternalNetworkEntitiesRequest) (*v1.GetExternalNetworkEntitiesResponse, error) {
 	query, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	query, _ = search.FilterQueryWithMap(query, mappings.OptionsMap)
 	pred, err := netEntityPredFactory.GeneratePredicate(query)
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "failed to parse query %q: %v", query.String(), err.Error())
+		return nil, errors.Wrapf(errox.InvalidArgs, "failed to parse query %q: %v", query.String(), err.Error())
 	}
 
 	ret, err := s.entities.GetAllMatchingEntities(ctx, func(entity *storage.NetworkEntity) bool {
@@ -118,7 +118,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 	// An error here implies one of the arguments is invalid.
 	id, err := externalsrcs.NewClusterScopedID(request.GetClusterId(), request.GetEntity().GetCidr())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	if err := s.validateCluster(request.GetClusterId()); err != nil {
@@ -160,7 +160,7 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 
 func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v1.PatchNetworkEntityRequest) (*storage.NetworkEntity, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "network entity ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "network entity ID must be specified")
 	}
 
 	id := request.GetId()
@@ -187,7 +187,7 @@ func (s *serviceImpl) getEntityAndValidateMutable(ctx context.Context, id string
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "network entity %s not found", id)
+		return nil, errors.Wrapf(errox.NotFound, "network entity %s not found", id)
 	}
 	if entity.GetInfo().GetExternalSource().GetDefault() {
 		return nil, status.Error(codes.PermissionDenied, "StackRox-generated network entities are immutable")
@@ -207,7 +207,7 @@ func (s *serviceImpl) GetNetworkGraphConfig(ctx context.Context, _ *v1.Empty) (*
 // PutNetworkGraphConfig updates Central's network graph config
 func (s *serviceImpl) PutNetworkGraphConfig(ctx context.Context, req *v1.PutNetworkGraphConfigRequest) (*storage.NetworkGraphConfig, error) {
 	if req.GetConfig() == nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "network graph config must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "network graph config must be specified")
 	}
 
 	if err := s.graphConfig.UpdateNetworkGraphConfig(ctx, req.GetConfig()); err != nil {
@@ -222,7 +222,7 @@ func (s *serviceImpl) getFlowStore(ctx context.Context, clusterID string) (netwo
 		return nil, errors.Errorf("could not obtain flows for cluster %s: %v", clusterID, err)
 	}
 	if flowStore == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "no flows found for cluster %s", clusterID)
+		return nil, errors.Wrapf(errox.NotFound, "no flows found for cluster %s", clusterID)
 	}
 	return flowStore, nil
 }
@@ -237,7 +237,7 @@ func (s *serviceImpl) validateCluster(clusterID string) error {
 	if exists, err := s.clusters.Exists(clusterReadCtx, clusterID); err != nil {
 		return err
 	} else if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "cluster %s not found. It may have been deleted", clusterID)
+		return errors.Wrapf(errox.NotFound, "cluster %s not found. It may have been deleted", clusterID)
 	}
 	return nil
 }
@@ -248,7 +248,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGr
 
 func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool) (*v1.NetworkGraph, error) {
 	if request.GetClusterId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "cluster ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
 	}
 
 	requestClone := request.Clone()
@@ -263,6 +263,20 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	deploymentQuery, scopeQuery, err := networkgraph.GetFilterAndScopeQueries(request.GetClusterId(), requestClone.GetQuery(), requestClone.GetScope())
 	if err != nil {
 		return nil, err
+	}
+
+	count, err := s.deployments.Count(ctx, deploymentQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	if count > maxNumberOfDeploymentsInGraphEnv.IntegerSetting() {
+		log.Warnf("Number of deployments is too high to be rendered in Network Graph: %d", count)
+		return nil, errors.Errorf(
+			"number of deployments (%d) exceeds maximum allowed for Network Graph: %d",
+			count,
+			maxNumberOfDeploymentsInGraphEnv.IntegerSetting(),
+		)
 	}
 
 	deployments, err := s.deployments.SearchListDeployments(ctx, deploymentQuery)

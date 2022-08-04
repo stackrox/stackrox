@@ -1,0 +1,36 @@
+{
+  "id": "d03e0723-ef09-44da-bf29-fdd9e576fbf9",
+  "name": "Spring4Shell (Spring Framework Remote Code Execution) and Spring Cloud Function vulnerabilities",
+  "description": "Alert on deployments with images containing Spring4Shell vulnerability CVE-2022-22965 which affects the Spring MVC component and vulnerability CVE-2022-22963 which affects the Spring Cloud component. There are flaws in Spring Cloud Function (versions 3.1.6, 3.2.2 and older unsupported versions) and in Spring Framework (5.3.0 to 5.3.17, 5.2.0 to 5.2.19 and older unsupported versions).",
+  "rationale": "In Spring Cloud Function, when using routing functionality, a user can provide a specially crafted SpEL as a routing-expression that may result in remote code execution (RCE) and access to local resources. For Spring Framework, a Spring MVC or Spring WebFlux application running on JDK 9+ may be vulnerable to RCE via data binding.",
+  "remediation": "Upgrade Spring Cloud Function to version 3.1.7 or 3.2.3. Upgrade Spring Framework to version 5.3.18+ (if currently on 5.3.x) or 5.2.20+ (if currently on 5.2.x). If not possible to upgrade Spring Framework, then apply an appropriate workaround from the suggested workarounds on https://spring.io/blog/2022/03/31/spring-framework-rce-early-announcement",
+  "categories": [
+    "Vulnerability Management"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity": "CRITICAL_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "CVE",
+          "values": [
+            {
+              "value": "CVE-2022-22963"
+            },
+            {
+              "value": "CVE-2022-22965"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

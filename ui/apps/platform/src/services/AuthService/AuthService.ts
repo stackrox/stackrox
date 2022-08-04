@@ -56,6 +56,7 @@ export type Group = {
         authProviderId: string;
         key?: string;
         value?: string;
+        id?: string;
     };
 };
 
@@ -71,11 +72,17 @@ export type AuthProvider = {
     active?: boolean;
     groups?: Group[];
     defaultRole?: string;
+    requiredAttributes: AuthProviderRequiredAttributes[];
 };
 
 export type AuthProviderInfo = {
     label: string;
     value: AuthProviderType;
+};
+
+export type AuthProviderRequiredAttributes = {
+    attributeKey: string;
+    attributeValue: string;
 };
 
 /**

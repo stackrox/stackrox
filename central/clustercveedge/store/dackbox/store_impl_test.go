@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/central/clustercveedge/store"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
@@ -50,6 +52,8 @@ func (suite *CVEStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *CVEStoreTestSuite) TestClusterCVES() {
+	ctx := sac.WithAllAccess(context.Background())
+
 	cveParts := []converter.ClusterCVEParts{
 		{
 			CVE: &storage.CVE{
@@ -75,11 +79,11 @@ func (suite *CVEStoreTestSuite) TestClusterCVES() {
 
 	// Test Add
 	for _, d := range cveParts {
-		suite.NoError(suite.store.Upsert(d))
+		suite.NoError(suite.store.Upsert(ctx, d))
 	}
 
 	for _, d := range cveParts {
-		got, exists, err := suite.cveStore.Get(d.CVE.GetId())
+		got, exists, err := suite.cveStore.Get(ctx, d.CVE.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, d.CVE)
@@ -90,25 +94,25 @@ func (suite *CVEStoreTestSuite) TestClusterCVES() {
 		d.CVE.Cvss += 1.0
 	}
 
-	suite.NoError(suite.store.Upsert(cveParts...))
+	suite.NoError(suite.store.Upsert(ctx, cveParts...))
 
 	for _, d := range cveParts {
-		got, exists, err := suite.cveStore.Get(d.CVE.GetId())
+		got, exists, err := suite.cveStore.Get(ctx, d.CVE.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, d.CVE)
 	}
 
 	// Test Count
-	count, err := suite.cveStore.Count()
+	count, err := suite.cveStore.Count(ctx)
 	suite.NoError(err)
 	suite.Equal(len(cveParts), count)
-	edge, exists, err := suite.store.Get(cveParts[0].Children[0].Edge.Id)
+	edge, exists, err := suite.store.Get(ctx, cveParts[0].Children[0].Edge.Id)
 	suite.NoError(err)
 	suite.True(exists)
 
-	suite.NoError(suite.store.Delete(edge.Id))
-	_, exists, err = suite.store.Get(cveParts[0].Children[0].Edge.Id)
+	suite.NoError(suite.store.Delete(ctx, edge.Id))
+	_, exists, err = suite.store.Get(ctx, cveParts[0].Children[0].Edge.Id)
 	suite.NoError(err)
 	suite.False(exists)
 }

@@ -31,6 +31,7 @@ import (
 	pkgDackBox "github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
@@ -38,6 +39,10 @@ import (
 )
 
 func TestUnsuppressCVEs(t *testing.T) {
+	if features.PostgresDatastore.Enabled() {
+		t.Skip("Skip non-postgres test")
+	}
+
 	expiredCVEs := []*storage.CVE{
 		{
 			Id:             "cve1",
@@ -95,7 +100,7 @@ func TestUnsuppressCVEs(t *testing.T) {
 	dacky, reg, indexQ := testDackBoxInstance(t, db, bleveIndex)
 	reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
 
-	cveDataStore, edgeDataStore := createDataStore(t, dacky, bleveIndex)
+	cveDataStore, edgeDataStore := createDataStore(t, dacky, indexQ, bleveIndex)
 
 	cveClusters := []*storage.Cluster{{Id: "id"}}
 	parts := make([]converter.ClusterCVEParts, 0, len(expiredCVEs)+len(unexpiredCVEs))
@@ -133,7 +138,7 @@ func TestUnsuppressCVEs(t *testing.T) {
 	newSig.Wait()
 }
 
-func createDataStore(t *testing.T, dacky *pkgDackBox.DackBox, bleveIndex bleve.Index) (cveDataStore.DataStore, clusterCVEEdgeDataStore.DataStore) {
+func createDataStore(t *testing.T, dacky *pkgDackBox.DackBox, indexQ queue.WaitableQueue, bleveIndex bleve.Index) (cveDataStore.DataStore, clusterCVEEdgeDataStore.DataStore) {
 	cveStorage := cveStore.New(dacky, concurrency.NewKeyFence())
 
 	cveIndexer := cveIndex.New(bleveIndex)
@@ -149,7 +154,7 @@ func createDataStore(t *testing.T, dacky *pkgDackBox.DackBox, bleveIndex bleve.I
 		deploymentIndexer.New(bleveIndex, bleveIndex),
 		clusterIndexer.New(bleveIndex))
 
-	cveDataStore, err := cveDataStore.New(dacky, cveStorage, cveIndexer, cveSearcher)
+	cveDataStore, err := cveDataStore.New(dacky, indexQ, cveStorage, cveIndexer, cveSearcher)
 	require.NoError(t, err)
 
 	edgeStorage, err := clusterCVEEdgeStore.New(dacky, concurrency.NewKeyFence())

@@ -1,12 +1,6 @@
 import { takeLatest, all, call, fork, put, select } from 'redux-saga/effects';
 import { fetchGlobalSearchResults } from 'services/SearchService';
 import { actions, types } from 'reducers/globalSearch';
-import { actions as alertsActions } from 'reducers/alerts';
-import { actions as imagesActions } from 'reducers/images';
-import { actions as deploymentsActions } from 'reducers/deployments';
-import { actions as networkActions } from 'reducers/network/search';
-import { actions as secretsActions } from 'reducers/secrets';
-import { actions as policiesActions } from 'reducers/policies/search';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
@@ -22,43 +16,16 @@ export function* getGlobalSearchResults() {
         const filters = {
             query: searchOptionsToQuery(searchOptions),
         };
-        if (category !== '') {
-            filters.categories = category;
+        if (category !== 'SEARCH_UNSET') {
+            filters.categories = [category];
         }
         const result = yield call(fetchGlobalSearchResults, filters);
-        yield put(actions.fetchGlobalSearchResults.success(result.response, { category }));
+        yield put(actions.fetchGlobalSearchResults.success(result, { category }));
     } catch (error) {
         yield put(actions.fetchGlobalSearchResults.failure(error));
         if (error.response && error.response.status >= 500 && error.response.data.error) {
             toast.error(error.response.data.error);
         }
-    }
-}
-
-export function* passthroughGlobalSearchOptions({ searchOptions, category }) {
-    switch (category) {
-        case 'IMAGES':
-            yield put(imagesActions.setImagesSearchOptions(searchOptions));
-            break;
-        case 'ALERTS':
-        case 'VIOLATIONS':
-            yield put(alertsActions.setAlertsSearchOptions(searchOptions));
-            break;
-        case 'DEPLOYMENTS':
-        case 'RISK':
-            yield put(deploymentsActions.setDeploymentsSearchOptions(searchOptions));
-            break;
-        case 'SECRETS':
-            yield put(secretsActions.setSecretsSearchOptions(searchOptions));
-            break;
-        case 'NETWORK':
-            yield put(networkActions.setNetworkSearchOptions(searchOptions));
-            break;
-        case 'POLICIES':
-            yield put(policiesActions.setPoliciesSearchOptions(searchOptions));
-            break;
-        default:
-            break;
     }
 }
 
@@ -70,14 +37,6 @@ function* watchSetGlobalSearchCategory() {
     yield takeLatest(types.SET_GLOBAL_SEARCH_CATEGORY, getGlobalSearchResults);
 }
 
-function* watchPassthroughGlobalSearchOptions() {
-    yield takeLatest(types.PASSTHROUGH_GLOBAL_SEARCH_OPTIONS, passthroughGlobalSearchOptions);
-}
-
 export default function* globalSearch() {
-    yield all([
-        fork(watchGlobalsearchSearchOptions),
-        fork(watchSetGlobalSearchCategory),
-        fork(watchPassthroughGlobalSearchOptions),
-    ]);
+    yield all([fork(watchGlobalsearchSearchOptions), fork(watchSetGlobalSearchCategory)]);
 }

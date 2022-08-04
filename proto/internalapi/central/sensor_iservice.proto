@@ -8,6 +8,7 @@ import "internalapi/central/network_flow.proto";
 import "internalapi/central/policy_sync.proto";
 import "internalapi/central/sensor_events.proto";
 import "internalapi/central/sensor_upgrade.proto";
+import "internalapi/central/cluster_metrics.proto";
 import "internalapi/central/telemetry.proto";
 import "internalapi/central/baseline_sync.proto";
 import "internalapi/central/hello.proto";
@@ -19,19 +20,20 @@ import "storage/image.proto";
 package central;
 
 message MsgFromSensor {
-    string hash_key          = 7;
-    string dedupe_key        = 8;
+    string hash_key                                                     = 7;
+    string dedupe_key                                                   = 8;
     oneof msg {
-        SensorEvent                  event                           = 1;
-        NetworkFlowUpdate            network_flow_update             = 2;
-        ScrapeUpdate                 scrape_update                   = 3;
-        NetworkPoliciesResponse      network_policies_response       = 4;
-        ClusterStatusUpdate          cluster_status_update           = 5;
-        PullTelemetryDataResponse    telemetry_data_response         = 6;
-        RawClusterHealthInfo         cluster_health_info             = 9;
-        SensorHello                  hello                           = 10;
-        AuditLogStatusInfo           audit_log_status_info           = 11;
+        SensorEvent                   event                             = 1;
+        NetworkFlowUpdate             network_flow_update               = 2;
+        ScrapeUpdate                  scrape_update                     = 3;
+        NetworkPoliciesResponse       network_policies_response         = 4;
+        ClusterStatusUpdate           cluster_status_update             = 5;
+        PullTelemetryDataResponse     telemetry_data_response           = 6;
+        RawClusterHealthInfo          cluster_health_info               = 9;
+        SensorHello                   hello                             = 10;
+        AuditLogStatusInfo            audit_log_status_info             = 11;
         IssueLocalScannerCertsRequest issue_local_scanner_certs_request = 12;
+        ClusterMetrics                cluster_metrics                   = 13;
     }
 }
 

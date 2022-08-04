@@ -143,7 +143,7 @@ func MatchFieldQuery(field, value string, highlight bool) *v1.Query {
 	})
 }
 
-// MatchLinkedFieldsQuery returns a query that matches
+// matchLinkedFieldsQuery returns a query that matches
 func matchLinkedFieldsQuery(fieldValues []fieldValue) *v1.Query {
 	mfqs := make([]*v1.MatchFieldQuery, len(fieldValues))
 	for i, fv := range fieldValues {

@@ -1,10 +1,10 @@
 package generate
 
 import (
-	"fmt"
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 type loadBalancerWrapper struct {
@@ -35,7 +35,7 @@ func (f *loadBalancerWrapper) Set(input string) error {
 		*f.LoadBalancerType = val
 		return nil
 	}
-	return fmt.Errorf("invalid load balancer type: %q", input)
+	return errox.InvalidArgs.Newf("invalid load balancer type: %q", input)
 }
 
 func (f *loadBalancerWrapper) Type() string {

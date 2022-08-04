@@ -2,26 +2,19 @@ package service
 
 import (
 	"context"
-	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/datastore"
-	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
 	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/and"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 )
 
@@ -38,12 +31,10 @@ var (
 	}()
 )
 
-// serviceImpl provides APIs for cves.
+// serviceImpl provides APIs for CVEs.
 type serviceImpl struct {
-	cves        datastore.DataStore
-	vulnReqMgr  vulnReqMgr.Manager
-	indexQ      queue.WaitableQueue
-	reprocessor reprocessor.Loop
+	cves       datastore.DataStore
+	vulnReqMgr vulnReqMgr.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -61,70 +52,27 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// SuppressCVE suppresses cves for specific duration or indefinitely.
+// SuppressCVEs suppresses CVEs for specific duration or indefinitely.
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
 	createdAt := types.TimestampNow()
-	if err := s.validateCVEsExist(ctx, request.GetIds()...); err != nil {
-		return nil, err
-	}
-
 	if err := s.cves.Suppress(ctx, createdAt, request.GetDuration(), request.GetIds()...); err != nil {
 		return nil, err
 	}
-
-	if err := s.waitForCVEToBeIndexed(ctx); err != nil {
-		return nil, err
-	}
-
 	// This handles updating image-cve edges and reprocessing affected deployments.
-	if err := s.vulnReqMgr.SnoozeVulnerabilityOnRequest(ctx, suppressCVEReqToVulnReq(request, createdAt)); err != nil {
+	if err := s.vulnReqMgr.SnoozeVulnerabilityOnRequest(ctx, common.SuppressCVEReqToVulnReq(request, createdAt)); err != nil {
 		log.Error(err)
 	}
 	return &v1.Empty{}, nil
 }
 
-// UnsuppressCVE unsuppresses given cves indefinitely.
+// UnsuppressCVEs unsuppresses given CVEs indefinitely.
 func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.UnsuppressCVERequest) (*v1.Empty, error) {
-	if err := s.validateCVEsExist(ctx, request.GetIds()...); err != nil {
-		return nil, err
-	}
-
 	if err := s.cves.Unsuppress(ctx, request.GetIds()...); err != nil {
 		return nil, err
 	}
-
-	if err := s.waitForCVEToBeIndexed(ctx); err != nil {
-		return nil, err
-	}
-
 	// This handles updating image-cve edges and reprocessing affected deployments.
-	if err := s.vulnReqMgr.UnSnoozeVulnerabilityOnRequest(ctx, unSuppressCVEReqToVulnReq(request)); err != nil {
+	if err := s.vulnReqMgr.UnSnoozeVulnerabilityOnRequest(ctx, common.UnSuppressCVEReqToVulnReq(request)); err != nil {
 		log.Error(err)
 	}
 	return &v1.Empty{}, nil
-}
-
-func (s *serviceImpl) waitForCVEToBeIndexed(ctx context.Context) error {
-	cveSynchronized := concurrency.NewSignal()
-	s.indexQ.PushSignal(&cveSynchronized)
-
-	select {
-	case <-ctx.Done():
-		return errors.New("timed out waiting for indexing")
-	case <-cveSynchronized.Done():
-		return nil
-	}
-}
-
-func (s *serviceImpl) validateCVEsExist(ctx context.Context, ids ...string) error {
-	result, err := s.cves.Search(ctx, search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery())
-	if err != nil {
-		return err
-	}
-
-	if len(result) < len(ids) {
-		missingIds := set.NewStringSet(ids...).Difference(search.ResultsToIDSet(result))
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Following CVEs not found: %s", strings.Join(missingIds.AsSlice(), ", "))
-	}
-	return nil
 }

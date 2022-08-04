@@ -9,11 +9,10 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
-	"github.com/stackrox/rox/sensor/common/imageutil"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc"
 )
@@ -28,15 +27,17 @@ type Service interface {
 }
 
 // NewService returns the ImageService API for the Admission Controller to use.
-func NewService(imageCache expiringcache.Cache) Service {
+func NewService(imageCache expiringcache.Cache, registryStore *registry.Store) Service {
 	return &serviceImpl{
-		imageCache: imageCache,
+		imageCache:    imageCache,
+		registryStore: registryStore,
 	}
 }
 
 type serviceImpl struct {
 	centralClient v1.ImageServiceClient
 	imageCache    expiringcache.Cache
+	registryStore *registry.Store
 }
 
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
@@ -55,10 +56,12 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 
 	// Note: The Admission Controller does NOT know if the image is cluster-local,
 	// so we determine it here.
-	req.Image.IsClusterLocal = imageutil.IsInternalImage(req.GetImage().GetName())
+	// If Sensor's registry store has an entry for the given image's registry,
+	// it is considered cluster-local.
+	req.Image.IsClusterLocal = s.registryStore.HasRegistryForImage(req.GetImage().GetName())
 
 	// Ask Central to scan the image if the image is not internal.
-	if !features.LocalImageScanning.Enabled() || !req.GetImage().GetIsClusterLocal() {
+	if !req.GetImage().GetIsClusterLocal() {
 		scanResp, err := s.centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 			Image:      req.GetImage(),
 			CachedOnly: !req.GetScanInline(),
@@ -71,7 +74,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		}, nil
 	}
 
-	img, err := scan.ScanImage(ctx, s.centralClient, req.GetImage())
+	img, err := scan.EnrichLocalImage(ctx, s.centralClient, req.GetImage())
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning image via local scanner")
 	}

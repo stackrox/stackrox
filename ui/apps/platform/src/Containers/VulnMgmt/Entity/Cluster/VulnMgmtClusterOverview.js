@@ -13,9 +13,10 @@ import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgm
 import entityTypes from 'constants/entityTypes';
 import { OVERVIEW_LIMIT } from 'constants/workflowPages.constants';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import TopRiskyEntitiesByVulnerabilities from '../../widgets/TopRiskyEntitiesByVulnerabilities';
-import RecentlyDetectedVulnerabilities from '../../widgets/RecentlyDetectedVulnerabilities';
+import RecentlyDetectedImageVulnerabilities from '../../widgets/RecentlyDetectedImageVulnerabilities';
 import TopRiskiestEntities from '../../widgets/TopRiskiestEntities';
 import DeploymentsWithMostSeverePolicyViolations from '../../widgets/DeploymentsWithMostSeverePolicyViolations';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
@@ -45,6 +46,8 @@ const emptyCluster = {
 
 const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyCluster, ...data };
@@ -113,13 +116,14 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                     entityTypes.NAMESPACE,
                                     entityTypes.DEPLOYMENT,
                                     entityTypes.IMAGE,
+                                    entityTypes.NODE,
                                 ]}
                                 entityContext={currentEntity}
                                 small
                             />
                         </div>
                         <div className="s-1">
-                            <RecentlyDetectedVulnerabilities
+                            <RecentlyDetectedImageVulnerabilities
                                 limit={OVERVIEW_LIMIT}
                                 entityContext={currentEntity}
                             />
@@ -141,31 +145,81 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
 
                 <CollapsibleSection title="Cluster Findings">
                     <div className="pdf-page pdf-stretch pdf-new flex relative rounded mb-4 ml-4 mr-4">
-                        <BinderTabs>
-                            <Tab title="Policies">
-                                <TableWidget
-                                    header={`${failingPolicies.length} failing ${pluralize(
-                                        entityTypes.POLICY,
-                                        failingPolicies.length
-                                    )} across this cluster`}
-                                    rows={failingPolicies}
-                                    entityType={entityTypes.POLICY}
-                                    noDataText="No failing policies"
-                                    className="bg-base-100"
-                                    columns={getPolicyTableColumns(workflowState)}
-                                    idAttribute="id"
-                                />
-                            </Tab>
-                            <Tab title="Fixable CVEs">
-                                <TableWidgetFixableCves
-                                    workflowState={workflowState}
-                                    entityContext={entityContext}
-                                    entityType={entityTypes.CLUSTER}
-                                    name={safeData?.name}
-                                    id={safeData?.id}
-                                />
-                            </Tab>
-                        </BinderTabs>
+                        {showVmUpdates && (
+                            <BinderTabs>
+                                <Tab title="Policies">
+                                    <TableWidget
+                                        header={`${failingPolicies.length} failing ${pluralize(
+                                            entityTypes.POLICY,
+                                            failingPolicies.length
+                                        )} across this cluster`}
+                                        rows={failingPolicies}
+                                        entityType={entityTypes.POLICY}
+                                        noDataText="No failing policies"
+                                        className="bg-base-100"
+                                        columns={getPolicyTableColumns(workflowState)}
+                                        idAttribute="id"
+                                    />
+                                </Tab>
+                                <Tab title="Fixable Image CVEs">
+                                    <TableWidgetFixableCves
+                                        workflowState={workflowState}
+                                        entityContext={entityContext}
+                                        entityType={entityTypes.CLUSTER}
+                                        vulnType={entityTypes.IMAGE_CVE}
+                                        name={safeData?.name}
+                                        id={safeData?.id}
+                                    />
+                                </Tab>
+                                <Tab title="Fixable Node CVEs">
+                                    <TableWidgetFixableCves
+                                        workflowState={workflowState}
+                                        entityContext={entityContext}
+                                        entityType={entityTypes.CLUSTER}
+                                        vulnType={entityTypes.NODE_CVE}
+                                        name={safeData?.name}
+                                        id={safeData?.id}
+                                    />
+                                </Tab>
+                                <Tab title="Fixable Platform CVEs">
+                                    <TableWidgetFixableCves
+                                        workflowState={workflowState}
+                                        entityContext={entityContext}
+                                        entityType={entityTypes.CLUSTER}
+                                        vulnType={entityTypes.CLUSTER_CVE}
+                                        name={safeData?.name}
+                                        id={safeData?.id}
+                                    />
+                                </Tab>
+                            </BinderTabs>
+                        )}
+                        {!showVmUpdates && (
+                            <BinderTabs>
+                                <Tab title="Policies">
+                                    <TableWidget
+                                        header={`${failingPolicies.length} failing ${pluralize(
+                                            entityTypes.POLICY,
+                                            failingPolicies.length
+                                        )} across this cluster`}
+                                        rows={failingPolicies}
+                                        entityType={entityTypes.POLICY}
+                                        noDataText="No failing policies"
+                                        className="bg-base-100"
+                                        columns={getPolicyTableColumns(workflowState)}
+                                        idAttribute="id"
+                                    />
+                                </Tab>
+                                <Tab title="Fixable CVEs">
+                                    <TableWidgetFixableCves
+                                        workflowState={workflowState}
+                                        entityContext={entityContext}
+                                        entityType={entityTypes.CLUSTER}
+                                        name={safeData?.name}
+                                        id={safeData?.id}
+                                    />
+                                </Tab>
+                            </BinderTabs>
+                        )}
                     </div>
                 </CollapsibleSection>
             </div>

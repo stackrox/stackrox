@@ -6,7 +6,6 @@ import { DescriptionList, Flex, FlexItem, Divider } from '@patternfly/react-core
 import dateTimeFormat from 'constants/dateTimeFormat';
 import DescriptionListItem from 'Components/DescriptionListItem';
 import KeyValue from 'Components/KeyValue';
-import ProcessComments from 'Containers/AnalystNotes/ProcessComments';
 import ProcessTags from 'Containers/AnalystNotes/ProcessTags';
 import FormCollapsibleButton from 'Containers/AnalystNotes/FormCollapsibleButton';
 
@@ -67,14 +66,6 @@ function ProcessCardContent({ process, areAnalystNotesVisible, selectProcessId }
                 <Flex direction={{ default: 'column' }} className="pf-u-mb-md">
                     <FlexItem>
                         <ProcessTags
-                            deploymentID={deploymentId}
-                            containerName={containerName}
-                            execFilePath={execFilePath}
-                            args={args}
-                        />
-                    </FlexItem>
-                    <FlexItem>
-                        <ProcessComments
                             deploymentID={deploymentId}
                             containerName={containerName}
                             execFilePath={execFilePath}

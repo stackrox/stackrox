@@ -27,7 +27,7 @@ const Metadata = ({
     const keyValueList = keyValuePairs.map(({ key, value }) => (
         <li className="flex border-b border-base-300 py-3" key={key}>
             <span className="text-base-600 font-700 mr-2">{key}:</span>
-            <span className="flex-grow font-600" data-testid={`${key}-value`}>
+            <span className="flex-grow font-600 min-w-0" data-testid={`${key}-value`}>
                 {value}
             </span>
         </li>

@@ -3,14 +3,15 @@ import groups.Integration
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import objects.Deployment
 import objects.GenericNotifier
 import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ImageService
 import services.PolicyService
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
-import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import util.Env
 
 class ImageManagementTest extends BaseSpecification {
@@ -145,6 +146,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify CVE snoozing applies to build time detection"() {
         given:
         "Create policy looking for a specific CVE applying to build time"
@@ -153,8 +155,13 @@ class ImageManagementTest extends BaseSpecification {
                 .addLifecycleStages(LifecycleStage.BUILD)
                 .addCategories("Testing")
                 .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
-                .setFields(
-                        PolicyOuterClass.PolicyFields.newBuilder().setCve("CVE-2019-14697").build()
+                .addPolicySections(
+                        PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                PolicyOuterClass.PolicyGroup.newBuilder()
+                                        .setFieldName("CVE")
+                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("CVE-2019-14697")
+                                                .build()).build()
+                        ).build()
                 ).build()
         policy = PolicyService.policyClient.postPolicy(
                 PolicyServiceOuterClass.PostPolicyRequest.newBuilder()
@@ -235,6 +242,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify image scan results when CVEs are suppressed: "() {
         given:
         "Scan image"
@@ -302,7 +310,7 @@ class ImageManagementTest extends BaseSpecification {
         assert scanResults.getAlertsList().findAll { it.getPolicy().name == policyName }.size() == 1
         withRetry(2, 3) {
             def genericViolation = GenericNotifier.getMostRecentViolationAndValidateCommonFields()
-            println "Most recent violation sent: ${genericViolation}"
+            log.info "Most recent violation sent: ${genericViolation}"
             def alert = genericViolation["data"]["alert"]
             assert alert != null
             assert alert["policy"]["name"] == policyName

@@ -1,5 +1,3 @@
-// TODO adapt the rest proto/storage/image.proto
-
 export type ImageName = {
     registry: string;
     remote: string;
@@ -7,13 +5,17 @@ export type ImageName = {
     fullName: string;
 };
 
-export type Image = {
-    name: string;
-    priority: string;
-    lastUpdated: string;
+export type ListImage = {
     id: string;
-    fixableCves: number;
-    cves: number;
-    created: string;
-    components: number;
+    name: string;
+    components?: number; // int32
+    cves?: number; // int32;
+    fixableCves: number; // int32
+    created: string; // ISO 8601 date string
+    lastUpdated: string; // ISO 8601 date string
+    priority: string; // int64
+};
+
+export type WatchedImage = {
+    name: string;
 };

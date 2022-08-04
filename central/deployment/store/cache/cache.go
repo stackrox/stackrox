@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -66,7 +68,7 @@ func (c *cachedStore) getCachedDeployment(id string) (*storage.Deployment, bool,
 	return entry.(*storage.Deployment).Clone(), true, nil
 }
 
-func (c *cachedStore) ListDeployment(id string) (*storage.ListDeployment, bool, error) {
+func (c *cachedStore) GetListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
 	deployment, hadEntry, err := c.getCachedDeployment(id)
 	if err != nil {
 		return nil, false, err
@@ -77,10 +79,10 @@ func (c *cachedStore) ListDeployment(id string) (*storage.ListDeployment, bool, 
 		}
 		return types.ConvertDeploymentToDeploymentList(deployment), true, nil
 	}
-	return c.store.ListDeployment(id)
+	return c.store.GetListDeployment(ctx, id)
 }
 
-func (c *cachedStore) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error) {
+func (c *cachedStore) GetManyListDeployments(ctx context.Context, ids ...string) ([]*storage.ListDeployment, []int, error) {
 	var deployments []*storage.ListDeployment
 	var missingIndices []int
 	for i, id := range ids {
@@ -100,7 +102,7 @@ func (c *cachedStore) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDepl
 		}
 		deploymentStoreCacheMisses.Inc()
 
-		listDeployment, exists, err := c.store.ListDeployment(id)
+		listDeployment, exists, err := c.store.GetListDeployment(ctx, id)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -113,7 +115,7 @@ func (c *cachedStore) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDepl
 	return deployments, missingIndices, nil
 }
 
-func (c *cachedStore) GetDeployment(id string) (*storage.Deployment, bool, error) {
+func (c *cachedStore) Get(ctx context.Context, id string) (*storage.Deployment, bool, error) {
 	deployment, entryExists, err := c.getCachedDeployment(id)
 	if err != nil {
 		return nil, false, err
@@ -125,7 +127,7 @@ func (c *cachedStore) GetDeployment(id string) (*storage.Deployment, bool, error
 	}
 
 	deploymentStoreCacheMisses.Inc()
-	deployment, exists, err := c.store.GetDeployment(id)
+	deployment, exists, err := c.store.Get(ctx, id)
 	if err != nil || !exists {
 		return nil, exists, err
 	}
@@ -134,7 +136,7 @@ func (c *cachedStore) GetDeployment(id string) (*storage.Deployment, bool, error
 	return deployment, true, nil
 }
 
-func (c *cachedStore) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment, []int, error) {
+func (c *cachedStore) GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error) {
 	var deployments []*storage.Deployment
 	var missingIndices []int
 	for i, id := range ids {
@@ -154,7 +156,7 @@ func (c *cachedStore) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deploymen
 		}
 		deploymentStoreCacheMisses.Inc()
 
-		deployment, exists, err := c.store.GetDeployment(id)
+		deployment, exists, err := c.store.Get(ctx, id)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -170,12 +172,12 @@ func (c *cachedStore) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deploymen
 	return deployments, missingIndices, nil
 }
 
-func (c *cachedStore) CountDeployments() (int, error) {
-	return c.store.CountDeployments()
+func (c *cachedStore) Count(ctx context.Context) (int, error) {
+	return c.store.Count(ctx)
 }
 
-func (c *cachedStore) UpsertDeployment(deployment *storage.Deployment) error {
-	if err := c.store.UpsertDeployment(deployment); err != nil {
+func (c *cachedStore) Upsert(ctx context.Context, deployment *storage.Deployment) error {
+	if err := c.store.Upsert(ctx, deployment); err != nil {
 		return err
 	}
 
@@ -184,8 +186,8 @@ func (c *cachedStore) UpsertDeployment(deployment *storage.Deployment) error {
 	return nil
 }
 
-func (c *cachedStore) RemoveDeployment(id string) error {
-	if err := c.store.RemoveDeployment(id); err != nil {
+func (c *cachedStore) Delete(ctx context.Context, id string) error {
+	if err := c.store.Delete(ctx, id); err != nil {
 		return err
 	}
 	c.cache.Add(id, &deploymentTombstone{})
@@ -199,14 +201,6 @@ func (c *cachedStore) updateStats() {
 	deploymentStoreCacheSize.Set(float64(size))
 }
 
-func (c *cachedStore) GetDeploymentIDs() ([]string, error) {
-	return c.store.GetDeploymentIDs()
-}
-
-func (c *cachedStore) AckKeysIndexed(keys ...string) error {
-	return c.store.AckKeysIndexed(keys...)
-}
-
-func (c *cachedStore) GetKeysToIndex() ([]string, error) {
-	return c.store.GetKeysToIndex()
+func (c *cachedStore) GetIDs(ctx context.Context) ([]string, error) {
+	return c.store.GetIDs(ctx)
 }

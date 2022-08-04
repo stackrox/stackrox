@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/blevesearch/bleve"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/pod/store/postgres"
 	"github.com/stackrox/rox/central/pod/store/rocksdb"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
+	piFilter "github.com/stackrox/rox/central/processindicator/filter"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -44,8 +46,28 @@ func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS
 
 // NewPostgresDB creates a pod datastore based on Postgres
 func NewPostgresDB(db *pgxpool.Pool, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
-	store := cache.NewCachedStore(postgres.New(context.TODO(), db))
+	store := cache.NewCachedStore(postgres.New(db))
 	indexer := postgres.NewIndexer(db)
 	searcher := search.New(store, indexer)
 	return newDatastoreImpl(context.TODO(), store, indexer, searcher, indicators, processFilter)
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
+	processIndicatorStore, err := piDS.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	processIndicatorFilter := piFilter.Singleton()
+	return NewPostgresDB(pool, processIndicatorStore, processIndicatorFilter)
+}
+
+// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
+func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
+	processIndicatorStore, err := piDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
+	if err != nil {
+		return nil, err
+	}
+	processIndicatorFilter := piFilter.Singleton()
+	return NewRocksDB(rocksengine, bleveIndex, processIndicatorStore, processIndicatorFilter)
 }

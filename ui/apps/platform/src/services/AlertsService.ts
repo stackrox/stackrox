@@ -2,9 +2,10 @@ import queryString from 'qs';
 
 import { Alert, ListAlert } from 'Containers/Violations/types/violationTypes';
 
+import { ApiSortOption, SearchFilter } from 'types/search';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
-import searchOptionsToQuery from './searchOptionsToQuery';
-import { RestSortOption } from './sortOption';
+import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 
 const baseUrl = '/v1/alerts';
 const baseCountUrl = '/v1/alertscount';
@@ -46,7 +47,7 @@ type AlertsByTimeseriesFilters = {
  */
 export function fetchAlertsByTimeseries(
     filters: AlertsByTimeseriesFilters
-): Promise<{ response: { clusters: ClusterAlert[] } }> {
+): Promise<ClusterAlert[]> {
     const params = queryString.stringify(filters);
 
     // set higher timeout for this call to handle known backend scale issues with dashboard
@@ -54,14 +55,12 @@ export function fetchAlertsByTimeseries(
         .get<{ clusters: ClusterAlert[] }>(`${baseUrl}/summary/timeseries?${params}`, {
             timeout: 59999,
         })
-        .then((response) => ({
-            response: response.data,
-        }));
+        .then((response) => response.data.clusters);
 }
 
 export type AlertCountBySeverity = {
     severity: Severity;
-    count: number;
+    count: string;
 };
 
 export type AlertGroup = {
@@ -69,9 +68,11 @@ export type AlertGroup = {
     counts: AlertCountBySeverity[];
 };
 
+export type AlertQueryGroupBy = 'UNSET' | 'CATEGORY' | 'CLUSTER';
+
 type SummaryAlertCountsFilters = {
     'request.query': string;
-    group_by: string;
+    group_by?: AlertQueryGroupBy;
 };
 
 /*
@@ -79,28 +80,47 @@ type SummaryAlertCountsFilters = {
  */
 export function fetchSummaryAlertCounts(
     filters: SummaryAlertCountsFilters
-): Promise<{ response: { groups: AlertGroup[] } }> {
+): CancellableRequest<AlertGroup[]> {
+    const params = queryString.stringify(filters);
+
+    // set higher timeout for this call to handle known backend scale issues with dashboard
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .get<{ groups: AlertGroup[] }>(`${baseUrl}/summary/counts?${params}`, {
+                timeout: 59999,
+                signal,
+            })
+            .then((response) => response.data.groups)
+    );
+}
+
+/**
+ * Fetch severity counts.
+ *
+ * TODO Delete once Action Widgets Dashboard (ROX-10650) becomes the default homepage
+ * dashboard view
+ */
+export function fetchSummaryAlertCountsLegacy(
+    filters: SummaryAlertCountsFilters
+): Promise<AlertGroup[]> {
     const params = queryString.stringify(filters);
 
     // set higher timeout for this call to handle known backend scale issues with dashboard
     return axios
         .get<{ groups: AlertGroup[] }>(`${baseUrl}/summary/counts?${params}`, { timeout: 59999 })
-        .then((response) => ({
-            response: response.data,
-        }));
+        .then((response) => response.data.groups);
 }
-
 /*
  * Fetch a page of list alert objects.
  */
 export function fetchAlerts(
-    searchOptions: RestSearchOption[],
-    sortOption: RestSortOption,
+    searchFilter: SearchFilter,
+    sortOption: ApiSortOption,
     page: number,
     pageSize: number
-): Promise<ListAlert[]> {
+): CancellableRequest<ListAlert[]> {
     const offset = page > 0 ? page * pageSize : 0;
-    const query = searchOptionsToQuery(searchOptions);
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
     const params = queryString.stringify(
         {
             query,
@@ -112,22 +132,26 @@ export function fetchAlerts(
         },
         { arrayFormat: 'repeat', allowDots: true }
     );
-    return axios
-        .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`)
-        .then((response) => response?.data?.alerts ?? []);
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`, { signal })
+            .then((response) => response?.data?.alerts ?? [])
+    );
 }
 
 /*
  * Fetch count of alerts.
  */
-export function fetchAlertCount(options: RestSearchOption[]): Promise<number> {
+export function fetchAlertCount(searchFilter: SearchFilter): CancellableRequest<number> {
     const params = queryString.stringify(
-        { query: searchOptionsToQuery(options) },
+        { query: getRequestQueryStringForSearchFilter(searchFilter) },
         { arrayFormat: 'repeat' }
     );
-    return axios
-        .get<{ count: number }>(`${baseCountUrl}?${params}`)
-        .then((response) => response?.data?.count ?? 0);
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .get<{ count: number }>(`${baseCountUrl}?${params}`, { signal })
+            .then((response) => response?.data?.count ?? 0)
+    );
 }
 
 /*

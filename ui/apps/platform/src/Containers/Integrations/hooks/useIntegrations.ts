@@ -6,14 +6,12 @@ import { selectors } from 'reducers';
 import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 const selectIntegrations = createStructuredSelector({
-    authPlugins: selectors.getAuthPlugins,
     authProviders: selectors.getAuthProviders,
     apiTokens: selectors.getAPITokens,
     clusterInitBundles: selectors.getClusterInitBundles,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
-    featureFlags: selectors.getFeatureFlags,
     signatureIntegrations: selectors.getSignatureIntegrations,
 });
 
@@ -26,7 +24,6 @@ export type UseIntegrationsResponse = Integration[];
 
 const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResponse => {
     const {
-        authPlugins,
         apiTokens,
         clusterInitBundles,
         authProviders,
@@ -41,9 +38,6 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
             integration.type.toLowerCase() === type.toLowerCase();
 
         switch (source) {
-            case 'authPlugins': {
-                return authPlugins;
-            }
             case 'authProviders': {
                 if (type === 'apitoken') {
                     return apiTokens;

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -32,6 +33,7 @@ type Service interface {
 func New(policies datastore.DataStore,
 	clusters clusterDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
+	networkPolicies networkPolicyDS.DataStore,
 	notifiers notifierDataStore.DataStore,
 	mitreStore mitreDataStore.MitreAttackReadOnlyDataStore,
 	reprocessor reprocessor.Loop,
@@ -52,6 +54,7 @@ func New(policies datastore.DataStore,
 		buildTimePolicies: buildTimePolicies,
 		lifecycleManager:  manager,
 		connectionManager: connectionManager,
+		networkPolicies:   networkPolicies,
 
 		processor: processor,
 

@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -16,13 +15,13 @@ type serviceWithRoutes struct {
 
 type serviceWrap struct {
 	*v1.Service
-	selector labels.Selector
+	selector selector
 }
 
 func wrapService(svc *v1.Service) *serviceWrap {
 	return &serviceWrap{
 		Service:  svc,
-		selector: SelectorFromMap(svc.Spec.Selector),
+		selector: createSelector(svc.Spec.Selector, emptyMatchesNothing()),
 	}
 }
 
@@ -146,7 +145,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	if oldWrap != nil {
 		sel = oldWrap.selector
 	}
-	if action == central.ResourceAction_UPDATE_RESOURCE {
+	if action == central.ResourceAction_UPDATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
 		newWrap := wrapService(svc)
 		sh.serviceStore.addOrUpdateService(newWrap)
 		if sel != nil {
@@ -156,6 +155,11 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 		}
 	} else if action == central.ResourceAction_REMOVE_RESOURCE {
 		sh.serviceStore.removeService(svc)
+	}
+	// If OnNamespaceDelete is called before we need to get the selector from the received object
+	if sel == nil {
+		wrap := wrapService(svc)
+		sel = wrap.selector
 	}
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }

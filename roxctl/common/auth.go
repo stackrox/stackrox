@@ -1,15 +1,15 @@
 package common
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 // Auth provides an abstraction to inject authentication information within http.Request
@@ -19,10 +19,10 @@ type Auth interface {
 
 func checkAuthParameters() error {
 	if flags.APITokenFile() != "" && flags.Password() != "" {
-		return errors.New("cannot use password- and token-based authentication at the same time")
+		return errox.InvalidArgs.New("cannot use password- and token-based authentication at the same time")
 	}
 	if flags.APITokenFile() == "" && env.TokenEnv.Setting() == "" && flags.Password() == "" {
-		return errors.New("no token set via either token file or the environment variable ROX_API_TOKEN")
+		return errox.InvalidArgs.New("no token set via either token file or the environment variable ROX_API_TOKEN")
 	}
 
 	return nil
@@ -32,15 +32,15 @@ const userHelpLiteralToken = `There is no token in file %q. The token file shoul
 To provide a token value directly, set the ROX_API_TOKEN environment variable.
 `
 
-func printAuthHelp() {
+func printAuthHelp(log logger.Logger) {
 	if !strings.Contains(flags.APITokenFile(), "/") {
 		// Specified token file looks somewhat like a literal token, try to help the user.
-		fmt.Fprintf(os.Stderr, userHelpLiteralToken, flags.APITokenFile())
+		log.PrintfLn(userHelpLiteralToken, flags.APITokenFile())
 	}
 }
 
 // newAuth creates a new Auth type which will be inferred based off of the values of flags.APITokenFile and flags.Password.
-func newAuth() (Auth, error) {
+func newAuth(log logger.Logger) (Auth, error) {
 	if err := checkAuthParameters(); err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func newAuth() (Auth, error) {
 
 	token, err := retrieveAuthToken()
 	if err != nil {
-		printAuthHelp()
+		printAuthHelp(log)
 		return nil, err
 	}
 	return &apiTokenAuthenticator{token}, nil

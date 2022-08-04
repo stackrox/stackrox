@@ -1,6 +1,7 @@
 package services
 
 import com.google.protobuf.Timestamp
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.CreateNetworkEntityRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
@@ -12,6 +13,7 @@ import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.ExternalSource
 import util.Timer
 
+@Slf4j
 class NetworkGraphService extends BaseService {
     static getNetworkGraphClient() {
         return NetworkGraphServiceGrpc.newBlockingStub(getChannel())
@@ -33,7 +35,7 @@ class NetworkGraphService extends BaseService {
             }
             return getNetworkGraphClient().getNetworkGraph(request.build())
         } catch (Exception e) {
-            println "Exception fetching network graph: ${e}"
+            log.error("Exception fetching network graph", e)
         }
     }
 
@@ -66,7 +68,7 @@ class NetworkGraphService extends BaseService {
 
             return getNetworkGraphClient().createExternalNetworkEntity(request)
         } catch (Exception e) {
-            println "Exception while creating network entity: ${e}"
+            log.error("Exception while creating network entity", e)
         }
     }
 
@@ -75,7 +77,7 @@ class NetworkGraphService extends BaseService {
             // Create request
             getNetworkGraphClient().deleteExternalNetworkEntity(ResourceByID.newBuilder().setId(entityID).build())
         } catch (Exception e) {
-            println "Exception while deleting network entity: ${e}"
+            log.error("Exception while deleting network entity", e)
         }
     }
 
@@ -101,10 +103,9 @@ class NetworkGraphService extends BaseService {
                     return matchingEntity
                 }
             } catch (Exception e) {
-                println "Exception while getting network entity with name ${entityName}, retrying...:"
-                println e.toString()
+                log.debug("Exception while getting network entity with name ${entityName}, retrying...", e)
             }
         }
-        println "Failed to get network entity with name ${entityName} under cluster ${clusterId}"
+        log.warn "Failed to get network entity with name ${entityName} under cluster ${clusterId}"
     }
 }

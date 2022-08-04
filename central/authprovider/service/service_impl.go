@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -16,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -70,11 +69,11 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetAuthProvider retrieves the authProvider based on the id passed
 func (s *serviceImpl) GetAuthProvider(_ context.Context, request *v1.GetAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
-		return nil, errorhelpers.NewErrInvalidArgs("auth provider id is required")
+		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
 	authProvider := s.registry.GetProvider(request.GetId())
 	if authProvider == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "auth provider %q not found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
 	}
 	return authProvider.StorageView(), nil
 }
@@ -122,6 +121,12 @@ func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty)
 			SuggestedAttributes: attributes,
 		})
 	}
+
+	// List auth providers in the same order for consistency across requests.
+	sort.Slice(supportedTypes, func(i, j int) bool {
+		return supportedTypes[i].GetType() < supportedTypes[j].GetType()
+	})
+
 	return &v1.AvailableProviderTypesResponse{
 		AuthProviderTypes: supportedTypes,
 	}, nil
@@ -158,37 +163,38 @@ func (s *serviceImpl) GetAuthProviders(_ context.Context, request *v1.GetAuthPro
 func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuthProviderRequest) (*storage.AuthProvider, error) {
 	providerReq := request.GetProvider()
 	if providerReq.GetName() == "" {
-		return nil, errorhelpers.NewErrInvalidArgs("no auth provider name specified")
+		return nil, errox.InvalidArgs.CausedBy("no auth provider name specified")
 	}
 	if providerReq.GetId() != "" {
-		return nil, errorhelpers.NewErrInvalidArgs("auth provider id must be empty")
+		return nil, errox.InvalidArgs.CausedBy("auth provider id is not empty")
 	}
 	if providerReq.GetLoginUrl() != "" {
-		return nil, errorhelpers.NewErrInvalidArgs("auth provider loginUrl field must be empty")
+		return nil, errox.InvalidArgs.CausedBy("auth provider loginUrl field is not empty")
 	}
 
-	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq), authproviders.WithValidateCallback(datastore.Singleton()))
+	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq),
+		authproviders.WithValidateCallback(datastore.Singleton()), authproviders.WithAttributeVerifier(providerReq))
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.NewErrInvalidArgs(err.Error()), "creating auth provider instance")
+		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)
 	}
 	return provider.StorageView(), nil
 }
 
 func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.AuthProvider) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
-		return nil, errorhelpers.NewErrInvalidArgs("auth provider id must not be empty")
+		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
 
 	provider := s.registry.GetProvider(request.GetId())
 	if provider == nil {
-		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("auth provider with id %q does not exist", request.GetId()))
+		return nil, errox.NotFound.Newf("auth provider with id %q does not exist", request.GetId())
 	}
 
 	// Attempt to merge configs.
 	request.Config = provider.MergeConfigInto(request.GetConfig())
 
 	if err := s.registry.ValidateProvider(ctx, authproviders.WithStorageView(request)); err != nil {
-		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("auth provider validation check failed: %v", err))
+		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
 	}
 
 	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it
@@ -196,16 +202,18 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, err
 	}
 
-	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request), authproviders.WithValidateCallback(datastore.Singleton()))
+	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request),
+		authproviders.WithAttributeVerifier(request),
+		authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.NewErrInvalidArgs(err.Error()), "creating auth provider instance")
+		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)
 	}
 	return provider.StorageView(), nil
 }
 
 func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.UpdateAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
-		return nil, errorhelpers.NewErrInvalidArgs("auth provider id must not be empty")
+		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
 
 	var options []authproviders.ProviderOption
@@ -217,7 +225,7 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 	}
 	provider, err := s.registry.UpdateProvider(ctx, request.GetId(), options...)
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.NewErrInvalidArgs(err.Error()), "updating auth provider")
+		return nil, errox.InvalidArgs.New("unable to update auth provider").CausedBy(err)
 	}
 	return provider.StorageView(), nil
 }
@@ -225,13 +233,13 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 // DeleteAuthProvider deletes an auth provider from the system
 func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errorhelpers.NewErrInvalidArgs("auth provider id is required")
+		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
 
 	// Get auth provider.
 	authProvider := s.registry.GetProvider(request.GetId())
 	if authProvider == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "auth provider %q not found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
 	}
 	// Delete auth provider.
 	if err := s.registry.DeleteProvider(ctx, request.GetId(), true); err != nil {
@@ -271,7 +279,6 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 		return response, nil
 	}
 
-	// We need all access for retrieving roles.
 	token, refreshCookie, err := s.registry.IssueToken(ctx, provider, authResponse)
 	if err != nil {
 		return nil, err

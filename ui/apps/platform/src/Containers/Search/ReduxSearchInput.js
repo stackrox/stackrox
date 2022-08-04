@@ -60,4 +60,5 @@ const mapDispatchToProps = {
     setAllSearchOptions: searchAutoCompleteActions.setAllSearchOptions,
 };
 
+/** @deprecated */
 export default connect(mapStateToProps, mapDispatchToProps)(ReduxSearchInput);

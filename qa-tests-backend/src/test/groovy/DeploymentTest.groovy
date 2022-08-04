@@ -1,13 +1,12 @@
 import static org.junit.Assume.assumeTrue
-
 import groups.BAT
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+import objects.Deployment
 import objects.Job
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.DeploymentService
 import services.ImageService
-import objects.Deployment
 import spock.lang.Unroll
 import util.Timer
 
@@ -25,7 +24,7 @@ class DeploymentTest extends BaseSpecification {
 
     private static final Job JOB = new Job()
             .setName("test-job-pi")
-            .setImage("perl")
+            .setImage("perl:5.32.1")
             .addLabel("app", "test")
             .setCommand(["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"])
 

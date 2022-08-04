@@ -1,15 +1,14 @@
 package dackbox
 
 import (
+	"context"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	acDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	"github.com/stackrox/rox/central/imagecomponent/store"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -30,7 +29,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (store.Store, er
 	}, nil
 }
 
-func (b *storeImpl) Exists(id string) (bool, error) {
+func (b *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -45,28 +44,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 	return exists, nil
 }
 
-func (b *storeImpl) GetAll() ([]*storage.ImageComponent, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Image Component")
-
-	dackTxn, err := b.dacky.NewReadOnlyTransaction()
-	if err != nil {
-		return nil, err
-	}
-	defer dackTxn.Discard()
-
-	msgs, err := componentDackBox.Reader.ReadAllIn(componentDackBox.Bucket, dackTxn)
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]*storage.ImageComponent, 0, len(msgs))
-	for _, msg := range msgs {
-		ret = append(ret, msg.(*storage.ImageComponent))
-	}
-
-	return ret, nil
-}
-
-func (b *storeImpl) Count() (int, error) {
+func (b *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Image Component")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -84,7 +62,7 @@ func (b *storeImpl) Count() (int, error) {
 }
 
 // GetImage returns image with given id.
-func (b *storeImpl) Get(id string) (image *storage.ImageComponent, exists bool, err error) {
+func (b *storeImpl) Get(ctx context.Context, id string) (image *storage.ImageComponent, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Image Component")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -102,7 +80,7 @@ func (b *storeImpl) Get(id string) (image *storage.ImageComponent, exists bool, 
 }
 
 // GetImagesBatch returns image with given sha.
-func (b *storeImpl) GetBatch(ids []string) ([]*storage.ImageComponent, []int, error) {
+func (b *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponent, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Image Component")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -131,101 +109,4 @@ func (b *storeImpl) GetBatch(ids []string) ([]*storage.ImageComponent, []int, er
 	}
 
 	return ret, missing, nil
-}
-
-func (b *storeImpl) Upsert(components ...*storage.ImageComponent) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.UpsertAll, "Image Component")
-
-	keysToUpsert := make([][]byte, 0, len(components))
-	for _, component := range components {
-		keysToUpsert = append(keysToUpsert, componentDackBox.KeyFunc(component))
-	}
-	lockedKeySet := concurrency.DiscreteKeySet(keysToUpsert...)
-
-	return b.keyFence.DoStatusWithLock(lockedKeySet, func() error {
-		batch := batcher.New(len(components), batchSize)
-		for {
-			start, end, ok := batch.Next()
-			if !ok {
-				break
-			}
-
-			if err := b.upsertNoBatch(components[start:end]...); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-func (b *storeImpl) upsertNoBatch(components ...*storage.ImageComponent) error {
-	dackTxn, err := b.dacky.NewTransaction()
-	if err != nil {
-		return err
-	}
-	defer dackTxn.Discard()
-
-	for _, component := range components {
-		err := componentDackBox.Upserter.UpsertIn(nil, component, dackTxn)
-		if err != nil {
-			return err
-		}
-	}
-
-	if err := dackTxn.Commit(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (b *storeImpl) Delete(ids ...string) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "Image Component")
-
-	keysToUpsert := make([][]byte, 0, len(ids))
-	for _, id := range ids {
-		keysToUpsert = append(keysToUpsert, componentDackBox.BucketHandler.GetKey(id))
-	}
-	lockedKeySet := concurrency.DiscreteKeySet(keysToUpsert...)
-
-	return b.keyFence.DoStatusWithLock(lockedKeySet, func() error {
-		batch := batcher.New(len(ids), batchSize)
-		for {
-			start, end, ok := batch.Next()
-			if !ok {
-				break
-			}
-
-			if err := b.deleteNoBatch(ids[start:end]...); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-func (b *storeImpl) deleteNoBatch(ids ...string) error {
-	dackTxn, err := b.dacky.NewTransaction()
-	if err != nil {
-		return err
-	}
-	defer dackTxn.Discard()
-
-	g := dackTxn.Graph()
-	for _, id := range ids {
-		acKeys := g.GetRefsToPrefix(componentDackBox.BucketHandler.GetKey(id), acDackBox.Bucket)
-		for _, key := range acKeys {
-			if err := acDackBox.Deleter.DeleteIn(key, dackTxn); err != nil {
-				return err
-			}
-		}
-		err := componentDackBox.Deleter.DeleteIn(componentDackBox.BucketHandler.GetKey(id), dackTxn)
-		if err != nil {
-			return err
-		}
-	}
-
-	if err := dackTxn.Commit(); err != nil {
-		return err
-	}
-	return nil
 }

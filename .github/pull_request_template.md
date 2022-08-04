@@ -9,7 +9,7 @@ Feel free to remove this section if it is overkill for your PR, and the title of
 - [ ] Unit test and regression tests added
 - [ ] Evaluated and added CHANGELOG entry if required
 - [ ] Determined and documented upgrade steps
-- [ ] Documented user facing changes (create PR based on [stackrox/openshift-docs](https://github.com/stackrox/openshift-docs) and merge into [rhacs-docs](https://github.com/openshift/openshift-docs/tree/rhacs-docs))
+- [ ] Documented user facing changes (create PR based on [openshift/openshift-docs](https://github.com/openshift/openshift-docs) and merge into [rhacs-docs](https://github.com/openshift/openshift-docs/tree/rhacs-docs))
 
 If any of these don't apply, please comment below.
 
