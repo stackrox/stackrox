@@ -220,6 +220,7 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.serviceAccountDataStore.EXPECT().RemoveServiceAccount(gomock.Any(), gomock.Any()).Return(nil)
 	suite.roleDataStore.EXPECT().RemoveRole(gomock.Any(), gomock.Any()).Return(nil)
 	suite.roleBindingDataStore.EXPECT().RemoveRoleBinding(gomock.Any(), gomock.Any()).Return(nil)
+	suite.clusterCVEDataStore.EXPECT().DeleteClusterCVEsInternal(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	done := concurrency.NewSignal()
 	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID, &done)
