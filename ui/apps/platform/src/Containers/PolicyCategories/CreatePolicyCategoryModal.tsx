@@ -41,7 +41,8 @@ function CreatePolicyCategoryModal({
         onSubmit: (values, { setSubmitting, resetForm }) => {
             setSubmitting(false);
             postPolicyCategory(values)
-                .then(() => {
+                .then((response) => {
+                    setSelectedCategory(response);
                     setTimeout(refreshPolicyCategories, 200);
                     addToast('Successfully added category');
                 })
@@ -50,7 +51,6 @@ function CreatePolicyCategoryModal({
                 })
                 .finally(() => {
                     setSubmitting(false);
-                    setSelectedCategory(values);
                     resetForm();
                     onClose();
                 });

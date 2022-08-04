@@ -56,6 +56,7 @@ function PolicyCategoriesPage(): React.ReactElement {
                 addToast={addToast}
                 setSelectedCategory={setSelectedCategory}
                 selectedCategory={selectedCategory}
+                refreshPolicyCategories={refreshPolicyCategories}
             />
         );
     }

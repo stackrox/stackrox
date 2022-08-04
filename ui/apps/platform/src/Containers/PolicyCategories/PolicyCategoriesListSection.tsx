@@ -11,6 +11,7 @@ type PolicyCategoriesListSectionProps = {
     addToast: (message) => void;
     selectedCategory: PolicyCategory | undefined;
     setSelectedCategory: (category) => void;
+    refreshPolicyCategories: () => void;
 };
 
 function PolicyCategoriesListSection({
@@ -18,6 +19,7 @@ function PolicyCategoriesListSection({
     addToast,
     selectedCategory,
     setSelectedCategory,
+    refreshPolicyCategories,
 }: PolicyCategoriesListSectionProps) {
     const customPolicyCategories = policyCategories.filter(({ isDefault }) => !isDefault);
     const defaultPolicyCategories = policyCategories.filter(({ isDefault }) => isDefault);
@@ -104,6 +106,7 @@ function PolicyCategoriesListSection({
                                 selectedCategory={selectedCategory}
                                 setSelectedCategory={setSelectedCategory}
                                 addToast={addToast}
+                                refreshPolicyCategories={refreshPolicyCategories}
                             />
                         </FlexItem>
                     </>
