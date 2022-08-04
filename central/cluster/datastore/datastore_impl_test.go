@@ -91,6 +91,11 @@ type ClusterDataStoreTestSuite struct {
 var _ suite.TearDownTestSuite = (*ClusterDataStoreTestSuite)(nil)
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
+	if features.PostgresDatastore.Enabled() {
+		suite.T().Skip("Skip dackbox tests if postgres is enabled")
+		suite.T().SkipNow()
+	}
+
 	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -220,7 +225,6 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.serviceAccountDataStore.EXPECT().RemoveServiceAccount(gomock.Any(), gomock.Any()).Return(nil)
 	suite.roleDataStore.EXPECT().RemoveRole(gomock.Any(), gomock.Any()).Return(nil)
 	suite.roleBindingDataStore.EXPECT().RemoveRoleBinding(gomock.Any(), gomock.Any()).Return(nil)
-	suite.clusterCVEDataStore.EXPECT().DeleteClusterCVEsInternal(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	done := concurrency.NewSignal()
 	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID, &done)
