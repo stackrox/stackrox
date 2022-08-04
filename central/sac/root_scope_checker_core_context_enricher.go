@@ -79,3 +79,7 @@ func (se *Enricher) GetPreAuthContextEnricher(authzTraceSink observe.AuthzTraceS
 		return ctxWithSCC, nil
 	}
 }
+
+func newConfiguredCache() expiringcache.Cache {
+	return expiringcache.NewExpiringCache(env.PermissionTimeout.DurationSetting())
+}
