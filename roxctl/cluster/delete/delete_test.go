@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/mocks"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -55,7 +56,7 @@ func (c *clusterDeleteTestSuite) createGRPCMockClustersService(clusters []*stora
 
 	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 		return listener.Dial()
-	}), grpc.WithInsecure())
+	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	c.Require().NoError(err)
 
 	closeFunction := func() {
