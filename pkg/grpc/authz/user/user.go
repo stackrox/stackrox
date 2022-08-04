@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
 )
 
 // With returns an authorizer that only authorizes users/tokens
@@ -29,6 +30,11 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 
 	// Check if the role has all the required permissions.
 	return p.checkPermissions(id.Permissions())
+}
+
+func (p *permissionChecker) collectPermissions(pc *[]permissions.ResourceWithAccess) error {
+	*pc = append(*pc, p.requiredPermissions...)
+	return permissioncheck.ErrPermissionCheckOnly
 }
 
 func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access) error {

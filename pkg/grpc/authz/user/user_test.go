@@ -42,6 +42,8 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 	idWithNoPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	idWithNoPermissions.EXPECT().Permissions().Return(nil).AnyTimes()
 
+	contextWithPermissionCheck, _ := permissioncheck.ContextWithPermissionCheck()
+
 	tests := []struct {
 		name                string
 		requiredPermissions []permissions.ResourceWithAccess
