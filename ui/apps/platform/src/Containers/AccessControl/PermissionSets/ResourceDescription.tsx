@@ -12,8 +12,6 @@ const resourceDescriptions: Record<ResourceName, string> = {
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
     AllComments:
         'Read: N/A Write: Delete comments from other users. All users can edit and delete their own comments by default. To add and remove comments or tags, you need a role with write access for the resource you are modifying.',
-    AuthPlugin:
-        'Read: View authentication plugins. Write: Modify authentication plugins (local administrator only).',
     AuthProvider:
         'Read: View configuration for authentication services. Write: Modify configuration for authentication services.',
     BackupPlugins:

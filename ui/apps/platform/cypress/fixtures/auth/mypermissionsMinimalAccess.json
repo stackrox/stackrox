@@ -4,7 +4,6 @@
     "resourceToAccess": {
         "APIToken": "NO_ACCESS",
         "Alert": "READ_ACCESS",
-        "AuthPlugin": "NO_ACCESS",
         "AuthProvider": "NO_ACCESS",
         "BackupPlugins": "NO_ACCESS",
         "CVE": "NO_ACCESS",
