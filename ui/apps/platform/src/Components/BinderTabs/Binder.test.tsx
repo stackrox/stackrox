@@ -8,8 +8,12 @@ describe('BinderTabs', () => {
     test("renders the first tab's contents", () => {
         render(
             <BinderTabs>
-                <Tab title="tab 1">Tab 1 Content</Tab>
-                <Tab title="tab 2">Tab 2 Content</Tab>
+                <Tab title="tab 1">
+                    <span>Tab 1 Content</span>
+                </Tab>
+                <Tab title="tab 2">
+                    <span>Tab 2 Content</span>
+                </Tab>
             </BinderTabs>
         );
         expect(screen.getByText('Tab 1 Content')).toBeDefined();
@@ -18,8 +22,12 @@ describe('BinderTabs', () => {
     test("selecting a new tab render's the new tab's contents", () => {
         render(
             <BinderTabs>
-                <Tab title="tab 1">Tab 1 Content</Tab>
-                <Tab title="tab 2">Tab 2 Content</Tab>
+                <Tab title="tab 1">
+                    <span>Tab 1 Content</span>
+                </Tab>
+                <Tab title="tab 2">
+                    <span>Tab 2 Content</span>
+                </Tab>
             </BinderTabs>
         );
 
