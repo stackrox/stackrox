@@ -39,9 +39,8 @@ func (cw *containerWrap) addProcess(indicator *storage.ProcessIndicator) {
 	cw.processes = append(cw.processes, indicator)
 }
 
-// fetchAndClearProcesses returns all the processes in the given *containerWrap
-// and then clears them from the *containerWrap.
-// This function is atomic.
+// fetchAndClearProcesses atomically returns all the processes in the given *containerWrap
+// and clears them from the *containerWrap.
 func (cw *containerWrap) fetchAndClearProcesses() []*storage.ProcessIndicator {
 	cw.mutex.Lock()
 	defer cw.mutex.Unlock()
