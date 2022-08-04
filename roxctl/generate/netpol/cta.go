@@ -14,41 +14,39 @@ import (
 func (cmd *generateNetpolCommand) generateNetpol() error {
 	recommendedNetpols, err := controller.PoliciesFromFolderPath(cmd.folderPath)
 	if err != nil {
-		return errors.Wrap(err, "Error synthesizing policies from folder")
+		return errors.Wrap(err, "error synthesizing policies from folder")
 	}
 
-	var yamlPolicies []string
 	var mergedPolicy string
 	for _, netpol := range recommendedNetpols {
 		yamlPolicy, err := networkpolicy.KubernetesNetworkPolicyWrap{NetworkPolicy: netpol}.ToYaml()
 		if err != nil {
-			return errors.Wrap(err, "Error converting Network Policy object to YAML")
+			return errors.Wrap(err, "error converting Network Policy object to YAML")
 		}
-		yamlPolicies = append(yamlPolicies, yamlPolicy)
 		mergedPolicy = fmt.Sprintf("%s---\n%s", mergedPolicy, yamlPolicy)
 	}
 
 	if !cmd.mergePolicies && !cmd.splitPolicies {
-		cmd.printNetpolsToStdout(mergedPolicy)
+		cmd.printNetpols(mergedPolicy)
 		return nil
 	}
 
 	if cmd.mergePolicies {
 		if err := cmd.saveNetpolsToMergedFile(mergedPolicy); err != nil {
-			return errors.Wrapf(err, "Error writing merged Network Policies to file")
+			return errors.Wrapf(err, "error saving merged Network Policies")
 		}
 	}
 
 	if cmd.splitPolicies {
 		if err := cmd.saveNetpolsToFolder(recommendedNetpols); err != nil {
-			return errors.Wrapf(err, "Error writing split Network Policies to folder")
+			return errors.Wrapf(err, "error saving split Network Policies")
 		}
 	}
 
 	return nil
 }
 
-func (cmd *generateNetpolCommand) printNetpolsToStdout(combinedNetpols string) {
+func (cmd *generateNetpolCommand) printNetpols(combinedNetpols string) {
 	cmd.env.Logger().PrintfLn(combinedNetpols)
 }
 
@@ -62,7 +60,7 @@ func (cmd *generateNetpolCommand) saveNetpolsToMergedFile(combinedNetpols string
 	}
 
 	if err := writeFile(filename, dirpath, combinedNetpols); err != nil {
-		return errors.Wrapf(err, "Error writing policy to file")
+		return errors.Wrapf(err, "error writing merged Network Policies")
 	}
 	return nil
 }
@@ -77,11 +75,11 @@ func (cmd *generateNetpolCommand) saveNetpolsToFolder(recommendedNetpols []*v1.N
 
 		yamlPolicy, err := networkpolicy.KubernetesNetworkPolicyWrap{NetworkPolicy: netpol}.ToYaml()
 		if err != nil {
-			return errors.Wrap(err, "Error converting Network Policy object to YAML")
+			return errors.Wrap(err, "error converting Network Policy object to YAML")
 		}
 
 		if err := writeFile(filename, cmd.outputFolderPath, yamlPolicy); err != nil {
-			return errors.Wrapf(err, "Error writing policy to file")
+			return errors.Wrapf(err, "error writing policy to file")
 		}
 	}
 	return nil
@@ -90,9 +88,9 @@ func (cmd *generateNetpolCommand) saveNetpolsToFolder(recommendedNetpols []*v1.N
 func writeFile(filename string, destDir string, content string) error {
 	outputPath := filepath.Join(destDir, filename)
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return errors.Wrapf(err, "Error creating directory for file %q", filename)
+		return errors.Wrapf(err, "error creating directory for file %q", filename)
 	}
 
 	perms := os.FileMode(0644)
-	return errors.Wrap(os.WriteFile(outputPath, []byte(content), perms), "Error writing file")
+	return errors.Wrap(os.WriteFile(outputPath, []byte(content), perms), "error writing file")
 }
