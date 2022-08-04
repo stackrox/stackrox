@@ -82,7 +82,6 @@ type ImageComponentResolver interface {
 	// deprecated functions
 
 	FixedIn(ctx context.Context) string
-	ID(ctx context.Context) graphql.ID
 }
 
 // ImageComponent returns an image component based on an input id (name:version)
@@ -419,10 +418,6 @@ func (resolver *imageComponentResolver) TopImageVulnerability(ctx context.Contex
 		return vulnResolver, nil
 	}
 	return resolver.root.TopImageVulnerability(resolver.withImageComponentScope(ctx), RawQuery{})
-}
-
-func (resolver *imageComponentResolver) ID(_ context.Context) graphql.ID {
-	return graphql.ID(resolver.data.GetId())
 }
 
 func (resolver *imageComponentResolver) LayerIndex() (*int32, error) {

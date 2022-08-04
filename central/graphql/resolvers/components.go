@@ -60,7 +60,7 @@ func init() {
 // ComponentResolver represents a generic resolver of component fields.
 // Values may come from either an embedded component context, or a top level component context.
 type ComponentResolver interface {
-	ID(ctx context.Context) graphql.ID
+	Id(ctx context.Context) graphql.ID
 	Name(ctx context.Context) string
 	Version(ctx context.Context) string
 	Priority(ctx context.Context) int32

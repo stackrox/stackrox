@@ -609,18 +609,6 @@ func (resolver *cVEResolver) CveBaseInfo(_ context.Context) (*cVEInfoResolver, e
 	return nil, nil
 }
 
-func (resolver *cVEResolver) SnoozeExpiry(_ context.Context) (*graphql.Time, error) {
-	return nil, nil
-}
-
-func (resolver *cVEResolver) SnoozeStart(_ context.Context) (*graphql.Time, error) {
-	return nil, nil
-}
-
-func (resolver *cVEResolver) Snoozed(_ context.Context) bool {
-	return false
-}
-
 // EnvImpact is the fraction of deployments that contains the CVE
 func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 	var numerator, denominator int
