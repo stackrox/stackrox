@@ -146,7 +146,7 @@ func (ds *datastoreImpl) GetNode(ctx context.Context, id string) (*storage.Node,
 func (ds *datastoreImpl) GetNodesBatch(ctx context.Context, ids []string) ([]*storage.Node, error) {
 	var nodes []*storage.Node
 	var err error
-	ok := true
+	var ok bool
 
 	if ok, err = nodesSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
