@@ -49,11 +49,12 @@ describe('AccessTokenManager', () => {
     });
 
     it('should clear timeout on refresh token invocation', () => {
+        const timeoutSpy = jest.spyOn(global, 'clearTimeout');
         const m = new AccessTokenManager();
         const tokenInfo = { expiry: new Date(Date.now() + 31000).toISOString() };
         m.setToken('my-token', tokenInfo);
         m.refreshToken();
-        expect(clearTimeout).toBeCalledTimes(1);
+        expect(timeoutSpy).toBeCalledTimes(1);
     });
 
     it('should store new token info after refresh', () => {
