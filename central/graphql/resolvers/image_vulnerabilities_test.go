@@ -29,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -63,7 +62,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
-	s.Require().NoError(err)
+	s.NoError(err)
 
 	pool, err := pgxpool.ConnectConfig(s.ctx, config)
 	s.NoError(err)
@@ -83,7 +82,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	imageCVEIndexer := imageCVEPostgres.NewIndexer(s.db)
 	imageCVESearcher := imageCVESearch.New(imageCVEStore, imageCVEIndexer)
 	imageCVEDatastore, err := imageCVEDataStore.New(imageCVEStore, imageCVEIndexer, imageCVESearcher, concurrency.NewKeyFence())
-	require.NoError(s.T(), err, "Failed to create ImageCVEDatastore")
+	s.NoError(err, "Failed to create ImageCVEDatastore")
 	s.resolver.ImageCVEDataStore = imageCVEDatastore
 
 	// image datastore
@@ -116,7 +115,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	testImages := testImages()
 	for _, image := range testImages {
 		err = imageStore.Upsert(s.ctx, image)
-		require.NoError(s.T(), err)
+		s.NoError(err)
 	}
 }
 
@@ -128,57 +127,57 @@ func (s *GraphQLImageVulnerabilityTestSuite) TearDownSuite() {
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestUnauthorizedImageVulnerabilityEndpoint() {
 	_, err := s.resolver.ImageVulnerability(s.ctx, IDQuery{})
-	require.Error(s.T(), err, "Unauthorized request got through")
+	s.Error(err, "Unauthorized request got through")
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestUnauthorizedImageVulnerabilitiesEndpoint() {
 	_, err := s.resolver.ImageVulnerabilities(s.ctx, PaginatedQuery{})
-	require.Error(s.T(), err, "Unauthorized request got through")
+	s.Error(err, "Unauthorized request got through")
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestUnauthorizedImageVulnerabilityCountEndpoint() {
 	_, err := s.resolver.ImageVulnerabilityCount(s.ctx, RawQuery{})
-	require.Error(s.T(), err, "Unauthorized request got through")
+	s.Error(err, "Unauthorized request got through")
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestUnauthorizedImageVulnerabilityCounterEndpoint() {
 	_, err := s.resolver.ImageVulnerabilityCounter(s.ctx, RawQuery{})
-	require.Error(s.T(), err, "Unauthorized request got through")
+	s.Error(err, "Unauthorized request got through")
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestUnauthorizedTopImageVulnerabilityEndpoint() {
 	_, err := s.resolver.TopImageVulnerability(s.ctx, RawQuery{})
-	require.Error(s.T(), err, "Unauthorized request got through")
+	s.Error(err, "Unauthorized request got through")
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilities() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	vulns, err := s.resolver.ImageVulnerabilities(ctx, PaginatedQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), 5, len(vulns))
+	s.NoError(err)
+	s.Equal(5, len(vulns))
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesFixable() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	query, err := getFixableRawQuery(true)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	vulns, err := s.resolver.ImageVulnerabilities(ctx, PaginatedQuery{Query: &query})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), 1, len(vulns))
+	s.NoError(err)
+	s.Equal(1, len(vulns))
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesNonFixable() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	query, err := getFixableRawQuery(false)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	vulns, err := s.resolver.ImageVulnerabilities(ctx, PaginatedQuery{Query: &query})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), 4, len(vulns))
+	s.NoError(err)
+	s.Equal(4, len(vulns))
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesScoped() {
@@ -187,14 +186,14 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesScoped() {
 	image := s.getImageResolver(ctx, "sha1")
 
 	vulns, err := image.ImageVulnerabilities(ctx, PaginatedQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), 3, len(vulns))
+	s.NoError(err)
+	s.Equal(3, len(vulns))
 
 	image = s.getImageResolver(ctx, "sha2")
 
 	vulns, err = image.ImageVulnerabilities(ctx, PaginatedQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), 5, len(vulns))
+	s.NoError(err)
+	s.Equal(5, len(vulns))
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityMiss() {
@@ -203,7 +202,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityMiss() {
 	vulnID := graphql.ID("invalid")
 
 	_, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnID})
-	require.Error(s.T(), err)
+	s.Error(err)
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityHit() {
@@ -212,16 +211,16 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityHit() {
 	vulnID := graphql.ID("cve-2018-1#")
 
 	vuln, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnID})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), vulnID, vuln.ID(ctx))
+	s.NoError(err)
+	s.Equal(vulnID, vuln.ID(ctx))
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityCount() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	count, err := s.resolver.ImageVulnerabilityCount(ctx, RawQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), int32(5), count)
+	s.NoError(err)
+	s.Equal(int32(5), count)
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityCountScoped() {
@@ -230,21 +229,21 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityCountScoped()
 	image := s.getImageResolver(ctx, "sha1")
 
 	count, err := image.ImageVulnerabilityCount(ctx, RawQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), int32(3), count)
+	s.NoError(err)
+	s.Equal(int32(3), count)
 
 	image = s.getImageResolver(ctx, "sha2")
 
 	count, err = image.ImageVulnerabilityCount(ctx, RawQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), int32(5), count)
+	s.NoError(err)
+	s.Equal(int32(5), count)
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityCounter() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	count, err := s.resolver.ImageVulnerabilityCounter(ctx, RawQuery{})
-	require.NoError(s.T(), err)
+	s.NoError(err)
 	checkVulnerabilityCounter(s.T(), count, 5, 1, 1, 2, 1, 1)
 }
 
@@ -254,13 +253,13 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityCounterScoped
 	image := s.getImageResolver(ctx, "sha1")
 
 	count, err := image.ImageVulnerabilityCounter(ctx, RawQuery{})
-	require.NoError(s.T(), err)
+	s.NoError(err)
 	checkVulnerabilityCounter(s.T(), count, 3, 1, 1, 0, 1, 1)
 
 	image = s.getImageResolver(ctx, "sha2")
 
 	count, err = image.ImageVulnerabilityCounter(ctx, RawQuery{})
-	require.NoError(s.T(), err)
+	s.NoError(err)
 	checkVulnerabilityCounter(s.T(), count, 5, 1, 1, 2, 1, 1)
 }
 
@@ -268,7 +267,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestTopImageVulnerabilityUnscoped()
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	_, err := s.resolver.TopImageVulnerability(ctx, RawQuery{})
-	require.Error(s.T(), err)
+	s.Error(err)
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestTopImageVulnerability() {
@@ -277,7 +276,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestTopImageVulnerability() {
 	image := s.getImageResolver(ctx, "sha1")
 
 	_, err := image.TopImageVulnerability(ctx, RawQuery{})
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	// TODO figure out how to test this
 }
@@ -288,14 +287,14 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityImages() {
 	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
 
 	images, err := vuln.Images(ctx, PaginatedQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), 2, len(images))
+	s.NoError(err)
+	s.Equal(2, len(images))
 
 	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-1#")
 
 	images, err = vuln.Images(ctx, PaginatedQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), 1, len(images))
+	s.NoError(err)
+	s.Equal(1, len(images))
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityImageCount() {
@@ -304,14 +303,14 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityImageCount() 
 	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
 
 	count, err := vuln.ImageCount(ctx, RawQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), int32(2), count)
+	s.NoError(err)
+	s.Equal(int32(2), count)
 
 	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-1#")
 
 	count, err = vuln.ImageCount(ctx, RawQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), int32(1), count)
+	s.NoError(err)
+	s.Equal(int32(1), count)
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityImageComponents() {
@@ -320,14 +319,14 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityImageComponen
 	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
 
 	images, err := vuln.ImageComponents(ctx, PaginatedQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), 2, len(images))
+	s.NoError(err)
+	s.Equal(2, len(images))
 
 	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-1#")
 
 	images, err = vuln.ImageComponents(ctx, PaginatedQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), 1, len(images))
+	s.NoError(err)
+	s.Equal(1, len(images))
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityImageComponentCount() {
@@ -336,22 +335,22 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityImageComponen
 	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
 
 	count, err := vuln.ImageComponentCount(ctx, RawQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), int32(2), count)
+	s.NoError(err)
+	s.Equal(int32(2), count)
 
 	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-1#")
 
 	count, err = vuln.ImageComponentCount(ctx, RawQuery{})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), int32(1), count)
+	s.NoError(err)
+	s.Equal(int32(1), count)
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) getImageResolver(ctx context.Context, id string) *imageResolver {
 	imageID := graphql.ID(id)
 
 	image, err := s.resolver.Image(ctx, struct{ ID graphql.ID }{ID: imageID})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), imageID, image.Id(ctx))
+	s.NoError(err)
+	s.Equal(imageID, image.Id(ctx))
 	return image
 }
 
@@ -359,7 +358,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) getImageVulnerabilityResolver(ctx c
 	vulnID := graphql.ID(id)
 
 	vuln, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnID})
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), vulnID, vuln.ID(ctx))
+	s.NoError(err)
+	s.Equal(vulnID, vuln.ID(ctx))
 	return vuln
 }
