@@ -682,7 +682,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/vm/node/export/csv",
+			Route:         "/api/export/csv/node/cve",
 			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment), permissions.View(resources.Node)),
 			ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
 			Compression:   true,
