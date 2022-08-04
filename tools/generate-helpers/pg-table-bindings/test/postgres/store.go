@@ -50,6 +50,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, key string) (bool, error)
 	Get(ctx context.Context, key string) (*storage.TestSingleKeyStruct, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TestSingleKeyStruct, error)
 	GetAll(ctx context.Context) ([]*storage.TestSingleKeyStruct, error)
 	Upsert(ctx context.Context, obj *storage.TestSingleKeyStruct) error
 	UpsertMany(ctx context.Context, objs []*storage.TestSingleKeyStruct) error
@@ -500,6 +501,47 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestS
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TestSingleKeyStruct, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "TestSingleKeyStruct")
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
+		return nil, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var results []*storage.TestSingleKeyStruct
+	for _, data := range rows {
+		msg := &storage.TestSingleKeyStruct{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, err
+		}
+		results = append(results, msg)
+	}
+	return results, nil
 }
 
 // Delete removes the specified IDs from the store

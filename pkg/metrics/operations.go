@@ -19,6 +19,7 @@ const (
 	GetAll
 	GetMany
 	GetFlowsForDeployment
+	GetByQuery
 
 	// Special operation currently used only for processes.
 	GetGrouped
