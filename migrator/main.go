@@ -57,6 +57,7 @@ func run() error {
 		return nil
 	}
 
+	// TODO: ROX-9884, ROX-10700 -- need to work on replicas and migrations
 	dbm, err := replica.Scan(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion)
 	if err != nil {
 		return errors.Wrap(err, "fail to scan replicas")
@@ -67,8 +68,10 @@ func run() error {
 		return err
 	}
 
-	defer postgreshelper.Close()
 	option.MigratorOptions.DBPathBase = replicaPath
+
+	// Close when needed
+	defer postgreshelper.Close()
 	if err = upgrade(conf); err != nil {
 		return err
 	}

@@ -92,7 +92,10 @@ func Load(conf *config.Config) (*pgxpool.Pool, *gorm.DB, error) {
 func Close() {
 	closeOnce.Do(func() {
 		if gormDB != nil {
-			sqlDB, _ := gormDB.DB()
+			sqlDB, err := gormDB.DB()
+			if err != nil {
+				return
+			}
 			if sqlDB != nil {
 				utils.IgnoreError(sqlDB.Close)
 			}
