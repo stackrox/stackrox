@@ -89,6 +89,7 @@ func Load(conf *config.Config) (*pgxpool.Pool, *gorm.DB, error) {
 	return postgresDB, gormDB, err
 }
 
+// Close closes postgres databases
 func Close() {
 	closeOnce.Do(func() {
 		if gormDB != nil {
