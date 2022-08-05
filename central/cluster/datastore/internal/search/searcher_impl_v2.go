@@ -56,8 +56,7 @@ func (s *searcherImplV2) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.
 }
 
 func (s *searcherImplV2) SearchClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error) {
-	clusters, _, err := s.searchClusters(ctx, q)
-	return clusters, err
+	return s.storage.GetByQuery(ctx, q)
 }
 
 func (s *searcherImplV2) searchClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, []search.Result, error) {

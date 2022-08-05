@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -10,6 +11,7 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, id string) (*storage.ProcessBaseline, bool, error)
+	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ProcessBaseline, []int, error)
 	Walk(ctx context.Context, fn func(baseline *storage.ProcessBaseline) error) error
 

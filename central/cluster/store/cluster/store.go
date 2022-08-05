@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -12,6 +13,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.Cluster, bool, error)
+	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error)
 	Upsert(ctx context.Context, obj *storage.Cluster) error
 	UpsertMany(ctx context.Context, objs []*storage.Cluster) error
 	Delete(ctx context.Context, id string) error

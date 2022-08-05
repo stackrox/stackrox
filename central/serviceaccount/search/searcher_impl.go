@@ -26,6 +26,9 @@ type searcherImpl struct {
 
 // SearchRawServiceAccounts returns the search results from indexed service accounts for the query.
 func (ds *searcherImpl) SearchRawServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, error) {
+	if features.PostgresDatastore.Enabled() {
+		return ds.storage.GetByQuery(ctx, q)
+	}
 	serviceAccounts, _, err := ds.searchServiceAccounts(ctx, q)
 	if err != nil {
 		return nil, err

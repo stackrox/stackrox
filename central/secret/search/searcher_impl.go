@@ -64,6 +64,9 @@ func (ds *searcherImpl) SearchListSecrets(ctx context.Context, q *v1.Query) ([]*
 
 // SearchRawSecrets retrieves secrets from the indexer and storage
 func (ds *searcherImpl) SearchRawSecrets(ctx context.Context, q *v1.Query) ([]*storage.Secret, error) {
+	if features.PostgresDatastore.Enabled() {
+		return ds.storage.GetByQuery(ctx, q)
+	}
 	return ds.searchSecrets(ctx, q)
 }
 

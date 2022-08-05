@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -12,6 +13,7 @@ type Store interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ActiveComponent, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ActiveComponent, []int, error)
+	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.ActiveComponent, error)
 	UpsertMany(ctx context.Context, activeComponents []*storage.ActiveComponent) error
 	DeleteMany(ctx context.Context, ids []string) error
 }

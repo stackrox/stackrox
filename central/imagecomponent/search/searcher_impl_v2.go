@@ -60,21 +60,7 @@ func (s *searcherImplV2) SearchImageComponents(ctx context.Context, q *v1.Query)
 }
 
 func (s *searcherImplV2) SearchRawImageComponents(ctx context.Context, q *v1.Query) ([]*storage.ImageComponent, error) {
-	return s.searchImageComponents(ctx, q)
-}
-
-func (s *searcherImplV2) searchImageComponents(ctx context.Context, q *v1.Query) ([]*storage.ImageComponent, error) {
-	results, err := s.getSearchResults(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := search.ResultsToIDs(results)
-	components, _, err := s.storage.GetMany(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	return components, nil
+	return s.storage.GetByQuery(ctx, q)
 }
 
 func (s *searcherImplV2) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {

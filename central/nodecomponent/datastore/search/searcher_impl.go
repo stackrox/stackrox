@@ -34,21 +34,7 @@ func (s *searcherImpl) SearchNodeComponents(ctx context.Context, q *v1.Query) ([
 }
 
 func (s *searcherImpl) SearchRawNodeComponents(ctx context.Context, q *v1.Query) ([]*storage.NodeComponent, error) {
-	return s.searchNodeComponents(ctx, q)
-}
-
-func (s *searcherImpl) searchNodeComponents(ctx context.Context, q *v1.Query) ([]*storage.NodeComponent, error) {
-	results, err := s.getSearchResults(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := search.ResultsToIDs(results)
-	components, _, err := s.storage.GetMany(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	return components, nil
+	return s.storage.GetByQuery(ctx, q)
 }
 
 func (s *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {

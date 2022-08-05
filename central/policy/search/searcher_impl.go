@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -33,6 +34,9 @@ type searcherImpl struct {
 
 // SearchRawPolicies retrieves Policies from the indexer and storage
 func (ds *searcherImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
+	if features.PostgresDatastore.Enabled() {
+		return ds.storage.GetByQuery(ctx, q)
+	}
 	policies, _, err := ds.searchPolicies(ctx, q)
 	return policies, err
 }

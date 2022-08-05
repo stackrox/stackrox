@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -117,6 +118,10 @@ func (s *storeImpl) GetAll(_ context.Context) ([]*storage.Policy, error) {
 		})
 	})
 	return policies, err
+}
+
+func (s *storeImpl) GetByQuery(_ context.Context, _ *v1.Query) ([]*storage.Policy, error) {
+	panic("unimplemented")
 }
 
 func (s *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Policy, []int, error) {

@@ -8,6 +8,7 @@ import (
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	"github.com/stackrox/rox/central/imagecomponent/store"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
@@ -77,6 +78,10 @@ func (b *storeImpl) Get(ctx context.Context, id string) (image *storage.ImageCom
 	}
 
 	return msg.(*storage.ImageComponent), msg != nil, err
+}
+
+func (b *storeImpl) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.ImageComponent, error) {
+	panic("unimplemented")
 }
 
 // GetImagesBatch returns image with given sha.

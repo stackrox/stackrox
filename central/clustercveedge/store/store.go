@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/cve/converter"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -14,6 +15,7 @@ type Store interface {
 	Exists(ctx context.Context, id string) (bool, error)
 
 	Get(ctx context.Context, id string) (*storage.ClusterCVEEdge, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ClusterCVEEdge, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ClusterCVEEdge, []int, error)
 
 	Upsert(ctx context.Context, cveParts ...converter.ClusterCVEParts) error

@@ -27,6 +27,9 @@ type searcherImpl struct {
 
 // SearchRawProcessIndicators retrieves Policies from the indexer and storage
 func (s *searcherImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error) {
+	if features.PostgresDatastore.Enabled() {
+		return s.storage.GetByQuery(ctx, q)
+	}
 	results, err := s.Search(ctx, q)
 	if err != nil {
 		return nil, err

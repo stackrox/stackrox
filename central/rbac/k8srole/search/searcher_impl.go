@@ -47,6 +47,9 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 // SearchRawRoles returns the roles and relationships that match the query.
 func (ds *searcherImpl) SearchRawRoles(ctx context.Context, q *v1.Query) ([]*storage.K8SRole, error) {
+	if features.PostgresDatastore.Enabled() {
+		return ds.storage.GetByQuery(ctx, q)
+	}
 	roles, _, err := ds.searchRoles(ctx, q)
 	if err != nil {
 		return nil, err

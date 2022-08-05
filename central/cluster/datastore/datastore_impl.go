@@ -282,11 +282,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error) {
-	clusters, err := ds.searchRawClusters(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return clusters, nil
+	return ds.searchRawClusters(ctx, q)
 }
 
 func (ds *datastoreImpl) CountClusters(ctx context.Context) (int, error) {

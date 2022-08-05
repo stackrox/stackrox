@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -77,6 +78,9 @@ func convertOne(cve *storage.ClusterCVE, result *search.Result) *v1.SearchResult
 }
 
 func (ds *searcherImpl) searchCVEs(ctx context.Context, q *v1.Query) ([]*storage.ClusterCVE, error) {
+	if features.PostgresDatastore.Enabled() {
+		return ds.storage.GetByQuery(ctx, q)
+	}
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err

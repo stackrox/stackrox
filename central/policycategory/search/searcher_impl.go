@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -47,12 +48,15 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return s.searcher.Count(ctx, q)
 }
 
-func (s searcherImpl) SearchRawCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error) {
+func (s *searcherImpl) SearchRawCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error) {
+	if features.PostgresDatastore.Enabled() {
+		return s.storage.GetByQuery(ctx, q)
+	}
 	categories, _, err := s.searchCategories(ctx, q)
 	return categories, err
 }
 
-func (s searcherImpl) SearchCategories(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+func (s *searcherImpl) SearchCategories(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	categories, results, err := s.searchCategories(ctx, q)
 	if err != nil {
 		return nil, err
