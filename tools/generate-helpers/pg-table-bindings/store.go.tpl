@@ -109,14 +109,9 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-    ret := &storeImpl{
+    return &storeImpl{
         db: db,
     }
-    {{- if not $inMigration}}
-    c, err := ret.Count(sac.WithAllAccess(context.Background()))
-    log.Debugf("Get counts {{.Type}}: %d, %v", c, err)
-    {{- end}}
-    return ret
 }
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}

@@ -37,7 +37,6 @@ var (
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
-	c := 0
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(ctx, postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
@@ -53,8 +52,6 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		log.WriteToStderrf("failed to persist object to store %v", err)
 		return err
 	}
-	c++
-	log.WriteToStderrf("Migrated %d to installation_infos", c)
 	return nil
 }
 

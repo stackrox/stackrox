@@ -17,11 +17,6 @@ func Run(databases *types.Databases) error {
 		return errors.Wrap(err, "getting current seq num")
 	}
 	log.WriteToStderrf("Found legacy db: %d", dbSeqNum)
-	/*
-		if dbSeqNum == 0 {
-			dbSeqNum = pkgMigrations.CurrentDBVersionSeqNum()
-		}
-	*/
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
 	if dbSeqNum > currSeqNum {
 		return fmt.Errorf("DB sequence number %d is greater than the latest one we have (%d). This means "+

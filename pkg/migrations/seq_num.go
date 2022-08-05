@@ -19,10 +19,5 @@ func CurrentDBVersionSeqNum() int {
 // without Postgres migrations. This function should only be used in testing
 // environment.
 func CurrentDBVersionSeqNumWithoutPostgres() int {
-	/*
-		if !features.PostgresDatastore.Enabled() {
-			utils.Must(errors.New("unexpected call, ROX_POSTGRES_DATASTORE is not true"))
-		}
-	*/
 	return internal.CurrentDBVersionSeqNum - 1
 }

@@ -64,10 +64,9 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	ret := &storeImpl{
+	return &storeImpl{
 		db: db,
 	}
-	return ret
 }
 
 func insertIntoClusterInitBundles(ctx context.Context, batch *pgx.Batch, obj *storage.InitBundleMeta) error {

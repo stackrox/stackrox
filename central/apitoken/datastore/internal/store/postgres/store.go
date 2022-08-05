@@ -69,12 +69,9 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	ret := &storeImpl{
+	return &storeImpl{
 		db: db,
 	}
-	c, err := ret.Count(sac.WithAllAccess(context.Background()))
-	log.Debugf("Get counts storage.TokenMetadata: %d, %v", c, err)
-	return ret
 }
 
 func insertIntoApiTokens(ctx context.Context, batch *pgx.Batch, obj *storage.TokenMetadata) error {

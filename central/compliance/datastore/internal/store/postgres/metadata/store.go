@@ -71,12 +71,9 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	ret := &storeImpl{
+	return &storeImpl{
 		db: db,
 	}
-	c, err := ret.Count(sac.WithAllAccess(context.Background()))
-	log.Debugf("Get counts storage.ComplianceRunMetadata: %d, %v", c, err)
-	return ret
 }
 
 func insertIntoComplianceRunMetadata(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceRunMetadata) error {
