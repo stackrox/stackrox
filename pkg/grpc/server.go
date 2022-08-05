@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	promhttp "github.com/travelaudience/go-promhttp"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 
 	// All our gRPC servers should support gzip
@@ -223,7 +224,7 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 }
 
 func (a *apiImpl) connectToLocalEndpoint(dialCtxFunc pipeconn.DialContextFunc) (*grpc.ClientConn, error) {
-	return grpc.Dial("", grpc.WithInsecure(),
+	return grpc.Dial("", grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithContextDialer(func(ctx context.Context, endpoint string) (net.Conn, error) {
 			return dialCtxFunc(ctx)
 		}),
