@@ -1405,7 +1405,6 @@ class ComplianceTest extends BaseSpecification {
                 remoteStackroxAccessScope.id, [
                 "APIToken"             : READ_WRITE_ACCESS,
                 "AllComments"          : READ_WRITE_ACCESS,
-                "AuthPlugin"           : READ_WRITE_ACCESS,
                 "AuthProvider"         : READ_WRITE_ACCESS,
                 "BackupPlugins"        : READ_WRITE_ACCESS,
                 "ComplianceRunSchedule": READ_WRITE_ACCESS,
