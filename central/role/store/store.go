@@ -11,6 +11,7 @@ import (
 type PermissionSetStore interface {
 	Get(ctx context.Context, id string) (*storage.PermissionSet, bool, error)
 	Upsert(ctx context.Context, obj *storage.PermissionSet) error
+	UpsertMany(ctx context.Context, obj []*storage.PermissionSet) error
 	Delete(ctx context.Context, id string) error
 	Walk(ctx context.Context, fn func(obj *storage.PermissionSet) error) error
 }
@@ -20,6 +21,7 @@ type PermissionSetStore interface {
 type SimpleAccessScopeStore interface {
 	Get(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error)
 	Upsert(ctx context.Context, obj *storage.SimpleAccessScope) error
+	UpsertMany(ctx context.Context, obj []*storage.SimpleAccessScope) error
 	Delete(ctx context.Context, id string) error
 	Walk(ctx context.Context, fn func(obj *storage.SimpleAccessScope) error) error
 }
@@ -29,6 +31,7 @@ type SimpleAccessScopeStore interface {
 type RoleStore interface {
 	Get(ctx context.Context, id string) (*storage.Role, bool, error)
 	Upsert(ctx context.Context, obj *storage.Role) error
+	UpsertMany(ctx context.Context, obj []*storage.Role) error
 	Delete(ctx context.Context, id string) error
 	Walk(ctx context.Context, fn func(obj *storage.Role) error) error
 }

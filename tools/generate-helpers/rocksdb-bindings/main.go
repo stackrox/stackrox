@@ -22,6 +22,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -52,6 +53,9 @@ type Store interface {
 	Walk(ctx context.Context, fn func(obj *storage.{{.Type}}) error) error
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
+
+	// Unused and only exists to satisfy interfaces used for Postgres
+	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.{{.Type}}, error)
 }
 
 type storeImpl struct {
@@ -200,6 +204,11 @@ func (b *storeImpl) AckKeysIndexed(_ context.Context, keys ...string) error {
 // GetKeysToIndex returns the keys that need to be indexed
 func (b *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return b.crud.GetKeysToIndex()
+}
+
+// GetByQuery is unused and only exists to satisfy interfaces used for Postgres
+func (b * storeImpl) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.{{.Type}}, error) {
+	panic("unimplemented")
 }
 `
 

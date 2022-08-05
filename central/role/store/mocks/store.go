@@ -79,6 +79,20 @@ func (mr *MockPermissionSetStoreMockRecorder) Upsert(ctx, obj interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockPermissionSetStore)(nil).Upsert), ctx, obj)
 }
 
+// UpsertMany mocks base method.
+func (m *MockPermissionSetStore) UpsertMany(ctx context.Context, obj []*storage.PermissionSet) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertMany", ctx, obj)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertMany indicates an expected call of UpsertMany.
+func (mr *MockPermissionSetStoreMockRecorder) UpsertMany(ctx, obj interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockPermissionSetStore)(nil).UpsertMany), ctx, obj)
+}
+
 // Walk mocks base method.
 func (m *MockPermissionSetStore) Walk(ctx context.Context, fn func(*storage.PermissionSet) error) error {
 	m.ctrl.T.Helper()
@@ -160,6 +174,20 @@ func (mr *MockSimpleAccessScopeStoreMockRecorder) Upsert(ctx, obj interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Upsert), ctx, obj)
 }
 
+// UpsertMany mocks base method.
+func (m *MockSimpleAccessScopeStore) UpsertMany(ctx context.Context, obj []*storage.SimpleAccessScope) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertMany", ctx, obj)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertMany indicates an expected call of UpsertMany.
+func (mr *MockSimpleAccessScopeStoreMockRecorder) UpsertMany(ctx, obj interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).UpsertMany), ctx, obj)
+}
+
 // Walk mocks base method.
 func (m *MockSimpleAccessScopeStore) Walk(ctx context.Context, fn func(*storage.SimpleAccessScope) error) error {
 	m.ctrl.T.Helper()
@@ -239,6 +267,20 @@ func (m *MockRoleStore) Upsert(ctx context.Context, obj *storage.Role) error {
 func (mr *MockRoleStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockRoleStore)(nil).Upsert), ctx, obj)
+}
+
+// UpsertMany mocks base method.
+func (m *MockRoleStore) UpsertMany(ctx context.Context, obj []*storage.Role) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertMany", ctx, obj)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertMany indicates an expected call of UpsertMany.
+func (mr *MockRoleStoreMockRecorder) UpsertMany(ctx, obj interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockRoleStore)(nil).UpsertMany), ctx, obj)
 }
 
 // Walk mocks base method.

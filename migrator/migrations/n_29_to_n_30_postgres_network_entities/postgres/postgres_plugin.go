@@ -44,6 +44,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, infoId string) (bool, error)
 	Get(ctx context.Context, infoId string) (*storage.NetworkEntity, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error)
 	Upsert(ctx context.Context, obj *storage.NetworkEntity) error
 	UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error
 	Delete(ctx context.Context, infoId string) error
@@ -353,6 +354,33 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Netwo
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error) {
+
+	var sacQueryFilter *v1.Query
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var results []*storage.NetworkEntity
+	for _, data := range rows {
+		msg := &storage.NetworkEntity{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, err
+		}
+		results = append(results, msg)
+	}
+	return results, nil
 }
 
 // Delete removes the specified IDs from the store
