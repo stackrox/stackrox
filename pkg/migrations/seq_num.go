@@ -24,5 +24,5 @@ func CurrentDBVersionSeqNumWithoutPostgres() int {
 	if !features.PostgresDatastore.Enabled() {
 		utils.Must(errors.New("Unexpected call, ROX_POSTGRES_DATASTORE is not true"))
 	}
-	return internal.CurrentDBVersionSeqNum
+	return internal.CurrentDBVersionSeqNum - 1
 }
