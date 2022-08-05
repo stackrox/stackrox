@@ -291,7 +291,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityHit() {
 
 	vuln, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnID})
 	s.NoError(err)
-	s.Equal(vulnID, vuln.ID(ctx))
+	s.Equal(vulnID, vuln.Id(ctx))
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityCount() {
@@ -438,6 +438,6 @@ func (s *GraphQLImageVulnerabilityTestSuite) getImageVulnerabilityResolver(ctx c
 
 	vuln, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnID})
 	s.NoError(err)
-	s.Equal(vulnID, vuln.ID(ctx))
+	s.Equal(vulnID, vuln.Id(ctx))
 	return vuln
 }
