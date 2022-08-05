@@ -45,6 +45,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.NodeComponentCVEEdge, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeComponentCVEEdge, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.NodeComponentCVEEdge, []int, error)
 
@@ -188,6 +189,35 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NodeC
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeComponentCVEEdge, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "NodeComponentCVEEdge")
+
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var results []*storage.NodeComponentCVEEdge
+	for _, data := range rows {
+		msg := &storage.NodeComponentCVEEdge{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, err
+		}
+		results = append(results, msg)
+	}
+	return results, nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
