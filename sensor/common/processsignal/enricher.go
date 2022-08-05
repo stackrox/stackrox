@@ -5,6 +5,7 @@ import (
 
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
@@ -25,8 +26,28 @@ type enricher struct {
 }
 
 type containerWrap struct {
+	mutex      sync.Mutex
 	processes  []*storage.ProcessIndicator
 	expiration time.Time
+}
+
+// addProcess atomically adds the given process indicator to the *containerWrap's processes.
+func (cw *containerWrap) addProcess(indicator *storage.ProcessIndicator) {
+	cw.mutex.Lock()
+	defer cw.mutex.Unlock()
+
+	cw.processes = append(cw.processes, indicator)
+}
+
+// fetchAndClearProcesses atomically returns all the processes in the given *containerWrap
+// and clears them from the *containerWrap.
+func (cw *containerWrap) fetchAndClearProcesses() []*storage.ProcessIndicator {
+	cw.mutex.Lock()
+	defer cw.mutex.Unlock()
+
+	processes := cw.processes
+	cw.processes = nil
+	return processes
 }
 
 func newEnricher(clusterEntities *clusterentities.Store, indicators chan *storage.ProcessIndicator) *enricher {
@@ -66,7 +87,7 @@ func (e *enricher) Add(indicator *storage.ProcessIndicator) {
 		wrap = wrapObj.(*containerWrap)
 	}
 
-	wrap.processes = append(wrap.processes, indicator)
+	wrap.addProcess(indicator)
 	e.lru.Add(indicator.GetSignal().GetContainerId(), wrap)
 	metrics.SetProcessEnrichmentCacheSize(float64(e.lru.Len()))
 }
@@ -85,12 +106,12 @@ func (e *enricher) processLoop() {
 			}
 		case <-expirationTicker.C:
 			for _, containerID := range e.lru.Keys() {
-				val, exists := e.lru.Peek(containerID)
+				wrapObj, exists := e.lru.Peek(containerID)
 				if !exists {
 					continue
 				}
-				wrap := val.(*containerWrap)
-				// If the current value has not expired, then break because all of the next values are newer
+				wrap := wrapObj.(*containerWrap)
+				// If the current value has not expired, then break because all the next values are newer
 				if wrap.expiration.After(time.Now()) {
 					break
 				}
@@ -106,12 +127,16 @@ func (e *enricher) processLoop() {
 
 // scans the cache and enriches indicators that have metadata.
 func (e *enricher) scanAndEnrich(metadata clusterentities.ContainerMetadata) {
-	if wrapInterface, ok := e.lru.Peek(metadata.ContainerID); ok {
-		wrap := wrapInterface.(*containerWrap)
-		for _, indicator := range wrap.processes {
+	if wrapObj, ok := e.lru.Peek(metadata.ContainerID); ok {
+		e.lru.Remove(metadata.ContainerID)
+		// Note: it is possible another goroutine has a reference to this same *containerWrap in Add.
+		// However, that process will not be dropped because either (a) it was added prior to fetchAndClearProcesses()
+		// or (b) it is added after fetchAndClearProcesses(). In case (b), Add will add the *containerWrap back into
+		// the cache.
+		processes := wrapObj.(*containerWrap).fetchAndClearProcesses()
+		for _, indicator := range processes {
 			e.enrich(indicator, metadata)
 		}
-		e.lru.Remove(metadata.ContainerID)
 	}
 }
 
