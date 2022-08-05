@@ -18,7 +18,6 @@ const (
 	ScopeCheckerDenyForNoID          ScopeCheckerCoreType = "deny all (no identity)"
 	ScopeCheckerAllowAdminAndService ScopeCheckerCoreType = "allow all (admin or service)"
 	ScopeCheckerBuiltIn              ScopeCheckerCoreType = "built-in"
-	ScopeCheckerPlugin               ScopeCheckerCoreType = "plugin"
 )
 
 // RecordScopeCheckerCoreType writes the given scope checker type iff the

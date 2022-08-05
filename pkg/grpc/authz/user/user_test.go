@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
-	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
@@ -43,8 +42,6 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 	idWithNoPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	idWithNoPermissions.EXPECT().Permissions().Return(nil).AnyTimes()
 
-	contextWithPermissionCheck, _ := permissioncheck.ContextWithPermissionCheck()
-
 	tests := []struct {
 		name                string
 		requiredPermissions []permissions.ResourceWithAccess
@@ -62,11 +59,6 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
 			ctx: ctx,
-		},
-		{
-			name: "ErrPermissionCheckOnly",
-			ctx:  contextWithPermissionCheck,
-			err:  permissioncheck.ErrPermissionCheckOnly,
 		},
 		{
 			name: "built-in scoped authz check permissions not sufficient permissions",
