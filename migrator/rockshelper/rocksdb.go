@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/option"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -16,11 +17,8 @@ const (
 )
 
 // New returns a new RocksDB
-func New() (*gorocksdb.DB, error) {
-	opts := gorocksdb.NewDefaultOptions()
-	opts.SetCreateIfMissing(true)
-	opts.SetCompression(gorocksdb.LZ4Compression)
-	return gorocksdb.OpenDb(opts, filepath.Join(option.MigratorOptions.DBPathBase, rocksDBDirName))
+func New() (*rocksdb.RocksDB, error) {
+	return rocksdb.New(filepath.Join(option.MigratorOptions.DBPathBase, rocksDBDirName))
 }
 
 // ReadFromRocksDB return unmarshalled proto object read from rocksDB for given prefix and id.

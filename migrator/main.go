@@ -114,7 +114,7 @@ func upgrade(conf *config.Config) error {
 			log.WriteToStderrf("Error closing DB: %v", err)
 		}
 		if rocksdb != nil {
-			rocksdb.Close()
+			rocksdb.DB.Close()
 		}
 	}()
 
@@ -129,9 +129,10 @@ func upgrade(conf *config.Config) error {
 
 	err = runner.Run(&types.Databases{
 		BoltDB:     boltDB,
-		RocksDB:    rocksdb,
+		RocksDB:    rocksdb.DB,
 		GormDB:     gormDB,
 		PostgresDB: pool,
+		PkgRocksDB: rocksdb,
 	})
 	if err != nil {
 		return errors.Wrap(err, "migrations failed")
