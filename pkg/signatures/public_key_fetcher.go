@@ -129,11 +129,11 @@ func makeTransientErrorRetryable(err error) error {
 	var urlError *url.Error
 	// We don't expect any transient errors that are coming from cosign at the moment.
 	if errors.As(err, &transportErr) && transportErr.Temporary() {
-		return retry.MakeRetryable(transportErr)
+		return retry.MakeRetryable(err)
 	}
 
 	if errors.As(err, &urlError) && urlError.Temporary() {
-		return retry.MakeRetryable(urlError)
+		return retry.MakeRetryable(err)
 	}
 
 	return err
