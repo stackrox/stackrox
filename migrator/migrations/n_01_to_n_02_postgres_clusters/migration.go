@@ -23,6 +23,7 @@ var (
 		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 1,
 		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 2},
 		Run: func(databases *types.Databases) error {
+			log.WriteToStderrf("start to migrate of %d clusters", len(clusters))
 			legacyStore, err := legacy.New(databases.PkgRocksDB)
 			if err != nil {
 				return err
@@ -64,6 +65,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 			return err
 		}
 	}
+	log.WriteToStderrf("Migration of %d clusters", len(clusters))
 	return nil
 }
 

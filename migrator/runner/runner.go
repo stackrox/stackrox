@@ -16,6 +16,12 @@ func Run(databases *types.Databases) error {
 	if err != nil {
 		return errors.Wrap(err, "getting current seq num")
 	}
+	log.WriteToStderrf("Found legacy db: %d", dbSeqNum)
+	/*
+		if dbSeqNum == 0 {
+			dbSeqNum = pkgMigrations.CurrentDBVersionSeqNum()
+		}
+	*/
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
 	if dbSeqNum > currSeqNum {
 		return fmt.Errorf("DB sequence number %d is greater than the latest one we have (%d). This means "+
@@ -35,6 +41,7 @@ func Run(databases *types.Databases) error {
 
 func runMigrations(databases *types.Databases, startingSeqNum int) error {
 	for seqNum := startingSeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum(); seqNum++ {
+		log.WriteToStderrf("Version %d", seqNum)
 		migration, ok := migrations.Get(seqNum)
 		if !ok {
 			return fmt.Errorf("no migration found starting at %d", startingSeqNum)

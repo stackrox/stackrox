@@ -60,7 +60,6 @@ func Load(conf *config.Config) (*pgxpool.Pool, *gorm.DB, error) {
 
 		// Waits for central-db ready with retries
 		err = retry.WithRetry(func() error {
-			var err error
 			if postgresDB == nil {
 				postgresDB, err = pgxpool.ConnectConfig(ctx, adminConfig)
 				if err != nil {
