@@ -121,7 +121,7 @@ function PolicyCategoriesListSection({
             <DeletePolicyCategoryModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
-                refreshPolicyCategories={() => {}}
+                refreshPolicyCategories={refreshPolicyCategories}
                 addToast={addToast}
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
