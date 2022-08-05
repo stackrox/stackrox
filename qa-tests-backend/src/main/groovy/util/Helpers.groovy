@@ -95,12 +95,12 @@ class Helpers {
 
         if (exception && (exception instanceof AssumptionViolatedException ||
                 exception.getMessage()?.contains("org.junit.AssumptionViolatedException"))) {
-            log.info("Won't collect logs for: ${exception.getMessage()}", exception)
+            log.info("Won't collect logs for", exception)
             return
         }
 
         if (exception) {
-            log.error("An exception occurred in test: ${exception.getMessage()}", exception)
+            log.error("An exception occurred in test", exception)
         }
 
         try {
