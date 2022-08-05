@@ -1117,11 +1117,6 @@ validate_expected_go_version() {
     [[ "${expected_go_version}" =~ ^go(1\.[0-9]{2})(\.[0-9]+)?$ ]]
     go_version="${BASH_REMATCH[1]}"
 
-    # TODO(ROX-8056): temporarily suspend the following check. The source needs to be go1.16 compatible
-    # due to OSBS build constraints, but we don't want everyone to revert their local toolchain
-    # to that.
-    go_version="1.16" # hardcode. To be removed once the above is fixed.
-
     go mod edit -go "${go_version}"
     git diff --exit-code -- go.mod
 }
