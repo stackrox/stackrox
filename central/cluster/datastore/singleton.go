@@ -9,6 +9,7 @@ import (
 	clusterHealthStatusStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
 	healthRocksDB "github.com/stackrox/rox/central/cluster/store/clusterhealth/rocksdb"
+	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	globalDackBox "github.com/stackrox/rox/central/globaldb/dackbox"
@@ -42,6 +43,7 @@ func initialize() {
 	var dackbox *dackbox.DackBox
 	var clusterStorage clusterStore.Store
 	var clusterHealthStorage clusterHealthStatusStore.Store
+	var clusterCVEDataStore clusterCVEDS.DataStore
 	var indexer index.Indexer
 	var err error
 
@@ -49,6 +51,7 @@ func initialize() {
 		clusterStorage = clusterPostgres.New(globaldb.GetPostgres())
 		clusterHealthStorage = clusterHealthPostgres.New(globaldb.GetPostgres())
 		indexer = clusterPostgres.NewIndexer(globaldb.GetPostgres())
+		clusterCVEDataStore = clusterCVEDS.Singleton()
 	} else {
 		dackbox = globalDackBox.GetGlobalDackBox()
 		clusterStorage, err = clusterRocksDB.New(globaldb.GetRocksDB())
@@ -76,7 +79,8 @@ func initialize() {
 		notifierProcessor.Singleton(),
 		dackbox,
 		ranking.ClusterRanker(),
-		networkBaselineManager.Singleton())
+		networkBaselineManager.Singleton(),
+		clusterCVEDataStore)
 
 	utils.CrashOnError(err)
 }
