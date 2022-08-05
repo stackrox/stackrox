@@ -8,6 +8,7 @@ import (
 )
 
 // TryAllowedResult represents the possible values of a `TryAllowed` call on an access scope checker.
+//
 //go:generate stringer -type=TryAllowedResult
 type TryAllowedResult int32
 
@@ -27,6 +28,7 @@ const (
 // Note: This interface does not provide any information about the scope it represents. This is
 // intentional to allow efficient implementations for special access scope checkers such as
 // "allow all".
+//
 //go:generate mockgen-wrapper
 type ScopeCheckerCore interface {
 	// SubScopeChecker obtains an access scope checker for the access scope directly underneath
