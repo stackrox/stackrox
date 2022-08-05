@@ -11,6 +11,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/jackc/pgx/v4/pgxpool"
+	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
+	componentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/postgres"
+	componentCVEEdgeSearch "github.com/stackrox/rox/central/componentcveedge/search"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
@@ -20,14 +23,19 @@ import (
 	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
 	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
+	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
+	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
+	imageCVEEdgeSearch "github.com/stackrox/rox/central/imagecveedge/search"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -36,6 +44,20 @@ import (
 func TestGraphQLImageVulnerabilityEndpoints(t *testing.T) {
 	suite.Run(t, new(GraphQLImageVulnerabilityTestSuite))
 }
+
+/*
+Remaining TODO tasks:
+- As sub resolver via cluster
+- As sub resolver via namespace
+- As sub resolver via deployment
+- TopImageVulnerability
+- sub resolver values
+	- EnvImpact
+	- LastScanned
+	- Deployments
+	- DeploymentCount
+	- DiscoveredAtImage
+*/
 
 type GraphQLImageVulnerabilityTestSuite struct {
 	suite.Suite
@@ -73,6 +95,8 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	imagePostgres.Destroy(s.ctx, s.db)
 	imageComponentPostgres.Destroy(s.ctx, s.db)
 	imageCVEPostgres.Destroy(s.ctx, s.db)
+	imageCVEEdgePostgres.Destroy(s.ctx, s.db)
+	componentCVEEdgePostgres.Destroy(s.ctx, s.db)
 
 	// create mock resolvers, set relevant ones
 	s.resolver = NewMock()
@@ -90,11 +114,25 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	imageStore := imagePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false)
 	s.resolver.ImageDataStore = imageDataStore.NewWithPostgres(imageStore, imagePostgres.NewIndexer(s.db), riskMock, ranking.NewRanker(), ranking.NewRanker())
 
-	// image component datastore
+	// imageComponent datastore
 	imageCompStore := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	imageCompIndexer := imageComponentPostgres.NewIndexer(s.db)
 	imageCompSearcher := imageComponentSearch.NewV2(imageCompStore, imageCompIndexer)
 	s.resolver.ImageComponentDataStore = imageComponentDataStore.New(nil, imageCompStore, imageCompIndexer, imageCompSearcher, riskMock, ranking.NewRanker())
+
+	// imageCVEEdge datastore
+	imageCveEdgeStore := imageCVEEdgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	imageCveEdgeIndexer := imageCVEEdgePostgres.NewIndexer(s.db)
+	imageCveEdgeSearcher := imageCVEEdgeSearch.NewV2(imageCveEdgeStore, imageCveEdgeIndexer)
+	s.resolver.ImageCVEEdgeDataStore = imageCVEEdgeDataStore.New(nil, imageCveEdgeStore, imageCveEdgeSearcher)
+
+	// componentCVEEdge datastore
+	componentCveEdgeStore := componentCVEEdgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	componentCveEdgeIndexer := componentCVEEdgePostgres.NewIndexer(s.db)
+	componentCveEdgeSearcher := componentCVEEdgeSearch.NewV2(componentCveEdgeStore, componentCveEdgeIndexer)
+	componentCveEdgeDatastore, err := componentCVEEdgeDataStore.New(nil, componentCveEdgeStore, componentCveEdgeIndexer, componentCveEdgeSearcher)
+	s.NoError(err)
+	s.resolver.ComponentCVEEdgeDataStore = componentCveEdgeDatastore
 
 	// Sac permissions
 	s.ctx = sac.WithAllAccess(s.ctx)
@@ -120,10 +158,17 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TearDownSuite() {
+	s.envIsolator.RestoreAll()
+
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 	imagePostgres.Destroy(s.ctx, s.db)
 	imageComponentPostgres.Destroy(s.ctx, s.db)
 	imageCVEPostgres.Destroy(s.ctx, s.db)
+	imageCVEEdgePostgres.Destroy(s.ctx, s.db)
+	componentCVEEdgePostgres.Destroy(s.ctx, s.db)
 }
+
+// permission checks
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestUnauthorizedImageVulnerabilityEndpoint() {
 	_, err := s.resolver.ImageVulnerability(s.ctx, IDQuery{})
@@ -167,6 +212,11 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesFixable() {
 	vulns, err := s.resolver.ImageVulnerabilities(ctx, PaginatedQuery{Query: &query})
 	s.NoError(err)
 	s.Equal(1, len(vulns))
+	for _, vuln := range vulns {
+		fixable, err := vuln.IsFixable(ctx, RawQuery{})
+		s.NoError(err)
+		s.Equal(true, fixable)
+	}
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesNonFixable() {
@@ -178,6 +228,35 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesNonFixable(
 	vulns, err := s.resolver.ImageVulnerabilities(ctx, PaginatedQuery{Query: &query})
 	s.NoError(err)
 	s.Equal(4, len(vulns))
+	for _, vuln := range vulns {
+		fixable, err := vuln.IsFixable(ctx, RawQuery{})
+		s.NoError(err)
+		s.Equal(false, fixable)
+	}
+}
+
+func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesFixedByVersion() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
+
+	scopedCtx := scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGE_COMPONENTS,
+		ID:    "comp1#0.9#",
+	})
+
+	fixedBy, err := vuln.FixedByVersion(scopedCtx)
+	s.NoError(err)
+	s.Equal("1.1", fixedBy)
+
+	scopedCtx = scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGE_COMPONENTS,
+		ID:    "comp2#1.1#",
+	})
+
+	fixedBy, err = vuln.FixedByVersion(scopedCtx)
+	s.NoError(err)
+	s.Equal("1.5", fixedBy)
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilitiesScoped() {
