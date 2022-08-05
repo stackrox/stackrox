@@ -60,7 +60,7 @@ func (ds *searcherImplV2) Count(ctx context.Context, q *v1.Query) (count int, er
 
 // SearchRawEdges retrieves edges from the indexer and storage
 func (ds *searcherImplV2) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.ClusterCVEEdge, error) {
-	return ds.searchImageComponentEdges(ctx, q)
+	return ds.storage.GetByQuery(ctx, q)
 }
 
 func (ds *searcherImplV2) resultsToEdges(ctx context.Context, results []search.Result) ([]*storage.ClusterCVEEdge, []int, error) {
@@ -92,18 +92,4 @@ func convertOne(obj *storage.ClusterCVEEdge, result *search.Result) *v1.SearchRe
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}
-}
-
-func (ds *searcherImplV2) searchImageComponentEdges(ctx context.Context, q *v1.Query) ([]*storage.ClusterCVEEdge, error) {
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := search.ResultsToIDs(results)
-	cves, _, err := ds.storage.GetMany(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	return cves, nil
 }
