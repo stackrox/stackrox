@@ -91,6 +91,7 @@ type ClusterDataStoreTestSuite struct {
 var _ suite.TearDownTestSuite = (*ClusterDataStoreTestSuite)(nil)
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.ei = envisolator.NewEnvIsolator(suite.T())
 	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 
@@ -109,7 +110,6 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster)))
 
-	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.clusters = clusterStoreMocks.NewMockStore(suite.mockCtrl)
 	suite.healthStatuses = clusterHealthStoreMocks.NewMockStore(suite.mockCtrl)
 	suite.indexer = clusterIndexMocks.NewMockIndexer(suite.mockCtrl)
