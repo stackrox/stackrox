@@ -91,6 +91,9 @@ type ClusterDataStoreTestSuite struct {
 var _ suite.TearDownTestSuite = (*ClusterDataStoreTestSuite)(nil)
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
+	suite.ei = envisolator.NewEnvIsolator(suite.T())
+	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+
 	if features.PostgresDatastore.Enabled() {
 		suite.T().Skip("Skip dackbox tests if postgres is enabled")
 		suite.T().SkipNow()
@@ -161,8 +164,6 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.clusterCVEDataStore,
 	)
 	suite.NoError(err)
-	suite.ei = envisolator.NewEnvIsolator(suite.T())
-	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }
