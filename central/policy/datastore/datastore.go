@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
-	"github.com/stackrox/rox/central/policy/store/boltdb"
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -58,7 +57,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher,
 }
 
 // newWithoutDefaults should be used only for testing purposes.
-func newWithoutDefaults(storage boltdb.Store, indexer index.Indexer,
+func newWithoutDefaults(storage store.Store, indexer index.Indexer,
 	searcher search.Searcher, clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore,
 	categoriesDatastore categoriesDataStore.DataStore) DataStore {
 	return &datastoreImpl{

@@ -13,6 +13,7 @@ import (
 	vulnDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	"github.com/stackrox/rox/central/cve/utils"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -116,6 +117,10 @@ func (b *storeImpl) Get(ctx context.Context, id string) (edges *storage.ClusterC
 	}
 
 	return msg.(*storage.ClusterCVEEdge), msg != nil, err
+}
+
+func (b *storeImpl) GetByQuery(_ context.Context, _ *v1.Query) ([]*storage.ClusterCVEEdge, error) {
+	panic("unimplemented")
 }
 
 func (b *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ClusterCVEEdge, []int, error) {

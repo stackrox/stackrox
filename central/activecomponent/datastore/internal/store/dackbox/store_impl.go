@@ -10,6 +10,7 @@ import (
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -72,6 +73,10 @@ func (s *storeImpl) Get(_ context.Context, id string) (*storage.ActiveComponent,
 	}
 
 	return msg.(*storage.ActiveComponent), msg != nil, err
+}
+
+func (s *storeImpl) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.ActiveComponent, error) {
+	panic("unimplemented")
 }
 
 func (s *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.ActiveComponent, []int, error) {

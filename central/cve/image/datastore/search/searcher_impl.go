@@ -34,7 +34,7 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *searcherImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVE, error) {
-	return ds.searchCVEs(ctx, q)
+	return ds.storage.GetByQuery(ctx, q)
 }
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
@@ -74,18 +74,4 @@ func convertOne(cve *storage.ImageCVE, result *search.Result) *v1.SearchResult {
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}
-}
-
-func (ds *searcherImpl) searchCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVE, error) {
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := search.ResultsToIDs(results)
-	cves, _, err := ds.storage.GetMany(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	return cves, nil
 }

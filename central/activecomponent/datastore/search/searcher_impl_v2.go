@@ -30,16 +30,7 @@ type searcherImplV2 struct {
 
 // SearchRawActiveComponents retrieves SearchResults from the indexer and storage
 func (s *searcherImplV2) SearchRawActiveComponents(ctx context.Context, q *v1.Query) ([]*storage.ActiveComponent, error) {
-	results, err := s.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	images, _, err := s.storage.GetMany(ctx, search.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
-	}
-	return images, nil
+	return s.storage.GetByQuery(ctx, q)
 }
 
 func (s *searcherImplV2) Search(ctx context.Context, q *v1.Query) (res []search.Result, err error) {

@@ -55,8 +55,28 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 
 // SearchListAlerts retrieves list alerts from the indexer and storage
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
-	alerts, _, err := ds.searchListAlerts(ctx, q)
-	return alerts, err
+	var alerts []*storage.Alert
+	var err error
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		alerts, err = ds.storage.GetByQuery(ctx, q)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		results, err := ds.Search(ctx, q)
+		if err != nil {
+			return nil, err
+		}
+		alerts, _, err = ds.storage.GetMany(ctx, search.ResultsToIDs(results))
+		if err != nil {
+			return nil, err
+		}
+	}
+	listAlerts := make([]*storage.ListAlert, 0, len(alerts))
+	for _, alert := range alerts {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+	}
+	return listAlerts, nil
 }
 
 // SearchRawAlerts retrieves Alerts from the indexer and storage
@@ -83,6 +103,9 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 }
 
 func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return ds.storage.GetByQuery(ctx, q)
+	}
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
