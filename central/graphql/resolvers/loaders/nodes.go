@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -102,7 +103,11 @@ func (ndl *nodeLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.N
 	nodes, missing := ndl.readAll(ids)
 	if len(missing) > 0 {
 		var err error
-		nodes, err = ndl.ds.GetNodesBatch(ctx, collectMissing(ids, missing))
+		if features.PostgresDatastore.Enabled() {
+			nodes, err = ndl.ds.GetManyNodeMetadata(ctx, collectMissing(ids, missing))
+		} else {
+			nodes, err = ndl.ds.GetNodesBatch(ctx, collectMissing(ids, missing))
+		}
 		if err != nil {
 			return nil, err
 		}

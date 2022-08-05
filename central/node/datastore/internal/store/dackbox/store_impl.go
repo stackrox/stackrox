@@ -5,6 +5,7 @@ import (
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
 	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
@@ -22,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -110,6 +112,11 @@ func (b *storeImpl) GetNodeMetadata(_ context.Context, id string) (*storage.Node
 		return nil, false, err
 	}
 	return node, node != nil, err
+}
+
+func (b *storeImpl) GetManyNodeMetadata(ctx context.Context, id []string) ([]*storage.Node, []int, error) {
+	utils.Must(errors.New("Unexpected call to GetManyNodeMetadata in Dackbox when running on Postgres"))
+	return nil, nil, nil
 }
 
 // GetNodesBatch returns nodes with given ids.

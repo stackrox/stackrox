@@ -162,7 +162,7 @@ func (ds *datastoreImpl) GetManyImageMetadata(ctx context.Context, ids []string)
 		return nil, err
 	}
 	if len(missingIdx) > 0 {
-		log.Errorf("Could not fetch %d/%d some images", len(missingIdx), len(ids))
+		log.Errorf("Could not fetch %d/%d images", len(missingIdx), len(ids))
 	}
 	for _, img := range imgs {
 		ds.updateImagePriority(img)

@@ -10,7 +10,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/image/datastore/store/postgres"
+	"github.com/stackrox/rox/central/node/datastore/internal/search"
+	"github.com/stackrox/rox/central/node/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func BenchmarkGetManyImages(b *testing.B) {
+func BenchmarkGetManyNodes(b *testing.B) {
 	envIsolator := envisolator.NewEnvIsolator(b)
 	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 	defer envIsolator.RestoreAll()
@@ -47,13 +48,19 @@ func BenchmarkGetManyImages(b *testing.B) {
 	defer db.Close()
 
 	postgres.Destroy(ctx, db)
-	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
-	datastore := NewWithPostgres(postgres.CreateTableAndNewStore(ctx, db, gormDB, false), postgres.NewIndexer(db), mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	mockRisk := mockRisks.NewMockDataStore(ctrl)
+	store := postgres.CreateTableAndNewStore(ctx, b, db, gormDB, false)
+	indexer := postgres.NewIndexer(db)
+	searcher := search.NewV2(store, indexer)
+	datastore := NewWithPostgres(store, indexer, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	ids := make([]string, 0, 100)
-	images := make([]*storage.Image, 0, 100)
+	images := make([]*storage.Node, 0, 100)
 	for i := 0; i < 100; i++ {
-		img := fixtures.GetImageWithUniqueComponents()
+		img := fixtures.GetNodeWithUniqueComponents()
 		id := fmt.Sprintf("%d", i)
 		ids = append(ids, id)
 		img.Id = id
@@ -61,19 +68,19 @@ func BenchmarkGetManyImages(b *testing.B) {
 	}
 
 	for _, image := range images {
-		require.NoError(b, datastore.UpsertImage(ctx, image))
+		require.NoError(b, datastore.UpsertNode(ctx, image))
 	}
 
-	b.Run("GetImagesBatch", func(b *testing.B) {
+	b.Run("GetNodesBatch", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err = datastore.GetImagesBatch(ctx, ids)
+			_, err = datastore.GetNodesBatch(ctx, ids)
 			require.NoError(b, err)
 		}
 	})
 
-	b.Run("GetManyImageMetadata", func(b *testing.B) {
+	b.Run("GetManyNodeMetadata", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err = datastore.GetManyImageMetadata(ctx, ids)
+			_, err = datastore.GetManyNodeMetadata(ctx, ids)
 			require.NoError(b, err)
 		}
 	})
