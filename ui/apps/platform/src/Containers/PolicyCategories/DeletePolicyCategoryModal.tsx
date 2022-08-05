@@ -56,15 +56,19 @@ function DeletePolicyCategoryModal({
     }
 
     useEffect(() => {
-        const query = getRequestQueryStringForSearchFilter({ Category: selectedCategory?.name });
-        getPolicies(query)
-            .then((policies) => {
-                setAffectedPolicies(policies);
-            })
-            .catch((error) => {
-                addToast(error.message);
+        if (selectedCategory?.name) {
+            const query = getRequestQueryStringForSearchFilter({
+                Category: selectedCategory?.name,
             });
-    }, []);
+            getPolicies(query)
+                .then((policies) => {
+                    setAffectedPolicies(policies);
+                })
+                .catch((error) => {
+                    addToast(error.message);
+                });
+        }
+    }, [selectedCategory?.name, addToast]);
 
     return (
         <Modal
