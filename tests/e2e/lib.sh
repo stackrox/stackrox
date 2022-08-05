@@ -414,6 +414,27 @@ handle_e2e_progress_failures() {
     fi
 }
 
+setup_automation_flavor_e2e_cluster() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: setup_automation_flavor_e2e_cluster <job_name>"
+    fi
+
+    local ci_job="$1"
+
+    echo "SHARED_DIR: ${SHARED_DIR}"
+    ls -l "${SHARED_DIR}"
+    export KUBECONFIG="${SHARED_DIR}/kubeconfig"
+
+    if [[ "$ci_job" =~ ^osd ]]; then
+        info "Logging in to an OSD cluster"
+        source "${SHARED_DIR}/dotenv"
+        oc login "$CLUSTER_API_ENDPOINT" \
+                --username "$CLUSTER_USERNAME" \
+                --password "$CLUSTER_PASSWORD" \
+                --insecure-skip-tls-verify=true
+    fi
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         usage
