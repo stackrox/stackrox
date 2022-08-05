@@ -71,9 +71,12 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	return &storeImpl{
+	ret := &storeImpl{
 		db: db,
 	}
+	c, err := ret.Count(sac.WithAllAccess(context.Background()))
+	log.Debugf("Get counts storage.NetworkPolicy: %d, %v", c, err)
+	return ret
 }
 
 func insertIntoNetworkpolicies(ctx context.Context, batch *pgx.Batch, obj *storage.NetworkPolicy) error {

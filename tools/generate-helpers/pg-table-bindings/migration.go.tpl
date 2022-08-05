@@ -60,6 +60,7 @@ var (
 {{$rocksDB :=  eq .Migration.MigrateFromDB "rocksdb" }}
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
+    c := 0
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New({{if .Migration.SingletonStore}}ctx, {{end}}postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
@@ -76,6 +77,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 	log.WriteToStderrf("failed to persist object to store %v", err)
 		return err
 	}
+	c++
 	{{- else}}
 	{{- /* Assume rocksdb and postgres agrees on if it should have GetAll function. Not acurate but works well. */}}
 	{{- if or $rocksDB (not .GetAll) }}
@@ -89,10 +91,12 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 			}
 			{{.Table|lowerCamelCase}} = {{.Table|lowerCamelCase}}[:0]
 		}
+		c++
 		return nil
 	})
 	{{- else}}
 	{{.Table|lowerCamelCase}}, err := legacyStore.GetAll(ctx)
+	c = len({{.Table|lowerCamelCase}})
 	{{- end}}
 	if err != nil {
 		return err
@@ -104,6 +108,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 		}
 	}
 	{{- end}}
+	log.WriteToStderrf("Migrated %d to {{.Table}}", c)
 	return nil
 }
 {{if and (not .Migration.SingletonStore) (or $rocksDB (not .GetAll))}}

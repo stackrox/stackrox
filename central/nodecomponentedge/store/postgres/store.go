@@ -17,6 +17,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -61,9 +62,12 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
-	return &storeImpl{
+	ret := &storeImpl{
 		db: db,
 	}
+	c, err := ret.Count(sac.WithAllAccess(context.Background()))
+	log.Debugf("Get counts storage.NodeComponentEdge: %d, %v", c, err)
+	return ret
 }
 
 // Count returns the number of objects in the store

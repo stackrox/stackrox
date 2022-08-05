@@ -40,6 +40,7 @@ var (
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
+	c := 0
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
@@ -53,6 +54,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 			}
 			complianceOperatorCheckResults = complianceOperatorCheckResults[:0]
 		}
+		c++
 		return nil
 	})
 	if err != nil {
@@ -64,6 +66,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 			return err
 		}
 	}
+	log.WriteToStderrf("Migrated %d to compliance_operator_check_results", c)
 	return nil
 }
 

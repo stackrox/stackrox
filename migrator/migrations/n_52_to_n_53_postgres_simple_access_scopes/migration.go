@@ -40,6 +40,7 @@ var (
 )
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
+	c := 0
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
 	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, schema.Table)
@@ -53,6 +54,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 			}
 			simpleAccessScopes = simpleAccessScopes[:0]
 		}
+		c++
 		return nil
 	})
 	if err != nil {
@@ -64,6 +66,7 @@ func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) e
 			return err
 		}
 	}
+	log.WriteToStderrf("Migrated %d to simple_access_scopes", c)
 	return nil
 }
 
