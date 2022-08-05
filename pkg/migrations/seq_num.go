@@ -1,10 +1,8 @@
 package migrations
 
 import (
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/migrations/internal"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 // CurrentDBVersionSeqNum is the current DB version number.
@@ -21,8 +19,10 @@ func CurrentDBVersionSeqNum() int {
 // without Postgres migrations. This function should only be used in testing
 // environment.
 func CurrentDBVersionSeqNumWithoutPostgres() int {
-	if !features.PostgresDatastore.Enabled() {
-		utils.Must(errors.New("Unexpected call, ROX_POSTGRES_DATASTORE is not true"))
-	}
+	/*
+		if !features.PostgresDatastore.Enabled() {
+			utils.Must(errors.New("unexpected call, ROX_POSTGRES_DATASTORE is not true"))
+		}
+	*/
 	return internal.CurrentDBVersionSeqNum - 1
 }
