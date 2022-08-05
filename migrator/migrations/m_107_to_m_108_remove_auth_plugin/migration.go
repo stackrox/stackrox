@@ -4,10 +4,14 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/tecbot/gorocksdb"
 	"go.etcd.io/bbolt"
+)
+
+const (
+	batchSize = 500
 )
 
 var (
@@ -15,66 +19,59 @@ var (
 		StartingSeqNum: 107,
 		VersionAfter:   storage.Version{SeqNum: 108},
 		Run: func(databases *types.Databases) error {
-			err := migratePS(databases.BoltDB)
+			err := migratePS(databases.RocksDB)
 			if err != nil {
 				return errors.Wrap(err, "updating PermissionSet schema")
 			}
-			return nil
+			return deleteAuthPluginBucket(databases.BoltDB)
 		},
 	}
 
-	psBucket               = []byte("permission_sets")
+	psPrefix               = []byte("permission_sets")
 	authPluginBucket       = []byte("authzPlugins")
 	AuthPluginResourceName = "AuthPlugin"
+
+	readOpts  = gorocksdb.NewDefaultReadOptions()
+	writeOpts = gorocksdb.NewDefaultWriteOptions()
 )
 
-func migratePS(db *bbolt.DB) error {
-	psToMigrate := make(map[string]*storage.PermissionSet)
-	err := db.View(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket(psBucket)
-		if bucket == nil {
-			return errors.Errorf("bucket %s not found", psBucket)
+func migratePS(db *gorocksdb.DB) error {
+
+	it := db.NewIterator(readOpts)
+	defer it.Close()
+	wb := gorocksdb.NewWriteBatch()
+	for it.Seek(psPrefix); it.ValidForPrefix(psPrefix); it.Next() {
+		ps := &storage.PermissionSet{}
+		if err := proto.Unmarshal(it.Value().Data(), ps); err != nil {
+			return errors.Wrap(err, "unable to unmarshal permission set")
 		}
-		return bucket.ForEach(func(k, v []byte) error {
-			ps := &storage.PermissionSet{}
-			if err := proto.Unmarshal(v, ps); err != nil {
-				log.WriteToStderrf("Failed to unmarshal permissionset data for key %s: %v", k, err)
-				return nil
-			}
-			if _, ok := ps.ResourceToAccess[AuthPluginResourceName]; ok {
-				psToMigrate[string(k)] = ps
-			}
-			return nil
-		})
-	})
-
-	if err != nil {
-		return errors.Wrap(err, "reading permissionset data")
-	}
-
-	if len(psToMigrate) == 0 {
-		return nil // nothing to do
-	}
-
-	for _, ps := range psToMigrate {
-		delete(ps.ResourceToAccess, AuthPluginResourceName)
-	}
-
-	return db.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket(psBucket)
-		if bucket == nil {
-			return errors.Errorf("bucket %s not found", psBucket)
-		}
-		for id, ps := range psToMigrate {
-			bytes, err := proto.Marshal(ps)
+		if _, ok := ps.ResourceToAccess[AuthPluginResourceName]; ok {
+			delete(ps.ResourceToAccess, AuthPluginResourceName)
+			data, err := proto.Marshal(ps)
 			if err != nil {
-				log.WriteToStderrf("failed to marshal migrated permissionset for key %s: %v", id, err)
-				continue
+				return errors.Wrap(err, "unable to marshal permission set")
 			}
-			if err := bucket.Put([]byte(id), bytes); err != nil {
-				return err
+			wb.Put(it.Key().Copy(), data)
+			if wb.Count() == batchSize {
+				if err := db.Write(writeOpts, wb); err != nil {
+					return errors.Wrap(err, "writing to RocksDB")
+				}
+				wb.Clear()
 			}
+
 		}
+	}
+
+	if wb.Count() != 0 {
+		if err := db.Write(writeOpts, wb); err != nil {
+			return errors.Wrap(err, "writing final batch to RocksDB")
+		}
+	}
+	return nil
+}
+
+func deleteAuthPluginBucket(db *bbolt.DB) error {
+	return db.Update(func(tx *bbolt.Tx) error {
 		return tx.DeleteBucket(authPluginBucket)
 	})
 }
