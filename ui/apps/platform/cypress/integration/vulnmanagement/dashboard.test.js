@@ -112,13 +112,13 @@ describe('Vuln Management Dashboard Page', () => {
     });
 
     it('"Top Riskiest <entities>" widget should start with a loading indicator', () => {
+        const widgetSelector = selectors.getWidget(
+            'Top risky deployments by CVE count & CVSS score'
+        );
+        const loadingSelector = `${widgetSelector} ${selectors.widgetBody}:contains("Loading")`;
+
         cy.visit(url.dashboard); // do not call visit helper because it waits on the requests
-        cy.get(selectors.getWidget('Top risky deployments by CVE count & CVSS score'))
-            .find(selectors.widgetBody)
-            .invoke('text')
-            .then((bodyText) => {
-                expect(bodyText).to.contain('Loading');
-            });
+        cy.get(loadingSelector);
     });
 
     it('clicking the "Top Riskiest Images" widget\'s "View All" button should take you to the images list', () => {
