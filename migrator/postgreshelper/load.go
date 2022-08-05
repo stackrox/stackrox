@@ -36,7 +36,6 @@ var (
 // Load loads a Postgres instance and returns a GormDB.
 func Load(conf *config.Config) (*pgxpool.Pool, *gorm.DB, error) {
 	once.Do(func() {
-		var password []byte
 		ctx := context.Background()
 
 		activeDB := pgconfig.GetActiveDB()
@@ -56,7 +55,7 @@ func Load(conf *config.Config) (*pgxpool.Pool, *gorm.DB, error) {
 		adminConfig.ConnConfig.Database = activeDB
 
 		// Add the active database and password to the source
-		gormSource := fmt.Sprintf("%s password=%s database=%s", conf.CentralDB.Source, password, activeDB)
+		gormSource := fmt.Sprintf("%s password=%s database=%s", conf.CentralDB.Source, adminConfig.ConnConfig.Password, activeDB)
 		gormSource = pgutils.PgxpoolDsnToPgxDsn(gormSource)
 
 		// Waits for central-db ready with retries
@@ -69,6 +68,7 @@ func Load(conf *config.Config) (*pgxpool.Pool, *gorm.DB, error) {
 					return err
 				}
 			}
+			log.WriteToStderrf("connect to gorm: %v", gormSource)
 			gormDB, err = gorm.Open(postgres.Open(gormSource), &gorm.Config{
 				NamingStrategy:  pgutils.NamingStrategy,
 				CreateBatchSize: 1000})
