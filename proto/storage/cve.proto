@@ -58,8 +58,8 @@ message CVE {
     reserved 22;
     // This was operating system which was added as a part of postgres migration.
     reserved 21;
-    float                     cvss                  = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
-    float                     impact_score          = 14 [(gogoproto.moretags) = "search:\"Impact Score\""];
+    float                     cvss                  = 2 [(gogoproto.moretags) = 'search:"CVSS,store"'];
+    float                     impact_score          = 14 [(gogoproto.moretags) = 'search:"Impact Score"'];
 
     // For internal purposes only. This will only be populated prior to upsert into datastore.
     // Cluster cves are split between k8s and istio. The type info is a relationship attribute and not a property of cve itself.
@@ -71,9 +71,9 @@ message CVE {
     string                    summary               = 4;
     string                    link                  = 5;
     // This indicates the timestamp when the cve was first published in the cve feeds.
-    google.protobuf.Timestamp published_on          = 6 [(gogoproto.moretags) = "search:\"CVE Published On\""];
+    google.protobuf.Timestamp published_on          = 6 [(gogoproto.moretags) = 'search:"CVE Published On"'];
     // Time when the CVE was first seen in the system.
-    google.protobuf.Timestamp created_at            = 15 [(gogoproto.moretags) = "search:\"CVE Created Time\""];
+    google.protobuf.Timestamp created_at            = 15 [(gogoproto.moretags) = 'search:"CVE Created Time"'];
     google.protobuf.Timestamp last_modified         = 7;
     repeated Reference        references            = 8;
 
@@ -85,12 +85,12 @@ message CVE {
     // Unfortunately, although there exists image SAC check on legacy suppress APIs,
     // one can snooze node and cluster type vulns, so we will have to carry over the support for node and cluster cves.
 
-    bool                      suppressed            = 12 [(gogoproto.moretags) = "search:\"CVE Snoozed\""];
+    bool                      suppressed            = 12 [(gogoproto.moretags) = 'search:"CVE Snoozed"'];
     google.protobuf.Timestamp suppress_activation   = 16;
-    google.protobuf.Timestamp suppress_expiry       = 17 [(gogoproto.moretags) = "search:\"CVE Snooze Expiry,hidden\""];
+    google.protobuf.Timestamp suppress_expiry       = 17 [(gogoproto.moretags) = 'search:"CVE Snooze Expiry,hidden"'];
 
     map<string, DistroSpecific> distro_specifics    = 19;
-    VulnerabilitySeverity       severity            = 20 [(gogoproto.moretags) = "search:\"Severity\""];
+    VulnerabilitySeverity       severity            = 20 [(gogoproto.moretags) = 'search:"Severity"'];
 }
 
 message CVEInfo {

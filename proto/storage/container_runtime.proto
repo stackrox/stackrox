@@ -15,5 +15,5 @@ enum ContainerRuntime {
 
 message ContainerRuntimeInfo {
     ContainerRuntime type = 1;
-    string version        = 2 [(gogoproto.moretags) = "search:\"Container Runtime,store\""];
+    string version        = 2 [(gogoproto.moretags) = 'search:"Container Runtime,store"'];
 }
