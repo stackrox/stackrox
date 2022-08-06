@@ -50,6 +50,7 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.InitBundleMeta) error
 	UpsertMany(ctx context.Context, objs []*storage.InitBundleMeta) error
 	Delete(ctx context.Context, id string) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.InitBundleMeta, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
@@ -320,6 +321,25 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+}
+
+// DeleteByQuery removes the objects based on the passed query
+func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "InitBundleMeta")
+
+	var sacQueryFilter *v1.Query
+	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
 	)
 
 	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
