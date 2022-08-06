@@ -19,6 +19,7 @@ type PolicyCategoriesSidePanelProps = {
     setSelectedCategory: (selectedCategory?: PolicyCategory) => void;
     addToast: (toast) => void;
     refreshPolicyCategories: () => void;
+    openDeleteModal: () => void;
 };
 
 function PolicyCategorySidePanel({
@@ -26,6 +27,7 @@ function PolicyCategorySidePanel({
     setSelectedCategory,
     addToast,
     refreshPolicyCategories,
+    openDeleteModal,
 }: PolicyCategoriesSidePanelProps) {
     const formik = useFormik({
         initialValues: selectedCategory,
@@ -69,7 +71,7 @@ function PolicyCategorySidePanel({
                         flexWrap={{ default: 'nowrap' }}
                     >
                         <Title headingLevel="h3">{name}</Title>
-                        <Button variant="secondary" isDanger>
+                        <Button variant="secondary" isDanger onClick={openDeleteModal}>
                             Delete category
                         </Button>
                     </Flex>
