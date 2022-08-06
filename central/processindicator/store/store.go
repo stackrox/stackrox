@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -19,4 +20,5 @@ type Store interface {
 	GetKeysToIndex(ctx context.Context) ([]string, error)
 
 	Walk(context.Context, func(pi *storage.ProcessIndicator) error) error
+	DeleteByQuery(ctx context.Context, query *v1.Query) error
 }

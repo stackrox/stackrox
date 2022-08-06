@@ -159,6 +159,9 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 		return sac.ErrResourceAccessDenied
 	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
+	if features.PostgresDatastore.Enabled() {
+		return ds.storage.DeleteByQuery(ctx, q)
+	}
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return err

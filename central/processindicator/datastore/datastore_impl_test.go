@@ -18,12 +18,14 @@ import (
 	searchMocks "github.com/stackrox/rox/central/processindicator/search/mocks"
 	"github.com/stackrox/rox/central/processindicator/store"
 	storeMocks "github.com/stackrox/rox/central/processindicator/store/mocks"
+	postgresStore "github.com/stackrox/rox/central/processindicator/store/postgres"
 	rocksStore "github.com/stackrox/rox/central/processindicator/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -45,7 +47,8 @@ type IndicatorDataStoreTestSuite struct {
 	indexer   index.Indexer
 	searcher  processSearch.Searcher
 
-	rocksDB *rocksdb.RocksDB
+	rocksDB  *rocksdb.RocksDB
+	postgres *pgtest.TestPostgres
 
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
@@ -65,22 +68,28 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Indicator)))
 
-	var err error
-	suite.rocksDB = rocksdbtest.RocksDBForT(suite.T())
-	suite.NoError(err)
-	suite.storage = rocksStore.New(suite.rocksDB)
-
-	tmpIndex, err := globalindex.TempInitializeIndices("")
-	suite.NoError(err)
-	suite.indexer = index.New(tmpIndex)
-
+	if features.PostgresDatastore.Enabled() {
+		suite.postgres = pgtest.ForT(suite.T())
+		suite.storage = postgresStore.New(suite.postgres.Pool)
+		suite.indexer = postgresStore.NewIndexer(suite.postgres.Pool)
+	} else {
+		suite.rocksDB = rocksdbtest.RocksDBForT(suite.T())
+		suite.storage = rocksStore.New(suite.rocksDB)
+		tmpIndex, err := globalindex.TempInitializeIndices("")
+		suite.NoError(err)
+		suite.indexer = index.New(tmpIndex)
+	}
 	suite.searcher = processSearch.New(suite.storage, suite.indexer)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 }
 
 func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(suite.rocksDB)
+	if features.PostgresDatastore.Enabled() {
+		suite.postgres.Teardown(suite.T())
+	} else {
+		rocksdbtest.TearDownRocksDB(suite.rocksDB)
+	}
 	suite.mockCtrl.Finish()
 }
 
@@ -425,11 +434,15 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByPod() {
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 	storeMock, indexMock, searchMock := suite.setupDataStoreWithMocks()
-	searchMock.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "jkldfjk"}}, nil)
-	storeMock.EXPECT().DeleteMany(suite.hasWriteCtx, gomock.Any()).Return(nil)
-	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Return(nil)
+	if features.PostgresDatastore.Enabled() {
+		storeMock.EXPECT().DeleteByQuery(gomock.Any(), gomock.Any()).Return(nil)
+	} else {
+		searchMock.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "jkldfjk"}}, nil)
+		storeMock.EXPECT().DeleteMany(suite.hasWriteCtx, gomock.Any()).Return(nil)
+		indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Return(nil)
 
-	storeMock.EXPECT().AckKeysIndexed(suite.hasWriteCtx, "jkldfjk").Return(nil)
+		storeMock.EXPECT().AckKeysIndexed(suite.hasWriteCtx, "jkldfjk").Return(nil)
+	}
 
 	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, "eoiurvbf")
 	suite.NoError(err, "expected no error trying to write with permissions")

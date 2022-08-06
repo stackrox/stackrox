@@ -54,8 +54,9 @@ type Store interface {
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
 
-	// Unused and only exists to satisfy interfaces used for Postgres
+	// Unused functions that only exist to satisfy interfaces used for Postgres
 	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.{{.Type}}, error)
+	DeleteByQuery(_ context.Context, _ *v1.Query) error
 }
 
 type storeImpl struct {
@@ -209,6 +210,11 @@ func (b *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 // GetByQuery is unused and only exists to satisfy interfaces used for Postgres
 func (b * storeImpl) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.{{.Type}}, error) {
 	panic("unimplemented")
+}
+
+// DeleteByQuery is a no-op added for compatibility with the Postgres implementation
+func (b *storeImpl) DeleteByQuery(_ context.Context, _ *v1.Query) error {
+	panic("Unimplemented")
 }
 `
 
