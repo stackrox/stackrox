@@ -5,8 +5,7 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
-- ROX-11348: The email notifier now allows for unauthenticated smtp.
-  The email notifier now allows for unauthenticated SMTP. By default, 
+- ROX-11348: The email notifier now allows for unauthenticated SMTP. By default, 
 authentication is still required for an email notifier, but the user can now choose to turn it off.
 
 ### Removed Features
