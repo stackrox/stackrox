@@ -429,7 +429,8 @@
           "$ref": "#/definitions/EmailAuthMethod"
         },
         "allowUnauthenticatedSmtp": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "Set to true to allow unauthenticated SMTP"
         }
       }
     },

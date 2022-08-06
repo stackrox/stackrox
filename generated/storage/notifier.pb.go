@@ -822,15 +822,16 @@ type Email struct {
 	Sender   string `protobuf:"bytes,2,opt,name=sender,proto3" json:"sender,omitempty"`
 	Username string `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"`
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password                 string           `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty" scrub:"always"`
-	DisableTLS               bool             `protobuf:"varint,5,opt,name=disableTLS,proto3" json:"disableTLS,omitempty"`
-	DEPRECATEDUseStartTLS    bool             `protobuf:"varint,6,opt,name=DEPRECATED_useStartTLS,json=DEPRECATEDUseStartTLS,proto3" json:"DEPRECATED_useStartTLS,omitempty"`
-	From                     string           `protobuf:"bytes,7,opt,name=from,proto3" json:"from,omitempty"`
-	StartTLSAuthMethod       Email_AuthMethod `protobuf:"varint,8,opt,name=startTLSAuthMethod,proto3,enum=storage.Email_AuthMethod" json:"startTLSAuthMethod,omitempty"`
-	AllowUnauthenticatedSmtp bool             `protobuf:"varint,9,opt,name=allow_unauthenticated_smtp,json=allowUnauthenticatedSmtp,proto3" json:"allow_unauthenticated_smtp,omitempty"`
-	XXX_NoUnkeyedLiteral     struct{}         `json:"-"`
-	XXX_unrecognized         []byte           `json:"-"`
-	XXX_sizecache            int32            `json:"-"`
+	Password              string           `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty" scrub:"always"`
+	DisableTLS            bool             `protobuf:"varint,5,opt,name=disableTLS,proto3" json:"disableTLS,omitempty"`
+	DEPRECATEDUseStartTLS bool             `protobuf:"varint,6,opt,name=DEPRECATED_useStartTLS,json=DEPRECATEDUseStartTLS,proto3" json:"DEPRECATED_useStartTLS,omitempty"`
+	From                  string           `protobuf:"bytes,7,opt,name=from,proto3" json:"from,omitempty"`
+	StartTLSAuthMethod    Email_AuthMethod `protobuf:"varint,8,opt,name=startTLSAuthMethod,proto3,enum=storage.Email_AuthMethod" json:"startTLSAuthMethod,omitempty"`
+	// Set to true to allow unauthenticated SMTP
+	AllowUnauthenticatedSmtp bool     `protobuf:"varint,9,opt,name=allow_unauthenticated_smtp,json=allowUnauthenticatedSmtp,proto3" json:"allow_unauthenticated_smtp,omitempty"`
+	XXX_NoUnkeyedLiteral     struct{} `json:"-"`
+	XXX_unrecognized         []byte   `json:"-"`
+	XXX_sizecache            int32    `json:"-"`
 }
 
 func (m *Email) Reset()         { *m = Email{} }

@@ -106,6 +106,7 @@ func TestEmailTest(t *testing.T) {
 }
 
 func TestUnauthEmail(t *testing.T) {
+	t.Skip("Skipping till ROX-8113 is fixed")
 	e, mockCtrl := getUnauthEmail(t)
 	defer mockCtrl.Finish()
 
