@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -24,7 +25,7 @@ type extractor struct {
 }
 
 func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
-	token := authn.ExtractToken(ri.Metadata, tokenType)
+	token := authn.ExtractToken(ri.Metadata, servicecerttoken.TokenType)
 	if token == "" {
 		return nil, nil
 	}

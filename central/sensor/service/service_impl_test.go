@@ -7,7 +7,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/assert"
 )
@@ -53,7 +52,7 @@ func TestGetCertExpiryStatus(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			identity := service.WrapMTLSIdentity(mtls.IdentityFromCert(requestinfo.CertInfo{
+			identity := service.WrapMTLSIdentity(mtls.IdentityFromCert(mtls.CertInfo{
 				NotBefore: tc.notBefore,
 				NotAfter:  tc.notAfter,
 			}))

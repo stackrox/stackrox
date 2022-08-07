@@ -45,7 +45,7 @@ func NewServiceCertInjectingRoundTripper(cert *tls.Certificate, rt http.RoundTri
 			newHeader[k] = sliceutils.StringClone(vs)
 		}
 
-		newHeader.Set("authorization", fmt.Sprintf("%s %s", tokenType, token))
+		newHeader.Set("authorization", fmt.Sprintf("%s %s", TokenType, token))
 		reqShallowCopy.Header = newHeader
 
 		return rt.RoundTrip(&reqShallowCopy)
@@ -60,7 +60,7 @@ func (i *serviceCertClientCreds) GetRequestMetadata(ctx context.Context, uri ...
 		return nil, errors.Wrap(err, "creating service cert token")
 	}
 	return map[string]string{
-		"authorization": fmt.Sprintf("%s %s", tokenType, token),
+		"authorization": fmt.Sprintf("%s %s", TokenType, token),
 	}, nil
 }
 

@@ -4,7 +4,7 @@ import (
 	"bytes"
 
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/random"
 )
 
