@@ -131,9 +131,6 @@ func validate(email *storage.Email) error {
 	if email.GetUsername() == "" {
 		errorList.AddString("Username must be specified")
 	}
-	if email.GetPassword() == "" {
-		errorList.AddString("Password must be specified")
-	}
 	if !email.GetDisableTLS() && email.GetStartTLSAuthMethod() != storage.Email_DISABLED {
 		errorList.AddString("TLS must be disabled to use a StartTLS Auth Method")
 	}
@@ -371,7 +368,7 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 }
 
 func (e *email) send(ctx context.Context, m *message) error {
-	conn, auth, err := e.connection(ctx)
+	conn, _, err := e.connection(ctx)
 	if err != nil {
 		return createError("Connection failed", err)
 	}
@@ -392,9 +389,9 @@ func (e *email) send(ctx context.Context, m *message) error {
 		}
 	}
 
-	if err = client.Auth(auth); err != nil {
+	/*if err = client.Auth(auth); err != nil {
 		return createError("SMTP authentication failed", err)
-	}
+	}*/
 
 	if err = client.Mail(e.config.GetSender()); err != nil {
 		return createError("SMTP MAIL command failed", err)
