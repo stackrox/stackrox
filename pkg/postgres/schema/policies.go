@@ -23,7 +23,6 @@ var (
                    Name varchar UNIQUE,
                    Description varchar,
                    Disabled bool,
-                   Categories text[],
                    LifecycleStages int[],
                    Severity integer,
                    EnforcementActions int[],
@@ -63,7 +62,6 @@ type Policies struct {
 	Name               string           `gorm:"column:name;type:varchar;unique"`
 	Description        string           `gorm:"column:description;type:varchar"`
 	Disabled           bool             `gorm:"column:disabled;type:bool"`
-	Categories         *pq.StringArray  `gorm:"column:categories;type:text[]"`
 	LifecycleStages    *pq.Int32Array   `gorm:"column:lifecyclestages;type:int[]"`
 	Severity           storage.Severity `gorm:"column:severity;type:integer"`
 	EnforcementActions *pq.Int32Array   `gorm:"column:enforcementactions;type:int[]"`

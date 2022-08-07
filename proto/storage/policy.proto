@@ -12,6 +12,7 @@ import "storage/rbac.proto";
 
 package storage;
 
+// Next tag: 28
 message Policy {
     string                      id                      = 1 [(gogoproto.moretags) = 'search:"Policy ID,store,hidden" sql:"pk"'];
     string                      name                    = 2 [(gogoproto.moretags) = 'search:"Policy,store" sql:"unique"'];
@@ -19,9 +20,10 @@ message Policy {
     string                      rationale               = 4;
     string                      remediation             = 5;
     bool                        disabled                = 6 [(gogoproto.moretags) = "search:\"Disabled\""];
-    repeated string             categories              = 7 [(gogoproto.moretags) = "search:\"Category,store\""];
-    reserved                                              8; // was PolicyFields fields
+    repeated string             categories              = 7 [(gogoproto.moretags) = 'search:\"Category,store\" sql:"-"'];
+    repeated string             category_ids            = 27 [(gogoproto.moretags) = 'sql:fk(PolicyCategory:id)'];
 
+    reserved                                              8; // was PolicyFields fields
     repeated LifecycleStage     lifecycle_stages        = 9  [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
     EventSource                 event_source            = 22;
 

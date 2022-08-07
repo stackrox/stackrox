@@ -203,7 +203,7 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 	if category.GetIsDefault() {
 		return errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be removed", id))
 	}
-
+	//TODO: Wire in policy datastore, to search for policies using the category. If in use, category will not be deleted
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return err
 	}

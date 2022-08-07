@@ -90,7 +90,6 @@ func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Poli
 		obj.GetName(),
 		obj.GetDescription(),
 		obj.GetDisabled(),
-		obj.GetCategories(),
 		obj.GetLifecycleStages(),
 		obj.GetSeverity(),
 		obj.GetEnforcementActions(),
@@ -101,7 +100,7 @@ func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Poli
 		serialized,
 	}
 
-	finalStr := "INSERT INTO policies (Id, Name, Description, Disabled, Categories, LifecycleStages, Severity, EnforcementActions, LastUpdated, SORTName, SORTLifecycleStage, SORTEnforcement, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Disabled = EXCLUDED.Disabled, Categories = EXCLUDED.Categories, LifecycleStages = EXCLUDED.LifecycleStages, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, LastUpdated = EXCLUDED.LastUpdated, SORTName = EXCLUDED.SORTName, SORTLifecycleStage = EXCLUDED.SORTLifecycleStage, SORTEnforcement = EXCLUDED.SORTEnforcement, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO policies (Id, Name, Description, Disabled, LifecycleStages, Severity, EnforcementActions, LastUpdated, SORTName, SORTLifecycleStage, SORTEnforcement, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Disabled = EXCLUDED.Disabled, LifecycleStages = EXCLUDED.LifecycleStages, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, LastUpdated = EXCLUDED.LastUpdated, SORTName = EXCLUDED.SORTName, SORTLifecycleStage = EXCLUDED.SORTLifecycleStage, SORTEnforcement = EXCLUDED.SORTEnforcement, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -126,8 +125,6 @@ func (s *storeImpl) copyFromPolicies(ctx context.Context, tx pgx.Tx, objs ...*st
 		"description",
 
 		"disabled",
-
-		"categories",
 
 		"lifecyclestages",
 
@@ -164,8 +161,6 @@ func (s *storeImpl) copyFromPolicies(ctx context.Context, tx pgx.Tx, objs ...*st
 			obj.GetDescription(),
 
 			obj.GetDisabled(),
-
-			obj.GetCategories(),
 
 			obj.GetLifecycleStages(),
 
