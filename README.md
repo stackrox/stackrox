@@ -1,5 +1,3 @@
-[![CircleCI][circleci-badge]][circleci-link]
-
 # StackRox Kubernetes Security Platform
 
 The StackRox Kubernetes Security Platform performs a risk analysis of the
@@ -14,6 +12,7 @@ Apollo. You may find references to these previous names in code or
 documentation.
 
 ## Community
+
 You can reach out to us through [Slack](https://cloud-native.slack.com/archives/C01TDE3GK0E) (#stackrox).
 For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackrox.io/).
 
@@ -36,25 +35,26 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
 
 ## Quick Installation via Helm
 
-StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
+StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get the `helm` CLI on your system.
+
 First, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
 ```sh
 helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
 ```
+
 To see all available Helm charts in the repo run (you may add the option `--devel` to show non-release builds as well)
 ```sh
 helm search repo stackrox
 ```
-In order to install stackrox-central-services you will need a secure password. This password will be needed later when creating an init bundle.
+
+To install stackrox-central-services, you will need a secure password. This password will be needed later when creating an init bundle.
 ```sh
 openssl rand -base64 20 | tr -d '/=+' > stackrox-admin-password.txt
 ```
-
 From here you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
 ```sh
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="$(cat stackrox-admin-password.txt)"
 ```
-
 If you're deploying StackRox on a small node like a local development cluster, run the following command to reduce StackRox resource requirements. Keep in mind that these reduced resource settings are not suited for a production setup.
 ```sh
 helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-services \
@@ -69,13 +69,14 @@ helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-ser
   --set scanner.resources.limits.memory=2500Mi \
   --set scanner.resources.limits.cpu=2000m
 ```
+
 To create a secured cluster, you first need to generate an init bundle containing initialization secrets. The init bundle will be saved in `stackrox-init-bundle.yaml`, and you will use it to provision secured clusters as shown below.
 ```sh
 kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
   --password "$(cat stackrox-admin-password.txt)" \
   central init-bundles generate stackrox-init-bundle --output - > stackrox-init-bundle.yaml
 ```
-Set a meaningful cluster name for your secured cluster in the `CLUSTER_NAME` environment variable. The cluster will be identified by this name in the clusters list of the StackRox UI.
+Set a meaningful cluster name for your secured cluster in the `CLUSTER_NAME` shell variable. The cluster will be identified by this name in the clusters list of the StackRox UI.
 ```sh
 CLUSTER_NAME="my-secured-cluster"
 ```
@@ -85,8 +86,7 @@ helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-sec
   -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME"
 ```
-When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services are deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
-
+When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services is deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 When deploying StackRox on a small node, you can install with additional options. This should reduce stackrox-secured-cluster-services resource requirements. Keep in mind that these reduced resource settings are not recommended for a production setup.
 ```sh
 helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
@@ -106,7 +106,7 @@ To further customize your Helm installation consult these documents:
 
 Follow these steps to get to StackRox UI
 
-1.Setup port forward to central:
+1.Setup port forward to Central:
 ```
 kubectl -n stackrox port-forward deploy/central 8000:8443
 ```
@@ -128,12 +128,12 @@ cd stackrox
 MAIN_IMAGE_TAG=latest ./deploy/k8s/deploy.sh
 ```
 
-If you are using docker for desktop or minikube use
-`./deploy/k8s/deploy-local.sh`. And for openshift:
-`./deploy/openshift/deploy.sh`.
+If you are using Docker Desktop, Colima, or minikube use
+`./deploy/k8s/deploy-local.sh`. For OpenShift,
+`./deploy/openshift/deploy.sh`
 
 When the deployment has completed a port-forward should exist, so you can connect
-to https://localhost:8000/. Credentials for the 'admin' user can be found in
+to <https://localhost:8000/>. Credentials for the `admin` user can be found in
 `./deploy/k8s/central-deploy/password`
 (`deploy/openshift/central-deploy/password` in the OpenShift case).
 
@@ -154,14 +154,17 @@ The following tools are necessary to test code and build image(s):
   * Get the version specified in [EXPECTED_GO_VERSION](./EXPECTED_GO_VERSION).
 * Various Go linters and RocksDB dependencies that can be installed using `make reinstall-dev-tools`.
 * UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
-* Docker (make sure you `docker login` to your company [DockerHub account](https://hub.docker.com/settings/security))
-* RocksDB (follow [Mac](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-darwin.md#install-rocksdb) or [Linux](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-linux.md#install-rocksdb) guide)
-* Xcode command line tools (macOS only)
+* [Docker](https://docs.docker.com/get-docker/)
+  * Note: Docker Desktop now requires a paid subscription for larger, enterprise companies.
+  * Some StackRox devs recommend [Colima](https://github.com/abiosoft/colima)
+* [RocksDB](https://rocksdb.org/)
+  * Follow [Mac](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-darwin.md#install-rocksdb) or [Linux](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-linux.md#install-rocksdb) guide)
+* [Xcode](https://developer.apple.com/xcode/) command line tools (macOS only)
 * [Bats](https://github.com/sstephenson/bats) is used to run certain shell tests.
   You can obtain it with `brew install bats` or `npm install -g bats`.
-* [oc OpenShift](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/) cli tool
+* [oc](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/) OpenShift cli tool
 
-##### xcode - macOS only
+##### Xcode - macOS only
 
 <details><summary>Click to expand</summary>
  Usually you would have these already installed by brew.
@@ -215,11 +218,11 @@ $ make image
 
 Now, you need to bring up a Kubernetes cluster *yourself* before proceeding.
 Development can either happen in GCP or locally with
-[Docker Desktop](https://docs.docker.com/docker-for-mac/#kubernetes) or [Minikube](https://minikube.sigs.k8s.io/docs/start/).
-Note that Docker Desktop is more suited for macOS development, because the cluster will have access to images built with `make image` locally without additional configuration. Also, the collector has better support for Docker Desktop than Minikube where drivers may not be available.
+[Docker Desktop](https://docs.docker.com/desktop/kubernetes/), [Colima](https://github.com/abiosoft/colima#kubernetes), [minikube](https://minikube.sigs.k8s.io/docs/start/).
+Note that Docker Desktop and Colima are more suited for macOS development, because the cluster will have access to images built with `make image` locally without additional configuration. Also, Collector has better support for these than minikube where drivers may not be available.
 
 ```bash
-# To keep the StackRox central's rocksdb state between restarts, set:
+# To keep the StackRox Central's RocksDB state between restarts, set:
 $ export STORAGE=pvc
 
 # To save time on rebuilds by skipping UI builds, set:
@@ -287,7 +290,7 @@ $ cdrox
 # Also uses the admin credentials from your last deployment via deploy.sh
 $ roxcurl /v1/metadata
 
-# Run quickstyle checks, faster than roxs' "make style"
+# Run quickstyle checks, faster than stackrox's "make style"
 $ quickstyle
 
 # The workflow repository includes some tools for supporting
@@ -310,7 +313,7 @@ If it isn't, use `Help | Find Action...`, type `Plugins` and hit enter, then swi
 This plugin does not know where to look for `.proto` imports by default in GoLand therefore you need to explicitly
 configure paths for this plugin.
 
-* Go to `File | Settings | Languages & Frameworks | Protocol Buffers`.
+* Go to `GoLand | Preferences | Languages & Frameworks | Protocol Buffers`.
 * Uncheck `Configure automatically`.
 * Click on `+` button, navigate and select `./proto` directory in the root of the repo.
 * Optionally, also add `$HOME/go/pkg/mod/github.com/gogo/googleapis@1.1.0`
@@ -320,7 +323,7 @@ configure paths for this plugin.
 
 #### Debugging
 
-With GoLand, you can naturally use breakpoints and debugger when running unit tests in IDE.
+With GoLand, you can naturally use breakpoints and the debugger when running unit tests in IDE.
 If you would like to debug local or even remote deployment, follow the procedure below.
 
 <details><summary>Kubernetes debugger setup</summary>
@@ -329,7 +332,7 @@ If you would like to debug local or even remote deployment, follow the procedure
     ```bash
     $ DEBUG_BUILD=yes make image
     ```
-    Alternatively, debug build will also be created when the branch name contains `-debug` substring. This works locally with `make image` and in CircleCI.
+    Alternatively, debug build will also be created when the branch name contains `-debug` substring. This works locally with `make image` and in CI.
  2. Deploy the image using instructions from this README file. Works both with `deploy-local.sh` and `deploy.sh`.
  3. Start the debugger (and port forwarding) in the target pod using `roxdebug` command from `workflow` repo.
     ```bash
@@ -390,12 +393,12 @@ suggested [here](https://docs.docker.com/engine/reference/commandline/login/#cre
 Before deploying on Openshift, ensure that you have the [oc - OpenShift Command Line](https://github.com/openshift/oc)
 installed.
 
-On MacOS, you can install it via the following command:
+On macOS, you can install it via the following command:
 ```bash
 brew install openshift-cli
 ```
 
-Afterwards, deploy `rox`:
+Afterwards, deploy `stackrox`:
 ```bash
 # Automatically creates a OS route for exposing all relevant services
 export LOAD_BALANCER=route
@@ -457,7 +460,3 @@ unzip openshift.zip -d openshift
 bash openshift/central.sh
 ```
 </details>
-
-
-[circleci-badge]: https://circleci.com/gh/stackrox/stackrox.svg?&style=shield&circle-token=eb5a0b87a6253b4c060d011bbfed4a2f1f516746
-[circleci-link]:  https://circleci.com/gh/stackrox/workflows/stackrox/tree/master
