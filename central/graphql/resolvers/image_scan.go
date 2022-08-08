@@ -3,6 +3,13 @@ package resolvers
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
+	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
+	"github.com/stackrox/rox/central/image/mappings"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/scancomponent"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -25,9 +32,54 @@ func init() {
 }
 
 func (resolver *imageScanResolver) ImageComponents(_ context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
-	return resolver.root.ImageComponents(resolver.ctx, args)
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	pagination := query.GetPagination()
+	query.Pagination = nil
+	resolvers, err := getImageComponentResolvers(resolver.ctx, resolver.root, resolver.data, query)
+
+	ret, err := paginationWrapper{
+		pv: pagination,
+	}.paginate(resolvers, err)
+	return ret.([]ImageComponentResolver), err
 }
 
 func (resolver *imageScanResolver) ImageComponentCount(_ context.Context, args RawQuery) (int32, error) {
 	return resolver.root.ImageComponentCount(resolver.ctx, args)
+}
+
+func getImageComponentResolvers(ctx context.Context, root *Resolver, imageScan *storage.ImageScan, query *v1.Query) ([]ImageComponentResolver, error) {
+	query, _ = search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
+	predicate, err := componentPredicateFactory.GeneratePredicate(query)
+	if err != nil {
+		return nil, err
+	}
+
+	idToComponent := make(map[string]*imageComponentResolver)
+	for _, embeddedComponent := range imageScan.GetComponents() {
+		if !predicate.Matches(embeddedComponent) {
+			continue
+		}
+
+		os := imageScan.GetOperatingSystem()
+		id := scancomponent.ComponentID(embeddedComponent.GetName(), embeddedComponent.GetVersion(), os)
+		if _, exists := idToComponent[id]; !exists {
+			component := common.GenerateImageComponent(os, embeddedComponent)
+			resolver, err := root.wrapImageComponent(component, true, nil)
+			if err != nil {
+				return nil, err
+			}
+			resolver.ctx = embeddedobjs.ComponentContext(ctx, os, imageScan.GetScanTime(), embeddedComponent)
+			idToComponent[id] = resolver
+		}
+	}
+
+	resolvers := make([]ImageComponentResolver, 0, len(idToComponent))
+	for _, component := range idToComponent {
+		resolvers = append(resolvers, component)
+	}
+	return resolvers, nil
 }
