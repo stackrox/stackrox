@@ -7,8 +7,6 @@ import (
 	"github.com/stackrox/rox/central/auth/userpass"
 	"github.com/stackrox/rox/central/sac/authorizer"
 	"github.com/stackrox/rox/pkg/contextutil"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -80,8 +78,4 @@ func (se *Enricher) GetPreAuthContextEnricher(authzTraceSink observe.AuthzTraceS
 		trace.RecordScopeCheckerCoreType(sccType)
 		return ctxWithSCC, nil
 	}
-}
-
-func newConfiguredCache() expiringcache.Cache {
-	return expiringcache.NewExpiringCache(env.PermissionTimeout.DurationSetting())
 }
