@@ -21,7 +21,9 @@ type componentContextValue struct {
 // ComponentContext returns a new context with the component attached.
 func ComponentContext(ctx context.Context, os string, lastScanned *types.Timestamp, component *storage.EmbeddedImageScanComponent) context.Context {
 	return context.WithValue(ctx, componentContextKey{}, &componentContextValue{
-		component: component,
+		component:   component,
+		os:          os,
+		lastScanned: lastScanned,
 	})
 }
 

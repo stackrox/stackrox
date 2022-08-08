@@ -11,6 +11,20 @@ import (
 )
 
 const (
+	imageOnlyQuery = `
+		query getImages($query: String, $pagination: Pagination) {
+			images(query: $query, pagination: $pagination) { 
+				id
+			}}`
+
+	imageWithCountsQuery = `
+		query getImages($query: String, $pagination: Pagination) {
+			images(query: $query, pagination: $pagination) { 
+				id
+				imageComponentCount
+				imageVulnerabilityCount
+			}}`
+
 	imageWithScanLongQuery = `
 		query getImages($query: String, $pagination: Pagination) {
 			images(query: $query, pagination: $pagination) { 
@@ -88,7 +102,7 @@ func BenchmarkImageResolver(b *testing.B) {
 	b.Run("GetImageComponentsWithoutImageScanResolver", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
-				imageWithScanQuery,
+				imageWithoutScanQuery,
 				"getImages",
 				map[string]interface{}{
 					"pagination": map[string]interface{}{
@@ -115,11 +129,40 @@ func BenchmarkImageResolver(b *testing.B) {
 		}
 	})
 
-	// Verify that full image is fetched.
 	b.Run("GetImageComponentsDerivedWithoutImageScanResolver", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
 				imageWithoutScanLongQuery,
+				"getImages",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
+
+	b.Run("GetImageOnly", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				imageOnlyQuery,
+				"getImages",
+				map[string]interface{}{
+					"pagination": map[string]interface{}{
+						"limit": 25,
+					},
+				},
+			)
+			require.Len(b, response.Errors, 0)
+		}
+	})
+
+	b.Run("GetImageWithCounts", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			response := schema.Exec(ctx,
+				imageWithCountsQuery,
 				"getImages",
 				map[string]interface{}{
 					"pagination": map[string]interface{}{
