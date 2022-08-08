@@ -2,7 +2,7 @@ package datastore
 
 import (
 	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
-	"github.com/stackrox/rox/central/componentcveedge/datastore/postgres"
+	"github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
 	"github.com/stackrox/rox/central/componentcveedge/index"
 	"github.com/stackrox/rox/central/componentcveedge/search"
 	"github.com/stackrox/rox/central/componentcveedge/store"
@@ -39,8 +39,7 @@ func initialize() {
 		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 		searcher = search.NewV2(storage, indexer)
-		ad, err = New(nil, storage, indexer, searcher)
-		utils.CrashOnError(err)
+		ad = New(nil, storage, indexer, searcher)
 		return
 	}
 
@@ -59,8 +58,7 @@ func initialize() {
 		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()),
 		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
 
-	ad, err = New(globalDackbox.GetGlobalDackBox(), storage, indexer, searcher)
-	utils.CrashOnError(err)
+	ad = New(globalDackbox.GetGlobalDackBox(), storage, indexer, searcher)
 }
 
 // Singleton provides the interface for non-service external interaction.
