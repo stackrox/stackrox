@@ -1,7 +1,9 @@
+import isEqual from 'lodash/isEqual';
 import set from 'lodash/set';
 
 import { IntegrationBase } from 'services/IntegrationsService';
 import { IntegrationSource, IntegrationType } from 'types/integration';
+import { ImageIntegrationCategory } from 'types/imageIntegration.proto';
 
 import integrationsList from './integrationsList';
 
@@ -74,3 +76,70 @@ const getTimes = () => {
 };
 
 export const timesOfDay = getTimes();
+
+// Utilities for image integrations which can have either or both of two categories.
+
+// Categories alternatives correspond to mutually exclusive toggle group items.
+type CategoriesAlternatives<
+    C0 extends ImageIntegrationCategory,
+    C1 extends ImageIntegrationCategory
+> = [
+    [[category0: C0]],
+    [[category1: C1]],
+    // The alternative for both categories includes both orders.
+    [[category0: C0, category1: C1], [category1: C1, category0: C0]]
+];
+
+// Compiler verifies that first argument of matchCategoriesAlternative method is a category alternative.
+type CategoriesAlternative<
+    C0 extends ImageIntegrationCategory,
+    C1 extends ImageIntegrationCategory
+> = CategoriesAlternatives<C0, C1>[number];
+
+function getCategoriesUtils<
+    C0 extends ImageIntegrationCategory,
+    C1 extends ImageIntegrationCategory
+>([category0, category1]: [C0, C1], [text0, text1]: [string, string]) {
+    const categoriesAlternatives: CategoriesAlternatives<C0, C1> = [
+        [[category0]],
+        [[category1]],
+        [
+            [category0, category1],
+            [category1, category0],
+        ],
+    ];
+
+    // For robust behavior, do not assume that categories from response are limited to C0 and C1.
+    /* eslint-disable no-nested-ternary */
+    return {
+        categoriesAlternatives,
+
+        getCategoriesText: (categories: ImageIntegrationCategory[]) =>
+            categories
+                .map((category) =>
+                    category === category0 ? text0 : category === category1 ? text1 : category
+                )
+                .join(' + '),
+
+        matchCategoriesAlternative: (
+            categoriesAlternative: CategoriesAlternative<C0, C1>,
+            categories: ImageIntegrationCategory[]
+        ) =>
+            categoriesAlternative.some((categoriesAlternativeItem) =>
+                isEqual(categoriesAlternativeItem, categories)
+            ),
+
+        validCategories: [category0, category1],
+    };
+    /* eslint-enable no-nested-ternary */
+}
+
+export const categoriesUtilsForClairifyScanner = getCategoriesUtils(
+    ['SCANNER', 'NODE_SCANNER'],
+    ['Image Scanner', 'Node Scanner']
+);
+
+export const categoriesUtilsForRegistryScanner = getCategoriesUtils(
+    ['REGISTRY', 'SCANNER'],
+    ['Registry', 'Scanner']
+);
