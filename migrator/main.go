@@ -75,7 +75,6 @@ func run() error {
 			return err
 		}
 	} else {
-		var gormDB *gorm.DB
 		gormDB, err := postgreshelper.Load(conf)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to postgres DB")

@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
@@ -213,13 +214,13 @@ func (c *endpointsTestCase) verifyAuthStatus(t *testing.T, testCtx *endpointsTes
 }
 
 func (c *endpointsTestCase) runGRPCTest(t *testing.T, testCtx *endpointsTestContext) {
-	var dialOpt grpc.DialOption
+	var creds credentials.TransportCredentials
 	if c.skipTLS {
-		dialOpt = grpc.WithInsecure()
+		creds = insecure.NewCredentials()
 	} else {
-		dialOpt = grpc.WithTransportCredentials(credentials.NewTLS(testCtx.tlsConfig(c.clientCert, c.validServerNames[0], true)))
+		creds = credentials.NewTLS(testCtx.tlsConfig(c.clientCert, c.validServerNames[0], true))
 	}
-	conn, err := grpc.Dial(c.endpoint(), dialOpt)
+	conn, err := grpc.Dial(c.endpoint(), grpc.WithTransportCredentials(creds))
 	if !assert.NoError(t, err, "expected gRPC dial to succeed") {
 		return
 	}

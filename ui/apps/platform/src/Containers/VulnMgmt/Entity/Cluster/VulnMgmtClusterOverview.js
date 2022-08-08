@@ -116,6 +116,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                     entityTypes.NAMESPACE,
                                     entityTypes.DEPLOYMENT,
                                     entityTypes.IMAGE,
+                                    entityTypes.NODE,
                                 ]}
                                 entityContext={currentEntity}
                                 small

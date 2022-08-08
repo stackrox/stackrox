@@ -17,6 +17,7 @@ import (
 	clusterHealthRocksDB "github.com/stackrox/rox/central/cluster/store/clusterhealth/rocksdb"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
+	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
@@ -317,6 +318,7 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 	mockFilter := filterMocks.NewMockFilter(mockCtrl)
 	clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(mockCtrl)
 	flows := networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl)
+	clusterCVEs := clusterCVEDS.NewMockDataStore(mockCtrl)
 
 	deployments := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, clusterFlows,
 		mockRiskDatastore, expiringcache.NewExpiringCache(1*time.Minute), mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
@@ -333,6 +335,7 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 		clusterHealthStorage,
 		clusterIndexer,
 		alertDataStore,
+		imageIntegrationDataStore,
 		namespaceDataStore,
 		deployments,
 		nodeDataStore,
@@ -347,8 +350,7 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 		notifierMock,
 		mockProvider,
 		ranking.NewRanker(),
-		networkBaselineMgr,
-		imageIntegrationDataStore)
+		networkBaselineMgr, clusterCVEs)
 	require.NoError(t, err)
 
 	// A bunch of these get called when a cluster is deleted
@@ -378,6 +380,7 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 	clusterFlows.EXPECT().GetFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(flows, nil)
 	flows.EXPECT().RemoveFlowsForDeployment(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	mockFilter.EXPECT().Delete(gomock.Any()).AnyTimes()
+	clusterCVEs.EXPECT().DeleteClusterCVEsInternal(gomock.Any(), gomock.Any()).AnyTimes()
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
 

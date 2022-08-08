@@ -18,16 +18,16 @@ message Node {
     // A unique ID identifying this node.
     string id                              = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk"'];
     // The (host)name of the node. Might or might not be the same as ID.
-    string name                            = 2 [(gogoproto.moretags) = "search:\"Node,store\""];
+    string name                            = 2 [(gogoproto.moretags) = 'search:"Node,store"'];
     // Taints on the host
     repeated Taint taints                  = 3;
     string cluster_id                      = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint"'];
-    string cluster_name                    = 5 [(gogoproto.moretags) = "search:\"Cluster,store\""];
+    string cluster_name                    = 5 [(gogoproto.moretags) = 'search:"Cluster,store"'];
     // TODO(ROX-6895): "Label" search term is ambiguous.
-    map<string, string> labels             = 6 [(gogoproto.moretags) = "search:\"Label\""];
-    map<string, string> annotations        = 7 [(gogoproto.moretags) = "search:\"Annotation\""];
+    map<string, string> labels             = 6 [(gogoproto.moretags) = 'search:"Label"'];
+    map<string, string> annotations        = 7 [(gogoproto.moretags) = 'search:"Annotation"'];
     // When the cluster reported the node was added
-    google.protobuf.Timestamp joined_at    = 13 [(gogoproto.moretags) = "search:\"Node Join Time,store\""];
+    google.protobuf.Timestamp joined_at    = 13 [(gogoproto.moretags) = 'search:"Node Join Time,store"'];
     // node internal IP addresses
     repeated string internal_ip_addresses  = 8;
     // node external IP addresses
@@ -39,28 +39,28 @@ message Node {
     // From NodeInfo. Operating system reported by the node (ex: linux).
     string operating_system                = 17;
     // From NodeInfo. OS image reported by the node from /etc/os-release.
-    string os_image                        = 12 [(gogoproto.moretags) = "search:\"Operating System,store\""];
+    string os_image                        = 12 [(gogoproto.moretags) = 'search:"Operating System,store"'];
     string kubelet_version                 = 15;
     string kube_proxy_version              = 16;
 
-    google.protobuf.Timestamp last_updated = 25 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
+    google.protobuf.Timestamp last_updated = 25 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
     // Time we received an update from Kubernetes.
-    google.protobuf.Timestamp k8s_updated  = 26 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
+    google.protobuf.Timestamp k8s_updated  = 26 [(gogoproto.moretags) = 'sensorhash:"ignore"'];
 
-    NodeScan scan                          = 18 [(gogoproto.moretags) = "policy:\"Node Scan\""];
+    NodeScan scan                          = 18 [(gogoproto.moretags) = 'policy:"Node Scan"'];
     oneof set_components {
-        int32 components                   = 19 [(gogoproto.moretags) = "search:\"Component Count,store,hidden\""];
+        int32 components                   = 19 [(gogoproto.moretags) = 'search:"Component Count,store,hidden"'];
     }
     oneof set_cves {
-        int32 cves                         = 20 [(gogoproto.moretags) = "search:\"CVE Count,store,hidden\""];
+        int32 cves                         = 20 [(gogoproto.moretags) = 'search:"CVE Count,store,hidden"'];
     }
     oneof set_fixable {
-        int32 fixable_cves                 = 21 [(gogoproto.moretags) = "search:\"Fixable CVE Count,store,hidden\""];
+        int32 fixable_cves                 = 21 [(gogoproto.moretags) = 'search:"Fixable CVE Count,store,hidden"'];
     }
     int64 priority                         = 22 [(gogoproto.moretags) = 'search:"Node Risk Priority,hidden"'];
-    float risk_score                       = 23 [(gogoproto.moretags) = "search:\"Node Risk Score,hidden\""];
+    float risk_score                       = 23 [(gogoproto.moretags) = 'search:"Node Risk Score,hidden"'];
     oneof set_top_cvss {
-        float top_cvss                     = 24 [(gogoproto.moretags) = "search:\"Node Top CVSS,store\""];
+        float top_cvss                     = 24 [(gogoproto.moretags) = 'search:"Node Top CVSS,store"'];
     }
 
     enum Note {
@@ -71,7 +71,7 @@ message Node {
 
 // Next tag: 5
 message NodeScan {
-    google.protobuf.Timestamp          scan_time        = 1 [(gogoproto.moretags) = "search:\"Node Scan Time,store\""];
+    google.protobuf.Timestamp          scan_time        = 1 [(gogoproto.moretags) = 'search:"Node Scan Time,store"'];
     string                             operating_system = 3;
     repeated EmbeddedNodeScanComponent components       = 2 [(gogoproto.moretags) = 'sql:"-"'];
 
@@ -84,8 +84,8 @@ message NodeScan {
 }
 
 message EmbeddedNodeScanComponent {
-    string                         name             = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
-    string                         version          = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
+    string                         name             = 1 [(gogoproto.moretags) = 'search:"Component,store"'];
+    string                         version          = 2 [(gogoproto.moretags) = 'search:"Component Version,store"'];
     repeated EmbeddedVulnerability vulns            = 3;
     repeated NodeVulnerability     vulnerabilities  = 7;
     int64                          priority         = 4;

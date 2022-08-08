@@ -60,6 +60,30 @@ func getEmail(t *testing.T) (*email, *gomock.Controller) {
 	return e, mockCtrl
 }
 
+func getUnauthEmail(t *testing.T) (*email, *gomock.Controller) {
+	mockCtrl := gomock.NewController(t)
+	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
+	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return([]*storage.NamespaceMetadata{}, nil).AnyTimes()
+	mitreStore := mitreMocks.NewMockMitreAttackReadOnlyDataStore(mockCtrl)
+	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
+
+	notifier := &storage.Notifier{
+		UiEndpoint: "http://google.com",
+		Config: &storage.Notifier_Email{
+			Email: &storage.Email{
+				Server:                   server,
+				Sender:                   user,
+				AllowUnauthenticatedSmtp: true,
+				DisableTLS:               true,
+			},
+		},
+	}
+
+	e, err := newEmail(notifier, nsStore, mitreStore)
+	require.NoError(t, err)
+	return e, mockCtrl
+}
+
 func TestEmailAlertNotify(t *testing.T) {
 	e, mockCtrl := getEmail(t)
 	defer mockCtrl.Finish()
@@ -76,6 +100,14 @@ func TestEmailNetworkPolicyYAMLNotify(t *testing.T) {
 
 func TestEmailTest(t *testing.T) {
 	e, mockCtrl := getEmail(t)
+	defer mockCtrl.Finish()
+
+	assert.NoError(t, e.Test(context.Background()))
+}
+
+func TestUnauthEmail(t *testing.T) {
+	t.Skip("Skipping till ROX-8113 is fixed")
+	e, mockCtrl := getUnauthEmail(t)
 	defer mockCtrl.Finish()
 
 	assert.NoError(t, e.Test(context.Background()))

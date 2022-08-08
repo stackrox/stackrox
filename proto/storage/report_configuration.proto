@@ -15,9 +15,9 @@ message ReportConfiguration {
         VULNERABILITY = 0;
     }
     string                    id                           = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string                    name                         = 2 [(gogoproto.moretags) = "search:\"Report Name\""];
+    string                    name                         = 2 [(gogoproto.moretags) = 'search:"Report Name"'];
     string                    description                  = 3;
-    ReportType                type                         = 4 [(gogoproto.moretags) = "search:\"Report Type\""];
+    ReportType                type                         = 4 [(gogoproto.moretags) = 'search:"Report Type"'];
     oneof                    filter {
         VulnerabilityReportFilters  vuln_report_filters    = 5;
     }

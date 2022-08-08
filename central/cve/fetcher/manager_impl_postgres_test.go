@@ -7,8 +7,10 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
+	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
@@ -294,17 +296,6 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	s.netFlows = netFlowsMocks.NewMockClusterDataStore(s.mockCtrl)
 	s.mockImages = mockImageDataStore.NewMockDataStore(s.mockCtrl)
 
-	s.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	s.netEntities.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-	clusterPostgres.Destroy(s.ctx, db)
-	clusterDataStore, err := clusterDS.New(
-		clusterPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB),
-		clusterHealthPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB),
-		clusterPostgres.NewIndexer(db), nil, s.mockNamespaces, nil, s.nodeDataStore, nil, nil,
-		s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil, nil)
-	s.NoError(err)
-	s.clusterDataStore = clusterDataStore
-
 	// Create cluster cve datastore
 	clusterCVEPostgres.Destroy(s.ctx, db)
 	clusterCVEStorage := clusterCVEPostgres.NewFullTestStore(s.T(), db, clusterCVEPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB))
@@ -313,6 +304,17 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	clusterCVEDS, err := clusterCVEDataStore.New(clusterCVEStorage, clusterCVEIndexer, clusterCVESearcher)
 	s.NoError(err)
 	s.clusterCVEDatastore = clusterCVEDS
+
+	s.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	s.netEntities.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
+	clusterPostgres.Destroy(s.ctx, db)
+	clusterDataStore, err := clusterDS.New(
+		clusterPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB),
+		clusterHealthPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB),
+		clusterPostgres.NewIndexer(db), nil, nil, s.mockNamespaces, nil, s.nodeDataStore, nil, nil,
+		s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil, s.clusterCVEDatastore)
+	s.NoError(err)
+	s.clusterDataStore = clusterDataStore
 
 	// Create cluster cve edge datastore
 	clusterCVEEdgePostgres.Destroy(s.ctx, db)
@@ -384,6 +386,30 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.NoError(err)
 	s.Len(results, 10)
 
+	// Suppress CVEs
+	start := types.TimestampNow()
+	duration := types.DurationProto(10 * time.Minute)
+	clusterCVE := utils.EmbeddedVulnerabilityToClusterCVE(storage.CVE_K8S_CVE, vulns[0])
+	err = s.clusterCVEDatastore.Suppress(s.ctx, start, duration, vulns[0].GetCve())
+	s.NoError(err)
+
+	storedCVE, found, err := s.clusterCVEDatastore.Get(s.ctx, clusterCVE.GetId())
+	s.NoError(err)
+	s.True(found)
+	s.True(storedCVE.GetSnoozed())
+
+	// Reconcile
+	s.NoError(s.cveManager.updateCVEs(vulns, clusterMap, utils.K8s))
+	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(10, count)
+
+	// Ensure that snoozed state is persisted.
+	storedCVE, found, err = s.clusterCVEDatastore.Get(s.ctx, clusterCVE.GetId())
+	s.NoError(err)
+	s.True(found)
+	s.True(storedCVE.GetSnoozed())
+
 	// Upsert istio CVEs.
 	vulns, clusterMap = getTestClusterCVEParts(10, c2ID)
 	s.NoError(s.cveManager.updateCVEs(vulns, clusterMap, utils.OpenShift))
@@ -446,6 +472,16 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	))
 	s.NoError(err)
 	s.Len(results, 0)
+
+	s.NoError(s.clusterCVEDatastore.DeleteClusterCVEsInternal(s.ctx, c2ID))
+	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(20, count)
+
+	s.NoError(s.clusterCVEDatastore.DeleteClusterCVEsInternal(s.ctx, c1ID))
+	count, err = s.clusterCVEDatastore.Count(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, count)
 }
 
 func getTestClusterCVEParts(numCVEs int, clusters ...string) ([]*storage.EmbeddedVulnerability, map[string][]*storage.Cluster) {

@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -36,6 +37,10 @@ type Store interface {
 	Walk(ctx context.Context, fn func(obj *storage.TokenMetadata) error) error
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
+
+	// Unused functions that only exist to satisfy interfaces used for Postgres
+	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.TokenMetadata, error)
+	DeleteByQuery(_ context.Context, _ *v1.Query) error
 }
 
 type storeImpl struct {
@@ -153,4 +158,14 @@ func (b *storeImpl) AckKeysIndexed(_ context.Context, keys ...string) error {
 // GetKeysToIndex returns the keys that need to be indexed
 func (b *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return b.crud.GetKeysToIndex()
+}
+
+// GetByQuery is unused and only exists to satisfy interfaces used for Postgres
+func (b * storeImpl) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.TokenMetadata, error) {
+	panic("unimplemented")
+}
+
+// DeleteByQuery is a no-op added for compatibility with the Postgres implementation
+func (b *storeImpl) DeleteByQuery(_ context.Context, _ *v1.Query) error {
+	panic("Unimplemented")
 }

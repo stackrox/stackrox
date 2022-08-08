@@ -38,7 +38,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestImageDataStoreWithPostgresTestImageDataStoreWithPostgres(t *testing.T) {
+func TestImageDataStoreWithPostgres(t *testing.T) {
 	suite.Run(t, new(ImagePostgresDataStoreTestSuite))
 }
 

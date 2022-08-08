@@ -6,7 +6,6 @@ export type ResourceName =
     | 'APIToken'
     | 'Alert'
     | 'AllComments'
-    | 'AuthPlugin'
     | 'AuthProvider'
     | 'BackupPlugins'
     | 'CVE'

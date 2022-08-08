@@ -1014,7 +1014,8 @@ unset_namespace_env_var() {
 openshift_ci_e2e_mods() {
     unset_namespace_env_var
 
-    # Similarly the incoming KUBECONFIG is best avoided.
+    # The incoming KUBECONFIG is for the openshift/release cluster and not the
+    # e2e test cluster.
     if [[ -n "${KUBECONFIG:-}" ]]; then
         info "There is an incoming KUBECONFIG in ${KUBECONFIG}"
         export OPENSHIFT_CI_KUBECONFIG="$KUBECONFIG"
@@ -1023,7 +1024,7 @@ openshift_ci_e2e_mods() {
     info "KUBECONFIG set: ${KUBECONFIG}"
     export KUBECONFIG
 
-    # KUBERNETES_{PORT,SERVICE} env values also interact with commandline kubectl tests
+    # KUBERNETES_{PORT,SERVICE} env values interact with commandline kubectl tests
     if env | grep -e ^KUBERNETES_; then
         local envfile
         envfile="$(mktemp)"

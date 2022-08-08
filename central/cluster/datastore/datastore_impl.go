@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/index"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
@@ -38,6 +39,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -73,8 +75,9 @@ type datastoreImpl struct {
 	searcher             search.Searcher
 
 	alertDataStore            alertDataStore.DataStore
-	namespaceDataStore        namespaceDataStore.DataStore
 	imageIntegrationDataStore imageIntegrationDataStore.DataStore
+	clusterCVEDataStore       clusterCVEDS.DataStore
+	namespaceDataStore        namespaceDataStore.DataStore
 	deploymentDataStore       deploymentDataStore.DataStore
 	nodeDataStore             nodeDataStore.GlobalDataStore
 	podDataStore              podDataStore.DataStore
@@ -548,7 +551,11 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	ds.removeK8SRoles(ctx, cluster)
 	ds.removeRoleBindings(ctx, cluster)
 
-	// TODO: Apparently, cluster cves are only cleaned up at next cve fetch cycle.
+	if features.PostgresDatastore.Enabled() {
+		if err := ds.clusterCVEDataStore.DeleteClusterCVEsInternal(ctx, cluster.GetId()); err != nil {
+			log.Errorf("Failed to delete cluster cves for cluster %q: %v ", cluster.GetId(), err)
+		}
+	}
 
 	if done != nil {
 		done.Signal()
@@ -576,13 +583,13 @@ func (ds *datastoreImpl) removeClusterNamespaces(ctx context.Context, cluster *s
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
 	namespaces, err := ds.namespaceDataStore.Search(ctx, q)
 	if err != nil {
-		log.Errorf("failed to get namespaces for removed cluster %s: %v", cluster.GetId(), err)
+		log.Errorf("Failed to get namespaces for removed cluster %s: %v", cluster.GetId(), err)
 	}
 
 	for _, namespace := range namespaces {
 		err = ds.namespaceDataStore.RemoveNamespace(ctx, namespace.ID)
 		if err != nil {
-			log.Errorf("failed to remove namespace %s in deleted cluster: %v", namespace.ID, err)
+			log.Errorf("Failed to remove namespace %s in deleted cluster: %v", namespace.ID, err)
 		}
 	}
 
@@ -616,18 +623,18 @@ func (ds *datastoreImpl) removeClusterDeployments(ctx context.Context, cluster *
 	for _, deployment := range deployments {
 		alerts, err := ds.getAlerts(ctx, deployment.ID)
 		if err != nil {
-			log.Errorf("failed to retrieve alerts for deployment %s: %v", deployment.ID, err)
+			log.Errorf("Failed to retrieve alerts for deployment %s: %v", deployment.ID, err)
 		} else {
 			err = ds.markAlertsStale(ctx, alerts)
 			if err != nil {
-				log.Errorf("failed to mark alerts for deployment %s as stale: %v", deployment.ID, err)
+				log.Errorf("Failed to mark alerts for deployment %s as stale: %v", deployment.ID, err)
 			}
 		}
 
 		removedIDs = append(removedIDs, deployment.ID)
 		err = ds.deploymentDataStore.RemoveDeployment(ctx, cluster.GetId(), deployment.ID)
 		if err != nil {
-			log.Errorf("failed to remove deployment %s in deleted cluster: %v", deployment.ID, err)
+			log.Errorf("Failed to remove deployment %s in deleted cluster: %v", deployment.ID, err)
 		}
 	}
 
@@ -637,12 +644,12 @@ func (ds *datastoreImpl) removeClusterDeployments(ctx context.Context, cluster *
 func (ds *datastoreImpl) removeClusterSecrets(ctx context.Context, cluster *storage.Cluster) {
 	secrets, err := ds.getSecrets(ctx, cluster)
 	if err != nil {
-		log.Errorf("failed to obtain secrets in deleted cluster %s: %v", cluster.GetId(), err)
+		log.Errorf("Failed to obtain secrets in deleted cluster %s: %v", cluster.GetId(), err)
 	}
 	for _, s := range secrets {
 		// Best effort to remove. If the object doesn't exist, then that is okay
 		if err := ds.secretsDataStore.RemoveSecret(ctx, s.GetId()); err != nil {
-			log.Errorf("failed to remove secret with id %s from deleted cluster %s: %v", s.GetId(), cluster.GetId(), err)
+			log.Errorf("Failed to remove secret with id %s from deleted cluster %s: %v", s.GetId(), cluster.GetId(), err)
 		}
 	}
 }
@@ -650,12 +657,12 @@ func (ds *datastoreImpl) removeClusterSecrets(ctx context.Context, cluster *stor
 func (ds *datastoreImpl) removeClusterServiceAccounts(ctx context.Context, cluster *storage.Cluster) {
 	serviceAccounts, err := ds.getServiceAccounts(ctx, cluster)
 	if err != nil {
-		log.Errorf("failed to find service accounts in deleted cluster %s: %v", cluster.GetId(), err)
+		log.Errorf("Failed to find service accounts in deleted cluster %s: %v", cluster.GetId(), err)
 	}
 	for _, s := range serviceAccounts {
 		// Best effort to remove. If the object doesn't exist, then that is okay
 		if err := ds.serviceAccountDataStore.RemoveServiceAccount(ctx, s); err != nil {
-			log.Errorf("failed to remove service account with id %s from deleted cluster %s: %v", s, cluster.GetId(), err)
+			log.Errorf("Failed to remove service account with id %s from deleted cluster %s: %v", s, cluster.GetId(), err)
 		}
 	}
 }
@@ -663,7 +670,7 @@ func (ds *datastoreImpl) removeClusterServiceAccounts(ctx context.Context, clust
 func (ds *datastoreImpl) removeK8SRoles(ctx context.Context, cluster *storage.Cluster) {
 	roles, err := ds.getRoles(ctx, cluster)
 	if err != nil {
-		log.Errorf("failed to find K8S roles in deleted cluster %s: %v", cluster.GetId(), err)
+		log.Errorf("Failed to find K8S roles in deleted cluster %s: %v", cluster.GetId(), err)
 	}
 	for _, r := range roles {
 		// Best effort to remove. If the object doesn't exist, then that is okay
@@ -676,12 +683,12 @@ func (ds *datastoreImpl) removeK8SRoles(ctx context.Context, cluster *storage.Cl
 func (ds *datastoreImpl) removeRoleBindings(ctx context.Context, cluster *storage.Cluster) {
 	bindings, err := ds.getRoleBindings(ctx, cluster)
 	if err != nil {
-		log.Errorf("failed to find K8S role bindings in deleted cluster %s: %v", cluster.GetId(), err)
+		log.Errorf("Failed to find K8S role bindings in deleted cluster %s: %v", cluster.GetId(), err)
 	}
 	for _, b := range bindings {
 		// Best effort to remove. If the object doesn't exist, then that is okay
 		if err := ds.roleBindingDataStore.RemoveRoleBinding(ctx, b); err != nil {
-			log.Errorf("failed to remove K8S role binding with id %s from deleted cluster %s: %v", b, cluster.GetId(), err)
+			log.Errorf("Failed to remove K8S role binding with id %s from deleted cluster %s: %v", b, cluster.GetId(), err)
 		}
 	}
 }

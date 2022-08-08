@@ -49,6 +49,7 @@ export_test_environment() {
     ci_export ROX_DECOMMISSIONED_CLUSTER_RETENTION "${ROX_DECOMMISSIONED_CLUSTER_RETENTION:-true}"
     ci_export ROX_NEW_POLICY_CATEGORIES "${ROX_NEW_POLICY_CATEGORIES:-true}"
     ci_export ROX_POLICIES_PATTERNFLY "${ROX_POLICIES_PATTERNFLY:-true}"
+    ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
     ci_export ROX_SECURITY_METRICS_PHASE_ONE "${ROX_SECURITY_METRICS_PHASE_ONE:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
     ci_export ROX_FRONTEND_VM_UPDATES "${ROX_FRONTEND_VM_UPDATES:-true}"
@@ -410,6 +411,27 @@ handle_e2e_progress_failures() {
 
     if [[ ! -f "${STATE_DEPLOYED}" ]]; then
         save_junit_failure "Stackrox_Deployment" "Could not deploy StackRox" "Check the build log" || true
+    fi
+}
+
+setup_automation_flavor_e2e_cluster() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: setup_automation_flavor_e2e_cluster <job_name>"
+    fi
+
+    local ci_job="$1"
+
+    echo "SHARED_DIR: ${SHARED_DIR}"
+    ls -l "${SHARED_DIR}"
+    export KUBECONFIG="${SHARED_DIR}/kubeconfig"
+
+    if [[ "$ci_job" =~ ^osd ]]; then
+        info "Logging in to an OSD cluster"
+        source "${SHARED_DIR}/dotenv"
+        oc login "$CLUSTER_API_ENDPOINT" \
+                --username "$CLUSTER_USERNAME" \
+                --password "$CLUSTER_PASSWORD" \
+                --insecure-skip-tls-verify=true
     fi
 }
 

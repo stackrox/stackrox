@@ -34,6 +34,9 @@ const commonRules = {
         },
     ],
 
+    // Allow a single named export from a module
+    'import/prefer-default-export': 'off',
+
     'import/no-extraneous-dependencies': [
         'error',
         {

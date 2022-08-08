@@ -111,16 +111,6 @@ describe('Vuln Management Dashboard Page', () => {
         cy.location('pathname').should('eq', url.list.deployments);
     });
 
-    it('"Top Riskiest <entities>" widget should start with a loading indicator', () => {
-        cy.visit(url.dashboard); // do not call visit helper because it waits on the requests
-        cy.get(selectors.getWidget('Top risky deployments by CVE count & CVSS score'))
-            .find(selectors.widgetBody)
-            .invoke('text')
-            .then((bodyText) => {
-                expect(bodyText).to.contain('Loading');
-            });
-    });
-
     it('clicking the "Top Riskiest Images" widget\'s "View All" button should take you to the images list', () => {
         visitVulnerabilityManagementDashboard();
         cy.intercept('POST', api.vulnMgmt.graphqlEntities('images')).as('images');

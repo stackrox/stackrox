@@ -128,10 +128,8 @@ func (ds *datastoreImpl) canReadNode(ctx context.Context, id string) (bool, erro
 
 // GetNode delegates to the underlying store.
 func (ds *datastoreImpl) GetNode(ctx context.Context, id string) (*storage.Node, bool, error) {
-	if !features.PostgresDatastore.Enabled() {
-		if ok, err := ds.canReadNode(ctx, id); err != nil || !ok {
-			return nil, false, err
-		}
+	if ok, err := ds.canReadNode(ctx, id); err != nil || !ok {
+		return nil, false, err
 	}
 
 	node, found, err := ds.storage.Get(ctx, id)
@@ -148,11 +146,10 @@ func (ds *datastoreImpl) GetNode(ctx context.Context, id string) (*storage.Node,
 func (ds *datastoreImpl) GetNodesBatch(ctx context.Context, ids []string) ([]*storage.Node, error) {
 	var nodes []*storage.Node
 	var err error
-	ok := true
-	if !features.PostgresDatastore.Enabled() {
-		if ok, err = nodesSAC.ReadAllowed(ctx); err != nil {
-			return nil, err
-		}
+	var ok bool
+
+	if ok, err = nodesSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
 	}
 
 	if ok {
@@ -181,12 +178,10 @@ func (ds *datastoreImpl) UpsertNode(ctx context.Context, node *storage.Node) err
 		return errors.New("cannot upsert a node without an id")
 	}
 
-	if !features.PostgresDatastore.Enabled() {
-		if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
-			return err
-		} else if !ok {
-			return sac.ErrResourceAccessDenied
-		}
+	if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
 
 	ds.keyedMutex.Lock(node.GetId())
@@ -206,12 +201,10 @@ func (ds *datastoreImpl) UpsertNode(ctx context.Context, node *storage.Node) err
 func (ds *datastoreImpl) DeleteNodes(ctx context.Context, ids ...string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "DeleteNodes")
 
-	if !features.PostgresDatastore.Enabled() {
-		if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
-			return err
-		} else if !ok {
-			return sac.ErrResourceAccessDenied
-		}
+	if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
 
 	errorList := errorhelpers.NewErrorList("deleting nodes")

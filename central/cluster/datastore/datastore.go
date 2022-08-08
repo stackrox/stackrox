@@ -15,6 +15,8 @@ import (
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
 	clusterHealthRocksDBStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/rocksdb"
+	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
+	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
@@ -110,6 +112,7 @@ func New(
 	graphProvider graph.Provider,
 	clusterRanker *ranking.Ranker,
 	networkBaselineMgr networkBaselineManager.Manager,
+	clusterCVEs clusterCVEDS.DataStore,
 ) (DataStore, error) {
 	ds := &datastoreImpl{
 		clusterStorage:            clusterStorage,
@@ -131,9 +134,9 @@ func New(
 		notifier:                  notifier,
 		clusterRanker:             clusterRanker,
 		networkBaselineMgr:        networkBaselineMgr,
-
-		idToNameCache: simplecache.New(),
-		nameToIDCache: simplecache.New(),
+		clusterCVEDataStore:       clusterCVEs,
+		idToNameCache:             simplecache.New(),
+		nameToIDCache:             simplecache.New(),
 	}
 
 	if features.PostgresDatastore.Enabled() {
@@ -141,11 +144,8 @@ func New(
 	} else {
 		ds.searcher = search.New(clusterStorage, indexer, graphProvider, clusterRanker)
 	}
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Cluster)))
-	if err := ds.buildIndex(ctx); err != nil {
+
+	if err := ds.buildIndex(sac.WithAllAccess(context.Background())); err != nil {
 		return ds, err
 	}
 
@@ -218,6 +218,10 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 	if err != nil {
 		return nil, err
 	}
+	clusterCVEStore, err := clusterCVEDataStore.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
 
 	sensorCnxMgr := connection.ManagerSingleton()
 	clusterRanker := ranking.ClusterRanker()
@@ -226,7 +230,7 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 		alertStore, iiStore, namespaceStore, deploymentStore,
 		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
-		nil, clusterRanker, networkBaselineManager)
+		nil, clusterRanker, networkBaselineManager, clusterCVEStore)
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
@@ -303,5 +307,5 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 		alertStore, iiStore, namespaceStore, deploymentStore,
 		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
-		dacky, clusterRanker, networkBaselineManager)
+		dacky, clusterRanker, networkBaselineManager, nil)
 }
