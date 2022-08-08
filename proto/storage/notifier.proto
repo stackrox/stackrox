@@ -37,8 +37,8 @@ message Notifier {
 
 message AWSSecurityHub {
     message Credentials {
-        string access_key_id     = 1 [(gogoproto.moretags) = "scrub:\"always\""];
-        string secret_access_key = 2 [(gogoproto.moretags) = "scrub:\"always\""];
+        string access_key_id     = 1 [(gogoproto.moretags) = 'scrub:"always"'];
+        string secret_access_key = 2 [(gogoproto.moretags) = 'scrub:"always"'];
     }
     string region             = 1;
     Credentials credentials   = 2;
@@ -47,17 +47,17 @@ message AWSSecurityHub {
 
 message CSCC {
     // The service account for the integration. The server will mask the value of this credential in responses and logs.
-    string service_account = 1 [(gogoproto.moretags) = "scrub:\"always\""];
+    string service_account = 1 [(gogoproto.moretags) = 'scrub:"always"'];
     reserved                 2; // Formerly gcp_org_id
     reserved                 3; // Formerly gcp_project
     string source_id       = 4;
 }
 
 message Jira {
-    string url        = 1 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
-    string username   = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string url        = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
+    string username   = 2 [(gogoproto.moretags) = 'scrub:"dependent"'];
     // The password for the integration. The server will mask the value of this credential in responses and logs.
-    string password   = 3 [(gogoproto.moretags) = "scrub:\"always\""];
+    string password   = 3 [(gogoproto.moretags) = 'scrub:"always"'];
     string issue_type = 4;
     message PriorityMapping {
         Severity severity      = 1;
@@ -68,11 +68,11 @@ message Jira {
 }
 
 message Email {
-    string server    = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string server    = 1 [(gogoproto.moretags) = 'scrub:"dependent"'];
     string sender    = 2;
-    string username  = 3 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string username  = 3 [(gogoproto.moretags) = 'scrub:"dependent"'];
     // The password for the integration. The server will mask the value of this credential in responses and logs.
-    string password  = 4 [(gogoproto.moretags) = "scrub:\"always\""];
+    string password  = 4 [(gogoproto.moretags) = 'scrub:"always"'];
     bool disableTLS  = 5;
     bool DEPRECATED_useStartTLS = 6; // useStartTLS has been deprecated for startTLSAuthMethod
     string from      = 7;
@@ -88,8 +88,8 @@ message Email {
 
 message Splunk {
     // The HTTP token for the integration. The server will mask the value of this credential in responses and logs.
-    string http_token                 = 1 [(gogoproto.moretags) = "scrub:\"always\""];
-    string http_endpoint              = 2 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
+    string http_token                 = 1 [(gogoproto.moretags) = 'scrub:"always"'];
+    string http_endpoint              = 2 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
     bool insecure                     = 3;
     int64 truncate                    = 4;
     bool audit_logging_enabled        = 5;
@@ -102,23 +102,23 @@ message Splunk {
 
 message PagerDuty {
     // The API key for the integration. The server will mask the value of this credential in responses and logs.
-    string api_key = 1 [(gogoproto.moretags) = "scrub:\"always\""];
+    string api_key = 1 [(gogoproto.moretags) = 'scrub:"always"'];
 }
 
 message Generic {
-    string endpoint                    = 1 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
+    string endpoint                    = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
     bool   skipTLSVerify               = 2;
     string ca_cert                     = 3;
-    string username                    = 4 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string username                    = 4 [(gogoproto.moretags) = 'scrub:"dependent"'];
     // The password for the integration. The server will mask the value of this credential in responses and logs.
-    string password                    = 5 [(gogoproto.moretags) = "scrub:\"always\""];
+    string password                    = 5 [(gogoproto.moretags) = 'scrub:"always"'];
     repeated KeyValuePair headers      = 6;
     repeated KeyValuePair extra_fields = 7;
     bool audit_logging_enabled         = 8;
 }
 
 message SumoLogic {
-    string http_source_address = 1 [(gogoproto.moretags) = "validate:\"nolocalendpoint\""];
+    string http_source_address = 1 [(gogoproto.moretags) = 'validate:"nolocalendpoint"'];
     bool   skipTLSVerify       = 2;
 }
 
@@ -136,7 +136,7 @@ message Syslog {
     LocalFacility local_facility = 1;
 
     message TCPConfig {
-        string hostname                    = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+        string hostname                    = 1 [(gogoproto.moretags) = 'scrub:"dependent"'];
         int32  port                        = 2;
         bool   skip_tls_verify             = 3;
         bool   use_tls                     = 4;

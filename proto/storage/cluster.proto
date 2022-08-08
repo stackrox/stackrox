@@ -116,7 +116,7 @@ message Cluster {
     string                    id                               = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"pk"'];
     string                    name                             = 2 [(gogoproto.moretags) = 'search:"Cluster,store" sql:"unique"'];
     ClusterType               type                             = 3;
-    map<string, string>       labels                           = 27 [(gogoproto.moretags) = "search:\"Cluster Label\""];
+    map<string, string>       labels                           = 27 [(gogoproto.moretags) = 'search:"Cluster Label"'];
     string                    main_image                       = 4;
     string                    collector_image                  = 16;
     string                    central_api_endpoint             = 5;
@@ -275,16 +275,16 @@ message ClusterHealthStatus {
     ScannerHealthInfo          scanner_health_info              = 10;
 
     // The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
-    HealthStatusLabel         sensor_health_status              = 2 [(gogoproto.moretags) = "search:\"Sensor Status,store\""];
-    HealthStatusLabel         collector_health_status           = 3 [(gogoproto.moretags) = "search:\"Collector Status,store\""];
+    HealthStatusLabel         sensor_health_status              = 2 [(gogoproto.moretags) = 'search:"Sensor Status,store"'];
+    HealthStatusLabel         collector_health_status           = 3 [(gogoproto.moretags) = 'search:"Collector Status,store"'];
 
-    HealthStatusLabel         overall_health_status             = 4 [(gogoproto.moretags) = "search:\"Cluster Status,store\""];
-    HealthStatusLabel         admission_control_health_status   = 7 [(gogoproto.moretags) = "search:\"Admission Control Status,store\""];
-    HealthStatusLabel         scanner_health_status             = 11 [(gogoproto.moretags) = "search:\"Scanner Status,store\""];
+    HealthStatusLabel         overall_health_status             = 4 [(gogoproto.moretags) = 'search:"Cluster Status,store"'];
+    HealthStatusLabel         admission_control_health_status   = 7 [(gogoproto.moretags) = 'search:"Admission Control Status,store"'];
+    HealthStatusLabel         scanner_health_status             = 11 [(gogoproto.moretags) = 'search:"Scanner Status,store"'];
 
     // For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
     // this timestamp will be updated by central pipeline when message is processed
-    google.protobuf.Timestamp last_contact                      = 5 [(gogoproto.moretags) = "search:\"Last Contact,store\""];;
+    google.protobuf.Timestamp last_contact                      = 5 [(gogoproto.moretags) = 'search:"Last Contact,store"'];;
 
     // To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
     bool                      health_info_complete              = 6;

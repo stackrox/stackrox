@@ -37,8 +37,8 @@ message NetworkBaseline {
     // This is the ID of the baseline.
     string deployment_id                             = 1 [(gogoproto.moretags) = 'sql:"pk"'];
 
-    string cluster_id                                = 2 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
-    string namespace                                 = 3 [(gogoproto.moretags) = "search:\"Namespace,hidden,store\""];
+    string cluster_id                                = 2 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store"'];
+    string namespace                                 = 3 [(gogoproto.moretags) = 'search:"Namespace,hidden,store"'];
 
     repeated NetworkBaselinePeer peers               = 4 [(gogoproto.moretags) = 'search:"-"'];
 
