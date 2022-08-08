@@ -206,5 +206,3 @@ exclude github.com/stackrox/rox v0.0.0-20210914215712-9ac265932e28
 exclude k8s.io/client-go v12.0.0+incompatible
 
 exclude github.com/openshift/client-go v3.9.0+incompatible
-
-replace helm.sh/helm/v3 => github.com/porridge/helm/v3 v3.7.3-0.20220719213745-59a08440474d
