@@ -82,6 +82,8 @@ message Email {
         LOGIN    = 2;
     }
     AuthMethod startTLSAuthMethod = 8;
+    // Set to true to allow unauthenticated SMTP
+    bool allow_unauthenticated_smtp = 9;
 }
 
 message Splunk {

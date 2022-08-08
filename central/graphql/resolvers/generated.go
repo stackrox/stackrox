@@ -559,6 +559,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"registryOverride: String!",
 	}))
 	utils.Must(builder.AddType("Email", []string{
+		"allowUnauthenticatedSmtp: Boolean!",
 		"disableTLS: Boolean!",
 		"from: String!",
 		"password: String!",
@@ -5609,6 +5610,11 @@ func (resolver *Resolver) wrapEmails(values []*storage.Email, err error) ([]*ema
 		output[i] = &emailResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *emailResolver) AllowUnauthenticatedSmtp(ctx context.Context) bool {
+	value := resolver.data.GetAllowUnauthenticatedSmtp()
+	return value
 }
 
 func (resolver *emailResolver) DisableTLS(ctx context.Context) bool {

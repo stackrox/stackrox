@@ -128,11 +128,14 @@ func validate(email *storage.Email) error {
 	if email.GetSender() == "" {
 		errorList.AddString("Sender must be specified")
 	}
-	if email.GetUsername() == "" {
-		errorList.AddString("Username must be specified")
-	}
-	if email.GetPassword() == "" {
-		errorList.AddString("Password must be specified")
+	// username and password are optional for unauthenticated smtp
+	if !email.AllowUnauthenticatedSmtp {
+		if email.GetUsername() == "" {
+			errorList.AddString("Username must be specified")
+		}
+		if email.GetPassword() == "" {
+			errorList.AddString("Password must be specified")
+		}
 	}
 	if !email.GetDisableTLS() && email.GetStartTLSAuthMethod() != storage.Email_DISABLED {
 		errorList.AddString("TLS must be disabled to use a StartTLS Auth Method")
@@ -392,8 +395,10 @@ func (e *email) send(ctx context.Context, m *message) error {
 		}
 	}
 
-	if err = client.Auth(auth); err != nil {
-		return createError("SMTP authentication failed", err)
+	if !e.notifier.GetEmail().GetAllowUnauthenticatedSmtp() {
+		if err = client.Auth(auth); err != nil {
+			return createError("SMTP authentication failed", err)
+		}
 	}
 
 	if err = client.Mail(e.config.GetSender()); err != nil {
