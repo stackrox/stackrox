@@ -80,7 +80,7 @@ message NetworkEntityInfo {
             string cidr     = 2;
         }
         // `default` indicates whether the external source is user-generated or system-generated.
-        bool       default  = 3 [(gogoproto.moretags) = "search:\"Default External Source,hidden\""];
+        bool       default  = 3 [(gogoproto.moretags) = 'search:"Default External Source,hidden"'];
     }
 
     Type               type            = 1 [(gogoproto.moretags) = 'sql:"index"'];

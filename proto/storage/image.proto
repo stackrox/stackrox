@@ -15,32 +15,32 @@ message Image {
     ImageName                       name                        = 1;
 
     ImageMetadata                   metadata                    = 2;
-    ImageScan                       scan                        = 3 [(gogoproto.moretags) = "policy:\"Image Scan\""];
+    ImageScan                       scan                        = 3 [(gogoproto.moretags) = 'policy:"Image Scan"'];
 
     ImageSignatureVerificationData  signature_verification_data = 15;
 
     ImageSignature                  signature                   = 16;
 
     oneof set_components {
-        int32 components                                        = 7 [(gogoproto.moretags) = "search:\"Component Count,store,hidden\""];
+        int32 components                                        = 7 [(gogoproto.moretags) = 'search:"Component Count,store,hidden"'];
     }
     oneof set_cves {
-        int32 cves                                              = 8 [(gogoproto.moretags) = "search:\"CVE Count,store,hidden\""];
+        int32 cves                                              = 8 [(gogoproto.moretags) = 'search:"CVE Count,store,hidden"'];
     }
     oneof set_fixable {
-        int32 fixable_cves                                      = 9 [(gogoproto.moretags) = "search:\"Fixable CVE Count,store,hidden\""];
+        int32 fixable_cves                                      = 9 [(gogoproto.moretags) = 'search:"Fixable CVE Count,store,hidden"'];
     }
 
-    google.protobuf.Timestamp last_updated                      = 5 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
+    google.protobuf.Timestamp last_updated                      = 5 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
 
     bool                            not_pullable                = 10;
     bool                            is_cluster_local            = 17;
 
     reserved 6;  // was map<string,string> clusterns_scopes
     int64                           priority                    = 11 [(gogoproto.moretags) = 'search:"Image Risk Priority,hidden"'];
-    float                           risk_score                  = 12 [(gogoproto.moretags) = "search:\"Image Risk Score,hidden\""];
+    float                           risk_score                  = 12 [(gogoproto.moretags) = 'search:"Image Risk Score,hidden"'];
     oneof set_top_cvss {
-        float                       top_cvss                    = 13 [(gogoproto.moretags) = "search:\"Image Top CVSS,store\""];
+        float                       top_cvss                    = 13 [(gogoproto.moretags) = 'search:"Image Top CVSS,store"'];
     }
 
     enum Note {
@@ -60,9 +60,9 @@ message DataSource {
 // Next tag: 7
 message ImageScan {
     string                              scanner_version  = 6;
-    google.protobuf.Timestamp           scan_time        = 1 [(gogoproto.moretags) = "search:\"Image Scan Time,store\""];
+    google.protobuf.Timestamp           scan_time        = 1 [(gogoproto.moretags) = 'search:"Image Scan Time,store"'];
     repeated EmbeddedImageScanComponent components       = 2 [(gogoproto.moretags) = 'sql:"-"'];
-    string                              operating_system = 4 [(gogoproto.moretags) = "search:\"Image OS,store\""];
+    string                              operating_system = 4 [(gogoproto.moretags) = 'search:"Image OS,store"'];
     // DataSource contains information about which integration was used to scan the image
     DataSource                          data_source      = 3;
     enum Note {
@@ -108,8 +108,8 @@ message ImageSignatureVerificationResult {
 
 // Next Tag: 13
 message EmbeddedImageScanComponent {
-    string                         name        = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
-    string                         version     = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
+    string                         name        = 1 [(gogoproto.moretags) = 'search:"Component,store"'];
+    string                         version     = 2 [(gogoproto.moretags) = 'search:"Component Version,store"'];
     License                        license     = 3;
     repeated EmbeddedVulnerability vulns       = 4;
     oneof has_layer_index {
@@ -121,7 +121,7 @@ message EmbeddedImageScanComponent {
     oneof set_top_cvss {
         float                      top_cvss    = 9;
     }
-    float                          risk_score  = 10 [(gogoproto.moretags) = "search:\"Component Risk Score,hidden\""];
+    float                          risk_score  = 10 [(gogoproto.moretags) = 'search:"Component Risk Score,hidden"'];
     // Component version that fixes all the fixable vulnerabilities in this component.
     string                         fixed_by    = 11;
     message Executable {
@@ -169,7 +169,7 @@ message ImageMetadata {
 
 message ImageSignature {
     repeated Signature signatures                  = 1;
-    google.protobuf.Timestamp fetched              = 2 [(gogoproto.moretags) = "search:\"Image Signature Fetched Time,hidden\""];
+    google.protobuf.Timestamp fetched              = 2 [(gogoproto.moretags) = 'search:"Image Signature Fetched Time,hidden"'];
 }
 
 message Signature {
@@ -189,19 +189,19 @@ message V2Metadata {
 
 message V1Metadata {
     string                    digest     = 1;
-    google.protobuf.Timestamp created    = 2 [(gogoproto.moretags) = "search:\"Image Created Time,store\""];
+    google.protobuf.Timestamp created    = 2 [(gogoproto.moretags) = 'search:"Image Created Time,store"'];
     string                    author     = 3;
     repeated ImageLayer       layers     = 4;
-    string                    user       = 5 [(gogoproto.moretags) = "search:\"Image User\""];
-    repeated string           command    = 6 [(gogoproto.moretags) = "search:\"Image Command\""];
-    repeated string           entrypoint = 7 [(gogoproto.moretags) = "search:\"Image Entrypoint\""];
-    repeated string           volumes    = 8 [(gogoproto.moretags) = "search:\"Image Volumes\""];
-    map<string, string>       labels     = 9 [(gogoproto.moretags) = "search:\"Image Label,store\""];
+    string                    user       = 5 [(gogoproto.moretags) = 'search:"Image User"'];
+    repeated string           command    = 6 [(gogoproto.moretags) = 'search:"Image Command"'];
+    repeated string           entrypoint = 7 [(gogoproto.moretags) = 'search:"Image Entrypoint"'];
+    repeated string           volumes    = 8 [(gogoproto.moretags) = 'search:"Image Volumes"'];
+    map<string, string>       labels     = 9 [(gogoproto.moretags) = 'search:"Image Label,store"'];
 }
 
 message ImageLayer {
-    string instruction                     = 1 [(gogoproto.moretags) = "search:\"Dockerfile Instruction Keyword,store\""];
-    string value                           = 2 [(gogoproto.moretags) = "search:\"Dockerfile Instruction Value,store\""];
+    string instruction                     = 1 [(gogoproto.moretags) = 'search:"Dockerfile Instruction Keyword,store"'];
+    string value                           = 2 [(gogoproto.moretags) = 'search:"Dockerfile Instruction Value,store"'];
     google.protobuf.Timestamp created      = 3;
     string author                          = 4;
     reserved 5; // formerly embedded components
@@ -209,10 +209,10 @@ message ImageLayer {
 }
 
 message ImageName {
-    string registry                         = 1 [(gogoproto.moretags) = "search:\"Image Registry,store\""];
-    string remote                           = 2 [(gogoproto.moretags) = "search:\"Image Remote,store\""];
-    string tag                              = 3 [(gogoproto.moretags) = "search:\"Image Tag,store\""];
-    string full_name                        = 4 [(gogoproto.moretags) = "search:\"Image,store,analyzer=standard\""];
+    string registry                         = 1 [(gogoproto.moretags) = 'search:"Image Registry,store"'];
+    string remote                           = 2 [(gogoproto.moretags) = 'search:"Image Remote,store"'];
+    string tag                              = 3 [(gogoproto.moretags) = 'search:"Image Tag,store"'];
+    string full_name                        = 4 [(gogoproto.moretags) = 'search:"Image,store,analyzer=standard"'];
 }
 
 message ListImage {
