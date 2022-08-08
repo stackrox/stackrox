@@ -61,6 +61,7 @@ describe('Components list Page and its entity detail page, (related entities) su
             visitVulnerabilityManagementEntities('image-components');
             hasExpectedHeaderColumns([
                 'Component',
+                'Operating System',
                 'CVEs',
                 'Fixed In',
                 'Top CVSS',

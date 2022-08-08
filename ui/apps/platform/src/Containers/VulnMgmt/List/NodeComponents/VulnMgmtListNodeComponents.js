@@ -52,6 +52,14 @@ export function getComponentTableColumns(showVMUpdates) {
                 sortField: componentSortFields.COMPONENT,
             },
             {
+                Header: `Operating System`,
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${defaultColumnClassName}`,
+                id: componentSortFields.OPERATING_SYSTEM,
+                accessor: 'operatingSystem',
+                sortField: componentSortFields.OPERATING_SYSTEM,
+            },
+            {
                 Header: showVMUpdates ? `Node CVEs` : 'CVEs',
                 entityType: entityTypes.CVE,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,

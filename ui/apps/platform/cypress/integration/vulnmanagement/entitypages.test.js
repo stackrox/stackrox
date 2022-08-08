@@ -300,7 +300,7 @@ describe('Entities single views', () => {
                 cy.get(`${selectors.tableBodyRows}:eq(0)`).click();
                 cy.wait('@cve');
 
-                cy.get(`${selectors.entityOverview} ${selectors.cveDescription}`)
+                cy.get(`${selectors.entityOverview} ${selectors.metadataDescription}`)
                     .invoke('text')
                     .then((descriptionInSidePanel) => {
                         expect(descriptionInSidePanel).to.equal(descriptionInList);
