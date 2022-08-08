@@ -164,6 +164,7 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
                 hasExpectedHeaderColumns(
                     [
                         'CVE',
+                        'Operating System',
                         'Fixable',
                         'CVSS Score',
                         'Env. Impact',
@@ -223,6 +224,7 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
                 hasExpectedHeaderColumns(
                     [
                         'CVE',
+                        'Operating System',
                         'Fixable',
                         'CVSS Score',
                         'Env. Impact',
