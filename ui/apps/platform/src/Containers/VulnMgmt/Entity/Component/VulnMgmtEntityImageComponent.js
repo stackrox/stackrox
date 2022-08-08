@@ -42,6 +42,7 @@ const VulnMgmtEntityImageComponent = ({
                     cvss
                     scoreVersion
                 }
+                operatingSystem
             }
         }
     `;

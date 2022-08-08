@@ -72,6 +72,6 @@ export function visitVulnerabilityManagementEntities(entitiesKey, search = '') {
 
     visit(`${url.list[entitiesKey]}${search}`);
 
-    cy.wait(['@searchOptions', `@${entitiesKey}`]);
+    cy.wait(['@searchOptions', `@${entitiesKey}`], { timeout: 10000 });
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
 }

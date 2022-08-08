@@ -224,6 +224,7 @@ export const IMAGE_CVE_DETAIL_FRAGMENT = gql`
         deploymentCount(query: $query)
         discoveredAtImage(query: $query)
         imageCount(query: $query)
+        operatingSystem
     }
 `;
 
@@ -260,6 +261,7 @@ export const NODE_CVE_DETAIL_FRAGMENT = gql`
         }
         nodeComponentCount(query: $query)
         nodeCount(query: $query)
+        operatingSystem
     }
 `;
 
@@ -408,6 +410,7 @@ export const NODE_CVE_LIST_FRAGMENT = gql`
         suppressed
         componentCount: nodeComponentCount
         nodeCount
+        operatingSystem
     }
 `;
 
@@ -435,6 +438,7 @@ export const VULN_IMAGE_CVE_LIST_FRAGMENT = gql`
         componentCount: imageComponentCount
         imageCount
         deploymentCount
+        operatingSystem
     }
 `;
 
@@ -803,6 +807,7 @@ export const VULN_NODE_COMPONENT_LIST_FRAGMENT = gql`
         }
         nodeCount(query: $query)
         priority
+        operatingSystem
     }
 `;
 
@@ -843,6 +848,7 @@ export const VULN_IMAGE_COMPONENT_LIST_FRAGMENT = gql`
         imageCount(query: $query)
         deploymentCount(query: $query)
         priority
+        operatingSystem
     }
 `;
 
