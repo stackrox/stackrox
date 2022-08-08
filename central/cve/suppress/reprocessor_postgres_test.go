@@ -91,7 +91,7 @@ func (s *ReprocessorPostgresTestSuite) TearDownSuite() {
 
 func (s *ReprocessorPostgresTestSuite) TestUnsuppressWithPostgres() {
 	ctx := sac.WithAllAccess(context.Background())
-	image := fixtures.GetImageWithUniqueComponents()
+	image := fixtures.GetImageWithUniqueComponents(5)
 
 	image.Priority = 1
 	for _, component := range image.GetScan().GetComponents() {

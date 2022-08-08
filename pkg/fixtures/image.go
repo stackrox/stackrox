@@ -47,10 +47,9 @@ func GetImage() *storage.Image {
 }
 
 // GetImageWithUniqueComponents returns a Mock Image where each component is unique
-func GetImageWithUniqueComponents() *storage.Image {
-	numComponentsPerImage := 5
-	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponentsPerImage)
-	for i := 0; i < numComponentsPerImage; i++ {
+func GetImageWithUniqueComponents(numComponents int) *storage.Image {
+	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponents)
+	for i := 0; i < numComponents; i++ {
 		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
 			Name:    fmt.Sprintf("name-%d", i),
 			Version: fmt.Sprintf("%d.2.3.4", i),
@@ -139,6 +138,9 @@ func getImageWithComponents(componentsPerImage []*storage.EmbeddedImageScanCompo
 		Scan: &storage.ImageScan{
 			ScanTime:   types.TimestampNow(),
 			Components: componentsPerImage,
+		},
+		SetComponents: &storage.Image_Components{
+			Components: int32(len(componentsPerImage)),
 		},
 	}
 }

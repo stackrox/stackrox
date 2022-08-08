@@ -182,7 +182,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
 }
 
 func (s *ImagePostgresDataStoreTestSuite) TestFixableWithPostgres() {
-	image := fixtures.GetImageWithUniqueComponents()
+	image := fixtures.GetImageWithUniqueComponents(5)
 	ctx := sac.WithAllAccess(context.Background())
 
 	s.NoError(s.datastore.UpsertImage(ctx, image))
@@ -213,7 +213,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestFixableWithPostgres() {
 }
 
 func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
-	image := fixtures.GetImageWithUniqueComponents()
+	image := fixtures.GetImageWithUniqueComponents(5)
 	ctx := sac.WithAllAccess(context.Background())
 
 	s.NoError(s.datastore.UpsertImage(ctx, image))
@@ -270,7 +270,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 // Test sort by Component search label sorts by Component+Version to ensure backward compatibility.
 func (s *ImagePostgresDataStoreTestSuite) TestSortByComponent() {
 	ctx := sac.WithAllAccess(context.Background())
-	node := fixtures.GetImageWithUniqueComponents()
+	node := fixtures.GetImageWithUniqueComponents(5)
 	componentIDs := make([]string, 0, len(node.GetScan().GetComponents()))
 	for _, component := range node.GetScan().GetComponents() {
 		componentIDs = append(componentIDs,
@@ -312,7 +312,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestSortByComponent() {
 
 func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	ctx := sac.WithAllAccess(context.Background())
-	testImage := fixtures.GetImageWithUniqueComponents()
+	testImage := fixtures.GetImageWithUniqueComponents(5)
 	s.NoError(s.datastore.UpsertImage(ctx, testImage))
 
 	storedImage, found, err := s.datastore.GetImage(ctx, testImage.GetId())
@@ -479,7 +479,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 
 func (s *ImagePostgresDataStoreTestSuite) TestGetManyImageMetadata() {
 	ctx := sac.WithAllAccess(context.Background())
-	testImage1 := fixtures.GetImageWithUniqueComponents()
+	testImage1 := fixtures.GetImageWithUniqueComponents(5)
 	s.NoError(s.datastore.UpsertImage(ctx, testImage1))
 
 	testImage2 := testImage1.Clone()
