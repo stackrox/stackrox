@@ -333,7 +333,7 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 	clusterDataStore, err := clusterDatastore.New(
 		clusterStorage,
 		clusterHealthStorage,
-		clusterIndexer,
+		clusterCVEs,
 		alertDataStore,
 		imageIntegrationDataStore,
 		namespaceDataStore,
@@ -350,7 +350,8 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 		notifierMock,
 		mockProvider,
 		ranking.NewRanker(),
-		networkBaselineMgr, clusterCVEs)
+		clusterIndexer,
+		networkBaselineMgr)
 	require.NoError(t, err)
 
 	// A bunch of these get called when a cluster is deleted

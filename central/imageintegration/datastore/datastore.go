@@ -34,6 +34,7 @@ type DataStore interface {
 	RemoveImageIntegration(ctx context.Context, id string) error
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchImageIntegrations(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // New returns an instance of DataStore.

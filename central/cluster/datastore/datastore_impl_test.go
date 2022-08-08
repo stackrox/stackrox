@@ -67,7 +67,6 @@ type ClusterDataStoreTestSuite struct {
 
 	clusters                  *clusterStoreMocks.MockStore
 	healthStatuses            *clusterHealthStoreMocks.MockStore
-	indexer                   *clusterIndexMocks.MockIndexer
 	clusterDataStore          DataStore
 	namespaceDataStore        *namespaceMocks.MockDataStore
 	deploymentDataStore       *deploymentMocks.MockDataStore
@@ -83,6 +82,7 @@ type ClusterDataStoreTestSuite struct {
 	mockCtrl                  *gomock.Controller
 	notifierMock              *notifierMocks.MockProcessor
 	mockProvider              *graphMocks.MockProvider
+	indexer                   *clusterIndexMocks.MockIndexer
 	networkBaselineMgr        *networkBaselineMocks.MockManager
 	serviceAccountDataStore   *serviceAccountMocks.MockDataStore
 	roleDataStore             *roleMocks.MockDataStore
@@ -147,7 +147,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.clusterDataStore, err = New(
 		suite.clusters,
 		suite.healthStatuses,
-		suite.indexer,
+		suite.clusterCVEDataStore,
 		suite.alertDataStore,
 		suite.imageIntegrationDataStore,
 		suite.namespaceDataStore,
@@ -164,8 +164,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.notifierMock,
 		suite.mockProvider,
 		ranking.NewRanker(),
+		suite.indexer,
 		suite.networkBaselineMgr,
-		suite.clusterCVEDataStore,
 	)
 	suite.NoError(err)
 	testbuildinfo.SetForTest(suite.T())
@@ -207,6 +207,7 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	testServiceAccounts := []search.Result{{ID: "fakeSA"}}
 	testRoles := []search.Result{{ID: "fakeK8Srole"}}
 	testRoleBindings := []search.Result{{ID: "fakerolebinding"}}
+	testImageIntegrations := []search.Result{{ID: "testii321"}}
 	suite.clusters.EXPECT().Get(suite.hasWriteCtx, fakeClusterID).Return(testCluster, true, nil)
 	suite.clusters.EXPECT().Delete(suite.hasWriteCtx, fakeClusterID).Return(nil)
 	suite.indexer.EXPECT().DeleteCluster(fakeClusterID).Return(nil)
@@ -230,7 +231,8 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.serviceAccountDataStore.EXPECT().RemoveServiceAccount(gomock.Any(), gomock.Any()).Return(nil)
 	suite.roleDataStore.EXPECT().RemoveRole(gomock.Any(), gomock.Any()).Return(nil)
 	suite.roleBindingDataStore.EXPECT().RemoveRoleBinding(gomock.Any(), gomock.Any()).Return(nil)
-	suite.imageIntegrationDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
+	suite.imageIntegrationDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testImageIntegrations, nil)
+	suite.imageIntegrationDataStore.EXPECT().RemoveImageIntegration(gomock.Any(), "testii321").Return(nil)
 
 	done := concurrency.NewSignal()
 	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID, &done)

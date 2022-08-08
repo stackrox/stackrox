@@ -563,7 +563,6 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 }
 
 func (ds *datastoreImpl) removeClusterImageIntegrations(ctx context.Context, cluster *storage.Cluster) {
-
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
 
 	imageIntegrations, err := ds.imageIntegrationDataStore.Search(ctx, q)

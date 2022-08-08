@@ -25,6 +25,10 @@ type datastoreImpl struct {
 	formattedSearcher search.Searcher
 }
 
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.formattedSearcher.Count(ctx, q)
+}
+
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
 	return ds.formattedSearcher.Search(ctx, q)
 }

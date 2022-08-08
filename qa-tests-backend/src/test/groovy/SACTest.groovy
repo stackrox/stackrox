@@ -415,7 +415,8 @@ class SACTest extends BaseSpecification {
         for (SSOC.SearchResponse.Count numResults : result.countsList) {
             // Policies are globally scoped so our cluster-scoped query won't return any
             if (numResults.category == SSOC.SearchCategory.POLICIES ||
-                numResults.category == SSOC.SearchCategory.POLICY_CATEGORIES) {
+                numResults.category == SSOC.SearchCategory.POLICY_CATEGORIES ||
+                numResults.category == SSOC.SearchCategory.IMAGE_INTEGRATIONS) {
                 continue
             }
             assert numResults.count > 0

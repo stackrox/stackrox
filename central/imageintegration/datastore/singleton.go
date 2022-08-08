@@ -20,7 +20,7 @@ import (
 var (
 	once sync.Once
 
-	ad DataStore
+	dataStore DataStore
 )
 
 func initializeDefaultIntegrations(storage store.Store) {
@@ -49,11 +49,11 @@ func initialize() {
 	}
 	initializeDefaultIntegrations(storage)
 	searcher := search.New(storage, indexer)
-	ad = New(storage, indexer, searcher)
+	dataStore = New(storage, indexer, searcher)
 }
 
 // Singleton provides the interface for non-service external interaction.
 func Singleton() DataStore {
 	once.Do(initialize)
-	return ad
+	return dataStore
 }

@@ -67,8 +67,8 @@ func (ds *searcherImpl) SearchImageIntegrations(ctx context.Context, q *v1.Query
 	}
 
 	protoResults := make([]*v1.SearchResult, 0, len(imageIntegrationList))
-	for i, policy := range imageIntegrationList {
-		protoResults = append(protoResults, convertImageIntegration(policy, results[i]))
+	for i, imageIntegration := range imageIntegrationList {
+		protoResults = append(protoResults, convertImageIntegration(imageIntegration, results[i]))
 	}
 	return protoResults, nil
 }

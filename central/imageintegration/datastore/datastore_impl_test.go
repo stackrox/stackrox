@@ -72,8 +72,9 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	suite.db = db
 	suite.store = boltStore.New(db)
 	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
+	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 	// test formattedSearcher
-	suite.datastore = NewForTestOnly(suite.store, suite.indexer, nil)
+	suite.datastore = NewForTestOnly(suite.store, suite.indexer, suite.searcher)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {
@@ -344,4 +345,11 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsRemove() {
 
 	err = suite.datastore.RemoveImageIntegration(suite.hasWriteIntegrationsCtx, integration.GetId())
 	suite.NoError(err, "expected no error trying to write with permissions")
+}
+
+func (suite *ImageIntegrationDataStoreTestSuite) TestSearch() {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	suite.searcher.EXPECT().Search(ctx, nil).Return(nil, nil)
+	_, err := suite.datastore.Search(ctx, nil)
+	suite.NoError(err)
 }

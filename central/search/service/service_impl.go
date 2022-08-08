@@ -92,20 +92,21 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 
 func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	searchers := map[v1.SearchCategory]search.Searcher{
-		v1.SearchCategory_ALERTS:           s.alerts,
-		v1.SearchCategory_DEPLOYMENTS:      s.deployments,
-		v1.SearchCategory_IMAGES:           s.images,
-		v1.SearchCategory_POLICIES:         s.policies,
-		v1.SearchCategory_SECRETS:          s.secrets,
-		v1.SearchCategory_NAMESPACES:       s.namespaces,
-		v1.SearchCategory_NODES:            s.nodes,
-		v1.SearchCategory_COMPLIANCE:       s.aggregator,
-		v1.SearchCategory_RISKS:            s.risks,
-		v1.SearchCategory_CLUSTERS:         s.clusters,
-		v1.SearchCategory_SERVICE_ACCOUNTS: s.serviceaccounts,
-		v1.SearchCategory_ROLES:            s.roles,
-		v1.SearchCategory_ROLEBINDINGS:     s.bindings,
-		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(s.bindings),
+		v1.SearchCategory_ALERTS:             s.alerts,
+		v1.SearchCategory_DEPLOYMENTS:        s.deployments,
+		v1.SearchCategory_IMAGES:             s.images,
+		v1.SearchCategory_POLICIES:           s.policies,
+		v1.SearchCategory_SECRETS:            s.secrets,
+		v1.SearchCategory_NAMESPACES:         s.namespaces,
+		v1.SearchCategory_NODES:              s.nodes,
+		v1.SearchCategory_COMPLIANCE:         s.aggregator,
+		v1.SearchCategory_RISKS:              s.risks,
+		v1.SearchCategory_CLUSTERS:           s.clusters,
+		v1.SearchCategory_SERVICE_ACCOUNTS:   s.serviceaccounts,
+		v1.SearchCategory_ROLES:              s.roles,
+		v1.SearchCategory_ROLEBINDINGS:       s.bindings,
+		v1.SearchCategory_SUBJECTS:           service.NewSubjectSearcher(s.bindings),
+		v1.SearchCategory_IMAGE_INTEGRATIONS: s.imageIntegrations,
 	}
 
 	if features.NewPolicyCategories.Enabled() {

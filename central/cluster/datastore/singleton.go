@@ -64,7 +64,7 @@ func initialize() {
 
 	ad, err = New(clusterStorage,
 		clusterHealthStorage,
-		indexer,
+		clusterCVEDataStore,
 		alertDataStore.Singleton(),
 		imageIntegrationDataStore.Singleton(),
 		namespaceDataStore.Singleton(),
@@ -81,8 +81,8 @@ func initialize() {
 		notifierProcessor.Singleton(),
 		dackbox,
 		ranking.ClusterRanker(),
-		networkBaselineManager.Singleton(),
-		clusterCVEDataStore)
+		indexer,
+		networkBaselineManager.Singleton())
 
 	utils.CrashOnError(err)
 }
