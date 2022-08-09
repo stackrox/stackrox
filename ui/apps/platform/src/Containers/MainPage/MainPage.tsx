@@ -12,12 +12,12 @@ import Notifications from 'Containers/Notifications';
 import SearchModal from 'Containers/Search/SearchModal';
 import UnreachableWarning from 'Containers/UnreachableWarning';
 import AppWrapper from 'Containers/AppWrapper';
-import VersionOutOfDate from 'Containers/VersionOutOfDate';
 import Body from 'Containers/MainPage/Body';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 
 import CredentialExpiryBanner from './CredentialExpiryBanner';
+import VersionOutOfDate from './VersionOutOfDate';
 import Masthead from './Header/Masthead';
 import NavigationSidebar from './Sidebar/NavigationSidebar';
 

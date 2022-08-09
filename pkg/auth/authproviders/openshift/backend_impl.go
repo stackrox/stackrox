@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/x509"
 	"net/http"
-	"net/url"
 	"os"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/satoken"
 )
 
@@ -56,9 +54,9 @@ type callbackAndRefreshConnector interface {
 }
 
 type backend struct {
-	id                 string
-	baseRedirectURL    url.URL
-	openshiftConnector callbackAndRefreshConnector
+	id                  string
+	baseRedirectURLPath string
+	openshiftConnector  callbackAndRefreshConnector
 }
 
 type openShiftSettings struct {
@@ -75,11 +73,6 @@ func newBackend(id string, callbackURLPath string, _ map[string]string) (authpro
 		return nil, err
 	}
 
-	baseRedirectURL := url.URL{
-		Scheme: "https",
-		Path:   callbackURLPath,
-	}
-
 	dexCfg := dexconnector.Config{
 		Issuer:          openshiftAPIUrl,
 		ClientID:        settings.clientID,
@@ -93,9 +86,9 @@ func newBackend(id string, callbackURLPath string, _ map[string]string) (authpro
 	}
 
 	b := &backend{
-		id:                 id,
-		baseRedirectURL:    baseRedirectURL,
-		openshiftConnector: openshiftConnector,
+		id:                  id,
+		baseRedirectURLPath: callbackURLPath,
+		openshiftConnector:  openshiftConnector,
 	}
 
 	return b, nil
@@ -109,15 +102,10 @@ func (b *backend) Config() map[string]string {
 func (b *backend) LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
 	state := idputil.MakeState(b.id, clientState)
 
-	// baseRedirectURL does not include the hostname, take it from the request.
-	// Allow HTTP only if the client did not use TLS and the host is localhost.
-	redirectURL := b.baseRedirectURL
-	redirectURL.Host = ri.Hostname
-	if !ri.ClientUsedTLS && netutil.IsLocalEndpoint(redirectURL.Host) {
-		redirectURL.Scheme = "http"
-	}
+	// Augment baseRedirectURLPath to a redirect URL with hostname, etc set.
+	redirectURI := dexconnector.MakeRedirectURI(ri, b.baseRedirectURLPath)
 
-	return b.openshiftConnector.LoginURL(defaultScopes, redirectURL.String(), state)
+	return b.openshiftConnector.LoginURL(defaultScopes, redirectURI.String(), state)
 }
 
 func (b *backend) RefreshURL() string {
@@ -129,12 +117,13 @@ func (b *backend) OnEnable(_ authproviders.Provider) {}
 func (b *backend) OnDisable(_ authproviders.Provider) {}
 
 func (b *backend) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
-	if r.URL.Path != b.baseRedirectURL.Path {
+	if r.URL.Path != b.baseRedirectURLPath {
 		return nil, httputil.Errorf(http.StatusNotFound, "path %q not found", r.URL.Path)
 	}
 	if r.Method != http.MethodGet {
 		return nil, httputil.Errorf(http.StatusMethodNotAllowed, "unsupported method %q, only GET requests are allowed to this URL", r.Method)
 	}
+
 	id, err := b.openshiftConnector.HandleCallback(defaultScopes, r)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving user identity")

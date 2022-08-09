@@ -6,9 +6,11 @@ import (
 
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -16,18 +18,22 @@ import (
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
+var (
+	sacHelper = sac.ForResource(resources.Deployment).MustCreatePgSearchHelper()
+)
+
 // NewV2 returns a new instance of Searcher for the given storage and indexer.
 func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImplV2{
 		storage:  storage,
 		indexer:  indexer,
-		searcher: postgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(indexer)),
+		searcher: formatSearcherV2(indexer),
 	}
 }
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
-	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, schema.DeploymentsSchema.OptionsMap)
+	scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(unsafeSearcher))
+	transformedSortFieldSearcher := sortfields.TransformSortFields(scopedSearcher, schema.DeploymentsSchema.OptionsMap)
 	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
 }
 
@@ -47,7 +53,7 @@ func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query)
 	return deployments, err
 }
 
-// SearchRawDeployments retrieves deployments from the indexer and storage
+// SearchListDeployments retrieves deployments from the indexer and storage
 func (ds *searcherImplV2) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
 	deployments, _, err := ds.searchListDeployments(ctx, q)
 	if err != nil {

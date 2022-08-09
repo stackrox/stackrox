@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	_ "embed"
 	"fmt"
 	"os"
+	"path/filepath"
 	"text/template"
 
 	"github.com/spf13/cobra"
@@ -11,7 +13,6 @@ import (
 )
 
 const storeFile = `
-
 package rocksdb
 
 import (
@@ -21,6 +22,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -44,22 +46,17 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id string) (*storage.{{.Type}}, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.{{.Type}}, []int, error)
-	{{- if .NoKeyField}}
-	UpsertWithID(ctx context.Context, id string, obj *storage.{{.Type}}) error
-	UpsertManyWithIDs(ctx context.Context, ids []string, objs []*storage.{{.Type}}) error
-	{{- else }}
 	Upsert(ctx context.Context, obj *storage.{{.Type}}) error
 	UpsertMany(ctx context.Context, objs []*storage.{{.Type}}) error
-	{{- end}}
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
-	{{- if .NoKeyField}}
-	WalkAllWithID(ctx context.Context, fn func(id string, obj *storage.{{.Type}}) error) error
-	{{- else }}
 	Walk(ctx context.Context, fn func(obj *storage.{{.Type}}) error) error
-	{{- end}}
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
+
+	// Unused functions that only exist to satisfy interfaces used for Postgres
+	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.{{.Type}}, error)
+	DeleteByQuery(_ context.Context, _ *v1.Query) error
 }
 
 type storeImpl struct {
@@ -70,12 +67,9 @@ func alloc() proto.Message {
 	return &storage.{{.Type}}{}
 }
 
-{{- if not .NoKeyField}}
-
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.{{.Type}}).{{.KeyFunc}})
 }
-{{- end}}
 
 {{- if .UniqKeyFunc}}
 
@@ -89,11 +83,11 @@ func uniqKeyFunc(msg proto.Message) []byte {
 func New(db *rocksdb.RocksDB) (Store, error) {
 	globaldb.RegisterBucket(bucket, "{{.Type}}")
 	{{- if .UniqKeyFunc}}
-	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, uniqKeyFunc, {{.TrackIndex}})
+	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, {{.TrackIndex}})
 	{{- else}}
-	baseCRUD := generic.NewCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, {{.TrackIndex}})
+	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, {{.TrackIndex}})
 	{{- end}}
-	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, {{if .NoKeyField}}nil{{else}}keyFunc{{end}})
+	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -106,11 +100,11 @@ func New(db *rocksdb.RocksDB) Store {
 	globaldb.RegisterBucket(bucket, "{{.Type}}")
 	{{- if .UniqKeyFunc}}
 	return &storeImpl{
-		crud: generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, uniqKeyFunc, {{.TrackIndex}}),
+		crud: generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, {{.TrackIndex}}),
 	}
 	{{- else}}
 	return &storeImpl{
-		crud: generic.NewCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, {{.TrackIndex}}),
+		crud: generic.NewCRUD(db, bucket, keyFunc, alloc, {{.TrackIndex}}),
 	}
 	{{- end}}
 }
@@ -163,27 +157,6 @@ func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.{{.Type
 	return objs, missingIndices, nil
 }
 
-{{- if .NoKeyField}}
-// UpsertWithID inserts the object into the DB
-func (b *storeImpl) UpsertWithID(_ context.Context, id string, obj *storage.{{.Type}}) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "{{.Type}}")
-
-	return b.crud.UpsertWithID(id, obj)
-}
-
-// UpsertManyWithIDs batches objects into the DB
-func (b *storeImpl) UpsertManyWithIDs(_ context.Context, ids []string, objs []*storage.{{.Type}}) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "{{.Type}}")
-
-	msgs := make([]proto.Message, 0, len(objs))
-	for _, o := range objs {
-		msgs = append(msgs, o)
-    }
-
-	return b.crud.UpsertManyWithIDs(ids, msgs)
-}
-{{- else}}
-
 // Upsert inserts the object into the DB
 func (b *storeImpl) Upsert(_ context.Context, obj *storage.{{.Type}}) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "{{.Type}}")
@@ -202,7 +175,6 @@ func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.{{.Type}}) err
 
 	return b.crud.UpsertMany(msgs)
 }
-{{- end}}
 
 // Delete removes the specified ID from the store
 func (b *storeImpl) Delete(_ context.Context, id string) error {
@@ -218,22 +190,12 @@ func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	return b.crud.DeleteMany(ids)
 }
 
-{{- if .NoKeyField}}
-// WalkAllWithID iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) WalkAllWithID(_ context.Context, fn func(id string, obj *storage.{{.Type}}) error) error {
-	return b.crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
-		return fn(string(id), msg.(*storage.{{.Type}}))
-	})
-}
-{{- else}}
-
 // Walk iterates over all of the objects in the store and applies the closure
 func (b *storeImpl) Walk(_ context.Context, fn func(obj *storage.{{.Type}}) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {
 		return fn(msg.(*storage.{{.Type}}))
 	})
 }
-{{- end}}
 
 // AckKeysIndexed acknowledges the passed keys were indexed
 func (b *storeImpl) AckKeysIndexed(_ context.Context, keys ...string) error {
@@ -244,16 +206,38 @@ func (b *storeImpl) AckKeysIndexed(_ context.Context, keys ...string) error {
 func (b *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return b.crud.GetKeysToIndex()
 }
+
+// GetByQuery is unused and only exists to satisfy interfaces used for Postgres
+func (b * storeImpl) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.{{.Type}}, error) {
+	panic("unimplemented")
+}
+
+// DeleteByQuery is a no-op added for compatibility with the Postgres implementation
+func (b *storeImpl) DeleteByQuery(_ context.Context, _ *v1.Query) error {
+	panic("Unimplemented")
+}
 `
+
+//go:embed rocksdb_plugin.go.tpl
+var rocksdbPluginFile string
 
 type properties struct {
 	Type        string
 	Bucket      string
-	NoKeyField  bool
 	KeyFunc     string
 	UniqKeyFunc string
 	Cache       bool
 	TrackIndex  bool
+	// Migration root
+	MigrationRoot string
+	// The unique sequence number to migrate to Postgres
+	MigrationSeq int
+	// Where the data are migrated from in the format of "database:bucket", eg, \"rocksdb:alerts\" or \"boltdb:version\"")
+	MigrateToTable string
+}
+
+type migrationOptions struct {
+	Package string
 }
 
 func main() {
@@ -268,22 +252,25 @@ func main() {
 	c.Flags().StringVar(&props.Bucket, "bucket", "", "the logical bucket of the objects")
 	utils.Must(c.MarkFlagRequired("bucket"))
 
-	c.Flags().BoolVar(&props.NoKeyField, "no-key-field", false, "whether or not object contains key field. If no, then to key function is not applied on object")
 	c.Flags().StringVar(&props.KeyFunc, "key-func", "GetId()", "the function on the object to retrieve the key")
 	c.Flags().StringVar(&props.UniqKeyFunc, "uniq-key-func", "", "when set, unique key constraint is added on the object field retrieved by the function")
 	c.Flags().BoolVar(&props.Cache, "cache", false, "whether or not to add a fully inmem cache")
 	c.Flags().BoolVar(&props.TrackIndex, "track-index", false, "whether or not to track the index updates and wait for them to be acknowledged")
+	c.Flags().StringVar(&props.MigrationRoot, "migration-root", "", "Root for migrations")
+	c.Flags().StringVar(&props.MigrateToTable, "migrate-to", "", "where the data are migrated from in the format of \"<database>:<bucket>\", eg, \"rocksdb:alerts\" or \"boltdb:version\"")
+	c.Flags().IntVar(&props.MigrationSeq, "migration-seq", 0, "the unique sequence number to migrate to Postgres")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		templateMap := map[string]interface{}{
 			"Type":        props.Type,
 			"Bucket":      props.Bucket,
-			"NoKeyField":  props.NoKeyField,
 			"KeyFunc":     props.KeyFunc,
 			"UniqKeyFunc": props.UniqKeyFunc,
 			"Cache":       props.Cache,
 			"TrackIndex":  props.TrackIndex,
 		}
+		migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.MigrationSeq, props.MigrationSeq+1, props.MigrateToTable)
+		root := filepath.Join(props.MigrationRoot, migrationDir)
 
 		t := template.Must(template.New("gen").Parse(autogenerated + storeFile))
 		buf := bytes.NewBuffer(nil)
@@ -293,6 +280,22 @@ func main() {
 		if err := os.WriteFile("store.go", buf.Bytes(), 0644); err != nil {
 			return err
 		}
+		if props.MigrationSeq == 0 {
+			return nil
+		}
+		templateMap["Migration"] = migrationOptions{
+			Package: fmt.Sprintf("n%dton%d", props.MigrationSeq, props.MigrationSeq+1),
+		}
+
+		t = template.Must(template.New("gen").Parse(autogenerated + rocksdbPluginFile))
+		buf = bytes.NewBuffer(nil)
+		if err := t.Execute(buf, templateMap); err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(root, "legacy/rocksdb_plugin.go"), buf.Bytes(), 0644); err != nil {
+			return err
+		}
+
 		return nil
 	}
 	if err := c.Execute(); err != nil {

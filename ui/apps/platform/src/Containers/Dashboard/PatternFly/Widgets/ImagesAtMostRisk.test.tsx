@@ -6,20 +6,20 @@ import '@testing-library/jest-dom/extend-expect';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
 import { vulnManagementImagesPath, vulnManagementPath } from 'routePaths';
-import ImagesAtMostRisk, { imagesQuery } from './ImagesAtMostRisk';
+import ImagesAtMostRisk, { getImagesQuery } from './ImagesAtMostRisk';
 
 function makeMockImage(
     id: string,
     remote: string,
     fullName: string,
     priority: number,
-    vulnCounter: VulnCounts
+    imageVulnerabilityCounter: VulnCounts
 ) {
     return {
         id,
         name: { remote, fullName },
         priority,
-        vulnCounter,
+        imageVulnerabilityCounter,
     };
 }
 
@@ -48,7 +48,9 @@ const mockImages = [1, 2, 3, 4, 5, 6].map((n) =>
 const mocks = [
     {
         request: {
-            query: imagesQuery,
+            // The component for this uses a feature flag to swap sub-resolvers, so treat it as
+            // disabled here until the feature flag is enabled in the production release.
+            query: getImagesQuery(false),
             variables: {
                 query: '',
             },
@@ -61,13 +63,16 @@ const mocks = [
     },
 ];
 
-jest.mock('hooks/useResizeObserver', () => ({
+jest.mock('hooks/useResizeObserver');
+jest.mock('hooks/useFeatureFlags', () => ({
     __esModule: true,
-    default: jest.fn().mockImplementation(jest.fn),
+    default: () => ({
+        isFeatureFlagEnabled: jest.fn(),
+    }),
 }));
 
 beforeEach(() => {
-    jest.resetModules();
+    localStorage.clear();
 });
 
 function setup() {
@@ -86,21 +91,13 @@ describe('Images at most risk dashboard widget', () => {
         const { user } = setup();
 
         // Default is display all images
-        expect(
-            await screen.findByRole('heading', {
-                name: 'Images at most risk',
-            })
-        ).toBeInTheDocument();
+        expect(await screen.findByText('Images at most risk')).toBeInTheDocument();
 
         // Change to display only active images
-        await user.click(await screen.findByRole('button', { name: `Options` }));
-        await user.click(await screen.findByRole('button', { name: `Active images` }));
+        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByText('Active images'));
 
-        expect(
-            await screen.findByRole('heading', {
-                name: 'Active images at most risk',
-            })
-        ).toBeInTheDocument();
+        expect(await screen.findByText('Active images at most risk')).toBeInTheDocument();
     });
 
     it('should render the correct text and number of CVEs under each column', async () => {
@@ -118,8 +115,8 @@ describe('Images at most risk dashboard widget', () => {
         );
 
         // Switch to show total CVEs
-        await user.click(await screen.findByRole('button', { name: `Options` }));
-        await user.click(await screen.findByRole('button', { name: `All CVEs` }));
+        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByText('All CVEs'));
 
         expect(await screen.findAllByText(`${totalCritical} CVEs`)).toHaveLength(mockImages.length);
         expect(await screen.findAllByText(`${totalImportant} CVEs`)).toHaveLength(
@@ -133,10 +130,10 @@ describe('Images at most risk dashboard widget', () => {
             utils: { history },
         } = setup();
 
-        await screen.findByRole('heading', { name: 'Images at most risk' });
+        await screen.findByText('Images at most risk');
         // Click on the link matching the second image
         const secondImageInList = mockImages[1];
-        await user.click(screen.getByRole('link', { name: secondImageInList.name?.remote }));
+        await user.click(await screen.findByText(secondImageInList.name?.remote));
         expect(history.location.pathname).toBe(
             `${vulnManagementPath}/image/${secondImageInList.id}`
         );
@@ -144,7 +141,7 @@ describe('Images at most risk dashboard widget', () => {
 
         await history.goBack();
 
-        await user.click(screen.getByRole('link', { name: 'View all' }));
+        await user.click(screen.getByText('View all'));
         expect(history.location.pathname).toBe(`${vulnManagementImagesPath}`);
     });
 });

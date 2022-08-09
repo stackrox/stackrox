@@ -13,6 +13,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
+	"github.com/stackrox/rox/sensor/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -38,10 +40,10 @@ type ReplayEventsSuite struct {
 	envIsolator *envisolator.EnvIsolator
 }
 
-var _ suite.SetupTestSuite = (*ReplayEventsSuite)(nil)
-var _ suite.TearDownTestSuite = (*ReplayEventsSuite)(nil)
+var _ suite.SetupAllSuite = (*ReplayEventsSuite)(nil)
+var _ suite.TearDownAllSuite = (*ReplayEventsSuite)(nil)
 
-func (suite *ReplayEventsSuite) SetupTest() {
+func (suite *ReplayEventsSuite) SetupSuite() {
 	suite.fakeClient = k8s.MakeFakeClient()
 
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
@@ -50,14 +52,18 @@ func (suite *ReplayEventsSuite) SetupTest() {
 	suite.envIsolator.Setenv("ROX_MTLS_CA_FILE", "../../../tools/local-sensor/certs/caCert.pem")
 	suite.envIsolator.Setenv("ROX_MTLS_CA_KEY_FILE", "../../../tools/local-sensor/certs/caKey.pem")
 
+	policies, err := testutils.GetPoliciesFromFile("data/policies.json")
+	if err != nil {
+		panic(err)
+	}
 	suite.fakeCentral = centralDebug.MakeFakeCentralWithInitialMessages(
 		message.SensorHello("1234"),
 		message.ClusterConfig(),
-		message.PolicySync([]*storage.Policy{}),
+		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 }
 
-func (suite *ReplayEventsSuite) TearDownTest() {
+func (suite *ReplayEventsSuite) TearDownSuite() {
 	suite.envIsolator.RestoreAll()
 }
 
@@ -94,9 +100,36 @@ var _ io.Writer = (*TraceWriterWithChannel)(nil)
 
 type TraceWriterWithChannel struct {
 	destinationChannel chan *central.SensorEvent
+	// mu mutex to avoid multiple goroutines writing at the same time
+	mu sync.Mutex
+	// enabled indicates whether the trace writer needs to write in the channel or not
+	enabled bool
 }
 
-func (tw *TraceWriterWithChannel) Write(b []byte) (int, error) {
+func (tw *TraceWriterWithChannel) close() {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	close(tw.destinationChannel)
+}
+
+func (tw *TraceWriterWithChannel) enable() {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	tw.enabled = true
+}
+
+func (tw *TraceWriterWithChannel) disable() {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	tw.enabled = false
+}
+
+func (tw *TraceWriterWithChannel) Write(b []byte) (nb int, retErr error) {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	if !tw.enabled {
+		return 0, nil
+	}
 	msg := resources.InformerK8sMsg{}
 	if err := json.Unmarshal(b, &msg); err != nil {
 		return 0, err
@@ -112,14 +145,13 @@ func (tw *TraceWriterWithChannel) Write(b []byte) (int, error) {
 }
 
 func (suite *ReplayEventsSuite) Test_ReplayEvents() {
-	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(suite.fakeCentral)
-	defer shutdownFakeServer()
+	conn, spyCentral, _ := createConnectionAndStartServer(suite.fakeCentral)
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
 	ackChannel := make(chan *central.SensorEvent)
-	defer close(ackChannel)
 	writer := &TraceWriterWithChannel{
 		destinationChannel: ackChannel,
+		enabled:            true,
 	}
 	// Depending on the size of the file the re-sync time may need to be increased.
 	// This is because we need to wait for the event outputs of each kubernetes event before sending the next.
@@ -137,7 +169,7 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 	}
 
 	go s.Start()
-	defer s.Stop()
+	defer writer.close()
 
 	spyCentral.ConnectionStarted.Wait()
 
@@ -145,18 +177,18 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 		k8sEventsFile    string
 		sensorOutputFile string
 	}{
-		"Safety net test": {
-			k8sEventsFile:    "data/safety-net-k8s-trace.jsonl",
-			sensorOutputFile: "data/safety-net-central-out.bin",
+		"Safety net test: Alerts": {
+			k8sEventsFile:    "data/safety-net-alerts-k8s-trace.jsonl",
+			sensorOutputFile: "data/safety-net-alerts-central-out.bin",
+		},
+		"Safety net test: Resources": {
+			k8sEventsFile:    "data/safety-net-resources-k8s-trace.jsonl",
+			sensorOutputFile: "data/safety-net-resources-central-out.bin",
 		},
 	}
 	for name, c := range cases {
 		suite.T().Run(name, func(t *testing.T) {
 			suite.fakeCentral.ClearReceivedBuffer()
-			receivedMessagesCh := make(chan *central.MsgFromSensor, 10)
-			suite.fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-				receivedMessagesCh <- msg
-			})
 			eventsReader := &k8s.TraceReader{
 				Source: c.k8sEventsFile,
 			}
@@ -170,6 +202,7 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 				Client:     suite.fakeClient,
 				Reader:     eventsReader,
 			}
+			writer.enable()
 			_, errCh := fm.CreateEvents(context.Background())
 			// Wait for all the events to be processed
 			err = <-errCh
@@ -187,6 +220,7 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 					}
 				}
 			}()
+			writer.disable()
 			// Wait for the re-sync to happen
 			time.Sleep(5 * resyncTime)
 			allEvents := suite.fakeCentral.GetAllMessages()
@@ -194,6 +228,23 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 			expectedEvents, err := readSensorOutputFile(c.sensorOutputFile)
 			if err != nil {
 				panic(err)
+			}
+			expectedAlerts := getAlerts(expectedEvents)
+			receivedAlerts := getAlerts(allEvents)
+			assert.Equal(t, len(expectedAlerts), len(receivedAlerts))
+			for id, expectedAlertEvent := range expectedAlerts {
+				if receivedAlertEvent, ok := receivedAlerts[id]; !ok {
+					t.Error("Deployment Alert Event not found")
+				} else {
+					assert.Equal(t, len(expectedAlertEvent), len(receivedAlertEvent))
+					for alertID, exp := range expectedAlertEvent {
+						if a, ok := receivedAlertEvent[alertID]; !ok {
+							t.Error("Alert not found")
+						} else {
+							assert.Equal(t, exp.GetState(), a.GetState())
+						}
+					}
+				}
 			}
 			expectedDeployments := getLastStateFromDeployments(expectedEvents)
 			receivedDeployments := getLastStateFromDeployments(allEvents)
@@ -224,6 +275,10 @@ func (suite *ReplayEventsSuite) Test_ReplayEvents() {
 				}
 			}
 			cancelFunc()
+			if err := fm.DeleteAllResources(); err != nil {
+				panic(err)
+			}
+			time.Sleep(5 * resyncTime)
 		})
 	}
 }
@@ -266,6 +321,24 @@ func readSensorOutputFile(fname string) ([]*central.MsgFromSensor, error) {
 		msgs = append(msgs, m)
 	}
 	return msgs, nil
+}
+
+func getAlerts(messages []*central.MsgFromSensor) map[string]map[string]*storage.Alert {
+	events := make(map[string]map[string]*storage.Alert)
+	for _, msg := range messages {
+		event := msg.GetEvent()
+		if event.GetAlertResults() != nil {
+			if event.GetAlertResults().GetDeploymentId() != "" {
+				alertResults := event.GetAlertResults().GetAlerts()
+				alerts := make(map[string]*storage.Alert, len(alertResults))
+				for _, a := range alertResults {
+					alerts[a.GetPolicy().GetId()] = a
+				}
+				events[event.GetAlertResults().GetDeploymentId()] = alerts
+			}
+		}
+	}
+	return events
 }
 
 func getLastStateFromDeployments(messages []*central.MsgFromSensor) map[string]*central.SensorEvent {

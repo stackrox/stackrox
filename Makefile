@@ -40,8 +40,6 @@ ROX_IMAGE_FLAVOR ?= $(shell \
 	  echo "development_build"; \
 	fi)
 
-BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
-
 DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
 ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
 	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
@@ -65,6 +63,15 @@ DEBUG_BUILD ?= no
 # The latter is painfully slow on Mac OS X with Docker Desktop, so we default to using a
 # standalone volume in that case, and to bind mounting otherwise.
 UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+
+BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
+ifeq ($(UNAME_S),Darwin)
+ifeq ($(UNAME_M),arm64)
+	# TODO(ROX-12064) build these images in the CI pipeline
+	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.44-arm64
+endif
+endif
 
 ifeq ($(UNAME_S),Darwin)
 BIND_GOCACHE ?= 0
@@ -139,7 +146,7 @@ $(GENNY_BIN): deps
 GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN): deps
 	@echo "+ $@"
-	$(SILENT)cd tools/test/ && go install github.com/jstemmer/go-junit-report
+	$(SILENT)cd tools/test/ && go install github.com/jstemmer/go-junit-report/v2
 
 PROTOLOCK_BIN := $(GOBIN)/protolock
 $(PROTOLOCK_BIN): deps
@@ -376,7 +383,7 @@ main-builder-image: build-volumes
 	@echo "+ $@"
 	$(SILENT)# Ensure that the go version in the image matches the expected version
 	# If the next line fails, you need to update the go version in rox-ci-image/images/stackrox-build.Dockerfile
-	grep -q "$(shell cat EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
+	grep -q "$(shell head -n 1 EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
 
 .PHONY: main-build
 main-build: build-prep main-build-dockerized
@@ -464,6 +471,14 @@ go-unit-tests: build-prep test-prep
 			LOGENCODING=$$encoding LOGLEVEL=$$level CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -v ./pkg/logging/... > /dev/null; \
 		done; \
 	done
+
+.PHONE: sensor-integration-test
+sensor-integration-test: build-prep test-prep
+	set -eo pipefail ; \
+	for package in $(shell git ls-files ./sensor/tests | grep '_test.go' | xargs -n 1 dirname | uniq | sort | sed -e 's/sensor\/tests\///'); do \
+		CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
+		| tee test-output/$$(echo $$package | sed -e 's/\//\_/').integration.log; \
+	done \
 
 .PHONY: go-postgres-unit-tests
 go-postgres-unit-tests: build-prep test-prep
@@ -680,6 +695,10 @@ image-flavor:
 .PHONY: default-image-registry
 default-image-registry:
 	@echo $(DEFAULT_IMAGE_REGISTRY)
+
+.PHONY: product-branding
+product-branding:
+	@echo $(ROX_PRODUCT_BRANDING)
 
 .PHONY: ossls-audit
 ossls-audit: deps

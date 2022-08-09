@@ -9,7 +9,6 @@ import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import VIOLATION_STATES from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
-import { SEARCH_CATEGORIES } from 'constants/searchOptions';
 
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useURLSort from 'hooks/useURLSort';
@@ -24,7 +23,7 @@ import tableColumnDescriptor from './violationTableColumnDescriptors';
 
 import './ViolationsTablePage.css';
 
-const searchCategory = SEARCH_CATEGORIES.ALERTS;
+const searchCategory = 'ALERTS';
 
 function ViolationsTablePage(): ReactElement {
     // Handle changes to applied search options.

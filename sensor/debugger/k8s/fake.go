@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -221,7 +222,7 @@ func (f *FakeEventsManager) Init() {
 // CreateEvents creates the k8s events from a given jsonl file
 // It returns a concurrency.Signal that will be triggered if we reach the minimum number of resources needed to start sensor
 // and an error channel
-func (f *FakeEventsManager) CreateEvents(ctx context.Context) (concurrency.Signal, <-chan error) {
+func (f *FakeEventsManager) CreateEvents(ctx context.Context) (*concurrency.Signal, <-chan error) {
 	min, errCh := f.handleEventsCreation(ctx)
 	errorCh := make(chan error)
 	go func() {
@@ -235,7 +236,7 @@ func (f *FakeEventsManager) CreateEvents(ctx context.Context) (concurrency.Signa
 
 // handleEventsCreation handles the creation of the events
 // It returns a concurrency.Signal indicating that we reached the minimum number of resources needed and an error channel
-func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (concurrency.Signal, <-chan error) {
+func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (*concurrency.Signal, <-chan error) {
 	minimumResources := concurrency.NewSignal()
 	errorCh := make(chan error)
 	events, errCh := f.eventsCreation()
@@ -270,7 +271,7 @@ func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (concurren
 
 		}
 	}()
-	return minimumResources, errorCh
+	return &minimumResources, errorCh
 }
 
 // eventsCreation creates the k8s events.
@@ -434,6 +435,121 @@ func (f *FakeEventsManager) waitOnMode(events []string) error {
 		}
 	}
 	return nil
+}
+
+// forEachResource executes a given function to all resources of a given kind
+func (f *FakeEventsManager) forEachResource(client reflect.Value, execFunc func(reflect.Value) error) error {
+	returnVals := client.MethodByName("List").Call([]reflect.Value{
+		reflect.ValueOf(context.Background()),
+		reflect.ValueOf(metav1.ListOptions{}),
+	})
+
+	if len(returnVals) != 2 {
+		return fmt.Errorf("expected 2 values from %s. Received: %d", "List", len(returnVals))
+	}
+	errInt := returnVals[len(returnVals)-1].Interface()
+	if errInt != nil {
+		return errInt.(error)
+	}
+
+	items := reflect.Indirect(returnVals[0]).FieldByName("Items")
+	if !items.IsValid() {
+		return errors.New("invalid kind: missing `Items` property")
+	}
+	errorList := errorhelpers.NewErrorList("for each resource")
+	for i := 0; i < items.Len(); i++ {
+		resource := items.Index(i)
+		if err := execFunc(resource); err != nil {
+			errorList.AddError(err)
+		}
+	}
+	return errorList.ToError()
+}
+
+// getNameFromObjectMeta returns the name of the resource
+func getNameFromObjectMeta(obj reflect.Value) (string, error) {
+	objMeta := obj.FieldByName("ObjectMeta")
+	if !objMeta.IsValid() {
+		return "", errors.New("resource does not have the ObjectMeta field")
+	}
+	getNameFn := objMeta.Addr().MethodByName("GetName")
+	if !getNameFn.IsValid() {
+		return "", errors.New("resource does not have the method GetName")
+	}
+	returnVals := getNameFn.Call([]reflect.Value{})
+	if len(returnVals) != 1 {
+		return "", errors.New("call to GetName should return one parameter")
+	}
+	return returnVals[0].String(), nil
+}
+
+// DeleteAllResources deletes all resources in the cluster
+func (f *FakeEventsManager) DeleteAllResources() error {
+	errorList := errorhelpers.NewErrorList("delete all resources")
+	namespaceClientFunc, ok := f.clientMap[namespaceKind]
+	if !ok {
+		errorList.AddStringf("kind %s not found", namespaceKind)
+	}
+	cl := reflect.ValueOf(namespaceClientFunc(""))
+	var namespaces []string
+	if err := f.forEachResource(cl, func(resource reflect.Value) error {
+		name, err := getNameFromObjectMeta(resource)
+		if err != nil {
+			return err
+		}
+		namespaces = append(namespaces, name)
+		return nil
+	}); err != nil {
+		errorList.AddError(err)
+	}
+	resourcesList := []string{
+		secretKind,
+		serviceAccountsKind,
+		roleKind,
+		clusterRoleKind,
+		roleBindingKind,
+		clusterRoleBindingKind,
+		networkPolicyKind,
+		serviceKind,
+		jobKind,
+		podKind,
+		replicaSetKind,
+		replicationControllerKind,
+		daemonSetKind,
+		deploymentKind,
+		statefulSetKind,
+		cronJobKind,
+		namespaceKind,
+		nodeKind,
+	}
+	for _, kind := range resourcesList {
+		clFunc, ok := f.clientMap[kind]
+		if !ok {
+			errorList.AddStringf("kind %s not found", kind)
+			continue
+		}
+		for _, ns := range namespaces {
+			cl = reflect.ValueOf(clFunc(ns))
+			if err := f.forEachResource(cl, func(resource reflect.Value) error {
+				name, err := getNameFromObjectMeta(resource)
+				if err != nil {
+					return err
+				}
+				retVals := runOp(removeAction, cl, reflect.ValueOf(name))
+				if len(retVals) < 1 || len(retVals) > 2 {
+					return fmt.Errorf("expected 1 or 2 values from %s. Received: %d", removeAction, len(retVals))
+				}
+				errI := retVals[len(retVals)-1].Interface()
+				if errI == nil {
+					return nil
+				}
+				return errI.(error)
+			}); err != nil {
+				errorList.AddError(err)
+			}
+		}
+	}
+	return errorList.ToError()
 }
 
 // isEventInSlice checks whether a SensorEvent is in a slice of events or not

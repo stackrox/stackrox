@@ -246,6 +246,17 @@ export function getCveTableColumns(workflowState) {
         },
     ];
 
+    if (currentEntityType === entityTypes.NODE_CVE || currentEntityType === entityTypes.IMAGE_CVE) {
+        tableColumns.splice(3, 0, {
+            Header: `Operating System`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            id: cveSortFields.OPERATING_SYSTEM,
+            accessor: 'operatingSystem',
+            sortField: cveSortFields.OPERATING_SYSTEM,
+        });
+    }
+
     const nonNullTableColumns = tableColumns.filter((col) => col);
 
     const cveColumnsBasedOnContext = getFilteredCVEColumns(nonNullTableColumns, workflowState);
@@ -543,7 +554,7 @@ const VulnMgmtCves = ({
                 query={cveQuery}
                 queryOptions={queryOptions}
                 idAttribute="cve"
-                entityListType={entityTypes.CVE}
+                entityListType={cveType}
                 getTableColumns={getCveTableColumns}
                 selectedRowId={selectedRowId}
                 search={search}

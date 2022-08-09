@@ -10,7 +10,9 @@ import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import {
     VULN_CVE_ONLY_FRAGMENT,
     VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT,
+    VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import VulnMgmtImageOverview from './VulnMgmtImageOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -29,6 +31,9 @@ const VulnMgmtImage = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+
     const workflowState = useContext(workflowStateContext);
 
     const overviewQuery = gql`
@@ -49,9 +54,13 @@ const VulnMgmtImage = ({
                     }
                 }
                 notes
-                vulnCount(query: $query)
+                ${
+                    showVMUpdates
+                        ? 'imageVulnerabilityCount(query: $query)'
+                        : 'vulnCount(query: $query)'
+                }
                 priority
-                topVuln {
+                ${showVMUpdates ? 'topVuln: topImageVulnerability' : 'topVuln'} {
                     cvss
                     scoreVersion
                 }
@@ -87,9 +96,12 @@ const VulnMgmtImage = ({
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
+        const activeStatusFragment = showVMUpdates
+            ? VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT
+            : VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT;
         const fragmentToUse =
-            fragmentName === 'componentFields'
-                ? VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT
+            fragmentName === 'componentFields' || fragmentName === 'imageComponentFields'
+                ? activeStatusFragment
                 : fragment;
         return gql`
         query getImage${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {

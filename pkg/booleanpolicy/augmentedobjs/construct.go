@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -235,22 +234,20 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 		}
 	}
 
-	if features.ImageSignatureVerification.Enabled() {
-		ids := []string{}
-		for _, result := range image.GetSignatureVerificationData().GetResults() {
-			if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-				ids = append(ids, result.GetVerifierId())
-			}
+	ids := []string{}
+	for _, result := range image.GetSignatureVerificationData().GetResults() {
+		if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+			ids = append(ids, result.GetVerifierId())
 		}
-		// When the object is not created, the policy will not match, but it should match.
-		if err := obj.AddPlainObjAt(
-			&imageSignatureVerification{
-				VerifierIDs: ids,
-			},
-			pathutil.FieldStep("SignatureVerificationData"),
-			pathutil.FieldStep(imageSignatureVerifiedKey)); err != nil {
-			return nil, utils.Should(err)
-		}
+	}
+	// When the object is not created, the policy will not match, but it should match.
+	if err := obj.AddPlainObjAt(
+		&imageSignatureVerification{
+			VerifierIDs: ids,
+		},
+		pathutil.FieldStep("SignatureVerificationData"),
+		pathutil.FieldStep(imageSignatureVerifiedKey)); err != nil {
+		return nil, utils.Should(err)
 	}
 
 	return obj, nil

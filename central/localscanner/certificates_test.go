@@ -8,7 +8,6 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -119,22 +118,7 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 	}
 }
 
-func (s *localScannerSuite) TestServiceIssueLocalScannerCertsFeatureFlagDisabled() {
-	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "false")
-	if features.LocalImageScanning.Enabled() {
-		s.T().Skip()
-	}
-
-	_, err := IssueLocalScannerCerts(namespace, clusterID)
-
-	s.Error(err)
-}
-
 func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
-	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
-	if !features.LocalImageScanning.Enabled() {
-		s.T().Skip()
-	}
 	testCases := map[string]struct {
 		namespace  string
 		clusterID  string

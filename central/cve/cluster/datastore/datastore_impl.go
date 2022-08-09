@@ -37,7 +37,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) UpsertClusterCVEsInternal(ctx context.Context, cveType storage.CVE_CVEType, cveParts ...converter.ClusterCVEParts) error {
-	return ds.storage.UpsertClusterCVEParts(ctx, cveType, cveParts...)
+	return ds.storage.ReconcileClusterCVEParts(ctx, cveType, cveParts...)
 }
 
 func (ds *datastoreImpl) DeleteClusterCVEsInternal(ctx context.Context, clusterID string) error {
@@ -162,21 +162,6 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 
 	ds.deleteFromCache(vulns...)
 	return nil
-}
-
-func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
-	ds.cveSuppressionLock.RLock()
-	defer ds.cveSuppressionLock.RUnlock()
-
-	for _, component := range node.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulnerabilities() {
-			if entry, ok := ds.cveSuppressionCache[vuln.GetCveBaseInfo().GetCve()]; ok {
-				vuln.Snoozed = true
-				vuln.SnoozeStart = entry.SuppressActivation
-				vuln.SnoozeExpiry = entry.SuppressExpiry
-			}
-		}
-	}
 }
 
 func getSuppressExpiry(start *types.Timestamp, duration *types.Duration) (*types.Timestamp, error) {

@@ -66,6 +66,9 @@ helm package -d "${tmp_remote_repository}/${remote_subdirectory}/opensource" "${
 echo "Building OSS helm repo index"
 helm repo index "${tmp_remote_repository}/${remote_subdirectory}/opensource"
 
+echo "Adding Artifact Hub meta info file"
+cp "${ROOT}/scripts/ci/artifacthub/artifacthub-repo.yml" "${tmp_remote_repository}/${remote_subdirectory}/opensource/artifacthub-repo.yml"
+
 gitbot -C "$tmp_remote_repository" add -A
 gitbot -C "$tmp_remote_repository" commit -m "Publish Helm Charts for version ${version}"
 gitbot -C "$tmp_remote_repository" push origin "$branch_name"

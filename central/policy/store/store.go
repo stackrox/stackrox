@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -23,7 +22,4 @@ type Store interface {
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
-
-	RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
-	DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
 }

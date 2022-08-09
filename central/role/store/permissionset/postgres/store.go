@@ -52,6 +52,7 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.PermissionSet) error
 	UpsertMany(ctx context.Context, objs []*storage.PermissionSet) error
 	Delete(ctx context.Context, id string) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.PermissionSet, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
@@ -201,7 +202,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PermissionSet) 
 			_, err := batchResults.Exec()
 			result = multierror.Append(result, err)
 		}
-		batchResults.Close()
+		if err := batchResults.Close(); err != nil {
+			return err
+		}
 		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
@@ -277,7 +280,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
@@ -334,6 +339,26 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+}
+
+// DeleteByQuery removes the objects based on the passed query
+func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "PermissionSet")
+
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
 	)
 
 	return postgres.RunDeleteRequestForSchema(schema, q, s.db)

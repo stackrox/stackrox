@@ -81,3 +81,24 @@ class GKECluster:
     def sigint_handler(self, signum, frame):
         print("Tearing down the cluster due to SIGINT", signum, frame)
         self.teardown()
+
+
+class AutomationFlavorsCluster:
+    KUBECTL_TIMEOUT = 5 * 60
+
+    def provision(self):
+        kubeconfig = os.environ["KUBECONFIG"]
+
+        print(f"Using kubeconfig from {kubeconfig}")
+
+        print("Nodes:")
+        subprocess.run(
+            ["kubectl", "get", "nodes", "-o", "wide"],
+            check=True,
+            timeout=AutomationFlavorsCluster.KUBECTL_TIMEOUT,
+        )
+
+        return self
+
+    def teardown(self):
+        pass

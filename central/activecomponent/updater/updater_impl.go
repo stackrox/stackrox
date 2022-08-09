@@ -45,6 +45,12 @@ type imageExecutable struct {
 	scannerVersion   string
 }
 
+func clearExecutables(image *storage.Image) {
+	for _, component := range image.GetScan().GetComponents() {
+		component.Executables = nil
+	}
+}
+
 // PopulateExecutableCache extracts executables from image scan and stores them in the executable cache.
 // Image executables are cleared on successful return.
 func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storage.Image) error {
@@ -54,12 +60,13 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 		log.Debugf("no valid scan, skip populating executable cache %s: %s", imageID, image.GetName())
 		return nil
 	}
-
 	scannerVersion := scan.GetScannerVersion()
 
 	// Check if we should update executable cache
 	currRecord, ok := u.executableCache.Get(imageID)
 	if ok && currRecord.(*imageExecutable).scannerVersion == scannerVersion {
+		// Still clear executables even if cache has been pre-populated as it may be a re-scan
+		clearExecutables(image)
 		log.Debugf("Skip scan at scan version %s, current scan version (%s) has been populated for image %s: %s", scannerVersion, currRecord.(*imageExecutable).scannerVersion, imageID, image.GetName())
 		return nil
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containers"
-	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
@@ -47,7 +46,11 @@ func getK8sComponentID(clusterID string, component string) string {
 	u, err := uuid.FromString(clusterID)
 	if err != nil {
 		log.Error(err)
-		return ""
+		// ClusterID is sometimes not a valid UUID when we're doing testing,
+		// so let's be forgiving in that case.
+		// Unfortunately, we can't replace the entire implementation of the function with this
+		// line due to backward compatibility implications.
+		return uuid.NewV5FromNonUUIDs(clusterID, component).String()
 	}
 	return uuid.NewV5(u, component).String()
 }
@@ -100,7 +103,7 @@ func newWrap(obj interface{}, kind, clusterID, registryOverride string, registry
 	}
 }
 
-func (w *deploymentWrap) populateK8sComponentIfNecessary(o *v1.Pod) *metav1.LabelSelector {
+func (w *deploymentWrap) populateK8sComponentIfNecessary(o *v1.Pod, hierarchy references.ParentHierarchy) *metav1.LabelSelector {
 	if o.Namespace == kubeSystemNamespace {
 		for _, labelKey := range k8sComponentLabelKeys {
 			value, ok := o.Labels[labelKey]
@@ -110,6 +113,7 @@ func (w *deploymentWrap) populateK8sComponentIfNecessary(o *v1.Pod) *metav1.Labe
 			w.Id = getK8sComponentID(w.GetClusterId(), value)
 			w.Name = fmt.Sprintf("static-%s-pods", value)
 			w.Type = k8sStandalonePodType
+			hierarchy.AddManually(string(o.UID), w.Id)
 			return &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					labelKey: value,
@@ -172,7 +176,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 			return false, errors.Wrap(err, "error getting label selector")
 		}
 
-	// Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
+	// Pods don't have the abstractions that higher level objects have, so we maintain their lifecycle independently
 	case *v1.Pod:
 		if o.Status.Phase == v1.PodSucceeded || o.Status.Phase == v1.PodFailed {
 			*action = central.ResourceAction_REMOVE_RESOURCE
@@ -182,7 +186,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
 		podLabels = o.Labels
-		labelSelector = w.populateK8sComponentIfNecessary(o)
+		labelSelector = w.populateK8sComponentIfNecessary(o, hierarchy)
 	case *v1beta1.CronJob:
 		// Cron jobs have a Job spec that then have a Pod Template underneath
 		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()
@@ -325,9 +329,7 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 			if image.GetId() != "" {
 				// Use the image ID from the pod's ContainerStatus.
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-				if features.LocalImageScanning.Enabled() {
-					image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
-				}
+				image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
 				continue
 			}
 
@@ -346,9 +348,7 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 			if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
 				image.Id = digest
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-				if features.LocalImageScanning.Enabled() {
-					image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
-				}
+				image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
 			}
 		}
 	}

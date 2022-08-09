@@ -50,9 +50,11 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, key1 string, key2 string) (bool, error)
 	Get(ctx context.Context, key1 string, key2 string) (*storage.TestMultiKeyStruct, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TestMultiKeyStruct, error)
 	Upsert(ctx context.Context, obj *storage.TestMultiKeyStruct) error
 	UpsertMany(ctx context.Context, objs []*storage.TestMultiKeyStruct) error
 	Delete(ctx context.Context, key1 string, key2 string) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.TestMultiKeyStruct, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
@@ -363,7 +365,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestMultiKeyStr
 			_, err := batchResults.Exec()
 			result = multierror.Append(result, err)
 		}
-		batchResults.Close()
+		if err := batchResults.Close(); err != nil {
+			return err
+		}
 		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
@@ -449,7 +453,9 @@ func (s *storeImpl) Exists(ctx context.Context, key1 string, key2 string) (bool,
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
@@ -514,6 +520,29 @@ func (s *storeImpl) Delete(ctx context.Context, key1 string, key2 string) error 
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(key1).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Test Key 2"), key2).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+}
+
+// DeleteByQuery removes the objects based on the passed query
+func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TestMultiKeyStruct")
+
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
 	)
 
 	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
@@ -604,6 +633,47 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestM
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TestMultiKeyStruct, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "TestMultiKeyStruct")
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
+		return nil, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var results []*storage.TestMultiKeyStruct
+	for _, data := range rows {
+		msg := &storage.TestMultiKeyStruct{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, err
+		}
+		results = append(results, msg)
+	}
+	return results, nil
 }
 
 // Delete removes the specified IDs from the store

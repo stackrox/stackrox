@@ -35,6 +35,8 @@ func generateClusterCVEEdge(cluster *storage.Cluster, cve *storage.ClusterCVE, f
 	ret := &storage.ClusterCVEEdge{
 		Id:        postgres.IDFromPks([]string{cluster.GetId(), cve.GetId()}),
 		IsFixable: len(fixVersions) != 0,
+		ClusterId: cluster.GetId(),
+		CveId:     cve.GetId(),
 	}
 
 	if ret.IsFixable {

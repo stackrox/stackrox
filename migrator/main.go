@@ -56,32 +56,33 @@ func run() error {
 		return nil
 	}
 
-	dbm, err := replica.Scan(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion)
-	if err != nil {
-		return errors.Wrap(err, "fail to scan replicas")
-	}
+	// TODO: ROX-9884, ROX-10700 -- turn off replicas and migrations until Postgres updates complete.
+	if !features.PostgresDatastore.Enabled() {
+		dbm, err := replica.Scan(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion)
+		if err != nil {
+			return errors.Wrap(err, "fail to scan replicas")
+		}
 
-	replica, replicaPath, err := dbm.GetReplicaToMigrate()
-	if err != nil {
-		return err
-	}
-	option.MigratorOptions.DBPathBase = replicaPath
-	if err = upgrade(conf); err != nil {
-		return err
-	}
-
-	if features.PostgresDatastore.Enabled() {
-		var gormDB *gorm.DB
-		gormDB, err = postgreshelper.Load(conf)
+		replicaName, replicaPath, err := dbm.GetReplicaToMigrate()
+		if err != nil {
+			return err
+		}
+		option.MigratorOptions.DBPathBase = replicaPath
+		if err = upgrade(conf); err != nil {
+			return err
+		}
+		if err = dbm.Persist(replicaName); err != nil {
+			return err
+		}
+	} else {
+		gormDB, err := postgreshelper.Load(conf)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to postgres DB")
 		}
 		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
+		log.WriteToStderr("Applied all table schemas.")
 	}
 
-	if err = dbm.Persist(replica); err != nil {
-		return err
-	}
 	return nil
 }
 

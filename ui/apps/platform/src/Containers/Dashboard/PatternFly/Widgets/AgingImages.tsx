@@ -1,4 +1,5 @@
-import React, { useReducer } from 'react';
+import React from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     Flex,
     FlexItem,
@@ -18,6 +19,7 @@ import pluralize from 'pluralize';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useURLSearch from 'hooks/useURLSearch';
+import useWidgetConfig from 'hooks/useWidgetConfig';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { SearchFilter } from 'types/search';
@@ -93,12 +95,18 @@ function getWidgetTitle(
     return `${totalImages} Aging ${pluralize('image', totalImages)}`;
 }
 
-const defaultTimeRanges: TimeRangeTuple = [
-    { enabled: true, value: 30 },
-    { enabled: true, value: 90 },
-    { enabled: true, value: 180 },
-    { enabled: true, value: 365 },
-];
+type Config = {
+    timeRanges: TimeRangeTuple;
+};
+
+const defaultConfig: Config = {
+    timeRanges: [
+        { enabled: true, value: 30 },
+        { enabled: true, value: 90 },
+        { enabled: true, value: 180 },
+        { enabled: true, value: 365 },
+    ],
+};
 
 type TimeRangeAction =
     | {
@@ -111,14 +119,16 @@ type TimeRangeAction =
           value: number;
       };
 
-function timeRangeReducer(state: TimeRangeTuple, action: TimeRangeAction) {
+function timeRangeReducer(state: Config, action: TimeRangeAction): Config {
     const nextState = cloneDeep(state);
+    const { timeRanges } = nextState;
+
     switch (action.type) {
         case 'toggle':
-            nextState[action.index].enabled = !nextState[action.index].enabled;
+            timeRanges[action.index].enabled = !timeRanges[action.index].enabled;
             return nextState;
         case 'update':
-            nextState[action.index].value = action.value;
+            timeRanges[action.index].value = action.value;
             return nextState;
         default:
             return nextState;
@@ -151,7 +161,14 @@ function getViewAllLink(searchFilter: SearchFilter) {
 function AgingImages() {
     const { isOpen: isOptionsOpen, onToggle: toggleOptionsOpen } = useSelectToggle();
     const { searchFilter } = useURLSearch();
-    const [timeRanges, dispatch] = useReducer(timeRangeReducer, defaultTimeRanges);
+    const { pathname } = useLocation();
+
+    const [{ timeRanges }, dispatch] = useWidgetConfig<Config, TimeRangeAction>(
+        'AgingImages',
+        pathname,
+        defaultConfig,
+        timeRangeReducer
+    );
 
     const variables = getQueryVariables(timeRanges, searchFilter);
     const { data, previousData, loading, error } = useQuery<TimeRangeCounts>(imageCountQuery, {
@@ -223,10 +240,10 @@ function AgingImages() {
                                                     <TextInput
                                                         aria-label="Image age in days"
                                                         style={{ minWidth: '100px' }}
-                                                        onChange={(val) => {
+                                                        onChange={async (val) => {
                                                             const value = parseInt(val, 10);
                                                             if (!(value >= maxTimeRange)) {
-                                                                dispatch({
+                                                                await dispatch({
                                                                     type: 'update',
                                                                     index,
                                                                     value,

@@ -7,7 +7,9 @@ import (
 )
 
 // Resource represents a generic type that we use in the function below.
+//go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=deployment_$GOFILE gen "Resource=*storage.Deployment"
 //go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=indicator_$GOFILE gen "Resource=*storage.ProcessIndicator"
+//go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=namespace_$GOFILE gen "Resource=*storage.NamespaceMetadata"
 //go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=pod_$GOFILE gen "Resource=*storage.Pod"
 //go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=role_bindings_$GOFILE gen "Resource=*storage.K8SRoleBinding"
 //go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=role_$GOFILE gen "Resource=*storage.K8SRole"

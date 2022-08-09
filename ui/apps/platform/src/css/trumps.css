@@ -116,6 +116,12 @@ button.pf-c-tree-view__node {
     word-break: break-all;
 }
 
+/* Override none value for list-style in Tailwind stylesheet. */
+.pf-c-modal-box ol,
+.pf-c-page__main-section ol {
+    list-style: decimal;
+}
+
 /* For classic components to equal or exceed z-index of PatternFly elements. */
 
 .z-xs-100 {

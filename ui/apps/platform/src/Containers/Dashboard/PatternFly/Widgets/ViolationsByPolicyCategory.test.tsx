@@ -4,21 +4,13 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
+import { mockChartsWithoutAnimation } from 'test-utils/mocks/@patternfly/react-charts';
 import ViolationsByPolicyCategory from 'Containers/Dashboard/PatternFly/Widgets/ViolationsByPolicyCategory';
 
-jest.mock('@patternfly/react-charts', () => {
-    const { Chart, ...rest } = jest.requireActual('@patternfly/react-charts');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return {
-        ...rest,
-        Chart: (props) => <Chart {...props} animate={undefined} />,
-    };
-});
+jest.setTimeout(10000);
 
-jest.mock('hooks/useResizeObserver', () => ({
-    __esModule: true,
-    default: jest.fn().mockImplementation(jest.fn),
-}));
+jest.mock('@patternfly/react-charts', () => mockChartsWithoutAnimation);
+jest.mock('hooks/useResizeObserver');
 
 // Mock the hook that handles the data fetching of alert counts
 jest.mock('Containers/Dashboard/PatternFly/hooks/useAlertGroups', () => {
@@ -46,6 +38,10 @@ jest.mock('Containers/Dashboard/PatternFly/hooks/useAlertGroups', () => {
             error: undefined,
         }),
     };
+});
+
+beforeEach(() => {
+    localStorage.clear();
 });
 
 const setup = () => {
@@ -78,9 +74,7 @@ describe('Violations by policy category widget', () => {
     it('should sort a policy violations by category widget by severity and volume of violations', async () => {
         const { user } = setup();
 
-        expect(
-            await screen.findByRole('heading', { name: /Policy violations by category/g })
-        ).toBeInTheDocument();
+        expect(await screen.findByText('Anomalous Activity')).toBeInTheDocument();
 
         // Default sorting should be by severity of critical and high Violations, with critical taking priority.
         await waitForAxisLinksToBe([
@@ -92,9 +86,9 @@ describe('Violations by policy category widget', () => {
         ]);
 
         // Switch to sort-by-volume, which orders the chart by total violations per category
-        await user.click(await screen.findByRole('button', { name: 'Options' }));
-        await user.click(await screen.findByRole('button', { name: 'Total' }));
-        await user.click(await screen.findByRole('button', { name: 'Options' }));
+        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByText('Total'));
+        await user.click(await screen.findByText('Options'));
 
         await waitForAxisLinksToBe([
             'Security Best Practices',
@@ -108,14 +102,12 @@ describe('Violations by policy category widget', () => {
     it('should allow toggling of severities for a policy violations by category widget', async () => {
         const { user } = setup();
 
-        expect(
-            await screen.findByRole('heading', { name: /Policy violations by category/g })
-        ).toBeInTheDocument();
+        expect(await screen.findByText('Anomalous Activity')).toBeInTheDocument();
 
         // Sort by volume, so that enabling lower severity bars changes the order of the chart
-        await user.click(await screen.findByRole('button', { name: 'Options' }));
-        await user.click(await screen.findByRole('button', { name: 'Total' }));
-        await user.click(await screen.findByRole('button', { name: 'Options' }));
+        await user.click(await screen.findByText('Options'));
+        await user.click(await screen.findByText('Total'));
+        await user.click(await screen.findByText('Options'));
 
         // Toggle on low and medium violations, which are disabled by default
         await user.click(await screen.findByText('Low'));

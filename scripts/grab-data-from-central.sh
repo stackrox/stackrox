@@ -38,7 +38,7 @@ main() {
 
     mkdir -p "${dest}"
 
-    roxctl -e "${api_endpoint}" -p "${ROX_PASSWORD}" central backup --output "${dest}"
+    roxctl -e "${api_endpoint}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central backup --output "${dest}"
 
     # With Postgres we no longer take RocksDB dumps
     if [ -z "${ROX_POSTGRES_DATASTORE}" ] || [ "${ROX_POSTGRES_DATASTORE}" == "false" ]; then

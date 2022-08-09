@@ -23,7 +23,7 @@ type DataStore interface {
 	GetAllPolicyCategories(ctx context.Context) ([]*storage.PolicyCategory, error)
 
 	AddPolicyCategory(context.Context, *storage.PolicyCategory) (*storage.PolicyCategory, error)
-	RenamePolicyCategory(ctx context.Context, id, newName string) error
+	RenamePolicyCategory(ctx context.Context, id, newName string) (*storage.PolicyCategory, error)
 	DeletePolicyCategory(ctx context.Context, id string) error
 }
 

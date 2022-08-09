@@ -43,6 +43,7 @@ func init() {
 			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"passingControls(query: String): [ComplianceControl!]!",
 			"plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!",
+			"scan: NodeScan",
 			"topNodeVulnerability(query: String): NodeVulnerability",
 			"unusedVarSink(query: String): Int",
 		}),
@@ -109,11 +110,11 @@ func (resolver *Resolver) NodeCount(ctx context.Context, args RawQuery) (int32, 
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.NodeGlobalDataStore.Search(ctx, query)
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return nodeLoader.CountFromQuery(ctx, query)
 }
 
 func (resolver *nodeResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
@@ -317,7 +318,7 @@ func (resolver *nodeResolver) Components(ctx context.Context, args PaginatedQuer
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.componentsV2(resolver.nodeScopeContext(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.componentsV2(resolver.withNodeScopeContext(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // ComponentCount returns the number of components in the node
@@ -329,7 +330,7 @@ func (resolver *nodeResolver) ComponentCount(ctx context.Context, args RawQuery)
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.componentCountV2(resolver.nodeScopeContext(ctx), RawQuery{Query: &query})
+	return resolver.root.componentCountV2(resolver.withNodeScopeContext(ctx), RawQuery{Query: &query})
 }
 
 // NodeComponents returns the components in the node.
@@ -338,13 +339,7 @@ func (resolver *nodeResolver) NodeComponents(ctx context.Context, args Paginated
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
-		return resolver.root.NodeComponents(resolver.nodeScopeContext(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeComponents in Node does not support postgres yet")
+	return resolver.root.NodeComponents(resolver.withNodeScopeContext(ctx), args)
 }
 
 // NodeComponentCount returns the number of components in the node
@@ -353,13 +348,7 @@ func (resolver *nodeResolver) NodeComponentCount(ctx context.Context, args RawQu
 	if err := readNodes(ctx); err != nil {
 		return 0, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
-		return resolver.root.NodeComponentCount(resolver.nodeScopeContext(ctx), RawQuery{Query: &query})
-	}
-	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeComponentCount in Node does not support postgres yet")
+	return resolver.root.NodeComponentCount(resolver.withNodeScopeContext(ctx), args)
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
@@ -369,7 +358,11 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 		return nil, err
 	}
 
-	vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, args)
+	query, err := resolver.getTopNodeCVEV1Query(args)
+	if err != nil {
+		return nil, err
+	}
+	vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, query)
 	if err != nil || vulnResolver == nil {
 		return nil, err
 	}
@@ -379,22 +372,26 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 // TopNodeVulnerability returns the first node vulnerability with the top CVSS score.
 func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopNodeVulnerability")
-	if err := readNodes(ctx); err != nil {
-		return nil, err
-	}
 
 	if !features.PostgresDatastore.Enabled() {
-		vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, args)
+		if err := readNodes(ctx); err != nil {
+			return nil, err
+		}
+
+		query, err := resolver.getTopNodeCVEV1Query(args)
+		if err != nil {
+			return nil, err
+		}
+		vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, query)
 		if err != nil || vulnResolver == nil {
 			return nil, err
 		}
 		return vulnResolver, nil
 	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver TopNodeVulnerability in Node does not support postgres yet")
+	return resolver.root.TopNodeVulnerability(resolver.withNodeScopeContext(ctx), args)
 }
 
-func (resolver *nodeResolver) unwrappedTopVulnQuery(ctx context.Context, args RawQuery) (*cVEResolver, error) {
+func (resolver *nodeResolver) getTopNodeCVEV1Query(args RawQuery) (*v1.Query, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -419,7 +416,10 @@ func (resolver *nodeResolver) unwrappedTopVulnQuery(ctx context.Context, args Ra
 		Limit:  1,
 		Offset: 0,
 	}
+	return query, nil
+}
 
+func (resolver *nodeResolver) unwrappedTopVulnQuery(ctx context.Context, query *v1.Query) (*cVEResolver, error) {
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err
@@ -445,13 +445,13 @@ func (resolver *nodeResolver) getNodeQuery() *v1.Query {
 
 // Vulns returns all of the vulnerabilities in the node.
 func (resolver *nodeResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Vulnerabilities")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Vulns")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.vulnerabilitiesV2(resolver.nodeScopeContext(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.vulnerabilitiesV2(resolver.withNodeScopeContext(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // VulnCount returns the number of vulnerabilities the node has.
@@ -462,7 +462,7 @@ func (resolver *nodeResolver) VulnCount(ctx context.Context, args RawQuery) (int
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.vulnerabilityCountV2(resolver.nodeScopeContext(ctx), RawQuery{Query: &query})
+	return resolver.root.vulnerabilityCountV2(resolver.withNodeScopeContext(ctx), RawQuery{Query: &query})
 }
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in a node.
@@ -473,7 +473,7 @@ func (resolver *nodeResolver) VulnCounter(ctx context.Context, args RawQuery) (*
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return resolver.root.vulnCounterV2(resolver.nodeScopeContext(ctx), RawQuery{Query: &query})
+	return resolver.root.vulnCounterV2(resolver.withNodeScopeContext(ctx), RawQuery{Query: &query})
 }
 
 // NodeVulnerabilities returns the vulnerabilities in the node.
@@ -482,12 +482,7 @@ func (resolver *nodeResolver) NodeVulnerabilities(ctx context.Context, args Pagi
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeVulnerabilities(resolver.nodeScopeContext(ctx), args)
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilities in Node does not support postgres yet")
+	return resolver.root.NodeVulnerabilities(resolver.withNodeScopeContext(ctx), args)
 }
 
 // NodeVulnerabilityCount returns the number of vulnerabilities the node has.
@@ -496,12 +491,7 @@ func (resolver *nodeResolver) NodeVulnerabilityCount(ctx context.Context, args R
 	if err := readNodes(ctx); err != nil {
 		return 0, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeVulnerabilityCount(resolver.nodeScopeContext(ctx), args)
-	}
-	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeVulnerabilityCount in Node does not support postgres yet")
+	return resolver.root.NodeVulnerabilityCount(resolver.withNodeScopeContext(ctx), args)
 }
 
 // NodeVulnerabilityCounter resolves the number of different types of vulnerabilities contained in a node.
@@ -510,16 +500,12 @@ func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-
-	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeVulnCounter(resolver.nodeScopeContext(ctx), args)
-	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in Node does not support postgres yet")
+	return resolver.root.NodeVulnerabilityCounter(resolver.withNodeScopeContext(ctx), args)
 }
 
 // PlottedVulns returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *nodeResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "PlottedVulns")
 	if features.PostgresDatastore.Enabled() {
 		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedNodeVulnerabilities.")
 	}
@@ -530,18 +516,26 @@ func (resolver *nodeResolver) PlottedVulns(ctx context.Context, args RawQuery) (
 // PlottedNodeVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "PlottedNodeVulnerabilities")
-	if !features.PostgresDatastore.Enabled() {
-		return newPlottedNodeVulnerabilitiesResolver(resolver.nodeScopeContext(ctx), resolver.root, args)
+
+	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+	return resolver.root.PlottedNodeVulnerabilities(ctx, RawQuery{Query: &query})
+}
+
+func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
+	res, err := resolver.root.wrapNodeScan(resolver.data.GetScan(), true, nil)
+	if err != nil || res == nil {
+		return nil, err
 	}
-	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver PlottedNodeVulnerabilities in Node does not support postgres yet")
+	res.ctx = resolver.withNodeScopeContext(ctx)
+	return res, nil
 }
 
 func (resolver *nodeResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
 	return nil
 }
 
-func (resolver *nodeResolver) nodeScopeContext(ctx context.Context) context.Context {
+func (resolver *nodeResolver) withNodeScopeContext(ctx context.Context) context.Context {
 	return scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODES,
 		ID:    resolver.data.GetId(),

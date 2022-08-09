@@ -3,27 +3,35 @@ import {
     PageSection,
     Bullseye,
     Spinner,
-    Alert,
     Divider,
     Button,
     Flex,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
+    AlertGroup,
+    Alert,
+    AlertVariant,
+    AlertActionCloseButton,
 } from '@patternfly/react-core';
 
+import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { getPolicyCategories } from 'services/PoliciesService';
+import { PolicyCategory } from 'types/policy.proto';
+import { getPolicyCategories } from 'services/PolicyCategoriesService';
 import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
 import PolicyCategoriesListSection from './PolicyCategoriesListSection';
+import CreatePolicyCategoryModal from './CreatePolicyCategoryModal';
 
 function PolicyCategoriesPage(): React.ReactElement {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
-    // TODO switch type once new API is in
-    const [policyCategories, setPolicyCategories] = useState<string[]>([]);
+    const [policyCategories, setPolicyCategories] = useState<PolicyCategory[]>([]);
+    const { toasts, addToast, removeToast } = useToasts();
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<PolicyCategory>();
 
-    let pageContent = (
+    let listContent = (
         <PageSection variant="light" isFilled id="policies-table-loading">
             <Bullseye>
                 <Spinner isSVG />
@@ -32,7 +40,7 @@ function PolicyCategoriesPage(): React.ReactElement {
     );
 
     if (errorMessage) {
-        pageContent = (
+        listContent = (
             <PageSection variant="light" isFilled id="policies-table-error">
                 <Bullseye>
                     <Alert variant="danger" title={errorMessage} />
@@ -41,12 +49,19 @@ function PolicyCategoriesPage(): React.ReactElement {
         );
     }
 
-    if (!isLoading && !errorMessage && policyCategories.length > 0) {
-        pageContent = <PolicyCategoriesListSection policyCategories={policyCategories} />;
+    if (!isLoading && !errorMessage) {
+        listContent = (
+            <PolicyCategoriesListSection
+                policyCategories={policyCategories}
+                addToast={addToast}
+                setSelectedCategory={setSelectedCategory}
+                selectedCategory={selectedCategory}
+                refreshPolicyCategories={refreshPolicyCategories}
+            />
+        );
     }
 
-    useEffect(() => {
-        setIsLoading(true);
+    function refreshPolicyCategories() {
         getPolicyCategories()
             .then((categories) => {
                 setPolicyCategories(categories);
@@ -57,6 +72,11 @@ function PolicyCategoriesPage(): React.ReactElement {
                 setErrorMessage(getAxiosErrorMessage(error));
             })
             .finally(() => setIsLoading(false));
+    }
+
+    useEffect(() => {
+        setIsLoading(true);
+        refreshPolicyCategories();
     }, []);
 
     return (
@@ -73,7 +93,11 @@ function PolicyCategoriesPage(): React.ReactElement {
                         </ToolbarItem>
                         <ToolbarItem alignment={{ default: 'alignRight' }}>
                             <Flex>
-                                <Button variant="primary" onClick={() => {}}>
+                                <Button
+                                    variant="primary"
+                                    onClick={() => setIsCreateModalOpen(true)}
+                                    isDisabled={isCreateModalOpen || !!selectedCategory}
+                                >
                                     Create category
                                 </Button>
                             </Flex>
@@ -82,7 +106,34 @@ function PolicyCategoriesPage(): React.ReactElement {
                 </Toolbar>
             </PageSection>
             <Divider component="div" />
-            {pageContent}
+            {listContent}
+            <AlertGroup isToast isLiveRegion>
+                {toasts.map(({ key, variant, title, children }: Toast) => (
+                    <Alert
+                        variant={AlertVariant[variant]}
+                        title={title}
+                        timeout={4000}
+                        onTimeout={() => removeToast(key)}
+                        actionClose={
+                            <AlertActionCloseButton
+                                title={title}
+                                variantLabel={`${variant} alert`}
+                                onClose={() => removeToast(key)}
+                            />
+                        }
+                        key={key}
+                    >
+                        {children}
+                    </Alert>
+                ))}
+            </AlertGroup>
+            <CreatePolicyCategoryModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                refreshPolicyCategories={refreshPolicyCategories}
+                addToast={addToast}
+                setSelectedCategory={setSelectedCategory}
+            />
         </>
     );
 }

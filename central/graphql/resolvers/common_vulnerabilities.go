@@ -13,8 +13,9 @@ import (
  * NOTE: This list is and should remain alphabetically ordered
  */
 var commonVulnerabilitySubResolvers = []string{
-	"createdAt: Time", // Discovered At System
+	"createdAt: Time",
 	"cve: String!",
+	"cveBaseInfo: CVEInfo",
 	"cvss: Float!",
 	"envImpact: Float!",
 	"fixedByVersion: String!",
@@ -33,7 +34,6 @@ var commonVulnerabilitySubResolvers = []string{
 	"suppressed: Boolean!",
 	"unusedVarSink(query: String): Int",
 	"vectors: EmbeddedVulnerabilityVectors",
-	"vulnerabilityState: String!",
 }
 
 // CommonVulnerabilityResolver represents the supported API on all vulnerabilities
@@ -41,10 +41,11 @@ var commonVulnerabilitySubResolvers = []string{
 type CommonVulnerabilityResolver interface {
 	CreatedAt(ctx context.Context) (*graphql.Time, error)
 	CVE(ctx context.Context) string
+	CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error)
 	Cvss(ctx context.Context) float64
 	EnvImpact(ctx context.Context) (float64, error)
 	FixedByVersion(ctx context.Context) (string, error)
-	ID(ctx context.Context) graphql.ID
+	Id(ctx context.Context) graphql.ID
 	ImpactScore(ctx context.Context) float64
 	IsFixable(ctx context.Context, args RawQuery) (bool, error)
 	LastModified(ctx context.Context) (*graphql.Time, error)
@@ -59,5 +60,4 @@ type CommonVulnerabilityResolver interface {
 	Suppressed(ctx context.Context) bool
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 	Vectors() *EmbeddedVulnerabilityVectorsResolver
-	VulnerabilityState(ctx context.Context) string
 }

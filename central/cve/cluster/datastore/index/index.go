@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
-// Indexer provides functionality to index node cves.
+// Indexer provides functionality to index cluster cves.
 //go:generate mockgen-wrapper
 type Indexer interface {
 	AddClusterCVE(cve *storage.ClusterCVE) error

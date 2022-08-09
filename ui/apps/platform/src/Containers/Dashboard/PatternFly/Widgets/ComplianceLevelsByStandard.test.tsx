@@ -1,14 +1,17 @@
 import React from 'react';
 import { MockedProvider } from '@apollo/client/testing';
-import { screen, within, waitFor, act } from '@testing-library/react';
+import { screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
+import { mockChartsWithoutAnimation } from 'test-utils/mocks/@patternfly/react-charts';
 import { AGGREGATED_RESULTS_ACROSS_ENTITIES } from 'queries/controls';
 import entityTypes, { standardEntityTypes } from 'constants/entityTypes';
 import { complianceBasePath, urlEntityListTypes } from 'routePaths';
 import ComplianceLevelsByStandard from './ComplianceLevelsByStandard';
+
+jest.setTimeout(10000);
 
 const mocks = [
     {
@@ -80,22 +83,11 @@ const mocks = [
     },
 ];
 
-jest.mock('@patternfly/react-charts', () => {
-    const { Chart, ...rest } = jest.requireActual('@patternfly/react-charts');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return {
-        ...rest,
-        Chart: (props) => <Chart {...props} animate={undefined} />,
-    };
-});
-
-jest.mock('hooks/useResizeObserver', () => ({
-    __esModule: true,
-    default: jest.fn().mockImplementation(jest.fn),
-}));
+jest.mock('@patternfly/react-charts', () => mockChartsWithoutAnimation);
+jest.mock('hooks/useResizeObserver');
 
 beforeEach(() => {
-    jest.resetModules();
+    localStorage.clear();
 });
 
 const setup = () => {
@@ -114,7 +106,7 @@ describe('Compliance levels by standard dashboard widget', () => {
         const { user } = setup();
 
         // Allow graph to load
-        await screen.findAllByRole('presentation');
+        await screen.findByLabelText('Compliance coverage by standard');
 
         async function getBarPercentages() {
             // eslint-disable-next-line testing-library/no-node-access
@@ -137,10 +129,8 @@ describe('Compliance levels by standard dashboard widget', () => {
         });
 
         // Sort by descending
-        await act(async () => {
-            await user.click(screen.getByRole('button', { name: 'Options' }));
-            await user.click(screen.getByRole('button', { name: 'Descending' }));
-        });
+        await user.click(screen.getByText('Options'));
+        await user.click(screen.getByText('Descending'));
 
         await waitFor(async () => {
             const descendingPercentages = await getBarPercentages();
@@ -156,13 +146,14 @@ describe('Compliance levels by standard dashboard widget', () => {
             utils: { history },
         } = setup();
 
-        await user.click(await screen.findByRole('link', { name: 'View all' }));
+        // Allow graph to load
+        await screen.findByLabelText('Compliance coverage by standard');
+
+        await user.click(await screen.findByText('View all'));
         expect(history.location.pathname).toBe(complianceBasePath);
 
         const standard = 'CIS Docker v1.2.0';
-        await act(async () => {
-            await user.click(await screen.findByRole('link', { name: standard }));
-        });
+        await user.click(await screen.findByText(standard));
         expect(history.location.pathname).toBe(
             `${complianceBasePath}/${urlEntityListTypes[standardEntityTypes.CONTROL]}`
         );

@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"context"
+	"log"
 	"testing"
 
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
@@ -9,13 +10,12 @@ import (
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	v12 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/rest"
 	k8sConfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -23,6 +23,18 @@ import (
 func MakeFakeClient() *ClientSet {
 	return &ClientSet{
 		k8s: fake.NewSimpleClientset(),
+	}
+}
+
+// MakeFakeClientFromRest creates a k8s client from rest.Config
+func MakeFakeClientFromRest(restConfig *rest.Config) *ClientSet {
+	client, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		log.Panicf("Creating Kubernetes clientset: %v", err)
+	}
+
+	return &ClientSet{
+		k8s: client,
 	}
 }
 
@@ -102,99 +114,5 @@ func (c *ClientSet) SetupExampleCluster(t *testing.T) {
 		Status: v1.NamespaceStatus{},
 	}, metav1.CreateOptions{})
 
-	require.NoError(t, err)
-}
-
-// MustCreateRole creates a k8s role. Test fails if creation fails.
-func (c *ClientSet) MustCreateRole(t *testing.T, name string) {
-	_, err := c.k8s.RbacV1().Roles("default").Create(context.Background(), &v12.Role{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: "default",
-		},
-		Rules: []v12.PolicyRule{{
-			APIGroups: []string{""},
-			Resources: []string{""},
-			Verbs:     []string{"get"},
-		}, {
-			APIGroups: []string{""},
-			Resources: []string{""},
-			Verbs:     []string{"list"},
-		}},
-	}, metav1.CreateOptions{})
-	require.NoError(t, err)
-}
-
-// MustCreateRoleBinding creates a k8s role binding. Test fails if creation fails.
-func (c *ClientSet) MustCreateRoleBinding(t *testing.T, bindingName, roleName, serviceAccountName string) {
-	_, err := c.k8s.RbacV1().RoleBindings("default").Create(context.Background(), &v12.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      bindingName,
-			Namespace: "default",
-		},
-		Subjects: []v12.Subject{
-			{
-				Name:      serviceAccountName,
-				Kind:      "ServiceAccount",
-				Namespace: "default",
-			},
-		},
-		RoleRef: v12.RoleRef{
-			APIGroup: "",
-			Kind:     "",
-			Name:     roleName,
-		},
-	}, metav1.CreateOptions{})
-	require.NoError(t, err)
-}
-
-// DeploymentOpts defines a function type for changing deployments before being applied.
-type DeploymentOpts func(obj *appsv1.Deployment)
-
-// WithServiceAccountName injects service account name to deployment before applying.
-func WithServiceAccountName(name string) DeploymentOpts {
-	return func(obj *appsv1.Deployment) {
-		obj.Spec.Template.Spec.ServiceAccountName = name
-	}
-}
-
-// MustCreateDeployment creates a k8s deployment. Test fails if creation fails.
-func (c *ClientSet) MustCreateDeployment(t *testing.T, name string, opts ...DeploymentOpts) {
-	deployment := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: "default",
-		},
-		Spec: appsv1.DeploymentSpec{
-			Template: v1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "nginx",
-				},
-				Spec: v1.PodSpec{
-					Volumes:        nil,
-					InitContainers: nil,
-					Containers: []v1.Container{
-						{
-							Name:  "nginx",
-							Image: "nginx:1.14.2",
-							Ports: []v1.ContainerPort{
-								{
-									ContainerPort: 80,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Status: appsv1.DeploymentStatus{},
-	}
-
-	for _, opt := range opts {
-		opt(deployment)
-	}
-
-	_, err := c.k8s.AppsV1().Deployments("default").Create(context.Background(), deployment, metav1.CreateOptions{})
 	require.NoError(t, err)
 }

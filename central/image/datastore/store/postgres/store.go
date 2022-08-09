@@ -12,12 +12,17 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
@@ -44,8 +49,9 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.ImagesSchema
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.ImagesSchema
+	targetResource = resources.Image
 )
 
 type imagePartsAsSlice struct {
@@ -108,12 +114,13 @@ func (s *storeImpl) insertIntoImages(
 		cloned.GetCves(),
 		cloned.GetFixableCves(),
 		pgutils.NilOrTime(cloned.GetLastUpdated()),
+		cloned.GetPriority(),
 		cloned.GetRiskScore(),
 		cloned.GetTopCvss(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO " + imagesTable + " (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, Components, Cves, FixableCves, LastUpdated, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO " + imagesTable + " (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, Components, Cves, FixableCves, LastUpdated, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -137,19 +144,20 @@ func (s *storeImpl) insertIntoImages(
 		return nil
 	}
 
+	// DO NOT CHANGE THE ORDER.
+	if err := copyFromImageComponentEdges(ctx, tx, cloned.GetId(), parts.imageComponentEdges...); err != nil {
+		return err
+	}
 	if err := copyFromImageComponents(ctx, tx, parts.components...); err != nil {
 		return err
 	}
-	if err := copyFromImageComponentEdges(ctx, tx, parts.imageComponentEdges...); err != nil {
+	if err := copyFromImageComponentCVEEdges(ctx, tx, parts.componentCVEEdges...); err != nil {
 		return err
 	}
 	if err := copyFromImageCves(ctx, tx, iTime, parts.vulns...); err != nil {
 		return err
 	}
-	if err := copyFromImageComponentCVEEdges(ctx, tx, cloned.GetScan().GetOperatingSystem(), parts.componentCVEEdges...); err != nil {
-		return err
-	}
-	return copyFromImageCVEEdges(ctx, tx, iTime, parts.imageCVEEdges...)
+	return copyFromImageCVEEdges(ctx, tx, iTime, cloned.GetId(), parts.imageCVEEdges...)
 }
 
 func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
@@ -213,6 +221,7 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 		"id",
 		"name",
 		"version",
+		"priority",
 		"source",
 		"riskscore",
 		"topcvss",
@@ -230,6 +239,7 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetVersion(),
+			obj.GetPriority(),
 			obj.GetSource(),
 			obj.GetRiskScore(),
 			obj.GetTopCvss(),
@@ -260,13 +270,11 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 			inputRows = inputRows[:0]
 		}
 	}
-
-	return err
+	return removeOrphanedImageComponent(ctx, tx)
 }
 
-func copyFromImageComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.ImageComponentEdge) error {
+func copyFromImageComponentEdges(ctx context.Context, tx pgx.Tx, imageID string, objs ...*storage.ImageComponentEdge) error {
 	inputRows := [][]interface{}{}
-
 	var err error
 
 	copyCols := []string{
@@ -277,14 +285,14 @@ func copyFromImageComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storag
 		"serialized",
 	}
 
-	if len(objs) == 0 {
-		return nil
-	}
-
-	// Copy does not upsert so have to delete first.
-	_, err = tx.Exec(ctx, "DELETE FROM "+imageComponentEdgesTable+" WHERE imageid = $1", objs[0].GetImageId())
+	// Copy does not upsert so have to delete first. This also cleans up orphaned edges.
+	_, err = tx.Exec(ctx, "DELETE FROM "+imageComponentEdgesTable+" WHERE imageid = $1", imageID)
 	if err != nil {
 		return err
+	}
+
+	if len(objs) == 0 {
+		return nil
 	}
 
 	for idx, obj := range objs {
@@ -304,7 +312,6 @@ func copyFromImageComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storag
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{imageComponentEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
-
 			if err != nil {
 				return err
 			}
@@ -342,6 +349,9 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 		ids.Add(obj.GetId())
 	}
 	existingCVEs, err := getCVEs(ctx, tx, ids.AsSlice())
+	if err != nil {
+		return err
+	}
 
 	for idx, obj := range objs {
 		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
@@ -394,15 +404,13 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 		}
 	}
 
-	return err
+	return removeOrphanedImageCVEs(ctx, tx)
 }
 
-func copyFromImageComponentCVEEdges(ctx context.Context, tx pgx.Tx, os string, objs ...*storage.ComponentCVEEdge) error {
+func copyFromImageComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.ComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
-
 	var err error
-
-	componentIDsToDelete := set.NewStringSet()
+	deletes := set.NewStringSet()
 
 	copyCols := []string{
 		"id",
@@ -429,18 +437,18 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx pgx.Tx, os string, o
 		})
 
 		// Add the id to be deleted.
-		componentIDsToDelete.Add(obj.GetImageComponentId())
+		deletes.Add(obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// Copy does not upsert so have to delete first.
-			_, err = tx.Exec(ctx, "DELETE FROM "+componentCVEEdgesTable+" WHERE imagecomponentid = ANY($1::text[])", componentIDsToDelete.AsSlice())
+			_, err = tx.Exec(ctx, "DELETE FROM "+componentCVEEdgesTable+" WHERE id = ANY($1::text[])", deletes.AsSlice())
 			if err != nil {
 				return err
 			}
 
 			// Clear the inserts for the next batch
-			componentIDsToDelete = nil
+			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{componentCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
 
@@ -453,10 +461,11 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx pgx.Tx, os string, o
 		}
 	}
 
-	return err
+	// Due to referential constraints, orphaned component-cve edges are removed when orphaned image components are removed.
+	return nil
 }
 
-func copyFromImageCVEEdges(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.ImageCVEEdge) error {
+func copyFromImageCVEEdges(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, imageID string, objs ...*storage.ImageCVEEdge) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -470,27 +479,19 @@ func copyFromImageCVEEdges(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Tim
 		"serialized",
 	}
 
-	if len(objs) == 0 {
-		return nil
-	}
-
 	ids := set.NewStringSet()
 	for _, obj := range objs {
 		ids.Add(obj.GetId())
 	}
 
-	// Remove orphaned edges.
-	if err := removeOrphanedImageCVEEdges(ctx, tx, objs[0].GetImageId(), ids.AsSlice()); err != nil {
-		return err
-	}
-
-	exisitingEdgeIDs, err := getImageCVEEdgeIDs(ctx, tx, objs[0].GetImageId())
+	oldEdgeIDs, err := getImageCVEEdgeIDs(ctx, tx, imageID)
 	if err != nil {
 		return err
 	}
 
 	for idx, obj := range objs {
-		if exisitingEdgeIDs.Contains(obj.GetId()) {
+		// Since the edge only maintains states enriched by ACS, if the edge already exists, then skip upsert.
+		if oldEdgeIDs.Remove(obj.GetId()) {
 			continue
 		}
 
@@ -520,11 +521,29 @@ func copyFromImageCVEEdges(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Tim
 			inputRows = inputRows[:0]
 		}
 	}
-	return err
+
+	// Remove orphaned edges.
+	return removeOrphanedImageCVEEdges(ctx, tx, oldEdgeIDs.AsSlice())
 }
 
-func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string, ids []string) error {
-	_, err := tx.Exec(ctx, "DELETE FROM "+imageCVEEdgesTable+" WHERE id in (select id from "+imageCVEEdgesTable+" where imageid = $1 and id != ANY($2::text[]))", imageID, ids)
+func removeOrphanedImageComponent(ctx context.Context, tx pgx.Tx) error {
+	_, err := tx.Exec(ctx, "DELETE FROM "+imageComponentsTable+" WHERE not exists (select "+imageComponentEdgesTable+".imagecomponentid from "+imageComponentEdgesTable+" where "+imageComponentsTable+".id = "+imageComponentEdgesTable+".imagecomponentid)")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func removeOrphanedImageCVEs(ctx context.Context, tx pgx.Tx) error {
+	_, err := tx.Exec(ctx, "DELETE FROM "+imageCVEsTable+" WHERE not exists (select "+componentCVEEdgesTable+".imagecveid from "+componentCVEEdgesTable+" where "+imageCVEsTable+".id = "+componentCVEEdgesTable+".imagecveid)")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, orphanedEdgeIDs []string) error {
+	_, err := tx.Exec(ctx, "DELETE FROM "+imageCVEEdgesTable+" WHERE id = ANY($1::text[])", orphanedEdgeIDs)
 	if err != nil {
 		return err
 	}
@@ -532,7 +551,7 @@ func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string,
 }
 
 func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, bool, error) {
-	oldImage, found, err := s.Get(ctx, image.GetId())
+	oldImage, found, err := s.GetImageMetadata(ctx, image.GetId())
 	if err != nil {
 		return false, false, err
 	}
@@ -891,12 +910,12 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, tx pgx.Tx, imageID stri
 	}
 
 	// Delete orphaned image components.
-	if _, err := tx.Exec(ctx, "delete from "+imageComponentsTable+" where not exists (select "+imageComponentEdgesTable+".imagecomponentid FROM "+imageComponentEdgesTable+")"); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+imageComponentsTable+" where not exists (select "+imageComponentEdgesTable+".imagecomponentid FROM "+imageComponentEdgesTable+" where "+imageComponentsTable+".id = "+imageComponentEdgesTable+".imagecomponentid)"); err != nil {
 		return err
 	}
 
 	// Delete orphaned cves.
-	if _, err := tx.Exec(ctx, "delete from "+imageCVEsTable+" where not exists (select "+componentCVEEdgesTable+".imagecveid FROM "+componentCVEEdgesTable+")"); err != nil {
+	if _, err := tx.Exec(ctx, "delete from "+imageCVEsTable+" where not exists (select "+componentCVEEdgesTable+".imagecveid FROM "+componentCVEEdgesTable+" where "+imageCVEsTable+".id = "+componentCVEEdgesTable+".imagecveid)"); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
@@ -960,7 +979,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 
 //// Used for testing
 
-func dropTableImages(ctx context.Context, db *pgxpool.Pool) {
+func dropAllTablesInImageTree(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images CASCADE")
 	dropTableImagesLayers(ctx, db)
 	dropTableImageComponents(ctx, db)
@@ -996,7 +1015,7 @@ func dropTableImageComponentEdges(ctx context.Context, db *pgxpool.Pool) {
 
 // Destroy drops image table.
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableImages(ctx, db)
+	dropAllTablesInImageTree(ctx, db)
 }
 
 // CreateTableAndNewStore returns a new Store instance for testing
@@ -1022,7 +1041,7 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
 
-// GetImageMetadata gets the image without scan/component data.
+// GetImageMetadata returns the image without scan/component data.
 func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
@@ -1043,6 +1062,64 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 		return nil, false, err
 	}
 	return &msg, true, nil
+}
+
+// GetManyImageMetadata returns images without scan/component data.
+func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
+
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	sacQueryFilter, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			missingIndices := make([]int, 0, len(ids))
+			for i := range ids {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	resultsByID := make(map[string]*storage.Image)
+	for _, data := range rows {
+		msg := &storage.Image{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, nil, err
+		}
+		resultsByID[msg.GetId()] = msg
+	}
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.Image, 0, len(resultsByID))
+	for i, id := range ids {
+		if result, ok := resultsByID[id]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
 }
 
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {

@@ -13,7 +13,7 @@ from typing import List
 class PostTestsConstants:
 
     API_TIMEOUT = 5 * 60
-    COLLECT_TIMEOUT = 5 * 60
+    COLLECT_TIMEOUT = 10 * 60
     CHECK_TIMEOUT = 5 * 60
     STORE_TIMEOUT = 5 * 60
     FIXUP_TIMEOUT = 5 * 60
@@ -290,6 +290,7 @@ class FinalPost(StoreArtifacts):
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()
         self.handle_run_failure()
+        self.handle_e2e_progress_failures()
 
     def fixup_artifacts_content_type(self):
         self.run_with_best_effort(
@@ -301,4 +302,13 @@ class FinalPost(StoreArtifacts):
         self.run_with_best_effort(
             ["scripts/ci/store-artifacts.sh", "make_artifacts_help"],
             timeout=PostTestsConstants.FIXUP_TIMEOUT,
+        )
+
+    def handle_e2e_progress_failures(self):
+        self.run_with_best_effort(
+            [
+                "tests/e2e/lib.sh",
+                "handle_e2e_progress_failures",
+            ],
+            timeout=PostTestsConstants.CHECK_TIMEOUT,
         )

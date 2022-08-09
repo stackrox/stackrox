@@ -125,6 +125,7 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 			}},
 			{Val: "Grandparent1Embedded2"},
 		},
+		RiskScore: 10,
 	}))
 	s.Require().NoError(s.testGrandparentStore.Upsert(testCtx, &storage.TestGrandparent{
 		Id:  "2",
@@ -137,6 +138,7 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 				{Val: "Grandparent2Embedded21"},
 			}},
 		},
+		RiskScore: 20,
 	}))
 	s.Require().NoError(s.testParent1Store.Upsert(testCtx, &storage.TestParent1{
 		Id:       "1",
@@ -365,7 +367,7 @@ func (s *GraphQueriesTestSuite) TestShortCircuit() {
 	})
 }
 
-func (s *GraphQueriesTestSuite) TestDerived() {
+func (s *GraphQueriesTestSuite) TestDerivedPagination() {
 	s.runTestCases([]graphQueryTestCase{
 		{
 			desc:              "one-hop count",
@@ -392,6 +394,20 @@ func (s *GraphQueriesTestSuite) TestDerived() {
 			desc:              "two-hop count (reversed)",
 			queriedType:       "testgrandparent",
 			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestChild1Count.String(), Reversed: true}}}},
+			orderMatters:      true,
+			expectedResultIDs: []string{"1", "2"},
+		},
+		{
+			desc:              "priority sorting",
+			queriedType:       "testgrandparent",
+			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestGrandParentPriority.String()}}}},
+			orderMatters:      true,
+			expectedResultIDs: []string{"2", "1"},
+		},
+		{
+			desc:              "priority sorting reversed",
+			queriedType:       "testgrandparent",
+			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestGrandParentPriority.String(), Reversed: true}}}},
 			orderMatters:      true,
 			expectedResultIDs: []string{"1", "2"},
 		},
@@ -428,6 +444,35 @@ func (s *GraphQueriesTestSuite) TestSubGraphSearch() {
 			desc:              "query out-of-scope parent from child1p4",
 			queriedType:       "testchild1p4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestParent4ID: {"r/.*4"}},
+			expectedResultIDs: []string{},
+		},
+	})
+}
+
+func (s *GraphQueriesTestSuite) TestDerived() {
+	s.runTestCases([]graphQueryTestCase{
+		{
+			desc:        "one-hop count",
+			queriedType: "testgrandparent",
+			queryStrings: map[search.FieldLabel][]string{
+				search.TestParent1Count: {">1"},
+			},
+			expectedResultIDs: []string{"1"},
+		},
+		{
+			desc:        "two-hop count",
+			queriedType: "testgrandparent",
+			queryStrings: map[search.FieldLabel][]string{
+				search.TestChild1Count: {">1"},
+			},
+			expectedResultIDs: []string{"1", "2"},
+		},
+		{
+			desc:        "two-hop count again",
+			queriedType: "testgrandparent",
+			queryStrings: map[search.FieldLabel][]string{
+				search.TestChild1Count: {">5"},
+			},
 			expectedResultIDs: []string{},
 		},
 	})

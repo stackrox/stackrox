@@ -44,7 +44,7 @@ func (s *PolicyCategoryServiceTestSuite) TearDownTest() {
 
 func (s *PolicyCategoryServiceTestSuite) TestRenameInvalidNameFails() {
 	ctx := context.Background()
-	resp, err := s.tested.RenamePolicyCategory(ctx, &v1.NewRenamePolicyCategoryRequest{
+	resp, err := s.tested.RenamePolicyCategory(ctx, &v1.RenamePolicyCategoryRequest{
 		Id:              "id",
 		NewCategoryName: "foo",
 	})

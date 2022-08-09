@@ -99,8 +99,12 @@ function launch_central {
     local STORAGE_ARGS=()
 
     local use_docker=1
-    if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
-    	use_docker=0
+    if [[ "${USE_LOCAL_ROXCTL:-}" == "true" ]]; then
+      echo "Using $(command -v roxctl) for install due to USE_LOCAL_ROXCTL==true"
+      use_docker=0
+    elif [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
+      echo "Using $(command -v roxctl) for install due to version match with MAIN_IMAGE_TAG $MAIN_IMAGE_TAG"
+      use_docker=0
     fi
 
     local DOCKER_PLATFORM_ARGS=()
@@ -357,7 +361,7 @@ function launch_central {
     # On some systems there's a race condition when port-forward connects to central but its pod then gets deleted due
     # to ongoing modifications to the central deployment. This port-forward dies and the script hangs "Waiting for
     # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
-    kubectl -n stackrox rollout status deploy/central --timeout=3m
+    kubectl -n stackrox rollout status deploy/central --timeout=6m
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
@@ -527,6 +531,7 @@ function launch_sensor {
         namespace="$NAMESPACE_OVERRIDE"
         echo "Changing namespace to $NAMESPACE_OVERRIDE"
         ls $k8s_dir/sensor-deploy/*.yaml | while read file; do sed -i'.original' -e 's/namespace: stackrox/namespace: '"$NAMESPACE_OVERRIDE"'/g' $file; done
+        sed -itmp.bak 's/set -e//g' $k8s_dir/sensor-deploy/sensor.sh
       fi
 
       echo "Deploying Sensor..."

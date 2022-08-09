@@ -3,13 +3,18 @@
 # Creates a cluster on infra.
 #
 
-set -uo pipefail
+set -euo pipefail
 
 FLAVOR="$1"
 NAME="$2"
 LIFESPAN="$3"
 WAIT="$4"
-ARGS="$5"
+
+if [ "$#" -gt 4 ]; then
+    ARGS="$5"
+else
+    ARGS=""
+fi
 
 check_not_empty \
     FLAVOR NAME LIFESPAN WAIT \

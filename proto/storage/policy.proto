@@ -15,27 +15,27 @@ package storage;
 message Policy {
     string                      id                      = 1 [(gogoproto.moretags) = 'search:"Policy ID,store,hidden" sql:"pk"'];
     string                      name                    = 2 [(gogoproto.moretags) = 'search:"Policy,store" sql:"unique"'];
-    string                      description             = 3 [(gogoproto.moretags) = "search:\"Description\""];
+    string                      description             = 3 [(gogoproto.moretags) = 'search:"Description"'];
     string                      rationale               = 4;
     string                      remediation             = 5;
-    bool                        disabled                = 6 [(gogoproto.moretags) = "search:\"Disabled\""];
-    repeated string             categories              = 7 [(gogoproto.moretags) = "search:\"Category,store\""];
+    bool                        disabled                = 6 [(gogoproto.moretags) = 'search:"Disabled"'];
+    repeated string             categories              = 7 [(gogoproto.moretags) = 'search:"Category,store"'];
     reserved                                              8; // was PolicyFields fields
 
-    repeated LifecycleStage     lifecycle_stages        = 9  [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
+    repeated LifecycleStage     lifecycle_stages        = 9  [(gogoproto.moretags) = 'search:"Lifecycle Stage,store"'];
     EventSource                 event_source            = 22;
 
     reserved                                            10; //was repeated Exclusion whitelists
     repeated Exclusion          exclusions              = 21;
     repeated Scope              scope                   = 11;
 
-    Severity                    severity                = 12 [(gogoproto.moretags) = "search:\"Severity,store\""];
+    Severity                    severity                = 12 [(gogoproto.moretags) = 'search:"Severity,store"'];
     // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
     // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
     // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
-    repeated EnforcementAction  enforcement_actions     = 13 [(gogoproto.moretags) = "search:\"Enforcement\""];
+    repeated EnforcementAction  enforcement_actions     = 13 [(gogoproto.moretags) = 'search:"Enforcement"'];
     repeated string             notifiers               = 14;
-    google.protobuf.Timestamp   last_updated            = 15 [(gogoproto.moretags) = "search:\"Policy Last Updated\""];
+    google.protobuf.Timestamp   last_updated            = 15 [(gogoproto.moretags) = 'search:"Policy Last Updated"'];
 
     // For internal use only.
     string                      SORT_name               = 16 [(gogoproto.moretags) = 'search:"SORT_Policy,hidden,analyzer=keyword"'];
@@ -219,7 +219,7 @@ message Exclusion {
     string                    name       = 1;
 
     message Container {
-        ImageName image_name = 3 [(gogoproto.moretags) = "search:\"-\""];
+        ImageName image_name = 3 [(gogoproto.moretags) = 'search:"-"'];
     }
     reserved 2; // formally Container container
 

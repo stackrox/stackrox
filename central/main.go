@@ -39,6 +39,7 @@ import (
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
+	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
 	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
@@ -110,7 +111,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
-	"github.com/stackrox/rox/central/sac/transitional"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
 	searchService "github.com/stackrox/rox/central/search/service"
@@ -133,6 +133,7 @@ import (
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
+	vStore "github.com/stackrox/rox/central/version/store"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	"github.com/stackrox/rox/generated/storage"
@@ -167,6 +168,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/osutils"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -239,7 +241,7 @@ func main() {
 	devmode.StartOnDevBuilds("central")
 
 	if features.PostgresDatastore.Enabled() {
-		sourceMap, config, err := globaldb.GetPostgresConfig()
+		sourceMap, config, err := pgconfig.GetPostgresConfig()
 		if err != nil {
 			log.Errorf("Unable to get Postgres DB config: %v", err)
 			return
@@ -275,7 +277,14 @@ func main() {
 }
 
 func ensureDB() {
-	err := version.Ensure(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
+	var versionStore vStore.Store
+	if features.PostgresDatastore.Enabled() {
+		versionStore = vStore.NewPostgres(globaldb.GetPostgres())
+	} else {
+		versionStore = vStore.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
+	}
+
+	err := version.Ensure(versionStore)
 	if err != nil {
 		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
 	}
@@ -356,6 +365,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		sensorUpgradeControlService.Singleton(),
 		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),
+		signatureIntegrationService.Singleton(),
 		siService.Singleton(),
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
@@ -368,10 +378,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
-	}
-
-	if features.ImageSignatureVerification.Enabled() {
-		servicesToRegister = append(servicesToRegister, signatureIntegrationService.Singleton())
 	}
 
 	if features.NewPolicyCategories.Enabled() {
@@ -492,8 +498,6 @@ func startGRPCServer() {
 			errors.LogInternalErrorStreamInterceptor,
 			errors.PanicOnInvariantViolationStreamInterceptor,
 		)
-		// This helps validate that SAC is being used correctly.
-		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}
 
 	// This adds an on-demand global tracing for the built-in authorization.
@@ -672,6 +676,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/extensions/backup",
 			Authorizer:    user.WithRole(role.Admin),
 			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), true),
+			Compression:   true,
+		})
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/export/csv/node/cve",
+			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment), permissions.View(resources.Node)),
+			ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
 			Compression:   true,
 		})
 	} else {

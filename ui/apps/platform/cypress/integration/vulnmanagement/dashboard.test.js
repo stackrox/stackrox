@@ -2,6 +2,7 @@ import * as api from '../../constants/apiEndpoints';
 import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import { visitVulnerabilityManagementDashboard } from '../../helpers/vulnmanagement/entities';
+import { hasFeatureFlag } from '../../helpers/features';
 
 function validateTopRiskyEntities(entityName) {
     visitVulnerabilityManagementDashboard();
@@ -45,7 +46,8 @@ describe('Vuln Management Dashboard Page', () => {
             });
     });
 
-    it('should show same number of cves between the tile and the cves list', () => {
+    // TODO: update CVE links to CVE tables checks, for VM Updates
+    it.skip('should show same number of cves between the tile and the cves list', () => {
         visitVulnerabilityManagementDashboard();
         cy.get(selectors.tileLinks)
             .eq(1)
@@ -64,14 +66,16 @@ describe('Vuln Management Dashboard Page', () => {
 
     it('should show same number of images between the tile and the images list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.get(selectors.tileLinks)
-            .eq(2)
 
+        const tileToCheck = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES') ? 2 : 3;
+        cy.log({ tileToCheck });
+        cy.get(selectors.tileLinks, { timeout: 8000 })
+            .eq(tileToCheck)
             .find(selectors.tileLinkValue)
             .invoke('text')
             .then((value) => {
                 const numImages = value;
-                cy.get(selectors.tileLinks).eq(2).click();
+                cy.get(selectors.tileLinks).eq(tileToCheck).click();
                 cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
                     .invoke('text')
                     .then((panelHeaderText) => {
@@ -107,16 +111,6 @@ describe('Vuln Management Dashboard Page', () => {
         cy.location('pathname').should('eq', url.list.deployments);
     });
 
-    it('"Top Riskiest <entities>" widget should start with a loading indicator', () => {
-        cy.visit(url.dashboard); // do not call visit helper because it waits on the requests
-        cy.get(selectors.getWidget('Top risky deployments by CVE count & CVSS score'))
-            .find(selectors.widgetBody)
-            .invoke('text')
-            .then((bodyText) => {
-                expect(bodyText).to.contain('Loading');
-            });
-    });
-
     it('clicking the "Top Riskiest Images" widget\'s "View All" button should take you to the images list', () => {
         visitVulnerabilityManagementDashboard();
         cy.intercept('POST', api.vulnMgmt.graphqlEntities('images')).as('images');
@@ -140,21 +134,35 @@ describe('Vuln Management Dashboard Page', () => {
         cy.location('search').should('eq', '?sort[0][id]=Severity&sort[0][desc]=true');
     });
 
-    it('clicking the "Recently Detected Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
+    it('clicking the "Recently Detected Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.get(selectors.getWidget('Recently Detected Vulnerabilities'))
-            .find(selectors.viewAllButton)
-            .click();
-        cy.location('pathname').should('eq', url.list.cves);
+
+        const titleToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+            ? 'Recently Detected Image Vulnerabilities'
+            : 'Recently Detected Vulnerabilities';
+
+        const urlToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+            ? url.list['image-cves']
+            : url.list.cves;
+
+        cy.get(selectors.getWidget(titleToExpect)).find(selectors.viewAllButton).click();
+        cy.location('pathname').should('eq', urlToExpect);
         cy.location('search').should('eq', '?sort[0][id]=CVE%20Created%20Time&sort[0][desc]=true');
     });
 
-    it('clicking the "Most Common Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
+    it('clicking the "Most Common Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
         visitVulnerabilityManagementDashboard();
-        cy.get(selectors.getWidget('Most Common Vulnerabilities'))
-            .find(selectors.viewAllButton)
-            .click();
-        cy.location('pathname').should('eq', url.list.cves);
+
+        const titleToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+            ? 'Most Common Image Vulnerabilities'
+            : 'Most Common Vulnerabilities';
+
+        const urlToExpect = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')
+            ? url.list['image-cves']
+            : url.list.cves;
+
+        cy.get(selectors.getWidget(titleToExpect)).find(selectors.viewAllButton).click();
+        cy.location('pathname').should('eq', urlToExpect);
         cy.location('search').should(
             'eq',
             '?sort[0][id]=Deployment%20Count&sort[0][desc]=true&sort[1][id]=CVSS&sort[1][desc]=true'

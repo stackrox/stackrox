@@ -10,9 +10,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
-	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
-	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/servicecerttoken"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -366,7 +367,7 @@ func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint strin
 			return nil, errors.Wrap(err, "instantiating TLS config")
 		}
 	} else {
-		allDialOpts = append(allDialOpts, grpc.WithInsecure())
+		allDialOpts = append(allDialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	if perRPCCreds := clientConnOpts.PerRPCCreds; perRPCCreds != nil {

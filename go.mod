@@ -7,10 +7,10 @@ go 1.16
 require github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581
 
 require (
-	cloud.google.com/go/compute v1.6.1
+	cloud.google.com/go/compute v1.7.0
 	cloud.google.com/go/containeranalysis v0.3.0
-	cloud.google.com/go/storage v1.22.1
-	github.com/BurntSushi/toml v1.0.0
+	cloud.google.com/go/storage v1.24.0
+	github.com/BurntSushi/toml v1.2.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/NYTimes/gziphandler v1.1.1
@@ -18,7 +18,7 @@ require (
 	github.com/RoaringBitmap/roaring v1.2.1
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.15.1
-	github.com/aws/aws-sdk-go v1.44.29
+	github.com/aws/aws-sdk-go v1.44.70
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
@@ -42,12 +42,12 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang-jwt/jwt/v4 v4.4.1
+	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/certificate-transparency-go v1.1.3
 	github.com/google/go-cmp v0.5.8
-	github.com/google/go-containerregistry v0.9.0
+	github.com/google/go-containerregistry v0.11.0
 	github.com/googleapis/gnostic v0.5.5
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.3.0
@@ -71,6 +71,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/sys/mount v0.3.0 // indirect
+	github.com/np-guard/cluster-topology-analyzer v1.2.3-0.20220802140408-c0ab819afba6
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
@@ -83,18 +84,18 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.35.0
-	github.com/russellhaering/gosaml2 v0.7.0
+	github.com/russellhaering/gosaml2 v0.8.0
 	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/sergi/go-diff v1.2.0
 	github.com/sigstore/cosign v1.8.1-0.20220530190726-3a43ddc93914
 	github.com/sigstore/sigstore v1.2.1-0.20220528141235-6d98e7d59dee
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.0
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
 	github.com/tkuchiki/go-timezone v0.2.2
@@ -103,33 +104,34 @@ require (
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.21.0
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
-	golang.org/x/net v0.0.0-20220607020251-c690dde0001d
-	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb
-	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
-	golang.org/x/sys v0.0.0-20220610221304-9f5ed59c137d
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
+	golang.org/x/oauth2 v0.0.0-20220718184931-c8730f7fcb92
+	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
-	golang.org/x/tools v0.1.11
+	golang.org/x/tools v0.1.12
 	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.84.0
-	google.golang.org/genproto v0.0.0-20220608133413-ed9918b62aac
+	google.golang.org/api v0.85.0
+	google.golang.org/genproto v0.0.0-20220617124728-180714bec0ad
 	google.golang.org/grpc v1.47.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/postgres v1.3.5
-	gorm.io/gorm v1.23.6
+	gorm.io/driver/postgres v1.3.8
+	gorm.io/gorm v1.23.8
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.2
-	k8s.io/api v0.23.8
-	k8s.io/apimachinery v0.23.8
-	k8s.io/apiserver v0.23.4
-	k8s.io/client-go v0.23.5
+	k8s.io/api v0.23.9
+	k8s.io/apimachinery v0.23.9
+	k8s.io/apiserver v0.23.9
+	k8s.io/client-go v0.23.9
 	k8s.io/kubectl v0.23.1
 	k8s.io/kubelet v0.22.11
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
-	sigs.k8s.io/controller-runtime v0.11.0
+	sigs.k8s.io/controller-runtime v0.11.2
+	sigs.k8s.io/e2e-framework v0.0.7
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -167,7 +169,7 @@ replace (
 
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
-	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.8-0.20220608072809-e51d0173f4f0
+	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.8-0.20220804162433-be98f831243c
 	// github.com/sigstore/rekor is a transitive dep pulled in by cosign. The version pulled in by cosign is using
 	// a vulnerable go-tuf version
 	// (https://github.com/theupdateframework/go-tuf/security/advisories/GHSA-66x3-6cw3-v5gj).

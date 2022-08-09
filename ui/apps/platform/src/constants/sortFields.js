@@ -50,6 +50,7 @@ export const componentSortFields = {
     DEPLOYMENT_COUNT: 'Deployment Count',
     PRIORITY: 'Component Risk Priority',
     FIXEDIN: 'Component Fixed By', // This field does not exist. However, seems like every column has to follow a template.
+    OPERATING_SYSTEM: 'Operating System',
 };
 
 /**
@@ -79,6 +80,7 @@ export const cveSortFields = {
     CVE_DISCOVERED_AT_IMAGE_TIME: 'CVE Discovered at Image Time',
     IMAGE_SCAN_TIME: 'Image Scan Time',
     PUBLISHED: 'CVE Published On',
+    OPERATING_SYSTEM: 'Operating System',
 };
 
 /**
@@ -279,4 +281,8 @@ export const entitySortFieldsMap = {
     [entityTypes.CVE]: cveSortFields,
     [entityTypes.POLICY]: policySortFields,
     [entityTypes.NODE]: nodeSortFields,
+    [entityTypes.NODE_CVE]: cveSortFields,
+    [entityTypes.NODE_COMPONENT]: componentSortFields,
+    [entityTypes.IMAGE_CVE]: cveSortFields,
+    [entityTypes.IMAGE_COMPONENT]: componentSortFields,
 };

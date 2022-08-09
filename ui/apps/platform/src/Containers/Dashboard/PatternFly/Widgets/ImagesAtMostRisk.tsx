@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { gql, useQuery } from '@apollo/client';
 import {
     Button,
@@ -14,8 +15,10 @@ import {
 } from '@patternfly/react-core';
 
 import { vulnManagementImagesPath } from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLSearch from 'hooks/useURLSearch';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useWidgetConfig from 'hooks/useWidgetConfig';
 import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
@@ -40,7 +43,8 @@ function getViewAllLink(searchFilter: SearchFilter) {
     return `${vulnManagementImagesPath}${queryString}`;
 }
 
-export const imagesQuery = gql`
+export function getImagesQuery(useUpdatedVmResolver: boolean) {
+    return gql`
     query getImages($query: String) {
         images(
             query: $query
@@ -52,7 +56,11 @@ export const imagesQuery = gql`
                 fullName
             }
             priority
-            vulnCounter {
+            ${
+                useUpdatedVmResolver
+                    ? 'imageVulnerabilityCounter'
+                    : 'imageVulnerabilityCounter: vulnCounter'
+            } {
                 important {
                     total
                     fixable
@@ -65,6 +73,7 @@ export const imagesQuery = gql`
         }
     }
 `;
+}
 
 // If no resource scope is applied and the user selects "Active images" only, we
 // can use the wildcard query `Namespace:*` to return images part of any namespace i.e. active
@@ -80,14 +89,31 @@ const fieldIdPrefix = 'images-at-most-risk';
 
 type ImageStatusOption = 'Active' | 'All';
 
+type Config = {
+    cveStatus: CveStatusOption;
+    imageStatus: ImageStatusOption;
+};
+
+const defaultConfig: Config = {
+    cveStatus: 'Fixable',
+    imageStatus: 'All',
+};
+
 function ImagesAtMostRisk() {
     const { isOpen: isOptionsOpen, onToggle: toggleOptionsOpen } = useSelectToggle();
     const { searchFilter } = useURLSearch();
+    const { pathname } = useLocation();
 
-    const [cveStatusOption, setCveStatusOption] = useState<CveStatusOption>('Fixable');
-    const [imageStatusOption, setImageStatusOption] = useState<ImageStatusOption>('All');
+    const [{ cveStatus, imageStatus }, updateConfig] = useWidgetConfig<Config>(
+        'ImagesAtMostRisk',
+        pathname,
+        defaultConfig
+    );
 
-    const variables = getQueryVariables(searchFilter, imageStatusOption);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    const variables = getQueryVariables(searchFilter, imageStatus);
+    const imagesQuery = getImagesQuery(isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES'));
     const { data, previousData, loading, error } = useQuery<ImageData>(imagesQuery, {
         variables,
     });
@@ -102,7 +128,7 @@ function ImagesAtMostRisk() {
             header={
                 <Flex direction={{ default: 'row' }}>
                     <FlexItem grow={{ default: 'grow' }}>
-                        <Title headingLevel="h2">{getTitle(searchFilter, imageStatusOption)}</Title>
+                        <Title headingLevel="h2">{getTitle(searchFilter, imageStatus)}</Title>
                     </FlexItem>
                     <FlexItem>
                         <Dropdown
@@ -129,14 +155,14 @@ function ImagesAtMostRisk() {
                                             className="pf-u-font-weight-normal"
                                             text="Fixable CVEs"
                                             buttonId={`${fieldIdPrefix}-fixable-only`}
-                                            isSelected={cveStatusOption === 'Fixable'}
-                                            onChange={() => setCveStatusOption('Fixable')}
+                                            isSelected={cveStatus === 'Fixable'}
+                                            onChange={() => updateConfig({ cveStatus: 'Fixable' })}
                                         />
                                         <ToggleGroupItem
                                             text="All CVEs"
                                             buttonId={`${fieldIdPrefix}-all-cves`}
-                                            isSelected={cveStatusOption === 'All'}
-                                            onChange={() => setCveStatusOption('All')}
+                                            isSelected={cveStatus === 'All'}
+                                            onChange={() => updateConfig({ cveStatus: 'All' })}
                                         />
                                     </ToggleGroup>
                                 </FormGroup>
@@ -148,19 +174,15 @@ function ImagesAtMostRisk() {
                                         <ToggleGroupItem
                                             text="Active images"
                                             buttonId={`${fieldIdPrefix}-status-active`}
-                                            isSelected={
-                                                imageStatusOption === 'Active' || isScopeApplied
-                                            }
-                                            onChange={() => setImageStatusOption('Active')}
+                                            isSelected={imageStatus === 'Active' || isScopeApplied}
+                                            onChange={() => updateConfig({ imageStatus: 'Active' })}
                                         />
                                         <ToggleGroupItem
                                             text="All images"
                                             buttonId={`${fieldIdPrefix}-status-all`}
-                                            isSelected={
-                                                imageStatusOption === 'All' && !isScopeApplied
-                                            }
+                                            isSelected={imageStatus === 'All' && !isScopeApplied}
                                             isDisabled={isScopeApplied}
-                                            onChange={() => setImageStatusOption('All')}
+                                            onChange={() => updateConfig({ imageStatus: 'All' })}
                                         />
                                     </ToggleGroup>
                                 </FormGroup>
@@ -178,7 +200,7 @@ function ImagesAtMostRisk() {
             }
         >
             {imageData && imageData.images.length > 0 ? (
-                <ImagesAtMostRiskTable imageData={imageData} cveStatusOption={cveStatusOption} />
+                <ImagesAtMostRiskTable imageData={imageData} cveStatusOption={cveStatus} />
             ) : (
                 <NoDataEmptyState />
             )}

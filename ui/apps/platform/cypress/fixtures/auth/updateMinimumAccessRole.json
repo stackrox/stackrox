@@ -1,0 +1,18 @@
+{
+    "previous_groups": [
+        {
+            "props": {
+                "authProviderId": "auth-provider-1"
+            },
+            "roleName": "Admin"
+        }
+    ],
+    "required_groups": [
+        {
+            "props": {
+                "authProviderId": "auth-provider-1"
+            },
+            "roleName": "Analyst"
+        }
+    ]
+}

@@ -1,3 +1,5 @@
+import { SearchCategory } from 'services/SearchService';
+
 export type ResourceType =
     | 'NAMESPACE'
     | 'CLUSTER'
@@ -74,12 +76,15 @@ export const standardBaseTypes = {
     [standardTypes.CIS_Kubernetes_v1_5]: 'CIS K8s',
 };
 
-export const searchCategories = {
+export const searchCategories: Record<string, SearchCategory> = {
     NAMESPACE: 'NAMESPACES',
     NODE: 'NODES',
     CLUSTER: 'CLUSTERS',
     CONTROL: 'COMPLIANCE',
     CVE: 'VULNERABILITIES',
+    CLUSTER_CVE: 'VULNERABILITIES',
+    IMAGE_CVE: 'VULNERABILITIES',
+    NODE_CVE: 'VULNERABILITIES',
     COMPONENT: 'IMAGE_COMPONENTS',
     DEPLOYMENT: 'DEPLOYMENTS',
     SECRET: 'SECRETS',

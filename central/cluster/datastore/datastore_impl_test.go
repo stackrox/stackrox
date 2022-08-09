@@ -14,6 +14,7 @@ import (
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
 	clusterStoreMocks "github.com/stackrox/rox/central/cluster/store/cluster/mocks"
 	clusterHealthStoreMocks "github.com/stackrox/rox/central/cluster/store/clusterhealth/mocks"
+	clusterCVEMocks "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
@@ -84,11 +85,21 @@ type ClusterDataStoreTestSuite struct {
 	serviceAccountDataStore *serviceAccountMocks.MockDataStore
 	roleDataStore           *roleMocks.MockDataStore
 	roleBindingDataStore    *roleBindingMocks.MockDataStore
+	clusterCVEDataStore     *clusterCVEMocks.MockDataStore
 }
 
 var _ suite.TearDownTestSuite = (*ClusterDataStoreTestSuite)(nil)
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.ei = envisolator.NewEnvIsolator(suite.T())
+	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
+
+	if features.PostgresDatastore.Enabled() {
+		suite.T().Skip("Skip dackbox tests if postgres is enabled")
+		suite.T().SkipNow()
+	}
+
 	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -99,7 +110,6 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster)))
 
-	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.clusters = clusterStoreMocks.NewMockStore(suite.mockCtrl)
 	suite.healthStatuses = clusterHealthStoreMocks.NewMockStore(suite.mockCtrl)
 	suite.indexer = clusterIndexMocks.NewMockIndexer(suite.mockCtrl)
@@ -120,6 +130,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.serviceAccountDataStore = serviceAccountMocks.NewMockDataStore(suite.mockCtrl)
 	suite.roleDataStore = roleMocks.NewMockDataStore(suite.mockCtrl)
 	suite.roleBindingDataStore = roleBindingMocks.NewMockDataStore(suite.mockCtrl)
+	suite.roleBindingDataStore = roleBindingMocks.NewMockDataStore(suite.mockCtrl)
+	suite.clusterCVEDataStore = clusterCVEMocks.NewMockDataStore(suite.mockCtrl)
 
 	suite.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	suite.clusters.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
@@ -149,10 +161,9 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.mockProvider,
 		ranking.NewRanker(),
 		suite.networkBaselineMgr,
+		suite.clusterCVEDataStore,
 	)
 	suite.NoError(err)
-	suite.ei = envisolator.NewEnvIsolator(suite.T())
-	suite.ei.Setenv("ROX_IMAGE_FLAVOR", "rhacs")
 	testbuildinfo.SetForTest(suite.T())
 	testutils.SetExampleVersion(suite.T())
 }

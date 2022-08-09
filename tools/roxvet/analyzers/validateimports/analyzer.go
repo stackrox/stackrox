@@ -35,6 +35,7 @@ var (
 		"sensor/upgrader",
 		"sensor/debugger",
 		"sensor/tests",
+		"sensor/testutils",
 		"tools",
 		"webhookserver",
 		"operator",
@@ -187,24 +188,50 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 		allowedPackages = append(allowedPackages,
 			"pkg/auth",
 			"pkg/batcher",
+			"pkg/bolthelper",
 			"pkg/buildinfo",
+			"pkg/concurrency",
 			"pkg/config",
+			"pkg/cve",
+			"pkg/cvss/cvssv2",
+			"pkg/cvss/cvssv3",
+			"pkg/dackbox",
+			"pkg/dackbox/crud",
+			"pkg/dackbox/raw",
+			"pkg/dackbox/sortedkeys",
+			"pkg/nodes/converter",
+			"pkg/db",
 			"pkg/env",
+			"pkg/errorhelpers",
 			"pkg/features",
 			"pkg/fileutils",
 			"pkg/fsutils",
 			"pkg/grpc/routes",
+			"pkg/images/types",
 			"pkg/logging",
+			"pkg/metrics",
 			"pkg/migrations",
+			"pkg/postgres/pgadmin",
+			"pkg/postgres/pgconfig",
+			"pkg/postgres/pgtest",
 			"pkg/postgres/pgutils",
 			"pkg/postgres/schema",
+			"pkg/postgres/walker",
 			"pkg/process/id",
+			"pkg/protoconv",
 			"pkg/retry",
 			"pkg/rocksdb",
+			"pkg/sac",
+			"pkg/scans",
+			"pkg/scancomponent",
+			"pkg/search",
+			"pkg/search/postgres",
+			"pkg/secondarykey",
 			"pkg/set",
 			"pkg/sliceutils",
 			"pkg/sync",
 			"pkg/testutils",
+			"pkg/timestamp",
 			"pkg/utils",
 			"pkg/uuid",
 			"pkg/version",
@@ -217,7 +244,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 
 	if validImportRoot == "tools" {
 		allowedPackages = append(allowedPackages, "central/globaldb", "central/metrics", "central/postgres", "central/role/resources",
-			"sensor/kubernetes/sensor", "sensor/debugger")
+			"sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils")
 	}
 
 	if validImportRoot == "sensor/kubernetes" {
@@ -231,7 +258,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	}
 
 	if validImportRoot == "sensor/tests" {
-		allowedPackages = append(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger")
+		allowedPackages = append(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger", "sensor/testutils")
 	}
 
 	for _, imp := range imports {

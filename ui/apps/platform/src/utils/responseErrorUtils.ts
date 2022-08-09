@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import { AxiosError } from 'axios';
 
 function isAxiosError(error: Error): error is AxiosError {

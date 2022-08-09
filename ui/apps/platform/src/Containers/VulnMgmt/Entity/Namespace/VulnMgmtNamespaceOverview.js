@@ -95,7 +95,11 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                         <div className="sx-1 lg:sx-2 sy-1 min-h-55 h-full">
                             <TopRiskyEntitiesByVulnerabilities
                                 defaultSelection={entityTypes.DEPLOYMENT}
-                                riskEntityTypes={[entityTypes.DEPLOYMENT, entityTypes.IMAGE]}
+                                riskEntityTypes={[
+                                    entityTypes.DEPLOYMENT,
+                                    entityTypes.IMAGE,
+                                    entityTypes.NODE,
+                                ]}
                                 entityContext={currentEntity}
                                 small
                             />
@@ -114,7 +118,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Namespace findings">
-                    <div className="flex pdf-page pdf-stretch pdf-new rounded relative rounded mb-4 ml-4 mr-4">
+                    <div className="flex pdf-page pdf-stretch pdf-new relative rounded mb-4 ml-4 mr-4">
                         <BinderTabs>
                             <Tab title="Policies">
                                 <TableWidget

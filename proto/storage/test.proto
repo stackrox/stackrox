@@ -165,6 +165,9 @@ message TestGrandparent {
   }
 
   repeated Embedded embedded = 3;
+
+  int64 priority = 4 [(gogoproto.moretags) = 'search:"Test Grandparent Priority"'];
+  float risk_score = 5 [(gogoproto.moretags) = 'search:"Test Grandparent Risk Score"'];
 }
 
 message TestParent1 {

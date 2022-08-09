@@ -1,29 +1,33 @@
 import React from 'react';
 import { SimpleList, SimpleListItem } from '@patternfly/react-core';
 
+import { PolicyCategory } from 'types/policy.proto';
+
 type PolicyCategoriesListProps = {
-    // policyCategories: {
-    //     id: string;
-    //     name: string;
-    //     isDefault: boolean;
-    // }[];
-    policyCategories: string[];
+    policyCategories: PolicyCategory[];
+    setSelectedCategory: (selectedCategory: PolicyCategory) => void;
 };
 
-function PolicyCategoriesList({ policyCategories }: PolicyCategoriesListProps) {
+function PolicyCategoriesList({
+    policyCategories,
+    setSelectedCategory,
+}: PolicyCategoriesListProps) {
     return (
         <SimpleList onSelect={() => {}}>
-            {policyCategories.map((name, idx) => (
-                <SimpleListItem
-                    // eslint-disable-next-line react/no-array-index-key
-                    key={idx}
-                    onClick={() => {}}
-                    isActive={false}
-                    componentProps={{ isDisabled: false }}
-                >
-                    {name}
-                </SimpleListItem>
-            ))}
+            {policyCategories.map((category) => {
+                const { id, name, isDefault } = category;
+                return (
+                    <SimpleListItem
+                        key={id}
+                        onClick={() => {
+                            setSelectedCategory(category);
+                        }}
+                        componentProps={{ disabled: isDefault }}
+                    >
+                        {name}
+                    </SimpleListItem>
+                );
+            })}
         </SimpleList>
     );
 }

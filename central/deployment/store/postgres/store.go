@@ -51,9 +51,11 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.Deployment, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Deployment, error)
 	Upsert(ctx context.Context, obj *storage.Deployment) error
 	UpsertMany(ctx context.Context, objs []*storage.Deployment) error
 	Delete(ctx context.Context, id string) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
@@ -892,7 +894,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Deployment) err
 			_, err := batchResults.Exec()
 			result = multierror.Append(result, err)
 		}
-		batchResults.Close()
+		if err := batchResults.Close(); err != nil {
+			return err
+		}
 		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
@@ -989,7 +993,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
@@ -1052,6 +1058,29 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+}
+
+// DeleteByQuery removes the objects based on the passed query
+func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Deployment")
+
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
 	)
 
 	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
@@ -1142,6 +1171,47 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Deplo
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Deployment, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "Deployment")
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
+		return nil, err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var results []*storage.Deployment
+	for _, data := range rows {
+		msg := &storage.Deployment{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, err
+		}
+		results = append(results, msg)
+	}
+	return results, nil
 }
 
 // Delete removes the specified IDs from the store

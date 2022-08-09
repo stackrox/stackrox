@@ -23,8 +23,8 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	dackboxPkg "github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
 	"github.com/stackrox/rox/pkg/features"
@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
@@ -105,8 +106,9 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 }
 
 var (
-	namespaceSAC             = sac.ForResource(resources.Namespace)
-	namespaceSACSearchHelper = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
+	namespaceSAC                     = sac.ForResource(resources.Namespace)
+	namespaceSACSearchHelper         = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
+	namespaceSACPostgresSearchHelper = namespaceSAC.MustCreatePgSearchHelper()
 
 	log = logging.LoggerForModule()
 
@@ -310,8 +312,8 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 ///////////////////////////////////////////////
 
 func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	safeSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher)
-	prioritySortedSearcher := sorted.Searcher(safeSearcher, search.NamespacePriority, namespaceRanker)
+	scopedSearcher := pkgPostgres.WithScoping(namespaceSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher))
+	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.NamespacePriority, namespaceRanker)
 	return paginated.WithDefaultSortOption(prioritySortedSearcher, defaultSortOption)
 }
 

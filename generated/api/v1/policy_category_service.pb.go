@@ -229,9 +229,7 @@ func (m *GetPolicyCategoriesResponse) Clone() *GetPolicyCategoriesResponse {
 	return cloned
 }
 
-// Note: Needed to rename these messages, since we cannot deprecate the existing category messages in policy_service.proto until 72
-// In 72, once older messages are deprecated, these messages will be renamed.
-type NewRenamePolicyCategoryRequest struct {
+type RenamePolicyCategoryRequest struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	NewCategoryName      string   `protobuf:"bytes,2,opt,name=new_category_name,json=newCategoryName,proto3" json:"new_category_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -239,18 +237,18 @@ type NewRenamePolicyCategoryRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *NewRenamePolicyCategoryRequest) Reset()         { *m = NewRenamePolicyCategoryRequest{} }
-func (m *NewRenamePolicyCategoryRequest) String() string { return proto.CompactTextString(m) }
-func (*NewRenamePolicyCategoryRequest) ProtoMessage()    {}
-func (*NewRenamePolicyCategoryRequest) Descriptor() ([]byte, []int) {
+func (m *RenamePolicyCategoryRequest) Reset()         { *m = RenamePolicyCategoryRequest{} }
+func (m *RenamePolicyCategoryRequest) String() string { return proto.CompactTextString(m) }
+func (*RenamePolicyCategoryRequest) ProtoMessage()    {}
+func (*RenamePolicyCategoryRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d74a5357d66d2c1c, []int{3}
 }
-func (m *NewRenamePolicyCategoryRequest) XXX_Unmarshal(b []byte) error {
+func (m *RenamePolicyCategoryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NewRenamePolicyCategoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RenamePolicyCategoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_NewRenamePolicyCategoryRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_RenamePolicyCategoryRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -260,64 +258,64 @@ func (m *NewRenamePolicyCategoryRequest) XXX_Marshal(b []byte, deterministic boo
 		return b[:n], nil
 	}
 }
-func (m *NewRenamePolicyCategoryRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NewRenamePolicyCategoryRequest.Merge(m, src)
+func (m *RenamePolicyCategoryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RenamePolicyCategoryRequest.Merge(m, src)
 }
-func (m *NewRenamePolicyCategoryRequest) XXX_Size() int {
+func (m *RenamePolicyCategoryRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *NewRenamePolicyCategoryRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_NewRenamePolicyCategoryRequest.DiscardUnknown(m)
+func (m *RenamePolicyCategoryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RenamePolicyCategoryRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_NewRenamePolicyCategoryRequest proto.InternalMessageInfo
+var xxx_messageInfo_RenamePolicyCategoryRequest proto.InternalMessageInfo
 
-func (m *NewRenamePolicyCategoryRequest) GetId() string {
+func (m *RenamePolicyCategoryRequest) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-func (m *NewRenamePolicyCategoryRequest) GetNewCategoryName() string {
+func (m *RenamePolicyCategoryRequest) GetNewCategoryName() string {
 	if m != nil {
 		return m.NewCategoryName
 	}
 	return ""
 }
 
-func (m *NewRenamePolicyCategoryRequest) MessageClone() proto.Message {
+func (m *RenamePolicyCategoryRequest) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *NewRenamePolicyCategoryRequest) Clone() *NewRenamePolicyCategoryRequest {
+func (m *RenamePolicyCategoryRequest) Clone() *RenamePolicyCategoryRequest {
 	if m == nil {
 		return nil
 	}
-	cloned := new(NewRenamePolicyCategoryRequest)
+	cloned := new(RenamePolicyCategoryRequest)
 	*cloned = *m
 
 	return cloned
 }
 
-type NewDeletePolicyCategoryRequest struct {
+type DeletePolicyCategoryRequest struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *NewDeletePolicyCategoryRequest) Reset()         { *m = NewDeletePolicyCategoryRequest{} }
-func (m *NewDeletePolicyCategoryRequest) String() string { return proto.CompactTextString(m) }
-func (*NewDeletePolicyCategoryRequest) ProtoMessage()    {}
-func (*NewDeletePolicyCategoryRequest) Descriptor() ([]byte, []int) {
+func (m *DeletePolicyCategoryRequest) Reset()         { *m = DeletePolicyCategoryRequest{} }
+func (m *DeletePolicyCategoryRequest) String() string { return proto.CompactTextString(m) }
+func (*DeletePolicyCategoryRequest) ProtoMessage()    {}
+func (*DeletePolicyCategoryRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d74a5357d66d2c1c, []int{4}
 }
-func (m *NewDeletePolicyCategoryRequest) XXX_Unmarshal(b []byte) error {
+func (m *DeletePolicyCategoryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NewDeletePolicyCategoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeletePolicyCategoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_NewDeletePolicyCategoryRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_DeletePolicyCategoryRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -327,33 +325,33 @@ func (m *NewDeletePolicyCategoryRequest) XXX_Marshal(b []byte, deterministic boo
 		return b[:n], nil
 	}
 }
-func (m *NewDeletePolicyCategoryRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NewDeletePolicyCategoryRequest.Merge(m, src)
+func (m *DeletePolicyCategoryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeletePolicyCategoryRequest.Merge(m, src)
 }
-func (m *NewDeletePolicyCategoryRequest) XXX_Size() int {
+func (m *DeletePolicyCategoryRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *NewDeletePolicyCategoryRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_NewDeletePolicyCategoryRequest.DiscardUnknown(m)
+func (m *DeletePolicyCategoryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeletePolicyCategoryRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_NewDeletePolicyCategoryRequest proto.InternalMessageInfo
+var xxx_messageInfo_DeletePolicyCategoryRequest proto.InternalMessageInfo
 
-func (m *NewDeletePolicyCategoryRequest) GetId() string {
+func (m *DeletePolicyCategoryRequest) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-func (m *NewDeletePolicyCategoryRequest) MessageClone() proto.Message {
+func (m *DeletePolicyCategoryRequest) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *NewDeletePolicyCategoryRequest) Clone() *NewDeletePolicyCategoryRequest {
+func (m *DeletePolicyCategoryRequest) Clone() *DeletePolicyCategoryRequest {
 	if m == nil {
 		return nil
 	}
-	cloned := new(NewDeletePolicyCategoryRequest)
+	cloned := new(DeletePolicyCategoryRequest)
 	*cloned = *m
 
 	return cloned
@@ -363,8 +361,8 @@ func init() {
 	proto.RegisterType((*PolicyCategory)(nil), "v1.PolicyCategory")
 	proto.RegisterType((*PostPolicyCategoryRequest)(nil), "v1.PostPolicyCategoryRequest")
 	proto.RegisterType((*GetPolicyCategoriesResponse)(nil), "v1.GetPolicyCategoriesResponse")
-	proto.RegisterType((*NewRenamePolicyCategoryRequest)(nil), "v1.NewRenamePolicyCategoryRequest")
-	proto.RegisterType((*NewDeletePolicyCategoryRequest)(nil), "v1.NewDeletePolicyCategoryRequest")
+	proto.RegisterType((*RenamePolicyCategoryRequest)(nil), "v1.RenamePolicyCategoryRequest")
+	proto.RegisterType((*DeletePolicyCategoryRequest)(nil), "v1.DeletePolicyCategoryRequest")
 }
 
 func init() {
@@ -372,39 +370,39 @@ func init() {
 }
 
 var fileDescriptor_d74a5357d66d2c1c = []byte{
-	// 505 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0xc1, 0x6e, 0xd3, 0x40,
-	0x10, 0xad, 0xdd, 0x0a, 0xd1, 0x05, 0x05, 0x3a, 0x0d, 0x28, 0x71, 0x42, 0x1a, 0x56, 0x08, 0x55,
-	0x11, 0x72, 0x70, 0xb8, 0xf5, 0x58, 0x82, 0x10, 0x97, 0xaa, 0x35, 0x07, 0x10, 0xaa, 0x54, 0x6d,
-	0x9d, 0x69, 0xba, 0x22, 0xf6, 0x1a, 0xef, 0xda, 0xc1, 0x42, 0x5c, 0xf8, 0x05, 0x2e, 0x9c, 0xf9,
-	0x1a, 0x8e, 0x48, 0xfc, 0x00, 0x0a, 0x7c, 0x08, 0xf2, 0xc6, 0x34, 0xb1, 0x71, 0x22, 0x6e, 0xc9,
-	0xf3, 0xcc, 0x7b, 0x33, 0xf3, 0xde, 0x92, 0x07, 0x2c, 0xe4, 0xfd, 0xc4, 0xe9, 0x87, 0x62, 0xc2,
-	0xbd, 0xf4, 0xcc, 0x63, 0x0a, 0xc7, 0x22, 0x4a, 0xcf, 0x24, 0x46, 0x09, 0xf7, 0xd0, 0x0e, 0x23,
-	0xa1, 0x04, 0x98, 0x89, 0x63, 0xb5, 0xc7, 0x42, 0x8c, 0x27, 0xd8, 0xcf, 0x1a, 0x58, 0x10, 0x08,
-	0xc5, 0x14, 0x17, 0x81, 0x9c, 0x57, 0x58, 0xbb, 0x39, 0x8f, 0x27, 0x7c, 0x5f, 0x04, 0x39, 0x08,
-	0x39, 0x88, 0x7e, 0xa8, 0xd2, 0x1c, 0x6b, 0xe5, 0x98, 0x44, 0x16, 0x79, 0x97, 0x45, 0x1d, 0xea,
-	0x92, 0xda, 0xb1, 0x1e, 0xe4, 0x69, 0x3e, 0x07, 0xd4, 0x88, 0xc9, 0x47, 0x0d, 0xa3, 0x6b, 0xec,
-	0x6f, 0xbb, 0x26, 0x1f, 0x01, 0x90, 0xad, 0x80, 0xf9, 0xd8, 0x30, 0x35, 0xa2, 0x7f, 0x43, 0x9b,
-	0x6c, 0x73, 0x39, 0xc4, 0x0b, 0x16, 0x4f, 0x54, 0x63, 0xb3, 0x6b, 0xec, 0x5f, 0x77, 0x17, 0x00,
-	0x7d, 0x45, 0x9a, 0xc7, 0x42, 0xaa, 0x22, 0xaf, 0x8b, 0xef, 0x62, 0x94, 0x0a, 0x0e, 0x48, 0x2d,
-	0x2c, 0x7c, 0xd0, 0x52, 0x37, 0x06, 0x60, 0x27, 0x8e, 0x5d, 0x6a, 0x29, 0x55, 0xd2, 0x13, 0xd2,
-	0x7a, 0x8e, 0x45, 0x5e, 0x8e, 0xd2, 0x45, 0x19, 0x8a, 0x40, 0x22, 0x0c, 0x08, 0xf1, 0xae, 0xd0,
-	0x86, 0xd1, 0xdd, 0x5c, 0x41, 0xbb, 0x54, 0x45, 0x4f, 0x49, 0xe7, 0x08, 0xa7, 0x2e, 0x66, 0x6b,
-	0x55, 0x0f, 0x5c, 0xbe, 0x47, 0x8f, 0xec, 0x04, 0x38, 0x5d, 0xf8, 0xb6, 0x74, 0x9c, 0x5b, 0x01,
-	0x4e, 0xff, 0xb6, 0x1f, 0x31, 0x1f, 0xe9, 0x63, 0xcd, 0x3e, 0xc4, 0x09, 0xaa, 0xff, 0x63, 0x1f,
-	0x7c, 0xdd, 0x22, 0x77, 0x8a, 0x95, 0x2f, 0xe7, 0x7e, 0xc1, 0x29, 0xd9, 0x29, 0x2f, 0x9f, 0xc2,
-	0xed, 0x6c, 0x3d, 0x17, 0xa5, 0x88, 0x23, 0x0f, 0x0f, 0xd3, 0x17, 0x43, 0xab, 0x62, 0x61, 0x7a,
-	0xff, 0xd3, 0x8f, 0xdf, 0x9f, 0xcd, 0x16, 0x34, 0x17, 0xb9, 0x5b, 0x9c, 0xa0, 0xff, 0x81, 0x8f,
-	0x3e, 0xc2, 0x39, 0xd9, 0xad, 0x38, 0x2d, 0xdc, 0xd4, 0xfc, 0x6c, 0x7a, 0x12, 0x63, 0x94, 0x5a,
-	0x7b, 0xd9, 0xbf, 0x35, 0x0e, 0xd0, 0xb6, 0x16, 0xba, 0x0b, 0xf5, 0x2a, 0x21, 0x88, 0x09, 0xfc,
-	0x9b, 0x0b, 0xb8, 0x37, 0x1f, 0x78, 0x45, 0x5e, 0x2a, 0xf7, 0x79, 0xa4, 0x65, 0x1e, 0xd2, 0x4a,
-	0x99, 0x83, 0x52, 0x6a, 0xe0, 0x82, 0xd4, 0xab, 0xfc, 0x05, 0x9a, 0x31, 0xaf, 0x37, 0xdf, 0xda,
-	0xce, 0x6a, 0x9e, 0x65, 0x8f, 0x89, 0xee, 0x69, 0xd1, 0xa6, 0x55, 0x2d, 0x6a, 0xf4, 0xe0, 0x92,
-	0xd4, 0xab, 0x9c, 0xbe, 0xd2, 0x59, 0x13, 0x83, 0x65, 0x9d, 0xdc, 0xac, 0xde, 0x6a, 0xb3, 0x0e,
-	0xed, 0x6f, 0xb3, 0x8e, 0xf1, 0x7d, 0xd6, 0x31, 0x7e, 0xce, 0x3a, 0xc6, 0x97, 0x5f, 0x9d, 0x0d,
-	0xd2, 0xe0, 0xc2, 0x96, 0x8a, 0x79, 0x6f, 0x23, 0xf1, 0x7e, 0xfe, 0xb2, 0x6d, 0x16, 0x72, 0x3b,
-	0x71, 0xde, 0x98, 0x89, 0xf3, 0x7a, 0xe3, 0xfc, 0x9a, 0xc6, 0x9e, 0xfc, 0x09, 0x00, 0x00, 0xff,
-	0xff, 0xf1, 0xc4, 0x12, 0xc4, 0x7d, 0x04, 0x00, 0x00,
+	// 504 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0xcd, 0x6e, 0xd3, 0x5c,
+	0x10, 0xad, 0xdd, 0xea, 0xd3, 0x97, 0x01, 0x05, 0x3a, 0x0d, 0x28, 0x71, 0x42, 0x12, 0x2c, 0x84,
+	0xaa, 0x08, 0x1c, 0x25, 0xec, 0xba, 0x2c, 0x41, 0x88, 0x0d, 0x6a, 0xcd, 0x82, 0x1f, 0x21, 0x55,
+	0xb7, 0xce, 0x10, 0xae, 0x48, 0x7c, 0x8d, 0xef, 0xb5, 0x83, 0x85, 0xd8, 0xf0, 0x0a, 0x6c, 0x78,
+	0x01, 0xde, 0x85, 0x25, 0x12, 0x2f, 0x80, 0x02, 0x0f, 0x82, 0xfc, 0x53, 0x52, 0x9b, 0x9b, 0x8a,
+	0x5d, 0x72, 0x3c, 0x73, 0xce, 0x9c, 0x39, 0x73, 0xe1, 0x16, 0x0b, 0xf8, 0x30, 0x1e, 0x0d, 0x03,
+	0x31, 0xe7, 0x5e, 0x72, 0xe2, 0x31, 0x45, 0x33, 0x11, 0x26, 0x27, 0x92, 0xc2, 0x98, 0x7b, 0xe4,
+	0x04, 0xa1, 0x50, 0x02, 0xcd, 0x78, 0x64, 0x75, 0x66, 0x42, 0xcc, 0xe6, 0x34, 0x4c, 0x1b, 0x98,
+	0xef, 0x0b, 0xc5, 0x14, 0x17, 0xbe, 0xcc, 0x2b, 0xac, 0xbd, 0x82, 0xc7, 0x13, 0x8b, 0x85, 0xf0,
+	0x0b, 0x10, 0x0b, 0x90, 0x16, 0x81, 0x4a, 0x0a, 0xac, 0x5d, 0x60, 0x92, 0x58, 0xe8, 0xbd, 0x2e,
+	0xeb, 0xd8, 0x2e, 0xd4, 0x8f, 0xb2, 0x41, 0xee, 0x17, 0x73, 0x60, 0x1d, 0x4c, 0x3e, 0x6d, 0x1a,
+	0x7d, 0x63, 0xbf, 0xe6, 0x9a, 0x7c, 0x8a, 0x08, 0x3b, 0x3e, 0x5b, 0x50, 0xd3, 0xcc, 0x90, 0xec,
+	0x37, 0x76, 0xa0, 0xc6, 0xe5, 0x84, 0x5e, 0xb1, 0x68, 0xae, 0x9a, 0xdb, 0x7d, 0x63, 0xff, 0x7f,
+	0x77, 0x0d, 0xd8, 0x4f, 0xa1, 0x75, 0x24, 0xa4, 0x2a, 0xf3, 0xba, 0xf4, 0x36, 0x22, 0xa9, 0xf0,
+	0x00, 0xea, 0x41, 0xe9, 0x43, 0x26, 0x75, 0x69, 0x8c, 0x4e, 0x3c, 0x72, 0x2a, 0x2d, 0x95, 0x4a,
+	0xfb, 0x18, 0xda, 0x0f, 0xa9, 0xcc, 0xcb, 0x49, 0xba, 0x24, 0x03, 0xe1, 0x4b, 0xc2, 0x31, 0x80,
+	0xf7, 0x07, 0x6d, 0x1a, 0xfd, 0xed, 0x0d, 0xb4, 0xe7, 0xaa, 0xec, 0xe7, 0xd0, 0x76, 0x29, 0xf5,
+	0xa4, 0x9f, 0xb6, 0xba, 0x8c, 0x01, 0xec, 0xfa, 0xb4, 0x5c, 0x87, 0x76, 0x6e, 0x33, 0x57, 0x7c,
+	0x5a, 0x9e, 0xb5, 0x3f, 0x66, 0x0b, 0xb2, 0xef, 0x42, 0x7b, 0x42, 0x73, 0x52, 0xff, 0x46, 0x3d,
+	0xfe, 0xb2, 0x03, 0xd7, 0xca, 0x95, 0x4f, 0xf2, 0xa4, 0xf0, 0x25, 0xec, 0x56, 0x6d, 0x27, 0x78,
+	0x35, 0x35, 0xe6, 0x92, 0x14, 0x51, 0xe8, 0xd1, 0x61, 0xf2, 0x68, 0x62, 0x69, 0xac, 0xda, 0x37,
+	0x3f, 0x7e, 0xff, 0xf5, 0xc9, 0x6c, 0x63, 0x6b, 0x7d, 0x71, 0x6b, 0xf3, 0xc3, 0xf7, 0x7c, 0xfa,
+	0x01, 0x4f, 0x61, 0x4f, 0xb3, 0x54, 0xbc, 0x9c, 0xf1, 0xb3, 0xe5, 0x71, 0x44, 0x61, 0x62, 0xf5,
+	0xd2, 0x7f, 0x17, 0xec, 0xde, 0xee, 0x64, 0x42, 0xd7, 0xb1, 0xa1, 0x13, 0xc2, 0x08, 0xf0, 0xef,
+	0x8b, 0xc0, 0x1b, 0xf9, 0xc0, 0x1b, 0x2e, 0x45, 0xeb, 0xe7, 0x4e, 0x26, 0x73, 0xdb, 0xd6, 0xca,
+	0x1c, 0x54, 0xee, 0x05, 0xe7, 0xd0, 0xd0, 0x85, 0x8b, 0xbd, 0x7c, 0x77, 0x1b, 0x63, 0xd7, 0x4a,
+	0xf7, 0x32, 0xe9, 0x96, 0xa5, 0x97, 0x36, 0x06, 0x48, 0xd0, 0xd0, 0xe5, 0x9d, 0xab, 0x5d, 0x70,
+	0x09, 0x56, 0x2d, 0x2d, 0x78, 0x90, 0xbe, 0xd8, 0xb3, 0xbc, 0x06, 0x9b, 0xf3, 0x3a, 0x74, 0xbe,
+	0xae, 0xba, 0xc6, 0xb7, 0x55, 0xd7, 0xf8, 0xb1, 0xea, 0x1a, 0x9f, 0x7f, 0x76, 0xb7, 0xa0, 0xc9,
+	0x85, 0x23, 0x15, 0xf3, 0xde, 0x84, 0xe2, 0x5d, 0xfe, 0xac, 0x1d, 0x16, 0x70, 0x27, 0x1e, 0xbd,
+	0x30, 0xe3, 0xd1, 0xb3, 0xad, 0xd3, 0xff, 0x32, 0xec, 0xde, 0xef, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0x55, 0x0f, 0xe7, 0x98, 0x7a, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -426,9 +424,9 @@ type PolicyCategoryServiceClient interface {
 	// PostPolicyCategory creates a new policy category
 	PostPolicyCategory(ctx context.Context, in *PostPolicyCategoryRequest, opts ...grpc.CallOption) (*PolicyCategory, error)
 	// RenamePolicyCategory renames the given policy category.
-	RenamePolicyCategory(ctx context.Context, in *NewRenamePolicyCategoryRequest, opts ...grpc.CallOption) (*Empty, error)
+	RenamePolicyCategory(ctx context.Context, in *RenamePolicyCategoryRequest, opts ...grpc.CallOption) (*PolicyCategory, error)
 	// DeletePolicyCategory removes the given policy category.
-	DeletePolicyCategory(ctx context.Context, in *NewDeletePolicyCategoryRequest, opts ...grpc.CallOption) (*Empty, error)
+	DeletePolicyCategory(ctx context.Context, in *DeletePolicyCategoryRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type policyCategoryServiceClient struct {
@@ -466,8 +464,8 @@ func (c *policyCategoryServiceClient) PostPolicyCategory(ctx context.Context, in
 	return out, nil
 }
 
-func (c *policyCategoryServiceClient) RenamePolicyCategory(ctx context.Context, in *NewRenamePolicyCategoryRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *policyCategoryServiceClient) RenamePolicyCategory(ctx context.Context, in *RenamePolicyCategoryRequest, opts ...grpc.CallOption) (*PolicyCategory, error) {
+	out := new(PolicyCategory)
 	err := c.cc.Invoke(ctx, "/v1.PolicyCategoryService/RenamePolicyCategory", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -475,7 +473,7 @@ func (c *policyCategoryServiceClient) RenamePolicyCategory(ctx context.Context, 
 	return out, nil
 }
 
-func (c *policyCategoryServiceClient) DeletePolicyCategory(ctx context.Context, in *NewDeletePolicyCategoryRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *policyCategoryServiceClient) DeletePolicyCategory(ctx context.Context, in *DeletePolicyCategoryRequest, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/v1.PolicyCategoryService/DeletePolicyCategory", in, out, opts...)
 	if err != nil {
@@ -493,9 +491,9 @@ type PolicyCategoryServiceServer interface {
 	// PostPolicyCategory creates a new policy category
 	PostPolicyCategory(context.Context, *PostPolicyCategoryRequest) (*PolicyCategory, error)
 	// RenamePolicyCategory renames the given policy category.
-	RenamePolicyCategory(context.Context, *NewRenamePolicyCategoryRequest) (*Empty, error)
+	RenamePolicyCategory(context.Context, *RenamePolicyCategoryRequest) (*PolicyCategory, error)
 	// DeletePolicyCategory removes the given policy category.
-	DeletePolicyCategory(context.Context, *NewDeletePolicyCategoryRequest) (*Empty, error)
+	DeletePolicyCategory(context.Context, *DeletePolicyCategoryRequest) (*Empty, error)
 }
 
 // UnimplementedPolicyCategoryServiceServer can be embedded to have forward compatible implementations.
@@ -511,10 +509,10 @@ func (*UnimplementedPolicyCategoryServiceServer) GetPolicyCategories(ctx context
 func (*UnimplementedPolicyCategoryServiceServer) PostPolicyCategory(ctx context.Context, req *PostPolicyCategoryRequest) (*PolicyCategory, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PostPolicyCategory not implemented")
 }
-func (*UnimplementedPolicyCategoryServiceServer) RenamePolicyCategory(ctx context.Context, req *NewRenamePolicyCategoryRequest) (*Empty, error) {
+func (*UnimplementedPolicyCategoryServiceServer) RenamePolicyCategory(ctx context.Context, req *RenamePolicyCategoryRequest) (*PolicyCategory, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RenamePolicyCategory not implemented")
 }
-func (*UnimplementedPolicyCategoryServiceServer) DeletePolicyCategory(ctx context.Context, req *NewDeletePolicyCategoryRequest) (*Empty, error) {
+func (*UnimplementedPolicyCategoryServiceServer) DeletePolicyCategory(ctx context.Context, req *DeletePolicyCategoryRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeletePolicyCategory not implemented")
 }
 
@@ -577,7 +575,7 @@ func _PolicyCategoryService_PostPolicyCategory_Handler(srv interface{}, ctx cont
 }
 
 func _PolicyCategoryService_RenamePolicyCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewRenamePolicyCategoryRequest)
+	in := new(RenamePolicyCategoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -589,13 +587,13 @@ func _PolicyCategoryService_RenamePolicyCategory_Handler(srv interface{}, ctx co
 		FullMethod: "/v1.PolicyCategoryService/RenamePolicyCategory",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PolicyCategoryServiceServer).RenamePolicyCategory(ctx, req.(*NewRenamePolicyCategoryRequest))
+		return srv.(PolicyCategoryServiceServer).RenamePolicyCategory(ctx, req.(*RenamePolicyCategoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _PolicyCategoryService_DeletePolicyCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewDeletePolicyCategoryRequest)
+	in := new(DeletePolicyCategoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -607,7 +605,7 @@ func _PolicyCategoryService_DeletePolicyCategory_Handler(srv interface{}, ctx co
 		FullMethod: "/v1.PolicyCategoryService/DeletePolicyCategory",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PolicyCategoryServiceServer).DeletePolicyCategory(ctx, req.(*NewDeletePolicyCategoryRequest))
+		return srv.(PolicyCategoryServiceServer).DeletePolicyCategory(ctx, req.(*DeletePolicyCategoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -772,7 +770,7 @@ func (m *GetPolicyCategoriesResponse) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *NewRenamePolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
+func (m *RenamePolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -782,12 +780,12 @@ func (m *NewRenamePolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NewRenamePolicyCategoryRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *RenamePolicyCategoryRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *NewRenamePolicyCategoryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *RenamePolicyCategoryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -813,7 +811,7 @@ func (m *NewRenamePolicyCategoryRequest) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *NewDeletePolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
+func (m *DeletePolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -823,12 +821,12 @@ func (m *NewDeletePolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NewDeletePolicyCategoryRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeletePolicyCategoryRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *NewDeletePolicyCategoryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *DeletePolicyCategoryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -915,7 +913,7 @@ func (m *GetPolicyCategoriesResponse) Size() (n int) {
 	return n
 }
 
-func (m *NewRenamePolicyCategoryRequest) Size() (n int) {
+func (m *RenamePolicyCategoryRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -935,7 +933,7 @@ func (m *NewRenamePolicyCategoryRequest) Size() (n int) {
 	return n
 }
 
-func (m *NewDeletePolicyCategoryRequest) Size() (n int) {
+func (m *DeletePolicyCategoryRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1264,7 +1262,7 @@ func (m *GetPolicyCategoriesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NewRenamePolicyCategoryRequest) Unmarshal(dAtA []byte) error {
+func (m *RenamePolicyCategoryRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1287,10 +1285,10 @@ func (m *NewRenamePolicyCategoryRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: NewRenamePolicyCategoryRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: RenamePolicyCategoryRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: NewRenamePolicyCategoryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RenamePolicyCategoryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1379,7 +1377,7 @@ func (m *NewRenamePolicyCategoryRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NewDeletePolicyCategoryRequest) Unmarshal(dAtA []byte) error {
+func (m *DeletePolicyCategoryRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1402,10 +1400,10 @@ func (m *NewDeletePolicyCategoryRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: NewDeletePolicyCategoryRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: DeletePolicyCategoryRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: NewDeletePolicyCategoryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DeletePolicyCategoryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

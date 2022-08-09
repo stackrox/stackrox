@@ -1,8 +1,7 @@
 import { all, put, call } from 'redux-saga/effects';
 
-import { mainPath, policiesPath } from 'routePaths';
+import { mainPath } from 'routePaths';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import { actions as policiesActions } from 'reducers/policies/search';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { fetchOptions } from 'services/SearchService';
 import capitalize from 'lodash/capitalize';
@@ -36,7 +35,6 @@ const getQuery = () => {
                     value: `${capitalize(key)}:`,
                 },
                 {
-                    className: 'Select-create-option-placeholder',
                     label: searchParams[key],
                     value: searchParams[key],
                 }
@@ -50,8 +48,8 @@ const getQuery = () => {
 function* getSearchOptions(setSearchModifiers, setSearchSuggestions, setSearchOptions, query = '') {
     try {
         const result = yield call(fetchOptions, query);
-        yield put(setSearchModifiers(result.options));
-        yield put(setSearchSuggestions(result.options));
+        yield put(setSearchModifiers(result));
+        yield put(setSearchSuggestions(result));
         const queryOptions = getQuery();
         if (queryOptions.length && setSearchOptions) {
             yield put(setSearchOptions(queryOptions));
@@ -71,15 +69,6 @@ export default function* searches() {
             globalSearchActions.setGlobalSearchSuggestions,
             null,
             ''
-        ),
-        // TODO: remove once policies is fully migrated over to PF
-        takeEveryNewlyMatchedLocation(
-            policiesPath,
-            getSearchOptions,
-            policiesActions.setPoliciesSearchModifiers,
-            policiesActions.setPoliciesSearchSuggestions,
-            policiesActions.setPoliciesSearchOptions,
-            'categories=POLICIES'
         ),
     ]);
 }

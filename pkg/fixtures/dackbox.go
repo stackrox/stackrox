@@ -87,8 +87,8 @@ import (
 //                                                                          |
 //                                                                          +--> ImageCVE7
 
-// GetEmbeddedImageCVE_1234_0001 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedImageCVE_1234_0001() *storage.EmbeddedVulnerability {
+// GetEmbeddedImageCVE1234x0001 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedImageCVE1234x0001() *storage.EmbeddedVulnerability {
 	return &storage.EmbeddedVulnerability{
 		Cve:          "CVE-1234-0001",
 		Cvss:         5.8,
@@ -126,8 +126,8 @@ func GetEmbeddedImageCVE_1234_0001() *storage.EmbeddedVulnerability {
 	}
 }
 
-// GetEmbeddedImageCVE_4567_0002 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedImageCVE_4567_0002() *storage.EmbeddedVulnerability {
+// GetEmbeddedImageCVE4567x0002 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedImageCVE4567x0002() *storage.EmbeddedVulnerability {
 	return &storage.EmbeddedVulnerability{
 		Cve:          "CVE-4567-0002",
 		Cvss:         7.5,
@@ -179,8 +179,8 @@ func GetEmbeddedImageCVE_4567_0002() *storage.EmbeddedVulnerability {
 	}
 }
 
-// GetEmbeddedImageCVE_1234_0003 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedImageCVE_1234_0003() *storage.EmbeddedVulnerability {
+// GetEmbeddedImageCVE1234x0003 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedImageCVE1234x0003() *storage.EmbeddedVulnerability {
 	return &storage.EmbeddedVulnerability{
 		Cve:          "CVE-1234-0003",
 		Cvss:         7.5,
@@ -232,8 +232,8 @@ func GetEmbeddedImageCVE_1234_0003() *storage.EmbeddedVulnerability {
 	}
 }
 
-// GetEmbeddedImageCVE_3456_0004 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedImageCVE_3456_0004() *storage.EmbeddedVulnerability {
+// GetEmbeddedImageCVE3456x0004 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedImageCVE3456x0004() *storage.EmbeddedVulnerability {
 	return &storage.EmbeddedVulnerability{
 		Cve:          "CVE-3456-0004",
 		Cvss:         7.5,
@@ -285,8 +285,8 @@ func GetEmbeddedImageCVE_3456_0004() *storage.EmbeddedVulnerability {
 	}
 }
 
-// GetEmbeddedImageCVE_3456_0005 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedImageCVE_3456_0005() *storage.EmbeddedVulnerability {
+// GetEmbeddedImageCVE3456x0005 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedImageCVE3456x0005() *storage.EmbeddedVulnerability {
 	return &storage.EmbeddedVulnerability{
 		Cve:          "CVE-3456-0005",
 		Cvss:         5.3,
@@ -338,8 +338,8 @@ func GetEmbeddedImageCVE_3456_0005() *storage.EmbeddedVulnerability {
 	}
 }
 
-// GetEmbeddedImageCVE_2345_0006 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedImageCVE_2345_0006() *storage.EmbeddedVulnerability {
+// GetEmbeddedImageCVE2345x0006 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedImageCVE2345x0006() *storage.EmbeddedVulnerability {
 	return &storage.EmbeddedVulnerability{
 		Cve:          "CVE-2345-0006",
 		Cvss:         7.8,
@@ -391,8 +391,8 @@ func GetEmbeddedImageCVE_2345_0006() *storage.EmbeddedVulnerability {
 	}
 }
 
-// GetEmbeddedImageCVE_2345_0007 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedImageCVE_2345_0007() *storage.EmbeddedVulnerability {
+// GetEmbeddedImageCVE2345x0007 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedImageCVE2345x0007() *storage.EmbeddedVulnerability {
 	return &storage.EmbeddedVulnerability{
 		Cve:          "CVE-2345-0007",
 		Cvss:         5.9,
@@ -444,15 +444,15 @@ func GetEmbeddedImageCVE_2345_0007() *storage.EmbeddedVulnerability {
 	}
 }
 
-// GetEmbeddedImageComponent_1_1 provides a pseudo-realistic image component for dackbox integration testing.
-func GetEmbeddedImageComponent_1_1() *storage.EmbeddedImageScanComponent {
+// GetEmbeddedImageComponent1x1 provides a pseudo-realistic image component for dackbox integration testing.
+func GetEmbeddedImageComponent1x1() *storage.EmbeddedImageScanComponent {
 	return &storage.EmbeddedImageScanComponent{
 		Name:    "scarlet",
 		Version: "1.1",
 		License: nil,
 		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedImageCVE_1234_0001(),
-			GetEmbeddedImageCVE_4567_0002(),
+			GetEmbeddedImageCVE1234x0001(),
+			GetEmbeddedImageCVE4567x0002(),
 		},
 		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 		Priority:      0,
@@ -465,14 +465,14 @@ func GetEmbeddedImageComponent_1_1() *storage.EmbeddedImageScanComponent {
 	}
 }
 
-// GetEmbeddedImageComponent_1_2 provides a pseudo-realistic image component for dackbox integration testing.
-func GetEmbeddedImageComponent_1_2() *storage.EmbeddedImageScanComponent {
+// GetEmbeddedImageComponent1x2 provides a pseudo-realistic image component for dackbox integration testing.
+func GetEmbeddedImageComponent1x2() *storage.EmbeddedImageScanComponent {
 	return &storage.EmbeddedImageScanComponent{
 		Name:    "baskerville",
 		Version: "1.2",
 		License: nil,
 		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedImageCVE_1234_0003(),
+			GetEmbeddedImageCVE1234x0003(),
 		},
 		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
 		Priority:      0,
@@ -489,15 +489,15 @@ func GetEmbeddedImageComponent_1_2() *storage.EmbeddedImageScanComponent {
 	}
 }
 
-// GetEmbeddedImageComponent_1s2_3 provides a pseudo-realistic image component for dackbox integration testing.
-func GetEmbeddedImageComponent_1s2_3() *storage.EmbeddedImageScanComponent {
+// GetEmbeddedImageComponent1s2x3 provides a pseudo-realistic image component for dackbox integration testing.
+func GetEmbeddedImageComponent1s2x3() *storage.EmbeddedImageScanComponent {
 	return &storage.EmbeddedImageScanComponent{
 		Name:    "downtown-london",
 		Version: "1s.2-3",
 		License: nil,
 		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedImageCVE_3456_0004(),
-			GetEmbeddedImageCVE_3456_0005(),
+			GetEmbeddedImageCVE3456x0004(),
+			GetEmbeddedImageCVE3456x0005(),
 		},
 		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
 		Priority:      0,
@@ -510,8 +510,8 @@ func GetEmbeddedImageComponent_1s2_3() *storage.EmbeddedImageScanComponent {
 	}
 }
 
-// GetEmbeddedImageComponent_2_4 provides a pseudo-realistic image component for dackbox integration testing.
-func GetEmbeddedImageComponent_2_4() *storage.EmbeddedImageScanComponent {
+// GetEmbeddedImageComponent2x4 provides a pseudo-realistic image component for dackbox integration testing.
+func GetEmbeddedImageComponent2x4() *storage.EmbeddedImageScanComponent {
 	return &storage.EmbeddedImageScanComponent{
 		Name:          "dr-jekyll-medecine-practice",
 		Version:       "2.4",
@@ -528,16 +528,16 @@ func GetEmbeddedImageComponent_2_4() *storage.EmbeddedImageScanComponent {
 	}
 }
 
-// GetEmbeddedImageComponent_2_5 provides a pseudo-realistic image component for dackbox integration testing.
-func GetEmbeddedImageComponent_2_5() *storage.EmbeddedImageScanComponent {
+// GetEmbeddedImageComponent2x5 provides a pseudo-realistic image component for dackbox integration testing.
+func GetEmbeddedImageComponent2x5() *storage.EmbeddedImageScanComponent {
 	return &storage.EmbeddedImageScanComponent{
 		Name:    "mr-hyde-secret-entrance",
 		Version: "2.5",
 		License: nil,
 		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedImageCVE_4567_0002(),
-			GetEmbeddedImageCVE_2345_0006(),
-			GetEmbeddedImageCVE_2345_0007(),
+			GetEmbeddedImageCVE4567x0002(),
+			GetEmbeddedImageCVE2345x0006(),
+			GetEmbeddedImageCVE2345x0007(),
 		},
 		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 2},
 		Priority:      0,
@@ -557,8 +557,8 @@ func GetEmbeddedImageComponent_2_5() *storage.EmbeddedImageScanComponent {
 	}
 }
 
-// GetImageSherlockHolmes_1 provides a pseudo-realistic image for dackbox integration testing.
-func GetImageSherlockHolmes_1() *storage.Image {
+// GetImageSherlockHolmes1 provides a pseudo-realistic image for dackbox integration testing.
+func GetImageSherlockHolmes1() *storage.Image {
 	return &storage.Image{
 		Id: "sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7",
 		Name: &storage.ImageName{
@@ -611,9 +611,9 @@ func GetImageSherlockHolmes_1() *storage.Image {
 			ScannerVersion: "2.24.0-11-g05cf175999",
 			ScanTime:       &types.Timestamp{Seconds: 1654154310, Nanos: 970783800},
 			Components: []*storage.EmbeddedImageScanComponent{
-				GetEmbeddedImageComponent_1_1(),
-				GetEmbeddedImageComponent_1_2(),
-				GetEmbeddedImageComponent_1s2_3(),
+				GetEmbeddedImageComponent1x1(),
+				GetEmbeddedImageComponent1x2(),
+				GetEmbeddedImageComponent1s2x3(),
 			},
 			OperatingSystem: "crime-stories",
 			DataSource: &storage.DataSource{
@@ -640,8 +640,8 @@ func GetImageSherlockHolmes_1() *storage.Image {
 	}
 }
 
-// GetImageDoctorJekyll_2 provides a pseudo-realistic image for dackbox integration testing.
-func GetImageDoctorJekyll_2() *storage.Image {
+// GetImageDoctorJekyll2 provides a pseudo-realistic image for dackbox integration testing.
+func GetImageDoctorJekyll2() *storage.Image {
 	return &storage.Image{
 		Id: "sha256:835762dc5388a591ecf31540eaeb14ec8bc96ad48a3bd11fdef77b7106111eec",
 		Name: &storage.ImageName{
@@ -694,9 +694,9 @@ func GetImageDoctorJekyll_2() *storage.Image {
 			ScannerVersion: "2.24.0-11-g05cf175999",
 			ScanTime:       &types.Timestamp{Seconds: 1654154710, Nanos: 67882700},
 			Components: []*storage.EmbeddedImageScanComponent{
-				GetEmbeddedImageComponent_1s2_3(),
-				GetEmbeddedImageComponent_2_4(),
-				GetEmbeddedImageComponent_2_5(),
+				GetEmbeddedImageComponent1s2x3(),
+				GetEmbeddedImageComponent2x4(),
+				GetEmbeddedImageComponent2x5(),
 			},
 			OperatingSystem: "crime-stories",
 			DataSource: &storage.DataSource{
@@ -723,8 +723,8 @@ func GetImageDoctorJekyll_2() *storage.Image {
 	}
 }
 
-// GetDeploymentSherlockHolmes_1 provides a pseudo-realistic deployment for dackbox integration testing.
-func GetDeploymentSherlockHolmes_1(id string, namespace *storage.NamespaceMetadata) *storage.Deployment {
+// GetDeploymentSherlockHolmes1 provides a pseudo-realistic deployment for dackbox integration testing.
+func GetDeploymentSherlockHolmes1(id string, namespace *storage.NamespaceMetadata) *storage.Deployment {
 	return &storage.Deployment{
 		Id:                    id,
 		Name:                  "sherlock-holmes-deployment",
@@ -747,8 +747,8 @@ func GetDeploymentSherlockHolmes_1(id string, namespace *storage.NamespaceMetada
 					Args: []string{"--investigate-dubious-story"},
 				},
 				Image: &storage.ContainerImage{
-					Id:             GetImageSherlockHolmes_1().GetId(),
-					Name:           GetImageSherlockHolmes_1().GetName(),
+					Id:             GetImageSherlockHolmes1().GetId(),
+					Name:           GetImageSherlockHolmes1().GetName(),
 					NotPullable:    false,
 					IsClusterLocal: false,
 				},
@@ -789,8 +789,8 @@ func GetDeploymentSherlockHolmes_1(id string, namespace *storage.NamespaceMetada
 	}
 }
 
-// GetDeploymentDoctorJekyll_2 provides a pseudo-realistic deployment for dackbox integration testing.
-func GetDeploymentDoctorJekyll_2(id string, namespace *storage.NamespaceMetadata) *storage.Deployment {
+// GetDeploymentDoctorJekyll2 provides a pseudo-realistic deployment for dackbox integration testing.
+func GetDeploymentDoctorJekyll2(id string, namespace *storage.NamespaceMetadata) *storage.Deployment {
 	return &storage.Deployment{
 		Id:                    id,
 		Name:                  "doctor-jekyll-deployment",
@@ -813,8 +813,8 @@ func GetDeploymentDoctorJekyll_2(id string, namespace *storage.NamespaceMetadata
 					Args: []string{"--tries-to-find-refined-special-crystals"},
 				},
 				Image: &storage.ContainerImage{
-					Id:             GetImageDoctorJekyll_2().GetId(),
-					Name:           GetImageDoctorJekyll_2().GetName(),
+					Id:             GetImageDoctorJekyll2().GetId(),
+					Name:           GetImageDoctorJekyll2().GetName(),
 					NotPullable:    false,
 					IsClusterLocal: false,
 				},
@@ -914,9 +914,9 @@ func GetDeploymentDoctorJekyll_2(id string, namespace *storage.NamespaceMetadata
 //                                           |
 //                                           +--> NodeCVE7
 
-// GetEmbeddedNodeCVE_1234_0001 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedNodeCVE_1234_0001() *storage.EmbeddedVulnerability {
-	vulnerability := GetEmbeddedImageCVE_1234_0001()
+// GetEmbeddedNodeCVE1234x0001 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE1234x0001() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE1234x0001()
 	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
 	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
@@ -924,9 +924,9 @@ func GetEmbeddedNodeCVE_1234_0001() *storage.EmbeddedVulnerability {
 	return vulnerability
 }
 
-// GetEmbeddedNodeCVE_4567_0002 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedNodeCVE_4567_0002() *storage.EmbeddedVulnerability {
-	vulnerability := GetEmbeddedImageCVE_4567_0002()
+// GetEmbeddedNodeCVE4567x0002 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE4567x0002() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE4567x0002()
 	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
 	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
@@ -934,9 +934,9 @@ func GetEmbeddedNodeCVE_4567_0002() *storage.EmbeddedVulnerability {
 	return vulnerability
 }
 
-// GetEmbeddedNodeCVE_1234_0003 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedNodeCVE_1234_0003() *storage.EmbeddedVulnerability {
-	vulnerability := GetEmbeddedImageCVE_1234_0003()
+// GetEmbeddedNodeCVE1234x0003 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE1234x0003() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE1234x0003()
 	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
 	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
@@ -944,9 +944,9 @@ func GetEmbeddedNodeCVE_1234_0003() *storage.EmbeddedVulnerability {
 	return vulnerability
 }
 
-// GetEmbeddedNodeCVE_3456_0004 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedNodeCVE_3456_0004() *storage.EmbeddedVulnerability {
-	vulnerability := GetEmbeddedImageCVE_3456_0004()
+// GetEmbeddedNodeCVE3456x0004 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE3456x0004() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE3456x0004()
 	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
 	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
@@ -954,9 +954,9 @@ func GetEmbeddedNodeCVE_3456_0004() *storage.EmbeddedVulnerability {
 	return vulnerability
 }
 
-// GetEmbeddedNodeCVE_3456_0005 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedNodeCVE_3456_0005() *storage.EmbeddedVulnerability {
-	vulnerability := GetEmbeddedImageCVE_3456_0005()
+// GetEmbeddedNodeCVE3456x0005 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE3456x0005() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE3456x0005()
 	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
 	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
@@ -964,9 +964,9 @@ func GetEmbeddedNodeCVE_3456_0005() *storage.EmbeddedVulnerability {
 	return vulnerability
 }
 
-// GetEmbeddedNodeCVE_2345_0006 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedNodeCVE_2345_0006() *storage.EmbeddedVulnerability {
-	vulnerability := GetEmbeddedImageCVE_2345_0006()
+// GetEmbeddedNodeCVE2345x0006 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE2345x0006() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE2345x0006()
 	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
 	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
@@ -974,9 +974,9 @@ func GetEmbeddedNodeCVE_2345_0006() *storage.EmbeddedVulnerability {
 	return vulnerability
 }
 
-// GetEmbeddedNodeCVE_2345_0007 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
-func GetEmbeddedNodeCVE_2345_0007() *storage.EmbeddedVulnerability {
-	vulnerability := GetEmbeddedImageCVE_2345_0007()
+// GetEmbeddedNodeCVE2345x0007 provides a pseudo-realistic image CVE for dackbox datastore integration testing.
+func GetEmbeddedNodeCVE2345x0007() *storage.EmbeddedVulnerability {
+	vulnerability := GetEmbeddedImageCVE2345x0007()
 	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
 	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
@@ -984,14 +984,14 @@ func GetEmbeddedNodeCVE_2345_0007() *storage.EmbeddedVulnerability {
 	return vulnerability
 }
 
-// GetEmbeddedNodeComponent_1_1 provides a pseudo-realistic node component for dackbox integration testing.
-func GetEmbeddedNodeComponent_1_1() *storage.EmbeddedNodeScanComponent {
+// GetEmbeddedNodeComponent1x1 provides a pseudo-realistic node component for dackbox integration testing.
+func GetEmbeddedNodeComponent1x1() *storage.EmbeddedNodeScanComponent {
 	return &storage.EmbeddedNodeScanComponent{
 		Name:    "scarlet",
 		Version: "1.1",
 		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedNodeCVE_1234_0001(),
-			GetEmbeddedNodeCVE_4567_0002(),
+			GetEmbeddedNodeCVE1234x0001(),
+			GetEmbeddedNodeCVE4567x0002(),
 		},
 		Vulnerabilities: nil,
 		Priority:        0,
@@ -1000,13 +1000,13 @@ func GetEmbeddedNodeComponent_1_1() *storage.EmbeddedNodeScanComponent {
 	}
 }
 
-// GetEmbeddedNodeComponent_1_2 provides a pseudo-realistic node component for dackbox integration testing.
-func GetEmbeddedNodeComponent_1_2() *storage.EmbeddedNodeScanComponent {
+// GetEmbeddedNodeComponent1x2 provides a pseudo-realistic node component for dackbox integration testing.
+func GetEmbeddedNodeComponent1x2() *storage.EmbeddedNodeScanComponent {
 	return &storage.EmbeddedNodeScanComponent{
 		Name:    "baskerville",
 		Version: "1.2",
 		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedNodeCVE_1234_0003(),
+			GetEmbeddedNodeCVE1234x0003(),
 		},
 		Vulnerabilities: nil,
 		Priority:        0,
@@ -1015,14 +1015,14 @@ func GetEmbeddedNodeComponent_1_2() *storage.EmbeddedNodeScanComponent {
 	}
 }
 
-// GetEmbeddedNodeComponent_1s2_3 provides a pseudo-realistic node component for dackbox integration testing.
-func GetEmbeddedNodeComponent_1s2_3() *storage.EmbeddedNodeScanComponent {
+// GetEmbeddedNodeComponent1s2x3 provides a pseudo-realistic node component for dackbox integration testing.
+func GetEmbeddedNodeComponent1s2x3() *storage.EmbeddedNodeScanComponent {
 	return &storage.EmbeddedNodeScanComponent{
 		Name:    "downtown-london",
 		Version: "1s.2-3",
 		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedNodeCVE_3456_0004(),
-			GetEmbeddedNodeCVE_3456_0005(),
+			GetEmbeddedNodeCVE3456x0004(),
+			GetEmbeddedNodeCVE3456x0005(),
 		},
 		Vulnerabilities: nil,
 		Priority:        0,
@@ -1031,8 +1031,8 @@ func GetEmbeddedNodeComponent_1s2_3() *storage.EmbeddedNodeScanComponent {
 	}
 }
 
-// GetEmbeddedNodeComponent_2_4 provides a pseudo-realistic node component for dackbox integration testing.
-func GetEmbeddedNodeComponent_2_4() *storage.EmbeddedNodeScanComponent {
+// GetEmbeddedNodeComponent2x4 provides a pseudo-realistic node component for dackbox integration testing.
+func GetEmbeddedNodeComponent2x4() *storage.EmbeddedNodeScanComponent {
 	return &storage.EmbeddedNodeScanComponent{
 		Name:            "dr-jekyll-medecine-practice",
 		Version:         "2.4",
@@ -1044,15 +1044,15 @@ func GetEmbeddedNodeComponent_2_4() *storage.EmbeddedNodeScanComponent {
 	}
 }
 
-// GetEmbeddedNodeComponent_2_5 provides a pseudo-realistic node component for dackbox integration testing.
-func GetEmbeddedNodeComponent_2_5() *storage.EmbeddedNodeScanComponent {
+// GetEmbeddedNodeComponent2x5 provides a pseudo-realistic node component for dackbox integration testing.
+func GetEmbeddedNodeComponent2x5() *storage.EmbeddedNodeScanComponent {
 	return &storage.EmbeddedNodeScanComponent{
 		Name:    "mr-hyde-secret-entrance",
 		Version: "2.5",
 		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedNodeCVE_4567_0002(),
-			GetEmbeddedNodeCVE_2345_0006(),
-			GetEmbeddedNodeCVE_2345_0007(),
+			GetEmbeddedNodeCVE4567x0002(),
+			GetEmbeddedNodeCVE2345x0006(),
+			GetEmbeddedNodeCVE2345x0007(),
 		},
 		Vulnerabilities: nil,
 		Priority:        0,
@@ -1061,9 +1061,9 @@ func GetEmbeddedNodeComponent_2_5() *storage.EmbeddedNodeScanComponent {
 	}
 }
 
-// GetScopedNode_1 provides a pseudo-realistic node with scoping information matching the input for
+// GetScopedNode1 provides a pseudo-realistic node with scoping information matching the input for
 // dackbox integration testing.
-func GetScopedNode_1(nodeID string, clusterID string) *storage.Node {
+func GetScopedNode1(nodeID string, clusterID string) *storage.Node {
 	node := &storage.Node{
 		Id:                      nodeID,
 		Name:                    "sherlock-holmes",
@@ -1091,9 +1091,9 @@ func GetScopedNode_1(nodeID string, clusterID string) *storage.Node {
 			ScanTime:        &types.Timestamp{Seconds: 1654154292, Nanos: 870002400},
 			OperatingSystem: "Linux",
 			Components: []*storage.EmbeddedNodeScanComponent{
-				GetEmbeddedNodeComponent_1_1(),
-				GetEmbeddedNodeComponent_1_2(),
-				GetEmbeddedNodeComponent_1s2_3(),
+				GetEmbeddedNodeComponent1x1(),
+				GetEmbeddedNodeComponent1x2(),
+				GetEmbeddedNodeComponent1s2x3(),
 			},
 			Notes: nil,
 		},
@@ -1111,9 +1111,9 @@ func GetScopedNode_1(nodeID string, clusterID string) *storage.Node {
 	return node
 }
 
-// GetScopedNode_2 provides a pseudo-realistic node with scoping information matching the input for
+// GetScopedNode2 provides a pseudo-realistic node with scoping information matching the input for
 // dackbox integration testing.
-func GetScopedNode_2(nodeID string, clusterID string) *storage.Node {
+func GetScopedNode2(nodeID string, clusterID string) *storage.Node {
 	node := &storage.Node{
 		Id:                      nodeID,
 		Name:                    "dr-jekyll",
@@ -1141,9 +1141,9 @@ func GetScopedNode_2(nodeID string, clusterID string) *storage.Node {
 			ScanTime:        &types.Timestamp{Seconds: 1654154292, Nanos: 870002400},
 			OperatingSystem: "Linux",
 			Components: []*storage.EmbeddedNodeScanComponent{
-				GetEmbeddedNodeComponent_1s2_3(),
-				GetEmbeddedNodeComponent_2_4(),
-				GetEmbeddedNodeComponent_2_5(),
+				GetEmbeddedNodeComponent1s2x3(),
+				GetEmbeddedNodeComponent2x4(),
+				GetEmbeddedNodeComponent2x5(),
 			},
 			Notes: nil,
 		},

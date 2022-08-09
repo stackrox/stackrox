@@ -45,6 +45,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ImageComponentEdge, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageComponentEdge, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponentEdge, []int, error)
 
@@ -87,7 +88,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
@@ -186,6 +189,35 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageComponentEdge, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "ImageComponentEdge")
+
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var results []*storage.ImageComponentEdge
+	for _, data := range rows {
+		msg := &storage.ImageComponentEdge{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, err
+		}
+		results = append(results, msg)
+	}
+	return results, nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

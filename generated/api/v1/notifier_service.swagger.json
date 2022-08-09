@@ -427,6 +427,10 @@
         },
         "startTLSAuthMethod": {
           "$ref": "#/definitions/EmailAuthMethod"
+        },
+        "allowUnauthenticatedSmtp": {
+          "type": "boolean",
+          "title": "Set to true to allow unauthenticated SMTP"
         }
       }
     },

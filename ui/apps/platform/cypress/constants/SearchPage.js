@@ -16,6 +16,7 @@ export const selectors = {
         body: '.pf-c-empty-state__body',
     }),
     tab: 'li.pf-c-tabs__item',
+    count: '.pf-c-badge',
     globalSearchResults: scopeSelectors('[data-testid="global-search-results"]', {
         header: 'h1',
     }),

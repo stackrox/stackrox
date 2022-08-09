@@ -18,6 +18,7 @@ import kubeSVG from 'images/kube.svg';
 import istioSVG from 'images/istio.svg';
 import openShiftSVG from 'images/openShift.svg';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 // need to add query for fixable cves for dashboard once it's supported
 const CLUSTER_WITH_MOST_ORCHESTRATOR_ISTIO_VULNERABILTIES = gql`
@@ -46,12 +47,12 @@ const CLUSTER_WITH_MOST_ORCHESTRATOR_ISTIO_VULNERABILTIES = gql`
     }
 `;
 
-const getVulnDataByType = (workflowState, clusterId, vulnType, vulns) => {
+const getVulnDataByType = (workflowState, clusterId, vulnType, vulns, showVmUpdates) => {
     const cveCount = vulns.length;
     const fixableCount = vulns.filter((vuln) => vuln.isFixable).length;
     const targetState = workflowState
         .resetPage(entityTypes.CLUSTER, clusterId)
-        .pushList(entityTypes.CVE)
+        .pushList(showVmUpdates ? entityTypes.CLUSTER_CVE : entityTypes.CVE)
         .setSearch({ 'CVE Type': vulnType });
 
     const url = targetState.toUrl();
@@ -70,7 +71,7 @@ const getVulnDataByType = (workflowState, clusterId, vulnType, vulns) => {
     };
 };
 
-const processData = (data, workflowState, limit) => {
+const processData = (data, workflowState, limit, showVmUpdates) => {
     if (!data.results) {
         return [];
     }
@@ -91,19 +92,25 @@ const processData = (data, workflowState, limit) => {
                     fixableCount: k8sFixableCount,
                     url: k8sUrl,
                     fixableUrl: k8sFixableUrl,
-                } = getVulnDataByType(workflowState, id, 'K8S_CVE', k8sVulns);
+                } = getVulnDataByType(workflowState, id, 'K8S_CVE', k8sVulns, showVmUpdates);
                 const {
                     cveCount: istioCveCount,
                     fixableCount: istioFixableCount,
                     url: istioUrl,
                     fixableUrl: istioFixableUrl,
-                } = getVulnDataByType(workflowState, id, 'ISTIO_CVE', istioVulns);
+                } = getVulnDataByType(workflowState, id, 'ISTIO_CVE', istioVulns, showVmUpdates);
                 const {
                     cveCount: openShiftCveCount,
                     fixableCount: openShiftFixableCount,
                     url: openShiftUrl,
                     fixableUrl: openShiftFixableUrl,
-                } = getVulnDataByType(workflowState, id, 'OPENSHIFT_CVE', openShiftVulns);
+                } = getVulnDataByType(
+                    workflowState,
+                    id,
+                    'OPENSHIFT_CVE',
+                    openShiftVulns,
+                    showVmUpdates
+                );
                 const clusterUrl = workflowState.resetPage(entityTypes.CLUSTER, id).toUrl();
                 const indicationTooltipText = isGKECluster
                     ? 'These CVEs might have been patched by GKE. Please check the GKE release notes or security bulletin to find out more.'
@@ -195,6 +202,8 @@ const ClustersWithMostOrchestratorVulnerabilities = ({ entityContext, limit }) =
             query: queryService.entityContextToQueryString(entityContext),
         },
     });
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     let content = <Loader />;
 
@@ -207,7 +216,7 @@ const ClustersWithMostOrchestratorVulnerabilities = ({ entityContext, limit }) =
 
             content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
         } else {
-            const processedData = processData(data, workflowState, limit);
+            const processedData = processData(data, workflowState, limit, showVmUpdates);
 
             if (!processedData || processedData.length === 0) {
                 content = (

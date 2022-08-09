@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -241,7 +242,7 @@ func (s *imageScanTestSuite) createGRPCMockImageService(components []*storage.Em
 
 	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 		return listener.Dial()
-	}), grpc.WithInsecure())
+	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	s.Require().NoError(err)
 
 	closeF := func() {

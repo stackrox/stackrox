@@ -283,7 +283,7 @@ func (s *Schema) ID() Field {
 			return f
 		}
 	}
-	// If there is only one primary key, that is considered Id column by default even if not specified explicitly.
+	// If there is only one primary key, that is considered ID column by default even if not specified explicitly.
 	pks := s.PrimaryKeys()
 	if len(pks) == 1 {
 		return pks[0]
@@ -450,12 +450,15 @@ type Field struct {
 	Type string
 
 	// DataType is the internal type
-	DataType            DataType
-	SQLType             string
-	ModelType           string
-	Options             PostgresOptions
-	Search              SearchField
+	DataType  DataType
+	SQLType   string
+	ModelType string
+	Options   PostgresOptions
+	Search    SearchField
+	// DerivedSearchFields represents the search fields derived from this search field.
 	DerivedSearchFields []DerivedSearchField
+	// Derived indicates whether the search field (if valid search field) is derived from other search field.
+	Derived bool
 }
 
 // DerivedSearchField represents a search field that's derived.

@@ -118,7 +118,7 @@ spec:
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
-        [<- if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
+        [<- if (not .KubectlOutput) >]
         {{- if ._rox.sensor.localImageScanning.enabled }}
         - name: ROX_SCANNER_GRPC_ENDPOINT
           value: {{ printf "scanner.%s.svc:8443" .Release.Namespace }}

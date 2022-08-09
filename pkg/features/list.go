@@ -24,17 +24,11 @@ var (
 	// PoliciesPatternFly enables the PatternFly version of Policies. (used in the front-end app only)
 	PoliciesPatternFly = registerFeature("Enable PatternFly version of Policies", "ROX_POLICIES_PATTERNFLY", true)
 
-	// LocalImageScanning enables OpenShift local-image scanning.
-	LocalImageScanning = registerFeature("Enable OpenShift local-image scanning", "ROX_LOCAL_IMAGE_SCANNING", true)
-
-	// ImageSignatureVerification enables image signature verification.
-	ImageSignatureVerification = registerFeature("Enable Image Signature Verification workflow", "ROX_VERIFY_IMAGE_SIGNATURE", true)
-
 	// PostgresDatastore enables Postgres datastore.
 	PostgresDatastore = registerFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", false)
 
 	// FrontendVMUpdates enables Frontend VM Updates.
-	FrontendVMUpdates = registerFeature("Enable Frontend VM Updates", "ROX_FRONTEND_VM_UDPATES", false)
+	FrontendVMUpdates = registerFeature("Enable Frontend VM Updates", "ROX_FRONTEND_VM_UPDATES", false)
 
 	// ECRAutoIntegration enables detection of ECR-based deployments to generate auto-integrations from ECR auth tokens.
 	ECRAutoIntegration = registerFeature("Enable ECR auto-integrations when running on AWS nodes", "ROX_ECR_AUTO_INTEGRATION", true)
@@ -46,9 +40,15 @@ var (
 	// NewPolicyCategories enables new policy categories as first-class entities.
 	NewPolicyCategories = registerFeature("Enable new policy categories as first-class entities", "ROX_NEW_POLICY_CATEGORIES", false)
 
+	// SearchPageUI enables search page instead of search modal in UI. Frontend only.
+	SearchPageUI = registerFeature("Enable search page instead of search modal in UI", "ROX_SEARCH_PAGE_UI", false)
+
 	// SecurityMetricsPhaseOne enables the PatternFly version of the main dashboard with Action Widgets. (used in the front-end app only)
 	SecurityMetricsPhaseOne = registerFeature("Enable PatternFly version of Security Metrics Dashboard", "ROX_SECURITY_METRICS_PHASE_ONE", true)
 
 	// DecommissionedClusterRetention enables the setting in System Configuration.
-	DecommissionedClusterRetention = registerFeature("Enable Decommissioned Cluster Retention in System Configuration", "ROX_DECOMMISSIONED_CLUSTER_RETENTION", false)
+	DecommissionedClusterRetention = registerFeature("Enable Decommissioned Cluster Retention in System Configuration", "ROX_DECOMMISSIONED_CLUSTER_RETENTION", true)
+
+	// QuayRobotAccounts enables Robot accounts as credentials in Quay Image Integration.
+	QuayRobotAccounts = registerFeature("Enable Robot accounts in Quay Image Integration", "ROX_QUAY_ROBOT_ACCOUNTS", false)
 )

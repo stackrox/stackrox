@@ -6,6 +6,7 @@ import {
 import { permissions as permissionsApi } from '../../constants/apiEndpoints';
 import sampleCert from '../../helpers/sampleCert';
 import { generateNameWithDate, getInputByLabel } from '../../helpers/formHelpers';
+import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAccessRole.json';
 
 import withAuth from '../../helpers/basicAuth';
 
@@ -204,6 +205,45 @@ describe('Access Control Auth providers', () => {
             .should('have.value', '')
             .should('have.attr', 'placeholder', '*****');
         cy.get(checkboxDoNotUseClientSecret).should('be.disabled').should('not.be.checked');
+    });
+
+    it('edit OpenID Connect minimum access role', () => {
+        cy.intercept('GET', authProvidersApi.list, {
+            fixture: 'auth/authProvidersWithClientSecret.json',
+        }).as('GetAuthProviders');
+        cy.intercept('GET', groupsApi.list, {
+            fixture: 'auth/groupsWithClientSecret.json',
+        }).as('GetGroups'); // to compute default access role
+        cy.intercept('PUT', '/v1/authProviders/auth-provider-1', {
+            body: {},
+        }).as('PutAuthProvider');
+        cy.intercept('POST', groupsApi.batch, (req) => {
+            expect(req.body).to.deep.equal(
+                updateMinimumAccessRoleRequest,
+                `request: ${JSON.stringify(req.body)} expected: ${JSON.stringify(
+                    updateMinimumAccessRoleRequest
+                )}`
+            );
+            req.body = {};
+        }).as('PostGroupsBatch');
+
+        const id = 'auth-provider-1';
+        cy.visit(`${authProvidersUrl}/${id}`);
+        cy.wait(['@GetAuthProviders', '@GetGroups']);
+
+        const { selectMinimumAccessRole, selectMinimumAccessRoleItem } =
+            selectors.form.minimumAccessRole;
+
+        cy.get(selectors.form.editButton).click();
+
+        cy.get(selectMinimumAccessRole).should('be.enabled').should('contain', 'Admin');
+        cy.get(selectMinimumAccessRole).click();
+        cy.get(`${selectMinimumAccessRoleItem}:contains("Analyst")`).click();
+
+        cy.get(selectors.form.saveButton).click();
+        cy.wait(['@PutAuthProvider', '@PostGroupsBatch']);
+
+        cy.get(selectMinimumAccessRole).should('contain', 'Analyst');
     });
 
     it('add SAML 2.0', () => {

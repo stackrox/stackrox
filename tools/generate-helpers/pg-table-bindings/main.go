@@ -50,14 +50,22 @@ var indexFile string
 //go:embed permission_checker.go.tpl
 var permissionCheckerFile string
 
+//go:embed migration.go.tpl
+var migrationFile string
+
+//go:embed migration_test.go.tpl
+var migrationTestFile string
+
 var (
 	schemaTemplate            = newTemplate(schemaFile)
-	singletonTemplate         = newTemplate(singletonFile)
+	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
 	singletonTestTemplate     = newTemplate(singletonTestFile)
 	storeTemplate             = newTemplate(storeFile)
 	storeTestTemplate         = newTemplate(storeTestFile)
 	indexTemplate             = newTemplate(indexFile)
 	permissionCheckerTemplate = newTemplate(permissionCheckerFile)
+	migrationTemplate         = newTemplate(migrationFile)
+	migrationTestTemplate     = newTemplate(migrationTestFile)
 )
 
 type properties struct {
@@ -93,6 +101,15 @@ type properties struct {
 
 	// Indicates that we should just generate the singleton store
 	SingletonStore bool
+
+	// Migration root
+	MigrateRoot string
+
+	// Where the data are migrated from in the format of "database:bucket", eg, \"rocksdb\", \"dackbox\" or \"boltdb\"")
+	MigrateFrom string
+
+	// The unique sequence number to migrate all tables to Postgres
+	MigrateSeq int
 
 	// Indicates the scope of search. Set this field to limit search to only some categories in case of overlapping
 	// search fields.
@@ -167,8 +184,21 @@ func main() {
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
+	c.Flags().StringVar(&props.MigrateRoot, "migration-root", "", "Root for migrations")
+	c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from, including \"rocksdb\", \"dackbox\" and \"boltdb\"")
+	c.Flags().IntVar(&props.MigrateSeq, "migration-seq", 0, "the unique sequence number to migrate to Postgres")
 
 	c.RunE = func(*cobra.Command, []string) error {
+		if (props.MigrateSeq == 0) != (props.MigrateFrom == "") {
+			log.Fatal("please use both \"--migrate-from\" and \"--migration-seq\" to create data migration")
+		}
+		if props.MigrateSeq != 0 && props.MigrateRoot == "" {
+			log.Fatalf("please specify --migration-root")
+		}
+		if props.MigrateSeq != 0 && !migrateFromRegex.MatchString(props.MigrateFrom) {
+			log.Fatalf("unknown format for --migrate-from: %s, expect in the format of %s", props.MigrateFrom, migrateFromRegex.String())
+		}
+
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
 		fmt.Println(readable.Time(time.Now()), "Generating for", typ)
 		mt := proto.MessageType(typ)
@@ -251,22 +281,50 @@ func main() {
 			if err := renderFile(templateMap, singletonTemplate, "store.go"); err != nil {
 				return err
 			}
-			return renderFile(templateMap, singletonTestTemplate, "store_test.go")
-		}
-		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
-			return err
-		}
-		if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
-			return err
-		}
-
-		if props.SearchCategory != "" {
-			if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
+			if err := renderFile(templateMap, singletonTestTemplate, "store_test.go"); err != nil {
 				return err
 			}
+		} else {
+			if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
+				return err
+			}
+			if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
+				return err
+			}
+
+			if props.SearchCategory != "" {
+				if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
+					return err
+				}
+			}
+			if permissionCheckerEnabled {
+				if err := renderFile(templateMap, permissionCheckerTemplate, "permission_checker.go"); err != nil {
+					return err
+				}
+			}
 		}
-		if permissionCheckerEnabled {
-			if err := renderFile(templateMap, permissionCheckerTemplate, "permission_checker.go"); err != nil {
+
+		if props.MigrateSeq != 0 {
+			postgresPluginTemplate := storeTemplate
+			if props.SingletonStore {
+				postgresPluginTemplate = singletonTemplate
+			}
+			migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.MigrateSeq, props.MigrateSeq+1, props.Table)
+			root := filepath.Join(props.MigrateRoot, migrationDir)
+			templateMap["Migration"] = MigrationOptions{
+				MigrateFromDB:   props.MigrateFrom,
+				MigrateSequence: props.MigrateSeq,
+				Dir:             migrationDir,
+				SingletonStore:  props.SingletonStore,
+			}
+
+			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {
+				return err
+			}
+			if err := renderFile(templateMap, migrationTestTemplate, filepath.Join(root, "migration_test.go")); err != nil {
+				return err
+			}
+			if err := renderFile(templateMap, postgresPluginTemplate, filepath.Join(root, "postgres/postgres_plugin.go")); err != nil {
 				return err
 			}
 		}

@@ -5,7 +5,7 @@ import { List } from 'react-feather';
 
 import PanelButton from 'Components/PanelButton';
 import TopCvssLabel from 'Components/TopCvssLabel';
-import TableCountLink from 'Components/workflow/TableCountLink';
+import ImageTableCountLinks from 'Components/workflow/ImageTableCountLinks';
 import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
@@ -19,7 +19,10 @@ import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { imageWatchStatuses } from 'Containers/VulnMgmt/VulnMgmt.constants';
-import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import {
+    IMAGE_LIST_FRAGMENT,
+    OLD_IMAGE_LIST_FRAGMENT,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
@@ -36,7 +39,7 @@ export const defaultImageSort = [
 ];
 
 export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagEnabled) {
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UDPATES');
+    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     return function getImageTableColumns(workflowState) {
         const tableColumns = [
@@ -55,14 +58,18 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 sortField: imageSortFields.NAME,
             },
             {
-                Header: `CVEs`,
-                entityType: entityTypes.CVE,
+                Header: isFrontendVMUpdatesEnabled ? 'Image CVEs' : 'CVEs',
+                entityType: isFrontendVMUpdatesEnabled ? entityTypes.IMAGE_CVE : entityTypes.CVE,
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
                     const { vulnCounter, id, scan, notes } = original;
 
-                    const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+                    const newState = workflowState
+                        .pushListItem(id)
+                        .pushList(
+                            isFrontendVMUpdatesEnabled ? entityTypes.IMAGE_CVE : entityTypes.CVE
+                        );
                     const url = newState.toUrl();
                     const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
@@ -176,44 +183,19 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 sortable: false,
             },
             {
-                Header: `Deployments`,
+                Header: `Entities`,
                 entityType: entityTypes.DEPLOYMENT,
                 headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={entityTypes.DEPLOYMENT}
-                        count={original.deploymentCount}
+                    <ImageTableCountLinks
+                        row={original}
                         textOnly={pdf}
-                        selectedRowId={original.id}
+                        isFrontendVMUpdatesEnabled={isFrontendVMUpdatesEnabled}
                     />
                 ),
-                id: imageSortFields.DEPLOYMENT_COUNT,
-                accessor: 'deploymentCount',
-                sortField: imageSortFields.DEPLOYMENT_COUNT,
-            },
-            {
-                Header: `Components`,
-                entityType: isFrontendVMUpdatesEnabled
-                    ? entityTypes.IMAGE_COMPONENT
-                    : entityTypes.COMPONENT,
-                headerClassName: `w-1/12 ${defaultHeaderClassName}`,
-                className: `w-1/12 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={
-                            isFrontendVMUpdatesEnabled
-                                ? entityTypes.IMAGE_COMPONENT
-                                : entityTypes.COMPONENT
-                        }
-                        count={original.componentCount}
-                        textOnly={pdf}
-                        selectedRowId={original.id}
-                    />
-                ),
-                id: imageSortFields.COMPONENT_COUNT,
-                accessor: 'componentCount',
-                sortField: imageSortFields.COMPONENT_COUNT,
+                accessor: 'entities',
+                sortable: false,
             },
             {
                 Header: `Risk Priority`,
@@ -241,6 +223,8 @@ const VulnMgmtImages = ({
     const [showWatchedImagesDialog, setShowWatchedImagesDialog] = useState(false);
     const workflowState = useContext(workflowStateContext);
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVmUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const fragmentToUse = showVmUpdates ? IMAGE_LIST_FRAGMENT : OLD_IMAGE_LIST_FRAGMENT;
 
     const inactiveImageScanningEnabled = workflowState.isBaseList(entityTypes.IMAGE);
 
@@ -251,7 +235,7 @@ const VulnMgmtImages = ({
             }
             count: imageCount(query: $query)
         }
-        ${IMAGE_LIST_FRAGMENT}
+        ${fragmentToUse}
     `;
 
     const tableSort = sort || defaultImageSort;

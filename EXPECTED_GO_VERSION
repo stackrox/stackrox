@@ -1,1 +1,2 @@
 go1.17.2
+# When changing the above, please update operator/Dockerfile accordingly.

@@ -18,7 +18,7 @@ export type ImageData = {
         id: string;
         name: Partial<ImageName>;
         priority: number;
-        vulnCounter: {
+        imageVulnerabilityCounter: {
             important: VulnCounts;
             critical: VulnCounts;
         };
@@ -57,7 +57,7 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                 </Tr>
             </Thead>
             <Tbody>
-                {images.map(({ id, name, priority, vulnCounter }) => (
+                {images.map(({ id, name, priority, imageVulnerabilityCounter }) => (
                     <Tr key={id}>
                         <Td className="pf-u-pl-0" dataLabel={columnNames.imageName}>
                             <Link
@@ -91,8 +91,8 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                             />
                             <span>
                                 {cveStatusOption === 'Fixable'
-                                    ? `${vulnCounter.critical.fixable} fixable`
-                                    : `${vulnCounter.critical.total} CVEs`}
+                                    ? `${imageVulnerabilityCounter.critical.fixable} fixable`
+                                    : `${imageVulnerabilityCounter.critical.total} CVEs`}
                             </span>
                         </Td>
                         <Td className="pf-u-pr-0" dataLabel={columnNames.importantCves}>
@@ -101,8 +101,8 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                                 color={severityColors.HIGH_SEVERITY}
                             />
                             {cveStatusOption === 'Fixable'
-                                ? `${vulnCounter.important.fixable} fixable`
-                                : `${vulnCounter.important.total} CVEs`}
+                                ? `${imageVulnerabilityCounter.important.fixable} fixable`
+                                : `${imageVulnerabilityCounter.important.total} CVEs`}
                         </Td>
                     </Tr>
                 ))}

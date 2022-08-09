@@ -305,6 +305,9 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			},
 			ColumnName: ctx.Column(structField.Name),
 		}
+		if searchOpts.FieldName != "" {
+			field.Derived = search.IsDerivedField(searchOpts.FieldName)
+		}
 
 		if dt, ok := simpleFieldsMap[structField.Type.Kind()]; ok {
 			schema.AddFieldWithType(field, dt)

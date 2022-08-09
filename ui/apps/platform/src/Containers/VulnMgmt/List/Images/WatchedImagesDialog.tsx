@@ -12,14 +12,15 @@ import {
     wrapperMarginClassName,
     inputTextClassName,
 } from 'constants/form.constants';
-import { getWatchedImages, watchImage, unwatchImage } from 'services/ImagesService';
+import { getWatchedImages, watchImage, unwatchImage } from 'services/imageService';
+import { WatchedImage } from 'types/image.proto';
 
 type WatchedImagesDialogProps = {
     closeDialog: () => void;
 };
 
 const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactElement => {
-    const [currentWatchedImages, setCurrentWatchedImages] = useState<{ name: string }[]>([]);
+    const [currentWatchedImages, setCurrentWatchedImages] = useState<WatchedImage[]>([]);
     const [successMessage, setSuccessMessage] = useState<ReactElement | string>('');
     const [errorMessage, setErrorMessage] = useState<ReactElement | string>('');
 
@@ -44,11 +45,11 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
         setSuccessMessage('');
         setErrorMessage('');
         watchImage(values.imageTag)
-            .then((image) => {
+            .then((normalizedName) => {
                 setSuccessMessage(
                     <div>
-                        <strong>{image?.normalizedName}</strong>
-                        {image?.normalizedName !== values.imageTag && (
+                        <strong>{normalizedName}</strong>
+                        {normalizedName !== values.imageTag && (
                             <>
                                 {` (normalized form of `}
                                 <strong>{values.imageTag}</strong>)
@@ -103,7 +104,7 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
     }
 
     const imageList = currentWatchedImages
-        .sort((a, b) => {
+        .sort((a: WatchedImage, b: WatchedImage) => {
             return a.name.localeCompare(b.name);
         })
         .map((image) => (
@@ -130,7 +131,7 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
                     validationSchema={Yup.object({
                         imageTag: Yup.string()
                             .matches(
-                                /([a-z.]+\/)([a-z0-9-]+\/)([a-z0-9-@./]+)(?::[0-9a-z\-.]+)?/,
+                                /([a-z.]+\/)([a-z0-9-]+\/)?([a-z0-9-@./]+)(?::[0-9a-z\-.]+)?/,
                                 'Must be a valid path to a container image'
                             )
                             .required('Required'),

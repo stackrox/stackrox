@@ -266,6 +266,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"tolerationsConfig: TolerationsConfig",
 		"type: ClusterType!",
 	}))
+	utils.Must(builder.AddType("ClusterCVE", []string{
+		"cveBaseInfo: CVEInfo",
+		"cvss: Float!",
+		"id: ID!",
+		"impactScore: Float!",
+		"severity: VulnerabilitySeverity!",
+		"snoozeExpiry: Time",
+		"snoozeStart: Time",
+		"snoozed: Boolean!",
+		"type: CVE_CVEType!",
+	}))
 	utils.Must(builder.AddType("ClusterCertExpiryStatus", []string{
 		"sensorCertExpiry: Time",
 		"sensorCertNotBefore: Time",
@@ -548,6 +559,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"registryOverride: String!",
 	}))
 	utils.Must(builder.AddType("Email", []string{
+		"allowUnauthenticatedSmtp: Boolean!",
 		"disableTLS: Boolean!",
 		"from: String!",
 		"password: String!",
@@ -633,7 +645,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notes: [Image_Note!]!",
 		"priority: Int!",
 		"riskScore: Float!",
-		"scan: ImageScan",
 		"signature: ImageSignature",
 		"signatureVerificationData: ImageSignatureVerificationData",
 	}))
@@ -867,8 +878,26 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"osImage: String!",
 		"priority: Int!",
 		"riskScore: Float!",
-		"scan: NodeScan",
 		"taints: [Taint]!",
+	}))
+	utils.Must(builder.AddType("NodeCVE", []string{
+		"cveBaseInfo: CVEInfo",
+		"cvss: Float!",
+		"id: ID!",
+		"impactScore: Float!",
+		"operatingSystem: String!",
+		"severity: VulnerabilitySeverity!",
+		"snoozeExpiry: Time",
+		"snoozeStart: Time",
+		"snoozed: Boolean!",
+	}))
+	utils.Must(builder.AddType("NodeComponent", []string{
+		"id: ID!",
+		"name: String!",
+		"operatingSystem: String!",
+		"priority: Int!",
+		"riskScore: Float!",
+		"version: String!",
 	}))
 	utils.Must(builder.AddType("NodeScan", []string{
 		"notes: [NodeScan_Note!]!",
@@ -3341,6 +3370,75 @@ func (resolver *clusterResolver) Type(ctx context.Context) string {
 	return value.String()
 }
 
+type clusterCVEResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ClusterCVE
+}
+
+func (resolver *Resolver) wrapClusterCVE(value *storage.ClusterCVE, ok bool, err error) (*clusterCVEResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterCVEResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapClusterCVEs(values []*storage.ClusterCVE, err error) ([]*clusterCVEResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterCVEResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterCVEResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *clusterCVEResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
+	value := resolver.data.GetCveBaseInfo()
+	return resolver.root.wrapCVEInfo(value, true, nil)
+}
+
+func (resolver *clusterCVEResolver) Cvss(ctx context.Context) float64 {
+	value := resolver.data.GetCvss()
+	return float64(value)
+}
+
+func (resolver *clusterCVEResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *clusterCVEResolver) ImpactScore(ctx context.Context) float64 {
+	value := resolver.data.GetImpactScore()
+	return float64(value)
+}
+
+func (resolver *clusterCVEResolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
+	return value.String()
+}
+
+func (resolver *clusterCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeExpiry()
+	return timestamp(value)
+}
+
+func (resolver *clusterCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeStart()
+	return timestamp(value)
+}
+
+func (resolver *clusterCVEResolver) Snoozed(ctx context.Context) bool {
+	value := resolver.data.GetSnoozed()
+	return value
+}
+
+func (resolver *clusterCVEResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
 type clusterCertExpiryStatusResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -5514,6 +5612,11 @@ func (resolver *Resolver) wrapEmails(values []*storage.Email, err error) ([]*ema
 	return output, nil
 }
 
+func (resolver *emailResolver) AllowUnauthenticatedSmtp(ctx context.Context) bool {
+	value := resolver.data.GetAllowUnauthenticatedSmtp()
+	return value
+}
+
 func (resolver *emailResolver) DisableTLS(ctx context.Context) bool {
 	value := resolver.data.GetDisableTLS()
 	return value
@@ -6206,12 +6309,6 @@ func (resolver *imageResolver) RiskScore(ctx context.Context) float64 {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetRiskScore()
 	return float64(value)
-}
-
-func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetScan()
-	return resolver.root.wrapImageScan(value, true, nil)
 }
 
 func (resolver *imageResolver) Signature(ctx context.Context) (*imageSignatureResolver, error) {
@@ -7976,14 +8073,132 @@ func (resolver *nodeResolver) RiskScore(ctx context.Context) float64 {
 	return float64(value)
 }
 
-func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
-	value := resolver.data.GetScan()
-	return resolver.root.wrapNodeScan(value, true, nil)
-}
-
 func (resolver *nodeResolver) Taints(ctx context.Context) ([]*taintResolver, error) {
 	value := resolver.data.GetTaints()
 	return resolver.root.wrapTaints(value, nil)
+}
+
+type nodeCVEResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeCVE
+}
+
+func (resolver *Resolver) wrapNodeCVE(value *storage.NodeCVE, ok bool, err error) (*nodeCVEResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeCVEResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeCVEs(values []*storage.NodeCVE, err error) ([]*nodeCVEResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeCVEResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeCVEResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeCVEResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
+	value := resolver.data.GetCveBaseInfo()
+	return resolver.root.wrapCVEInfo(value, true, nil)
+}
+
+func (resolver *nodeCVEResolver) Cvss(ctx context.Context) float64 {
+	value := resolver.data.GetCvss()
+	return float64(value)
+}
+
+func (resolver *nodeCVEResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *nodeCVEResolver) ImpactScore(ctx context.Context) float64 {
+	value := resolver.data.GetImpactScore()
+	return float64(value)
+}
+
+func (resolver *nodeCVEResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
+	return value
+}
+
+func (resolver *nodeCVEResolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
+	return value.String()
+}
+
+func (resolver *nodeCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeExpiry()
+	return timestamp(value)
+}
+
+func (resolver *nodeCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeStart()
+	return timestamp(value)
+}
+
+func (resolver *nodeCVEResolver) Snoozed(ctx context.Context) bool {
+	value := resolver.data.GetSnoozed()
+	return value
+}
+
+type nodeComponentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeComponent
+}
+
+func (resolver *Resolver) wrapNodeComponent(value *storage.NodeComponent, ok bool, err error) (*nodeComponentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeComponentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeComponents(values []*storage.NodeComponent, err error) ([]*nodeComponentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeComponentResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeComponentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeComponentResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *nodeComponentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *nodeComponentResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
+	return value
+}
+
+func (resolver *nodeComponentResolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	return int32(value)
+}
+
+func (resolver *nodeComponentResolver) RiskScore(ctx context.Context) float64 {
+	value := resolver.data.GetRiskScore()
+	return float64(value)
+}
+
+func (resolver *nodeComponentResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
+	return value
 }
 
 type nodeScanResolver struct {

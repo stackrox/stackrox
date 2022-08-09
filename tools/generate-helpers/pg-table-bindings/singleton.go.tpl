@@ -1,3 +1,4 @@
+{{ $inMigration := ne (index . "Migration") nil}}
 {{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
 {{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
 {{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
@@ -8,8 +9,6 @@
 
 {{- $ := . }}
 
-package postgres
-
 import (
     "context"
     "strings"
@@ -19,9 +18,11 @@ import (
     "github.com/jackc/pgx/v4"
     "github.com/jackc/pgx/v4/pgxpool"
     "github.com/pkg/errors"
+    {{- if not $inMigration}}
     "github.com/stackrox/rox/central/metrics"
-    pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     "github.com/stackrox/rox/central/role/resources"
+    {{- end}}
+    pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/auth/permissions"
@@ -44,7 +45,7 @@ const (
 var (
     log = logging.LoggerForModule()
     schema = {{ template "schemaVar" .Schema}}
-    {{ if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) -}}
+    {{ if and (not $inMigration) (or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped)) -}}
     targetResource = resources.{{.Type | storageToResource}}
     {{- end }}
 )
@@ -113,6 +114,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
 {{ template "insertObject" dict "schema" .Schema "joinTable" .JoinTable }}
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
+    {{- if not $inMigration}}
     defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.TrimmedType}}")
 
     {{ template "defineScopeChecker" "READ_WRITE" }}
@@ -121,7 +123,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-
+    {{ end }}
     conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {
 	    return err
@@ -151,6 +153,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
+    {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
 
     {{ template "defineScopeChecker" "READ" }}
@@ -159,7 +162,7 @@ func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
     } else if !ok {
         return nil, false, nil
     }
-
+    {{ end}}
 	conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {
 	    return nil, false, err
@@ -180,7 +183,9 @@ func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+    {{- if not $inMigration}}
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
+    {{- end}}
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 	    return nil, nil, err
@@ -190,6 +195,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context) error {
+    {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
 
     {{ template "defineScopeChecker" "READ_WRITE" }}
@@ -198,7 +204,7 @@ func (s *storeImpl) Delete(ctx context.Context) error {
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-
+    {{ end}}
     conn, release, err := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
 	if err != nil {
 	    return err

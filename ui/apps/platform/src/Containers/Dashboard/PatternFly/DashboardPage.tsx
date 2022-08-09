@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { CSSProperties } from 'react';
 import { Divider, Flex, FlexItem, Gallery, PageSection, Text, Title } from '@patternfly/react-core';
 import SummaryCounts from './SummaryCounts';
 import ScopeBar from './ScopeBar';
@@ -41,10 +41,15 @@ function DashboardPage() {
             <Divider component="div" />
             <PageSection>
                 <Gallery
-                    style={{
-                        // Ensure the grid has never grows large enough to show 4 columns
-                        maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
-                    }}
+                    style={
+                        {
+                            // Ensure the grid has never grows large enough to show 4 columns
+                            maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
+                            // Ensure the grid gap matches that of the outside padding of the containing PageSection
+                            '--pf-l-gallery--m-gutter--GridGap':
+                                'var(--pf-c-page__main-section--PaddingTop)',
+                        } as CSSProperties
+                    }
                     hasGutter
                     minWidths={{ default: `${minWidgetWidth}px` }}
                 >

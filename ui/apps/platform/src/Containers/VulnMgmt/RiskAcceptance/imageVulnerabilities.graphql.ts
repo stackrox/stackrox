@@ -29,7 +29,7 @@ export type Vulnerability = {
     cvss: string;
     scoreVersion: string;
     discoveredAtImage: string;
-    imageComponents: EmbeddedImageScanComponent[];
+    components: EmbeddedImageScanComponent[];
     vulnerabilityRequest: VulnerabilityRequest;
 };
 
@@ -49,7 +49,7 @@ export type GetImageVulnerabilitiesData = {
             tag: string;
         };
         vulnCount: number;
-        imageVulnerabilities: Vulnerability[];
+        vulns: Vulnerability[];
     };
 };
 
@@ -76,7 +76,7 @@ export const GET_IMAGE_VULNERABILITIES = gql`
                 tag
             }
             vulnCount(query: $vulnsQuery)
-            imageVulnerabilities(query: $vulnsQuery, pagination: $pagination) {
+            vulns(query: $vulnsQuery, pagination: $pagination) {
                 id
                 cve
                 isFixable
@@ -84,7 +84,7 @@ export const GET_IMAGE_VULNERABILITIES = gql`
                 scoreVersion
                 cvss
                 discoveredAtImage
-                imageComponents {
+                components {
                     id
                     name
                     version

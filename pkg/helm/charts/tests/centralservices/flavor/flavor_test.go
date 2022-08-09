@@ -30,7 +30,8 @@ func customFlavor(t *testing.T) defaults.ImageFlavor {
 		ScannerDBImageName:     "custom-scanner-db",
 
 		ChartRepo: defaults.ChartRepo{
-			URL: "url",
+			URL:     "url",
+			IconURL: "url",
 		},
 		ImagePullSecrets: defaults.ImagePullSecrets{
 			AllowNone: false,

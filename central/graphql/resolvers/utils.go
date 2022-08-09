@@ -357,3 +357,46 @@ func V1RawQueryAsResolverQuery(rQ *v1.RawQuery) (RawQuery, PaginatedQuery) {
 		},
 	}
 }
+
+// logErrorOnQueryContainingField logs error if the query contains the given field label.
+func logErrorOnQueryContainingField(query *v1.Query, label search.FieldLabel, resolver string) {
+	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok && mfQ.MatchFieldQuery.GetField() == label.String() {
+			log.Errorf("Unexpected field (%s) found in query to resolver (%s). Response maybe unexpected.", label.String(), resolver)
+		}
+	})
+}
+
+func imageComponentToNodeComponent(comp *storage.ImageComponent) (*storage.NodeComponent, error) {
+	if comp == nil {
+		return nil, nil
+	}
+	if comp.GetSource() != storage.SourceType_INFRASTRUCTURE {
+		return nil, errors.Errorf("incorrect component source type '%s', should be '%s'", comp.GetSource().String(), storage.SourceType_INFRASTRUCTURE)
+	}
+	nodeComp := &storage.NodeComponent{
+		Id:              comp.GetId(),
+		Name:            comp.GetName(),
+		Version:         comp.GetVersion(),
+		Priority:        comp.GetPriority(),
+		RiskScore:       comp.GetRiskScore(),
+		OperatingSystem: comp.GetOperatingSystem(),
+	}
+	if comp.GetSetTopCvss() != nil {
+		nodeComp.SetTopCvss = &storage.NodeComponent_TopCvss{TopCvss: comp.GetTopCvss()}
+	}
+	return nodeComp, nil
+}
+
+func imageComponentsToNodeComponents(comps []*storage.ImageComponent) ([]*storage.NodeComponent, error) {
+	ret := make([]*storage.NodeComponent, 0, len(comps))
+	for _, comp := range comps {
+		nodeComp, err := imageComponentToNodeComponent(comp)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, nodeComp)
+	}
+	return ret, nil
+}

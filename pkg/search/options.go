@@ -2,6 +2,8 @@ package search
 
 import (
 	"strings"
+
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // A FieldLabel is the label we use to refer to a search field, as a human-readable shortcut.
@@ -133,10 +135,6 @@ var (
 	Priority                      = newFieldLabel("Priority")
 	ClusterPriority               = newFieldLabel("Cluster Risk Priority")
 	NamespacePriority             = newFieldLabel("Namespace Risk Priority")
-	NodePriority                  = newFieldLabel("Node Risk Priority")
-	DeploymentPriority            = newFieldLabel("Deployment Risk Priority")
-	ImagePriority                 = newFieldLabel("Image Risk Priority")
-	ComponentPriority             = newFieldLabel("Component Risk Priority")
 	Privileged                    = newFieldLabel("Privileged")
 	ProcessTag                    = newFieldLabel("Process Tag")
 	ReadOnlyRootFilesystem        = newFieldLabel("Read Only Root Filesystem")
@@ -241,12 +239,18 @@ var (
 	SORTEnforcement    = newFieldLabel("SORT_Enforcement")
 
 	// Following are derived fields
+	// Count-based derived fields. These fields are supported only in pagination.
 	NamespaceCount  = newDerivedFieldLabel("Namespace Count", NamespaceID, CountDerivationType)
 	DeploymentCount = newDerivedFieldLabel("Deployment Count", DeploymentID, CountDerivationType)
 	ImageCount      = newDerivedFieldLabel("Image Count", ImageSHA, CountDerivationType)
 	NodeCount       = newDerivedFieldLabel("Node Count", NodeID, CountDerivationType)
 	ComponentCount  = newDerivedFieldLabel("Component Count", ComponentID, CountDerivationType)
 	CVECount        = newDerivedFieldLabel("CVE Count", CVEID, CountDerivationType)
+	// Translative derived fields with reversed sorting. These fields are supported only in pagination.
+	NodePriority       = newDerivedFieldLabel("Node Risk Priority", NodeRiskScore, SimpleReverseSortDerivationType)
+	DeploymentPriority = newDerivedFieldLabel("Deployment Risk Priority", DeploymentRiskScore, SimpleReverseSortDerivationType)
+	ImagePriority      = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
+	ComponentPriority  = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
 
 	// External network sources fields
 	DefaultExternalSource = newFieldLabel("Default External Source")
@@ -298,6 +302,7 @@ var (
 	TestGrandparentVal       = newFieldLabel("Test Grandparent Val")
 	TestGrandparentEmbedded  = newFieldLabel("Test Grandparent Embedded")
 	TestGrandparentEmbedded2 = newFieldLabel("Test Grandparent Embedded2")
+	TestGrandparentRiskScore = newFieldLabel("Test Grandparent Risk Score")
 	TestParent1ID            = newFieldLabel("Test Parent1 ID")
 	TestParent1Val           = newFieldLabel("Test Parent1 Val")
 	TestChild1ID             = newFieldLabel("Test Child1 ID")
@@ -324,15 +329,18 @@ var (
 	TestShortCircuitID = newFieldLabel("Test ShortCircuit ID")
 
 	// Derived test fields
-	TestGrandparentCount = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
-	TestParent1Count     = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
-	TestChild1Count      = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
+	TestGrandparentCount    = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
+	TestParent1Count        = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
+	TestChild1Count         = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
+	TestGrandParentPriority = newDerivedFieldLabel("Test Grandparent Priority", TestGrandparentRiskScore, SimpleReverseSortDerivationType)
 )
 
 func init() {
+	derivedFields = set.NewStringSet()
 	derivationsByField = make(map[string]map[string]DerivationType)
 	for k, metadata := range allFieldLabels {
 		if metadata != nil {
+			derivedFields.Add(strings.ToLower(k))
 			derivedFromLower := strings.ToLower(string(metadata.DerivedFrom))
 			subMap, exists := derivationsByField[derivedFromLower]
 			if !exists {
@@ -347,6 +355,7 @@ func init() {
 var (
 	allFieldLabels     = make(map[string]*DerivedFieldLabelMetadata)
 	derivationsByField map[string]map[string]DerivationType
+	derivedFields      set.StringSet
 )
 
 // IsValidFieldLabel returns whether this is a known, valid field label.
@@ -358,6 +367,11 @@ func IsValidFieldLabel(s string) bool {
 // GetFieldsDerivedFrom gets the fields derived from the given search field.
 func GetFieldsDerivedFrom(s string) map[string]DerivationType {
 	return derivationsByField[strings.ToLower(s)]
+}
+
+// IsDerivedField returns if the search field is a derived field or not.
+func IsDerivedField(s string) bool {
+	return derivedFields.Contains(strings.ToLower(s))
 }
 
 func newFieldLabelWithMetadata(s string, metadata *DerivedFieldLabelMetadata) FieldLabel {
@@ -391,9 +405,11 @@ type DerivedFieldLabelMetadata struct {
 }
 
 // DerivationType represents a type of derivation.
+//go:generate stringer -type=DerivationType
 type DerivationType int
 
 // This block enumerates all supported derivation types.
 const (
 	CountDerivationType DerivationType = iota
+	SimpleReverseSortDerivationType
 )

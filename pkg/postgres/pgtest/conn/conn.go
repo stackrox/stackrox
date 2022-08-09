@@ -25,16 +25,23 @@ func GetConnectionStringWithDatabaseName(database string) string {
 	}
 	pass := env.GetString("POSTGRES_PASSWORD", "")
 	host := env.GetString("POSTGRES_HOST", "localhost")
-	src := fmt.Sprintf("host=%s port=5432 user=%s database=%s sslmode=disable statement_timeout=600000", host, user, database)
+	port := env.GetString("POSTGRES_PORT", "5432")
+	src := fmt.Sprintf("host=%s port=%s user=%s database=%s sslmode=disable statement_timeout=600000 client_encoding=UTF-8", host, port, user, database)
 	if pass != "" {
 		src += fmt.Sprintf(" password=%s", pass)
 	}
 	return src
 }
 
-// OpenGormDB opens a Gorm DB to the Postgres DB.
-func OpenGormDB(t testing.TB, source string) *gorm.DB {
-	gormDB, err := gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+// OpenGormDB opens a Gorm DB to the Postgres DB
+func OpenGormDB(t testing.TB, source string, disableConstraint bool) *gorm.DB {
+	gormDB, err := gorm.Open(
+		postgres.Open(source),
+		&gorm.Config{
+			NamingStrategy:                           pgutils.NamingStrategy,
+			DisableForeignKeyConstraintWhenMigrating: disableConstraint,
+		},
+	)
 	require.NoError(t, err, "failed to connect to connect with gorm db")
 	return gormDB
 }

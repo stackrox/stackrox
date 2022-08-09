@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
+	"github.com/stackrox/rox/sensor/testutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -72,6 +73,7 @@ type localSensorConfig struct {
 	ResyncPeriod       time.Duration
 	CreateMode         k8s.CreateMode
 	Delay              time.Duration
+	PoliciesFile       string
 }
 
 const (
@@ -81,7 +83,7 @@ const (
 
 func writeOutputInJSONFormat(messages []*central.MsgFromSensor, start, end time.Time, outfile string) {
 	dateFormat := "02.01.15 11:06:39"
-	data, err := json.Marshal(&sensorMessagesJSONOutput{
+	data, err := json.Marshal(&sensorMessageJSONOutput{
 		ScenarioStart:      start.Format(dateFormat),
 		ScenarioEnd:        end.Format(dateFormat),
 		MessagesFromSensor: messages,
@@ -132,6 +134,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		ResyncPeriod:       1 * time.Minute,
 		Delay:              5 * time.Second,
 		CreateMode:         k8s.Delay,
+		PoliciesFile:       "",
 	}
 	flag.BoolVar(&sensorConfig.Verbose, "verbose", sensorConfig.Verbose, "prints all messages to stdout as well as to the output file")
 	flag.DurationVar(&sensorConfig.Duration, "duration", sensorConfig.Duration, "duration that the scenario should run (leave it empty to run it without timeout)")
@@ -143,6 +146,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.StringVar(&sensorConfig.ReplayK8sTraceFile, "replay-in", sensorConfig.ReplayK8sTraceFile, "a file where recorded trace would be read from")
 	flag.DurationVar(&sensorConfig.ResyncPeriod, "resync", sensorConfig.ResyncPeriod, "resync period")
 	flag.DurationVar(&sensorConfig.Delay, "delay", sensorConfig.Delay, "create events with a given delay")
+	flag.StringVar(&sensorConfig.PoliciesFile, "with-policies", sensorConfig.PoliciesFile, " a file containing a list of policies")
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
@@ -200,10 +204,18 @@ func main() {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "tools/local-sensor/certs/caCert.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "tools/local-sensor/certs/caKey.pem"))
 
+	var policies []*storage.Policy
+	if localConfig.PoliciesFile != "" {
+		policies, err = testutils.GetPoliciesFromFile(localConfig.PoliciesFile)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
 		message.SensorHello("1234"),
 		message.ClusterConfig(),
-		message.PolicySync([]*storage.Policy{}),
+		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 
 	if localConfig.Verbose {
@@ -290,7 +302,7 @@ func main() {
 	spyCentral.KillSwitch.Signal()
 }
 
-type sensorMessagesJSONOutput struct {
+type sensorMessageJSONOutput struct {
 	ScenarioStart      string                   `json:"scenario_start"`
 	ScenarioEnd        string                   `json:"scenario_end"`
 	MessagesFromSensor []*central.MsgFromSensor `json:"messages_from_sensor"`

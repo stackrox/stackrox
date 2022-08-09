@@ -18,9 +18,10 @@ import {
 export const nodeComponentCountKeyMap = {
     ...defaultCountKeyMap,
     [entityTypes.CVE]: 'vulnCount: nodeVulnerabilityCount',
+    [entityTypes.NODE_CVE]: 'vulnCount: nodeVulnerabilityCount',
 };
 
-const VulnMgmtNodeComponent = ({
+const VulnMgmtEntityNodeComponent = ({
     entityId,
     entityListType,
     search,
@@ -41,29 +42,30 @@ const VulnMgmtNodeComponent = ({
                 fixedIn
                 location(query: $scopeQuery)
                 priority
-                vulnCount: nodeVulnerabilityCount(query: $query, scopeQuery: $scopeQuery)
+                nodeVulnerabilityCount(query: $query, scopeQuery: $scopeQuery)
                 nodeCount(query: $query)
                 topVuln: topNodeVulnerability {
                     cvss
                     scoreVersion
                 }
+                operatingSystem
             }
         }
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getNodeComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
-            result: nodeComponent(id: $id) {
-                id
-                ${nodeComponentCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
-                ${listFieldName}(query: $query, scopeQuery: $scopeQuery, pagination: $pagination) { ...${fragmentName} }
-                unusedVarSink(query: $policyQuery)
-                unusedVarSink(query: $scopeQuery)
+            query getNodeComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+                result: nodeComponent(id: $id) {
+                    id
+                    ${nodeComponentCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
+                    ${listFieldName}(query: $query, scopeQuery: $scopeQuery, pagination: $pagination) { ...${fragmentName} }
+                    unusedVarSink(query: $policyQuery)
+                    unusedVarSink(query: $scopeQuery)
+                }
             }
-        }
-        ${fragment}
-    `;
+            ${fragment}
+        `;
     }
 
     const fullEntityContext = workflowState.getEntityContext();
@@ -97,4 +99,4 @@ const VulnMgmtNodeComponent = ({
     );
 };
 
-export default VulnMgmtNodeComponent;
+export default VulnMgmtEntityNodeComponent;

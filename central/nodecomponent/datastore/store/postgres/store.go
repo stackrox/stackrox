@@ -50,9 +50,11 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.NodeComponent, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeComponent, error)
 	Upsert(ctx context.Context, obj *storage.NodeComponent) error
 	UpsertMany(ctx context.Context, objs []*storage.NodeComponent) error
 	Delete(ctx context.Context, id string) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.NodeComponent, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
@@ -87,12 +89,13 @@ func insertIntoNodeComponents(ctx context.Context, batch *pgx.Batch, obj *storag
 		obj.GetId(),
 		obj.GetName(),
 		obj.GetVersion(),
+		obj.GetPriority(),
 		obj.GetRiskScore(),
 		obj.GetTopCvss(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO node_components (Id, Name, Version, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO node_components (Id, Name, Version, Priority, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -115,6 +118,8 @@ func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs 
 		"name",
 
 		"version",
+
+		"priority",
 
 		"riskscore",
 
@@ -139,6 +144,8 @@ func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs 
 			obj.GetName(),
 
 			obj.GetVersion(),
+
+			obj.GetPriority(),
 
 			obj.GetRiskScore(),
 
@@ -217,7 +224,9 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NodeComponent) 
 			_, err := batchResults.Exec()
 			result = multierror.Append(result, err)
 		}
-		batchResults.Close()
+		if err := batchResults.Close(); err != nil {
+			return err
+		}
 		if err := result.ErrorOrNil(); err != nil {
 			return err
 		}
@@ -302,7 +311,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
+	// returns more than 1, despite the fact that the identifier is unique in the table.
+	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store
@@ -365,6 +376,29 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+}
+
+// DeleteByQuery removes the objects based on the passed query
+func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NodeComponent")
+
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
 	)
 
 	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
@@ -455,6 +489,47 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NodeC
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeComponent, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "NodeComponent")
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
+		return nil, err
+	}
+	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var results []*storage.NodeComponent
+	for _, data := range rows {
+		msg := &storage.NodeComponent{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, err
+		}
+		results = append(results, msg)
+	}
+	return results, nil
 }
 
 // Delete removes the specified IDs from the store

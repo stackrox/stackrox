@@ -15,9 +15,9 @@ enum TaintEffect {
 }
 
 message Taint {
-    string      key          = 1 [(gogoproto.moretags) = "search:\"Taint Key\""];
-    string      value        = 2 [(gogoproto.moretags) = "search:\"Taint Value\""];
-    TaintEffect taint_effect = 3 [(gogoproto.moretags) = "search:\"Taint Effect\""];
+    string      key          = 1 [(gogoproto.moretags) = 'search:"Taint Key"'];
+    string      value        = 2 [(gogoproto.moretags) = 'search:"Taint Value"'];
+    TaintEffect taint_effect = 3 [(gogoproto.moretags) = 'search:"Taint Effect"'];
 }
 
 message Toleration {
@@ -27,8 +27,8 @@ message Toleration {
         TOLERATION_OPERATOR_EQUAL    = 2;
     }
 
-    string      key          = 1 [(gogoproto.moretags) = "search:\"Toleration Key\""];
+    string      key          = 1 [(gogoproto.moretags) = 'search:"Toleration Key"'];
     Operator    operator     = 2;
-    string      value        = 3 [(gogoproto.moretags) = "search:\"Toleration Value\""];
+    string      value        = 3 [(gogoproto.moretags) = 'search:"Toleration Value"'];
     TaintEffect taint_effect = 4;
 }

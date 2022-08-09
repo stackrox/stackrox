@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -73,15 +72,12 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	}
 
 	// Fetch signatures from cluster-local registry.
-	var sigs []*storage.Signature
-	if features.ImageSignatureVerification.Enabled() {
-		sigs, err = fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image,
-			matchingRegistry)
-		if err != nil {
-			log.Debugf("Failed fetching signatures for image %q: %v", imgName, err)
-			return nil, errors.Wrapf(err, "fetching signature for image %q from registry %q",
-				imgName, matchingRegistry.Name())
-		}
+	sigs, err := fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image,
+		matchingRegistry)
+	if err != nil {
+		log.Debugf("Failed fetching signatures for image %q: %v", imgName, err)
+		return nil, errors.Wrapf(err, "fetching signature for image %q from registry %q",
+			imgName, matchingRegistry.Name())
 	}
 
 	// Retrieve the image ID with best-effort from image and metadata.

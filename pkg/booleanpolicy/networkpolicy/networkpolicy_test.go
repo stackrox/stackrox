@@ -26,25 +26,29 @@ func policy(classificationEnums []storage.NetworkPolicyType) *storage.NetworkPol
 func (suite *NetworkPolicySuite) Test_FilterForDeployment() {
 	cases := map[string]struct {
 		deploymentLabels        map[string]string
+		specPodTemplateLabels   map[string]string
 		netpolSelectors         []map[string]string
 		expectedPoliciesMatched int
 	}{
 		"Match: one NW policy with one label": {
-			deploymentLabels: map[string]string{"app": "central"},
+			deploymentLabels:      map[string]string{"app": "central"},
+			specPodTemplateLabels: map[string]string{"app": "central"},
 			netpolSelectors: []map[string]string{
 				{"app": "central"},
 			},
 			expectedPoliciesMatched: 1,
 		},
 		"Match: one NW policy with two labels": {
-			deploymentLabels: map[string]string{"app": "central", "env": "prod"},
+			deploymentLabels:      map[string]string{"app": "central", "env": "prod"},
+			specPodTemplateLabels: map[string]string{"app": "central", "env": "prod"},
 			netpolSelectors: []map[string]string{
 				{"app": "central", "env": "prod"},
 			},
 			expectedPoliciesMatched: 1,
 		},
 		"One Match: two NW policies with one label": {
-			deploymentLabels: map[string]string{"app": "central", "env": "prod"},
+			deploymentLabels:      map[string]string{"app": "central", "env": "prod"},
+			specPodTemplateLabels: map[string]string{"app": "central", "env": "prod"},
 			netpolSelectors: []map[string]string{
 				{"app": "central"},
 				{"app": "sensor"},
@@ -52,22 +56,50 @@ func (suite *NetworkPolicySuite) Test_FilterForDeployment() {
 			expectedPoliciesMatched: 1,
 		},
 		"Two Matches: two NW policies with one label": {
-			deploymentLabels: map[string]string{"app": "central", "env": "prod"},
+			deploymentLabels:      map[string]string{"app": "central", "env": "prod"},
+			specPodTemplateLabels: map[string]string{"app": "central", "env": "prod"},
 			netpolSelectors: []map[string]string{
 				{"app": "central"},
 				{"env": "prod"},
 			},
 			expectedPoliciesMatched: 2,
 		},
+		"No Match: NW policies shall not match against the deployment label even if 0 pods match": {
+			deploymentLabels:      map[string]string{"app": "central-deployment", "env": "prod"},
+			specPodTemplateLabels: map[string]string{"app": "central-pod", "env": "prod"},
+			netpolSelectors: []map[string]string{
+				{"app": "central-deployment", "env": "prod"},
+			},
+			expectedPoliciesMatched: 0,
+		},
+		"No Match: NW policies shall ignore the deployment labels even if pods have 0 labels": {
+			deploymentLabels:      map[string]string{"app": "central", "env": "prod"},
+			specPodTemplateLabels: map[string]string{},
+			netpolSelectors: []map[string]string{
+				{"app": "central"},
+				{"env": "prod"},
+			},
+			expectedPoliciesMatched: 0,
+		},
+		"One Match: NW policies shall match against the pod labels only": {
+			deploymentLabels:      map[string]string{"app": "central-deployment"},
+			specPodTemplateLabels: map[string]string{"app": "central-pod"},
+			netpolSelectors: []map[string]string{
+				{"app": "central-pod"},
+			},
+			expectedPoliciesMatched: 1,
+		},
 		"No Match: one NW with two labels": {
-			deploymentLabels: map[string]string{"app": "central", "env": "prod"},
+			deploymentLabels:      map[string]string{"app": "central", "env": "prod"},
+			specPodTemplateLabels: map[string]string{"app": "central", "env": "prod"},
 			netpolSelectors: []map[string]string{
 				{"app": "central", "env": "dev"},
 			},
 			expectedPoliciesMatched: 0,
 		},
 		"No Match: one NW policy with different labels": {
-			deploymentLabels: map[string]string{"app": "central"},
+			deploymentLabels:      map[string]string{"app": "central"},
+			specPodTemplateLabels: map[string]string{"app": "central"},
 			netpolSelectors: []map[string]string{
 				{"app": "sensor"},
 			},
@@ -85,7 +117,10 @@ func (suite *NetworkPolicySuite) Test_FilterForDeployment() {
 				policies = append(policies, p)
 			}
 
-			dep := &storage.Deployment{PodLabels: testCase.deploymentLabels}
+			dep := &storage.Deployment{
+				Labels:    testCase.deploymentLabels,
+				PodLabels: testCase.specPodTemplateLabels,
+			}
 			suite.Len(FilterForDeployment(policies, dep), testCase.expectedPoliciesMatched)
 		})
 	}

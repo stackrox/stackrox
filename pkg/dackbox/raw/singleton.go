@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	rocksdbInstance "github.com/stackrox/rox/pkg/rocksdb/instance"

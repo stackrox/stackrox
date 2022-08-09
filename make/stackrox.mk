@@ -50,7 +50,7 @@ test-all: test-integration
 GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN):
 	@echo "+ $@"
-	$(SILENT)cd $(TOPLEVEL)/tools/test/ && go install github.com/jstemmer/go-junit-report
+	$(SILENT)cd $(TOPLEVEL)/tools/test/ && go install github.com/jstemmer/go-junit-report/v2
 
 .PHONY: report
 report: $(GO_JUNIT_REPORT_BIN)

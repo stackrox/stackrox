@@ -6,9 +6,13 @@ import queryService from 'utils/queryService';
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
-import { VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import {
+    VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT,
+    VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -27,6 +31,9 @@ const VulmMgmtDeployment = ({
     setRefreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
 
     const overviewQuery = gql`
         query getDeployment($id: ID!, $policyQuery: String, $scopeQuery: String) {
@@ -64,16 +71,28 @@ const VulmMgmtDeployment = ({
                 type
                 created
                 imageCount
+                ${
+                    showVMUpdates
+                        ? `
+                imageComponentCount
+                imageVulnerabilityCount
+                `
+                        : `
                 componentCount
                 vulnCount
+                `
+                }
             }
         }
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
+        const activeStatusFragment = showVMUpdates
+            ? VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT
+            : VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT;
         const fragmentToUse =
-            fragmentName === 'componentFields'
-                ? VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT
+            fragmentName === 'componentFields' || fragmentName === 'imageComponentFields'
+                ? activeStatusFragment
                 : fragment;
         return gql`
         query getDeployment${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
