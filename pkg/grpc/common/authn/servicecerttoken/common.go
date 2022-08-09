@@ -9,8 +9,8 @@ import (
 const (
 	// hashAlgo is the cryptographic hash algorithm to use for signatures.
 	hashAlgo = tls.SHA256
-	// tokenType is the prefix in the authorization header to identify the token type.
-	tokenType = "ServiceCert"
+	// TokenType is the prefix in the authorization header to identify the token type.
+	TokenType = "ServiceCert"
 )
 
 var (
