@@ -38,6 +38,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/features"
@@ -142,7 +143,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	if features.PostgresDatastore.Enabled() {
 		pool = globaldb.GetPostgres()
 	}
-	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), pool, nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
@@ -300,7 +301,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	if features.PostgresDatastore.Enabled() {
 		pool = globaldb.GetPostgres()
 	}
-	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), pool, nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	alertsDS := alertDatastore.NewWithDb(s.rocksDB, idx)
 
 	deployment := fixtures.GetDeployment()
@@ -380,7 +381,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	if features.PostgresDatastore.Enabled() {
 		pool = globaldb.GetPostgres()
 	}
-	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), pool, nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	alertsDS := alertDatastore.NewWithDb(s.rocksDB, idx)
 
 	deployment := fixtures.GetDeployment()

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/features"
@@ -130,7 +131,7 @@ func TestLabelsMap(t *testing.T) {
 			if features.PostgresDatastore.Enabled() {
 				pool = globaldb.GetPostgres()
 			}
-			deploymentsDS := datastore.New(dacky, concurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+			deploymentsDS := datastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 			for _, deployment := range c.deployments {
 				assert.NoError(t, deploymentsDS.UpsertDeployment(ctx, deployment))

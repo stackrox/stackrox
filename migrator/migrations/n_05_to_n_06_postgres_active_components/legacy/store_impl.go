@@ -12,8 +12,8 @@ import (
 	deploymentDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/deployment"
 	componentDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/imagecomponent"
 	"github.com/stackrox/rox/pkg/batcher"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 )
 

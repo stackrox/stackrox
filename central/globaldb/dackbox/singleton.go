@@ -2,8 +2,8 @@ package dackbox
 
 import (
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/logging"
