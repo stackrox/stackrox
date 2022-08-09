@@ -57,6 +57,10 @@ function RuleGroups({
 }: RuleGroupsProps): ReactElement {
     const augmentedRuleKeys = getAugmentedRuleKeys(ruleAttributes, groups);
 
+    function isDisabled(group: Group) {
+        return disabled || group?.props?.traits?.mutabilityMode === 'ALLOW_FORCED';
+    }
+
     return (
         <FieldArray
             name="groups"
@@ -76,7 +80,7 @@ function RuleGroups({
                                         <SelectSingle
                                             id={`groups[${index}].props.key`}
                                             value={groups[`${index}`].props.key ?? ''}
-                                            isDisabled={disabled}
+                                            isDisabled={isDisabled(group)}
                                             handleSelect={setFieldValue}
                                             direction="up"
                                             isCreatable
@@ -103,7 +107,7 @@ function RuleGroups({
                                             id={`groups[${index}].props.value`}
                                             value={groups[`${index}`].props.value}
                                             onChange={onChange}
-                                            isDisabled={disabled}
+                                            isDisabled={isDisabled(group)}
                                         />
                                     </FormGroup>
                                 </FlexItem>
@@ -120,7 +124,7 @@ function RuleGroups({
                                         <SelectSingle
                                             id={`groups[${index}].roleName`}
                                             value={groups[`${index}`].roleName}
-                                            isDisabled={disabled}
+                                            isDisabled={isDisabled(group)}
                                             handleSelect={setFieldValue}
                                             direction="up"
                                             placeholderText="Select a role"
@@ -131,7 +135,7 @@ function RuleGroups({
                                         </SelectSingle>
                                     </FormGroup>
                                 </FlexItem>
-                                {!disabled && (
+                                {!isDisabled(group) && (
                                     <FlexItem>
                                         <Button
                                             variant="plain"

@@ -631,6 +631,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"authProviderId: String!",
 		"id: ID!",
 		"key: String!",
+		"traits: Traits",
 		"value: String!",
 	}))
 	utils.Must(builder.AddType("Image", []string{
@@ -801,6 +802,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"name: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.MutabilityMode(0)))
 	utils.Must(builder.AddType("Namespace", []string{
 		"metadata: NamespaceMetadata",
 		"numDeployments: Int!",
@@ -1350,6 +1352,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Toleration_Operator(0)))
 	utils.Must(builder.AddType("TolerationsConfig", []string{
 		"disabled: Boolean!",
+	}))
+	utils.Must(builder.AddType("Traits", []string{
+		"mutabilityMode: MutabilityMode!",
 	}))
 	utils.Must(builder.AddType("UpgradeProgress", []string{
 		"since: Time",
@@ -6188,6 +6193,11 @@ func (resolver *groupPropertiesResolver) Key(ctx context.Context) string {
 	return value
 }
 
+func (resolver *groupPropertiesResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
+}
+
 func (resolver *groupPropertiesResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
@@ -7533,6 +7543,24 @@ func (resolver *mitreTechniqueResolver) Id(ctx context.Context) graphql.ID {
 func (resolver *mitreTechniqueResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func toMutabilityMode(value *string) storage.MutabilityMode {
+	if value != nil {
+		return storage.MutabilityMode(storage.MutabilityMode_value[*value])
+	}
+	return storage.MutabilityMode(0)
+}
+
+func toMutabilityModes(values *[]string) []storage.MutabilityMode {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.MutabilityMode, len(*values))
+	for i, v := range *values {
+		output[i] = toMutabilityMode(&v)
+	}
+	return output
 }
 
 type namespaceResolver struct {
@@ -11499,6 +11527,35 @@ func (resolver *Resolver) wrapTolerationsConfigs(values []*storage.TolerationsCo
 func (resolver *tolerationsConfigResolver) Disabled(ctx context.Context) bool {
 	value := resolver.data.GetDisabled()
 	return value
+}
+
+type traitsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Traits
+}
+
+func (resolver *Resolver) wrapTraits(value *storage.Traits, ok bool, err error) (*traitsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &traitsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapTraitses(values []*storage.Traits, err error) ([]*traitsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*traitsResolver, len(values))
+	for i, v := range values {
+		output[i] = &traitsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *traitsResolver) MutabilityMode(ctx context.Context) string {
+	value := resolver.data.GetMutabilityMode()
+	return value.String()
 }
 
 type upgradeProgressResolver struct {

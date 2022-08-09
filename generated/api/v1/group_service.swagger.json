@@ -37,6 +37,17 @@
             "type": "string"
           },
           {
+            "name": "traits.mutabilityMode",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "ALLOW",
+              "ALLOW_FORCED"
+            ],
+            "default": "ALLOW"
+          },
+          {
             "name": "authProviderId",
             "in": "query",
             "required": false,
@@ -125,14 +136,8 @@
         },
         "parameters": [
           {
-            "name": "id",
-            "description": "Unique identifier for group properties and respectively the group.",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
             "name": "authProviderId",
+            "description": "We copy over parameters from storage.GroupProperties for seamless HTTP API migration.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -148,6 +153,18 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -306,6 +323,9 @@
           "type": "string",
           "description": "Unique identifier for group properties and respectively the group."
         },
+        "traits": {
+          "$ref": "#/definitions/storageTraits"
+        },
         "authProviderId": {
           "type": "string"
         },
@@ -317,6 +337,24 @@
         }
       },
       "description": "GroupProperties defines the properties of a group. Groups apply to users when\ntheir properties match. For instance:\n  * If GroupProperties has only an auth_provider_id, then that group applies\n    to all users logged in with that auth provider.\n  * If GroupProperties in addition has a claim key, then it applies to all\n    users with that auth provider and the claim key, etc."
+    },
+    "storageMutabilityMode": {
+      "type": "string",
+      "enum": [
+        "ALLOW",
+        "ALLOW_FORCED"
+      ],
+      "default": "ALLOW",
+      "description": "EXPERIMENTAL.\n\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW to ALLOW_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW."
+    },
+    "storageTraits": {
+      "type": "object",
+      "properties": {
+        "mutabilityMode": {
+          "$ref": "#/definitions/storageMutabilityMode"
+        }
+      },
+      "description": "EXPERIMENTAL."
     },
     "v1Empty": {
       "type": "object"
@@ -349,6 +387,9 @@
             "$ref": "#/definitions/storageGroup"
           },
           "description": "Required groups are the groups we want to mutate the previous groups into."
+        },
+        "force": {
+          "type": "boolean"
         }
       },
       "title": "GroupBatchUpdateRequest is an in transaction batch update to the groups present.\nNext Available Tag: 3"

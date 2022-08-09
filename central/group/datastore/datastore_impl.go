@@ -125,7 +125,7 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error
 	return ds.storage.Upsert(ctx, group)
 }
 
-func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group) error {
+func (ds *dataStoreImpl) Mutate(ctx context.Context, force bool, remove, update, add []*storage.Group) error {
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -174,6 +174,10 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 			// Use the id of the retrieved group to delete
 			propsID = id
 		}
+		err := ds.validateMutableGroupID(ctx, propsID, force)
+		if err != nil {
+			return err
+		}
 		idsToRemove = append(idsToRemove, propsID)
 	}
 	if len(remove) > 0 {
@@ -185,7 +189,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 	return nil
 }
 
-func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupProperties) error {
+func (ds *dataStoreImpl) Remove(ctx context.Context, force bool, props *storage.GroupProperties) error {
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -213,17 +217,22 @@ func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupPropert
 		propsID = id
 	}
 
+	err := ds.validateMutableGroupID(ctx, propsID, force)
+	if err != nil {
+		return err
+	}
+
 	return ds.storage.Delete(ctx, propsID)
 }
 
-func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string) error {
+func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, deleteReq *storage.DeleteByIDWithForce) error {
 	groups, err := ds.GetFiltered(ctx, func(properties *storage.GroupProperties) bool {
-		return authProviderID == properties.GetAuthProviderId()
+		return deleteReq.GetId() == properties.GetAuthProviderId()
 	})
 	if err != nil {
 		return errors.Wrap(err, "collecting associated groups")
 	}
-	return ds.Mutate(ctx, groups, nil, nil)
+	return ds.Mutate(ctx, deleteReq.GetForce(), groups, nil, nil)
 }
 
 // Helpers
@@ -269,6 +278,11 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 		}
 		// Use the id of the retrieved group to update
 		group.GetProps().Id = id
+	}
+
+	err := ds.validateMutableGroupID(ctx, group.GetProps().GetId(), false)
+	if err != nil {
+		return err
 	}
 
 	defaultGroup, err := ds.getDefaultGroupForProps(ctx, group.GetProps())
@@ -377,4 +391,18 @@ func (ds *dataStoreImpl) getDefaultGroupForProps(ctx context.Context, props *sto
 
 	// 2. Filter for the default group.
 	return ds.getByProps(ctx, &storage.GroupProperties{AuthProviderId: props.GetAuthProviderId()})
+}
+
+func (ds *dataStoreImpl) validateMutableGroupID(ctx context.Context, id string, force bool) error {
+	group, exists, err := ds.storage.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errox.NotFound.Newf("group with id %q was not found", id)
+	}
+	if group.GetProps().GetTraits().GetMutabilityMode() == storage.MutabilityMode_ALLOW_FORCED && !force {
+		return errox.InvalidArgs.Newf("group %q is immutable", id)
+	}
+	return nil
 }

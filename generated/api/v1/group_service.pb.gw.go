@@ -213,7 +213,7 @@ var (
 )
 
 func request_GroupService_DeleteGroup_0(ctx context.Context, marshaler runtime.Marshaler, client GroupServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq storage.GroupProperties
+	var protoReq DeleteGroupRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
@@ -229,7 +229,7 @@ func request_GroupService_DeleteGroup_0(ctx context.Context, marshaler runtime.M
 }
 
 func local_request_GroupService_DeleteGroup_0(ctx context.Context, marshaler runtime.Marshaler, server GroupServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq storage.GroupProperties
+	var protoReq DeleteGroupRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {

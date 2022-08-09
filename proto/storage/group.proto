@@ -4,6 +4,7 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "gogoproto/gogo.proto";
+import "storage/traits.proto";
 
 package storage;
 
@@ -26,6 +27,7 @@ message Group {
 message GroupProperties {
     // Unique identifier for group properties and respectively the group.
     string id               = 4 [(gogoproto.moretags) = 'sql:"pk"'];
+    Traits traits           = 5;
 
     string auth_provider_id = 1;
     string key              = 2;

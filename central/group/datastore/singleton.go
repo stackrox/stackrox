@@ -42,7 +42,7 @@ func initialize() {
 	grps, err := ds.GetFiltered(ctx, isEmptyGroupPropertiesF)
 	utils.Should(err)
 	for _, grp := range grps {
-		err = ds.Remove(ctx, grp.GetProps())
+		err = ds.Remove(ctx, true, grp.GetProps())
 		utils.Should(err)
 	}
 }

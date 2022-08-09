@@ -95,45 +95,45 @@ func (mr *MockDataStoreMockRecorder) GetFiltered(ctx, filter interface{}) *gomoc
 }
 
 // Mutate mocks base method.
-func (m *MockDataStore) Mutate(ctx context.Context, remove, update, add []*storage.Group) error {
+func (m *MockDataStore) Mutate(ctx context.Context, force bool, remove, update, add []*storage.Group) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Mutate", ctx, remove, update, add)
+	ret := m.ctrl.Call(m, "Mutate", ctx, force, remove, update, add)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Mutate indicates an expected call of Mutate.
-func (mr *MockDataStoreMockRecorder) Mutate(ctx, remove, update, add interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Mutate(ctx, force, remove, update, add interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mutate", reflect.TypeOf((*MockDataStore)(nil).Mutate), ctx, remove, update, add)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mutate", reflect.TypeOf((*MockDataStore)(nil).Mutate), ctx, force, remove, update, add)
 }
 
 // Remove mocks base method.
-func (m *MockDataStore) Remove(ctx context.Context, props *storage.GroupProperties) error {
+func (m *MockDataStore) Remove(ctx context.Context, force bool, props *storage.GroupProperties) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Remove", ctx, props)
+	ret := m.ctrl.Call(m, "Remove", ctx, force, props)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Remove indicates an expected call of Remove.
-func (mr *MockDataStoreMockRecorder) Remove(ctx, props interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Remove(ctx, force, props interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockDataStore)(nil).Remove), ctx, props)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockDataStore)(nil).Remove), ctx, force, props)
 }
 
 // RemoveAllWithAuthProviderID mocks base method.
-func (m *MockDataStore) RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string) error {
+func (m *MockDataStore) RemoveAllWithAuthProviderID(ctx context.Context, deleteReq *storage.DeleteByIDWithForce) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveAllWithAuthProviderID", ctx, authProviderID)
+	ret := m.ctrl.Call(m, "RemoveAllWithAuthProviderID", ctx, deleteReq)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveAllWithAuthProviderID indicates an expected call of RemoveAllWithAuthProviderID.
-func (mr *MockDataStoreMockRecorder) RemoveAllWithAuthProviderID(ctx, authProviderID interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) RemoveAllWithAuthProviderID(ctx, deleteReq interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAllWithAuthProviderID", reflect.TypeOf((*MockDataStore)(nil).RemoveAllWithAuthProviderID), ctx, authProviderID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAllWithAuthProviderID", reflect.TypeOf((*MockDataStore)(nil).RemoveAllWithAuthProviderID), ctx, deleteReq)
 }
 
 // Update mocks base method.

@@ -116,7 +116,7 @@ func (s *serviceImpl) BatchUpdate(ctx context.Context, req *v1.GroupBatchUpdateR
 	}
 
 	removed, updated, added := diffGroups(req.GetPreviousGroups(), req.GetRequiredGroups())
-	if err := s.groups.Mutate(ctx, removed, updated, added); err != nil {
+	if err := s.groups.Mutate(ctx, req.GetForce(), removed, updated, added); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
@@ -138,8 +138,13 @@ func (s *serviceImpl) UpdateGroup(ctx context.Context, group *storage.Group) (*v
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) DeleteGroup(ctx context.Context, props *storage.GroupProperties) (*v1.Empty, error) {
-	err := s.groups.Remove(ctx, props)
+func (s *serviceImpl) DeleteGroup(ctx context.Context, deleteReq *v1.DeleteGroupRequest) (*v1.Empty, error) {
+	err := s.groups.Remove(ctx, deleteReq.GetForce(), &storage.GroupProperties{
+		Id:             deleteReq.GetId(),
+		AuthProviderId: deleteReq.GetAuthProviderId(),
+		Key:            deleteReq.GetKey(),
+		Value:          deleteReq.GetValue(),
+	})
 	if err != nil {
 		return nil, err
 	}
