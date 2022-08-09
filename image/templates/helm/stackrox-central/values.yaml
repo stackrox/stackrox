@@ -190,6 +190,8 @@
 #    # Disabled by default.
 #    route:
 #      enabled: null
+#      # Specify a custom hostname if desired, otherwise accept the default from OpenShift.
+#      host: null
 #
 #
 ## Configuration options relating to StackRox Scanner.
