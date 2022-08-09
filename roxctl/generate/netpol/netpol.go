@@ -19,6 +19,7 @@ type generateNetpolCommand struct {
 	removeOutputPath bool
 	mergeMode        bool
 	splitMode        bool
+	stdoutMode       bool
 
 	// injected or constructed values
 	env     environment.Environment
@@ -52,6 +53,9 @@ func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) err
 	cmd.folderPath = args[0]
 	cmd.splitMode = c.Flags().Changed("output-dir")
 	cmd.mergeMode = c.Flags().Changed("output-file")
+	if !cmd.splitMode && !cmd.mergeMode {
+		cmd.stdoutMode = true
+	}
 	return nil
 }
 
@@ -77,8 +81,7 @@ func (cmd *generateNetpolCommand) setupPath(path string) error {
 			}
 			cmd.env.Logger().WarnfLn("Removed output path %s", path)
 		} else {
-			cmd.env.Logger().ErrfLn("Output path %s already exists. Use --remove to overwrite or select a different path.", path)
-			return errox.AlreadyExists.Newf("path %s already exists", path)
+			return errox.AlreadyExists.Newf("path %s already exists. Use --remove to overwrite or select a different path.", path)
 		}
 	} else if !os.IsNotExist(err) {
 		return errors.Wrapf(err, "failed to check if path %s exists", path)

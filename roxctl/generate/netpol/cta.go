@@ -42,8 +42,12 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 		return nil
 	}
 
-	cmd.printNetpols(mergedPolicy)
+	if cmd.stdoutMode {
+		cmd.printNetpols(mergedPolicy)
+		return nil
+	}
 
+	cmd.env.Logger().WarnfLn("No mode selected, not providing any output.")
 	return nil
 }
 
