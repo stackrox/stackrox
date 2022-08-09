@@ -43,7 +43,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 	c.Flags().BoolVar(&generateNetpolCmd.removeOutputPath, "remove", false, "remove the output path if it already exists")
-	c.Flags().StringVarP(&generateNetpolCmd.outputFolderPath, "output-dir", "d", "", "save generated policies into target folder - 1 file per policy")
+	c.Flags().StringVarP(&generateNetpolCmd.outputFolderPath, "output-dir", "d", "", "save generated policies into target folder - one file per policy")
 	c.Flags().StringVarP(&generateNetpolCmd.outputFilePath, "output-file", "f", "", "save and merge generated policies into a single yaml file")
 	c.MarkFlagsMutuallyExclusive("output-dir", "output-file")
 	return c
