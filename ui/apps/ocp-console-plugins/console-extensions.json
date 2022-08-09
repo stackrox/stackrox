@@ -1,0 +1,28 @@
+[
+{
+    "type": "console.navigation/section",
+    "properties": {
+      "id": "advanced-cluster-security",
+      "name": "Advanced Cluster Security",
+      "perspective": "admin"
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/acs/violations",
+      "component": { "$codeRef": "Violations" }
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "acs-violations",
+      "name": "ACS Security",
+      "href": "/acs/violations",
+      "perspective": "admin",
+      "section": "advanced-cluster-security"
+    }
+  }
+]

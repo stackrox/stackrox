@@ -1,0 +1,154 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: acs-ocp-console-plugins
+  annotations:
+    openshift.io/display-name: ACS OpenShift Console Plugins
+    openshift.io/documentation-url: "https://github.com/spadgett/console-plugin-template"
+    description: >-
+      nginx HTTP server for the ACS OpenShift console plugin creating using the
+      template at https://github.com/spadgett/console-plugin-template
+    iconClass: icon-nginx
+    tags: openshift,console,plugin,nginx
+parameters:
+- description: Name of your plugin. This name must match the name in the consolePlugin declaration in package.json.
+  name: PLUGIN_NAME
+  value: acs-ocp-console-plugins
+  required: true
+- description: Namespace for your plugin. The namespace will be created by the template.
+  name: NAMESPACE
+  value: acs-ocp-console-plugins
+  required: true
+- description: Container image of the plugin.
+  name: IMAGE
+  value: quay.io/rh_ee_dvail/acs-violations-plugin:latest
+  required: true
+message: >-
+  To enable the plugin on the cluster, run the following command:
+
+  oc patch consoles.operator.openshift.io cluster --patch '{ "spec": { "plugins": ["${PLUGIN_NAME}"] } }' --type=merge
+
+  For more information about using this template, see https://github.com/spadgett/console-plugin-template
+objects:
+  - apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: '${NAMESPACE}'
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: '${PLUGIN_NAME}'
+      namespace: '${NAMESPACE}'
+      labels:
+        app: '${PLUGIN_NAME}'
+        app.kubernetes.io/component: '${PLUGIN_NAME}'
+        app.kubernetes.io/instance: '${PLUGIN_NAME}'
+        app.kubernetes.io/part-of: '${PLUGIN_NAME}'
+        app.openshift.io/runtime-namespace: '${NAMESPACE}'
+    spec:
+      replicas: 2
+      selector:
+        matchLabels:
+          app: '${PLUGIN_NAME}'
+      template:
+        metadata:
+          labels:
+            app: '${PLUGIN_NAME}'
+        spec:
+          containers:
+            - name: '${PLUGIN_NAME}'
+              image: '${IMAGE}'
+              ports:
+                - containerPort: 9443
+                  protocol: TCP
+              imagePullPolicy: Always
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                  - ALL
+              resources:
+                  requests:
+                    cpu: 10m
+                    memory: 50Mi
+              volumeMounts:
+                - name: plugin-serving-cert
+                  readOnly: true
+                  mountPath: /var/serving-cert
+                - name: nginx-conf
+                  readOnly: true
+                  mountPath: /etc/nginx/nginx.conf
+                  subPath: nginx.conf
+          volumes:
+            - name: plugin-serving-cert
+              secret:
+                secretName: plugin-serving-cert
+                defaultMode: 420
+            - name: nginx-conf
+              configMap:
+                name: nginx-conf
+                defaultMode: 420
+          restartPolicy: Always
+          dnsPolicy: ClusterFirst
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 25%
+          maxSurge: 25%
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: nginx-conf
+      namespace: '${NAMESPACE}'
+      labels:
+        app: '${PLUGIN_NAME}'
+        app.kubernetes.io/part-of: '${PLUGIN_NAME}'
+    data:
+      nginx.conf: |
+        error_log /dev/stdout info;
+        events {}
+        http {
+          access_log         /dev/stdout;
+          include            /etc/nginx/mime.types;
+          default_type       application/octet-stream;
+          keepalive_timeout  65;
+          server {
+            listen              9443 ssl;
+            ssl_certificate     /var/serving-cert/tls.crt;
+            ssl_certificate_key /var/serving-cert/tls.key;
+            root                /usr/share/nginx/html;
+          }
+        }
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        service.alpha.openshift.io/serving-cert-secret-name: plugin-serving-cert
+      name: '${PLUGIN_NAME}'
+      namespace: '${NAMESPACE}'
+      labels:
+        app: '${PLUGIN_NAME}'
+        app.kubernetes.io/component: '${PLUGIN_NAME}'
+        app.kubernetes.io/instance: '${PLUGIN_NAME}'
+        app.kubernetes.io/part-of: '${PLUGIN_NAME}'
+    spec:
+      ports:
+        - name: 9443-tcp
+          protocol: TCP
+          port: 9443
+          targetPort: 9443
+      selector:
+        app: '${PLUGIN_NAME}'
+      type: ClusterIP
+      sessionAffinity: None
+  - apiVersion: console.openshift.io/v1alpha1
+    kind: ConsolePlugin
+    metadata:
+      name: '${PLUGIN_NAME}'
+    spec:
+      displayName: 'Console Plugin Template'
+      service:
+        name: '${PLUGIN_NAME}'
+        namespace: '${NAMESPACE}'
+        port: 9443
+        basePath: '/'
