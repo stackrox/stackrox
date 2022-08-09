@@ -11,7 +11,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	backend "github.com/stackrox/rox/central/clusterinit/backend"
 	storage "github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/mtls"
+	mtls "github.com/stackrox/rox/pkg/mtls"
 )
 
 // MockBackend is a mock of Backend interface.
