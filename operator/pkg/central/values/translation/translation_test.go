@@ -429,7 +429,7 @@ func TestTranslate(t *testing.T) {
 							Exposure: &platform.Exposure{
 								Route: &platform.ExposureRoute{
 									Enabled: &truth,
-									Host: pointer.StringPtr("custom-route.stackrox.io"),
+									Host:    pointer.StringPtr("custom-route.stackrox.io"),
 								},
 							},
 						},
@@ -441,7 +441,7 @@ func TestTranslate(t *testing.T) {
 					"exposure": map[string]interface{}{
 						"route": map[string]interface{}{
 							"enabled": true,
-							"host": "custom-route.stackrox.io",
+							"host":    "custom-route.stackrox.io",
 						},
 					},
 				},
