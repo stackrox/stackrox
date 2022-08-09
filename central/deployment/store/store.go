@@ -14,6 +14,7 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.Deployment, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error)
+	Walk(ctx context.Context, fn func(deployment *storage.Deployment) error) error
 
 	Count(ctx context.Context) (int, error)
 	Upsert(ctx context.Context, deployment *storage.Deployment) error

@@ -238,7 +238,8 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	if features.PostgresDatastore.Enabled() {
 		pool = globaldb.GetPostgres()
 	}
-	deployments := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	require.NoError(t, err)
 
 	pods, err := podDatastore.NewRocksDB(db, bleveIndex, mockProcessDataStore, mockFilter)
 	require.NoError(t, err)
@@ -285,8 +286,8 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	if features.PostgresDatastore.Enabled() {
 		pool = globaldb.GetPostgres()
 	}
-	deployments := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-
+	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	require.NoError(t, err)
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }
 
@@ -319,8 +320,9 @@ func generateClusterDataStructures(t *testing.T) (configDatastore.DataStore, dep
 	flows := networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl)
 	clusterCVEs := clusterCVEDS.NewMockDataStore(mockCtrl)
 
-	deployments := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), nil, nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, clusterFlows,
+	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), nil, nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, clusterFlows,
 		mockRiskDatastore, expiringcache.NewExpiringCache(1*time.Minute), mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	require.NoError(t, err)
 
 	clusterStorage, err := clusterRocksDB.New(db)
 	require.NoError(t, err)
