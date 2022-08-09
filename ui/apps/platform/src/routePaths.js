@@ -4,7 +4,9 @@
 
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
 
-export const mainPath = '/main';
+// TODO Configure webpack 'define' plugin
+// export const mainPath = process.env.REACT_APP_MAIN_PATH ?? '/main';
+export const mainPath = '/acs';
 export const loginPath = '/login';
 export const testLoginResultsPath = '/test-login-results';
 export const authResponsePrefix = '/auth/response/';

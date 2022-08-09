@@ -120,13 +120,13 @@
         "watch:react": "HTTPS=true react-scripts start",
         "generate-graphql-possible-types": "ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh) node scripts/generate-graphql-possible-types.js",
         "eject": "react-scripts eject",
-        "plugins:build": "yarn plugins:clean && NODE_ENV=production node_modules/.bin/webpack -c webpack.console-plugins.config.js",
+        "plugins:build": "REACT_APP_MAIN_PATH='/acs' yarn plugins:clean && NODE_ENV=production node_modules/.bin/webpack -c webpack.console-plugins.config.js",
         "plugins:clean": "rm -rf dist",
         "plugins:image-build": "yarn plugins:build && docker build -t quay.io/rh_ee_dvail/acs-violations-plugin:latest . ",
         "plugins:image-build-quick": "docker build -t quay.io/rh_ee_dvail/acs-violations-plugin:latest .",
         "plugins:image-run": "docker run -it --rm -p 9090:80 quay.io/rh_ee_dvail/acs-violations-plugin:latest",
         "plugins:image-push": "docker push quay.io/rh_ee_dvail/acs-violations-plugin:latest",
-        "plugins:start": "node_modules/.bin/webpack serve -c webpack.console-plugins.config.js"
+        "plugins:start": "REACT_APP_MAIN_PATH='/acs' node_modules/.bin/webpack serve -c webpack.console-plugins.config.js"
     },
     "devDependencies": {
         "ts-loader": "^9.2.8",
