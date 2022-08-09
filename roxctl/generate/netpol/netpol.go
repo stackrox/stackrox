@@ -62,11 +62,11 @@ func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) err
 func (cmd *generateNetpolCommand) validate() error {
 	if cmd.splitMode {
 		if err := cmd.setupPath(cmd.outputFolderPath); err != nil {
-			return errors.Wrapf(err, "failed to set up folder path")
+			return errors.Wrap(err, "failed to set up folder path")
 		}
 	} else if cmd.mergeMode {
 		if err := cmd.setupPath(cmd.outputFilePath); err != nil {
-			return errors.Wrapf(err, "failed to set up file path")
+			return errors.Wrap(err, "failed to set up file path")
 		}
 	}
 

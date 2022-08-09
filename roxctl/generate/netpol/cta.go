@@ -30,14 +30,14 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 
 	if cmd.mergeMode {
 		if err := cmd.saveNetpolsToMergedFile(mergedPolicy); err != nil {
-			return errors.Wrapf(err, "error saving merged Network Policies")
+			return errors.Wrap(err, "error saving merged Network Policies")
 		}
 		return nil
 	}
 
 	if cmd.splitMode {
 		if err := cmd.saveNetpolsToFolder(recommendedNetpols); err != nil {
-			return errors.Wrapf(err, "error saving split Network Policies")
+			return errors.Wrap(err, "error saving split Network Policies")
 		}
 		return nil
 	}
@@ -62,7 +62,7 @@ func (cmd *generateNetpolCommand) saveNetpolsToMergedFile(combinedNetpols string
 	}
 
 	if err := writeFile(filename, dirpath, combinedNetpols); err != nil {
-		return errors.Wrapf(err, "error writing merged Network Policies")
+		return errors.Wrap(err, "error writing merged Network Policies")
 	}
 	return nil
 }
@@ -81,7 +81,7 @@ func (cmd *generateNetpolCommand) saveNetpolsToFolder(recommendedNetpols []*v1.N
 		}
 
 		if err := writeFile(filename, cmd.outputFolderPath, yamlPolicy); err != nil {
-			return errors.Wrapf(err, "error writing policy to file")
+			return errors.Wrap(err, "error writing policy to file")
 		}
 	}
 	return nil
