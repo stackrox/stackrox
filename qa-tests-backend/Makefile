@@ -57,6 +57,11 @@ bat-test: compile
 	@echo "+ $@"
 	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=BAT
 
+.PHONY: sac-test
+sac-test: compile
+	@echo "+ $@"
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SAC
+
 .PHONY: smoke-test
 smoke-test: compile
 	@echo "+ $@"

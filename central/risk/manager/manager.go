@@ -104,6 +104,8 @@ func New(nodeStorage nodeDS.GlobalDataStore,
 func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Deployment")
 
+	log.Infof("reprocess risk for deployment %q: %+v", deployment.GetName(), deployment)
+
 	oldRisk, exists, err := e.riskStorage.GetRiskForDeployment(allAccessCtx, deployment)
 	if err != nil {
 		log.Errorf("error getting risk for deployment %s: %v", deployment.GetName(), err)
@@ -119,8 +121,10 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 				continue
 			}
 			if !exists {
+				log.Infof("no risk found for image %q of deployment %q", container.GetImage().GetName().GetFullName(), deployment.GetName())
 				continue
 			}
+			log.Infof("risk found for image %q of deployment %q", container.GetImage().GetName().GetFullName(), deployment.GetName())
 			imageRisks = append(imageRisks, risk)
 		}
 	}

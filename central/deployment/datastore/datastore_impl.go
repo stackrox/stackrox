@@ -216,6 +216,7 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeployment")
 
+	log.Infof("upserting deployment %q: %+v", deployment.GetName(), deployment)
 	return ds.upsertDeployment(ctx, deployment)
 }
 

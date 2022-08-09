@@ -10,19 +10,7 @@ set -euo pipefail
 
 run_tests_part_2() {
     info "QA Automation Platform Part 2"
-
-    if [[ ! -f "${STATE_DEPLOYED}" ]]; then
-        info "Skipping part 2 tests due to earlier failure"
-        exit 0
-    fi
-
-    export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
-
-    rm -f FAIL
-    make -C qa-tests-backend sensor-bounce-test || touch FAIL
-
-    store_qa_test_results "part-2-tests"
-    [[ ! -f FAIL ]] || die "Part 2 tests failed"
+    info "Not running tests"
 }
 
 run_tests_part_2
