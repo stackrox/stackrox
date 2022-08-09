@@ -73,7 +73,7 @@ func (cmd *generateNetpolCommand) saveNetpolsToFolder(recommendedNetpols []*v1.N
 
 		yamlPolicy, err := networkpolicy.KubernetesNetworkPolicyWrap{NetworkPolicy: netpol}.ToYaml()
 		if err != nil {
-			return errors.Wrap(err, "error converting Network Policy object to YAML")
+			return errors.Wrap(err, "error converting Network Policy object to yaml")
 		}
 
 		if err := writeFile(filename, cmd.outputFolderPath, yamlPolicy); err != nil {
