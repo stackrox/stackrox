@@ -10,6 +10,8 @@
     },
     "license": "UNLICENSED",
     "dependencies": {
+        "@openshift-console/dynamic-plugin-sdk": "0.0.3",
+        "@openshift-console/dynamic-plugin-sdk-webpack": "0.0.6",
         "@apollo/client": "^3.5.5",
         "@lifeomic/axios-fetch": "^3.0.0",
         "@patternfly/react-charts": "6.74.3",
@@ -117,9 +119,20 @@
         "watch:tailwind": "postcss ./src/app.tw.css -o ./src/index.css -w",
         "watch:react": "HTTPS=true react-scripts start",
         "generate-graphql-possible-types": "ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh) node scripts/generate-graphql-possible-types.js",
-        "eject": "react-scripts eject"
+        "eject": "react-scripts eject",
+        "plugins:build": "yarn plugins:clean && NODE_ENV=production node_modules/.bin/webpack -c webpack.console-plugins.config.js",
+        "plugins:clean": "rm -rf dist",
+        "plugins:image-build": "yarn plugins:build && docker build -t quay.io/rh_ee_dvail/acs-violations-plugin:latest . ",
+        "plugins:image-build-quick": "docker build -t quay.io/rh_ee_dvail/acs-violations-plugin:latest .",
+        "plugins:image-run": "docker run -it --rm -p 9090:80 quay.io/rh_ee_dvail/acs-violations-plugin:latest",
+        "plugins:image-push": "docker push quay.io/rh_ee_dvail/acs-violations-plugin:latest",
+        "plugins:start": "node_modules/.bin/webpack serve -c webpack.console-plugins.config.js"
     },
     "devDependencies": {
+        "ts-loader": "^9.2.8",
+        "webpack": "^5.68.0",
+        "webpack-cli": "^4.9.2",
+        "webpack-dev-server": "^4.7.4",
         "@babel/core": "7.12.3",
         "@stackrox/tailwind-config": "*",
         "@testing-library/jest-dom": "^5.15.0",
@@ -173,5 +186,17 @@
         "not dead",
         "not ie <= 11",
         "not op_mini all"
-    ]
+    ],
+    "consolePlugin": {
+        "name": "acs-ocp-console-plugins",
+        "version": "0.0.1",
+        "displayName": "Advanced Cluster Security Plugins",
+        "description": "ACS -> OCP Plugins",
+        "exposedModules": {
+            "Violations": "./console-plugins/modules/Violations"
+        },
+        "dependencies": {
+            "@console/pluginAPI": "*"
+        }
+    }
 }

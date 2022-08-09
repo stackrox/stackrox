@@ -19,7 +19,7 @@
     "type": "console.navigation/href",
     "properties": {
       "id": "acs-violations",
-      "name": "ACS Security",
+      "name": "Violations",
       "href": "/acs/violations",
       "perspective": "admin",
       "section": "advanced-cluster-security"

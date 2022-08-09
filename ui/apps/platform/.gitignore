@@ -5,4 +5,5 @@
 
 # production
 /build
+/dist
 /src/index.css
