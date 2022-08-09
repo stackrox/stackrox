@@ -1,7 +1,9 @@
 package servicecerttoken
 
 import (
+	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"strings"
 	"time"
 
@@ -10,22 +12,22 @@ import (
 	ctTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/grpc/client/authn/servicecerttoken"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 )
 
-// parseToken parses a ServiceCert token and returns the parsed x509 certificate. Note that the returned certificate is
+// ParseToken parses a ServiceCert token and returns the parsed x509 certificate. Note that the returned certificate is
 // not verified.
-func parseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error) {
+func ParseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 2 {
 		return nil, errors.Errorf("expected token to contain exactly one '.', found %d", len(parts)-1)
 	}
 
-	authBytes, err := servicecerttoken.TokenB64Enc.DecodeString(parts[0])
+	authBytes, err := b64Enc.DecodeString(parts[0])
 	if err != nil {
 		return nil, errors.Wrap(err, "could not decode auth info")
 	}
-	sigBytes, err := servicecerttoken.TokenB64Enc.DecodeString(parts[1])
+	sigBytes, err := b64Enc.DecodeString(parts[1])
 	if err != nil {
 		return nil, errors.Wrap(err, "could not decode signature")
 	}
@@ -54,7 +56,7 @@ func parseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error
 
 	ds := ctTLS.DigitallySigned{
 		Algorithm: ctTLS.SignatureAndHashAlgorithm{
-			Hash:      servicecerttoken.HashAlgo,
+			Hash:      hashAlgo,
 			Signature: ctTLS.SignatureAlgorithmFromPubKey(cert.PublicKey),
 		},
 		Signature: sigBytes,
@@ -64,4 +66,29 @@ func parseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error
 		return nil, errors.Wrap(err, "failed to verify signature")
 	}
 	return cert, nil
+}
+
+// CreateToken creates a ServiceCert token from the given certificate, stamping it with the given current timestamp.
+func CreateToken(cert *tls.Certificate, currTime time.Time) (string, error) {
+	tsPb, err := types.TimestampProto(currTime)
+	if err != nil {
+		return "", errors.Wrap(err, "could not create timestamp proto")
+	}
+
+	auth := &central.ServiceCertAuth{
+		CertDer:     cert.Certificate[0],
+		CurrentTime: tsPb,
+	}
+
+	authBytes, err := proto.Marshal(auth)
+	if err != nil {
+		return "", errors.Wrap(err, "could not marshal service cert auth structure")
+	}
+
+	ds, err := ctTLS.CreateSignature(cryptoutils.DerefPrivateKey(cert.PrivateKey), hashAlgo, authBytes)
+	if err != nil {
+		return "", errors.Wrap(err, "could not create signature")
+	}
+
+	return fmt.Sprintf("%s.%s", b64Enc.EncodeToString(authBytes), b64Enc.EncodeToString(ds.Signature)), nil
 }
