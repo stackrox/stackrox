@@ -5,16 +5,13 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/gob"
 	"fmt"
-	"math/big"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
@@ -24,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -49,15 +47,6 @@ var (
 )
 
 type requestInfoKey struct{}
-
-// CertInfo is the relevant (for us) fraction of a X.509 certificate that can safely be serialized.
-type CertInfo struct {
-	Subject             pkix.Name
-	NotBefore, NotAfter time.Time
-	EmailAddresses      []string
-	SerialNumber        *big.Int
-	CertFingerprint     string
-}
 
 // HTTPRequest provides a gob encodeable way of passing HTTP Request parameters
 type HTTPRequest struct {
@@ -90,7 +79,7 @@ type RequestInfo struct {
 	// Importantly, chain[0] should be the same, and equal to the leaf cert presented by the client, for all VerifiedChains.
 	// (If clients present multiple certs, the first one that matches the basic server constraints are picked, and the others
 	// are all ignored.)
-	VerifiedChains [][]CertInfo
+	VerifiedChains [][]mtls.CertInfo
 	// Metadata is the request metadata. For *pure* HTTP/1.1 requests, these are the actual HTTP headers. Otherwise,
 	// these are only the headers that make it to the GRPC handler.
 	Metadata metadata.MD
@@ -99,8 +88,8 @@ type RequestInfo struct {
 }
 
 // ExtractCertInfo gets the cert info from a cert.
-func ExtractCertInfo(fullCert *x509.Certificate) CertInfo {
-	return CertInfo{
+func ExtractCertInfo(fullCert *x509.Certificate) mtls.CertInfo {
+	return mtls.CertInfo{
 		Subject:         fullCert.Subject,
 		NotBefore:       fullCert.NotBefore,
 		NotAfter:        fullCert.NotAfter,
@@ -111,8 +100,8 @@ func ExtractCertInfo(fullCert *x509.Certificate) CertInfo {
 }
 
 // ExtractCertInfoChains gets the cert infos from a cert chain
-func ExtractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]CertInfo {
-	result := make([][]CertInfo, 0, len(fullCertChains))
+func ExtractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]mtls.CertInfo {
+	result := make([][]mtls.CertInfo, 0, len(fullCertChains))
 	for _, chain := range fullCertChains {
 		// This should never happen in practice based on the Go standard library's documented guarantees,
 		// but we're being extra defensive here.
@@ -122,7 +111,7 @@ func ExtractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]CertInfo {
 			}
 			continue
 		}
-		subjectChain := make([]CertInfo, 0, len(chain))
+		subjectChain := make([]mtls.CertInfo, 0, len(chain))
 		for _, cert := range chain {
 			subjectChain = append(subjectChain, ExtractCertInfo(cert))
 		}

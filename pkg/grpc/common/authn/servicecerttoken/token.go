@@ -15,9 +15,9 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 )
 
-// parseToken parses a ServiceCert token and returns the parsed x509 certificate. Note that the returned certificate is
+// ParseToken parses a ServiceCert token and returns the parsed x509 certificate. Note that the returned certificate is
 // not verified.
-func parseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error) {
+func ParseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 2 {
 		return nil, errors.Errorf("expected token to contain exactly one '.', found %d", len(parts)-1)
@@ -68,8 +68,8 @@ func parseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error
 	return cert, nil
 }
 
-// createToken creates a ServiceCert token from the given certificate, stamping it with the given current timestamp.
-func createToken(cert *tls.Certificate, currTime time.Time) (string, error) {
+// CreateToken creates a ServiceCert token from the given certificate, stamping it with the given current timestamp.
+func CreateToken(cert *tls.Certificate, currTime time.Time) (string, error) {
 	tsPb, err := types.TimestampProto(currTime)
 	if err != nil {
 		return "", errors.Wrap(err, "could not create timestamp proto")

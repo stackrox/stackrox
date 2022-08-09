@@ -9,7 +9,6 @@ import (
 
 	cfcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -22,7 +21,7 @@ type Identity struct {
 }
 
 // IdentityFromCert returns an mTLS (mutual TLS) identity for the given certificate.
-func IdentityFromCert(cert requestinfo.CertInfo) Identity {
+func IdentityFromCert(cert CertInfo) Identity {
 	return Identity{
 		Subject:   convertCertSubject(cert.Subject),
 		Serial:    cert.SerialNumber,
