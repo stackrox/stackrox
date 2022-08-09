@@ -1,7 +1,7 @@
 package keyfence
 
 import (
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 )
 

@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/features"
@@ -74,7 +75,7 @@ type deploymentDatastoreSACSuite struct {
 	engine   *rocksdb.RocksDB
 	index    bleve.Index
 	dacky    *dackbox.DackBox
-	keyFence concurrency.KeyFence
+	keyFence dackboxConcurrency.KeyFence
 	indexQ   queue.WaitableQueue
 
 	// Elements for postgres mode
@@ -113,7 +114,7 @@ func (s *deploymentDatastoreSACSuite) SetupSuite() {
 		s.Require().NoError(err)
 		s.index, err = globalindex.MemOnlyIndex()
 		s.Require().NoError(err)
-		s.keyFence = concurrency.NewKeyFence()
+		s.keyFence = dackboxConcurrency.NewKeyFence()
 		s.indexQ = queue.NewWaitableQueue()
 		s.dacky, err = dackbox.NewRocksDBDackBox(s.engine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
 		s.Require().NoError(err)

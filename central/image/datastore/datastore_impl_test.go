@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/features"
@@ -77,7 +78,7 @@ func (suite *ImageDataStoreTestSuite) SetupSuite() {
 
 	suite.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(suite.T()))
 
-	suite.datastore = New(dacky, concurrency.NewKeyFence(), suite.index, suite.index, false, suite.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+	suite.datastore = New(dacky, dackboxConcurrency.NewKeyFence(), suite.index, suite.index, false, suite.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 }
 
 func (suite *ImageDataStoreTestSuite) TearDownSuite() {
