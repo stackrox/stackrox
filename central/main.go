@@ -111,7 +111,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
-	"github.com/stackrox/rox/central/sac/transitional"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
 	searchService "github.com/stackrox/rox/central/search/service"
@@ -499,8 +498,6 @@ func startGRPCServer() {
 			errors.LogInternalErrorStreamInterceptor,
 			errors.PanicOnInvariantViolationStreamInterceptor,
 		)
-		// This helps validate that SAC is being used correctly.
-		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}
 
 	// This adds an on-demand global tracing for the built-in authorization.

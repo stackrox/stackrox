@@ -1205,46 +1205,6 @@
       }
     },
     {
-      "protopath": "authz_plugin.proto",
-      "def": {
-        "messages": [
-          {
-            "name": "AuthzPluginConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "name",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "enabled",
-                "type": "bool"
-              },
-              {
-                "id": 4,
-                "name": "endpoint_config",
-                "type": "HTTPEndpointConfig"
-              }
-            ]
-          }
-        ],
-        "imports": [
-          {
-            "path": "storage/http_endpoint.proto"
-          }
-        ],
-        "package": {
-          "name": "storage"
-        }
-      }
-    },
-    {
       "protopath": "cluster.proto",
       "def": {
         "enums": [

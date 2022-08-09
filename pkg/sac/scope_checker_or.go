@@ -21,16 +21,6 @@ func NewOrScopeChecker(scopeCheckers ...ScopeChecker) ScopeChecker {
 	}
 }
 
-func (s orScopeChecker) Core() ScopeCheckerCore {
-	// We can't unambiguously return a ScopeCheckerCore here. The method itself is used only
-	// within verifying interceptor. The verifying interceptor is used within the context of the
-	// external authz plugin. Once this will be fully deprecated, we can eventually also remove this method.
-	if len(s.scopeCheckers) != 0 {
-		return s.scopeCheckers[0].Core()
-	}
-	return nil
-}
-
 func (s orScopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
