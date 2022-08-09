@@ -425,10 +425,12 @@ func TestTranslate(t *testing.T) {
 			args: args{
 				c: platform.Central{
 					Spec: platform.CentralSpec{
-						Exposure: &platform.Exposure{
-							Route: &platform.ExposureRoute{
-								Enabled: &truth,
-								Host: pointer.StringPtr("custom-route.stackrox.io"),
+						Central: &platform.CentralComponentSpec{
+							Exposure: &platform.Exposure{
+								Route: &platform.ExposureRoute{
+									Enabled: &truth,
+									Host: pointer.StringPtr("custom-route.stackrox.io"),
+								},
 							},
 						},
 					},
