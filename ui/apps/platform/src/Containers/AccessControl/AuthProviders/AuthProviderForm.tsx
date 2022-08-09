@@ -314,7 +314,9 @@ function AuthProviderForm({
                                             isDisabled={action === 'edit'}
                                             isSmall
                                         >
-                                            {selectedAuthProvider.active
+                                            {selectedAuthProvider.active ||
+                                            selectedAuthProvider.traits?.mutabilityMode ===
+                                                'ALLOW_FORCED'
                                                 ? 'Edit minimum role and rules'
                                                 : 'Edit auth provider'}
                                         </Button>
@@ -357,6 +359,18 @@ function AuthProviderForm({
                     }
                 />
             )}
+            {selectedAuthProvider.traits?.mutabilityMode === 'ALLOW_FORCED' && (
+                <Alert
+                    isInline
+                    variant="warning"
+                    title={
+                        <span>
+                            This auth provider is immutable. You can only edit the minimum role and
+                            rules.
+                        </span>
+                    }
+                />
+            )}
             <FormikProvider value={formik}>
                 <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
                     <Grid hasGutter>
@@ -375,7 +389,11 @@ function AuthProviderForm({
                                     id="name"
                                     value={values.name}
                                     onChange={onChange}
-                                    isDisabled={isViewing || values.active}
+                                    isDisabled={
+                                        isViewing ||
+                                        values.active ||
+                                        values.traits?.mutabilityMode === 'ALLOW_FORCED'
+                                    }
                                     isRequired
                                     onBlur={handleBlur}
                                     validated={
@@ -411,7 +429,9 @@ function AuthProviderForm({
                             onBlur={handleBlur}
                             configErrors={errors.config}
                             configTouched={touched.config}
-                            disabled={values.active}
+                            disabled={
+                                values.active || values.traits?.mutabilityMode === 'ALLOW_FORCED'
+                            }
                         />
                     </Grid>
                 </FormSection>

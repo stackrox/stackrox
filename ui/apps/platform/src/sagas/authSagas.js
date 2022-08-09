@@ -282,7 +282,9 @@ function* saveAuthProvider(action) {
             yield call(fetchUsersAttributes);
             yield put(actions.selectAuthProvider({ ...remaining, id: savedAuthProvider.data.id }));
         } else {
-            yield call(AuthService.saveAuthProvider, remaining);
+            if (!remaining.active && !remaining.traits?.mutabilityMode === 'ALLOW_FORCED') {
+                yield call(AuthService.saveAuthProvider, remaining);
+            }
             yield call(getAuthProviders);
             yield call(fetchUsersAttributes);
             yield put(groupActions.saveRuleGroup(filteredGroups, defaultRole, authProvider.id));

@@ -55,23 +55,37 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
-	exists, err := b.storage.Exists(ctx, authProvider.GetId())
-	if err != nil {
+	if err := b.verifyExistsAndMutable(ctx, authProvider.GetId(), false); err != nil {
 		return err
-	}
-	if !exists {
-		return errox.NotFound.Newf("auth provider with id %q was not found", authProvider.GetId())
 	}
 	return b.storage.Upsert(ctx, authProvider)
 }
 
 // RemoveAuthProvider removes an auth provider from bolt
-func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, id string) error {
+func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, deleteReq *storage.DeleteByIDWithForce) error {
 	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
+	id := deleteReq.GetId()
+	if err := b.verifyExistsAndMutable(ctx, id, deleteReq.GetForce()); err != nil {
+		return err
+	}
 	return b.storage.Delete(ctx, id)
+}
+
+func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, force bool) error {
+	provider, exists, err := b.storage.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errox.NotFound.Newf("auth provider with id %q was not found", id)
+	}
+	if provider.GetTraits().GetMutabilityMode() == storage.MutabilityMode_ALLOW_FORCED && !force {
+		return errox.InvalidArgs.Newf("auth provider %q is immutable", id)
+	}
+	return nil
 }

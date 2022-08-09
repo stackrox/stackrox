@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "gogoproto/gogo.proto";
+
+package storage;
+
+// EXPERIMENTAL.
+//
+// MutabilityMode specifies whether and how an object can be modified. Default
+// is ALLOW and means there are no modification restrictions; this is equivalent
+// to the absence of MutabilityMode specification. ALLOW_FORCED forbids all
+// modifying operations except object removal with force bit on.
+//
+// Be careful when changing the state of this field. For example, modifying an
+// object from ALLOW to ALLOW_FORCED is allowed but will prohibit any further
+// changes to it, including modifying it back to ALLOW.
+enum MutabilityMode {
+  ALLOW        = 0;
+  ALLOW_FORCED = 1;
+}
+
+// EXPERIMENTAL.
+message Traits {
+  MutabilityMode mutabilityMode = 1;
+}
+
+// EXPERIMENTAL.
+//
+// Used in combination with MutabilityMode.ALLOW_FORCED to enable forced removal.
+message DeleteByIDWithForce {
+  string id  = 1;
+  bool force = 2;
+}

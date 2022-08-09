@@ -67,8 +67,10 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {authProviders.map(({ id, name, type, defaultRole, groups = [] }) => {
+                    {authProviders.map((authProvider) => {
+                        const { id, name, type, defaultRole, traits, groups = [] } = authProvider;
                         const typeLabel = getAuthProviderTypeLabel(type, availableProviderTypes);
+                        const isImmutable = traits?.mutabilityMode === 'ALLOW_FORCED';
 
                         return (
                             <Tr
@@ -99,10 +101,15 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                             {
                                                 title: 'Delete auth provider',
                                                 onClick: () => onClickDelete(name, id),
-                                                isDisabled: id === currentUser?.authProvider?.id,
+                                                isDisabled:
+                                                    id === currentUser?.authProvider?.id ||
+                                                    isImmutable,
                                                 description:
+                                                    // eslint-disable-next-line no-nested-ternary
                                                     id === currentUser?.authProvider?.id
                                                         ? 'Cannot delete current auth provider'
+                                                        : isImmutable
+                                                        ? 'Cannot delete unmodifiable auth provider'
                                                         : '',
                                             },
                                         ],

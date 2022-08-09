@@ -412,7 +412,7 @@ func (*tstAuthProviderStore) UpdateAuthProvider(_ context.Context, _ *storage.Au
 	return nil
 }
 
-func (*tstAuthProviderStore) RemoveAuthProvider(_ context.Context, _ string) error {
+func (*tstAuthProviderStore) RemoveAuthProvider(_ context.Context, _ *storage.DeleteByIDWithForce) error {
 	return nil
 }
 

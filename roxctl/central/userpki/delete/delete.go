@@ -119,7 +119,7 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 	return func() error {
 		cmd.env.Logger().PrintfLn("Deleting provider and rolemappings.")
 
-		_, err := authService.DeleteAuthProvider(ctx, &v1.ResourceByID{
+		_, err := authService.DeleteAuthProvider(ctx, &storage.DeleteByIDWithForce{
 			Id: prov.GetId(),
 		})
 

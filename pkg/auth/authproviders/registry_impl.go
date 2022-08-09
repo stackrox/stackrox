@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
@@ -201,11 +202,11 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	return provider, nil
 }
 
-func (r *registryImpl) DeleteProvider(ctx context.Context, id string, ignoreActive bool) error {
+func (r *registryImpl) DeleteProvider(ctx context.Context, deleteReq *storage.DeleteByIDWithForce, ignoreActive bool) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	provider := r.providers[id]
+	provider := r.providers[deleteReq.GetId()]
 	if provider == nil {
 		return nil
 	}
@@ -214,10 +215,10 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, id string, ignoreActi
 		return errors.New("cannot update an auth provider once it has been used. Please delete and then re-add to modify")
 	}
 
-	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store), UnregisterSource(r.issuerFactory)); err != nil {
+	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store, deleteReq), UnregisterSource(r.issuerFactory)); err != nil {
 		return err
 	}
-	delete(r.providers, id)
+	delete(r.providers, deleteReq.GetId())
 	r.deletedNoLock(provider)
 	return nil
 }

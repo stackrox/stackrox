@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -76,10 +77,10 @@ func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesUpdate() {
 func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesRemove() {
 	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.RemoveAuthProvider(s.hasNoneCtx, "id")
+	err := s.dataStore.RemoveAuthProvider(s.hasNoneCtx, &storage.DeleteByIDWithForce{Id: "id"})
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.RemoveAuthProvider(s.hasReadCtx, "id")
+	err = s.dataStore.RemoveAuthProvider(s.hasReadCtx, &storage.DeleteByIDWithForce{Id: "id"})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -149,7 +150,7 @@ func (s *authProviderDataStoreTestSuite) TestErrorOnAdd() {
 
 func (s *authProviderDataStoreTestSuite) TestAllowsUpdate() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
-	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{}, true, nil).Times(2)
 
 	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
 	s.NoError(err, "expected no error trying to write with permissions")
@@ -159,7 +160,7 @@ func (s *authProviderDataStoreTestSuite) TestAllowsUpdate() {
 }
 
 func (s *authProviderDataStoreTestSuite) TestErrorOnUpdate() {
-	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
 
 	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
 	s.Error(err)
@@ -167,10 +168,71 @@ func (s *authProviderDataStoreTestSuite) TestErrorOnUpdate() {
 
 func (s *authProviderDataStoreTestSuite) TestAllowsRemove() {
 	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{}, true, nil).Times(2)
 
-	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, "id")
+	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, &storage.DeleteByIDWithForce{Id: "id"})
 	s.NoError(err, "expected no error trying to write with permissions")
 
-	err = s.dataStore.RemoveAuthProvider(s.hasWriteAccessCtx, "id")
+	err = s.dataStore.RemoveAuthProvider(s.hasWriteAccessCtx, &storage.DeleteByIDWithForce{Id: "id"})
 	s.NoError(err, "expect no error trying to write with Access permissions")
+}
+
+func (s *authProviderDataStoreTestSuite) TestUpdateMutableToImmutable() {
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			MutabilityMode: storage.MutabilityMode_ALLOW,
+		},
+	}, true, nil).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
+	s.NoError(err)
+}
+
+func (s *authProviderDataStoreTestSuite) TestUpdateImmutableError() {
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			MutabilityMode: storage.MutabilityMode_ALLOW_FORCED,
+		},
+	}, true, nil).Times(1)
+
+	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
+	s.ErrorIs(err, errox.InvalidArgs)
+}
+
+func (s *authProviderDataStoreTestSuite) TestDeleteImmutableNoForce() {
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			MutabilityMode: storage.MutabilityMode_ALLOW_FORCED,
+		},
+	}, true, nil).Times(1)
+
+	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, &storage.DeleteByIDWithForce{
+		Id:    "id",
+		Force: false,
+	})
+	s.ErrorIs(err, errox.InvalidArgs)
+}
+
+func (s *authProviderDataStoreTestSuite) TestDeleteImmutableForce() {
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			MutabilityMode: storage.MutabilityMode_ALLOW,
+		},
+	}, true, nil).Times(1)
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, &storage.DeleteByIDWithForce{
+		Id:    "id",
+		Force: true,
+	})
+	s.NoError(err)
 }

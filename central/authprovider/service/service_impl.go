@@ -197,8 +197,12 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
 	}
 
+	deleteReq := &storage.DeleteByIDWithForce{
+		Id:    request.GetId(),
+		Force: false,
+	}
 	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it
-	if err := s.registry.DeleteProvider(ctx, request.GetId(), false); err != nil {
+	if err := s.registry.DeleteProvider(ctx, deleteReq, false); err != nil {
 		return nil, err
 	}
 
@@ -215,7 +219,6 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
-
 	var options []authproviders.ProviderOption
 	if nameOpt, ok := request.GetNameOpt().(*v1.UpdateAuthProviderRequest_Name); ok {
 		options = append(options, authproviders.WithName(nameOpt.Name))
@@ -231,7 +234,7 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 }
 
 // DeleteAuthProvider deletes an auth provider from the system
-func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
+func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *storage.DeleteByIDWithForce) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
@@ -242,7 +245,7 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Resour
 		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
 	}
 	// Delete auth provider.
-	if err := s.registry.DeleteProvider(ctx, request.GetId(), true); err != nil {
+	if err := s.registry.DeleteProvider(ctx, request, true); err != nil {
 		return nil, err
 	}
 	// Delete groups for auth provider.

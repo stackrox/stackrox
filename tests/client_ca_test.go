@@ -173,7 +173,7 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		_, err := authService.DeleteAuthProvider(ctx, &v1.ResourceByID{Id: createdAuthProvider.GetId()})
+		_, err := authService.DeleteAuthProvider(ctx, &storage.DeleteByIDWithForce{Id: createdAuthProvider.GetId()})
 		require.NoError(t, err)
 	}()
 
