@@ -131,20 +131,6 @@ func (mr *MockScopeCheckerMockRecorder) ClusterID(clusterID interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClusterID", reflect.TypeOf((*MockScopeChecker)(nil).ClusterID), clusterID)
 }
 
-// Core mocks base method.
-func (m *MockScopeChecker) Core() sac.ScopeCheckerCore {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Core")
-	ret0, _ := ret[0].(sac.ScopeCheckerCore)
-	return ret0
-}
-
-// Core indicates an expected call of Core.
-func (mr *MockScopeCheckerMockRecorder) Core() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Core", reflect.TypeOf((*MockScopeChecker)(nil).Core))
-}
-
 // EffectiveAccessScope mocks base method.
 func (m *MockScopeChecker) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	m.ctrl.T.Helper()

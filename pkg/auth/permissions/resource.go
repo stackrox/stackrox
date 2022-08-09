@@ -70,14 +70,6 @@ func (m ResourceMetadata) String() string {
 	return string(m.Resource)
 }
 
-// PerformLegacyAuthForSAC checks whether legacy authorizers should be enforced even if SAC is enabled.
-func (m ResourceMetadata) PerformLegacyAuthForSAC() bool {
-	if m.legacyAuthForSAC != nil {
-		return *m.legacyAuthForSAC
-	}
-	return m.Scope == GlobalScope
-}
-
 // ResourceHandle allows referring to a resource, without having to specify whether it is a Resource
 // or a ResourceMetadata object.
 type ResourceHandle interface {
