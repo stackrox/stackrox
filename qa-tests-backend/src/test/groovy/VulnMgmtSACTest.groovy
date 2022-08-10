@@ -39,6 +39,34 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
     """
 
+    private static final GET_IMAGE_CVES_QUERY = """
+    query getCves(\$query: String, \$pagination: Pagination)
+    {
+        results: imageVulnerabilities(query: \$query, pagination: \$pagination) {
+            ...cveFields
+            __typename
+        }
+        count: imageVulnerabilityCount(query: \$query)
+    }
+    fragment cveFields on ImageVulnerability {
+        cve
+    }
+    """
+
+    private static final GET_NODE_CVES_QUERY = """
+    query getCves(\$query: String, \$pagination: Pagination)
+    {
+        results: nodeVulnerabilities(query: \$query, pagination: \$pagination) {
+            ...cveFields
+            __typename
+        }
+        count: nodeVulnerabilityCount(query: \$query)
+    }
+    fragment cveFields on NodeVulnerability {
+        cve
+    }
+    """
+
     private static final GET_COMPONENTS_QUERY = """
     query getComponents(\$query: String, \$pagination: Pagination)
     {
@@ -50,6 +78,36 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     fragment componentFields on EmbeddedImageScanComponent {
+        name
+        version
+    }
+    """
+
+    private static final GET_IMAGE_COMPONENTS_QUERY = """
+    query getComponents(\$query: String, \$pagination: Pagination)
+    {
+        results: imageComponents(query: \$query, pagination: \$pagination) {
+            ...componentFields
+            __typename
+        }
+        count: imageComponentCount(query: \$query)
+    }
+    fragment componentFields on ImageComponent {
+        name
+        version
+    }
+    """
+
+    private static final GET_NODE_COMPONENTS_QUERY = """
+    query getComponents(\$query: String, \$pagination: Pagination)
+    {
+        results: nodeComponents(query: \$query, pagination: \$pagination) {
+            ...componentFields
+            __typename
+        }
+        count: nodeComponentCount(query: \$query)
+    }
+    fragment componentFields on NodeComponent {
         name
         version
     }
@@ -106,18 +164,30 @@ class VulnMgmtSACTest extends BaseSpecification {
         when:
         "Get Node CVEs and components"
         BaseService.useBasicAuth()
-        def gqlService = new GraphQLService()
         def baseQuery = "Node:*"
-        def baseVulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: baseQuery])
+        def cveQuery = ""
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            cveQuery = GET_NODE_CVES_QUERY
+        } else {
+            cveQuery = GET_CVES_QUERY
+        }
+        def componentQuery = ""
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            componentQuery = GET_NODE_COMPONENTS_QUERY
+        } else {
+            componentQuery = GET_COMPONENTS_QUERY
+        }
+        def gqlService = new GraphQLService()
+        def baseVulnCallResult = gqlService.Call(cveQuery, [query: baseQuery])
         assert baseVulnCallResult.hasNoErrors()
-        def baseComponentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: baseQuery])
+        def baseComponentCallResult = gqlService.Call(componentQuery, [query: baseQuery])
         assert baseComponentCallResult.hasNoErrors()
 
         and:
         gqlService = new GraphQLService(getToken(NODE_ROLE, NODE_ROLE))
-        def vulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: ""])
+        def vulnCallResult = gqlService.Call(cveQuery, [query: ""])
         assert vulnCallResult.hasNoErrors()
-        def componentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: ""])
+        def componentCallResult = gqlService.Call(componentQuery, [query: ""])
         assert componentCallResult.hasNoErrors()
 
         then:
@@ -140,16 +210,28 @@ class VulnMgmtSACTest extends BaseSpecification {
         BaseService.useBasicAuth()
         def gqlService = new GraphQLService()
         def baseQuery = "Image:*"
-        def baseVulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: baseQuery])
+        def cveQuery = ""
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            cveQuery = GET_IMAGE_CVES_QUERY
+        } else {
+            cveQuery = GET_CVES_QUERY
+        }
+        def componentQuery = ""
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            componentQuery = GET_IMAGE_COMPONENTS_QUERY
+        } else {
+            componentQuery = GET_COMPONENTS_QUERY
+        }
+        def baseVulnCallResult = gqlService.Call(cveQuery, [query: baseQuery])
         assert baseVulnCallResult.hasNoErrors()
-        def baseComponentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: baseQuery])
+        def baseComponentCallResult = gqlService.Call(componentQuery, [query: baseQuery])
         assert baseComponentCallResult.hasNoErrors()
 
         and:
         gqlService = new GraphQLService(getToken(IMAGE_ROLE, IMAGE_ROLE))
-        def vulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: ""])
+        def vulnCallResult = gqlService.Call(cveQuery, [query: ""])
         assert vulnCallResult.hasNoErrors()
-        def componentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: ""])
+        def componentCallResult = gqlService.Call(componentQuery, [query: ""])
         assert componentCallResult.hasNoErrors()
 
         then:
