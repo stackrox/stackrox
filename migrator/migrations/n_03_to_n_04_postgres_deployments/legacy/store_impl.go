@@ -10,8 +10,8 @@ import (
 	deploymentDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/deployment"
 	imageDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/image"
 	namespaceDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/namespace"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 )
 

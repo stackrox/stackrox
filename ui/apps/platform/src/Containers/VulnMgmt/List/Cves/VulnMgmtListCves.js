@@ -36,6 +36,7 @@ import {
     NODE_CVE_LIST_FRAGMENT,
     CLUSTER_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import CVSSSeverityLabel from 'Components/CVSSSeverityLabel';
 import CveType from 'Components/CveType';
@@ -293,6 +294,9 @@ const VulnMgmtCves = ({
 }) => {
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const usesPostgres = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const workflowState = useContext(workflowStateContext);
 
@@ -553,7 +557,7 @@ const VulnMgmtCves = ({
                 totalResults={totalResults}
                 query={cveQuery}
                 queryOptions={queryOptions}
-                idAttribute="cve"
+                idAttribute={showVMUpdates && usesPostgres ? 'id' : 'cve'}
                 entityListType={cveType}
                 getTableColumns={getCveTableColumns}
                 selectedRowId={selectedRowId}

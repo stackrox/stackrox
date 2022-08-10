@@ -2,20 +2,13 @@ package sac
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/central/auth/userpass"
-	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/sac/authorizer"
-	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/contextutil"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
-	sacClient "github.com/stackrox/rox/pkg/sac/client"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -26,7 +19,7 @@ var (
 )
 
 func initialize() {
-	enricher = newEnricher()
+	enricher = &Enricher{}
 }
 
 // GetEnricher returns the singleton Enricher object.
@@ -37,73 +30,30 @@ func GetEnricher() *Enricher {
 
 // Enricher returns a object which will enrich a context with a cached root scope checker core
 type Enricher struct {
-	// In a perfect world we would clear this cache when SAC gets disabled
-	cacheLock     sync.Mutex
-	clientCaches  expiringcache.Cache
-	clientManager AuthPluginClientManger
-}
-
-func newEnricher() *Enricher {
-	return &Enricher{
-		clientCaches:  newConfiguredCache(),
-		clientManager: AuthPluginClientManagerSingleton(),
-	}
 }
 
 // getRootScopeCheckerCore adds a scope checker to the context for later use in
-// scope checking. There are four possibilities currently:
-//   1. User identity maps to a special case: (a) deny all or (b) allow all =>
-//      add the corresponding trivial scope checker.
-//   2. Built-in scoped authorizer must be used => use the scope checker
-//      constructed from resolved roles associated with the identity.
-//   3. Auth plugin is detected => use the scope checker created around the
-//      auth plugin client in use at the time of request.
-//   4. Unrecoverable error => nil context.
+// scope checking.
 func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Context, observe.ScopeCheckerCoreType, error) {
-	client := se.clientManager.GetClient()
-
 	// Check the id of the context and decide scope checker to use.
 	id := authn.IdentityFromContextOrNil(ctx)
 	if id == nil {
-		// 1a. User identity not found => deny all.
+		// User identity not found => deny all.
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), observe.ScopeCheckerDenyForNoID, nil
 	}
 	if id.Service() != nil || userpass.IsLocalAdmin(id) {
-		// 1b. Admin => allow all.
+		// Admin => allow all.
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), observe.ScopeCheckerAllowAdminAndService, nil
 	}
 	if len(id.Roles()) == 0 {
-		// 1c. User has no valid role => deny all.
+		// User has no valid role => deny all.
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), observe.ScopeCheckerDenyForNoID, nil
 	}
-	if client == nil {
-		// 2. Built-in scoped authorizer must be used.
-		scopeChecker, err := authorizer.NewBuiltInScopeChecker(ctx, id.Roles())
-		if err != nil {
-			return nil, observe.ScopeCheckerNone, errors.Wrap(err, "creating scoped authorizer for identity")
-		}
-		return sac.WithGlobalAccessScopeChecker(ctx, scopeChecker), observe.ScopeCheckerBuiltIn, nil
-	}
-	ctx = sac.SetContextPluginScopedAuthzEnabled(ctx)
-
-	// Get the principal and the cache key for it.
-	principal, idCacheKey, err := idToPrincipalAndCacheKey(id)
+	scopeChecker, err := authorizer.NewBuiltInScopeChecker(ctx, id.Roles())
 	if err != nil {
-		return nil, observe.ScopeCheckerNone, err
+		return nil, observe.ScopeCheckerNone, errors.Wrap(err, "creating scoped authorizer for identity")
 	}
-
-	// 3. If we have a scope checker cached for the user, use that,
-	// otherwise generate a new one and add it to the cache.
-	cacheForClient := se.cacheForClient(client)
-	rsc, _ := cacheForClient.Get(idCacheKey).(sac.ScopeCheckerCore)
-	if rsc == nil {
-		rsc = sac.NewRootScopeCheckerCore(NewRequestTracker(client, datastore.Singleton(), principal))
-		// Not locking here can cause multiple root contexts to be created for
-		// one user. This will have correct results and be eventually consistent
-		// but it will be slightly inefficient.
-		cacheForClient.Add(idCacheKey, rsc)
-	}
-	return sac.WithGlobalAccessScopeChecker(ctx, rsc), observe.ScopeCheckerPlugin, nil
+	return sac.WithGlobalAccessScopeChecker(ctx, scopeChecker), observe.ScopeCheckerBuiltIn, nil
 }
 
 // GetPreAuthContextEnricher returns a contextutil.ContextUpdater which adds a
@@ -128,55 +78,4 @@ func (se *Enricher) GetPreAuthContextEnricher(authzTraceSink observe.AuthzTraceS
 		trace.RecordScopeCheckerCoreType(sccType)
 		return ctxWithSCC, nil
 	}
-}
-
-func (se *Enricher) cacheForClient(client sacClient.Client) expiringcache.Cache {
-	se.cacheLock.Lock()
-	defer se.cacheLock.Unlock()
-
-	clientCache, _ := se.clientCaches.Get(client).(expiringcache.Cache)
-	if clientCache == nil {
-		clientCache = newConfiguredCache()
-		se.clientCaches.Add(client, clientCache)
-	}
-	return clientCache
-}
-
-func idToPrincipalAndCacheKey(id authn.Identity) (*payload.Principal, string, error) {
-	// Generate a JSON body for the user we are using the auth plugin for.
-	principal := idToPrincipal(id)
-	principalJSONBytes, err := json.Marshal(principal)
-	if err != nil {
-		return nil, "", err
-	}
-	return principal, string(principalJSONBytes), nil
-}
-
-func idToPrincipal(id authn.Identity) *payload.Principal {
-	externalAuthProvider := id.ExternalAuthProvider()
-	var authProvider payload.AuthProviderInfo
-	// TODO joseph do something here for, e.g., API tokens
-	if externalAuthProvider == nil {
-		authProvider = payload.AuthProviderInfo{
-			Type: "",
-			ID:   "",
-			Name: "",
-		}
-	} else {
-		authProvider = payload.AuthProviderInfo{
-			Type: externalAuthProvider.Type(),
-			ID:   externalAuthProvider.ID(),
-			Name: externalAuthProvider.Name(),
-		}
-	}
-	attributes := make(map[string]interface{}, len(id.Attributes()))
-	for k, v := range id.Attributes() {
-		attributes[k] = v
-	}
-
-	return &payload.Principal{AuthProvider: authProvider, Attributes: attributes, Roles: utils.RoleNames(id.Roles())}
-}
-
-func newConfiguredCache() expiringcache.Cache {
-	return expiringcache.NewExpiringCache(env.PermissionTimeout.DurationSetting())
 }

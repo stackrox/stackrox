@@ -6,14 +6,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
-	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
@@ -44,9 +42,6 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 	idWithNoPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	idWithNoPermissions.EXPECT().Permissions().Return(nil).AnyTimes()
 
-	contextWithPermissionCheck, _ := permissioncheck.ContextWithPermissionCheck()
-
-	err := errors.New("some error")
 	tests := []struct {
 		name                string
 		requiredPermissions []permissions.ResourceWithAccess
@@ -64,11 +59,6 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
 			ctx: ctx,
-		},
-		{
-			name: "ErrPermissionCheckOnly",
-			ctx:  contextWithPermissionCheck,
-			err:  permissioncheck.ErrPermissionCheckOnly,
 		},
 		{
 			name: "built-in scoped authz check permissions not sufficient permissions",
@@ -96,43 +86,12 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			err: errox.NoCredentials,
 		},
 		{
-			name: "plugin SAC check only global permissions",
-			requiredPermissions: []permissions.ResourceWithAccess{{
-				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
-			}, {
-				Resource: nsScopedResource, Access: storage.Access_READ_ACCESS,
-			}},
-			ctx: sac.WithNoAccess(sac.SetContextPluginScopedAuthzEnabled(ctx)),
-		},
-		{
-			name: "plugin SAC check only global permissions",
-			requiredPermissions: []permissions.ResourceWithAccess{{
-				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
-			}},
-			ctx: sac.WithNoAccess(sac.SetContextPluginScopedAuthzEnabled(ctx)),
-		},
-		{
-			name: "plugin SAC check only global permissions",
+			name: "built-in global scoped authz check permissions but nil permissions in ID",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextPluginScopedAuthzEnabled(ctx)),
-			err: errox.NotAuthorized,
-		},
-		{
-			name: "plugin SAC check only global permissions",
-			requiredPermissions: []permissions.ResourceWithAccess{{
-				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
-			}},
-			ctx: sac.WithAllAccess(sac.SetContextPluginScopedAuthzEnabled(ctx)),
-		},
-		{
-			name: "plugin SAC check only global permissions with errored scope checker",
-			requiredPermissions: []permissions.ResourceWithAccess{{
-				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
-			}},
-			ctx: sac.WithGlobalAccessScopeChecker(sac.SetContextPluginScopedAuthzEnabled(ctx), sac.ErrorAccessScopeCheckerCore(err)),
-			err: err,
+			ctx: sac.WithNoAccess(ctxWithNoPermissions),
+			err: errox.NoCredentials,
 		},
 	}
 	for _, tt := range tests {
