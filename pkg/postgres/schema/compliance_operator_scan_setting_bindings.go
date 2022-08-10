@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -16,8 +17,10 @@ var (
 		Table: `
                create table if not exists compliance_operator_scan_setting_bindings (
                    Id varchar,
+                   ClusterId varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id)
+                   PRIMARY KEY(Id),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ClusterId) REFERENCES clusters(Id) ON DELETE CASCADE
                )
                `,
 		GormModel: (*ComplianceOperatorScanSettingBindings)(nil),
@@ -32,6 +35,13 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorScanSettingBinding)(nil)), "compliance_operator_scan_setting_bindings")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Cluster": ClustersSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		RegisterTable(schema, CreateTableComplianceOperatorScanSettingBindingsStmt)
 		return schema
 	}()
@@ -43,6 +53,8 @@ const (
 
 // ComplianceOperatorScanSettingBindings holds the Gorm model for Postgres table `compliance_operator_scan_setting_bindings`.
 type ComplianceOperatorScanSettingBindings struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Id          string   `gorm:"column:id;type:varchar;primaryKey"`
+	ClusterId   string   `gorm:"column:clusterid;type:varchar"`
+	Serialized  []byte   `gorm:"column:serialized;type:bytea"`
+	ClustersRef Clusters `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

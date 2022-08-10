@@ -66,49 +66,4 @@ func (s *ComplianceOperatorCheckResultsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundComplianceOperatorCheckResult)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, complianceOperatorCheckResult))
-	foundComplianceOperatorCheckResult, exists, err = store.Get(ctx, complianceOperatorCheckResult.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorCheckResult, foundComplianceOperatorCheckResult)
-
-	complianceOperatorCheckResultCount, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, complianceOperatorCheckResultCount)
-	complianceOperatorCheckResultCount, err = store.Count(withNoAccessCtx)
-	s.NoError(err)
-	s.Zero(complianceOperatorCheckResultCount)
-
-	complianceOperatorCheckResultExists, err := store.Exists(ctx, complianceOperatorCheckResult.GetId())
-	s.NoError(err)
-	s.True(complianceOperatorCheckResultExists)
-	s.NoError(store.Upsert(ctx, complianceOperatorCheckResult))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorCheckResult), sac.ErrResourceAccessDenied)
-
-	foundComplianceOperatorCheckResult, exists, err = store.Get(ctx, complianceOperatorCheckResult.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorCheckResult, foundComplianceOperatorCheckResult)
-
-	s.NoError(store.Delete(ctx, complianceOperatorCheckResult.GetId()))
-	foundComplianceOperatorCheckResult, exists, err = store.Get(ctx, complianceOperatorCheckResult.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundComplianceOperatorCheckResult)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorCheckResult.GetId()), sac.ErrResourceAccessDenied)
-
-	var complianceOperatorCheckResults []*storage.ComplianceOperatorCheckResult
-	for i := 0; i < 200; i++ {
-		complianceOperatorCheckResult := &storage.ComplianceOperatorCheckResult{}
-		s.NoError(testutils.FullInit(complianceOperatorCheckResult, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		complianceOperatorCheckResults = append(complianceOperatorCheckResults, complianceOperatorCheckResult)
-	}
-
-	s.NoError(store.UpsertMany(ctx, complianceOperatorCheckResults))
-
-	complianceOperatorCheckResultCount, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, complianceOperatorCheckResultCount)
 }

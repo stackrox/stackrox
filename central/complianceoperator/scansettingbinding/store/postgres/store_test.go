@@ -66,49 +66,4 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundComplianceOperatorScanSettingBinding)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, complianceOperatorScanSettingBinding))
-	foundComplianceOperatorScanSettingBinding, exists, err = store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorScanSettingBinding, foundComplianceOperatorScanSettingBinding)
-
-	complianceOperatorScanSettingBindingCount, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, complianceOperatorScanSettingBindingCount)
-	complianceOperatorScanSettingBindingCount, err = store.Count(withNoAccessCtx)
-	s.NoError(err)
-	s.Zero(complianceOperatorScanSettingBindingCount)
-
-	complianceOperatorScanSettingBindingExists, err := store.Exists(ctx, complianceOperatorScanSettingBinding.GetId())
-	s.NoError(err)
-	s.True(complianceOperatorScanSettingBindingExists)
-	s.NoError(store.Upsert(ctx, complianceOperatorScanSettingBinding))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorScanSettingBinding), sac.ErrResourceAccessDenied)
-
-	foundComplianceOperatorScanSettingBinding, exists, err = store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorScanSettingBinding, foundComplianceOperatorScanSettingBinding)
-
-	s.NoError(store.Delete(ctx, complianceOperatorScanSettingBinding.GetId()))
-	foundComplianceOperatorScanSettingBinding, exists, err = store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundComplianceOperatorScanSettingBinding)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorScanSettingBinding.GetId()), sac.ErrResourceAccessDenied)
-
-	var complianceOperatorScanSettingBindings []*storage.ComplianceOperatorScanSettingBinding
-	for i := 0; i < 200; i++ {
-		complianceOperatorScanSettingBinding := &storage.ComplianceOperatorScanSettingBinding{}
-		s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		complianceOperatorScanSettingBindings = append(complianceOperatorScanSettingBindings, complianceOperatorScanSettingBinding)
-	}
-
-	s.NoError(store.UpsertMany(ctx, complianceOperatorScanSettingBindings))
-
-	complianceOperatorScanSettingBindingCount, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, complianceOperatorScanSettingBindingCount)
 }

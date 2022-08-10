@@ -80,10 +80,11 @@ func insertIntoComplianceOperatorCheckResults(ctx context.Context, batch *pgx.Ba
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
+		obj.GetClusterId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_check_results (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_check_results (Id, ClusterId, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -103,6 +104,8 @@ func (s *storeImpl) copyFromComplianceOperatorCheckResults(ctx context.Context, 
 
 		"id",
 
+		"clusterid",
+
 		"serialized",
 	}
 
@@ -118,6 +121,8 @@ func (s *storeImpl) copyFromComplianceOperatorCheckResults(ctx context.Context, 
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
+
+			obj.GetClusterId(),
 
 			serialized,
 		})

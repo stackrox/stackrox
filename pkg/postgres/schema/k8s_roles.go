@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -26,7 +27,8 @@ var (
                    Labels jsonb,
                    Annotations jsonb,
                    serialized bytea,
-                   PRIMARY KEY(Id)
+                   PRIMARY KEY(Id),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ClusterId) REFERENCES clusters(Id) ON DELETE CASCADE
                )
                `,
 		GormModel: (*K8sRoles)(nil),
@@ -41,6 +43,13 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.K8SRole)(nil)), "k8s_roles")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Cluster": ClustersSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ROLES, "k8srole", (*storage.K8SRole)(nil)))
 		RegisterTable(schema, CreateTableK8sRolesStmt)
 		return schema
@@ -62,4 +71,5 @@ type K8sRoles struct {
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
 	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
+	ClustersRef Clusters          `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

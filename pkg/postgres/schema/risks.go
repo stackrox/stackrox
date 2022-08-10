@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,7 +24,8 @@ var (
                    Subject_Type integer,
                    Score numeric,
                    serialized bytea,
-                   PRIMARY KEY(Id)
+                   PRIMARY KEY(Id),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (Subject_ClusterId) REFERENCES clusters(Id) ON DELETE CASCADE
                )
                `,
 		GormModel: (*Risks)(nil),
@@ -38,6 +40,13 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Risk)(nil)), "risks")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Cluster": ClustersSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_RISKS, "risk", (*storage.Risk)(nil)))
 		RegisterTable(schema, CreateTableRisksStmt)
 		return schema
@@ -56,4 +65,5 @@ type Risks struct {
 	SubjectType      storage.RiskSubjectType `gorm:"column:subject_type;type:integer"`
 	Score            float32                 `gorm:"column:score;type:numeric"`
 	Serialized       []byte                  `gorm:"column:serialized;type:bytea"`
+	ClustersRef      Clusters                `gorm:"foreignKey:subject_clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

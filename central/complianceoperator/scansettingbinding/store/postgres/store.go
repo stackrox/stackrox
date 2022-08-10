@@ -85,10 +85,11 @@ func insertIntoComplianceOperatorScanSettingBindings(ctx context.Context, batch 
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
+		obj.GetClusterId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_setting_bindings (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_setting_bindings (Id, ClusterId, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -108,6 +109,8 @@ func (s *storeImpl) copyFromComplianceOperatorScanSettingBindings(ctx context.Co
 
 		"id",
 
+		"clusterid",
+
 		"serialized",
 	}
 
@@ -123,6 +126,8 @@ func (s *storeImpl) copyFromComplianceOperatorScanSettingBindings(ctx context.Co
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
+
+			obj.GetClusterId(),
 
 			serialized,
 		})

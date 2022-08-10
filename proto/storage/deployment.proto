@@ -29,7 +29,7 @@ message Deployment {
     map<string, string> pod_labels             = 19 [(gogoproto.moretags) = 'search:"Pod Label,store"'];
     LabelSelector label_selector               = 20;
     google.protobuf.Timestamp created          = 8 [(gogoproto.moretags) = 'search:"Created,store,hidden" hash:"ignore"'];
-    string cluster_id                          = 9 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden"'];
+    string cluster_id                          = 9 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" sql:"fk(Cluster:id)"'];
     string cluster_name                        = 10 [(gogoproto.moretags) = 'search:"Cluster,store"'];
     repeated Container containers              = 11;
     reserved 12;
@@ -121,7 +121,7 @@ message Pod {
     string name                                         = 2 [(gogoproto.moretags) = 'search:"Pod Name,hidden"'];
     string deployment_id                                = 3 [(gogoproto.moretags) = 'search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint"'];
     string namespace                                    = 4 [(gogoproto.moretags) = 'search:"Namespace,store"'];
-    string cluster_id                                   = 5 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden"'];
+    string cluster_id                                   = 5 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" sql:"fk(Cluster:id)'];
     repeated ContainerInstance live_instances           = 6;
     // Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)
     // There is one bucket (list) per container name.

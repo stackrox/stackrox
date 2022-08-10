@@ -39,7 +39,8 @@ var (
                    RiskScore numeric,
                    ProcessTags text[],
                    serialized bytea,
-                   PRIMARY KEY(Id)
+                   PRIMARY KEY(Id),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ClusterId) REFERENCES clusters(Id) ON DELETE CASCADE
                )
                `,
 		GormModel: (*Deployments)(nil),
@@ -186,6 +187,7 @@ var (
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":             ImagesSchema,
 			"storage.NamespaceMetadata": NamespacesSchema,
+			"storage.Cluster":           ClustersSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -239,6 +241,7 @@ type Deployments struct {
 	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric"`
 	ProcessTags                   *pq.StringArray         `gorm:"column:processtags;type:text[]"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
+	ClustersRef                   Clusters                `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
 // DeploymentsContainers holds the Gorm model for Postgres table `deployments_containers`.

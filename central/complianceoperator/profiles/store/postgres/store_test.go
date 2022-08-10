@@ -66,49 +66,4 @@ func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundComplianceOperatorProfile)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, complianceOperatorProfile))
-	foundComplianceOperatorProfile, exists, err = store.Get(ctx, complianceOperatorProfile.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorProfile, foundComplianceOperatorProfile)
-
-	complianceOperatorProfileCount, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, complianceOperatorProfileCount)
-	complianceOperatorProfileCount, err = store.Count(withNoAccessCtx)
-	s.NoError(err)
-	s.Zero(complianceOperatorProfileCount)
-
-	complianceOperatorProfileExists, err := store.Exists(ctx, complianceOperatorProfile.GetId())
-	s.NoError(err)
-	s.True(complianceOperatorProfileExists)
-	s.NoError(store.Upsert(ctx, complianceOperatorProfile))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorProfile), sac.ErrResourceAccessDenied)
-
-	foundComplianceOperatorProfile, exists, err = store.Get(ctx, complianceOperatorProfile.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorProfile, foundComplianceOperatorProfile)
-
-	s.NoError(store.Delete(ctx, complianceOperatorProfile.GetId()))
-	foundComplianceOperatorProfile, exists, err = store.Get(ctx, complianceOperatorProfile.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundComplianceOperatorProfile)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorProfile.GetId()), sac.ErrResourceAccessDenied)
-
-	var complianceOperatorProfiles []*storage.ComplianceOperatorProfile
-	for i := 0; i < 200; i++ {
-		complianceOperatorProfile := &storage.ComplianceOperatorProfile{}
-		s.NoError(testutils.FullInit(complianceOperatorProfile, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		complianceOperatorProfiles = append(complianceOperatorProfiles, complianceOperatorProfile)
-	}
-
-	s.NoError(store.UpsertMany(ctx, complianceOperatorProfiles))
-
-	complianceOperatorProfileCount, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, complianceOperatorProfileCount)
 }

@@ -105,7 +105,7 @@ message Alert {
 
     // Scoping information
 
-    string                    cluster_id        = 18 [(gogoproto.moretags) = 'search:"Cluster ID,store"'];
+    string                    cluster_id        = 18 [(gogoproto.moretags) = 'search:"Cluster ID,store" sql:"fk(Cluster:id)"'];
     string                    cluster_name      = 19 [(gogoproto.moretags) = 'search:"Cluster,store"'];
     string                    namespace         = 20 [(gogoproto.moretags) = 'search:"Namespace,store"'];
     string                    namespace_id      = 21 [(gogoproto.moretags) = 'search:"Namespace ID"'];

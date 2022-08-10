@@ -27,7 +27,7 @@ message Risk {
 message RiskSubject {
     string id                   = 1;
     string namespace            = 2 [(gogoproto.moretags) = 'search:"Namespace,store"'];
-    string cluster_id           = 3 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden"'];
+    string cluster_id           = 3 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" sql:"fk(Cluster:id)"'];
     RiskSubjectType type        = 4 [(gogoproto.moretags) = 'search:"Risk Subject Type,hidden"'];
 }
 

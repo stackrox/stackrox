@@ -66,49 +66,4 @@ func (s *ComplianceOperatorScansStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundComplianceOperatorScan)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, complianceOperatorScan))
-	foundComplianceOperatorScan, exists, err = store.Get(ctx, complianceOperatorScan.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorScan, foundComplianceOperatorScan)
-
-	complianceOperatorScanCount, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, complianceOperatorScanCount)
-	complianceOperatorScanCount, err = store.Count(withNoAccessCtx)
-	s.NoError(err)
-	s.Zero(complianceOperatorScanCount)
-
-	complianceOperatorScanExists, err := store.Exists(ctx, complianceOperatorScan.GetId())
-	s.NoError(err)
-	s.True(complianceOperatorScanExists)
-	s.NoError(store.Upsert(ctx, complianceOperatorScan))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorScan), sac.ErrResourceAccessDenied)
-
-	foundComplianceOperatorScan, exists, err = store.Get(ctx, complianceOperatorScan.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorScan, foundComplianceOperatorScan)
-
-	s.NoError(store.Delete(ctx, complianceOperatorScan.GetId()))
-	foundComplianceOperatorScan, exists, err = store.Get(ctx, complianceOperatorScan.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundComplianceOperatorScan)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorScan.GetId()), sac.ErrResourceAccessDenied)
-
-	var complianceOperatorScans []*storage.ComplianceOperatorScan
-	for i := 0; i < 200; i++ {
-		complianceOperatorScan := &storage.ComplianceOperatorScan{}
-		s.NoError(testutils.FullInit(complianceOperatorScan, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		complianceOperatorScans = append(complianceOperatorScans, complianceOperatorScan)
-	}
-
-	s.NoError(store.UpsertMany(ctx, complianceOperatorScans))
-
-	complianceOperatorScanCount, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, complianceOperatorScanCount)
 }

@@ -28,7 +28,7 @@ message ProcessIndicator {
     // A process signal message passed from Collector to Sensor
     ProcessSignal signal                           = 6;
 
-    string cluster_id                              = 7 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" policy:",prefer-parent"'];
+    string cluster_id                              = 7 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"fk(Cluster:id)"'];
     string namespace                               = 8 [(gogoproto.moretags) = 'search:"Namespace,store,hidden" policy:",prefer-parent"'];
 
     google.protobuf.Timestamp container_start_time = 9;

@@ -66,49 +66,4 @@ func (s *ComplianceOperatorRulesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundComplianceOperatorRule)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, complianceOperatorRule))
-	foundComplianceOperatorRule, exists, err = store.Get(ctx, complianceOperatorRule.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorRule, foundComplianceOperatorRule)
-
-	complianceOperatorRuleCount, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, complianceOperatorRuleCount)
-	complianceOperatorRuleCount, err = store.Count(withNoAccessCtx)
-	s.NoError(err)
-	s.Zero(complianceOperatorRuleCount)
-
-	complianceOperatorRuleExists, err := store.Exists(ctx, complianceOperatorRule.GetId())
-	s.NoError(err)
-	s.True(complianceOperatorRuleExists)
-	s.NoError(store.Upsert(ctx, complianceOperatorRule))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorRule), sac.ErrResourceAccessDenied)
-
-	foundComplianceOperatorRule, exists, err = store.Get(ctx, complianceOperatorRule.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorRule, foundComplianceOperatorRule)
-
-	s.NoError(store.Delete(ctx, complianceOperatorRule.GetId()))
-	foundComplianceOperatorRule, exists, err = store.Get(ctx, complianceOperatorRule.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundComplianceOperatorRule)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorRule.GetId()), sac.ErrResourceAccessDenied)
-
-	var complianceOperatorRules []*storage.ComplianceOperatorRule
-	for i := 0; i < 200; i++ {
-		complianceOperatorRule := &storage.ComplianceOperatorRule{}
-		s.NoError(testutils.FullInit(complianceOperatorRule, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		complianceOperatorRules = append(complianceOperatorRules, complianceOperatorRule)
-	}
-
-	s.NoError(store.UpsertMany(ctx, complianceOperatorRules))
-
-	complianceOperatorRuleCount, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, complianceOperatorRuleCount)
 }

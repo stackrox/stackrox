@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
@@ -25,7 +26,8 @@ var (
                    Namespace varchar,
                    CreatedAt timestamp,
                    serialized bytea,
-                   PRIMARY KEY(Id)
+                   PRIMARY KEY(Id),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ClusterId) REFERENCES clusters(Id) ON DELETE CASCADE
                )
                `,
 		GormModel: (*Secrets)(nil),
@@ -76,6 +78,13 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Secret)(nil)), "secrets")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Cluster": ClustersSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SECRETS, "secret", (*storage.Secret)(nil)))
 		RegisterTable(schema, CreateTableSecretsStmt)
 		return schema
@@ -97,6 +106,7 @@ type Secrets struct {
 	Namespace   string     `gorm:"column:namespace;type:varchar"`
 	CreatedAt   *time.Time `gorm:"column:createdat;type:timestamp"`
 	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
+	ClustersRef Clusters   `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
 // SecretsFiles holds the Gorm model for Postgres table `secrets_files`.

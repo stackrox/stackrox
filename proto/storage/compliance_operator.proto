@@ -22,7 +22,7 @@ message ComplianceOperatorCheckResult {
     string              id           = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              check_id     = 2;
     string              check_name   = 3;
-    string              cluster_id   = 4;
+    string              cluster_id   = 4 [(gogoproto.moretags) = 'sql:"fk(Cluster:id)"'];
     CheckStatus         status       = 5;
     string              description  = 6;
     string              instructions = 7;
@@ -35,7 +35,7 @@ message ComplianceOperatorProfile {
     string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              profile_id  = 2;
     string              name        = 3;
-    string              cluster_id  = 4;
+    string              cluster_id  = 4 [(gogoproto.moretags) = 'sql:"fk(Cluster:id)"'];
     map<string, string> labels      = 5;
     map<string, string> annotations = 6;
     string              description = 7;
@@ -50,7 +50,7 @@ message ComplianceOperatorRule {
     string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              rule_id     = 2;
     string              name        = 3;
-    string              cluster_id  = 4;
+    string              cluster_id  = 4 [(gogoproto.moretags) = 'sql:"fk(Cluster:id)"'];
     map<string, string> labels      = 5;
     map<string, string> annotations = 6;
     string              title       = 7;
@@ -62,7 +62,7 @@ message ComplianceOperatorRule {
 message ComplianceOperatorScanSettingBinding {
     string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              name        = 2;
-    string              cluster_id  = 3;
+    string              cluster_id  = 3 [(gogoproto.moretags) = 'sql:"fk(Cluster:id)"'];
     map<string, string> labels      = 4;
     map<string, string> annotations = 5;
     message Profile {
@@ -74,7 +74,7 @@ message ComplianceOperatorScanSettingBinding {
 message ComplianceOperatorScan {
     string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              name        = 2;
-    string              cluster_id  = 3;
+    string              cluster_id  = 3 [(gogoproto.moretags) = 'sql:"fk(Cluster:id)"'];
     string              profile_id  = 4;
     map<string, string> labels      = 5;
     map<string, string> annotations = 6;

@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
@@ -52,7 +53,8 @@ var (
                    State integer,
                    Tags text[],
                    serialized bytea,
-                   PRIMARY KEY(Id)
+                   PRIMARY KEY(Id),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ClusterId) REFERENCES clusters(Id) ON DELETE CASCADE
                )
                `,
 		GormModel: (*Alerts)(nil),
@@ -61,7 +63,25 @@ var (
 			"create index if not exists alerts_Deployment_Id on alerts using hash(Deployment_Id)",
 			"create index if not exists alerts_State on alerts using btree(State)",
 		},
-		Children: []*postgres.CreateStmts{},
+		Children: []*postgres.CreateStmts{
+			&postgres.CreateStmts{
+				Table: `
+               create table if not exists alerts_processes (
+                   alerts_Id varchar,
+                   idx integer,
+                   ClusterId varchar,
+                   PRIMARY KEY(alerts_Id, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE,
+                   CONSTRAINT fk_parent_table_1 FOREIGN KEY (ClusterId) REFERENCES clusters(Id) ON DELETE CASCADE
+               )
+               `,
+				GormModel: (*AlertsProcesses)(nil),
+				Indexes: []string{
+					"create index if not exists alertsProcesses_idx on alerts_processes using btree(idx)",
+				},
+				Children: []*postgres.CreateStmts{},
+			},
+		},
 	}
 
 	// AlertsSchema is the go schema for table `alerts`.
@@ -71,6 +91,13 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Alert)(nil)), "alerts")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Cluster": ClustersSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.ListAlert)(nil)))
 		RegisterTable(schema, CreateTableAlertsStmt)
 		return schema
@@ -78,7 +105,8 @@ var (
 )
 
 const (
-	AlertsTableName = "alerts"
+	AlertsTableName          = "alerts"
+	AlertsProcessesTableName = "alerts_processes"
 )
 
 // Alerts holds the Gorm model for Postgres table `alerts`.
@@ -116,4 +144,14 @@ type Alerts struct {
 	State                    storage.ViolationState              `gorm:"column:state;type:integer;index:alerts_state,type:btree"`
 	Tags                     *pq.StringArray                     `gorm:"column:tags;type:text[]"`
 	Serialized               []byte                              `gorm:"column:serialized;type:bytea"`
+	ClustersRef              Clusters                            `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// AlertsProcesses holds the Gorm model for Postgres table `alerts_processes`.
+type AlertsProcesses struct {
+	AlertsId    string   `gorm:"column:alerts_id;type:varchar;primaryKey"`
+	Idx         int      `gorm:"column:idx;type:integer;primaryKey;index:alertsprocesses_idx,type:btree"`
+	ClusterId   string   `gorm:"column:clusterid;type:varchar"`
+	AlertsRef   Alerts   `gorm:"foreignKey:alerts_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	ClustersRef Clusters `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
