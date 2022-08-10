@@ -427,7 +427,6 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Autocomplete on #category resources using the #tokenName token returns #numResults results"() {
         when:
         "Search is called using a token without view access to Deployments"
