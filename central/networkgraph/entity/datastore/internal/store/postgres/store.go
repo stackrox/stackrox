@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -88,10 +89,12 @@ func insertIntoNetworkEntities(ctx context.Context, batch *pgx.Batch, obj *stora
 		// parent primary keys start
 		obj.GetInfo().GetId(),
 		obj.GetInfo().GetExternalSource().GetDefault(),
+		obj.GetScope().GetClusterId(),
+		obj.GetScope().GetNamespace(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Default, serialized) VALUES($1, $2, $3) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Default, Scope_ClusterId, Scope_Namespace, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, Scope_ClusterId = EXCLUDED.Scope_ClusterId, Scope_Namespace = EXCLUDED.Scope_Namespace, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -113,6 +116,10 @@ func (s *storeImpl) copyFromNetworkEntities(ctx context.Context, tx pgx.Tx, objs
 
 		"info_externalsource_default",
 
+		"scope_clusterid",
+
+		"scope_namespace",
+
 		"serialized",
 	}
 
@@ -130,6 +137,10 @@ func (s *storeImpl) copyFromNetworkEntities(ctx context.Context, tx pgx.Tx, objs
 			obj.GetInfo().GetId(),
 
 			obj.GetInfo().GetExternalSource().GetDefault(),
+
+			obj.GetScope().GetClusterId(),
+
+			obj.GetScope().GetNamespace(),
 
 			serialized,
 		})
@@ -217,7 +228,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkEntity) 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkEntity) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NetworkEntity")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
+		ClusterID(obj.GetScope().GetClusterId()).Namespace(obj.GetScope().GetNamespace())
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -234,7 +246,18 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkEntit
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrResourceAccessDenied
+		var deniedIds []string
+		for _, obj := range objs {
+			subScopeChecker := scopeChecker.ClusterID(obj.GetScope().GetClusterId()).Namespace(obj.GetScope().GetNamespace())
+			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
+				return err
+			} else if !ok {
+				deniedIds = append(deniedIds, obj.GetInfo().GetId())
+			}
+		}
+		if len(deniedIds) != 0 {
+			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying networkEntitys with IDs [%s] was denied", strings.Join(deniedIds, ", "))
+		}
 	}
 
 	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
@@ -539,6 +562,18 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error {
 	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
+		return err
+	}
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return err
+	}
 	fetcher, closer, err := postgres.RunCursorQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err

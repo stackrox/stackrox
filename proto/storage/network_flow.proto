@@ -41,7 +41,8 @@ message NetworkEndpointProperties {
 
 message NetworkEntity {
     message Scope {
-        string cluster_id = 1;
+        string cluster_id = 1 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden"'];
+        string namespace = 2 [(gogoproto.moretags) = 'search:"Namespace,store"'];
     }
 
     NetworkEntityInfo info  = 1;

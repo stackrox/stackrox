@@ -82,10 +82,12 @@ func insertIntoNetworkEntities(ctx context.Context, batch *pgx.Batch, obj *stora
 		// parent primary keys start
 		obj.GetInfo().GetId(),
 		obj.GetInfo().GetExternalSource().GetDefault(),
+		obj.GetScope().GetClusterId(),
+		obj.GetScope().GetNamespace(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Default, serialized) VALUES($1, $2, $3) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Default, Scope_ClusterId, Scope_Namespace, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, Scope_ClusterId = EXCLUDED.Scope_ClusterId, Scope_Namespace = EXCLUDED.Scope_Namespace, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -107,6 +109,10 @@ func (s *storeImpl) copyFromNetworkEntities(ctx context.Context, tx pgx.Tx, objs
 
 		"info_externalsource_default",
 
+		"scope_clusterid",
+
+		"scope_namespace",
+
 		"serialized",
 	}
 
@@ -124,6 +130,10 @@ func (s *storeImpl) copyFromNetworkEntities(ctx context.Context, tx pgx.Tx, objs
 			obj.GetInfo().GetId(),
 
 			obj.GetInfo().GetExternalSource().GetDefault(),
+
+			obj.GetScope().GetClusterId(),
+
+			obj.GetScope().GetNamespace(),
 
 			serialized,
 		})

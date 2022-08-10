@@ -19,6 +19,8 @@ var (
                create table if not exists network_entities (
                    Info_Id varchar,
                    Info_ExternalSource_Default bool,
+                   Scope_ClusterId varchar,
+                   Scope_Namespace varchar,
                    serialized bytea,
                    PRIMARY KEY(Info_Id)
                )
@@ -49,5 +51,7 @@ const (
 type NetworkEntities struct {
 	InfoId                    string `gorm:"column:info_id;type:varchar;primaryKey"`
 	InfoExternalSourceDefault bool   `gorm:"column:info_externalsource_default;type:bool"`
+	ScopeClusterId            string `gorm:"column:scope_clusterid;type:varchar"`
+	ScopeNamespace            string `gorm:"column:scope_namespace;type:varchar"`
 	Serialized                []byte `gorm:"column:serialized;type:bytea"`
 }

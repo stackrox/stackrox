@@ -60,7 +60,7 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.NamespaceMetadata{}, resourceType: directlyScoped},
 		{typ: &storage.NetworkBaseline{}, resourceType: directlyScoped},
 		{typ: &storage.NetworkGraphConfig{}, resourceType: globallyScoped},
-		{typ: &storage.NetworkEntity{}, resourceType: indirectlyScoped},
+		{typ: &storage.NetworkEntity{}, resourceType: directlyScoped},
 		{typ: &storage.NetworkFlow{}, resourceType: indirectlyScoped},
 		{typ: &storage.NetworkPolicy{}, resourceType: directlyScoped},
 		{typ: &storage.NetworkPolicyApplicationUndoRecord{}, resourceType: indirectlyScoped},

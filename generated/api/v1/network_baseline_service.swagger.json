@@ -411,6 +411,9 @@
       "properties": {
         "clusterId": {
           "type": "string"
+        },
+        "namespace": {
+          "type": "string"
         }
       }
     },
