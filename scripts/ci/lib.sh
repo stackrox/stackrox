@@ -638,7 +638,7 @@ get_PR_number() {
         # bin, test-bin, images
         local pull_request
         pull_request=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].number' 2>&1) || {
-            echo 2>&1 "ERROR: Could not determin a PR number"
+            echo 2>&1 "ERROR: Could not determine a PR number"
             return 1
         }
         if [[ "$pull_request" =~ ^[0-9]+$ ]]; then
