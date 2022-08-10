@@ -34,7 +34,7 @@ func (s *basicAuthProviderRemovalServiceImpl) AuthFuncOverride(ctx context.Conte
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// GetAuthProvider retrieves the authProvider based on the id passed
+// GetAuthProvider retrieves the authProvider based on the id passed.
 func (s *basicAuthProviderRemovalServiceImpl) GetAuthProvider(ctx context.Context, request *v1.GetAuthProviderRequest) (*storage.AuthProvider, error) {
 	authProvider, err := s.underlying.GetAuthProvider(ctx, request)
 	if err != nil {
@@ -46,7 +46,7 @@ func (s *basicAuthProviderRemovalServiceImpl) GetAuthProvider(ctx context.Contex
 	return authProvider, nil
 }
 
-// GetLoginAuthProviders retrieves all authProviders that matches the request filters
+// GetLoginAuthProviders retrieves all authProviders that matches the request filters.
 func (s *basicAuthProviderRemovalServiceImpl) GetLoginAuthProviders(ctx context.Context, _ *v1.Empty) (*v1.GetLoginAuthProvidersResponse, error) {
 	resp, err := s.underlying.GetLoginAuthProviders(ctx, &v1.Empty{})
 	if err != nil || len(resp.GetAuthProviders()) == 0 {
@@ -68,7 +68,7 @@ func (s *basicAuthProviderRemovalServiceImpl) ListAvailableProviderTypes(ctx con
 	return s.underlying.ListAvailableProviderTypes(ctx, &v1.Empty{})
 }
 
-// GetAuthProviders retrieves all authProviders that matches the request filters
+// GetAuthProviders retrieves all authProviders that matches the request filters.
 func (s *basicAuthProviderRemovalServiceImpl) GetAuthProviders(ctx context.Context, request *v1.GetAuthProvidersRequest) (*v1.GetAuthProvidersResponse, error) {
 	resp, err := s.underlying.GetAuthProviders(ctx, request)
 	if err != nil {
@@ -85,7 +85,7 @@ func (s *basicAuthProviderRemovalServiceImpl) GetAuthProviders(ctx context.Conte
 	}, nil
 }
 
-// PostAuthProvider inserts a new auth provider into the system
+// PostAuthProvider inserts a new auth provider into the system.
 func (s *basicAuthProviderRemovalServiceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetProvider().GetType() == basic.TypeName {
 		return nil, errox.InvalidArgs.Newf("cannot create basic auth providers")
@@ -107,7 +107,7 @@ func (s *basicAuthProviderRemovalServiceImpl) UpdateAuthProvider(ctx context.Con
 	return s.underlying.UpdateAuthProvider(ctx, request)
 }
 
-// DeleteAuthProvider deletes an auth provider from the system
+// DeleteAuthProvider deletes an auth provider from the system.
 func (s *basicAuthProviderRemovalServiceImpl) DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == userpass.BasicAuthProviderID {
 		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
