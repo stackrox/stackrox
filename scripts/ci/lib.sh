@@ -993,7 +993,7 @@ openshift_ci_mods() {
             info "Will checkout SHA to match PR: $sha"
             git checkout "$sha"
         else
-            echo "WARNING: Could not determina a SHA for this PR, ${sha:-}"
+            echo "WARNING: Could not determine a SHA for this PR, ${sha:-}"
         fi
     fi
 
