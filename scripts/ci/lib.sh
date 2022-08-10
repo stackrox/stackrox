@@ -627,6 +627,31 @@ is_in_PR_context() {
     return 1
 }
 
+get_PR_number() {
+    if is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
+        echo "${CIRCLE_PULL_REQUEST}"
+        return 0
+    elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
+        echo "${PULL_NUMBER}"
+        return 0
+    elif is_OPENSHIFT_CI && [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+        # bin, test-bin, images
+        local pull_request
+        pull_request=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].number' 2>&1) || {
+            echo 2>&1 "ERROR: Could not determin a PR number"
+            return 1
+        }
+        if [[ "$pull_request" =~ ^[0-9]+$ ]]; then
+            echo "$pull_request"
+            return 0
+        fi
+    fi
+
+    echo 2>&1 "ERROR: Could not determin a PR number"
+
+    return 1
+}
+
 is_openshift_CI_rehearse_PR() {
     [[ "$(get_repo_full_name)" == "openshift/release" ]]
 }
