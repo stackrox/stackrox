@@ -167,6 +167,59 @@ message ImageMetadata {
     uint64                    version               = 5;
 }
 
+message ImageSBOM {
+    google.protobuf.Timestamp fetched = 1;
+    repeated SBOM sboms               = 2;
+    SBOMVerificationResult result     = 3;
+}
+
+message SBOMVerificationResult {
+    enum Status {
+        UNSET               = 0;
+        // COVERED is set when the SBOM covers the whole image.
+        COVERED             = 1;
+        // PARTIALLY_COVERED is set when the SBOM covers only parts of the image, i.e. only a few layers / files.
+        PARTIALLY_COVERED   = 2;
+        // FAILED_VERIFICATION is set when the SBOM verification failed.
+        FAILED_VERIFICATION = 3;
+        // GENERIC_ERROR is set when a generic, non-specific error occurred during verification.
+        GENERIC_ERROR       = 4;
+    }
+    Status status                      = 1;
+    google.protobuf.Timestamp verified = 2;
+}
+
+message SBOM {
+    enum Type {
+        UNSET = 0;
+        COMPLETE_SBOM = 1;
+        LAYER_SCOPED_SBOM = 2;
+        FILE_SCOPED_SBOM = 3;
+    }
+    Type type = 1;
+    oneof SBOM {
+        CompleteSBOM complete_sbom = 2;
+        LayerSBOM layer_sbom = 3;
+        FileSBOM file_sbom = 4;
+    }
+}
+
+// SBOMs can refer to a single layer of an image.
+message LayerSBOM {
+    string referenced_image_layer_sha = 1;
+}
+
+// SBOMs can refer to a single file in the unexpanded image.
+message FileSBOM {
+    string path_in_image = 1;
+}
+
+// Shit name should be something else but ¯\_(ツ)_/¯
+message CompleteSBOM {
+    // Scope could be either all / empty -> not sure it makes sense to add it.
+    string scope = 1;
+}
+
 message ImageSignature {
     repeated Signature signatures                  = 1;
     google.protobuf.Timestamp fetched              = 2 [(gogoproto.moretags) = 'search:"Image Signature Fetched Time,hidden"'];
