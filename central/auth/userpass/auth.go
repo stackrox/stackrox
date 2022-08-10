@@ -27,7 +27,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	// The auth provider ID used for basic auth. This is arbitrary, but should not be changed.
+	// BasicAuthProviderID is the auth provider ID used for basic auth. This is arbitrary, but should not be changed.
 	BasicAuthProviderID = "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
 )
 
