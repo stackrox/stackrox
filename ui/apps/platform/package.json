@@ -193,6 +193,7 @@
         "displayName": "Advanced Cluster Security Plugins",
         "description": "ACS -> OCP Plugins",
         "exposedModules": {
+            "Overview": "./console-plugins/modules/Overview",
             "Violations": "./console-plugins/modules/Violations"
         },
         "dependencies": {

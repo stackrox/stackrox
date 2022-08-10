@@ -8,11 +8,21 @@
     }
   },
   {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "acs-overview",
+      "name": "Overview",
+      "href": "/acs/overview",
+      "perspective": "admin",
+      "section": "advanced-cluster-security"
+    }
+  },
+  {
     "type": "console.page/route",
     "properties": {
       "exact": true,
-      "path": "/acs/violations",
-      "component": { "$codeRef": "Violations" }
+      "path": "/acs/overview",
+      "component": { "$codeRef": "Overview" }
     }
   },
   {
@@ -23,6 +33,13 @@
       "href": "/acs/violations",
       "perspective": "admin",
       "section": "advanced-cluster-security"
+    }
+  },
+{
+    "type": "console.page/route",
+    "properties": {
+      "path": "/acs/violations",
+      "component": { "$codeRef": "Violations" }
     }
   }
 ]

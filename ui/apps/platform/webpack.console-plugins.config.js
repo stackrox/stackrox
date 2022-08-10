@@ -19,12 +19,16 @@ const config = {
         rules: [
             {
                 test: /\.(jsx?|tsx?)$/,
-                exclude: /node_modules/,
+                exclude: {
+                    and: [/node_modules/],
+                    not: [/node_modules\/@lifeomic/],
+                },
                 use: [
                     {
                         loader: 'ts-loader',
                         options: {
                             configFile: path.resolve(__dirname, 'tsconfig.json'),
+                            allowTsInNodeModules: true,
                         },
                     },
                 ],
