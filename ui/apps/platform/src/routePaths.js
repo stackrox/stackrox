@@ -31,6 +31,7 @@ export const deprecatedPoliciesPath = `${deprecatedPoliciesBasePath}/:policyId?/
 export const riskBasePath = `${mainPath}/risk`;
 export const riskPath = `${riskBasePath}/:deploymentId?`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
+export const searchPath = `${mainPath}/search`;
 export const apidocsPath = `${mainPath}/apidocs`;
 export const accessControlPath = `${mainPath}/access`;
 export const accessControlBasePathV2 = `${mainPath}/access-control`;

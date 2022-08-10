@@ -15,6 +15,7 @@ import {
     policyManagementBasePath,
     deprecatedPoliciesPath,
     riskPath,
+    searchPath,
     apidocsPath,
     accessControlPathV2,
     userBasePath,
@@ -44,6 +45,7 @@ function NotFoundPage(): ReactElement {
     );
 }
 
+const AsyncSearchPage = asyncComponent(() => import('Containers/Search/SearchPage'));
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
 // TODO Rename this and replace AsyncDashboardPage once Sec Metrics Phase One is complete
@@ -94,6 +96,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const { isDarkMode } = useTheme();
 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
+    const isSearchPageEnabled = isFeatureFlagEnabled('ROX_SEARCH_PAGE_UI');
     const isDashboardPatternFlyEnabled = isFeatureFlagEnabled('ROX_SECURITY_METRICS_PHASE_ONE');
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
@@ -122,6 +125,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
                     <Route path={riskPath} component={AsyncRiskPage} />
                     <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
+                    {isSearchPageEnabled && <Route path={searchPath} component={AsyncSearchPage} />}
                     <Route path={apidocsPath} component={AsyncApiDocsPage} />
                     <Route path={userBasePath} component={AsyncUserPage} />
                     <Route path={systemConfigPath} component={AsyncSystemConfigPage} />

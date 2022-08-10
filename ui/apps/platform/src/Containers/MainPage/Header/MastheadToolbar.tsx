@@ -4,6 +4,7 @@ import { PageHeaderTools, PageHeaderToolsGroup, PageHeaderToolsItem } from '@pat
 
 import useCases from 'constants/useCaseTypes';
 import parseURL from 'utils/URLParser';
+import { searchPath } from 'routePaths';
 
 import CLIDownloadMenu from './CLIDownloadMenu';
 import ClusterStatusProblems from './ClusterStatusProblems';
@@ -18,7 +19,9 @@ function MastheadToolbar(): ReactElement {
     const workflowState = parseURL(location);
     const useCase = workflowState.getUseCase();
     const showOrchestratorComponentsToggle =
-        useCase === useCases.RISK || useCase === useCases.NETWORK;
+        useCase === useCases.RISK ||
+        useCase === useCases.NETWORK ||
+        location.pathname === searchPath;
 
     return (
         <PageHeaderTools>
