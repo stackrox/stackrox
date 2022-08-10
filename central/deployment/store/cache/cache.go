@@ -24,6 +24,13 @@ func NewCachedStore(store store.Store) (store.Store, error) {
 	return impl, nil
 }
 
+type cacheImpl struct {
+	store store.Store
+
+	cache map[string]*storage.Deployment
+	lock  sync.RWMutex
+}
+
 func (c *cacheImpl) GetListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
@@ -52,15 +59,8 @@ func (c *cacheImpl) GetManyListDeployments(ctx context.Context, ids ...string) (
 	return listDeployments, missingIndices, nil
 }
 
-type cacheImpl struct {
-	store store.Store
-
-	cache map[string]*storage.Deployment
-	lock  sync.RWMutex
-}
-
 func (c *cacheImpl) addNoLock(deployment *storage.Deployment) {
-	c.cache[deployment.GetId()] = deployment.Clone()
+	c.cache[deployment.GetId()] = deployment
 }
 
 func (c *cacheImpl) populate() error {
@@ -103,9 +103,8 @@ func (c *cacheImpl) Exists(_ context.Context, id string) (bool, error) {
 
 func (c *cacheImpl) Get(_ context.Context, id string) (*storage.Deployment, bool, error) {
 	c.lock.RLock()
-	defer c.lock.RUnlock()
-
 	deployment, ok := c.cache[id]
+	c.lock.RUnlock()
 	if !ok {
 		return nil, false, nil
 	}
@@ -145,10 +144,11 @@ func (c *cacheImpl) Upsert(ctx context.Context, deployment *storage.Deployment) 
 	if err := c.store.Upsert(ctx, deployment); err != nil {
 		return err
 	}
+	clonedDeployment := deployment.Clone()
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.addNoLock(deployment)
+	c.addNoLock(clonedDeployment)
 	return nil
 }
 

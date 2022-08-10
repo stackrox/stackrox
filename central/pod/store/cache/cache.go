@@ -31,7 +31,7 @@ type cacheImpl struct {
 }
 
 func (c *cacheImpl) addNoLock(pod *storage.Pod) {
-	c.cache[pod.GetId()] = pod.Clone()
+	c.cache[pod.GetId()] = pod
 }
 
 func (c *cacheImpl) populate() error {
@@ -86,9 +86,8 @@ func (c *cacheImpl) GetKeys() ([]string, error) {
 
 func (c *cacheImpl) Get(_ context.Context, id string) (*storage.Pod, bool, error) {
 	c.lock.RLock()
-	defer c.lock.RUnlock()
-
 	pod, ok := c.cache[id]
+	c.lock.RUnlock()
 	if !ok {
 		return nil, false, nil
 	}
@@ -128,10 +127,11 @@ func (c *cacheImpl) Upsert(ctx context.Context, pod *storage.Pod) error {
 	if err := c.store.Upsert(ctx, pod); err != nil {
 		return err
 	}
+	clonedPod := pod.Clone()
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.addNoLock(pod)
+	c.addNoLock(clonedPod)
 	return nil
 }
 
