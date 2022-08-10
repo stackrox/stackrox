@@ -5,6 +5,7 @@ import org.junit.experimental.categories.Category
 import services.GraphQLService
 import services.ImageService
 import spock.lang.Ignore
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
 import util.Env
 
@@ -191,14 +192,6 @@ class CVETest extends BaseSpecification {
     private static final SCOPED_FIXABLE_QUERY = """
     query getCve(\$id: ID!, \$scopeQuery: String) {
       result: vulnerability(id: \$id) {
-        isFixable(query: \$scopeQuery)
-      }
-    }
-    """
-
-    private static final SCOPED_FIXABLE_POSTGRES_QUERY = """
-    query getCve(\$id: ID!, \$scopeQuery: String) {
-      result: imageVulnerability(id: \$id) {
         isFixable(query: \$scopeQuery)
       }
     }
@@ -465,24 +458,15 @@ class CVETest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable for entities when scoped by CVE is still correct"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"
         def gqlService = new GraphQLService()
-        def fixableCvesByEntityQuery = ""
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            fixableCvesByEntityQuery = FIXABLE_CVES_BY_ENTITY_POSTGRES_QUERY
-        } else {
-            fixableCvesByEntityQuery = FIXABLE_CVES_BY_ENTITY_QUERY
-        }
-        def scopeQuery = ""
-        if (! Env.CI_JOBNAME.contains("postgres")) {
-            scopeQuery = "CVE:CVE-2020-8285"
-        }
-        def ret = gqlService.Call(fixableCvesByEntityQuery, [
+        def ret = gqlService.Call(FIXABLE_CVES_BY_ENTITY_QUERY, [
                 id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
                 query: "",
-                scopeQuery: scopeQuery,
+                scopeQuery: "CVE:CVE-2020-8285",
                 vulnQuery: "Fixable:true",
         ])
 
@@ -494,6 +478,7 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable is correct when scoped (#digest, #fixable)"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"
