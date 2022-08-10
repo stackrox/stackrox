@@ -444,6 +444,12 @@ func TestTranslate(t *testing.T) {
 							"host":    "custom-route.stackrox.io",
 						},
 					},
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"persistentVolumeClaim": map[string]interface{}{
+							"createClaim": false,
+						},
+					},
 				},
 			},
 		},
