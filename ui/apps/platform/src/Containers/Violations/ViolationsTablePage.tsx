@@ -169,7 +169,7 @@ function ViolationsTablePage(): ReactElement {
                     searchOptions={searchOptions}
                 />
             </PageSection>
-            <PageSection variant="default">
+            <PageSection variant="default" padding={{ default: 'noPadding' }} className="pf-u-m-lg">
                 {currentPageAlertsErrorMessage ? (
                     <Bullseye>
                         <Alert variant="danger" title={currentPageAlertsErrorMessage} />

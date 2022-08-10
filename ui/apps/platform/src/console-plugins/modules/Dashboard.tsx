@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { PageSection, Title } from '@patternfly/react-core';
+import { Divider, PageSection, Title } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
 import PluginProvider from 'console-plugins/PluginProvider';
@@ -30,19 +30,19 @@ export default function Overview() {
     return (
         <PluginProvider>
             <PageSection>
-                <Title headingLevel="h2">Dashboard</Title>
+                <Title headingLevel="h1">Dashboard</Title>
             </PageSection>
-            <PageSection>
+            <Divider component="div" />
+            <PageSection className="pf-u-m-lg">
                 {
                     // Any dashboard components using react-table blow up in production... not sure why
                     /* <ViolationsByPolicySeverity /> */
                 }
-                <Title headingLevel="h2">
+                <Title headingLevel="h2" className="pf-u-pb-md">
                     {`${totalCount} policy ${pluralize('violation', totalCount)} by severity`}
                 </Title>
                 <PolicyViolationTiles searchFilter={{}} counts={counts} />
-            </PageSection>
-            <PageSection>
+                <Divider className="pf-u-my-lg" component="div" />
                 <ViolationsByPolicyCategory />
             </PageSection>
         </PluginProvider>

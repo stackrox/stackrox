@@ -9,6 +9,7 @@ import {
     Title,
     SelectOption,
     Select,
+    Divider,
 } from '@patternfly/react-core';
 import { loginWithBasicAuth } from 'services/AuthService';
 import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
@@ -68,9 +69,10 @@ export default function PluginLogin({ onLogin, onEndpointChange }) {
     return (
         <>
             <PageSection>
-                <Title headingLevel="h2">Login to ACS Instance</Title>
+                <Title headingLevel="h1">Login to ACS Instance</Title>
             </PageSection>
-            <PageSection>
+            <Divider component="div" />
+            <PageSection className="pf-u-m-lg">
                 <Form>
                     <FormGroup label="Select ACS Instance" isRequired fieldId="simple-form-name-03">
                         <Select

@@ -7,6 +7,7 @@ import configureApolloClient from 'configureApolloClient';
 
 import 'css/acs.css';
 
+import { PageSection } from '@patternfly/react-core';
 import PluginLogin from './PluginLogin';
 
 let baseURL = localStorage.getItem('acs-base-url');
@@ -32,20 +33,27 @@ export default function PluginProvider({ children }) {
         }
     });
 
-    return isAuth ? (
-        <ApolloProvider client={apolloClient}>{children}</ApolloProvider>
-    ) : (
-        <PluginLogin
-            onLogin={(res) => {
-                if (res.token) {
-                    userAuthenticated = true;
-                    setIsAuth(true);
-                }
-            }}
-            onEndpointChange={(endpoint: string) => {
-                baseURL = `https://${endpoint}`;
-                localStorage.setItem('acs-base-url', baseURL);
-            }}
-        />
+    return (
+        <PageSection
+            padding={{ default: 'noPadding' }}
+            style={{ backgroundColor: 'var(--pf-global--BackgroundColor--light-300)' }}
+        >
+            {isAuth ? (
+                <ApolloProvider client={apolloClient}>{children}</ApolloProvider>
+            ) : (
+                <PluginLogin
+                    onLogin={(res) => {
+                        if (res.token) {
+                            userAuthenticated = true;
+                            setIsAuth(true);
+                        }
+                    }}
+                    onEndpointChange={(endpoint: string) => {
+                        baseURL = `https://${endpoint}`;
+                        localStorage.setItem('acs-base-url', baseURL);
+                    }}
+                />
+            )}
+        </PageSection>
     );
 }
