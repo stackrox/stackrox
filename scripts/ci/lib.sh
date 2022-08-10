@@ -647,7 +647,7 @@ get_PR_number() {
         fi
     fi
 
-    echo 2>&1 "ERROR: Could not determin a PR number"
+    echo 2>&1 "ERROR: Could not determine a PR number"
 
     return 1
 }
@@ -993,7 +993,7 @@ openshift_ci_mods() {
             info "Will checkout SHA to match PR: $sha"
             git checkout "$sha"
         else
-            echo "WARNING: Could not determin a SHA for this PR, ${sha:-}"
+            echo "WARNING: Could not determina a SHA for this PR, ${sha:-}"
         fi
     fi
 
