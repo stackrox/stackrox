@@ -42,7 +42,8 @@ func initialize() {
 		bleveIndex = globalindex.GetGlobalIndex()
 		processIndex = globalindex.GetProcessIndex()
 	}
-	ad = New(dackBox,
+	var err error
+	ad, err = New(dackBox,
 		keyFence,
 		pool,
 		// Process Tag store will be removed in 72.0
@@ -58,6 +59,9 @@ func initialize() {
 		ranking.ClusterRanker(),
 		ranking.NamespaceRanker(),
 		ranking.DeploymentRanker())
+	if err != nil {
+		log.Fatalf("could not initialize deployment datastore: %v", err)
+	}
 }
 
 // Singleton provides the interface for non-service external interaction.

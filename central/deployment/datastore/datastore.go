@@ -70,8 +70,11 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpo
 	processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
-	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
-	storage = cache.NewCachedStore(storage)
+	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
+	storage, err := cache.NewCachedStore(storage)
+	if err != nil {
+		return nil, err
+	}
 	var deploymentIndexer index.Indexer
 	var searcher search.Searcher
 	if features.PostgresDatastore.Enabled() {
@@ -93,7 +96,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpo
 		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	ds.initializeRanker()
-	return ds
+	return ds, nil
 }
 
 // New creates a deployment datastore based on dackbox
@@ -101,7 +104,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Po
 	processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
-	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
+	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	var storage store.Store
 	if features.PostgresDatastore.Enabled() {
 		storage = postgres.NewFullStore(context.TODO(), pool)
@@ -165,5 +168,5 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	deploymentRanker := ranking.DeploymentRanker()
 	return New(dacky, keyFence, nil, nil, bleveIndex, bleveIndex, imageStore,
 		processBaselineStore, networkFlowClusterStore, riskStore, nil,
-		processFilter, clusterRanker, namespaceRanker, deploymentRanker), nil
+		processFilter, clusterRanker, namespaceRanker, deploymentRanker)
 }

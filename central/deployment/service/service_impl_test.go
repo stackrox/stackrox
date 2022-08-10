@@ -131,7 +131,8 @@ func TestLabelsMap(t *testing.T) {
 			if features.PostgresDatastore.Enabled() {
 				pool = globaldb.GetPostgres()
 			}
-			deploymentsDS := datastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+			deploymentsDS, err := datastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+			require.NoError(t, err)
 
 			for _, deployment := range c.deployments {
 				assert.NoError(t, deploymentsDS.UpsertDeployment(ctx, deployment))
