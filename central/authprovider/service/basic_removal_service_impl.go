@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/userpass"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -35,10 +36,14 @@ func (s *basicAuthProviderRemovalServiceImpl) AuthFuncOverride(ctx context.Conte
 
 // GetAuthProvider retrieves the authProvider based on the id passed
 func (s *basicAuthProviderRemovalServiceImpl) GetAuthProvider(ctx context.Context, request *v1.GetAuthProviderRequest) (*storage.AuthProvider, error) {
-	if request.GetId() == userpass.BasicAuthProviderID {
-		return nil, errox.NotFound
+	authProvider, err := s.underlying.GetAuthProvider(ctx, request)
+	if err != nil {
+		return authProvider, err
 	}
-	return s.underlying.GetAuthProvider(ctx, request)
+	if authProvider.GetType() == basic.TypeName {
+		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
+	}
+	return authProvider, nil
 }
 
 // GetLoginAuthProviders retrieves all authProviders that matches the request filters
@@ -49,7 +54,7 @@ func (s *basicAuthProviderRemovalServiceImpl) GetLoginAuthProviders(ctx context.
 	}
 	filtered := make([]*v1.GetLoginAuthProvidersResponse_LoginAuthProvider, 0, len(resp.GetAuthProviders())-1)
 	for _, authProvider := range resp.GetAuthProviders() {
-		if authProvider.GetId() != userpass.BasicAuthProviderID {
+		if authProvider.GetType() != basic.TypeName {
 			filtered = append(filtered, authProvider)
 		}
 	}
@@ -71,7 +76,7 @@ func (s *basicAuthProviderRemovalServiceImpl) GetAuthProviders(ctx context.Conte
 	}
 	filtered := make([]*storage.AuthProvider, 0, len(resp.GetAuthProviders())-1)
 	for _, authProvider := range resp.GetAuthProviders() {
-		if authProvider.GetId() != userpass.BasicAuthProviderID {
+		if authProvider.GetType() != basic.TypeName {
 			filtered = append(filtered, authProvider)
 		}
 	}
@@ -83,24 +88,21 @@ func (s *basicAuthProviderRemovalServiceImpl) GetAuthProviders(ctx context.Conte
 // PostAuthProvider inserts a new auth provider into the system
 func (s *basicAuthProviderRemovalServiceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetProvider().GetType() == basic.TypeName {
-		// TODO: what is the real error here?
-		return nil, errox.InvalidArgs
+		return nil, errox.InvalidArgs.Newf("cannot create basic auth providers")
 	}
 	return s.underlying.PostAuthProvider(ctx, request)
 }
 
 func (s *basicAuthProviderRemovalServiceImpl) PutAuthProvider(ctx context.Context, request *storage.AuthProvider) (*storage.AuthProvider, error) {
 	if request.GetType() == basic.TypeName {
-		// TODO: what is the real error here?
-		return nil, errox.InvalidArgs
+		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
 	}
 	return s.underlying.PutAuthProvider(ctx, request)
 }
 
 func (s *basicAuthProviderRemovalServiceImpl) UpdateAuthProvider(ctx context.Context, request *v1.UpdateAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == userpass.BasicAuthProviderID {
-		// TODO: what is the real error here?
-		return nil, errox.NotFound
+		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
 	}
 	return s.underlying.UpdateAuthProvider(ctx, request)
 }
@@ -108,16 +110,14 @@ func (s *basicAuthProviderRemovalServiceImpl) UpdateAuthProvider(ctx context.Con
 // DeleteAuthProvider deletes an auth provider from the system
 func (s *basicAuthProviderRemovalServiceImpl) DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == userpass.BasicAuthProviderID {
-		// TODO: what is the real error here?
-		return nil, errox.NotFound
+		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
 	}
 	return s.underlying.DeleteAuthProvider(ctx, request)
 }
 
 func (s *basicAuthProviderRemovalServiceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTokenRequest) (*v1.ExchangeTokenResponse, error) {
 	if request.GetType() == basic.TypeName {
-		// TODO: what is the real error here?
-		return nil, errox.NotFound
+		return nil, errors.Wrapf(errox.NotFound, "auth provider with type %q not found", request.GetType())
 	}
 	return s.underlying.ExchangeToken(ctx, request)
 }
