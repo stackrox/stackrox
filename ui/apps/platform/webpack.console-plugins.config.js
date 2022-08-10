@@ -38,7 +38,7 @@ const config = {
                 use: ['style-loader', 'css-loader'],
             },
             {
-                test: /\.(png|jpg|jpeg|gif|svg|woff2?|ttf|eot|otf)(\?.*$|$)/,
+                test: /\.(png|jpg|jpeg|gif|svg|woff2?|ttf|eot|otf|ico)(\?.*$|$)/,
                 type: 'asset/resource',
                 generator: {
                     filename: 'assets/[name].[ext]',

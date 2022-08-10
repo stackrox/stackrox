@@ -289,14 +289,12 @@ export function loginWithBasicAuth(
     username: string,
     password: string,
     authProvider: AuthProvider
-): Promise<void> {
+): Promise<ExchangeTokenResponse> {
     const basicAuthPseudoToken = queryString.stringify({ username, password });
     return exchangeAuthToken(basicAuthPseudoToken, authProvider.type, authProvider.id).then(
-        ({ token }) => {
-            storeAccessToken(token);
-            // window.location.href might be better, however
-            // @ts-ignore 2322
-            window.location = getAndClearRequestedLocation() || '/';
+        (res) => {
+            storeAccessToken(res.token);
+            return res;
         }
     );
 }
