@@ -116,3 +116,4 @@ You will need to start another proxy:
  Or use the script provided by the deployment script:
 
 `deploy/{k8s,openshift}/central-deploy/central/scripts/port-forward.sh 8000`
+
