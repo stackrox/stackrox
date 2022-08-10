@@ -20,11 +20,13 @@ let opnamesForDashboard = [
     'mostCommonImageVulnerabilities',
     'deploymentsWithMostSeverePolicyViolations',
     'clustersWithMostOrchestratorIstioVulnerabilities',
+    'clustersWithMostClusterVulnerabilities',
 ];
 
 if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
     opnamesForDashboard = opnamesForDashboard.filter(
         (opname) =>
+            opname !== 'clustersWithMostOrchestratorIstioVulnerabilities' &&
             opname !== 'recentlyDetectedVulnerabilities' &&
             opname !== 'topRiskiestImagesOld' &&
             opname !== 'mostCommonVulnerabilities'
@@ -32,6 +34,7 @@ if (hasFeatureFlag('ROX_FRONTEND_VM_UPDATES')) {
 } else {
     opnamesForDashboard = opnamesForDashboard.filter(
         (opname) =>
+            opname !== 'clustersWithMostClusterVulnerabilities' &&
             opname !== 'recentlyDetectedImageVulnerabilities' &&
             opname !== 'topRiskiestImageVulns' &&
             opname !== 'mostCommonImageVulnerabilities'
