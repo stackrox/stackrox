@@ -151,6 +151,44 @@ class CVETest extends BaseSpecification {
     }
     """
 
+    private static final FIXABLE_CVES_BY_ENTITY_POSTGRES_QUERY = """
+    query getFixableCvesForEntity(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
+     \$vulnPagination: Pagination) {
+      result: image(id: \$id) {
+        id
+        imageVulnerabilityCounter {
+          all {
+            fixable
+            __typename
+          }
+          __typename
+        }
+        vulnerabilities: imageVulnerabilities(query: \$vulnQuery, pagination: \$vulnPagination) {
+          ...cveFields
+          __typename
+        }
+        __typename
+      }
+    }
+    fragment cveFields on ImageVulnerability {
+      id
+      cve
+      cvss
+      scoreVersion
+      envImpact
+      impactScore
+      summary
+      fixedByVersion
+      isFixable(query: \$scopeQuery)
+      createdAt
+      publishedOn
+      deploymentCount(query: \$query)
+      imageCount(query: \$query)
+      imageComponentCount(query: \$query)
+      __typename
+    }
+    """
+
     private static final SCOPED_FIXABLE_QUERY = """
     query getCve(\$id: ID!, \$scopeQuery: String) {
       result: vulnerability(id: \$id) {
@@ -420,15 +458,24 @@ class CVETest extends BaseSpecification {
     }
 
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable for entities when scoped by CVE is still correct"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"
         def gqlService = new GraphQLService()
-        def ret = gqlService.Call(FIXABLE_CVES_BY_ENTITY_QUERY, [
+        def fixableCvesByEntityQuery = ""
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            fixableCvesByEntityQuery = FIXABLE_CVES_BY_ENTITY_POSTGRES_QUERY
+        } else {
+            fixableCvesByEntityQuery = FIXABLE_CVES_BY_ENTITY_QUERY
+        }
+        def scopeQuery = ""
+        if (! Env.CI_JOBNAME.contains("postgres")) {
+            scopeQuery = "CVE:CVE-2020-8285"
+        }
+        def ret = gqlService.Call(fixableCvesByEntityQuery, [
                 id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
                 query: "",
-                scopeQuery: "CVE:CVE-2020-8285",
+                scopeQuery: scopeQuery,
                 vulnQuery: "Fixable:true",
         ])
 
