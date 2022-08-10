@@ -120,7 +120,7 @@
         "watch:react": "HTTPS=true react-scripts start",
         "generate-graphql-possible-types": "ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh) node scripts/generate-graphql-possible-types.js",
         "eject": "react-scripts eject",
-        "plugins:build": "REACT_APP_MAIN_PATH='/acs' yarn plugins:clean && NODE_ENV=production node_modules/.bin/webpack -c webpack.console-plugins.config.js",
+        "plugins:build": "REACT_APP_MAIN_PATH='/acs' yarn plugins:clean && node_modules/.bin/webpack -c webpack.console-plugins.config.js",
         "plugins:clean": "rm -rf dist",
         "plugins:image-build": "yarn plugins:build && docker build -t quay.io/rh_ee_dvail/acs-violations-plugin:latest . ",
         "plugins:image-build-quick": "docker build -t quay.io/rh_ee_dvail/acs-violations-plugin:latest .",
@@ -193,7 +193,7 @@
         "displayName": "Advanced Cluster Security Plugins",
         "description": "ACS -> OCP Plugins",
         "exposedModules": {
-            "Overview": "./console-plugins/modules/Overview",
+            "Dashboard": "./console-plugins/modules/Dashboard",
             "Violations": "./console-plugins/modules/Violations"
         },
         "dependencies": {

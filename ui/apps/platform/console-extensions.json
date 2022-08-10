@@ -10,9 +10,9 @@
   {
     "type": "console.navigation/href",
     "properties": {
-      "id": "acs-overview",
-      "name": "Overview",
-      "href": "/acs/overview",
+      "id": "acs-dashboard",
+      "name": "Dashboard",
+      "href": "/acs/dashboard",
       "perspective": "admin",
       "section": "advanced-cluster-security"
     }
@@ -21,8 +21,8 @@
     "type": "console.page/route",
     "properties": {
       "exact": true,
-      "path": "/acs/overview",
-      "component": { "$codeRef": "Overview" }
+      "path": "/acs/dashboard",
+      "component": { "$codeRef": "Dashboard" }
     }
   },
   {
