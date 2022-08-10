@@ -102,6 +102,70 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
+    def "Verify role based scoping on vuln mgmt: node-role Node:*"() {
+        when:
+        "Get Node CVEs and components"
+        BaseService.useBasicAuth()
+        def gqlService = new GraphQLService()
+        def baseQuery = "Node:*"
+        def baseVulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: baseQuery])
+        assert baseVulnCallResult.hasNoErrors()
+        def baseComponentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: baseQuery])
+        assert baseComponentCallResult.hasNoErrors()
+
+        and:
+        gqlService = new GraphQLService(getToken(NODE_ROLE, NODE_ROLE))
+        def vulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: ""])
+        assert vulnCallResult.hasNoErrors()
+        def componentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: ""])
+        assert componentCallResult.hasNoErrors()
+
+        then:
+        baseVulnCallResult.code == vulnCallResult.code
+        extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
+
+        baseComponentCallResult.code == componentCallResult.code
+        extractCVEsAndSort(baseComponentCallResult.value) == extractCVEsAndSort(componentCallResult.value)
+
+        cleanup:
+        "Cleanup"
+        BaseService.useBasicAuth()
+    }
+
+    @Retry(count = 0)
+    @Unroll
+    def "Verify role based scoping on vuln mgmt: image-role Image:*"() {
+        when:
+        "Get Node CVEs and components"
+        BaseService.useBasicAuth()
+        def gqlService = new GraphQLService()
+        def baseQuery = "Image:*"
+        def baseVulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: baseQuery])
+        assert baseVulnCallResult.hasNoErrors()
+        def baseComponentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: baseQuery])
+        assert baseComponentCallResult.hasNoErrors()
+
+        and:
+        gqlService = new GraphQLService(getToken(IMAGE_ROLE, IMAGE_ROLE))
+        def vulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: ""])
+        assert vulnCallResult.hasNoErrors()
+        def componentCallResult = gqlService.Call(GET_COMPONENTS_QUERY, [query: ""])
+        assert componentCallResult.hasNoErrors()
+
+        then:
+        baseVulnCallResult.code == vulnCallResult.code
+        extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
+
+        baseComponentCallResult.code == componentCallResult.code
+        extractCVEsAndSort(baseComponentCallResult.value) == extractCVEsAndSort(componentCallResult.value)
+
+        cleanup:
+        "Cleanup"
+        BaseService.useBasicAuth()
+    }
+
+    @Retry(count = 0)
+    @Unroll
     @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify role based scoping on vuln mgmt: #roleName #baseQuery"() {
         when:
@@ -134,8 +198,6 @@ class VulnMgmtSACTest extends BaseSpecification {
         where:
         "Data inputs are: "
         roleName        | baseQuery
-        NODE_ROLE       | "Node:*"
-        IMAGE_ROLE      | "Image:*"
         NODE_IMAGE_ROLE | "Component:*"
     }
 
