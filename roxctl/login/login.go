@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
+	"github.com/stackrox/rox/roxctl/config"
 )
 
 type loginCommand struct {
@@ -167,5 +168,34 @@ func (h *loginHandler) serveCallback(w http.ResponseWriter, req *http.Request) {
 	if refreshToken != "" {
 		h.env.Logger().InfofLn("Refresh token: %s", refreshToken)
 	}
+
+	cfg, err := config.Load()
+	if err != nil {
+		panic(err)
+	}
+	if cfg == nil {
+		cfg = &config.Config{}
+	}
+	if cfg.Hosts == nil {
+		cfg.Hosts = make(map[string]*config.HostConfig)
+	}
+	hc := cfg.Hosts[h.env.BaseURL().String()]
+	if hc == nil {
+		hc = &config.HostConfig{}
+		cfg.Hosts[h.env.BaseURL().String()] = hc
+	}
+	ha := hc.Access
+	if ha == nil {
+		hc.Access = &config.HostAccessConfig{}
+		ha = hc.Access
+	}
+	ha.Token = token
+	ha.ExpiresAt = expiresAt
+	ha.RefreshToken = refreshToken
+
+	if err := config.Store(cfg); err != nil {
+		panic(err)
+	}
+
 	h.ret.Signal()
 }

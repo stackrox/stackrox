@@ -77,7 +77,7 @@ func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration, authOpt ...auth.M
 
 func (c *cliEnvironmentImpl) AuthMethod() auth.Method {
 	c.authMethodInit.Do(func() {
-		am, err := determineAuthMethod()
+		am, err := determineAuthMethod(c)
 		if err != nil {
 			am = auth.Error(err)
 		}

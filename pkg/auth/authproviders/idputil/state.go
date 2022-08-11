@@ -80,7 +80,7 @@ func ParseClientState(clientState string) (string, AuthnMode) {
 			return "", AuthnModeTest
 		}
 		return parts[1], AuthnModeTest
-	} else if parts[1] == AuthorizeCLIClientState {
+	} else if parts[0] == AuthorizeCLIClientState {
 		if len(parts) == 1 {
 			return "", AuthnModeAuthorizeCLI
 		}

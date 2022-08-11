@@ -126,20 +126,20 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	providerID := req.URL.Path[len(prefix):]
 	clientState := req.URL.Query().Get("clientState")
 	testMode, _ := strconv.ParseBool(req.URL.Query().Get("test"))
-	authorizeCLICallbackURL := req.URL.Query().Get("authorizeCLICallback")
+	authorizeCLICallbackURL := req.URL.Query().Get("authorizeCallback")
 	if authorizeCLICallbackURL != "" {
 		if testMode {
 			http.Error(w, "Cannot use test mode in conjunction with CLI authorization", http.StatusBadRequest)
 			return
 		}
-
-	} else {
 		newState, err := idputil.AuthorizeCLICallbackURLState(authorizeCLICallbackURL)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		clientState = newState
+	} else {
+		clientState = idputil.AttachTestStateOrEmpty(clientState, testMode)
 	}
 
 	provider := r.getAuthProvider(providerID)
@@ -343,6 +343,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		}
 		callbackURL.RawQuery = q.Encode()
 		w.Header().Set("Location", callbackURL.String())
+		w.WriteHeader(http.StatusSeeOther)
 		return
 	}
 

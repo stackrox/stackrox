@@ -52,7 +52,7 @@ func (tokenEnvVarAuthSource) GetCreds(_ string) (credentials.PerRPCCredentials, 
 }
 
 // determineAuthMethod does just that
-func determineAuthMethod() (auth.Method, error) {
+func determineAuthMethod(env Environment) (auth.Method, error) {
 	if flags.APITokenFile() != "" && flags.Password() != "" {
 		return nil, errox.InvalidArgs.New("cannot use password- and token-based authentication at the same time")
 	}
@@ -65,5 +65,5 @@ func determineAuthMethod() (auth.Method, error) {
 	if os.Getenv("ROX_API_TOKEN") != "" {
 		return tokenEnvVarAuthSource{}, nil
 	}
-	return authFromConfig{}, nil
+	return authFromConfig{env: env}, nil
 }

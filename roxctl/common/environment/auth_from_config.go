@@ -41,7 +41,7 @@ func (a authFromConfig) getToken(baseURL string) (string, error) {
 	if hostAccess == nil || (hostAccess.Token == "" && hostAccess.RefreshToken == "") {
 		return "", errors.Errorf("no credentials stored for %s, use 'roxctl login'", baseURL)
 	}
-	if hostAccess.Token != "" && hostAccess.ExpiresAt.Before(time.Now().Add(-30*time.Second)) {
+	if hostAccess.Token != "" && hostAccess.ExpiresAt.After(time.Now().Add(30*time.Second)) {
 		return hostAccess.Token, nil
 	}
 
