@@ -898,12 +898,17 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: true,
     },
     {
-        name: 'Image is not covered by SBOM',
-        shortName: 'Image SBOM',
-        category: policyCriteriaCategories.IMAGE_REGISTRY,
-        type: 'text',
-        placeholder: 'COVERED',
-        canBooleanLogic: true,
+        label: 'Image is not fully covered by SBOM',
+        name: 'SBOM Verification Status',
+        shortName: 'Image SBOM coverage',
+        category: policyCriteriaCategories.IMAGE_CONTENTS,
+        type: 'select',
+        options: [
+            {
+                label: 'SBOM covers the whole image',
+                value: 'COVERED',
+            },
+        ],
     },
     {
         name: 'Add Capabilities',
