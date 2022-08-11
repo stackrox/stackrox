@@ -22,6 +22,8 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 		}
 		cmd.env.Logger().WarnfLn("Removed output path %s", cmd.outputFolderPath)
 	}
+	cmd.env.Logger().InfofLn("Writing generated Network Policies to %s", cmd.outputFolderPath)
+
 	var mergedPolicy string
 	yamlPolicies := make([]string, 0, len(recommendedNetpols))
 	for _, netpol := range recommendedNetpols {

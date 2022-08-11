@@ -76,13 +76,10 @@ func (cmd *generateNetpolCommand) validate() error {
 }
 
 func (cmd *generateNetpolCommand) setupPath(path string) error {
-	if _, err := os.Stat(path); err == nil {
-		if !cmd.removeOutputPath {
-			return errox.AlreadyExists.Newf("path %s already exists. Use --remove to overwrite or select a different path.", path)
-		}
+	if _, err := os.Stat(path); err == nil && !cmd.removeOutputPath {
+		return errox.AlreadyExists.Newf("path %s already exists. Use --remove to overwrite or select a different path.", path)
 	} else if !os.IsNotExist(err) {
 		return errors.Wrapf(err, "failed to check if path %s exists", path)
 	}
-	cmd.env.Logger().InfofLn("Writing generated Network Policies to %s", path)
 	return nil
 }
