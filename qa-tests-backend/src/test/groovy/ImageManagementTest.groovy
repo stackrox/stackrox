@@ -15,22 +15,6 @@ import util.Env
 
 class ImageManagementTest extends BaseSpecification {
 
-    def suppressImageCVE(String cve) {
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            CVEService.suppressImageCVE(cve)
-        } else {
-            CVEService.suppressCVE(cve)
-        }
-    }
-
-    def unsuppressImageCVE(String cve) {
-        if (Env.CI_JOBNAME.contains("postgres")) {
-            CVEService.unsuppressImageCVE(cve)
-        } else {
-            CVEService.unsuppressCVE(cve)
-        }
-    }
-
     @Unroll
     @Category([BAT, Integration])
     def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
@@ -189,13 +173,13 @@ class ImageManagementTest extends BaseSpecification {
         when:
         "Suppress CVE and check that it violates"
         def cve = "CVE-2019-14697"
-        suppressImageCVE(cve)
+        CVEService.suppressImageCVE(cve)
         scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
         assert scanResults.alertsList.find { y -> y.policy.id == policy.id } == null
 
         and:
         "Unsuppress CVE"
-        unsuppressImageCVE(cve)
+        CVEService.unsuppressImageCVE(cve)
         scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
 
         then:
@@ -268,7 +252,7 @@ class ImageManagementTest extends BaseSpecification {
         assert hasOpenSSLVuln(image)
 
         def cve = "CVE-2010-0928"
-        suppressImageCVE(cve)
+        CVEService.suppressImageCVE(cve)
 
         when:
         def scanIncludeSnoozed = ImageService.scanImage("library/nginx:1.10", true)
@@ -283,7 +267,7 @@ class ImageManagementTest extends BaseSpecification {
         def getExcludeSnoozed  = ImageService.getImage(image.id, false)
         assert !hasOpenSSLVuln(getExcludeSnoozed)
 
-        unsuppressImageCVE(cve)
+        CVEService.unsuppressImageCVE(cve)
 
         def unsuppressedScan = ImageService.scanImage("library/nginx:1.10", false)
         def unsuppressedGet  = ImageService.getImage(image.id, false)
@@ -295,7 +279,7 @@ class ImageManagementTest extends BaseSpecification {
 
         cleanup:
         // Should be able to call this multiple times safely in case of any failures previously
-        unsuppressImageCVE(cve)
+        CVEService.unsuppressImageCVE(cve)
     }
 
     @Category([BAT, Integration])
