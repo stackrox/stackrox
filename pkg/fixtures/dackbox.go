@@ -785,7 +785,6 @@ func GetDeploymentSherlockHolmes1(id string, namespace *storage.NamespaceMetadat
 		Ports:                         nil,
 		StateTimestamp:                1654762976894737,
 		RiskScore:                     1.9846836,
-		ProcessTags:                   nil,
 	}
 }
 
@@ -851,7 +850,6 @@ func GetDeploymentDoctorJekyll2(id string, namespace *storage.NamespaceMetadata)
 		Ports:                         nil,
 		StateTimestamp:                1654762976894737,
 		RiskScore:                     1.9846836,
-		ProcessTags:                   nil,
 	}
 }
 

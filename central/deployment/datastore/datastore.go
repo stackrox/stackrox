@@ -6,10 +6,8 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/analystnotes"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
-	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
@@ -56,10 +54,6 @@ type DataStore interface {
 	// the stored deployment.
 	UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error
 
-	AddTagsToProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey, tags []string) error
-	RemoveTagsFromProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey, tags []string) error
-	GetTagsForProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey) ([]string, error)
-
 	RemoveDeployment(ctx context.Context, clusterID, id string) error
 
 	GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error)
@@ -67,7 +61,7 @@ type DataStore interface {
 }
 
 func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpool.Pool,
-	processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
+	bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
@@ -92,8 +86,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpo
 			deploymentIndexer,
 			imageCVEEdgeIndexer.New(bleveIndex))
 	}
-	ds := newDatastoreImpl(storage, processTagsStore, deploymentIndexer, searcher, images, baselines, networkFlows, risks,
-		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+	ds := newDatastoreImpl(storage, deploymentIndexer, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	ds.initializeRanker()
 	return ds, nil
@@ -101,7 +94,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, pool *pgxpo
 
 // New creates a deployment datastore based on dackbox
 func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Pool,
-	processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
+	bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
@@ -111,7 +104,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool *pgxpool.Po
 	} else {
 		storage = dackBoxStore.New(dacky, keyFence)
 	}
-	return newDataStore(storage, dacky, pool, processTagsStore, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+	return newDataStore(storage, dacky, pool, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
@@ -139,9 +132,7 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 	clusterRanker := ranking.ClusterRanker()
 	namespaceRanker := ranking.NamespaceRanker()
 	deploymentRanker := ranking.DeploymentRanker()
-	return newDatastoreImpl(dbstore, nil, indexer, searcher, imageStore, processBaselineStore,
-		networkFlowClusterStore, riskStore, nil, processFilter, clusterRanker,
-		namespaceRanker, deploymentRanker), nil
+	return newDatastoreImpl(dbstore, indexer, searcher, imageStore, processBaselineStore, networkFlowClusterStore, riskStore, nil, processFilter, clusterRanker, namespaceRanker, deploymentRanker), nil
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
@@ -166,7 +157,7 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	clusterRanker := ranking.ClusterRanker()
 	namespaceRanker := ranking.NamespaceRanker()
 	deploymentRanker := ranking.DeploymentRanker()
-	return New(dacky, keyFence, nil, nil, bleveIndex, bleveIndex, imageStore,
+	return New(dacky, keyFence, nil, bleveIndex, bleveIndex, imageStore,
 		processBaselineStore, networkFlowClusterStore, riskStore, nil,
 		processFilter, clusterRanker, namespaceRanker, deploymentRanker)
 }

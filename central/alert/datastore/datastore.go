@@ -39,9 +39,6 @@ type DataStore interface {
 	MarkAlertStale(ctx context.Context, id string) error
 
 	DeleteAlerts(ctx context.Context, ids ...string) error
-
-	AddAlertTags(ctx context.Context, alertID string, tags []string) ([]string, error)
-	RemoveAlertTags(ctx context.Context, alertID string, tags []string) error
 }
 
 // New returns a new soleInstance of DataStore using the input store, indexer, and searcher.

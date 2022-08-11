@@ -136,7 +136,7 @@ message Alert {
 
     ViolationState            state             = 11 [(gogoproto.moretags) = 'search:"Violation State,store" sql:"index=btree"'];
     google.protobuf.Timestamp snooze_till       = 12;
-    repeated string           tags              = 14 [(gogoproto.moretags) = 'search:"Tag,store"'];
+    reserved 14; // was tags
 }
 
 message ListAlert {
@@ -167,7 +167,7 @@ message ListAlert {
     ListAlertPolicy           policy             = 4;
     ViolationState            state              = 6 [(gogoproto.moretags) = 'search:"Violation State,store"'];
     int32                     enforcement_count  = 7;
-    repeated string           tags               = 8 [(gogoproto.moretags) = 'search:"Tag,store"'];
+    reserved 8; // was tags
     storage.EnforcementAction enforcement_action = 9 [(gogoproto.moretags) = 'search:"Enforcement"'];
     CommonEntityInfo          common_entity_info = 10;
 
