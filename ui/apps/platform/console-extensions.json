@@ -1,4 +1,35 @@
 [
+  {
+    "type": "console.dashboards/tab",
+    "properties": {
+      "id": "ACS",
+      "navSection": "home",
+      "title": "ACS"
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "model": {
+        "group": "apps",
+        "kind": "Deployment",
+        "version": "v1"
+      },
+      "page": {
+        "name": "Violations",
+        "href": "violations"
+      },
+      "component": { "$codeRef": "DeploymentViolations" }
+    }
+  },
+{
+    "type": "console.dashboards/card",
+    "properties": {
+      "tab": "ACS",
+      "position": "MAIN",
+      "component": { "$codeRef": "Dashboard" }
+    }
+  },
 {
     "type": "console.navigation/section",
     "properties": {

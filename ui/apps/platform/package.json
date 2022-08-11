@@ -194,6 +194,7 @@
         "description": "ACS -> OCP Plugins",
         "exposedModules": {
             "Dashboard": "./console-plugins/modules/Dashboard",
+            "DeploymentViolations": "./console-plugins/modules/DeploymentViolations",
             "Violations": "./console-plugins/modules/Violations"
         },
         "dependencies": {

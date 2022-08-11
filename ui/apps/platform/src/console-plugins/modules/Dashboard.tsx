@@ -29,22 +29,12 @@ export default function Overview() {
 
     return (
         <PluginProvider>
-            <PageSection>
-                <Title headingLevel="h1">Dashboard</Title>
-            </PageSection>
-            <Divider component="div" />
-            <PageSection className="pf-u-m-lg">
-                {
-                    // Any dashboard components using react-table blow up in production... not sure why
-                    /* <ViolationsByPolicySeverity /> */
-                }
-                <Title headingLevel="h2" className="pf-u-pb-md">
-                    {`${totalCount} policy ${pluralize('violation', totalCount)} by severity`}
-                </Title>
-                <PolicyViolationTiles searchFilter={{}} counts={counts} />
-                <Divider className="pf-u-my-lg" component="div" />
-                <ViolationsByPolicyCategory />
-            </PageSection>
+            <Title headingLevel="h2" className="pf-u-pb-md test">
+                {`${totalCount} policy ${pluralize('violation', totalCount)} by severity`}
+            </Title>
+            <PolicyViolationTiles searchFilter={{}} counts={counts} />
+            <Divider className="pf-u-my-lg" component="div" />
+            <ViolationsByPolicyCategory />
         </PluginProvider>
     );
 }
