@@ -273,7 +273,7 @@ The following tools are necessary to test code and build image(s):
   * Get the version specified in [EXPECTED_GO_VERSION](./EXPECTED_GO_VERSION).
 * Various Go linters and RocksDB dependencies that can be installed using `make reinstall-dev-tools`.
 * UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
-* Docker (make sure you `docker login` to your company [DockerHub account](https://hub.docker.com/settings/security))
+* Docker (follow [Mac](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-darwin.md#install-docker-desktop-for-mac) or [Linux](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-linux.md#install-docker) guide)
 * RocksDB (follow [Mac](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-darwin.md#install-rocksdb) or [Linux](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-linux.md#install-rocksdb) guide)
 * Xcode command line tools (macOS only)
 * [Bats](https://github.com/sstephenson/bats) is used to run certain shell tests.
