@@ -24,13 +24,14 @@ var (
 	csvHandler *csvCommon.HandlerImpl
 
 	csvHeader = []string{
-		"Node CVE",
+		"Image CVE",
 		"Fixable",
 		"CVSS Score",
 		"Env Impact (%s)",
 		"Impact Score",
-		"Nodes",
-		"Node Components",
+		"Deployments",
+		"Images",
+		"Image Components",
 		"Last Scanned",
 		"Published",
 		"Summary",
@@ -44,26 +45,29 @@ func initialize() {
 func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 	return csvCommon.NewCSVHandler(
 		resolver,
-		// Node CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
+		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 		[]*csvCommon.SearchWrapper{
-			csvCommon.NewSearchWrapper(v1.SearchCategory_NODE_COMPONENTS, schema.NodeComponentsSchema.OptionsMap, resolver.NodeComponentDataStore),
-			csvCommon.NewSearchWrapper(v1.SearchCategory_NODES, csvCommon.NodeOnlyOptionsMap, resolver.NodeGlobalDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS, schema.ImageComponentsSchema.OptionsMap, resolver.ImageComponentDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGES, csvCommon.ImageOnlyOptionsMap, resolver.ImageDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, csvCommon.DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_NAMESPACES, csvCommon.NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
 		},
 	)
 }
 
-type nodeCveRow struct {
-	cve            string
-	fixable        string
-	cvssScore      string
-	envImpact      string
-	impactScore    string
-	nodeCount      string
-	componentCount string
-	scannedTime    string
-	publishedTime  string
-	summary        string
+type imageCveRow struct {
+	cve             string
+	fixable         string
+	cvssScore       string
+	envImpact       string
+	impactScore     string
+	deploymentCount string
+	imageCount      string
+	componentCount  string
+	scannedTime     string
+	publishedTime   string
+	summary         string
 }
 
 type csvResults struct {
@@ -76,15 +80,16 @@ func newCSVResults(header []string, sort bool) csvResults {
 	}
 }
 
-func (c *csvResults) addRow(row nodeCveRow) {
-	// node cve, fixable, cvss score, env impact, impact score, nodes, node components, scanned time, published time, summary
+func (c *csvResults) addRow(row imageCveRow) {
+	// image cve, fixable, cvss score, env impact, impact score, deployments, images, images components, scanned time, published time, summary
 	value := []string{
 		row.cve,
 		row.fixable,
 		row.cvssScore,
 		row.envImpact,
 		row.impactScore,
-		row.nodeCount,
+		row.deploymentCount,
+		row.imageCount,
 		row.componentCount,
 		row.scannedTime,
 		row.publishedTime,
@@ -94,8 +99,8 @@ func (c *csvResults) addRow(row nodeCveRow) {
 	c.AddValue(value)
 }
 
-// NodeCVECSVHandler returns a handler func to serve csv export requests of Node CVE data for Vuln Mgmt
-func NodeCVECSVHandler() http.HandlerFunc {
+// ImageCVECSVHandler returns a handler func to serve csv export requests of Image CVE data for Vuln Mgmt
+func ImageCVECSVHandler() http.HandlerFunc {
 	once.Do(initialize)
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -118,10 +123,10 @@ func NodeCVECSVHandler() http.HandlerFunc {
 			csv.WriteError(w, http.StatusInternalServerError, err)
 			log.Errorf("Unexpected value (nil) for resolver in Handler")
 		}
-		vulnResolvers, err := res.NodeVulnerabilities(ctx, paginatedQuery)
+		vulnResolvers, err := res.ImageVulnerabilities(ctx, paginatedQuery)
 		if err != nil {
 			csv.WriteError(w, http.StatusInternalServerError, err)
-			log.Errorf("unable to get node vulnerabilities for csv export: %v", err)
+			log.Errorf("unable to get image vulnerabilities for csv export: %v", err)
 			return
 		}
 
@@ -132,7 +137,7 @@ func NodeCVECSVHandler() http.HandlerFunc {
 		output := newCSVResults(csvHeader, postSortRequired)
 		for _, d := range vulnResolvers {
 			var errorList errorhelpers.ErrorList
-			dataRow := nodeCveRow{}
+			dataRow := imageCveRow{}
 			dataRow.cve = d.CVE(ctx)
 			isFixable, err := d.IsFixable(ctx, rawQuery)
 			if err != nil {
@@ -147,13 +152,19 @@ func NodeCVECSVHandler() http.HandlerFunc {
 			dataRow.envImpact = fmt.Sprintf("%.2f", envImpact*100)
 			dataRow.impactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
 			// Entity counts should be scoped to CVE only
-			nodeCount, err := d.NodeCount(ctx, resolvers.RawQuery{})
+			deploymentCount, err := d.DeploymentCount(ctx, resolvers.RawQuery{})
 			if err != nil {
 				errorList.AddError(err)
 			}
-			dataRow.nodeCount = fmt.Sprint(nodeCount)
+			dataRow.deploymentCount = fmt.Sprint(deploymentCount)
 			// Entity counts should be scoped to CVE only
-			componentCount, err := d.NodeComponentCount(ctx, resolvers.RawQuery{})
+			imageCount, err := d.ImageCount(ctx, resolvers.RawQuery{})
+			if err != nil {
+				errorList.AddError(err)
+			}
+			dataRow.imageCount = fmt.Sprint(imageCount)
+			// Entity counts should be scoped to CVE only
+			componentCount, err := d.ImageComponentCount(ctx, resolvers.RawQuery{})
 			if err != nil {
 				errorList.AddError(err)
 			}
@@ -176,7 +187,6 @@ func NodeCVECSVHandler() http.HandlerFunc {
 				log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.cve, err)
 			}
 		}
-
-		output.Write(w, "node_cve_export")
+		output.Write(w, "image_cve_export")
 	}
 }

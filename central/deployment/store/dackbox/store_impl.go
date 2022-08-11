@@ -68,6 +68,25 @@ func (b *StoreImpl) GetIDs(_ context.Context) ([]string, error) {
 	return ids, err
 }
 
+// Walk walks the entire deployment prefix
+func (b *StoreImpl) Walk(_ context.Context, fn func(deployment *storage.Deployment) error) error {
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
+
+	txn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return err
+	}
+	defer txn.Discard()
+
+	return txn.BucketForEach(deploymentDackBox.Bucket, false, func(k, v []byte) error {
+		var deployment storage.Deployment
+		if err := proto.Unmarshal(v, &deployment); err != nil {
+			return err
+		}
+		return fn(&deployment)
+	})
+}
+
 // GetListDeployment returns ListDeployment with given id.
 func (b *StoreImpl) GetListDeployment(ctx context.Context, id string) (deployment *storage.ListDeployment, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ListDeployment")

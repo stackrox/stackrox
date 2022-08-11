@@ -145,6 +145,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 		if c.Exposure.Route != nil {
 			route := translation.NewValuesBuilder()
 			route.SetBool("enabled", c.Exposure.Route.Enabled)
+			route.SetString("host", c.Exposure.Route.Host)
 			exposure.AddChild("route", &route)
 		}
 		cv.AddChild("exposure", &exposure)

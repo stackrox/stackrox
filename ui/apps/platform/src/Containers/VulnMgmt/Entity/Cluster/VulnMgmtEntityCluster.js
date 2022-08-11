@@ -87,12 +87,12 @@ const VulmMgmtEntityCluster = ({
     function getListQuery(listFieldName, fragmentName, fragment) {
         // @TODO: if we are ever able to search for k8s and istio vulns, swap out this hack for a regular query
         const isSearchingByVulnType = search && search['CVE Type'];
-        const parsedListFieldName = isSearchingByVulnType
-            ? 'vulns: k8sClusterVulnerabilities'
-            : listFieldName;
-        const parsedEntityListType = isSearchingByVulnType
-            ? defaultCountKeyMap[entityTypes.K8S_CVE]
-            : defaultCountKeyMap[entityListType];
+        const parsedListFieldName =
+            isSearchingByVulnType && !showVMUpdates ? 'vulns: k8sVulns' : listFieldName;
+        const parsedEntityListType =
+            isSearchingByVulnType && !showVMUpdates
+                ? defaultCountKeyMap[entityTypes.K8S_CVE]
+                : defaultCountKeyMap[entityListType];
         return gql`
             query getCluster_${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
                 result: cluster(id: $id) {
