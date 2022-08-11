@@ -547,7 +547,7 @@ $(CURDIR)/image/rhel/Dockerfile.gen:
 	< $(CURDIR)/image/rhel/Dockerfile.envsubst > $(CURDIR)/image/rhel/Dockerfile.gen
 
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image central-db-image \
+docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image \
                          $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/rhel/Dockerfile.gen
 	docker build \
 		-t stackrox/main:$(TAG) \
