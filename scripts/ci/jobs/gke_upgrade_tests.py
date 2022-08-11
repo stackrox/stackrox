@@ -10,6 +10,9 @@ from pre_tests import PreSystemTests
 from ci_tests import UpgradeTest
 from post_tests import PostClusterTest, FinalPost
 
+# use postgres
+os.environ["ROX_POSTGRES_DATASTORE"] = "true"
+
 ClusterTestRunner(
     cluster=GKECluster("upgrade-test"),
     pre_test=PreSystemTests(),
