@@ -155,8 +155,8 @@ class ExportButton extends Component {
         );
     };
 
-    openWidget = () => {
-        this.setState({ toggleWidget: true });
+    toggleWidget = () => {
+        this.setState(({ toggleWidget }) => ({ toggleWidget: !toggleWidget }));
     };
 
     render() {
@@ -169,7 +169,7 @@ class ExportButton extends Component {
                     textCondensed="Export"
                     textClass={this.props.textClass}
                     icon={<Icon.FileText size="14" className="mx-1 lg:ml-1 lg:mr-3" />}
-                    onClick={this.openWidget}
+                    onClick={this.toggleWidget}
                 />
                 {this.renderContent()}
             </div>
