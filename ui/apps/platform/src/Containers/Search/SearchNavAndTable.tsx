@@ -8,34 +8,34 @@ import { SearchFilter } from 'types/search';
 import { searchPath } from 'routePaths';
 
 import SearchTable from './SearchTable';
-import { SearchTabCategory, searchResultCategoryMap, searchTabMap } from './searchCategories';
+import { SearchNavCategory, searchResultCategoryMap, searchNavMap } from './searchCategories';
 import { stringifyQueryObject } from './searchQuery';
 
-type SearchTabsProps = {
-    activeTabCategory: SearchTabCategory;
+type SearchNavAndTableProps = {
+    activeNavCategory: SearchNavCategory;
     searchFilter: SearchFilter;
     searchResponse: SearchResponse;
 };
 
-function SearchTabs({
-    activeTabCategory,
+function SearchNavAndTable({
+    activeNavCategory,
     searchFilter,
     searchResponse,
-}: SearchTabsProps): ReactElement {
+}: SearchNavAndTableProps): ReactElement {
     const { hasReadAccess } = usePermissions();
 
     const { counts, results } = searchResponse;
 
-    function getTabCategoryCount(tabCategory: SearchTabCategory) {
-        return tabCategory === 'SEARCH_UNSET'
+    function getNavCategoryCount(navCategory: SearchNavCategory) {
+        return navCategory === 'SEARCH_UNSET'
             ? results.length
-            : counts.find(({ category }) => category === tabCategory)?.count ?? 0;
+            : counts.find(({ category }) => category === navCategory)?.count ?? 0;
     }
 
-    const searchTabEntriesFiltered = Object.entries(searchTabMap).filter(
-        ([tabCategory]) =>
-            tabCategory === 'SEARCH_UNSET' ||
-            hasReadAccess(searchResultCategoryMap[tabCategory].resourceName)
+    const searchNavEntriesFiltered = Object.entries(searchNavMap).filter(
+        ([navCategory]) =>
+            navCategory === 'SEARCH_UNSET' ||
+            hasReadAccess(searchResultCategoryMap[navCategory].resourceName)
     );
 
     return (
@@ -43,12 +43,12 @@ function SearchTabs({
             <SplitItem>
                 <Nav aria-label="Categories" theme="light">
                     <NavList>
-                        {searchTabEntriesFiltered.map(([tabCategory, text]) => (
-                            <NavItem key={tabCategory} isActive={tabCategory === activeTabCategory}>
+                        {searchNavEntriesFiltered.map(([navCategory, text]) => (
+                            <NavItem key={navCategory} isActive={navCategory === activeNavCategory}>
                                 <Link
                                     to={`${searchPath}${stringifyQueryObject({
                                         searchFilter,
-                                        tabCategory: tabCategory as SearchTabCategory,
+                                        navCategory: navCategory as SearchNavCategory,
                                     })}`}
                                     replace
                                 >
@@ -58,7 +58,7 @@ function SearchTabs({
                                     >
                                         <FlexItem>{text}</FlexItem>
                                         <FlexItem>
-                                            {getTabCategoryCount(tabCategory as SearchTabCategory)}
+                                            {getNavCategoryCount(navCategory as SearchNavCategory)}
                                         </FlexItem>
                                     </Flex>
                                 </Link>
@@ -71,11 +71,11 @@ function SearchTabs({
                 <SearchTable
                     searchFilter={searchFilter}
                     searchResults={results}
-                    tabCategory={activeTabCategory}
+                    navCategory={activeNavCategory}
                 />
             </SplitItem>
         </Split>
     );
 }
 
-export default SearchTabs;
+export default SearchNavAndTable;

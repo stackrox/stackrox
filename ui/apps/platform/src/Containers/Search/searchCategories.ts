@@ -170,9 +170,9 @@ export const searchResultCategoryMap: Record<
     },
 };
 
-export type SearchTabCategory = 'SEARCH_UNSET' | SearchResultCategory;
+export type SearchNavCategory = 'SEARCH_UNSET' | SearchResultCategory;
 
-export const searchTabMap: Record<SearchTabCategory, string> = {
+export const searchNavMap: Record<SearchNavCategory, string> = {
     SEARCH_UNSET: 'All results',
     CLUSTERS: 'Clusters',
     DEPLOYMENTS: 'Deployments',

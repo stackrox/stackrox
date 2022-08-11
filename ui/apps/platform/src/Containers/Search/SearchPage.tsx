@@ -23,7 +23,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { searchPath } from 'routePaths';
 
-import SearchTabs from './SearchTabs';
+import SearchNavAndTable from './SearchNavAndTable';
 import {
     parseQueryString,
     parseSearchFilter,
@@ -70,7 +70,7 @@ function SearchPage(): ReactElement {
         return cancel;
     }, []);
 
-    const { searchFilter, tabCategory } = parseQueryString(search, searchOptions);
+    const { searchFilter, navCategory } = parseQueryString(search, searchOptions);
     const stringifiedSearchFilter = stringifySearchFilter(searchFilter);
 
     useEffect(() => {
@@ -108,7 +108,7 @@ function SearchPage(): ReactElement {
         if (!searchFilterKeyWithoutValueNext) {
             const queryString = stringifyQueryObject({
                 searchFilter: searchFilterNext,
-                tabCategory,
+                navCategory,
             });
             const searchPathWithQueryString = `${searchPath}${queryString}`;
 
@@ -149,8 +149,8 @@ function SearchPage(): ReactElement {
             content = <Alert variant="info" isInline title="No results match the search filter" />;
         } else {
             content = (
-                <SearchTabs
-                    activeTabCategory={tabCategory}
+                <SearchNavAndTable
+                    activeNavCategory={navCategory}
                     searchFilter={searchFilter}
                     searchResponse={searchResponse}
                 />

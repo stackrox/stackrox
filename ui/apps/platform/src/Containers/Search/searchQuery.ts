@@ -2,11 +2,11 @@ import qs from 'qs';
 
 import { SearchFilter } from 'types/search';
 
-import { SearchTabCategory, searchTabMap } from './searchCategories';
+import { SearchNavCategory, searchNavMap } from './searchCategories';
 
 export type SearchQueryObject = {
     searchFilter: SearchFilter;
-    tabCategory: SearchTabCategory;
+    navCategory: SearchNavCategory;
 };
 
 type SearchQueryParse = {
@@ -30,28 +30,28 @@ export function parseQueryString(search: string, searchOptions: string[]): Searc
         });
     }
 
-    let tabCategory: SearchTabCategory = 'SEARCH_UNSET';
+    let navCategory: SearchNavCategory = 'SEARCH_UNSET';
     if (Object.keys(searchFilter).length !== 0 && typeof category === 'string') {
-        const tabCategoryFound = Object.keys(searchTabMap).find(
-            (tabCategoryFinding) => category === searchTabMap[tabCategoryFinding]
+        const navCategoryFound = Object.keys(searchNavMap).find(
+            (navCategoryFinding) => category === searchNavMap[navCategoryFinding]
         );
-        if (tabCategoryFound) {
-            tabCategory = tabCategoryFound as SearchTabCategory;
+        if (navCategoryFound) {
+            navCategory = navCategoryFound as SearchNavCategory;
         }
     }
 
-    return { searchFilter, tabCategory };
+    return { searchFilter, navCategory };
 }
 
-export function stringifyQueryObject({ searchFilter, tabCategory }: SearchQueryObject) {
+export function stringifyQueryObject({ searchFilter, navCategory }: SearchQueryObject) {
     if (Object.keys(searchFilter).length === 0) {
         return '';
     }
 
     const queryObject: SearchQueryParse = { s: searchFilter }; // TODO early return if no keys?
 
-    if (tabCategory !== 'SEARCH_UNSET') {
-        queryObject.category = searchTabMap[tabCategory];
+    if (navCategory !== 'SEARCH_UNSET') {
+        queryObject.category = searchNavMap[navCategory];
     }
 
     return qs.stringify(queryObject, {

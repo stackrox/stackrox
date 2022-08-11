@@ -6,7 +6,7 @@ import { SearchFilter } from 'types/search';
 
 import FilterLinks from './FilterLinks';
 import ViewLinks from './ViewLinks';
-import { SearchTabCategory, searchResultCategoryMap, searchTabMap } from './searchCategories';
+import { SearchNavCategory, searchResultCategoryMap, searchNavMap } from './searchCategories';
 
 function getLocationTextForCategory(location: string, category: SearchResultCategory) {
     return category === 'DEPLOYMENTS' ? location.replace(/^\//, '') : location.replace(/\/.+/, '');
@@ -17,35 +17,35 @@ function getLocationLabelForCategory(category: SearchResultCategory) {
 }
 
 type SearchTableProps = {
+    navCategory: SearchNavCategory;
     searchFilter: SearchFilter;
     searchResults: SearchResult[];
-    tabCategory: SearchTabCategory;
 };
 
-function SearchTable({ searchFilter, searchResults, tabCategory }: SearchTableProps): ReactElement {
-    const firstColumnHeading = searchTabMap[tabCategory];
+function SearchTable({ navCategory, searchFilter, searchResults }: SearchTableProps): ReactElement {
+    const firstColumnHeading = searchNavMap[navCategory];
     const hasLocationColumn =
-        tabCategory === 'DEPLOYMENTS' || tabCategory === 'NAMESPACES' || tabCategory === 'NODES';
-    const locationColumnHeading = hasLocationColumn ? getLocationLabelForCategory(tabCategory) : '';
-    const hasCategoryColumn = tabCategory === 'SEARCH_UNSET';
+        navCategory === 'DEPLOYMENTS' || navCategory === 'NAMESPACES' || navCategory === 'NODES';
+    const locationColumnHeading = hasLocationColumn ? getLocationLabelForCategory(navCategory) : '';
+    const hasCategoryColumn = navCategory === 'SEARCH_UNSET';
     const hasViewLinkColumn =
-        tabCategory === 'SEARCH_UNSET' ||
-        searchResultCategoryMap[tabCategory].viewLinks.length !== 0;
+        navCategory === 'SEARCH_UNSET' ||
+        searchResultCategoryMap[navCategory].viewLinks.length !== 0;
     const hasFilterLinkColumn =
-        tabCategory === 'SEARCH_UNSET' || !!searchResultCategoryMap[tabCategory].filterOn;
+        navCategory === 'SEARCH_UNSET' || !!searchResultCategoryMap[navCategory].filterOn;
 
     const searchResultsFilteredAndSorted =
-        tabCategory === 'SEARCH_UNSET'
+        navCategory === 'SEARCH_UNSET'
             ? [...searchResults].sort((a: SearchResult, b: SearchResult) => {
                   const byName = a.name.localeCompare(b.name);
                   if (byName === 0) {
                       // If equal by name, secondary sort by category text.
-                      return searchTabMap[a.category].localeCompare(searchTabMap[b.category]);
+                      return searchNavMap[a.category].localeCompare(searchNavMap[b.category]);
                   }
                   return byName;
               })
             : searchResults
-                  .filter(({ category }) => category === tabCategory)
+                  .filter(({ category }) => category === navCategory)
                   .sort((a: SearchResult, b: SearchResult) => a.name.localeCompare(b.name));
 
     return (
@@ -65,7 +65,7 @@ function SearchTable({ searchFilter, searchResults, tabCategory }: SearchTablePr
                         <Tr key={id}>
                             <Td dataLabel={firstColumnHeading} modifier="breakWord">
                                 {name}
-                                {tabCategory === 'SEARCH_UNSET' &&
+                                {navCategory === 'SEARCH_UNSET' &&
                                     category !== 'CLUSTERS' &&
                                     typeof location === 'string' &&
                                     location.length !== 0 && (
@@ -84,7 +84,7 @@ function SearchTable({ searchFilter, searchResults, tabCategory }: SearchTablePr
                             )}
                             {hasCategoryColumn && (
                                 <Td dataLabel="Category" modifier="nowrap">
-                                    {searchTabMap[category]}
+                                    {searchNavMap[category]}
                                 </Td>
                             )}
                             {hasViewLinkColumn && (
