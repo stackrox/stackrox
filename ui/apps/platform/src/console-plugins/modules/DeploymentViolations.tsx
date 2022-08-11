@@ -1,4 +1,4 @@
-import { useInterval, PageSection } from '@patternfly/react-core';
+import { PageSection } from '@patternfly/react-core';
 import PluginProvider from 'console-plugins/PluginProvider';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
@@ -7,6 +7,7 @@ import ViolationsTablePanel from 'Containers/Violations/ViolationsTablePanel';
 import tableColumnDescriptor from 'Containers/Violations/violationTableColumnDescriptors';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
+import useInterval from 'hooks/useInterval';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -14,6 +15,8 @@ import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 import { CancelledPromiseError } from 'services/cancellationUtils';
 import { SortOption } from 'types/table';
 
+// Note, react-router information and the current k8s entity among other things are passed
+// as props to the component by the console
 export default function DeploymentViolations({ obj }) {
     const { name, namespace } = obj.metadata;
 

@@ -69,7 +69,7 @@ function ViolationsByPolicyCategory() {
             header={
                 <Flex direction={{ default: 'row' }}>
                     <FlexItem grow={{ default: 'grow' }}>
-                        <Title headingLevel="h2">Policy violations by category</Title>
+                        <Title headingLevel="h5">Policy violations by category</Title>
                     </FlexItem>
                     <FlexItem>
                         <Dropdown

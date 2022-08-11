@@ -27,7 +27,23 @@
     "properties": {
       "tab": "ACS",
       "position": "MAIN",
-      "component": { "$codeRef": "Dashboard" }
+      "component": { "$codeRef": "DashboardTiles" }
+    }
+  },
+{
+    "type": "console.dashboards/card",
+    "properties": {
+      "tab": "ACS",
+      "position": "LEFT",
+      "component": { "$codeRef": "DashboardRecent" }
+    }
+  },
+{
+    "type": "console.dashboards/card",
+    "properties": {
+      "tab": "ACS",
+      "position": "MAIN",
+      "component": { "$codeRef": "DashboardChart" }
     }
   },
 {
@@ -36,24 +52,6 @@
       "id": "advanced-cluster-security",
       "name": "Advanced Cluster Security",
       "perspective": "admin"
-    }
-  },
-  {
-    "type": "console.navigation/href",
-    "properties": {
-      "id": "acs-dashboard",
-      "name": "Dashboard",
-      "href": "/acs/dashboard",
-      "perspective": "admin",
-      "section": "advanced-cluster-security"
-    }
-  },
-  {
-    "type": "console.page/route",
-    "properties": {
-      "exact": true,
-      "path": "/acs/dashboard",
-      "component": { "$codeRef": "Dashboard" }
     }
   },
   {

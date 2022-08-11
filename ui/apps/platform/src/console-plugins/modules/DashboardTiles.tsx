@@ -1,10 +1,9 @@
 import React from 'react';
 
-import { Divider, PageSection, Title } from '@patternfly/react-core';
+import { Card, CardBody, CardHeader, CardTitle } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
 import PluginProvider from 'console-plugins/PluginProvider';
-import ViolationsByPolicyCategory from 'Containers/Dashboard/PatternFly/Widgets/ViolationsByPolicyCategory';
 import PolicyViolationTiles from 'Containers/Dashboard/PatternFly/Widgets/PolicyViolationTiles';
 import useAlertGroups from 'Containers/Dashboard/PatternFly/hooks/useAlertGroups';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
@@ -29,12 +28,16 @@ export default function Overview() {
 
     return (
         <PluginProvider>
-            <Title headingLevel="h2" className="pf-u-pb-md test">
-                {`${totalCount} policy ${pluralize('violation', totalCount)} by severity`}
-            </Title>
-            <PolicyViolationTiles searchFilter={{}} counts={counts} />
-            <Divider className="pf-u-my-lg" component="div" />
-            <ViolationsByPolicyCategory />
+            <Card>
+                <CardHeader>
+                    <CardTitle>
+                        {`${totalCount} policy ${pluralize('violation', totalCount)} by severity`}
+                    </CardTitle>
+                </CardHeader>
+                <CardBody>
+                    <PolicyViolationTiles searchFilter={{}} counts={counts} />
+                </CardBody>
+            </Card>
         </PluginProvider>
     );
 }
