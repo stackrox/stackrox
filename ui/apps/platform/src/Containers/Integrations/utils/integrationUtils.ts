@@ -81,26 +81,26 @@ export const timesOfDay = getTimes();
 
 // Categories alternatives correspond to mutually exclusive toggle group items.
 type CategoriesAlternatives<
-    C0 extends ImageIntegrationCategory,
-    C1 extends ImageIntegrationCategory
+    Category0 extends ImageIntegrationCategory,
+    Category1 extends ImageIntegrationCategory
 > = [
-    [[category0: C0]],
-    [[category1: C1]],
+    [[category0: Category0]],
+    [[category1: Category1]],
     // The alternative for both categories includes both orders.
-    [[category0: C0, category1: C1], [category1: C1, category0: C0]]
+    [[category0: Category0, category1: Category1], [category1: Category1, category0: Category0]]
 ];
 
 // Compiler verifies that first argument of matchCategoriesAlternative method is a category alternative.
 type CategoriesAlternative<
-    C0 extends ImageIntegrationCategory,
-    C1 extends ImageIntegrationCategory
-> = CategoriesAlternatives<C0, C1>[number];
+    Category0 extends ImageIntegrationCategory,
+    Category1 extends ImageIntegrationCategory
+> = CategoriesAlternatives<Category0, Category1>[number];
 
 function getCategoriesUtils<
-    C0 extends ImageIntegrationCategory,
-    C1 extends ImageIntegrationCategory
->([category0, category1]: [C0, C1], [text0, text1]: [string, string]) {
-    const categoriesAlternatives: CategoriesAlternatives<C0, C1> = [
+    Category0 extends ImageIntegrationCategory,
+    Category1 extends ImageIntegrationCategory
+>([category0, category1]: [Category0, Category1], [text0, text1]: [string, string]) {
+    const categoriesAlternatives: CategoriesAlternatives<Category0, Category1> = [
         [[category0]],
         [[category1]],
         [
@@ -109,7 +109,7 @@ function getCategoriesUtils<
         ],
     ];
 
-    // For robust behavior, do not assume that categories from response are limited to C0 and C1.
+    // For robust behavior, do not assume that categories from response are limited to Category0 and Category1.
     /* eslint-disable no-nested-ternary */
     return {
         categoriesAlternatives,
@@ -122,7 +122,7 @@ function getCategoriesUtils<
                 .join(' + '),
 
         matchCategoriesAlternative: (
-            categoriesAlternative: CategoriesAlternative<C0, C1>,
+            categoriesAlternative: CategoriesAlternative<Category0, Category1>,
             categories: ImageIntegrationCategory[]
         ) =>
             categoriesAlternative.some((categoriesAlternativeItem) =>
