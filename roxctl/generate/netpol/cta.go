@@ -16,7 +16,12 @@ func (cmd *generateNetpolCommand) generateNetpol() error {
 	if err != nil {
 		return errors.Wrap(err, "error synthesizing policies from folder")
 	}
-
+	if _, err := os.Stat(cmd.outputFolderPath); err == nil {
+		if err := os.RemoveAll(cmd.outputFolderPath); err != nil {
+			return errors.Wrapf(err, "failed to remove output path %s", cmd.outputFolderPath)
+		}
+		cmd.env.Logger().WarnfLn("Removed output path %s", cmd.outputFolderPath)
+	}
 	var mergedPolicy string
 	yamlPolicies := make([]string, 0, len(recommendedNetpols))
 	for _, netpol := range recommendedNetpols {

@@ -77,12 +77,7 @@ func (cmd *generateNetpolCommand) validate() error {
 
 func (cmd *generateNetpolCommand) setupPath(path string) error {
 	if _, err := os.Stat(path); err == nil {
-		if cmd.removeOutputPath {
-			if err := os.RemoveAll(path); err != nil {
-				return errors.Wrapf(err, "failed to remove output path %s", path)
-			}
-			cmd.env.Logger().WarnfLn("Removed output path %s", path)
-		} else {
+		if !cmd.removeOutputPath {
 			return errox.AlreadyExists.Newf("path %s already exists. Use --remove to overwrite or select a different path.", path)
 		}
 	} else if !os.IsNotExist(err) {
