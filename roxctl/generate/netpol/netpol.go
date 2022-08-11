@@ -45,7 +45,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().BoolVar(&generateNetpolCmd.removeOutputPath, "remove", false, "remove the output path if it already exists")
 	c.Flags().StringVarP(&generateNetpolCmd.outputFolderPath, "output-dir", "d", "", "save generated policies into target folder - one file per policy")
 	c.Flags().StringVarP(&generateNetpolCmd.outputFilePath, "output-file", "f", "", "save and merge generated policies into a single yaml file")
-	c.MarkFlagsMutuallyExclusive("output-dir", "output-file")
 	return c
 }
 
@@ -60,6 +59,9 @@ func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) err
 }
 
 func (cmd *generateNetpolCommand) validate() error {
+	if cmd.outputFolderPath != "" && cmd.outputFilePath != "" {
+		return errors.New("Flags [-d|--output-dir, -f|--output-file] cannot be used together")
+	}
 	if cmd.splitMode {
 		if err := cmd.setupPath(cmd.outputFolderPath); err != nil {
 			return errors.Wrap(err, "failed to set up folder path")
