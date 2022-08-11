@@ -72,7 +72,7 @@ func (cmd *scannerGenerateCommand) generate(logger logger.Logger) error {
 		return errors.Wrap(err, "could not marshal scanner params")
 	}
 
-	err = zipdownload.GetZip(zipdownload.GetZipOptions{
+	err = zipdownload.GetZip(cmd.env, zipdownload.GetZipOptions{
 		Path:       scannerGenerateAPIPath,
 		Method:     http.MethodPost,
 		Body:       body,
@@ -80,7 +80,7 @@ func (cmd *scannerGenerateCommand) generate(logger logger.Logger) error {
 		BundleType: "scanner",
 		ExpandZip:  true,
 		OutputDir:  cmd.outputDir,
-	}, cmd.env.Logger())
+	})
 
 	return errors.Wrap(err, "could not get scanner bundle")
 }
