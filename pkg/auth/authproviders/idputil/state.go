@@ -58,7 +58,7 @@ func AuthorizeCLICallbackURLState(callbackURL string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "unparseable callback URL")
 	}
-	if urlParsed.Hostname() != "localhost" {
+	if urlParsed.Hostname() != "localhost" && urlParsed.Hostname() != "127.0.0.1" {
 		return "", errors.Wrap(err, "only localhost is allowed as a CLI authorization callback target")
 	}
 	return fmt.Sprintf("%s#%s", AuthorizeCLIClientState, urlParsed), nil
