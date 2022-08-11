@@ -2176,8 +2176,8 @@ func (suite *DefaultPoliciesTestSuite) TestImageSBOMVerified() {
 		"image_covered_result":           nil,
 	}
 
-	imgMatcher, err := BuildImageMatcher(policyWithSingleKeyValue(fieldnames.SBOMVerificationStatus,
-		storage.SBOMVerificationResult_COVERED.String(), false))
+	imgMatcher, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.SBOMVerificationStatus,
+		[]string{storage.SBOMVerificationResult_COVERED.String()}, false, storage.BooleanOperator_AND))
 	suite.Require().NoError(err)
 
 	for _, img := range images {
