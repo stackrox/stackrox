@@ -75,6 +75,75 @@ export const GET_IMAGE_VULNERABILITIES = gql`
                 remote
                 tag
             }
+            vulnCount: imageVulnerabilityCount(query: $vulnsQuery)
+            vulns: imageVulnerabilities(query: $vulnsQuery, pagination: $pagination) {
+                id
+                cve
+                isFixable
+                severity
+                scoreVersion
+                cvss
+                discoveredAtImage
+                components: imageComponents {
+                    id
+                    name
+                    version
+                    fixedIn
+                }
+                vulnerabilityRequest: effectiveVulnerabilityRequest {
+                    id
+                    targetState
+                    status
+                    expired
+                    requestor {
+                        id
+                        name
+                    }
+                    approvers {
+                        id
+                        name
+                    }
+                    comments {
+                        createdAt
+                        id
+                        message
+                        user {
+                            id
+                            name
+                        }
+                    }
+                    deferralReq {
+                        expiresOn
+                        expiresWhenFixed
+                    }
+                    updatedDeferralReq {
+                        expiresOn
+                        expiresWhenFixed
+                    }
+                    scope {
+                        imageScope {
+                            registry
+                            remote
+                            tag
+                        }
+                    }
+                    cves {
+                        ids
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export const GET_IMAGE_VULNERABILITIES_LEGACY = gql`
+    query getImageVulnerabilities($imageId: ID!, $vulnsQuery: String, $pagination: Pagination) {
+        image(id: $imageId) {
+            name {
+                registry
+                remote
+                tag
+            }
             vulnCount(query: $vulnsQuery)
             vulns(query: $vulnsQuery, pagination: $pagination) {
                 id
