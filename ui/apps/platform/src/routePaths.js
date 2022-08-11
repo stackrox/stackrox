@@ -6,6 +6,7 @@ import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/e
 
 export const mainPath = '/main';
 export const loginPath = '/login';
+export const authorizeCLIPath = '/authorize-cli';
 export const testLoginResultsPath = '/test-login-results';
 export const authResponsePrefix = '/auth/response/';
 

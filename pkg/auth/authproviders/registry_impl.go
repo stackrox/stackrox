@@ -365,7 +365,7 @@ func (r *registryImpl) issueTokenForResponse(ctx context.Context, provider Provi
 			log.Errorf("failed to encode refresh token cookie data: %v", err)
 		} else {
 			refreshCookie = &http.Cookie{
-				Name:     refreshTokenCookieName,
+				Name:     RefreshTokenCookieName,
 				Value:    encodedData,
 				Path:     r.sessionURLPrefix(),
 				HttpOnly: true,

@@ -126,7 +126,21 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	providerID := req.URL.Path[len(prefix):]
 	clientState := req.URL.Query().Get("clientState")
 	testMode, _ := strconv.ParseBool(req.URL.Query().Get("test"))
-	clientState = idputil.AttachTestStateOrEmpty(clientState, testMode)
+	authorizeCLICallbackURL := req.URL.Query().Get("authorizeCLICallback")
+	if authorizeCLICallbackURL != "" {
+		if testMode {
+			http.Error(w, "Cannot use test mode in conjunction with CLI authorization", http.StatusBadRequest)
+			return
+		}
+
+	} else {
+		newState, err := idputil.AuthorizeCLICallbackURLState(authorizeCLICallbackURL)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		clientState = newState
+	}
 
 	provider := r.getAuthProvider(providerID)
 	if provider == nil {
@@ -157,13 +171,14 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	w.WriteHeader(http.StatusSeeOther)
 }
 
-type tokenRefreshResponse struct {
+// TokenRefreshResponse bla
+type TokenRefreshResponse struct {
 	Token  string    `json:"token,omitempty"`
 	Expiry time.Time `json:"expiry,omitempty"`
 }
 
 func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, error) {
-	refreshTokenCookie, err := req.Cookie(refreshTokenCookieName)
+	refreshTokenCookie, err := req.Cookie(RefreshTokenCookieName)
 	if err != nil {
 		return nil, httputil.Errorf(http.StatusBadRequest, "could not obtain refresh token cookie: %v", err)
 	}
@@ -201,7 +216,7 @@ func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, err
 		httputil.SetCookie(httputil.ResponseHeaderFromContext(req.Context()), newRefreshCookie)
 	}
 
-	return &tokenRefreshResponse{
+	return &TokenRefreshResponse{
 		Token:  token.Token,
 		Expiry: token.Expiry(),
 	}, nil
@@ -232,7 +247,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	providerID, clientState, err := factory.ProcessHTTPRequest(w, req)
-	clientState, testMode := idputil.ParseClientState(clientState)
+	clientState, mode := idputil.ParseClientState(clientState)
 
 	var provider Provider
 	if err == nil {
@@ -244,13 +259,13 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		}
 	}
 	if err != nil {
-		r.error(w, err, typ, "", testMode)
+		r.error(w, err, typ, "", mode == idputil.AuthnModeTest)
 		return
 	}
 
 	backend, err := provider.GetOrCreateBackend(req.Context())
 	if err != nil {
-		r.error(w, err, typ, "", testMode)
+		r.error(w, err, typ, "", mode == idputil.AuthnModeTest)
 		return
 	}
 
@@ -258,18 +273,18 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	if err != nil {
 		log.Errorf(fmt.Sprintf("error processing HTTP request for provider %s of type %s: %v",
 			provider.Name(), provider.Type(), err))
-		r.error(w, err, typ, clientState, testMode)
+		r.error(w, err, typ, clientState, mode == idputil.AuthnModeTest)
 		return
 	}
 
 	if authResp == nil || authResp.Claims == nil {
-		r.error(w, errox.NoCredentials.CausedBy("authentication response is empty"), typ, clientState, testMode)
+		r.error(w, errox.NoCredentials.CausedBy("authentication response is empty"), typ, clientState, mode == idputil.AuthnModeTest)
 		return
 	}
 
 	if provider.AttributeVerifier() != nil {
 		if err := provider.AttributeVerifier().Verify(authResp.Claims.Attributes); err != nil {
-			r.error(w, errox.NoCredentials.CausedBy(err), typ, clientState, testMode)
+			r.error(w, errox.NoCredentials.CausedBy(err), typ, clientState, mode == idputil.AuthnModeTest)
 			return
 		}
 	}
@@ -277,12 +292,12 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	// We need all access for retrieving roles.
 	user, err := CreateRoleBasedIdentity(sac.WithAllAccess(req.Context()), provider, authResp)
 	if err != nil {
-		r.error(w, errors.Wrap(err, "cannot create role based identity"), typ, clientState, testMode)
+		r.error(w, errors.Wrap(err, "cannot create role based identity"), typ, clientState, mode == idputil.AuthnModeTest)
 		return
 	}
 
-	if testMode {
-		w.Header().Set("Location", r.userMetadataURL(user, typ, clientState, testMode).String())
+	if mode == idputil.AuthnModeTest {
+		w.Header().Set("Location", r.userMetadataURL(user, typ, clientState, true).String())
 		w.WriteHeader(http.StatusSeeOther)
 		return
 	}
@@ -290,13 +305,13 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	userInfo := user.GetUserInfo()
 	if userInfo == nil {
 		err := errox.NotAuthorized.CausedBy("failed to get user info")
-		r.error(w, err, typ, clientState, testMode)
+		r.error(w, err, typ, clientState, false)
 		return
 	}
 
 	userRoles := userInfo.GetRoles()
 	if len(userRoles) == 0 {
-		r.error(w, auth.ErrNoValidRole, typ, clientState, testMode)
+		r.error(w, auth.ErrNoValidRole, typ, clientState, false)
 		return
 	}
 
@@ -304,12 +319,30 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	var refreshCookie *http.Cookie
 	tokenInfo, refreshCookie, err = r.issueTokenForResponse(req.Context(), provider, authResp)
 	if err != nil {
-		r.error(w, err, typ, clientState, testMode)
+		r.error(w, err, typ, clientState, false)
 		return
 	}
 
 	if tokenInfo == nil {
 		// Assume the ProcessHTTPRequest already took care of writing a response.
+		return
+	}
+
+	if mode == idputil.AuthnModeAuthorizeCLI {
+		callbackURL, err := url.Parse(clientState)
+		if err != nil {
+			r.error(w, errors.Wrap(err, "invalid CLI authorization callback URL"), typ, clientState, false)
+			return
+		}
+		// TODO check callback URL again
+		q := callbackURL.Query()
+		q.Set("token", tokenInfo.Token)
+		q.Set("expiresAt", tokenInfo.Expiry().Format(time.RFC3339))
+		if refreshCookie != nil {
+			q.Set("refreshToken", refreshCookie.Value)
+		}
+		callbackURL.RawQuery = q.Encode()
+		w.Header().Set("Location", callbackURL.String())
 		return
 	}
 
@@ -328,7 +361,7 @@ func (r *registryImpl) logoutEndpoint(req *http.Request) (interface{}, error) {
 
 	// Whatever happens, make sure the cookie gets cleared.
 	clearCookie := &http.Cookie{
-		Name:     refreshTokenCookieName,
+		Name:     RefreshTokenCookieName,
 		Path:     r.sessionURLPrefix(),
 		HttpOnly: true,
 		Secure:   true,

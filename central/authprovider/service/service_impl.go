@@ -263,13 +263,16 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 		return nil, err
 	}
 
-	clientState, testMode := idputil.ParseClientState(clientState)
+	clientState, mode := idputil.ParseClientState(clientState)
+	if mode == idputil.AuthnModeAuthorizeCLI {
+		return nil, errox.InvalidArgs.New("ExchangeToken functionality is not available for CLI authorization")
+	}
 	response := &v1.ExchangeTokenResponse{
 		ClientState: clientState,
-		Test:        testMode,
+		Test:        mode == idputil.AuthnModeTest,
 	}
 
-	if testMode {
+	if mode == idputil.AuthnModeTest {
 		// We need all access for retrieving roles.
 		userMetadata, err := authproviders.CreateRoleBasedIdentity(sac.WithAllAccess(ctx), provider, authResponse)
 		if err != nil {

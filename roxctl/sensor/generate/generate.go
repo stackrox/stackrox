@@ -166,7 +166,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 
 		DisablePodSecurityPolicies: !s.enablePodSecurityPolicies,
 	}
-	if err := s.getBundleFn(params, s.outputDir, s.timeout, s.env.Logger()); err != nil {
+	if err := s.getBundleFn(s.env, params, s.outputDir, s.timeout); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 

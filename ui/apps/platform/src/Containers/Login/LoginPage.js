@@ -18,6 +18,7 @@ import UnreachableWarning from 'Containers/UnreachableWarning';
 import Labeled from 'Components/Labeled';
 import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
 import BrandLogo from 'Components/PatternFly/BrandLogo';
+import { parseFragment } from 'utils/locationUtils';
 import AppWrapper from '../AppWrapper';
 import LoginNotice from './LoginNotice';
 
@@ -50,7 +51,12 @@ class LoginPage extends Component {
         }).isRequired,
         serverState: PropTypes.oneOf(['UP', 'UNREACHABLE', 'RESURRECTED', undefined, null])
             .isRequired,
+        authorizeCLIMode: PropTypes.bool,
         ...reduxFormPropTypes,
+    };
+
+    static defaultProps = {
+        authorizeCLIMode: false,
     };
 
     static contextType = ThemeContext;
@@ -74,6 +80,30 @@ class LoginPage extends Component {
         if (!authProvider) {
             return;
         }
+        const { authorizeCLIMode } = this.props;
+        if (authorizeCLIMode) {
+            if (authProvider.type === 'basic') {
+                this.setState({
+                    authProviderResponse: {
+                        error: 'Cannot use username/password login to authorize roxctl CLI',
+                    },
+                });
+                return;
+            }
+            const { authorizeCallback } = parseFragment(window.location);
+            if (!authorizeCallback) {
+                this.setState({
+                    authProviderResponse: {
+                        error: 'No authorize callback specified, did you reach this page via roxctl login?',
+                    },
+                });
+                return;
+            }
+            this.setState({ loggingIn: true });
+            window.location = `${authProvider.loginUrl}?authorizeCallback=${authorizeCallback}`;
+            return;
+        }
+
         if (authProvider.type === 'basic') {
             this.setState({ loggingIn: true });
 
@@ -128,20 +158,27 @@ class LoginPage extends Component {
     };
 
     renderFields = () => {
-        const { authStatus, authProviders } = this.props;
+        const { authStatus, authorizeCLIMode } = this.props;
+        let { authProviders } = this.props;
         if (
-            authStatus === AUTH_STATUS.LOADING ||
-            authStatus === AUTH_STATUS.LOGGED_IN ||
-            authStatus === AUTH_STATUS.ANONYMOUS_ACCESS
+            !authorizeCLIMode &&
+            (authStatus === AUTH_STATUS.LOADING ||
+                authStatus === AUTH_STATUS.LOGGED_IN ||
+                authStatus === AUTH_STATUS.ANONYMOUS_ACCESS)
         ) {
             return null;
         }
 
+        let title = 'Log in to your account';
+        if (authorizeCLIMode) {
+            authProviders = authProviders.filter((provider) => provider.type !== 'basic');
+            title = 'Authorize roxctl CLI';
+        }
         const options = authProvidersToSelectOptions(authProviders);
         return (
             <div>
                 <Title headingLevel="h2" size={TitleSizes['3xl']} className="pb-12">
-                    Log in to your account
+                    {title}
                 </Title>
                 <Labeled label="Select an auth provider">
                     <ReduxSelectField
@@ -164,7 +201,7 @@ class LoginPage extends Component {
     };
 
     renderLoginButton = () => {
-        const { authStatus } = this.props;
+        const { authStatus, authorizeCLIMode } = this.props;
         if (authStatus === AUTH_STATUS.LOADING) {
             return (
                 <div className="p-6 w-full text-center">
@@ -177,7 +214,10 @@ class LoginPage extends Component {
                 </div>
             );
         }
-        if (authStatus === AUTH_STATUS.LOGGED_IN || authStatus === AUTH_STATUS.ANONYMOUS_ACCESS) {
+        if (
+            !authorizeCLIMode &&
+            (authStatus === AUTH_STATUS.LOGGED_IN || authStatus === AUTH_STATUS.ANONYMOUS_ACCESS)
+        ) {
             return (
                 <div className="p-8 w-full text-center">
                     <Link
@@ -204,7 +244,7 @@ class LoginPage extends Component {
                 isBlock
                 onClick={this.props.handleSubmit(this.login)}
             >
-                Log in
+                {authorizeCLIMode ? 'Authorize' : 'Log in'}
             </Button>
         );
     };
@@ -255,14 +295,19 @@ const Form = reduxForm({
 // which are based on the Redux state. Yet because initialValues matter only when
 // component is mounted, we cannot mount a component until we have everything to populate
 // initial values (in this case the list of auth providers)
-const LoadingOrForm = ({ authProviders }) => {
+const LoadingOrForm = ({ authProviders, authorizeCLIMode = false }) => {
     if (!authProviders.length) {
         return <LoadingSection message="Loading..." />;
     }
 
-    const options = authProvidersToSelectOptions(authProviders);
+    let availableAuthProviders = authProviders;
+    if (authorizeCLIMode) {
+        availableAuthProviders = authProviders.filter((provider) => provider.type !== 'basic');
+    }
+
+    const options = authProvidersToSelectOptions(availableAuthProviders);
     const initialValues = { authProvider: options[0].value };
-    return <Form initialValues={initialValues} />;
+    return <Form initialValues={initialValues} authorizeCLIMode={authorizeCLIMode} />;
 };
 
 // yep, it's connect again, because we need to initialize form values from the state

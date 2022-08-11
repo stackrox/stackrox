@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"google.golang.org/grpc"
@@ -14,7 +15,7 @@ import (
 // NewEnvWithConn creates new environment with given connection. It returns environment and out / errOut buffer.
 // It's meant to use in tests only.
 func NewEnvWithConn(conn *grpc.ClientConn, t *testing.T) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
-	envMock := NewMockEnvironment(gomock.NewController(t))
+	envMock := mocks.NewMockEnvironment(gomock.NewController(t))
 
 	testIO, _, out, errOut := io.TestIO()
 	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())

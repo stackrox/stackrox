@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Route, Switch } from 'react-router-dom';
 
-import { loginPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';
+import { loginPath, authorizeCLIPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import AuthenticatedRoutes from 'Containers/MainPage/AuthenticatedRoutes';
 import LoginPage from 'Containers/Login/LoginPage';
@@ -16,6 +16,10 @@ function AppPage(): ReactElement {
             <AppPageFavicon />
             <Switch>
                 <Route path={loginPath} component={LoginPage} />
+                <Route
+                    path={authorizeCLIPath}
+                    render={(props) => <LoginPage {...props} authorizeCLIMode />}
+                />
                 <Route path={testLoginResultsPath} component={TestLoginResultsPage} />
                 <Route path={authResponsePrefix} component={LoadingSection} />
                 <Route component={AuthenticatedRoutes} />

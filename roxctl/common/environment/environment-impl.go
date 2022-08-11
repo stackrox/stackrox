@@ -2,6 +2,7 @@ package environment
 
 import (
 	"io"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	cliIO "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -20,6 +22,9 @@ type cliEnvironmentImpl struct {
 	io              cliIO.IO
 	logger          logger.Logger
 	colorfulPrinter printer.ColorfulPrinter
+
+	authMethod     auth.Method
+	authMethodInit sync.Once
 }
 
 var (
@@ -59,14 +64,37 @@ func CLIEnvironment() Environment {
 }
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
-func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
-	client, err := common.GetRoxctlHTTPClient(timeout, flags.ForceHTTP1(), flags.UseInsecure(), c.Logger())
+func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration, authOpt ...auth.Method) (common.RoxctlHTTPClient, error) {
+	var am auth.Method
+	if len(authOpt) > 0 {
+		am = authOpt[0]
+	} else {
+		am = c.AuthMethod()
+	}
+	client, err := common.GetRoxctlHTTPClient(am, timeout, flags.ForceHTTP1(), flags.UseInsecure(), c.Logger())
 	return client, errors.WithStack(err)
 }
 
+func (c *cliEnvironmentImpl) AuthMethod() auth.Method {
+	c.authMethodInit.Do(func() {
+		am, err := determineAuthMethod()
+		if err != nil {
+			am = auth.Error(err)
+		}
+		c.authMethod = am
+	})
+	return c.authMethod
+}
+
 // GRPCConnection returns the common.GetGRPCConnection
-func (c *cliEnvironmentImpl) GRPCConnection() (*grpc.ClientConn, error) {
-	connection, err := common.GetGRPCConnection(c.Logger())
+func (c *cliEnvironmentImpl) GRPCConnection(authOpt ...auth.Method) (*grpc.ClientConn, error) {
+	var am auth.Method
+	if len(authOpt) > 0 {
+		am = authOpt[0]
+	} else {
+		am = c.AuthMethod()
+	}
+	connection, err := common.GetGRPCConnection(am, c.Logger())
 	return connection, errors.WithStack(err)
 }
 
@@ -90,6 +118,22 @@ func (c *cliEnvironmentImpl) ColorWriter() io.Writer {
 func (c *cliEnvironmentImpl) ConnectNames() (string, string, error) {
 	names, s, err := common.ConnectNames()
 	return names, s, errors.Wrap(err, "could not get endpoint")
+}
+
+func (c *cliEnvironmentImpl) BaseURL() *url.URL {
+	endpoint, plaintext, err := flags.EndpointAndPlaintextSetting()
+	if err != nil {
+		panic(err)
+	}
+	scheme := "https"
+	if plaintext {
+		scheme = "http"
+	}
+	baseURL, err := url.Parse(scheme + "://" + endpoint)
+	if err != nil {
+		panic(err)
+	}
+	return baseURL
 }
 
 type colorWriter struct {

@@ -9,9 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 const (
@@ -38,7 +38,7 @@ func (cmd *scannerUploadDbCommand) uploadDd() error {
 	}
 	defer utils.IgnoreError(file.Close)
 
-	resp, err := common.DoHTTPRequestAndCheck200(scannerUploadDbAPIPath, cmd.timeout, http.MethodPost, file, cmd.env.Logger())
+	resp, err := util.DoHTTPRequestAndCheck200(cmd.env, scannerUploadDbAPIPath, cmd.timeout, http.MethodPost, file)
 	if err != nil {
 		return errors.Wrap(err, "could not connect with scanner definitions API")
 	}

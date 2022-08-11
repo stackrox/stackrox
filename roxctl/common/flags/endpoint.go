@@ -75,6 +75,19 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 	return u.Host, usePlaintext, nil
 }
 
+// BaseURL bla
+func BaseURL() (string, error) {
+	host, pt, err := EndpointAndPlaintextSetting()
+	if err != nil {
+		return "", err
+	}
+	scheme := "https"
+	if pt {
+		scheme = "http"
+	}
+	return scheme + "://" + host, nil
+}
+
 // ServerName returns the specified ServerName.
 func ServerName() string {
 	return serverName
