@@ -8,7 +8,7 @@ require github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581
 
 require (
 	cloud.google.com/go/compute v1.7.0
-	cloud.google.com/go/containeranalysis v0.3.0
+	cloud.google.com/go/containeranalysis v0.4.0
 	cloud.google.com/go/storage v1.24.0
 	github.com/BurntSushi/toml v1.2.0
 	github.com/Masterminds/semver v1.5.0
