@@ -75,7 +75,7 @@ func (a authFromConfig) getToken(baseURL string) (string, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", errors.Errorf("reading response body from token refresh")
+		return "", errors.New("reading response body from token refresh")
 	}
 
 	var tokenRefresh authproviders.TokenRefreshResponse
