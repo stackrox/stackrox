@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc/codes"
@@ -148,11 +149,11 @@ func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error
 	return nil
 }
 
-func userID(info requestinfo.CertInfo) string {
+func userID(info mtls.CertInfo) string {
 	return "userpki:" + info.CertFingerprint
 }
 
-func externalUser(info requestinfo.CertInfo) *tokens.ExternalUserClaim {
+func externalUser(info mtls.CertInfo) *tokens.ExternalUserClaim {
 	attrs := userpki.ExtractAttributes(info)
 	return &tokens.ExternalUserClaim{
 		UserID:     userID(info),

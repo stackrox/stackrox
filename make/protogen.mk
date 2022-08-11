@@ -34,7 +34,7 @@ endif
 ##############
 # Set some platform variables for protoc.
 # If the proto version is changed, be sure it is also changed in qa-tests-backend/build.gradle.
-PROTOC_VERSION := 3.20.1
+PROTOC_VERSION := 21.4
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 PROTOC_ARCH = linux

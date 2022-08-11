@@ -13,6 +13,7 @@ import (
 	boltPkg "github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -69,7 +70,7 @@ func (s *clusterDatastoreSACSuite) SetupSuite() {
 		s.Require().NoError(err)
 		s.index, err = globalindex.MemOnlyIndex()
 		s.Require().NoError(err)
-		keyFence := concurrency.NewKeyFence()
+		keyFence := dackboxConcurrency.NewKeyFence()
 		indexQ := queue.NewWaitableQueue()
 		dacky, err := dackbox.NewRocksDBDackBox(s.engine, indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
 		s.Require().NoError(err)

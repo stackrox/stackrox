@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -94,11 +95,11 @@ func (suite *ImageComponentSearchTestSuite) SetupSuite() {
 
 	suite.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(suite.T()))
 
-	suite.imageDataStore = imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, bleveIndex, false, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
-	suite.nodeDataStore = nodeDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	suite.imageDataStore = imageDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, bleveIndex, false, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	suite.nodeDataStore = nodeDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	index := componentIndex.New(bleveIndex)
-	store, _ := componentStore.New(dacky, concurrency.NewKeyFence())
+	store, _ := componentStore.New(dacky, dackboxConcurrency.NewKeyFence())
 	suite.searcher = New(store, dacky, cveIndex.New(bleveIndex), componentCVEEdgeIndex.New(bleveIndex), index,
 		imageComponentEdgeIndex.New(bleveIndex), imageCVEEdgeIndex.New(bleveIndex), imageIndex.New(bleveIndex),
 		nodeComponentEdgeIndex.New(bleveIndex), nodeIndex.New(bleveIndex), deploymentIndex.New(bleveIndex, bleveIndex),

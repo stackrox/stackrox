@@ -93,7 +93,12 @@ create_cluster() {
     else
         die "Support is missing for this CI environment"
     fi
-    # . from branch names
+
+    if is_in_PR_context; then
+        labels="${labels},pr=$(get_PR_number)"
+    fi
+
+    # remove . from branch names
     tags="${tags//./-}"
     labels="${labels//./-}"
     # lowercase

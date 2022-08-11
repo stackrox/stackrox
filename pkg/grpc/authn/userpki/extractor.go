@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -92,7 +93,7 @@ func (a attributes) add(key string, values ...string) {
 }
 
 // ExtractAttributes converts a subset of CertInfo into an attribute map for authorization
-func ExtractAttributes(userCerts ...requestinfo.CertInfo) map[string][]string {
+func ExtractAttributes(userCerts ...mtls.CertInfo) map[string][]string {
 	output := make(attributes)
 
 	for _, userCert := range userCerts {

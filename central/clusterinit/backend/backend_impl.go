@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -164,7 +163,7 @@ func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
 }
 
 // ValidateClientCertificate validates cert chains in identity extractors defined in authn.ValidateCertChain
-func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []requestinfo.CertInfo) error {
+func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []mtls.CertInfo) error {
 	if len(chain) == 0 {
 		return errors.New("empty cert chain passed")
 	}
