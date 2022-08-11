@@ -140,6 +140,7 @@ var (
 	ReadOnlyRootFilesystem        = newFieldLabel("Read Only Root Filesystem")
 	Replicas                      = newFieldLabel("Replicas")
 	ReadinessProbeDefined         = newFieldLabel("Readiness Probe Defined")
+	SBOMVerificationStatus        = newFieldLabel("SBOM Verification Status")
 	SecretID                      = newFieldLabel("Secret ID")
 	SecretName                    = newFieldLabel("Secret")
 	SecretPath                    = newFieldLabel("Secret Path")

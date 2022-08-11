@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrRemote "github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/pkg/oci"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoconv"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"golang.org/x/time/rate"
 )
 
@@ -90,11 +92,13 @@ func (s *sigstoreSBOMFetcher) FetchSBOM(ctx context.Context, image *storage.Imag
 	sbom, err := se.Attachment("sbom")
 
 	// Probs not the one we are looking for - need to use our own error mapping (heroku + ggcr).
-	if errors.Is(err, ociremote.ErrImageNotFound) {
+	if checkIfErrorContainsCode(err, http.StatusNotFound) {
 		// No sbom attached to the image reference.
 		if !isIndex {
 			return nil, nil
 		}
+	} else if checkIfErrorContainsCode(err, http.StatusUnauthorized) {
+		return nil, errox.NotAuthorized.CausedBy(err)
 	} else if err != nil {
 		return nil, err
 	}
@@ -209,4 +213,27 @@ func optionsFromRegistry(registry registryTypes.Registry) []gcrRemote.Option {
 				registryCfg.Username, registryCfg.Password)))
 	}
 	return opts
+}
+
+// checkIfErrorContainsCode will try retrieve a http.StatusCode from the given error by casting the error to either
+// transport.Error or registry.HttpStatusError and check whether the code is contained within a given list of codes.
+// In case the error is matching one of these types and the code is contained within the given codes, true will be
+// returned.
+// If the error is not matching any of these types or the code is not contained in the given codes, false will be
+// returned.
+func checkIfErrorContainsCode(err error, codes ...int) bool {
+	var transportErr *transport.Error
+	var statusError *dockerRegistry.HttpStatusError
+
+	// Transport error is returned by go-containerregistry for any errors occurred post authentication.
+	if errors.As(err, &transportErr) {
+		return sliceutils.IntFind(codes, transportErr.StatusCode) != -1
+	}
+
+	// HttpStatusError is returned by heroku-client for any errors occurred during authentication.
+	if errors.As(err, &statusError) && statusError.Response != nil {
+		return sliceutils.IntFind(codes, statusError.Response.StatusCode) != -1
+	}
+
+	return false
 }

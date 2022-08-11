@@ -46,7 +46,7 @@ func (v *verifier) VerifySBOM(_ context.Context, image *storage.Image) error {
 			filePathsReferencedBySBOMS.AddAll(fileScopedSBOM.GetPathInImage()...)
 		}
 	}
-
+	//nolint:govet
 	result := &storage.SBOMVerificationResult{
 		Verified: protoconv.ConvertTimeToTimestamp(time.Now()),
 		Status:   storage.SBOMVerificationResult_FAILED_VERIFICATION,

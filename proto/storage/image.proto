@@ -187,7 +187,7 @@ message SBOMVerificationResult {
         // GENERIC_ERROR is set when a generic, non-specific error occurred during verification.
         GENERIC_ERROR       = 4;
     }
-    Status status                      = 1;
+    Status status                      = 1 [(gogoproto.moretags) = 'search:"SBOM Verification Status"'];
     google.protobuf.Timestamp verified = 2;
 }
 

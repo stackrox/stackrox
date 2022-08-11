@@ -202,6 +202,13 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 		}
 	}
 
+	if img.GetSbom().GetResult().GetStatus() == storage.SBOMVerificationResult_UNSET {
+		// TODO: this is a ugly workaround for the policy system which treats an enum with the value 0 as uninitialized, thus ignoring the value.
+		// This leads to the same issue with the signature verification data: we want to alert when the status is not as expected OR the
+		// SBOM is not there. So, for now,  resorting to setting GENERIC_ERROR when there's no result, which will make the policy alert properly.
+		img.Sbom = &storage.ImageSBOM{Result: &storage.SBOMVerificationResult{Status: storage.SBOMVerificationResult_GENERIC_ERROR}}
+	}
+
 	obj := pathutil.NewAugmentedObj(&img)
 
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"

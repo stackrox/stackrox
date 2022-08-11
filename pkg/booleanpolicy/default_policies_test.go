@@ -196,6 +196,19 @@ func imageWithSignatureVerificationResults(name string, results []*storage.Image
 	return img
 }
 
+func imageWithSBOMResult(name string, result *storage.SBOMVerificationResult) *storage.Image {
+	img := &storage.Image{
+		Id:   uuid.NewV4().String(),
+		Name: &storage.ImageName{FullName: name, Remote: "ASFASF"},
+	}
+
+	if result != nil {
+		img.Sbom = &storage.ImageSBOM{Result: result}
+	}
+
+	return img
+}
+
 func deploymentWithImageAnyID(img *storage.Image) *storage.Deployment {
 	return deploymentWithImage(uuid.NewV4().String(), img)
 }
@@ -2140,6 +2153,41 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 			}
 			assert.ElementsMatch(t, imgMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", imgMatched.AsSlice(), c.value, c.expectedMatches)
 		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestImageSBOMVerified() {
+	var images = []*storage.Image{
+		imageWithSBOMResult("image_no_result", &storage.SBOMVerificationResult{}),
+		imageWithSBOMResult("image_nil_result", nil),
+		imageWithSBOMResult("image_partially_covered_result",
+			&storage.SBOMVerificationResult{Status: storage.SBOMVerificationResult_PARTIALLY_COVERED}),
+		imageWithSBOMResult("image_failed_result",
+			&storage.SBOMVerificationResult{Status: storage.SBOMVerificationResult_FAILED_VERIFICATION}),
+		imageWithSBOMResult("image_covered_result",
+			&storage.SBOMVerificationResult{Status: storage.SBOMVerificationResult_COVERED}),
+	}
+
+	expectedMessages := map[string][]string{
+		"image_no_result":                {"Image has no SBOM"},
+		"image_nil_result":               {"Image has no SBOM"},
+		"image_partially_covered_result": {"Image has a SBOM that only partially covers the contents of the image"},
+		"image_failed_result":            {"Image has no SBOM"},
+		"image_covered_result":           nil,
+	}
+
+	imgMatcher, err := BuildImageMatcher(policyWithSingleKeyValue(fieldnames.SBOMVerificationStatus,
+		storage.SBOMVerificationResult_COVERED.String(), false))
+	suite.Require().NoError(err)
+
+	for _, img := range images {
+		violations, err := imgMatcher.MatchImage(nil, img)
+		suite.NoError(err)
+		var receivedMessages []string
+		for _, v := range violations.AlertViolations {
+			receivedMessages = append(receivedMessages, v.GetMessage())
+		}
+		suite.ElementsMatch(expectedMessages[img.GetName().GetFullName()], receivedMessages)
 	}
 }
 

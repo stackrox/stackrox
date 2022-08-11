@@ -145,3 +145,17 @@ func ForImageSignatureVerificationStatus() QueryBuilder {
 	}
 	return queryBuilderFunc(qbf)
 }
+
+// ForSBOMVerificationStatus returns a query builder for SBOM
+// verification status.
+func ForSBOMVerificationStatus() QueryBuilder {
+	qbf := func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{{
+			Field:    search.SBOMVerificationStatus.String(),
+			Values:   mapValues(group, nil),
+			Operator: operatorProtoMap[group.GetBooleanOperator()],
+			Negate:   !group.Negate,
+		}}
+	}
+	return queryBuilderFunc(qbf)
+}
