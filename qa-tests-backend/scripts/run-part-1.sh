@@ -36,6 +36,11 @@ test_part_1() {
 
 run_tests_part_1() {
     info "QA Automation Platform Part 1"
+    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
+        oc get scc qatest-anyuid || oc create -f "${ROOT}/qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
+    fi
+
+    export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
     info "Running SAC tests 100 times, exiting on the first failure found"
 
