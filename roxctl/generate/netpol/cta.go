@@ -96,7 +96,7 @@ func (cmd *generateNetpolCommand) saveNetpolsToFolder(recommendedNetpols []*v1.N
 
 func writeFile(filename string, destDir string, content string) error {
 	outputPath := filepath.Join(destDir, filename)
-	if err := os.MkdirAll(filepath.Dir(destDir), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return errors.Wrapf(err, "error creating directory for file %q", filename)
 	}
 
