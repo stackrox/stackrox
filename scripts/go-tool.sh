@@ -53,6 +53,7 @@ fi
 
 ldflags=("${x_defs[@]}")
 if [[ "$DEBUG_BUILD" != "yes" ]]; then
+  echo >&2 "DEBUG_BUILD is not yes. Compiling with -s -w"
   ldflags+=(-s -w)
 fi
 

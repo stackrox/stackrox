@@ -463,11 +463,20 @@ With GoLand, you can naturally use breakpoints and debugger when running unit te
 
 If you would like to debug local or even remote deployment, follow the procedure below.
 
- 1. Create debug build locally by exporting `DEBUG_BUILD=yes`:
-    ```bash
-    $ DEBUG_BUILD=yes make image
-    ```
-    Alternatively, debug build will also be created when the branch name contains `-debug` substring. This works locally with `make image` and in CircleCI.
+ 1. Create a debug build
+    * Create debug build locally by exporting `DEBUG_BUILD=yes`:
+        ```bash
+        $ DEBUG_BUILD=yes make image
+        ```
+    * To create a debug build for remote debugging,
+      * Open Makefile under /stackrox and find the line containing `DEBUG_BUILD ?= no`.
+      * Comment out that line and add `DEBUG_BUILD ?= yes` underneath it.
+        ```makefile
+        # DEBUG_BUILD ?= no
+        DEBUG_BUILD ?= yes
+        ```
+      * **Make sure to reset the Makefile to its previous state before merging your branch into master**.
+    * Alternatively, debug build will also be created when the branch name contains `-debug` substring. This works locally with `make image` and in CircleCI.
  2. Deploy the image using instructions from this README file. Works both with `deploy-local.sh` and `deploy.sh`.
  3. Start the debugger (and port forwarding) in the target pod using `roxdebug` command from `workflow` repo.
     ```bash
@@ -478,6 +487,7 @@ If you would like to debug local or even remote deployment, follow the procedure
     # See usage help
     $ roxdebug --help
     ```
+    When remote debugging, make sure `KUBECONFIG` env var is set before calling `roxdebug`.
  4. Configure GoLand for remote debugging (should be done only once):
     1. Open `Run | Edit Configurations …`, click on the `+` icon to add new configuration, choose `Go Remote` template.
     2. Choose `Host:` `localhost` and `Port:` `40000`. Give this configuration some name.

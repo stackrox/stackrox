@@ -56,7 +56,8 @@ GOCACHE_VOLUME_NAME := stackrox-rox-gocache
 ifneq (,$(findstring -debug,$(shell git rev-parse --abbrev-ref HEAD)))
 	DEBUG_BUILD ?= yes
 endif
-DEBUG_BUILD ?= no
+# DEBUG_BUILD ?= no
+DEBUG_BUILD ?= yes
 
 # Figure out whether to use standalone Docker volume for GOPATH/Go build cache, or bind
 # mount one from the host filesystem.
@@ -422,7 +423,7 @@ endif
 
 .PHONY: main-build-nodeps
 main-build-nodeps:
-	$(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
+	DEBUG_BUILD="$(DEBUG_BUILD)" $(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 ifndef CI
     CGO_ENABLED=0 $(GOBUILD) roxctl
