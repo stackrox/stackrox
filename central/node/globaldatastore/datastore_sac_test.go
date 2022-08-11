@@ -65,19 +65,19 @@ func (s *nodeDatastoreSACSuite) setupPostgres() {
 	var err error
 
 	s.pgtestbase = pgtest.ForT(s.T())
-	s.NotNil(s.pgtestbase)
+	s.Require().NotNil(s.pgtestbase)
 	s.datastore, err = dackboxDatastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
 	s.Require().NoError(err)
 	s.globalDatastore, err = globaldatastore.New(s.datastore)
 	s.Require().NoError(err)
 
-	s.optionsMap = schema.ClustersSchema.OptionsMap
+	s.optionsMap = schema.NodesSchema.OptionsMap
 }
 
 func (s *nodeDatastoreSACSuite) setupRocks() {
 	var err error
 
-	s.rocksEngine, err = rocksdb.NewTemp("nodeSACTest")
+	s.rocksEngine, err = rocksdb.NewTemp("nodeGlobalDatastoreSACTest")
 	s.Require().NoError(err)
 	s.bleveIndex, err = globalindex.MemOnlyIndex()
 	s.Require().NoError(err)
@@ -130,15 +130,17 @@ func (s *nodeDatastoreSACSuite) TearDownTest() {
 	}
 }
 
-func (s *nodeDatastoreSACSuite) addTestNode(clusterID string) {
+func (s *nodeDatastoreSACSuite) addTestNode(clusterID string) string {
 	nodeID := uuid.NewV4().String()
 	node := fixtures.GetScopedNode(nodeID, clusterID)
 	node.Priority = 1
 
 	errUpsert := s.datastore.UpsertNode(s.testContexts[testutils.UnrestrictedReadWriteCtx], node)
-	s.NoError(errUpsert)
+	s.Require().NoError(errUpsert)
 	s.testNodeIDs[clusterID] = append(s.testNodeIDs[clusterID], nodeID)
 	s.testNodes[nodeID] = node
+
+	return nodeID
 }
 
 func (s *nodeDatastoreSACSuite) waitForIndexing() {
@@ -165,7 +167,6 @@ func (s *nodeDatastoreSACSuite) initTestResourceSet() {
 
 type sacMultiNodeTest struct {
 	Context            context.Context
-	SingleCluster      bool
 	ExpectedClusterIds []string
 }
 
@@ -181,7 +182,6 @@ func getReadSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, val
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...))),
-			SingleCluster:      false,
 			ExpectedClusterIds: []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3},
 		},
 		"full read-write can get": {
@@ -189,7 +189,6 @@ func getReadSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, val
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...))),
-			SingleCluster:      false,
 			ExpectedClusterIds: []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3},
 		},
 		"full read-write on wrong cluster cannot get": {
@@ -198,7 +197,6 @@ func getReadSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, val
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(wrongClusterID))),
-			SingleCluster:      false,
 			ExpectedClusterIds: []string{},
 		},
 		"read-write on wrong cluster and partial namespace access cannot get": {
@@ -208,7 +206,6 @@ func getReadSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, val
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(wrongClusterID),
 					sac.NamespaceScopeKeys("someNamespace"))),
-			SingleCluster:      false,
 			ExpectedClusterIds: []string{},
 		},
 		"read-only on right cluster can get": {
@@ -217,7 +214,6 @@ func getReadSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, val
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterID))),
-			SingleCluster:      true,
 			ExpectedClusterIds: []string{validClusterID},
 		},
 		"full read-write on right cluster can get": {
@@ -226,7 +222,6 @@ func getReadSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, val
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterID))),
-			SingleCluster:      true,
 			ExpectedClusterIds: []string{validClusterID},
 		},
 		"read-write on the right cluster and partial namespace access cannot get": {
@@ -236,7 +231,6 @@ func getReadSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, val
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterID),
 					sac.NamespaceScopeKeys("someNamespace"))),
-			SingleCluster:      true,
 			ExpectedClusterIds: []string{},
 		},
 	}
@@ -254,7 +248,6 @@ func getWriteSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, va
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...))),
-			SingleCluster:      false,
 			ExpectedClusterIds: []string{},
 		},
 		"full read-write can write": {
@@ -262,7 +255,6 @@ func getWriteSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, va
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...))),
-			SingleCluster:      false,
 			ExpectedClusterIds: []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3},
 		},
 		"full read-write on wrong cluster cannot write": {
@@ -271,7 +263,6 @@ func getWriteSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, va
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(wrongClusterID))),
-			SingleCluster:      false,
 			ExpectedClusterIds: []string{},
 		},
 		"read-write on wrong cluster and partial namespace access cannot write": {
@@ -281,7 +272,6 @@ func getWriteSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, va
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(wrongClusterID),
 					sac.NamespaceScopeKeys("someNamespace"))),
-			SingleCluster:      false,
 			ExpectedClusterIds: []string{},
 		},
 		"read-only on right cluster cannot write": {
@@ -290,7 +280,6 @@ func getWriteSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, va
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterID))),
-			SingleCluster:      true,
 			ExpectedClusterIds: []string{},
 		},
 		"full read-write on right cluster can write": {
@@ -299,7 +288,6 @@ func getWriteSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, va
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterID))),
-			SingleCluster:      true,
 			ExpectedClusterIds: []string{validClusterID},
 		},
 		"read-write on the right cluster and partial namespace access cannot write": {
@@ -309,7 +297,6 @@ func getWriteSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, va
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterID),
 					sac.NamespaceScopeKeys("someNamespace"))),
-			SingleCluster:      true,
 			ExpectedClusterIds: []string{},
 		},
 	}
@@ -365,7 +352,7 @@ func (s *nodeDatastoreSACSuite) TestGetClusterNodeStore() {
 			datastore, err := s.globalDatastore.GetClusterNodeStore(ctx, clusterID, false)
 			if c.ExpectedFound {
 				s.NoError(err)
-				s.Require().NotNil(datastore)
+				s.NotNil(datastore)
 			} else {
 				s.ErrorIs(err, sac.ErrResourceAccessDenied)
 				s.Nil(datastore)
@@ -387,33 +374,104 @@ func (s *nodeDatastoreSACSuite) TestGetClusterNodeStoreWriteAccess() {
 				s.Nil(datastore)
 			} else {
 				s.NoError(err)
-				s.Require().NotNil(datastore)
+				s.NotNil(datastore)
 			}
 		})
 	}
 }
 
-func (s *nodeDatastoreSACSuite) TestRemoveClusterNodeStores() {
+func (s *nodeDatastoreSACSuite) TestRemoveClusterNodeStoresSingle() {
 	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
 	for name, c := range cases {
 		s.Run(name, func() {
+			var err error
+
+			unrestrictedCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
 			ctx := s.testContexts[c.ScopeKey]
 
-			err := s.globalDatastore.RemoveClusterNodeStores(ctx, s.testNodeIDs[testconsts.Cluster1][1])
+			removeClusterID := uuid.NewV4().String()
+			testNodeID := s.addTestNode(removeClusterID)
 			s.waitForIndexing()
 
+			_, foundTestNode, err := s.datastore.GetNode(unrestrictedCtx, testNodeID)
+			s.Require().True(foundTestNode)
+			s.Require().NoError(err)
+
+			err = s.globalDatastore.RemoveClusterNodeStores(ctx, removeClusterID)
 			if c.ExpectError {
 				s.ErrorIs(err, c.ExpectedError)
+
+				// Check that node is still in datastore.
+				_, foundTestNode, err = s.datastore.GetNode(unrestrictedCtx, testNodeID)
+				s.True(foundTestNode)
+				s.NoError(err)
 			} else {
 				s.NoError(err)
-			}
 
-			err = s.globalDatastore.RemoveClusterNodeStores(ctx, s.testNodeIDs[testconsts.Cluster2][0], s.testNodeIDs[testconsts.Cluster2][1])
+				// Check that node is removed from store.
+				_, foundTestNode, err = s.datastore.GetNode(unrestrictedCtx, testNodeID)
+				s.False(foundTestNode)
+				s.NoError(err)
+
+				// Ensure that another cluster node is available.
+				_, foundTestNode, err = s.datastore.GetNode(unrestrictedCtx, s.testNodeIDs[testconsts.Cluster1][0])
+				s.True(foundTestNode)
+				s.NoError(err)
+			}
+		})
+	}
+}
+
+func (s *nodeDatastoreSACSuite) TestRemoveClusterNodeStoresMulti() {
+	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
+	for name, c := range cases {
+		s.Run(name, func() {
+			var err error
+			var foundTestNode bool
+
+			unrestrictedCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
+			ctx := s.testContexts[c.ScopeKey]
+
+			var testNodeIDs []string
+			var removeClusterIDs []string
+			for i := 0; i < 3; i++ {
+				removeClusterID := uuid.NewV4().String()
+				testNodeID := s.addTestNode(removeClusterID)
+
+				removeClusterIDs = append(removeClusterIDs, removeClusterID)
+				testNodeIDs = append(testNodeIDs, testNodeID)
+			}
 			s.waitForIndexing()
 
+			for _, testNodeID := range testNodeIDs {
+				_, foundTestNode, err = s.datastore.GetNode(unrestrictedCtx, testNodeID)
+				s.Require().True(foundTestNode)
+				s.Require().NoError(err)
+			}
+
+			err = s.globalDatastore.RemoveClusterNodeStores(ctx, removeClusterIDs...)
 			if c.ExpectError {
 				s.ErrorIs(err, c.ExpectedError)
+
+				// Check that nodes are still in datastore.
+				for _, testNodeID := range testNodeIDs {
+					_, foundTestNode, err = s.datastore.GetNode(unrestrictedCtx, testNodeID)
+					s.True(foundTestNode)
+					s.NoError(err)
+				}
 			} else {
+				s.NoError(err)
+
+				// Check that nodes are removed from store.
+				for _, testNodeID := range testNodeIDs {
+					_, foundTestNode, err = s.datastore.GetNode(unrestrictedCtx, testNodeID)
+					s.False(foundTestNode)
+					s.NoError(err)
+				}
+
+				// Ensure that another cluster node is available.
+				_, foundTestNode, err = s.datastore.GetNode(unrestrictedCtx, s.testNodeIDs[testconsts.Cluster1][0])
+				s.True(foundTestNode)
 				s.NoError(err)
 			}
 		})
@@ -427,12 +485,12 @@ func (s *nodeDatastoreSACSuite) TestSearchResults() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
-			results, err := s.globalDatastore.SearchResults(ctx, nil)
+			searchResults, err := s.globalDatastore.SearchResults(ctx, nil)
 			s.NoError(err)
 
-			fetchedNodeIDs := make([]string, 0, len(results))
-			for _, result := range results {
-				fetchedNodeIDs = append(fetchedNodeIDs, result.Id)
+			fetchedNodeIDs := make([]string, 0, len(searchResults))
+			for _, result := range searchResults {
+				fetchedNodeIDs = append(fetchedNodeIDs, result.GetId())
 			}
 
 			var expectedNodeIds []string
@@ -452,12 +510,14 @@ func (s *nodeDatastoreSACSuite) TestSearchRawNodes() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := c.Context
-			rawNodes, err := s.globalDatastore.SearchRawNodes(ctx, nil)
+			nodes, err := s.globalDatastore.SearchRawNodes(ctx, nil)
 			s.NoError(err)
 
-			fetchedNodeIDs := make([]string, 0, len(rawNodes))
-			for _, rawNode := range rawNodes {
-				fetchedNodeIDs = append(fetchedNodeIDs, rawNode.Id)
+			fetchedNodeIDs := make([]string, 0, len(nodes))
+			for _, node := range nodes {
+				fetchedNodeIDs = append(fetchedNodeIDs, node.GetId())
+
+				s.Equal(s.testNodes[node.GetId()].GetClusterId(), node.GetClusterId())
 			}
 
 			var expectedNodeIds []string
