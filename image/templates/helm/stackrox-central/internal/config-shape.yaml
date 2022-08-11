@@ -71,6 +71,7 @@ central:
       port: null # int
     route:
       enabled: null # bool
+      host: null # string
   extraMounts: null # [dict]
   enableCentralDB: null # bool
   dbPassword:
