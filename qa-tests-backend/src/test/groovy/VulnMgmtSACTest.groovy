@@ -141,7 +141,6 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify permissions on vuln mgmt: role with no CVE permissions is rejected"() {
         when:
         "Get CVEs via GraphQL"
