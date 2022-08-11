@@ -330,6 +330,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"dynamicConfig: DynamicClusterConfig",
 		"staticConfig: StaticClusterConfig",
 	}))
+	utils.Must(builder.AddType("CompleteSBOM", []string{
+	}))
 	utils.Must(builder.AddType("ComplianceAggregation_AggregationKey", []string{
 		"id: ID!",
 		"scope: ComplianceAggregation_Scope!",
@@ -601,6 +603,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cve: String",
 		"scope: VulnReqScope",
 	}))
+	utils.Must(builder.AddType("FileSBOM", []string{
+		"pathInImage: [String!]!",
+	}))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
 		"metadata: TokenMetadata",
 		"token: String!",
@@ -645,6 +650,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notes: [Image_Note!]!",
 		"priority: Int!",
 		"riskScore: Float!",
+		"sbom: ImageSBOM",
 		"signature: ImageSignature",
 		"signatureVerificationData: ImageSignatureVerificationData",
 	}))
@@ -695,6 +701,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ImagePullSecret_Registry", []string{
 		"name: String!",
 		"username: String!",
+	}))
+	utils.Must(builder.AddType("ImageSBOM", []string{
+		"fetched: Time",
+		"result: SBOMVerificationResult",
+		"sboms: [SBOM]!",
 	}))
 	utils.Must(builder.AddType("ImageScan", []string{
 		"dataSource: DataSource",
@@ -770,6 +781,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"key: String!",
 		"op: LabelSelector_Operator!",
 		"values: [String!]!",
+	}))
+	utils.Must(builder.AddType("LayerSBOM", []string{
+		"referencedImageLayerSha: [String!]!",
 	}))
 	utils.Must(builder.AddType("License", []string{
 		"name: String!",
@@ -1139,6 +1153,24 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"permissionSetId: String!",
 	}))
+	utils.Must(builder.AddType("SBOM", []string{
+		"completeSbom: CompleteSBOM",
+		"fileSbom: FileSBOM",
+		"layerSbom: LayerSBOM",
+		"type: SBOM_Type!",
+		"sBOM: SBOMSBOM",
+	}))
+	utils.Must(builder.AddUnionType("SBOMSBOM", []string{
+		"CompleteSBOM",
+		"LayerSBOM",
+		"FileSBOM",
+	}))
+	utils.Must(builder.AddType("SBOMVerificationResult", []string{
+		"status: SBOMVerificationResult_Status!",
+		"verified: Time",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SBOMVerificationResult_Status(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SBOM_Type(0)))
 	utils.Must(builder.AddType("ScannerHealthInfo", []string{
 		"statusErrors: [String!]!",
 	}))
@@ -3867,6 +3899,30 @@ func (resolver *completeClusterConfigResolver) StaticConfig(ctx context.Context)
 	return resolver.root.wrapStaticClusterConfig(value, true, nil)
 }
 
+type completeSBOMResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CompleteSBOM
+}
+
+func (resolver *Resolver) wrapCompleteSBOM(value *storage.CompleteSBOM, ok bool, err error) (*completeSBOMResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &completeSBOMResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCompleteSBOMs(values []*storage.CompleteSBOM, err error) ([]*completeSBOMResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*completeSBOMResolver, len(values))
+	for i, v := range values {
+		output[i] = &completeSBOMResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
 type complianceAggregation_AggregationKeyResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -5941,6 +5997,35 @@ func (resolver *Resolver) wrapFalsePositiveRequests(values []*storage.FalsePosit
 	return output, nil
 }
 
+type fileSBOMResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.FileSBOM
+}
+
+func (resolver *Resolver) wrapFileSBOM(value *storage.FileSBOM, ok bool, err error) (*fileSBOMResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &fileSBOMResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapFileSBOMs(values []*storage.FileSBOM, err error) ([]*fileSBOMResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*fileSBOMResolver, len(values))
+	for i, v := range values {
+		output[i] = &fileSBOMResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *fileSBOMResolver) PathInImage(ctx context.Context) []string {
+	value := resolver.data.GetPathInImage()
+	return value
+}
+
 type generateTokenResponseResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -6311,6 +6396,12 @@ func (resolver *imageResolver) RiskScore(ctx context.Context) float64 {
 	return float64(value)
 }
 
+func (resolver *imageResolver) Sbom(ctx context.Context) (*imageSBOMResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetSbom()
+	return resolver.root.wrapImageSBOM(value, true, nil)
+}
+
 func (resolver *imageResolver) Signature(ctx context.Context) (*imageSignatureResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetSignature()
@@ -6659,6 +6750,45 @@ func (resolver *imagePullSecret_RegistryResolver) Name(ctx context.Context) stri
 func (resolver *imagePullSecret_RegistryResolver) Username(ctx context.Context) string {
 	value := resolver.data.GetUsername()
 	return value
+}
+
+type imageSBOMResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageSBOM
+}
+
+func (resolver *Resolver) wrapImageSBOM(value *storage.ImageSBOM, ok bool, err error) (*imageSBOMResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageSBOMResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageSBOMs(values []*storage.ImageSBOM, err error) ([]*imageSBOMResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageSBOMResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageSBOMResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageSBOMResolver) Fetched(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetFetched()
+	return timestamp(value)
+}
+
+func (resolver *imageSBOMResolver) Result(ctx context.Context) (*sBOMVerificationResultResolver, error) {
+	value := resolver.data.GetResult()
+	return resolver.root.wrapSBOMVerificationResult(value, true, nil)
+}
+
+func (resolver *imageSBOMResolver) Sboms(ctx context.Context) ([]*sBOMResolver, error) {
+	value := resolver.data.GetSboms()
+	return resolver.root.wrapSBOMs(value, nil)
 }
 
 type imageScanResolver struct {
@@ -7252,6 +7382,35 @@ func (resolver *labelSelector_RequirementResolver) Op(ctx context.Context) strin
 
 func (resolver *labelSelector_RequirementResolver) Values(ctx context.Context) []string {
 	value := resolver.data.GetValues()
+	return value
+}
+
+type layerSBOMResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.LayerSBOM
+}
+
+func (resolver *Resolver) wrapLayerSBOM(value *storage.LayerSBOM, ok bool, err error) (*layerSBOMResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &layerSBOMResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapLayerSBOMs(values []*storage.LayerSBOM, err error) ([]*layerSBOMResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*layerSBOMResolver, len(values))
+	for i, v := range values {
+		output[i] = &layerSBOMResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *layerSBOMResolver) ReferencedImageLayerSha(ctx context.Context) []string {
+	value := resolver.data.GetReferencedImageLayerSha()
 	return value
 }
 
@@ -9861,6 +10020,158 @@ func (resolver *roleResolver) Name(ctx context.Context) string {
 func (resolver *roleResolver) PermissionSetId(ctx context.Context) string {
 	value := resolver.data.GetPermissionSetId()
 	return value
+}
+
+type sBOMResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.SBOM
+}
+
+func (resolver *Resolver) wrapSBOM(value *storage.SBOM, ok bool, err error) (*sBOMResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &sBOMResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSBOMs(values []*storage.SBOM, err error) ([]*sBOMResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*sBOMResolver, len(values))
+	for i, v := range values {
+		output[i] = &sBOMResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *sBOMResolver) CompleteSbom(ctx context.Context) (*completeSBOMResolver, error) {
+	value := resolver.data.GetCompleteSbom()
+	return resolver.root.wrapCompleteSBOM(value, true, nil)
+}
+
+func (resolver *sBOMResolver) FileSbom(ctx context.Context) (*fileSBOMResolver, error) {
+	value := resolver.data.GetFileSbom()
+	return resolver.root.wrapFileSBOM(value, true, nil)
+}
+
+func (resolver *sBOMResolver) LayerSbom(ctx context.Context) (*layerSBOMResolver, error) {
+	value := resolver.data.GetLayerSbom()
+	return resolver.root.wrapLayerSBOM(value, true, nil)
+}
+
+func (resolver *sBOMResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
+type sBOMSBOMResolver struct {
+	resolver interface{}
+}
+
+func (resolver *sBOMResolver) SBOM() *sBOMSBOMResolver {
+	if val := resolver.data.GetCompleteSbom(); val != nil {
+		return &sBOMSBOMResolver{
+			resolver: &completeSBOMResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetLayerSbom(); val != nil {
+		return &sBOMSBOMResolver{
+			resolver: &layerSBOMResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetFileSbom(); val != nil {
+		return &sBOMSBOMResolver{
+			resolver: &fileSBOMResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *sBOMSBOMResolver) ToCompleteSBOM() (*completeSBOMResolver, bool) {
+	res, ok := resolver.resolver.(*completeSBOMResolver)
+	return res, ok
+}
+
+func (resolver *sBOMSBOMResolver) ToLayerSBOM() (*layerSBOMResolver, bool) {
+	res, ok := resolver.resolver.(*layerSBOMResolver)
+	return res, ok
+}
+
+func (resolver *sBOMSBOMResolver) ToFileSBOM() (*fileSBOMResolver, bool) {
+	res, ok := resolver.resolver.(*fileSBOMResolver)
+	return res, ok
+}
+
+type sBOMVerificationResultResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.SBOMVerificationResult
+}
+
+func (resolver *Resolver) wrapSBOMVerificationResult(value *storage.SBOMVerificationResult, ok bool, err error) (*sBOMVerificationResultResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &sBOMVerificationResultResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSBOMVerificationResults(values []*storage.SBOMVerificationResult, err error) ([]*sBOMVerificationResultResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*sBOMVerificationResultResolver, len(values))
+	for i, v := range values {
+		output[i] = &sBOMVerificationResultResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *sBOMVerificationResultResolver) Status(ctx context.Context) string {
+	value := resolver.data.GetStatus()
+	return value.String()
+}
+
+func (resolver *sBOMVerificationResultResolver) Verified(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetVerified()
+	return timestamp(value)
+}
+
+func toSBOMVerificationResult_Status(value *string) storage.SBOMVerificationResult_Status {
+	if value != nil {
+		return storage.SBOMVerificationResult_Status(storage.SBOMVerificationResult_Status_value[*value])
+	}
+	return storage.SBOMVerificationResult_Status(0)
+}
+
+func toSBOMVerificationResult_Statuses(values *[]string) []storage.SBOMVerificationResult_Status {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SBOMVerificationResult_Status, len(*values))
+	for i, v := range *values {
+		output[i] = toSBOMVerificationResult_Status(&v)
+	}
+	return output
+}
+
+func toSBOM_Type(value *string) storage.SBOM_Type {
+	if value != nil {
+		return storage.SBOM_Type(storage.SBOM_Type_value[*value])
+	}
+	return storage.SBOM_Type(0)
+}
+
+func toSBOM_Types(values *[]string) []storage.SBOM_Type {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SBOM_Type, len(*values))
+	for i, v := range *values {
+		output[i] = toSBOM_Type(&v)
+	}
+	return output
 }
 
 type scannerHealthInfoResolver struct {

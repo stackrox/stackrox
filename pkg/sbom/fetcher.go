@@ -22,10 +22,10 @@ import (
 
 /*
 Fetcher
-- Which abstractions make sense?
 	- fetching should, for now, be limited the "cosign" way, but potentially we could do this differently as well.
-	- _could_ include a client abstraction to handle different sbom types (i.e. sdpf, clonedx, syft) to obtain contents.
-	- do we require the SBOM media type (i.e. in which format the SBOM is) at all or not? How would the verification look like?
+	- _could_ include a client abstraction to handle different sbom types (i.e. spdx, cyclonedx, syft) to obtain contents (iff they are helpful).
+	- do we require the SBOM media type (i.e. in which format the SBOM is) at all or not? Would a policy make sense
+      to alert on SBOMs that do not match a specific media type / format (e.g. I only want syft SBOMs formats)?
 
 Note: should make this a "sigstore" client instead, which implements different interfaces, i.e.
 	-> fetching signatures & sboms
@@ -137,6 +137,8 @@ func getSBOMsFromScope(sbom oci.File) ([]*storage.SBOM, error) {
 	scopeValues := strings.Split(scope, ",")
 
 	var layers, paths []string
+	// Traverse through the scope values. Since scope values _may_ be repeated, we will add a list of all referenced
+	// layers / paths.
 	for _, scopeVal := range scopeValues {
 		switch {
 		case strings.HasPrefix(scopeVal, scopeLayer):
@@ -162,8 +164,7 @@ func getSBOMsFromScope(sbom oci.File) ([]*storage.SBOM, error) {
 	if len(layers) > 0 {
 		sboms = append(sboms, &storage.SBOM{
 			SBOM: &storage.SBOM_LayerSbom{LayerSbom: &storage.LayerSBOM{
-				// TODO: use repeated value for image layers.
-				ReferencedImageLayerSha: layers[0],
+				ReferencedImageLayerSha: layers,
 			}},
 			Type: storage.SBOM_LAYER_SCOPED_SBOM,
 		})
@@ -172,8 +173,7 @@ func getSBOMsFromScope(sbom oci.File) ([]*storage.SBOM, error) {
 	if len(paths) > 0 {
 		sboms = append(sboms, &storage.SBOM{
 			SBOM: &storage.SBOM_FileSbom{FileSbom: &storage.FileSBOM{
-				// TODO: use repeated value for paths.
-				PathInImage: paths[0],
+				PathInImage: paths,
 			}},
 			Type: storage.SBOM_FILE_SCOPED_SBOM,
 		})

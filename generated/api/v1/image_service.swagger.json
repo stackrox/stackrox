@@ -831,6 +831,10 @@
       ],
       "default": "UNKNOWN"
     },
+    "storageCompleteSBOM": {
+      "type": "object",
+      "title": "Shit name, should be something else but ¯\\_(ツ)_/¯"
+    },
     "storageContainerImage": {
       "type": "object",
       "properties": {
@@ -1025,6 +1029,18 @@
       ],
       "default": "V2"
     },
+    "storageFileSBOM": {
+      "type": "object",
+      "properties": {
+        "pathInImage": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "SBOMs can refer to a single file in the unexpanded image."
+    },
     "storageImage": {
       "type": "object",
       "properties": {
@@ -1045,6 +1061,9 @@
         },
         "signature": {
           "$ref": "#/definitions/storageImageSignature"
+        },
+        "sbom": {
+          "$ref": "#/definitions/storageImageSBOM"
         },
         "components": {
           "type": "integer",
@@ -1087,7 +1106,7 @@
           }
         }
       },
-      "title": "Next Tag: 18"
+      "title": "Next Tag: 19"
     },
     "storageImageLayer": {
       "type": "object",
@@ -1166,6 +1185,24 @@
         "MISSING_SIGNATURE_VERIFICATION_DATA"
       ],
       "default": "MISSING_METADATA"
+    },
+    "storageImageSBOM": {
+      "type": "object",
+      "properties": {
+        "fetched": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sboms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSBOM"
+          }
+        },
+        "result": {
+          "$ref": "#/definitions/storageSBOMVerificationResult"
+        }
+      }
     },
     "storageImageScan": {
       "type": "object",
@@ -1272,6 +1309,18 @@
       "default": "UNSET",
       "description": "Status represents the status of the result.\n\n - VERIFIED: VERIFIED is set when the signature's verification was successful.\n - FAILED_VERIFICATION: FAILED_VERIFICATION is set when the signature's verification failed.\n - INVALID_SIGNATURE_ALGO: INVALID_SIGNATURE_ALGO is set when the signature's algorithm is invalid and unsupported.\n - CORRUPTED_SIGNATURE: CORRUPTED_SIGNATURE is set when the raw signature is corrupted, i.e. wrong base64 encoding.\n - GENERIC_ERROR: GENERIC_ERROR is set when an error occurred during verification that cannot be associated with a specific\nstatus."
     },
+    "storageLayerSBOM": {
+      "type": "object",
+      "properties": {
+        "referencedImageLayerSha": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "SBOMs can refer to a single layer of an image."
+    },
     "storageLicense": {
       "type": "object",
       "properties": {
@@ -1320,6 +1369,57 @@
           "format": "int64"
         }
       }
+    },
+    "storageSBOM": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/storageSBOMType"
+        },
+        "completeSbom": {
+          "$ref": "#/definitions/storageCompleteSBOM"
+        },
+        "layerSbom": {
+          "$ref": "#/definitions/storageLayerSBOM"
+        },
+        "fileSbom": {
+          "$ref": "#/definitions/storageFileSBOM"
+        }
+      }
+    },
+    "storageSBOMType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COMPLETE_SBOM",
+        "LAYER_SCOPED_SBOM",
+        "FILE_SCOPED_SBOM"
+      ],
+      "default": "UNSET"
+    },
+    "storageSBOMVerificationResult": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/storageSBOMVerificationResultStatus"
+        },
+        "verified": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "storageSBOMVerificationResultStatus": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COVERED",
+        "PARTIALLY_COVERED",
+        "FAILED_VERIFICATION",
+        "GENERIC_ERROR"
+      ],
+      "default": "UNSET",
+      "description": " - COVERED: COVERED is set when the SBOM covers the whole image.\n - PARTIALLY_COVERED: PARTIALLY_COVERED is set when the SBOM covers only parts of the image, i.e. only a few layers / files.\n - FAILED_VERIFICATION: FAILED_VERIFICATION is set when the SBOM verification failed.\n - GENERIC_ERROR: GENERIC_ERROR is set when a generic, non-specific error occurred during verification."
     },
     "storageSignature": {
       "type": "object",

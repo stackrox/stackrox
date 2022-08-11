@@ -9,7 +9,7 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next Tag: 18
+// Next Tag: 19
 message Image {
     string                          id                          = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"pk"'];
     ImageName                       name                        = 1;
@@ -20,6 +20,8 @@ message Image {
     ImageSignatureVerificationData  signature_verification_data = 15;
 
     ImageSignature                  signature                   = 16;
+
+    ImageSBOM                       sbom                        = 18;
 
     oneof set_components {
         int32 components                                        = 7 [(gogoproto.moretags) = 'search:"Component Count,store,hidden"'];
@@ -206,18 +208,16 @@ message SBOM {
 
 // SBOMs can refer to a single layer of an image.
 message LayerSBOM {
-    string referenced_image_layer_sha = 1;
+    repeated string referenced_image_layer_sha = 1;
 }
 
 // SBOMs can refer to a single file in the unexpanded image.
 message FileSBOM {
-    string path_in_image = 1;
+    repeated string path_in_image = 1;
 }
 
-// Shit name should be something else but ¯\_(ツ)_/¯
+// Shit name, should be something else but ¯\_(ツ)_/¯
 message CompleteSBOM {
-    // Scope could be either all / empty -> not sure it makes sense to add it.
-    string scope = 1;
 }
 
 message ImageSignature {

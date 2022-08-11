@@ -17,7 +17,12 @@ type Verifier interface {
 	VerifySBOM(ctx context.Context, image *storage.Image) error
 }
 
-// NewFetcher create a new fetcher for SBOMs.
+// NewFetcher creates a new fetcher for SBOMs.
 func NewFetcher() Fetcher {
 	return newSigstoreSBOMFetcher()
+}
+
+// NewVerifier creates a new verifier for SBOMs.
+func NewVerifier() Verifier {
+	return newSBOMVerifier()
 }
