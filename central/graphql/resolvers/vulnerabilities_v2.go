@@ -262,6 +262,14 @@ func (resolver *Resolver) nodeVulnerabilitiesV2(ctx context.Context, args Pagina
 	return ret, nil
 }
 
+func (resolver *Resolver) clusterVulnerabilityV2(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
+	vulnResolver, err := resolver.unwrappedVulnerabilityV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return vulnResolver, nil
+}
+
 func (resolver *Resolver) clusterVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
 	if err != nil {
@@ -591,6 +599,14 @@ func (resolver *cVEResolver) getEnvImpactComponentsForNodes(ctx context.Context)
 		return 0, 0, err
 	}
 	return int(withThisCVECount), allNodesCount, nil
+}
+
+func (resolver *cVEResolver) OperatingSystem(_ context.Context) string {
+	return ""
+}
+
+func (resolver *cVEResolver) CveBaseInfo(_ context.Context) (*cVEInfoResolver, error) {
+	return nil, nil
 }
 
 // EnvImpact is the fraction of deployments that contains the CVE
@@ -1056,10 +1072,6 @@ func (resolver *cVEResolver) VulnerabilityState(ctx context.Context) string {
 	}
 
 	return storage.VulnerabilityState_OBSERVED.String()
-}
-
-func (resolver *cVEResolver) OperatingSystem(ctx context.Context) string {
-	return ""
 }
 
 func (resolver *cVEResolver) addScopeContext(query *v1.Query) (context.Context, *v1.Query) {

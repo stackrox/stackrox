@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/role/store"
 	PermissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	permissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	postgresRolePGStore "github.com/stackrox/rox/central/role/store/role/postgres"
@@ -29,9 +30,9 @@ var (
 // Singleton returns the singleton providing access to the roles store.
 func Singleton() DataStore {
 	once.Do(func() {
-		var roleStorage roleStore.Store
-		var permissionSetStorage permissionSetPGStore.Store
-		var accessScopeStorage simpleAccessScopeStore.Store
+		var roleStorage store.RoleStore
+		var permissionSetStorage store.PermissionSetStore
+		var accessScopeStorage store.SimpleAccessScopeStore
 		if features.PostgresDatastore.Enabled() {
 			roleStorage = postgresRolePGStore.New(globaldb.GetPostgres())
 			permissionSetStorage = PermissionSetPGStore.New(globaldb.GetPostgres())

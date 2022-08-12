@@ -55,7 +55,7 @@ func Load(conf *config.Config) (*pgxpool.Pool, *gorm.DB, error) {
 		adminConfig.ConnConfig.Database = activeDB
 
 		// Add the active database and password to the source
-		gormSource := fmt.Sprintf("%s password=%s database=%s", conf.CentralDB.Source, adminConfig.ConnConfig.Password, activeDB)
+		gormSource := fmt.Sprintf("%s password=%s database=%s client_encoding=UTF-8", conf.CentralDB.Source, adminConfig.ConnConfig.Password, activeDB)
 		gormSource = pgutils.PgxpoolDsnToPgxDsn(gormSource)
 
 		// Waits for central-db ready with retries

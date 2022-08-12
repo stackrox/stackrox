@@ -24,7 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cryptoutils"
-	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"

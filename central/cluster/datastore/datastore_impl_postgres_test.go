@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
+	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
 	namespace "github.com/stackrox/rox/central/namespace/datastore"
 	nsPostgres "github.com/stackrox/rox/central/namespace/store/postgres"
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
@@ -45,6 +46,7 @@ type ClusterPostgresDataStoreTestSuite struct {
 	nodeDataStore    *nodeMocks.MockGlobalDataStore
 	netEntities      *netEntitiesMocks.MockEntityDataStore
 	netFlows         *netFlowsMocks.MockClusterDataStore
+	clusterCVEs      *clusterCVEDS.MockDataStore
 	envIsolator      *envisolator.EnvIsolator
 }
 
@@ -80,10 +82,11 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 	s.netEntities = netEntitiesMocks.NewMockEntityDataStore(s.mockCtrl)
 	s.nodeDataStore = nodeMocks.NewMockGlobalDataStore(s.mockCtrl)
 	s.netFlows = netFlowsMocks.NewMockClusterDataStore(s.mockCtrl)
+	s.clusterCVEs = clusterCVEDS.NewMockDataStore(s.mockCtrl)
 
 	s.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	s.netEntities.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-	clusterDS, err := New(clusterPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), clusterHealthPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), clusterPostgres.NewIndexer(s.db), nil, ds, nil, s.nodeDataStore, nil, nil, s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil)
+	clusterDS, err := New(clusterPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), clusterHealthPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), clusterPostgres.NewIndexer(s.db), nil, ds, nil, s.nodeDataStore, nil, nil, s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil, s.clusterCVEs)
 	s.NoError(err)
 	s.clusterDatastore = clusterDS
 }

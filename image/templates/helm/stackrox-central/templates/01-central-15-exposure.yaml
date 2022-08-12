@@ -11,6 +11,9 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "route" "central") | nindent 4 }}
 spec:
+{{- if ._rox.central.exposure.route.host }}
+  host: {{ ._rox.central.exposure.route.host }}
+{{- end }}
   port:
     targetPort: https
   tls:

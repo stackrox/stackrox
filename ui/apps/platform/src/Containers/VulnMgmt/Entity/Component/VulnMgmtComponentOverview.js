@@ -41,6 +41,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
     const safeData = { ...emptyComponent, ...data };
 
     const { fixedIn, version, priority, topVuln, id, location, vulnCount, activeState } = safeData;
+    const operatingSystem = safeData?.operatingSystem;
 
     const metadataKeyValuePairs = [
         {
@@ -56,6 +57,13 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         metadataKeyValuePairs.push({
             key: 'Location',
             value: location || 'N/A',
+        });
+    }
+
+    if (operatingSystem !== undefined) {
+        metadataKeyValuePairs.push({
+            key: 'Operating System',
+            value: operatingSystem,
         });
     }
 

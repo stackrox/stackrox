@@ -35,6 +35,7 @@ import (
 	nodeComponentEdgeIndex "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/features"
@@ -54,7 +55,7 @@ type DackboxTestDataStore interface {
 	GetRocksEngine() *rocksPkg.RocksDB
 	GetBleveIndex() bleve.Index
 	GetDackbox() *dackbox.DackBox
-	GetKeyFence() concurrency.KeyFence
+	GetKeyFence() dackboxConcurrency.KeyFence
 	GetIndexQ() queue.WaitableQueue
 	// Data injection
 	PushImageToVulnerabilitiesGraph(waitForIndexing bool) error
@@ -73,7 +74,7 @@ type dackboxTestDataStoreImpl struct {
 	rocksEngine *rocksPkg.RocksDB
 	bleveIndex  bleve.Index
 	dacky       *dackbox.DackBox
-	keyFence    concurrency.KeyFence
+	keyFence    dackboxConcurrency.KeyFence
 	indexQ      queue.WaitableQueue
 
 	// DataStores
@@ -104,7 +105,7 @@ func (s *dackboxTestDataStoreImpl) GetDackbox() *dackbox.DackBox {
 	return s.dacky
 }
 
-func (s *dackboxTestDataStoreImpl) GetKeyFence() concurrency.KeyFence {
+func (s *dackboxTestDataStoreImpl) GetKeyFence() dackboxConcurrency.KeyFence {
 	return s.keyFence
 }
 
@@ -300,7 +301,7 @@ func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 		if err != nil {
 			return nil, err
 		}
-		s.keyFence = concurrency.NewKeyFence()
+		s.keyFence = dackboxConcurrency.NewKeyFence()
 		s.indexQ = queue.NewWaitableQueue()
 		s.dacky, err = dackbox.NewRocksDBDackBox(s.rocksEngine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
 		if err != nil {

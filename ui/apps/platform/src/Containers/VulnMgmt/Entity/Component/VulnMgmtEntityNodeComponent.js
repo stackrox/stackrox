@@ -48,6 +48,7 @@ const VulnMgmtEntityNodeComponent = ({
                     cvss
                     scoreVersion
                 }
+                operatingSystem
             }
         }
     `;

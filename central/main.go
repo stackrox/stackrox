@@ -35,9 +35,11 @@ import (
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
+	clusterCveCsv "github.com/stackrox/rox/central/cve/cluster/csv"
 	clusterCVEService "github.com/stackrox/rox/central/cve/cluster/service"
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
+	imageCveCsv "github.com/stackrox/rox/central/cve/image/csv"
 	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
@@ -111,7 +113,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
-	"github.com/stackrox/rox/central/sac/transitional"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
 	searchService "github.com/stackrox/rox/central/search/service"
@@ -499,8 +500,6 @@ func startGRPCServer() {
 			errors.LogInternalErrorStreamInterceptor,
 			errors.PanicOnInvariantViolationStreamInterceptor,
 		)
-		// This helps validate that SAC is being used correctly.
-		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}
 
 	// This adds an on-demand global tracing for the built-in authorization.
@@ -683,8 +682,20 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/export/csv/node/cve",
-			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment), permissions.View(resources.Node)),
+			Authorizer:    user.With(permissions.View(resources.Node)),
 			ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
+			Compression:   true,
+		})
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/export/csv/image/cve",
+			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
+			ServerHandler: imageCveCsv.ImageCVECSVHandler(),
+			Compression:   true,
+		})
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/export/csv/cluster/cve",
+			Authorizer:    user.With(permissions.View(resources.Cluster)),
+			ServerHandler: clusterCveCsv.ClusterCVECSVHandler(),
 			Compression:   true,
 		})
 	} else {

@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -52,6 +53,20 @@ func (mr *MockStoreMockRecorder) AckKeysIndexed(ctx interface{}, keys ...interfa
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx}, keys...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckKeysIndexed", reflect.TypeOf((*MockStore)(nil).AckKeysIndexed), varargs...)
+}
+
+// DeleteByQuery mocks base method.
+func (m *MockStore) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteByQuery", ctx, query)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteByQuery indicates an expected call of DeleteByQuery.
+func (mr *MockStoreMockRecorder) DeleteByQuery(ctx, query interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByQuery", reflect.TypeOf((*MockStore)(nil).DeleteByQuery), ctx, query)
 }
 
 // DeleteMany mocks base method.

@@ -627,6 +627,31 @@ is_in_PR_context() {
     return 1
 }
 
+get_PR_number() {
+    if is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
+        echo "${CIRCLE_PULL_REQUEST}"
+        return 0
+    elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
+        echo "${PULL_NUMBER}"
+        return 0
+    elif is_OPENSHIFT_CI && [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+        # bin, test-bin, images
+        local pull_request
+        pull_request=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].number' 2>&1) || {
+            echo 2>&1 "ERROR: Could not determine a PR number"
+            return 1
+        }
+        if [[ "$pull_request" =~ ^[0-9]+$ ]]; then
+            echo "$pull_request"
+            return 0
+        fi
+    fi
+
+    echo 2>&1 "ERROR: Could not determine a PR number"
+
+    return 1
+}
+
 is_openshift_CI_rehearse_PR() {
     [[ "$(get_repo_full_name)" == "openshift/release" ]]
 }
@@ -968,7 +993,7 @@ openshift_ci_mods() {
             info "Will checkout SHA to match PR: $sha"
             git checkout "$sha"
         else
-            echo "WARNING: Could not determin a SHA for this PR, ${sha:-}"
+            echo "WARNING: Could not determine a SHA for this PR, ${sha:-}"
         fi
     fi
 
@@ -1014,7 +1039,8 @@ unset_namespace_env_var() {
 openshift_ci_e2e_mods() {
     unset_namespace_env_var
 
-    # Similarly the incoming KUBECONFIG is best avoided.
+    # The incoming KUBECONFIG is for the openshift/release cluster and not the
+    # e2e test cluster.
     if [[ -n "${KUBECONFIG:-}" ]]; then
         info "There is an incoming KUBECONFIG in ${KUBECONFIG}"
         export OPENSHIFT_CI_KUBECONFIG="$KUBECONFIG"
@@ -1023,7 +1049,7 @@ openshift_ci_e2e_mods() {
     info "KUBECONFIG set: ${KUBECONFIG}"
     export KUBECONFIG
 
-    # KUBERNETES_{PORT,SERVICE} env values also interact with commandline kubectl tests
+    # KUBERNETES_{PORT,SERVICE} env values interact with commandline kubectl tests
     if env | grep -e ^KUBERNETES_; then
         local envfile
         envfile="$(mktemp)"

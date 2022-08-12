@@ -12,8 +12,8 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	namespaceDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
@@ -66,6 +66,25 @@ func (b *StoreImpl) GetIDs(_ context.Context) ([]string, error) {
 		return nil
 	})
 	return ids, err
+}
+
+// Walk walks the entire deployment prefix
+func (b *StoreImpl) Walk(_ context.Context, fn func(deployment *storage.Deployment) error) error {
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
+
+	txn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return err
+	}
+	defer txn.Discard()
+
+	return txn.BucketForEach(deploymentDackBox.Bucket, false, func(k, v []byte) error {
+		var deployment storage.Deployment
+		if err := proto.Unmarshal(v, &deployment); err != nil {
+			return err
+		}
+		return fn(&deployment)
+	})
 }
 
 // GetListDeployment returns ListDeployment with given id.

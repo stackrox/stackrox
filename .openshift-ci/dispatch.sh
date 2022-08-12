@@ -6,6 +6,7 @@
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
+source "$ROOT/tests/e2e/lib.sh"
 
 set -euo pipefail
 
@@ -24,11 +25,18 @@ ci_export CI_JOB_NAME "$ci_job"
 gate_job "$ci_job"
 
 case "$ci_job" in
-    gke*qa-e2e-tests|eks-qa-e2e-tests|gke-nongroovy-e2e-tests|gke-upgrade-tests|gke-ui-e2e-tests)
+    gke*qa-e2e-tests|gke-nongroovy-e2e-tests|gke-upgrade-tests|gke-ui-e2e-tests|\
+    eks-qa-e2e-tests|osd*qa-e2e-tests)
         openshift_ci_e2e_mods
         ;;
     openshift-*-operator-e2e-tests)
         operator_e2e_test_setup
+        ;;
+esac
+
+case "$ci_job" in
+    eks-qa-e2e-tests|osd*qa-e2e-tests)
+        setup_automation_flavor_e2e_cluster "$ci_job"
         ;;
 esac
 

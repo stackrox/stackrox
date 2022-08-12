@@ -49,10 +49,12 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.Policy, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Policy, error)
 	GetAll(ctx context.Context) ([]*storage.Policy, error)
 	Upsert(ctx context.Context, obj *storage.Policy) error
 	UpsertMany(ctx context.Context, objs []*storage.Policy) error
 	Delete(ctx context.Context, id string) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Policy, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
@@ -404,6 +406,26 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
+// DeleteByQuery removes the objects based on the passed query
+func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Policy")
+
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+}
+
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.PolicyIDs")
@@ -480,6 +502,41 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Polic
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// GetByQuery returns the objects matching the query
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Policy, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "Policy")
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var results []*storage.Policy
+	for _, data := range rows {
+		msg := &storage.Policy{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, err
+		}
+		results = append(results, msg)
+	}
+	return results, nil
 }
 
 // Delete removes the specified IDs from the store
