@@ -1,10 +1,16 @@
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Checkbox, SelectOption } from '@patternfly/react-core';
+import {
+    Checkbox,
+    Form,
+    PageSection,
+    TextInput,
+    ToggleGroup,
+    ToggleGroupItem,
+} from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
-import FormMultiSelect from 'Components/FormMultiSelect';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
@@ -15,6 +21,11 @@ import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
+
+import { categoriesUtilsForRegistryScanner } from '../../utils/integrationUtils';
+
+const { categoriesAlternatives, getCategoriesText, matchCategoriesAlternative, validCategories } =
+    categoriesUtilsForRegistryScanner;
 
 export type QuayIntegration = {
     categories: ('REGISTRY' | 'SCANNER')[];
@@ -36,7 +47,7 @@ export const validationSchema = yup.object().shape({
         name: yup.string().trim().required('An integration name is required'),
         categories: yup
             .array()
-            .of(yup.string().trim().oneOf(['REGISTRY', 'SCANNER']))
+            .of(yup.string().trim().oneOf(validCategories))
             .min(1, 'Must have at least one type selected')
             .required('A category is required'),
         quay: yup.object().shape({
@@ -72,7 +83,7 @@ export const defaultValues: QuayIntegrationFormValues = {
     config: {
         id: '',
         name: '',
-        categories: [],
+        categories: ['REGISTRY'],
         quay: {
             endpoint: '',
             oauthToken: '',
@@ -122,10 +133,6 @@ function QuayIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
-    function onCustomChange(id, value) {
-        return setFieldValue(id, value);
-    }
-
     function onUpdateCredentialsChange(value, event) {
         setFieldValue('config.quay.oauthToken', '');
         return setFieldValue(event.target.id, value);
@@ -161,19 +168,29 @@ function QuayIntegrationForm({
                         touched={touched}
                         errors={errors}
                     >
-                        <FormMultiSelect
-                            id="config.categories"
-                            values={values.config.categories}
-                            onChange={onCustomChange}
-                            isDisabled={!isEditable}
-                        >
-                            <SelectOption key={0} value="REGISTRY">
-                                Registry
-                            </SelectOption>
-                            <SelectOption key={1} value="SCANNER">
-                                Scanner
-                            </SelectOption>
-                        </FormMultiSelect>
+                        <ToggleGroup id="config.categories" areAllGroupsDisabled={!isEditable}>
+                            {categoriesAlternatives.map((categoriesAlternative) => {
+                                const [categoriesAlternativeItem0] = categoriesAlternative;
+                                const text = getCategoriesText(categoriesAlternativeItem0);
+                                const isSelected = matchCategoriesAlternative(
+                                    categoriesAlternative,
+                                    values.config.categories
+                                );
+                                return (
+                                    <ToggleGroupItem
+                                        key={text}
+                                        text={text}
+                                        isSelected={isSelected}
+                                        onChange={() =>
+                                            setFieldValue(
+                                                'config.categories',
+                                                categoriesAlternativeItem0
+                                            )
+                                        }
+                                    />
+                                );
+                            })}
+                        </ToggleGroup>
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Endpoint"

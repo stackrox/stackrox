@@ -22,6 +22,14 @@ export function getSelectOption(option) {
     return cy.get(`.pf-c-select__menu button:contains("${option}")`);
 }
 
+export function getToggleGroupItem(groupText, itemIndex, itemText) {
+    // Need item index to disambiguate complete versus partial matches.
+    // For example, Registry is (intended) complete match but Registry + Scanner is (unintended) partial match.
+    return cy.get(
+        `.pf-c-form__group:contains("${groupText}") .pf-c-toggle-group__item:eq(${itemIndex}) button.pf-c-toggle-group__button:contains("${itemText}")`
+    );
+}
+
 export function getHelperElementByLabel(label) {
     return cy
         .contains('label', label)
