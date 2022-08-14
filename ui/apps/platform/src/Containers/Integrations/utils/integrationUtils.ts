@@ -109,12 +109,12 @@ function getCategoriesUtils<
         ],
     ];
 
-    // For robust behavior, do not assume that categories from response are limited to Category0 and Category1.
+    // For robust behavior in case of unexpected response, provide ternary fallback even though categories limited to Category0 and Category1.
     /* eslint-disable no-nested-ternary */
     return {
         categoriesAlternatives,
 
-        getCategoriesText: (categories: ImageIntegrationCategory[]) =>
+        getCategoriesText: (categories: (Category0 | Category1)[]) =>
             categories
                 .map((category) =>
                     category === category0 ? text0 : category === category1 ? text1 : category
@@ -123,7 +123,7 @@ function getCategoriesUtils<
 
         matchCategoriesAlternative: (
             categoriesAlternative: CategoriesAlternative<Category0, Category1>,
-            categories: ImageIntegrationCategory[]
+            categories: (Category0 | Category1)[]
         ) =>
             categoriesAlternative.some((categoriesAlternativeItem) =>
                 isEqual(categoriesAlternativeItem, categories)
