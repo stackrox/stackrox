@@ -122,6 +122,7 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 			{Val: "Grandparent1Embedded1", Embedded2: []*storage.TestGrandparent_Embedded_Embedded2{
 				{Val: "Grandparent1Embedded11"},
 				{Val: "Grandparent1Embedded12"},
+				{Val: "GrandparentEmbeddedShared"},
 			}},
 			{Val: "Grandparent1Embedded2"},
 		},
@@ -133,9 +134,11 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 		Embedded: []*storage.TestGrandparent_Embedded{
 			{Val: "Grandparent2Embedded1", Embedded2: []*storage.TestGrandparent_Embedded_Embedded2{
 				{Val: "Grandparent2Embedded11"},
+				{Val: "GrandparentEmbeddedShared"},
 			}},
 			{Val: "Grandparent2Embedded2", Embedded2: []*storage.TestGrandparent_Embedded_Embedded2{
 				{Val: "Grandparent2Embedded21"},
+				{Val: "GrandparentEmbeddedShared"},
 			}},
 		},
 		RiskScore: 20,
@@ -356,6 +359,76 @@ func (s *GraphQueriesTestSuite) TestCountQueriesOnGrandParentValue() {
 			queriedProtoType:  "testchild1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
 			expectedResultIDs: []string{"1", "2", "3"},
+			queryType:         postgres.COUNT,
+		},
+	})
+}
+
+func (s *GraphQueriesTestSuite) TestCountQueriesOnGrandChild() {
+	s.runTestCases([]graphQueryTestCase{
+		{
+			desc:              "simple grandchild query",
+			queriedProtoType:  "testgrandchild1",
+			q:                 search.EmptyQuery(),
+			expectedResultIDs: []string{"1", "2", "3"},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:              "grand parent query",
+			queriedProtoType:  "testgrandchild1",
+			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
+			expectedResultIDs: []string{"1", "2"},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:             "grand child query + grand parent query",
+			queriedProtoType: "testgrandchild1",
+			queryStrings: map[search.FieldLabel][]string{
+				search.TestGrandparentVal: {"r/.*1"},
+				search.TestGrandchild1ID:  {"1"},
+			},
+			expectedResultIDs: []string{"1"},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:             "non-overlapping grand child query and grand parent query",
+			queriedProtoType: "testgrandchild1",
+			queryStrings: map[search.FieldLabel][]string{
+				search.TestGrandparentVal: {"r/.*2"},
+				search.TestGrandchild1ID:  {"1"},
+			},
+			expectedResultIDs: []string{},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:              "embedded grand parent query",
+			queriedProtoType:  "testgrandchild1",
+			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentEmbedded2: {"Grandparent1Embedded11"}},
+			expectedResultIDs: []string{"1", "2", "3"},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:              "non-overlapping embedded grand parent query",
+			queriedProtoType:  "testgrandchild1",
+			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentEmbedded2: {"Grandparent2Embedded11"}},
+			expectedResultIDs: []string{},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:              "shared value embedded grand parent query",
+			queriedProtoType:  "testgrandchild1",
+			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentEmbedded2: {"GrandparentEmbeddedShared"}},
+			expectedResultIDs: []string{"1", "2", "3"},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:             "scoped shared value embedded grand parent query",
+			queriedProtoType: "testgrandchild1",
+			queryStrings: map[search.FieldLabel][]string{
+				search.TestGrandparentVal:       {"r/.*2"},
+				search.TestGrandparentEmbedded2: {"GrandparentEmbeddedShared"},
+			},
+			expectedResultIDs: []string{},
 			queryType:         postgres.COUNT,
 		},
 	})
