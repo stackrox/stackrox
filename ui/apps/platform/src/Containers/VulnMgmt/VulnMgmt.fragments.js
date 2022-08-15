@@ -132,8 +132,21 @@ export const CLUSTER_LIST_FRAGMENT_UPDATED = gql`
     }
 `;
 
-export const VULN_CVE_ONLY_FRAGMENT = gql`
+export const VULN_CVE_ONLY_FRAGMENT_LEGACY = gql`
     fragment cveFields on EmbeddedVulnerability {
+        id
+        cve
+        cvss
+        severity
+        scoreVersion
+        summary
+        fixedByVersion
+        isFixable(query: $scopeQuery)
+    }
+`;
+
+export const VULN_CVE_ONLY_FRAGMENT = gql`
+    fragment cveFields on ImageVulnerability {
         id
         cve
         cvss

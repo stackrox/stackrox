@@ -211,7 +211,7 @@ function FalsePositiveCVEsTable({
                                         }}
                                     />
                                     <Td dataLabel="CVE">
-                                        <CVESummaryLink cve={row.cve} />
+                                        <CVESummaryLink cve={row.cve} id={row.id} />
                                     </Td>
                                     <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                     <Td dataLabel="Severity">

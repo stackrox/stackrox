@@ -257,7 +257,7 @@ function ObservedCVEsTable({
                                     <Td dataLabel="CVE">
                                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                             <FlexItem>
-                                                <CVESummaryLink cve={row.cve} />
+                                                <CVESummaryLink cve={row.cve} id={row.id} />
                                             </FlexItem>
                                             {row.vulnerabilityRequest?.id &&
                                                 !row.vulnerabilityRequest.expired && (
