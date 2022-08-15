@@ -111,21 +111,28 @@ func ConjunctionQuery(queries ...*v1.Query) *v1.Query {
 // Helper function that DisjunctionQuery and ConjunctionQuery proxy to.
 // Do NOT call this directly.
 func disjunctOrConjunctQueries(isConjunct bool, queries ...*v1.Query) *v1.Query {
-	if len(queries) == 0 {
+	nonNilQueries := make([]*v1.Query, 0, len(queries))
+	for _, q := range queries {
+		if q == nil {
+			continue
+		}
+		nonNilQueries = append(nonNilQueries, q)
+	}
+	if len(nonNilQueries) == 0 {
 		return &v1.Query{}
 	}
 
-	if len(queries) == 1 {
-		return queries[0]
+	if len(nonNilQueries) == 1 {
+		return nonNilQueries[0]
 	}
 	if isConjunct {
 		return &v1.Query{
-			Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{Queries: queries}},
+			Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{Queries: nonNilQueries}},
 		}
 	}
 
 	return &v1.Query{
-		Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{Queries: queries}},
+		Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{Queries: nonNilQueries}},
 	}
 }
 
