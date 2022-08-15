@@ -128,7 +128,7 @@ export const sidePanelListEntityPageSelectors = {
     emptyFindingsSection: '[data-testid="results-message"]',
     deploymentCountText: '.rt-td [data-testid="deploymentCountText"]',
     imageCountText: '.rt-td [data-testid="imageCountText"]',
-    cveType: '[data-testid="entity-overview"] [data-testid="cve-type"]',
+    cveType: '[data-testid="entity-overview"] [data-testid="CVE Type-value"]',
 };
 
 export const dashboardSelectors = {
