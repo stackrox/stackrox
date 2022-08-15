@@ -26,13 +26,21 @@ class GKECluster:
     TEARDOWN_TIMEOUT = 5 * 60
     GKE_SCRIPT = "scripts/ci/gke.sh"
 
-    def __init__(self, cluster_id):
+    def __init__(self, cluster_id, num_nodes=3, machine_type="e2-standard-4"):
         self.cluster_id = cluster_id
+        self.num_nodes = num_nodes
+        self.machine_type = machine_type
         self.refresh_token_cmd = None
 
     def provision(self):
         with subprocess.Popen(
-            [GKECluster.GKE_SCRIPT, "provision_gke_cluster", self.cluster_id]
+            [
+                GKECluster.GKE_SCRIPT,
+                "provision_gke_cluster",
+                self.cluster_id,
+                self.num_nodes,
+                self.machine_type,
+            ]
         ) as cmd:
 
             try:
