@@ -116,6 +116,10 @@ cleanup_image() {
 build_main_and_bundles() {
     export JOB_NAME="build-main-and-bundle"
 
+    if [[ "${RACE_CONDITION_DEBUG:-}" == "true" ]]; then
+        RACE_CONDITION_DEBUG="${RACE_CONDITION_DEBUG}-rcd"
+    fi
+
     openshift_ci_mods
 
     info "Make the main image Dockerfile"
