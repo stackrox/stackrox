@@ -166,7 +166,7 @@ class NonGroovyE2e(BaseTest):
         )
 
 
-class Scale(BaseTest):
+class ScaleTest(BaseTest):
     TEST_TIMEOUT = 90 * 60
     TEST_OUTPUT_DIR = "/tmp/scale-test"
 
