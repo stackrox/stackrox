@@ -972,11 +972,19 @@ openshift_ci_mods() {
     info "Git log:"
     git log --oneline --decorate -n 20 || true
 
+    info "Git status:"
+    git status || true
+
     info "Recent git refs:"
     git for-each-ref --format='%(creatordate) %(refname)' --sort=creatordate | tail -20
 
     info "Current Status:"
     "$ROOT/status.sh" || true
+
+    if [[ -z "${HOME:-}" || "${HOME:-}" == "/" ]]; then
+        mkdir -p /tmp/home
+        export HOME="/tmp/home"
+    fi
 
     # For ci_export(), override BASH_ENV from stackrox-test with something that is writable.
     BASH_ENV=$(mktemp)
