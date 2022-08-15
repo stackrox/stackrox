@@ -485,6 +485,46 @@ func (s *GraphQueriesTestSuite) TestSubGraphSearch() {
 	})
 }
 
+func (s *GraphQueriesTestSuite) TestSubGraphCountQueries() {
+	s.runTestCases([]graphQueryTestCase{
+		{
+			desc:              "query out-of-scope resource from parent4",
+			queriedProtoType:  "testparent4",
+			queryStrings:      map[search.FieldLabel][]string{search.TestParent2ID: {"r/.*1"}},
+			expectedResultIDs: []string{},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:              "query out-of-scope resource from child1p4",
+			queriedProtoType:  "testchild1p4",
+			queryStrings:      map[search.FieldLabel][]string{search.TestChild1ID: {"r/.*1"}},
+			expectedResultIDs: []string{},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:              "query in-scope resource from parent4",
+			queriedProtoType:  "testparent4",
+			queryStrings:      map[search.FieldLabel][]string{search.TestParent4Val: {"r/.*4"}},
+			expectedResultIDs: []string{"4"},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:              "query in-scope child from parent4",
+			queriedProtoType:  "testparent4",
+			queryStrings:      map[search.FieldLabel][]string{search.TestChild1P4ID: {"r/.*P4"}},
+			expectedResultIDs: []string{"4"},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:              "query out-of-scope parent from child1p4",
+			queriedProtoType:  "testchild1p4",
+			queryStrings:      map[search.FieldLabel][]string{search.TestParent4ID: {"r/.*4"}},
+			expectedResultIDs: []string{},
+			queryType:         postgres.COUNT,
+		},
+	})
+}
+
 func (s *GraphQueriesTestSuite) TestDerived() {
 	s.runTestCases([]graphQueryTestCase{
 		{
