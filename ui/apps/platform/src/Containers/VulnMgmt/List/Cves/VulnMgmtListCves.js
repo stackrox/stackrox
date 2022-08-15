@@ -389,7 +389,7 @@ const VulnMgmtCves = ({
         e.stopPropagation();
 
         const cveIdsToToggle = cveId ? [cveId] : selectedCveIds;
-        suppressVulns(cveIdsToToggle, duration)
+        suppressVulns(cveType, cveIdsToToggle, duration)
             .then(() => {
                 setSelectedCveIds([]);
 
@@ -414,7 +414,7 @@ const VulnMgmtCves = ({
         e.stopPropagation();
 
         const cveIdsToToggle = cveId ? [cveId] : selectedCveIds;
-        unsuppressVulns(cveIdsToToggle, false)
+        unsuppressVulns(cveType, cveIdsToToggle)
             .then(() => {
                 setSelectedCveIds([]);
 
