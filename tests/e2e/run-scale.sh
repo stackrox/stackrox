@@ -34,7 +34,7 @@ deploy_stackrox_in_scale_mode() {
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}" \
     get_central_basic_auth_creds
 
-    "$ROOT/scale/launch_workload.sh scale-test"
+    "$ROOT/scale/launch_workload.sh" scale-test
 
     wait_for_api
 }
