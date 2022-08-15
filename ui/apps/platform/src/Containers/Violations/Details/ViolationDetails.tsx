@@ -41,18 +41,6 @@ function ViolationDetails({
                     </FlexItem>
                 )}
             </Flex>
-            <Flex
-                direction={{ default: 'column' }}
-                data-testid="violation-tags"
-                flex={{ default: 'flex_1' }}
-            >
-                <FlexItem>
-                    <Title headingLevel="h3" className="pf-u-mb-md">
-                        Add violation metadata
-                    </Title>
-                    <Divider component="div" />
-                </FlexItem>
-            </Flex>
         </Flex>
     );
 }
