@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -301,7 +300,7 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateEmptyChain() 
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 	ctx := s.ctx
 	id := uuid.NewV4()
-	certs := []requestinfo.CertInfo{
+	certs := []mtls.CertInfo{
 		{Subject: pkix.Name{Organization: []string{id.String()}}},
 	}
 
@@ -313,7 +312,7 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificateEphemeralInitBundle() {
 	ctx := s.ctx
 	id := uuid.NewV4()
-	certs := []requestinfo.CertInfo{
+	certs := []mtls.CertInfo{
 		{Subject: pkix.Name{
 			CommonName:   centralsensor.EphemeralInitCertClusterID,
 			Organization: []string{id.String()},
@@ -333,7 +332,7 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificate() {
 	meta, err := s.backend.Issue(s.ctx, "revoke-check")
 	s.Require().NoError(err)
 
-	certs := []requestinfo.CertInfo{
+	certs := []mtls.CertInfo{
 		{Subject: pkix.Name{Organization: []string{meta.Meta.Id}}},
 	}
 
@@ -354,7 +353,7 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateShouldIgnoreN
 	// To access the revoke check a token should be passed without any access rights.
 	ctxWithoutSAC := context.Background()
 
-	certs := []requestinfo.CertInfo{
+	certs := []mtls.CertInfo{
 		{Subject: pkix.Name{Organization: []string{}}},
 	}
 

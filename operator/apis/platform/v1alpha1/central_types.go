@@ -293,6 +293,11 @@ type ExposureRoute struct {
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
+
+	// Specify a custom hostname for the central route.
+	// If unspecified, an appropriate default value will be automatically chosen by OpenShift route operator.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	Host *string `json:"host,omitempty"`
 }
 
 // Note the following struct should mostly match LocalScannerComponentSpec for the SecuredCluster type. Different Scanner

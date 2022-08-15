@@ -8,7 +8,7 @@ require github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581
 
 require (
 	cloud.google.com/go/compute v1.7.0
-	cloud.google.com/go/containeranalysis v0.3.0
+	cloud.google.com/go/containeranalysis v0.4.0
 	cloud.google.com/go/storage v1.24.0
 	github.com/BurntSushi/toml v1.2.0
 	github.com/Masterminds/semver v1.5.0
@@ -42,7 +42,7 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang-jwt/jwt/v4 v4.4.1
+	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/certificate-transparency-go v1.1.3
@@ -83,7 +83,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/client_model v0.2.0
-	github.com/prometheus/common v0.35.0
+	github.com/prometheus/common v0.37.0
 	github.com/russellhaering/gosaml2 v0.8.0
 	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/sergi/go-diff v1.2.0
@@ -112,8 +112,8 @@ require (
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.12
 	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.85.0
-	google.golang.org/genproto v0.0.0-20220617124728-180714bec0ad
+	google.golang.org/api v0.91.0
+	google.golang.org/genproto v0.0.0-20220624142145-8cd45d7dbd1f
 	google.golang.org/grpc v1.47.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
@@ -130,7 +130,7 @@ require (
 	k8s.io/kubectl v0.23.1
 	k8s.io/kubelet v0.22.11
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
-	sigs.k8s.io/controller-runtime v0.11.1
+	sigs.k8s.io/controller-runtime v0.11.2
 	sigs.k8s.io/e2e-framework v0.0.7
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -206,5 +206,3 @@ exclude github.com/stackrox/rox v0.0.0-20210914215712-9ac265932e28
 exclude k8s.io/client-go v12.0.0+incompatible
 
 exclude github.com/openshift/client-go v3.9.0+incompatible
-
-replace helm.sh/helm/v3 => github.com/porridge/helm/v3 v3.7.3-0.20220719213745-59a08440474d

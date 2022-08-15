@@ -420,6 +420,39 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 		},
+
+		"route with custom hostname": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Exposure: &platform.Exposure{
+								Route: &platform.ExposureRoute{
+									Enabled: &truth,
+									Host:    pointer.StringPtr("custom-route.stackrox.io"),
+								},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposure": map[string]interface{}{
+						"route": map[string]interface{}{
+							"enabled": true,
+							"host":    "custom-route.stackrox.io",
+						},
+					},
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"persistentVolumeClaim": map[string]interface{}{
+							"createClaim": false,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tt := range tests {

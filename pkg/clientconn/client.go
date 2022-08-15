@@ -10,9 +10,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
-	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
-	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/servicecerttoken"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"

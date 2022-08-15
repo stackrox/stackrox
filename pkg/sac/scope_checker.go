@@ -10,9 +10,9 @@ import (
 
 // ScopeChecker provides a convenience wrapper around a ScopeCheckerCore.
 // Client code should almost always use this type in favor of ScopeCheckerCore.
+//
 //go:generate mockgen-wrapper
 type ScopeChecker interface {
-	Core() ScopeCheckerCore
 	SubScopeChecker(keys ...ScopeKey) ScopeChecker
 	PerformChecks(ctx context.Context) error
 	TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult

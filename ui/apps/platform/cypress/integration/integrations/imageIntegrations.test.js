@@ -5,8 +5,7 @@ import {
     getHelperElementByLabel,
     getInputByLabel,
     generateNameWithDate,
-    getSelectButtonByLabel,
-    getSelectOption,
+    getToggleGroupItem,
 } from '../../helpers/formHelpers';
 import { visitIntegrationsUrl } from '../../helpers/integrations';
 
@@ -59,8 +58,18 @@ describe('Image Integrations Test', () => {
 
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(integrationName);
-        getSelectButtonByLabel('Type').click();
-        getSelectOption('Image Scanner').click();
+
+        const selected = 'pf-m-selected';
+        getToggleGroupItem('Type', 0, 'Image Scanner').should('have.class', selected);
+        getToggleGroupItem('Type', 1, 'Node Scanner').should('not.have.class', selected);
+        getToggleGroupItem('Type', 2, 'Image Scanner + Node Scanner').should(
+            'not.have.class',
+            selected
+        );
+        getToggleGroupItem('Type', 2, 'Image Scanner + Node Scanner')
+            .click()
+            .should('have.class', selected);
+
         getInputByLabel('Endpoint').clear().type('https://scanner.stackrox:8080');
 
         cy.get(selectors.buttons.test).should('be.enabled');
@@ -151,8 +160,13 @@ describe('Image Integrations Test', () => {
 
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(integrationName);
-        getSelectButtonByLabel('Type').click();
-        getSelectOption('Registry').click();
+
+        const selected = 'pf-m-selected';
+        getToggleGroupItem('Type', 0, 'Registry').should('have.class', selected);
+        getToggleGroupItem('Type', 1, 'Scanner').should('not.have.class', selected);
+        getToggleGroupItem('Type', 2, 'Registry + Scanner').should('not.have.class', selected);
+        getToggleGroupItem('Type', 2, 'Registry + Scanner').click().should('have.class', selected);
+
         getInputByLabel('Registry endpoint').clear().type('test.endpoint');
         getInputByLabel('Project').clear().type('test');
         getInputByLabel('Service account key (JSON)').type('{"key":"value"}', {
@@ -246,8 +260,13 @@ describe('Image Integrations Test', () => {
 
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(integrationName);
-        getSelectButtonByLabel('Type').click();
-        getSelectOption('Registry').click();
+
+        const selected = 'pf-m-selected';
+        getToggleGroupItem('Type', 0, 'Registry').should('have.class', selected);
+        getToggleGroupItem('Type', 1, 'Scanner').should('not.have.class', selected);
+        getToggleGroupItem('Type', 2, 'Registry + Scanner').should('not.have.class', selected);
+        getToggleGroupItem('Type', 2, 'Registry + Scanner').click().should('have.class', selected);
+
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('OAuth token').clear().type('12345');
 

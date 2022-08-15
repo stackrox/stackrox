@@ -170,6 +170,11 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.nodePort.enabled:true
       - displayName: Enabled
         path: central.exposure.route.enabled
+      - description: Specify a custom hostname for the central route. If unspecified,
+          an appropriate default value will be automatically chosen by OpenShift route
+          operator.
+        displayName: Host
+        path: central.exposure.route.host
       - description: Expose Central's monitoring endpoint. A new service, "monitoring",
           with port 9090, will be created as well as a network policy allowing inbound
           connections to the port.

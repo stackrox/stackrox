@@ -18,7 +18,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	{{ if $rocksDB}}"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"{{end}}
 	{{ if $boltDB}}"github.com/stackrox/rox/pkg/bolthelper"{{end}}
-	{{ if $dackbox}}"github.com/stackrox/rox/pkg/concurrency"{{end}}
+	{{ if $dackbox}}"github.com/stackrox/rox/pkg/dackbox/concurrency"{{end}}
 	{{ if $dackbox}}"github.com/stackrox/rox/pkg/dackbox"{{end}}
 	{{ if $dackbox}}rawDackbox "github.com/stackrox/rox/pkg/dackbox/raw"{{end}}
 	"github.com/stackrox/rox/pkg/features"

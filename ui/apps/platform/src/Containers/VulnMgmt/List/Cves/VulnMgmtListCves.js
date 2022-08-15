@@ -36,6 +36,7 @@ import {
     NODE_CVE_LIST_FRAGMENT,
     CLUSTER_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import CVSSSeverityLabel from 'Components/CVSSSeverityLabel';
 import CveType from 'Components/CveType';
@@ -246,6 +247,17 @@ export function getCveTableColumns(workflowState) {
         },
     ];
 
+    if (currentEntityType === entityTypes.NODE_CVE || currentEntityType === entityTypes.IMAGE_CVE) {
+        tableColumns.splice(3, 0, {
+            Header: `Operating System`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            id: cveSortFields.OPERATING_SYSTEM,
+            accessor: 'operatingSystem',
+            sortField: cveSortFields.OPERATING_SYSTEM,
+        });
+    }
+
     const nonNullTableColumns = tableColumns.filter((col) => col);
 
     const cveColumnsBasedOnContext = getFilteredCVEColumns(nonNullTableColumns, workflowState);
@@ -282,6 +294,9 @@ const VulnMgmtCves = ({
 }) => {
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+    const usesPostgres = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const workflowState = useContext(workflowStateContext);
 
@@ -542,7 +557,7 @@ const VulnMgmtCves = ({
                 totalResults={totalResults}
                 query={cveQuery}
                 queryOptions={queryOptions}
-                idAttribute="cve"
+                idAttribute={showVMUpdates && usesPostgres ? 'id' : 'cve'}
                 entityListType={cveType}
                 getTableColumns={getCveTableColumns}
                 selectedRowId={selectedRowId}

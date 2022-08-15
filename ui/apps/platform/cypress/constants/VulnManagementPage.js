@@ -82,6 +82,7 @@ export const listSelectors = {
     fixableCVELink: '[data-testid="fixableCvesLink"]',
     numCVEColLink: '.rt-tr > .rt-td',
     cveDescription: '[data-testid="cve-description"]',
+    metadataDescription: '[data-testid="metadata-description"]',
     statusChips: '[data-testid="label-chip"]',
     deploymentCountLink: '[data-testid="deploymentCountLink"]',
     failingDeploymentCountLink: '[data-testid="failingDeploymentsCountLink"]',
@@ -127,7 +128,7 @@ export const sidePanelListEntityPageSelectors = {
     emptyFindingsSection: '[data-testid="results-message"]',
     deploymentCountText: '.rt-td [data-testid="deploymentCountText"]',
     imageCountText: '.rt-td [data-testid="imageCountText"]',
-    cveType: '[data-testid="entity-overview"] [data-testid="cve-type"]',
+    cveType: '[data-testid="entity-overview"] [data-testid="CVE Type-value"]',
 };
 
 export const dashboardSelectors = {

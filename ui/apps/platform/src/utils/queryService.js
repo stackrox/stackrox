@@ -71,11 +71,7 @@ function entityContextToQueryObject(entityContext) {
         const entityQueryObj = {};
         if (key === entityTypes.IMAGE) {
             entityQueryObj[`${key} SHA`] = entityContext[key];
-        } else if (
-            key === entityTypes.COMPONENT ||
-            key === entityTypes.IMAGE_COMPONENT ||
-            key === entityTypes.NODE_COMPONENT
-        ) {
+        } else if (key === entityTypes.COMPONENT) {
             const parsedComponentID = entityContext[key].split(':').map(decodeBase64);
             // eslint-disable-next-line dot-notation
             [entityQueryObj['COMPONENT'], entityQueryObj[`COMPONENT VERSION`]] = parsedComponentID;

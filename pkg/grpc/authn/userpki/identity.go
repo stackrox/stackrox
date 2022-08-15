@@ -8,13 +8,13 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/mtls"
 )
 
 var _ authn.Identity = (*identity)(nil)
 
 type identity struct {
-	info          requestinfo.CertInfo
+	info          mtls.CertInfo
 	provider      authproviders.Provider
 	resolvedRoles []permissions.ResolvedRole
 	attributes    map[string][]string
@@ -64,6 +64,6 @@ func (i *identity) UID() string {
 	return userID(i.info)
 }
 
-func userID(info requestinfo.CertInfo) string {
+func userID(info mtls.CertInfo) string {
 	return "userpki:" + info.CertFingerprint
 }

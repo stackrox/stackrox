@@ -291,7 +291,13 @@ describe('Entities single views', () => {
     });
 
     it('should show a CVE description in overview when coming from cve list', () => {
-        visitVulnerabilityManagementEntities('cves');
+        const usingVMUpdates = hasFeatureFlag('ROX_FRONTEND_VM_UPDATES');
+
+        if (usingVMUpdates) {
+            visitVulnerabilityManagementEntities('image-cves');
+        } else {
+            visitVulnerabilityManagementEntities('cves');
+        }
 
         cy.get(`${selectors.tableBodyRowGroups}:eq(0) ${selectors.cveDescription}`)
             .invoke('text')
@@ -300,7 +306,7 @@ describe('Entities single views', () => {
                 cy.get(`${selectors.tableBodyRows}:eq(0)`).click();
                 cy.wait('@cve');
 
-                cy.get(`${selectors.entityOverview} ${selectors.cveDescription}`)
+                cy.get(`${selectors.entityOverview} ${selectors.metadataDescription}`)
                     .invoke('text')
                     .then((descriptionInSidePanel) => {
                         expect(descriptionInSidePanel).to.equal(descriptionInList);

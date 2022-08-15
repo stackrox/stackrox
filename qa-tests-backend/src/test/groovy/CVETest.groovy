@@ -5,7 +5,6 @@ import org.junit.experimental.categories.Category
 import services.GraphQLService
 import services.ImageService
 import spock.lang.Ignore
-import spock.lang.IgnoreIf
 import spock.lang.Unroll
 import util.Env
 
@@ -151,9 +150,55 @@ class CVETest extends BaseSpecification {
     }
     """
 
+    private static final FIXABLE_CVES_BY_ENTITY_POSTGRES_QUERY = """
+    query getFixableCvesForEntity(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
+     \$vulnPagination: Pagination) {
+      result: image(id: \$id) {
+        id
+        imageVulnerabilityCounter {
+          all {
+            fixable
+            __typename
+          }
+          __typename
+        }
+        vulnerabilities: imageVulnerabilities(query: \$vulnQuery, pagination: \$vulnPagination) {
+          ...cveFields
+          __typename
+        }
+        __typename
+      }
+    }
+    fragment cveFields on ImageVulnerability {
+      id
+      cve
+      cvss
+      scoreVersion
+      envImpact
+      impactScore
+      summary
+      fixedByVersion
+      isFixable(query: \$scopeQuery)
+      createdAt
+      publishedOn
+      deploymentCount(query: \$query)
+      imageCount(query: \$query)
+      imageComponentCount(query: \$query)
+      __typename
+    }
+    """
+
     private static final SCOPED_FIXABLE_QUERY = """
     query getCve(\$id: ID!, \$scopeQuery: String) {
       result: vulnerability(id: \$id) {
+        isFixable(query: \$scopeQuery)
+      }
+    }
+    """
+
+    private static final SCOPED_FIXABLE_POSTGRES_QUERY = """
+    query getCve(\$id: ID!, \$scopeQuery: String) {
+      result: imageVulnerability(id: \$id) {
         isFixable(query: \$scopeQuery)
       }
     }
@@ -420,15 +465,24 @@ class CVETest extends BaseSpecification {
     }
 
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable for entities when scoped by CVE is still correct"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"
         def gqlService = new GraphQLService()
-        def ret = gqlService.Call(FIXABLE_CVES_BY_ENTITY_QUERY, [
+        def fixableCvesByEntityQuery = ""
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            fixableCvesByEntityQuery = FIXABLE_CVES_BY_ENTITY_POSTGRES_QUERY
+        } else {
+            fixableCvesByEntityQuery = FIXABLE_CVES_BY_ENTITY_QUERY
+        }
+        def scopeQuery = ""
+        if (! Env.CI_JOBNAME.contains("postgres")) {
+            scopeQuery = "CVE:CVE-2020-8285"
+        }
+        def ret = gqlService.Call(fixableCvesByEntityQuery, [
                 id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
                 query: "",
-                scopeQuery: "CVE:CVE-2020-8285",
+                scopeQuery: scopeQuery,
                 vulnQuery: "Fixable:true",
         ])
 
@@ -440,14 +494,26 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable is correct when scoped (#digest, #fixable)"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"
         def gqlService = new GraphQLService()
-        def ret = gqlService.Call(SCOPED_FIXABLE_QUERY, [
-                id: "CVE-2019-9893",
-                scopeQuery: "Image Sha:${digest}+CVE:CVE-2019-9893",
+        def scopedFixableQuery = ""
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            scopedFixableQuery = SCOPED_FIXABLE_POSTGRES_QUERY
+        } else {
+            scopedFixableQuery = SCOPED_FIXABLE_QUERY
+        }
+        def cveId = "CVE-2019-9893"
+        def scopeQuery = "Image Sha:${digest}"
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            cveId = cveId + "#" + "${os}"
+        } else {
+            scopeQuery = scopeQuery + "+CVE:" + cveId
+        }
+        def ret = gqlService.Call(scopedFixableQuery, [
+                id: cveId,
+                scopeQuery: scopeQuery,
         ])
 
         then:
@@ -458,9 +524,9 @@ class CVETest extends BaseSpecification {
         where:
         "data inputs"
 
-        digest | fixable
-        FIXABLE_VULN_IMAGE_DIGEST | true
-        UNFIXABLE_VULN_IMAGE_DIGEST | false
+        digest                      | os             | fixable
+        FIXABLE_VULN_IMAGE_DIGEST   | "ubuntu:18.04" | true
+        UNFIXABLE_VULN_IMAGE_DIGEST | "debian:10"    | false
     }
 
 }

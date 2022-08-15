@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"

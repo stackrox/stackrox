@@ -65,7 +65,6 @@ var (
 	AllComments = newDeprecatedResourceMetadata("AllComments", permissions.GlobalScope,
 		Administration)
 	APIToken     = newDeprecatedResourceMetadata("APIToken", permissions.GlobalScope, Integration)
-	AuthPlugin   = newDeprecatedResourceMetadata("AuthPlugin", permissions.GlobalScope, Access)
 	AuthProvider = newDeprecatedResourceMetadata("AuthProvider", permissions.GlobalScope,
 		Access)
 	BackupPlugins = newDeprecatedResourceMetadata("BackupPlugins", permissions.GlobalScope,

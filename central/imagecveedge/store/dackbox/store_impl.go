@@ -8,8 +8,8 @@ import (
 	"github.com/stackrox/rox/central/imagecveedge/store"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )

@@ -116,6 +116,11 @@ spec:
                           enabled:
                             default: false
                             type: boolean
+                          host:
+                            description: Specify a custom hostname for the central
+                              route. If unspecified, an appropriate default value
+                              will be automatically chosen by OpenShift route operator.
+                            type: string
                         type: object
                     type: object
                   monitoring:

@@ -78,10 +78,11 @@ func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.riskDataStore = riskMocks.NewMockDataStore(s.mockCtrl)
 
-	s.deploymentDatastore = newDataStore(
+	s.deploymentDatastore, err = newDataStore(
 		deploymentPostgres.NewFullTestStore(s.T(), deploymentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)),
 		nil, s.db, nil, nil, nil, s.imageDatastore, nil, nil, s.riskDataStore,
 		nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
+	s.Require().NoError(err)
 
 	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_COMPONENTS, schema.ImageComponentsSchema)
 	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULNERABILITIES, schema.ImageCvesSchema)

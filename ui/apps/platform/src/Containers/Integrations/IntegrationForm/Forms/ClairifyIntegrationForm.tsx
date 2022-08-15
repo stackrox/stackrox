@@ -1,10 +1,9 @@
 import React, { ReactElement } from 'react';
-import { TextInput, SelectOption, PageSection, Form } from '@patternfly/react-core';
+import { Form, PageSection, TextInput, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
-import FormMultiSelect from 'Components/FormMultiSelect';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
@@ -14,6 +13,11 @@ import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
+
+import { categoriesUtilsForClairifyScanner } from '../../utils/integrationUtils';
+
+const { categoriesAlternatives, getCategoriesText, matchCategoriesAlternative, validCategories } =
+    categoriesUtilsForClairifyScanner;
 
 export type ClairifyIntegration = {
     categories: ('NODE_SCANNER' | 'SCANNER')[];
@@ -29,7 +33,7 @@ export const validationSchema = yup.object().shape({
     name: yup.string().trim().required('An integration name is required'),
     categories: yup
         .array()
-        .of(yup.string().trim().oneOf(['NODE_SCANNER', 'SCANNER']))
+        .of(yup.string().trim().oneOf(validCategories))
         .min(1, 'Must have at least one type selected')
         .required('A category is required'),
     clairify: yup.object().shape({
@@ -43,7 +47,7 @@ export const validationSchema = yup.object().shape({
 export const defaultValues: ClairifyIntegration = {
     id: '',
     name: '',
-    categories: [],
+    categories: ['SCANNER'],
     clairify: {
         endpoint: '',
         grpcEndpoint: '',
@@ -86,10 +90,6 @@ function ClairifyIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
-    function onCustomChange(id, value) {
-        return setFieldValue(id, value);
-    }
-
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -120,19 +120,26 @@ function ClairifyIntegrationForm({
                         touched={touched}
                         errors={errors}
                     >
-                        <FormMultiSelect
-                            id="categories"
-                            values={values.categories}
-                            onChange={onCustomChange}
-                            isDisabled={!isEditable}
-                        >
-                            <SelectOption key={0} value="SCANNER">
-                                Image Scanner
-                            </SelectOption>
-                            <SelectOption key={1} value="NODE_SCANNER">
-                                Node Scanner
-                            </SelectOption>
-                        </FormMultiSelect>
+                        <ToggleGroup id="categories" areAllGroupsDisabled={!isEditable}>
+                            {categoriesAlternatives.map((categoriesAlternative) => {
+                                const [categoriesAlternativeItem0] = categoriesAlternative;
+                                const text = getCategoriesText(categoriesAlternativeItem0);
+                                const isSelected = matchCategoriesAlternative(
+                                    categoriesAlternative,
+                                    values.categories
+                                );
+                                return (
+                                    <ToggleGroupItem
+                                        key={text}
+                                        text={text}
+                                        isSelected={isSelected}
+                                        onChange={() =>
+                                            setFieldValue('categories', categoriesAlternativeItem0)
+                                        }
+                                    />
+                                );
+                            })}
+                        </ToggleGroup>
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Endpoint"

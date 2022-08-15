@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	pkgDackBox "github.com/stackrox/rox/pkg/dackbox"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/features"
@@ -139,7 +140,7 @@ func TestUnsuppressCVEs(t *testing.T) {
 }
 
 func createDataStore(t *testing.T, dacky *pkgDackBox.DackBox, indexQ queue.WaitableQueue, bleveIndex bleve.Index) (cveDataStore.DataStore, clusterCVEEdgeDataStore.DataStore) {
-	cveStorage := cveStore.New(dacky, concurrency.NewKeyFence())
+	cveStorage := cveStore.New(dacky, dackboxConcurrency.NewKeyFence())
 
 	cveIndexer := cveIndex.New(bleveIndex)
 	cveSearcher := cveSearch.New(cveStorage, dacky, cveIndexer,
@@ -157,7 +158,7 @@ func createDataStore(t *testing.T, dacky *pkgDackBox.DackBox, indexQ queue.Waita
 	cveDataStore, err := cveDataStore.New(dacky, indexQ, cveStorage, cveIndexer, cveSearcher)
 	require.NoError(t, err)
 
-	edgeStorage, err := clusterCVEEdgeStore.New(dacky, concurrency.NewKeyFence())
+	edgeStorage, err := clusterCVEEdgeStore.New(dacky, dackboxConcurrency.NewKeyFence())
 	require.NoError(t, err)
 	edgeIndexer := clusterCVEEdgeIndexer.New(bleveIndex)
 	edgeSearcher := clusterCVEEdgeSearcher.New(edgeStorage, edgeIndexer, cveIndexer, dacky)
