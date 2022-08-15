@@ -2,10 +2,23 @@ import queryString from 'qs';
 import { saveFile } from 'services/DownloadService';
 import { cveSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
+import entityTypes from 'constants/entityTypes';
 import axios from './instance';
 
-const baseUrl = '/v1/cves';
 const csvUrl = '/api/vm/export/csv';
+
+function getBaseCveUrl(cveType) {
+    if (cveType === entityTypes.CLUSTER_CVE) {
+        return '/v1/clustercves';
+    }
+    if (cveType === entityTypes.NODE_CVE) {
+        return '/v1/nodecves';
+    }
+    if (cveType === entityTypes.IMAGE_CVE) {
+        return '/v1/imagecves';
+    }
+    return '/v1/cves';
+}
 
 /**
  * Send request to suppress CVEs with a given IDs.
@@ -14,7 +27,8 @@ const csvUrl = '/api/vm/export/csv';
  * @param {!string} CVE suppress duration, if 0 then CVEs are suppressed indefinitely
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
  */
-export function suppressVulns(cveIds, duration = 0) {
+export function suppressVulns(cveType, cveIds, duration = 0) {
+    const baseUrl = getBaseCveUrl(cveType);
     return axios.patch(`${baseUrl}/suppress`, { ids: cveIds, duration });
 }
 
@@ -24,7 +38,8 @@ export function suppressVulns(cveIds, duration = 0) {
  * @param {!string} CVE unique identifier
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
  */
-export function unsuppressVulns(cveIds) {
+export function unsuppressVulns(cveType, cveIds) {
+    const baseUrl = getBaseCveUrl(cveType);
     return axios.patch(`${baseUrl}/unsuppress`, { ids: cveIds });
 }
 

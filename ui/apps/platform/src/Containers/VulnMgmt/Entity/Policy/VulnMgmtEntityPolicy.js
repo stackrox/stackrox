@@ -7,8 +7,12 @@ import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { DEPLOYMENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import {
+    DEPLOYMENT_LIST_FRAGMENT,
+    DEPLOYMENT_LIST_FRAGMENT_UPDATED,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import queryService from 'utils/queryService';
 import VulnMgmtPolicyOverview from './VulnMgmtPolicyOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
@@ -25,6 +29,13 @@ const VulmMgmtEntityPolicy = ({
 }) => {
     const queryVarParam = entityContext[entityTypes.POLICY] ? '' : '(query: $scopeQuery)';
     const workflowState = useContext(workflowStateContext);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showVMUpdates = isFeatureFlagEnabled('ROX_FRONTEND_VM_UPDATES');
+
+    const fragmentToUse = showVMUpdates
+        ? DEPLOYMENT_LIST_FRAGMENT_UPDATED
+        : DEPLOYMENT_LIST_FRAGMENT;
 
     const overviewQuery = gql`
         query getPolicy($id: ID!, $policyQuery: String, $scopeQuery: String) {
@@ -77,7 +88,7 @@ const VulmMgmtEntityPolicy = ({
                 unusedVarSink(query: $scopeQuery)
             }
         }
-        ${DEPLOYMENT_LIST_FRAGMENT}
+        ${fragmentToUse}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {

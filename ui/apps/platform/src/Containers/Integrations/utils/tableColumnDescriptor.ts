@@ -1,6 +1,11 @@
 import { BaseBackupIntegration } from 'types/externalBackup.proto';
 import { FeatureFlagEnvVar } from 'types/featureFlag';
-import { BaseImageIntegration } from 'types/imageIntegration.proto';
+import {
+    BaseImageIntegration,
+    ClairifyImageIntegration,
+    GoogleImageIntegration,
+    QuayImageIntegration,
+} from 'types/imageIntegration.proto';
 import {
     AuthProviderType,
     BackupIntegrationType,
@@ -12,7 +17,17 @@ import {
 import { SumoLogicNotifierIntegration, SyslogNotifierIntegration } from 'types/notifier.proto';
 import { SignatureIntegration } from 'types/signatureIntegration.proto';
 
-import { daysOfWeek, timesOfDay } from './integrationUtils';
+import {
+    categoriesUtilsForClairifyScanner,
+    categoriesUtilsForRegistryScanner,
+    daysOfWeek,
+    timesOfDay,
+} from './integrationUtils';
+
+const { getCategoriesText: getCategoriesTextForClairifyScanner } =
+    categoriesUtilsForClairifyScanner;
+const { getCategoriesText: getCategoriesTextForRegistryScanner } =
+    categoriesUtilsForRegistryScanner;
 
 export type AccessorFunction = (integration: BaseIntegration) => string;
 
@@ -143,6 +158,13 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         quay: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'quay.endpoint', Header: 'Endpoint' },
+            {
+                Header: 'Type',
+                accessor: (integration) =>
+                    getCategoriesTextForRegistryScanner(
+                        (integration as QuayImageIntegration).categories
+                    ),
+            },
         ],
         clair: [
             { accessor: 'name', Header: 'Name' },
@@ -151,11 +173,25 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         clairify: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'clairify.endpoint', Header: 'Endpoint' },
+            {
+                Header: 'Type',
+                accessor: (integration) =>
+                    getCategoriesTextForClairifyScanner(
+                        (integration as ClairifyImageIntegration).categories
+                    ),
+            },
         ],
         google: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'google.endpoint', Header: 'Endpoint' },
             { accessor: 'google.project', Header: 'Project' },
+            {
+                Header: 'Type',
+                accessor: (integration) =>
+                    getCategoriesTextForRegistryScanner(
+                        (integration as GoogleImageIntegration).categories
+                    ),
+            },
         ],
         ecr: [
             { accessor: 'name', Header: 'Name' },
