@@ -48,6 +48,7 @@ test_upgrade() {
     preamble
     setup_deployment_env false false
     remove_existing_stackrox_resources
+    setup_default_TLS_certs
 
     info "Deploying central"
     "$TEST_ROOT/$DEPLOY_DIR/central.sh"
