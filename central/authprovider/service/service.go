@@ -30,11 +30,3 @@ func New(registry authproviders.Registry, groupStore groupDataStore.DataStore) S
 		groupStore: groupStore,
 	}
 }
-
-// NewWithBasicProviderDisabled returns a new Service instance using the given DataStore.
-// The service would filter out "basic" auth provider.
-func NewWithBasicProviderDisabled(registry authproviders.Registry, groupStore groupDataStore.DataStore) Service {
-	return &basicAuthProviderRemovalServiceImpl{
-		underlying: New(registry, groupStore),
-	}
-}

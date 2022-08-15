@@ -311,6 +311,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
 		authService.New(),
+		authProviderSvc.New(registry, groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
 		centralHealthService.Singleton(),
@@ -383,12 +384,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 
 	if features.NewPolicyCategories.Enabled() {
 		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
-	}
-
-	if env.ManagedCentral.BooleanSetting() {
-		servicesToRegister = append(servicesToRegister, authProviderSvc.NewWithBasicProviderDisabled(registry, groupDataStore.Singleton()))
-	} else {
-		servicesToRegister = append(servicesToRegister, authProviderSvc.New(registry, groupDataStore.Singleton()))
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
