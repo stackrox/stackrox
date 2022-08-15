@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/authprovider/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/errox"
@@ -77,10 +78,10 @@ func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesUpdate() {
 func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesRemove() {
 	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.RemoveAuthProvider(s.hasNoneCtx, &storage.DeleteByIDWithForce{Id: "id"})
+	err := s.dataStore.RemoveAuthProvider(s.hasNoneCtx, &v1.DeleteByIDWithForce{Id: "id"})
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.RemoveAuthProvider(s.hasReadCtx, &storage.DeleteByIDWithForce{Id: "id"})
+	err = s.dataStore.RemoveAuthProvider(s.hasReadCtx, &v1.DeleteByIDWithForce{Id: "id"})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -170,10 +171,10 @@ func (s *authProviderDataStoreTestSuite) TestAllowsRemove() {
 	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{}, true, nil).Times(2)
 
-	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, &storage.DeleteByIDWithForce{Id: "id"})
+	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, &v1.DeleteByIDWithForce{Id: "id"})
 	s.NoError(err, "expected no error trying to write with permissions")
 
-	err = s.dataStore.RemoveAuthProvider(s.hasWriteAccessCtx, &storage.DeleteByIDWithForce{Id: "id"})
+	err = s.dataStore.RemoveAuthProvider(s.hasWriteAccessCtx, &v1.DeleteByIDWithForce{Id: "id"})
 	s.NoError(err, "expect no error trying to write with Access permissions")
 }
 
@@ -213,7 +214,7 @@ func (s *authProviderDataStoreTestSuite) TestDeleteImmutableNoForce() {
 		},
 	}, true, nil).Times(1)
 
-	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, &storage.DeleteByIDWithForce{
+	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, &v1.DeleteByIDWithForce{
 		Id:    "id",
 		Force: false,
 	})
@@ -230,7 +231,7 @@ func (s *authProviderDataStoreTestSuite) TestDeleteImmutableForce() {
 	}, true, nil).Times(1)
 	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, &storage.DeleteByIDWithForce{
+	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, &v1.DeleteByIDWithForce{
 		Id:    "id",
 		Force: true,
 	})

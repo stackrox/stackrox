@@ -197,7 +197,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
 	}
 
-	deleteReq := &storage.DeleteByIDWithForce{
+	deleteReq := &v1.DeleteByIDWithForce{
 		Id:    request.GetId(),
 		Force: false,
 	}
@@ -234,7 +234,7 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 }
 
 // DeleteAuthProvider deletes an auth provider from the system
-func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *storage.DeleteByIDWithForce) (*v1.Empty, error) {
+func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.DeleteByIDWithForce) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}

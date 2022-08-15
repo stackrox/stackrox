@@ -3,6 +3,7 @@ package authproviders
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -12,5 +13,5 @@ type Store interface {
 
 	AddAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error
 	UpdateAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error
-	RemoveAuthProvider(ctx context.Context, deleteReq *storage.DeleteByIDWithForce) error
+	RemoveAuthProvider(ctx context.Context, deleteReq *v1.DeleteByIDWithForce) error
 }

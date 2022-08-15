@@ -5,8 +5,6 @@ import static com.jayway.restassured.RestAssured.given
 import com.jayway.restassured.config.RestAssuredConfig
 import groovy.util.logging.Slf4j
 
-import io.stackrox.proto.storage.TraitsOuterClass
-
 import util.Keys
 
 import javax.net.ssl.SSLContext
@@ -18,6 +16,7 @@ import util.Env
 
 import io.stackrox.proto.api.v1.AuthProviderServiceGrpc
 import io.stackrox.proto.api.v1.AuthproviderService
+import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.AuthProviderOuterClass
 
 @Slf4j
@@ -61,7 +60,7 @@ class AuthProviderService extends BaseService {
     }
 
     static deleteAuthProvider(String id) {
-        getAuthProviderService().deleteAuthProvider(TraitsOuterClass.DeleteByIDWithForce.newBuilder().setId(id).build())
+        getAuthProviderService().deleteAuthProvider(Common.DeleteByIDWithForce.newBuilder().setId(id).build())
     }
 
     static getAuthProviderLoginToken(String id) {

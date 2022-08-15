@@ -152,8 +152,7 @@
           }
         },
         "traits": {
-          "$ref": "#/definitions/storageTraits",
-          "description": "See traits.proto for documentation."
+          "$ref": "#/definitions/storageTraits"
         }
       },
       "title": "Next Tag: 9"

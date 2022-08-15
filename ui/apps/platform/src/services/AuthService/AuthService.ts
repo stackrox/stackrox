@@ -154,7 +154,7 @@ export function updateAuthProvider(authProvider: AuthProvider): Promise<AuthProv
  * Saves auth provider either by creating a new one (in case ID is missed) or by updating existing one by ID.
  */
 export function saveAuthProvider(authProvider: AuthProvider): string | Promise<AuthProvider> {
-    if (authProvider.active || authProvider.traits?.mutabilityMode === 'ALLOW_FORCED') {
+    if (authProvider.active || authProvider.traits?.mutabilityMode !== 'ALLOW') {
         return authProvider.id;
     }
     return authProvider.id

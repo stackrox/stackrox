@@ -26,11 +26,3 @@ enum MutabilityMode {
 message Traits {
   MutabilityMode mutabilityMode = 1;
 }
-
-// EXPERIMENTAL.
-//
-// Used in combination with MutabilityMode.ALLOW_FORCED to enable forced removal.
-message DeleteByIDWithForce {
-  string id  = 1;
-  bool force = 2;
-}

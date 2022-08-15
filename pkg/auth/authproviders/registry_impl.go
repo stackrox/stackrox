@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
@@ -202,7 +202,7 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	return provider, nil
 }
 
-func (r *registryImpl) DeleteProvider(ctx context.Context, deleteReq *storage.DeleteByIDWithForce, ignoreActive bool) error {
+func (r *registryImpl) DeleteProvider(ctx context.Context, deleteReq *v1.DeleteByIDWithForce, ignoreActive bool) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 

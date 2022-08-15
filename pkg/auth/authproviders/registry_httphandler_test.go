@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
@@ -412,7 +413,7 @@ func (*tstAuthProviderStore) UpdateAuthProvider(_ context.Context, _ *storage.Au
 	return nil
 }
 
-func (*tstAuthProviderStore) RemoveAuthProvider(_ context.Context, _ *storage.DeleteByIDWithForce) error {
+func (*tstAuthProviderStore) RemoveAuthProvider(_ context.Context, _ *v1.DeleteByIDWithForce) error {
 	return nil
 }
 

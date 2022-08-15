@@ -36,6 +36,5 @@ message AuthProvider {
     }
     repeated RequiredAttribute required_attributes = 11;
 
-    // See traits.proto for documentation.
     Traits traits = 12;
 }

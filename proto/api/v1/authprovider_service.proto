@@ -119,7 +119,7 @@ service AuthProviderService {
         };
     }
 
-    rpc DeleteAuthProvider (storage.DeleteByIDWithForce) returns (Empty) {
+    rpc DeleteAuthProvider (DeleteByIDWithForce) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/authProviders/{id}"
         };

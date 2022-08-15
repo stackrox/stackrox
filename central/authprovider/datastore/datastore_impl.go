@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/authprovider/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
@@ -62,7 +63,7 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 }
 
 // RemoveAuthProvider removes an auth provider from bolt
-func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, deleteReq *storage.DeleteByIDWithForce) error {
+func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, deleteReq *v1.DeleteByIDWithForce) error {
 	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -84,6 +85,11 @@ func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, f
 	if !exists {
 		return errox.NotFound.Newf("auth provider with id %q was not found", id)
 	}
+
+	if provider.GetTraits().GetMutabilityMode() == storage.MutabilityMode_ALLOW {
+		return nil
+	}
+
 	if provider.GetTraits().GetMutabilityMode() == storage.MutabilityMode_ALLOW_FORCED && !force {
 		return errox.InvalidArgs.Newf("auth provider %q is immutable", id)
 	}

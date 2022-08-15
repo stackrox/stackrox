@@ -37,14 +37,13 @@ type AuthProvider struct {
 	// UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request
 	// is coming from any of these, the auth request will use these for the callback URL,
 	// not ui_endpoint.
-	ExtraUiEndpoints   []string                          `protobuf:"bytes,9,rep,name=extra_ui_endpoints,json=extraUiEndpoints,proto3" json:"extra_ui_endpoints,omitempty"`
-	Active             bool                              `protobuf:"varint,10,opt,name=active,proto3" json:"active,omitempty"`
-	RequiredAttributes []*AuthProvider_RequiredAttribute `protobuf:"bytes,11,rep,name=required_attributes,json=requiredAttributes,proto3" json:"required_attributes,omitempty"`
-	// See traits.proto for documentation.
-	Traits               *Traits  `protobuf:"bytes,12,opt,name=traits,proto3" json:"traits,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	ExtraUiEndpoints     []string                          `protobuf:"bytes,9,rep,name=extra_ui_endpoints,json=extraUiEndpoints,proto3" json:"extra_ui_endpoints,omitempty"`
+	Active               bool                              `protobuf:"varint,10,opt,name=active,proto3" json:"active,omitempty"`
+	RequiredAttributes   []*AuthProvider_RequiredAttribute `protobuf:"bytes,11,rep,name=required_attributes,json=requiredAttributes,proto3" json:"required_attributes,omitempty"`
+	Traits               *Traits                           `protobuf:"bytes,12,opt,name=traits,proto3" json:"traits,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
+	XXX_unrecognized     []byte                            `json:"-"`
+	XXX_sizecache        int32                             `json:"-"`
 }
 
 func (m *AuthProvider) Reset()         { *m = AuthProvider{} }

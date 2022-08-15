@@ -3,6 +3,7 @@ package authproviders
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/dberrors"
@@ -34,7 +35,7 @@ func UpdateStore(ctx context.Context, store Store) ProviderOption {
 }
 
 // DeleteFromStore removes the providers stored data from the input store.
-func DeleteFromStore(ctx context.Context, store Store, req *storage.DeleteByIDWithForce) ProviderOption {
+func DeleteFromStore(ctx context.Context, store Store, req *v1.DeleteByIDWithForce) ProviderOption {
 	return func(pr *providerImpl) error {
 		err := store.RemoveAuthProvider(ctx, req)
 		if err != nil {

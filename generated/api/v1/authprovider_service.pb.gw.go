@@ -339,7 +339,7 @@ var (
 )
 
 func request_AuthProviderService_DeleteAuthProvider_0(ctx context.Context, marshaler runtime.Marshaler, client AuthProviderServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq storage.DeleteByIDWithForce
+	var protoReq DeleteByIDWithForce
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -373,7 +373,7 @@ func request_AuthProviderService_DeleteAuthProvider_0(ctx context.Context, marsh
 }
 
 func local_request_AuthProviderService_DeleteAuthProvider_0(ctx context.Context, marshaler runtime.Marshaler, server AuthProviderServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq storage.DeleteByIDWithForce
+	var protoReq DeleteByIDWithForce
 	var metadata runtime.ServerMetadata
 
 	var (
