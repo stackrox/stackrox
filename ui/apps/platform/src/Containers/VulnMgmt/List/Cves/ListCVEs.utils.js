@@ -26,7 +26,8 @@ export function getFilteredCVEColumns(columns, workflowState) {
         !workflowState.getSingleAncestorOfType(entityTypes.NODE);
 
     // TODO: remove this temporary conditional check, after generic CVE list is removed
-    const shouldKeepCveType = currentEntityType === entityTypes.CVE;
+    const shouldKeepCveType =
+        currentEntityType === entityTypes.CVE || currentEntityType === entityTypes.CLUSTER_CVE;
 
     return columns.filter((col) => {
         switch (col.accessor) {
