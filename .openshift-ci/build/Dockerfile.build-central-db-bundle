@@ -1,5 +1,4 @@
-FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.35
-# note the above FROM line is ignored and OpenShift CI uses build_root image instead
+FROM registry.ci.openshift.org/stackrox/apollo-ci:stackrox-build-0.3.44-2-ga2b83e99da
 
 ARG ROX_PRODUCT_BRANDING
 ENV ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
