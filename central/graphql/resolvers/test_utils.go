@@ -136,3 +136,22 @@ func checkVulnerabilityCounter(t *testing.T, resolver *VulnerabilityCounterResol
 func getFixableRawQuery(fixable bool) (string, error) {
 	return search.NewQueryBuilder().AddBools(search.Fixable, fixable).RawQuery()
 }
+
+func getIdList(ctx context.Context, resolvers interface{}) []string {
+	var list []string
+	switch resolvers.(type) {
+	case []ImageVulnerabilityResolver:
+		for _, r := range resolvers.([]ImageVulnerabilityResolver) {
+			list = append(list, string(r.Id(ctx)))
+		}
+	case []*imageResolver:
+		for _, r := range resolvers.([]*imageResolver) {
+			list = append(list, string(r.Id(ctx)))
+		}
+	case []ImageComponentResolver:
+		for _, r := range resolvers.([]ImageComponentResolver) {
+			list = append(list, string(r.Id(ctx)))
+		}
+	}
+	return list
+}
