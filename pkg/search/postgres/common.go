@@ -110,7 +110,12 @@ func (q *query) getPortionBeforeFromClause() string {
 	case DELETE:
 		return "delete"
 	case COUNT:
-		return "select count(*)"
+		var primaryKeyPaths []string
+		// Always select the primary keys for count.
+		for _, pk := range q.Schema.PrimaryKeys() {
+			primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName))
+		}
+		return fmt.Sprintf("select count(distinct(%s))", strings.Join(primaryKeyPaths, ", "))
 	case GET:
 		return fmt.Sprintf("select %q.serialized", q.From)
 	case SEARCH:

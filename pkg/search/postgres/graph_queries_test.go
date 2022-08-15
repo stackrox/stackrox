@@ -377,7 +377,7 @@ func (s *GraphQueriesTestSuite) TestCountQueriesOnGrandChild() {
 			desc:              "grand parent query",
 			queriedProtoType:  "testgrandchild1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
-			expectedResultIDs: []string{"1", "2"},
+			expectedResultIDs: []string{"1", "2", "3"},
 			queryType:         postgres.COUNT,
 		},
 		{
