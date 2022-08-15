@@ -334,6 +334,15 @@
         }
       }
     },
+    "TraitsMutabilityMode": {
+      "type": "string",
+      "enum": [
+        "ALLOW_MUTATE",
+        "ALLOW_MUTATE_FORCED"
+      ],
+      "default": "ALLOW_MUTATE",
+      "description": "EXPERIMENTAL.\n\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW to ALLOW_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW."
+    },
     "UserInfoResourceToAccess": {
       "type": "object",
       "properties": {
@@ -444,15 +453,6 @@
       },
       "title": "Next Tag: 9"
     },
-    "storageMutabilityMode": {
-      "type": "string",
-      "enum": [
-        "ALLOW",
-        "ALLOW_FORCED"
-      ],
-      "default": "ALLOW",
-      "description": "EXPERIMENTAL.\n\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW to ALLOW_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW."
-    },
     "storageServiceIdentity": {
       "type": "object",
       "properties": {
@@ -496,7 +496,7 @@
       "type": "object",
       "properties": {
         "mutabilityMode": {
-          "$ref": "#/definitions/storageMutabilityMode"
+          "$ref": "#/definitions/TraitsMutabilityMode"
         }
       },
       "description": "EXPERIMENTAL."

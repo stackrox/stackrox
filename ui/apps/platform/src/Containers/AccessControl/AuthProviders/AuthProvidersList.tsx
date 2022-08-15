@@ -70,7 +70,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                     {authProviders.map((authProvider) => {
                         const { id, name, type, defaultRole, traits, groups = [] } = authProvider;
                         const typeLabel = getAuthProviderTypeLabel(type, availableProviderTypes);
-                        const isImmutable = traits?.mutabilityMode !== 'ALLOW';
+                        const isImmutable = traits?.mutabilityMode !== 'ALLOW_MUTATE';
 
                         return (
                             <Tr

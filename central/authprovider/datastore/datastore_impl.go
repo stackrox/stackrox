@@ -86,11 +86,11 @@ func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, f
 		return errox.NotFound.Newf("auth provider with id %q was not found", id)
 	}
 
-	if provider.GetTraits().GetMutabilityMode() == storage.MutabilityMode_ALLOW {
+	if provider.GetTraits().GetMutabilityMode() == storage.Traits_ALLOW_MUTATE {
 		return nil
 	}
 
-	if provider.GetTraits().GetMutabilityMode() == storage.MutabilityMode_ALLOW_FORCED && !force {
+	if provider.GetTraits().GetMutabilityMode() == storage.Traits_ALLOW_MUTATE_FORCED && !force {
 		return errox.InvalidArgs.Newf("auth provider %q is immutable", id)
 	}
 	return nil

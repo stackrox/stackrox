@@ -183,7 +183,7 @@ func (s *authProviderDataStoreTestSuite) TestUpdateMutableToImmutable() {
 		Id:   "id",
 		Name: "name",
 		Traits: &storage.Traits{
-			MutabilityMode: storage.MutabilityMode_ALLOW,
+			MutabilityMode: storage.Traits_ALLOW_MUTATE,
 		},
 	}, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
@@ -197,7 +197,7 @@ func (s *authProviderDataStoreTestSuite) TestUpdateImmutableError() {
 		Id:   "id",
 		Name: "name",
 		Traits: &storage.Traits{
-			MutabilityMode: storage.MutabilityMode_ALLOW_FORCED,
+			MutabilityMode: storage.Traits_ALLOW_MUTATE_FORCED,
 		},
 	}, true, nil).Times(1)
 
@@ -210,7 +210,7 @@ func (s *authProviderDataStoreTestSuite) TestDeleteImmutableNoForce() {
 		Id:   "id",
 		Name: "name",
 		Traits: &storage.Traits{
-			MutabilityMode: storage.MutabilityMode_ALLOW_FORCED,
+			MutabilityMode: storage.Traits_ALLOW_MUTATE_FORCED,
 		},
 	}, true, nil).Times(1)
 
@@ -226,7 +226,7 @@ func (s *authProviderDataStoreTestSuite) TestDeleteImmutableForce() {
 		Id:   "id",
 		Name: "name",
 		Traits: &storage.Traits{
-			MutabilityMode: storage.MutabilityMode_ALLOW,
+			MutabilityMode: storage.Traits_ALLOW_MUTATE,
 		},
 	}, true, nil).Times(1)
 	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)

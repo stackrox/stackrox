@@ -315,7 +315,8 @@ function AuthProviderForm({
                                             isSmall
                                         >
                                             {selectedAuthProvider.active ||
-                                            selectedAuthProvider.traits?.mutabilityMode !== 'ALLOW'
+                                            selectedAuthProvider.traits?.mutabilityMode !==
+                                                'ALLOW_MUTATE'
                                                 ? 'Edit minimum role and rules'
                                                 : 'Edit auth provider'}
                                         </Button>
@@ -358,7 +359,7 @@ function AuthProviderForm({
                     }
                 />
             )}
-            {selectedAuthProvider.traits?.mutabilityMode !== 'ALLOW' && (
+            {selectedAuthProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE' && (
                 <Alert
                     isInline
                     variant="warning"
@@ -391,7 +392,7 @@ function AuthProviderForm({
                                     isDisabled={
                                         isViewing ||
                                         values.active ||
-                                        values.traits?.mutabilityMode !== 'ALLOW'
+                                        values.traits?.mutabilityMode !== 'ALLOW_MUTATE'
                                     }
                                     isRequired
                                     onBlur={handleBlur}
@@ -428,7 +429,9 @@ function AuthProviderForm({
                             onBlur={handleBlur}
                             configErrors={errors.config}
                             configTouched={touched.config}
-                            disabled={values.active || values.traits?.mutabilityMode !== 'ALLOW'}
+                            disabled={
+                                values.active || values.traits?.mutabilityMode !== 'ALLOW_MUTATE'
+                            }
                         />
                     </Grid>
                 </FormSection>
