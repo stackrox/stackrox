@@ -254,6 +254,12 @@ func (s *GraphQueriesTestSuite) mustRunQuery(typeName string, q *v1.Query) []sea
 	return res
 }
 
+func (s *GraphQueriesTestSuite) mustRunCountQuery(typeName string, q *v1.Query) int {
+	count, err := postgres.RunCountRequestForSchema(getTestSchema(s.T(), typeName), q, s.pool)
+	s.Require().NoError(err)
+	return count
+}
+
 func (s *GraphQueriesTestSuite) assertResultsHaveIDs(results []search.Result, orderMatters bool, expectedIDs ...string) {
 	idsFromResult := make([]string, 0, len(results))
 	for _, res := range results {
@@ -267,9 +273,9 @@ func (s *GraphQueriesTestSuite) assertResultsHaveIDs(results []search.Result, or
 }
 
 type graphQueryTestCase struct {
-	desc        string
-	queriedType string
-
+	desc             string
+	queriedProtoType string
+	queryType        postgres.QueryType
 	// Passing queryStrings is short for passing
 	// search.NewQueryBuilder().AddStrings() with the values
 	// in queryStrings.
@@ -296,8 +302,12 @@ func (s *GraphQueriesTestSuite) runTestCases(testCases []graphQueryTestCase) {
 			} else {
 				s.Require().Empty(testCase.queryStrings, "both query and queryStrings specified")
 			}
-			res := s.mustRunQuery(testCase.queriedType, q)
-			s.assertResultsHaveIDs(res, testCase.orderMatters, testCase.expectedResultIDs...)
+			if testCase.queryType == postgres.COUNT {
+				s.Equal(len(testCase.expectedResultIDs), s.mustRunCountQuery(testCase.queriedProtoType, q))
+			} else {
+				res := s.mustRunQuery(testCase.queriedProtoType, q)
+				s.assertResultsHaveIDs(res, testCase.orderMatters, testCase.expectedResultIDs...)
+			}
 		})
 	}
 }
@@ -306,21 +316,47 @@ func (s *GraphQueriesTestSuite) TestQueriesOnGrandParentValue() {
 	s.runTestCases([]graphQueryTestCase{
 		{
 			desc:              "simple grandparent query",
-			queriedType:       "testgrandparent",
+			queriedProtoType:  "testgrandparent",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
 			expectedResultIDs: []string{"1"},
 		},
 		{
 			desc:              "query from parent",
-			queriedType:       "testparent1",
+			queriedProtoType:  "testparent1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
 			expectedResultIDs: []string{"1", "2"},
 		},
 		{
 			desc:              "query from child",
-			queriedType:       "testchild1",
+			queriedProtoType:  "testchild1",
 			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
 			expectedResultIDs: []string{"1", "2", "3"},
+		},
+	})
+}
+
+func (s *GraphQueriesTestSuite) TestCountQueriesOnGrandParentValue() {
+	s.runTestCases([]graphQueryTestCase{
+		{
+			desc:              "simple grandparent query",
+			queriedProtoType:  "testgrandparent",
+			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
+			expectedResultIDs: []string{"1"},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:              "query from parent",
+			queriedProtoType:  "testparent1",
+			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
+			expectedResultIDs: []string{"1", "2"},
+			queryType:         postgres.COUNT,
+		},
+		{
+			desc:              "query from child",
+			queriedProtoType:  "testchild1",
+			queryStrings:      map[search.FieldLabel][]string{search.TestGrandparentVal: {"r/.*1"}},
+			expectedResultIDs: []string{"1", "2", "3"},
+			queryType:         postgres.COUNT,
 		},
 	})
 }
@@ -330,28 +366,28 @@ func (s *GraphQueriesTestSuite) TestShortCircuit() {
 		// Test short circuit as path
 		{
 			desc:              "no query",
-			queriedType:       "testshortcircuit",
+			queriedProtoType:  "testshortcircuit",
 			q:                 search.NewQueryBuilder().ProtoQuery(),
 			orderMatters:      false,
 			expectedResultIDs: []string{"3"},
 		},
 		{
 			desc:              "one query - one table - 1 match",
-			queriedType:       "testshortcircuit",
+			queriedProtoType:  "testshortcircuit",
 			q:                 search.NewQueryBuilder().AddExactMatches(search.TestChild1Val, "Child15").ProtoQuery(),
 			orderMatters:      false,
 			expectedResultIDs: []string{"3"},
 		},
 		{
 			desc:              "one query - one table - match",
-			queriedType:       "testshortcircuit",
+			queriedProtoType:  "testshortcircuit",
 			q:                 search.NewQueryBuilder().AddExactMatches(search.TestChild1Val, "no match").ProtoQuery(),
 			orderMatters:      false,
 			expectedResultIDs: []string{},
 		},
 		{
 			desc:              "two queries - two tables",
-			queriedType:       "testshortcircuit",
+			queriedProtoType:  "testshortcircuit",
 			q:                 search.NewQueryBuilder().AddExactMatches(search.TestChild1Val, "Child15").AddExactMatches(search.TestG2Grandchild1Val, "g2GrandChild15").ProtoQuery(),
 			orderMatters:      false,
 			expectedResultIDs: []string{"3"},
@@ -359,7 +395,7 @@ func (s *GraphQueriesTestSuite) TestShortCircuit() {
 		// Test short circuit as fastest path (but does not exist)
 		{
 			desc:              "query that _would_ pass through short circuit",
-			queriedType:       "testchild1",
+			queriedProtoType:  "testchild1",
 			q:                 search.NewQueryBuilder().AddExactMatches(search.TestG2Grandchild1Val, "g2GrandChild16").ProtoQuery(),
 			orderMatters:      false,
 			expectedResultIDs: []string{"2"},
@@ -371,42 +407,42 @@ func (s *GraphQueriesTestSuite) TestDerivedPagination() {
 	s.runTestCases([]graphQueryTestCase{
 		{
 			desc:              "one-hop count",
-			queriedType:       "testgrandparent",
+			queriedProtoType:  "testgrandparent",
 			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestParent1Count.String()}}}},
 			orderMatters:      true,
 			expectedResultIDs: []string{"2", "1"},
 		},
 		{
 			desc:              "one-hop count (reversed)",
-			queriedType:       "testgrandparent",
+			queriedProtoType:  "testgrandparent",
 			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestParent1Count.String(), Reversed: true}}}},
 			orderMatters:      true,
 			expectedResultIDs: []string{"1", "2"},
 		},
 		{
 			desc:              "two-hop count",
-			queriedType:       "testgrandparent",
+			queriedProtoType:  "testgrandparent",
 			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestChild1Count.String()}}}},
 			orderMatters:      true,
 			expectedResultIDs: []string{"2", "1"},
 		},
 		{
 			desc:              "two-hop count (reversed)",
-			queriedType:       "testgrandparent",
+			queriedProtoType:  "testgrandparent",
 			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestChild1Count.String(), Reversed: true}}}},
 			orderMatters:      true,
 			expectedResultIDs: []string{"1", "2"},
 		},
 		{
 			desc:              "priority sorting",
-			queriedType:       "testgrandparent",
+			queriedProtoType:  "testgrandparent",
 			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestGrandParentPriority.String()}}}},
 			orderMatters:      true,
 			expectedResultIDs: []string{"2", "1"},
 		},
 		{
 			desc:              "priority sorting reversed",
-			queriedType:       "testgrandparent",
+			queriedProtoType:  "testgrandparent",
 			q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestGrandParentPriority.String(), Reversed: true}}}},
 			orderMatters:      true,
 			expectedResultIDs: []string{"1", "2"},
@@ -418,31 +454,31 @@ func (s *GraphQueriesTestSuite) TestSubGraphSearch() {
 	s.runTestCases([]graphQueryTestCase{
 		{
 			desc:              "query out-of-scope resource from parent4",
-			queriedType:       "testparent4",
+			queriedProtoType:  "testparent4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestParent2ID: {"r/.*1"}},
 			expectedResultIDs: []string{},
 		},
 		{
 			desc:              "query out-of-scope resource from child1p4",
-			queriedType:       "testchild1p4",
+			queriedProtoType:  "testchild1p4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestChild1ID: {"r/.*1"}},
 			expectedResultIDs: []string{},
 		},
 		{
 			desc:              "query in-scope resource from parent4",
-			queriedType:       "testparent4",
+			queriedProtoType:  "testparent4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestParent4Val: {"r/.*4"}},
 			expectedResultIDs: []string{"4"},
 		},
 		{
 			desc:              "query in-scope child from parent4",
-			queriedType:       "testparent4",
+			queriedProtoType:  "testparent4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestChild1P4ID: {"r/.*P4"}},
 			expectedResultIDs: []string{"4"},
 		},
 		{
 			desc:              "query out-of-scope parent from child1p4",
-			queriedType:       "testchild1p4",
+			queriedProtoType:  "testchild1p4",
 			queryStrings:      map[search.FieldLabel][]string{search.TestParent4ID: {"r/.*4"}},
 			expectedResultIDs: []string{},
 		},
@@ -452,24 +488,24 @@ func (s *GraphQueriesTestSuite) TestSubGraphSearch() {
 func (s *GraphQueriesTestSuite) TestDerived() {
 	s.runTestCases([]graphQueryTestCase{
 		{
-			desc:        "one-hop count",
-			queriedType: "testgrandparent",
+			desc:             "one-hop count",
+			queriedProtoType: "testgrandparent",
 			queryStrings: map[search.FieldLabel][]string{
 				search.TestParent1Count: {">1"},
 			},
 			expectedResultIDs: []string{"1"},
 		},
 		{
-			desc:        "two-hop count",
-			queriedType: "testgrandparent",
+			desc:             "two-hop count",
+			queriedProtoType: "testgrandparent",
 			queryStrings: map[search.FieldLabel][]string{
 				search.TestChild1Count: {">1"},
 			},
 			expectedResultIDs: []string{"1", "2"},
 		},
 		{
-			desc:        "two-hop count again",
-			queriedType: "testgrandparent",
+			desc:             "two-hop count again",
+			queriedProtoType: "testgrandparent",
 			queryStrings: map[search.FieldLabel][]string{
 				search.TestChild1Count: {">5"},
 			},
