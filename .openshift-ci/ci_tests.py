@@ -164,3 +164,21 @@ class NonGroovyE2e(BaseTest):
             NonGroovyE2e.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
+
+
+class Scale(BaseTest):
+    TEST_TIMEOUT = 90 * 60
+    TEST_OUTPUT_DIR = "/tmp/scale-test"
+
+    def run(self):
+        print("Executing the Scale Test")
+
+        def set_dirs_after_start():
+            # let post test know where results are
+            self.test_output_dirs = [Scale.TEST_OUTPUT_DIR]
+
+        self.run_with_graceful_kill(
+            ["tests/e2e/run-scale.sh", Scale.TEST_OUTPUT_DIR],
+            Scale.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
