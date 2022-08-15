@@ -262,6 +262,7 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
                 hasExpectedHeaderColumns(
                     [
                         'CVE',
+                        'Type',
                         'Fixable',
                         'CVSS Score',
                         'Env. Impact',
