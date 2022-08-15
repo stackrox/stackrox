@@ -57,6 +57,12 @@ message DeleteGroupRequest {
     bool force              = 5;
 }
 
+message UpdateGroupRequest {
+    storage.Group group = 1;
+
+    bool force          = 2;
+}
+
 service GroupService {
 
     rpc GetGroups (GetGroupsRequest) returns (GetGroupsResponse) {
@@ -85,10 +91,10 @@ service GroupService {
         };
     }
 
-    rpc UpdateGroup (storage.Group) returns (Empty) {
+    rpc UpdateGroup (UpdateGroupRequest) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/groups"
-            body: "*"
+            body: "group"
         };
     }
 

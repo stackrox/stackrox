@@ -225,6 +225,12 @@
             "schema": {
               "$ref": "#/definitions/storageGroup"
             }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [

@@ -108,7 +108,7 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 	return ds.storage.Upsert(ctx, group)
 }
 
-func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error {
+func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force bool) error {
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -119,7 +119,7 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group); err != nil {
+	if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force); err != nil {
 		return err
 	}
 	return ds.storage.Upsert(ctx, group)
@@ -148,8 +148,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 	}
 
 	for _, group := range update {
-		// We do not allow updates to groups even with the force flag set, hence explicitly setting force to false here.
-		if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group); err != nil {
+		if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force); err != nil {
 			return err
 		}
 	}
@@ -237,7 +236,8 @@ func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, g
 
 // Validate if the group is allowed to be updated and prep the group before it is updated in db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
-func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context, group *storage.Group) error {
+func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context, group *storage.Group,
+	force bool) error {
 	if err := ValidateGroup(group); err != nil {
 		return errox.InvalidArgs.CausedBy(err)
 	}
@@ -253,7 +253,7 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 		group.GetProps().Id = id
 	}
 
-	err := ds.validateMutableGroupIDNoLock(ctx, group.GetProps().GetId(), false)
+	err := ds.validateMutableGroupIDNoLock(ctx, group.GetProps().GetId(), force)
 	if err != nil {
 		return err
 	}

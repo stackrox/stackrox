@@ -17,7 +17,7 @@ type DataStore interface {
 	Walk(ctx context.Context, authProviderID string, attributes map[string][]string) ([]*storage.Group, error)
 
 	Add(ctx context.Context, group *storage.Group) error
-	Update(ctx context.Context, group *storage.Group) error
+	Update(ctx context.Context, group *storage.Group, force bool) error
 	Mutate(ctx context.Context, remove, update, add []*storage.Group, force bool) error
 	Remove(ctx context.Context, props *storage.GroupProperties, force bool) error
 	RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string, force bool) error

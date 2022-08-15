@@ -130,8 +130,8 @@ func (s *serviceImpl) CreateGroup(ctx context.Context, group *storage.Group) (*v
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) UpdateGroup(ctx context.Context, group *storage.Group) (*v1.Empty, error) {
-	err := s.groups.Update(ctx, group)
+func (s *serviceImpl) UpdateGroup(ctx context.Context, updateReq *v1.UpdateGroupRequest) (*v1.Empty, error) {
+	err := s.groups.Update(ctx, updateReq.GetGroup(), updateReq.GetForce())
 	if err != nil {
 		return nil, err
 	}

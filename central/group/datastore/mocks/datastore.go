@@ -137,17 +137,17 @@ func (mr *MockDataStoreMockRecorder) RemoveAllWithAuthProviderID(ctx, authProvid
 }
 
 // Update mocks base method.
-func (m *MockDataStore) Update(ctx context.Context, group *storage.Group) error {
+func (m *MockDataStore) Update(ctx context.Context, group *storage.Group, force bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, group)
+	ret := m.ctrl.Call(m, "Update", ctx, group, force)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockDataStoreMockRecorder) Update(ctx, group interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Update(ctx, group, force interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockDataStore)(nil).Update), ctx, group)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockDataStore)(nil).Update), ctx, group, force)
 }
 
 // Walk mocks base method.

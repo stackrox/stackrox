@@ -302,7 +302,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesUpdate() {
 		Key:            "123",
 		Value:          "123",
 	}, RoleName: "123"}
-	err := s.dataStore.Update(s.hasNoneCtx, grp)
+	err := s.dataStore.Update(s.hasNoneCtx, grp, false)
 	s.Error(err, "expected an error trying to write without permissions")
 
 	grp = &storage.Group{Props: &storage.GroupProperties{
@@ -310,7 +310,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesUpdate() {
 		Key:            "123",
 		Value:          "123",
 	}, RoleName: "123"}
-	err = s.dataStore.Update(s.hasReadCtx, grp)
+	err = s.dataStore.Update(s.hasReadCtx, grp, false)
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -324,7 +324,7 @@ func (s *groupDataStoreTestSuite) TestAllowsUpdate() {
 		Key:            "123",
 		Value:          "123",
 	}, RoleName: "123"}
-	err := s.dataStore.Update(s.hasWriteCtx, grp)
+	err := s.dataStore.Update(s.hasWriteCtx, grp, false)
 	s.NoError(err, "expected no error trying to write with permissions")
 
 	grp = &storage.Group{Props: &storage.GroupProperties{
@@ -333,7 +333,7 @@ func (s *groupDataStoreTestSuite) TestAllowsUpdate() {
 		Key:            "123",
 		Value:          "123",
 	}, RoleName: "123"}
-	err = s.dataStore.Update(s.hasWriteAccessCtx, grp)
+	err = s.dataStore.Update(s.hasWriteAccessCtx, grp, false)
 	s.NoError(err, "expected no error trying to write with Access permissions")
 }
 
@@ -354,7 +354,7 @@ func (s *groupDataStoreTestSuite) TestCanUpdateGroupByProps() {
 	s.storage.EXPECT().Upsert(gomock.Any(), expectedGroup).Return(nil)
 	s.expectGet(1, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
 
-	s.NoError(s.dataStore.Update(s.hasWriteAccessCtx, updatedGroup.Clone()))
+	s.NoError(s.dataStore.Update(s.hasWriteAccessCtx, updatedGroup.Clone(), false))
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesMutate() {
@@ -567,7 +567,7 @@ func (s *groupDataStoreTestSuite) TestUpdateToDefaultGroupIfOneAlreadyExists() {
 	updatedGroup.GetProps().Value = ""
 
 	// Ensure a "AlreadyExists" error is yielded when trying to update the group.
-	err := s.dataStore.Update(s.hasWriteAccessCtx, updatedGroup.Clone())
+	err := s.dataStore.Update(s.hasWriteAccessCtx, updatedGroup.Clone(), false)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 
@@ -604,7 +604,7 @@ func (s *groupDataStoreTestSuite) TestCanUpdateExistingDefaultGroup() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{defaultGroup})
 
 	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
-	s.NoError(s.dataStore.Update(s.hasWriteAccessCtx, defaultGroup))
+	s.NoError(s.dataStore.Update(s.hasWriteAccessCtx, defaultGroup, false))
 	s.NoError(s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{}, []*storage.Group{defaultGroup}, []*storage.Group{}, false))
 
 	// 2. Update the default group to a non-default group.
@@ -615,7 +615,7 @@ func (s *groupDataStoreTestSuite) TestCanUpdateExistingDefaultGroup() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{defaultGroup})
 
 	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
-	s.NoError(s.dataStore.Update(s.hasWriteAccessCtx, defaultGroup))
+	s.NoError(s.dataStore.Update(s.hasWriteAccessCtx, defaultGroup, false))
 	s.NoError(s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{}, []*storage.Group{defaultGroup}, []*storage.Group{}, false))
 
 	// 3. Adding another default group back in should now work, as we have made the existing default group a non-default group.
@@ -707,7 +707,7 @@ func (s *groupDataStoreTestSuite) TestValidateGroup() {
 		s.Error(err)
 		s.ErrorIs(err, errox.InvalidArgs)
 
-		err = s.dataStore.Update(s.hasWriteAccessCtx, g)
+		err = s.dataStore.Update(s.hasWriteAccessCtx, g, false)
 		s.Error(err)
 		s.ErrorIs(err, errox.InvalidArgs)
 
@@ -748,19 +748,33 @@ func (s *groupDataStoreTestSuite) TestUpdateMutableToImmutable() {
 			Value: "dfg",
 		},
 		RoleName: "Admin",
-	})
+	}, false)
 	s.NoError(err)
 }
 
-func (s *groupDataStoreTestSuite) TestUpdateImmutableError() {
+func (s *groupDataStoreTestSuite) TestUpdateImmutableNoForce() {
 	expectedGroup := fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE_FORCED)
 
 	updatedGroup := expectedGroup.Clone()
 	updatedGroup.GetProps().Key = ""
 	updatedGroup.GetProps().Value = ""
 
-	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup)
+	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup, false)
 	s.ErrorIs(err, errox.InvalidArgs)
+}
+
+func (s *groupDataStoreTestSuite) TestUpdateImmutableForce() {
+	expectedGroup := fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE_FORCED)
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	updatedGroup := expectedGroup.Clone()
+	updatedGroup.GetProps().Key = "something"
+	updatedGroup.GetProps().Value = "else"
+
+	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup, true)
+	s.NoError(err)
 }
 
 func (s *groupDataStoreTestSuite) TestDeleteImmutableNoForce() {
@@ -792,7 +806,7 @@ func (s *groupDataStoreTestSuite) TestDefaultGroupCannotBeImmutable() {
 			},
 		},
 	}
-	err := s.dataStore.Update(s.hasWriteCtx, group)
+	err := s.dataStore.Update(s.hasWriteCtx, group, false)
 	s.ErrorIs(err, errox.InvalidArgs)
 	err = s.dataStore.Add(s.hasWriteCtx, group)
 	s.ErrorIs(err, errox.InvalidArgs)
@@ -834,5 +848,15 @@ func (s *groupDataStoreTestSuite) TestMutateGroupForce() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{mutableGroup}).Return(nil).Times(1)
 	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{immutableGroup.GetProps().GetId()}).Return(nil).Times(1)
 	err := s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{immutableGroup}, []*storage.Group{mutableGroup}, nil, true)
+	s.NoError(err)
+
+	// 2. Try and update an immutable group via mutate with force.
+	gomock.InOrder(
+		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(immutableGroup, true, nil),
+		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(mutableGroup, true, nil),
+	)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Group{immutableGroup}).Return(nil).Times(1)
+	s.storage.EXPECT().DeleteMany(gomock.Any(), []string{mutableGroup.GetProps().GetId()}).Return(nil).Times(1)
+	err = s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{mutableGroup}, []*storage.Group{immutableGroup}, nil, true)
 	s.NoError(err)
 }
