@@ -118,7 +118,7 @@ func isLoginAuthProvider(provider authproviders.Provider) bool {
 		return false
 	}
 	// Only auth providers that are visible should be used for login purposes.
-	if view.GetVisibility() == storage.AuthProvider_NOT_VISIBLE {
+	if view.GetVisibility() != storage.AuthProvider_VISIBLE {
 		return false
 	}
 	return true
@@ -191,7 +191,7 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 		return nil, errox.InvalidArgs.CausedBy("auth provider loginUrl field is not empty")
 	}
 	if providerReq.GetType() == basic.TypeName {
-		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s can not be created",
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be created",
 			basic.TypeName)
 	}
 
@@ -209,7 +209,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
 	if request.GetType() == basic.TypeName {
-		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s can not be modified",
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be modified",
 			basic.TypeName)
 	}
 
@@ -253,7 +253,7 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 
 	// Do not attempt to update auth provider of type "basic" and instead return an invalid args error.
 	if authProvider.StorageView().GetType() == basic.TypeName {
-		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s can not be modified",
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be modified",
 			basic.TypeName)
 	}
 
@@ -284,7 +284,7 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Delete
 
 	// Do not attempt to delete auth provider of type "basic" and instead return an invalid args error.
 	if authProvider.StorageView().GetType() == basic.TypeName {
-		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s can not be deleted",
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be deleted",
 			basic.TypeName)
 	}
 

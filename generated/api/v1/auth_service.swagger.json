@@ -60,11 +60,10 @@
     "AuthProviderVisibility": {
       "type": "string",
       "enum": [
-        "UNSET",
         "VISIBLE",
-        "NOT_VISIBLE"
+        "HIDDEN"
       ],
-      "default": "UNSET",
+      "default": "VISIBLE",
       "description": "EXPERIMENTAL.\nvisibility allows to specify whether the auth provider should show up when listing the auth providers\nduring login."
 >>>>>>> a02a6d618 (Add field visibility, set the basic auth provider to not visible in managed service context.)
     },

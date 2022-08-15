@@ -90,7 +90,7 @@ func RegisterAuthProviderOrPanic(ctx context.Context, mgr *basicAuthn.Manager, r
 	// For managed services, we do not want to show the basic auth provider for login purposes. The default auth
 	// in that context will be the sso.redhat.com auth provider.
 	if env.ManagedCentral.BooleanSetting() {
-		options = append(options, authproviders.WithVisibility(storage.AuthProvider_NOT_VISIBLE))
+		options = append(options, authproviders.WithVisibility(storage.AuthProvider_HIDDEN))
 	}
 
 	provider, err := registry.CreateProvider(basicAuthProvider.ContextWithBasicAuthManager(ctx, mgr), options...)

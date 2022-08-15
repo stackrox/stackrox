@@ -41,9 +41,8 @@ message AuthProvider {
     // visibility allows to specify whether the auth provider should show up when listing the auth providers
     // during login.
     enum Visibility {
-        UNSET                    = 0;
-        VISIBLE                  = 1;
-        NOT_VISIBLE              = 2;
+        VISIBLE = 0;
+        HIDDEN  = 1;
     }
     Visibility visibility = 13;
 }

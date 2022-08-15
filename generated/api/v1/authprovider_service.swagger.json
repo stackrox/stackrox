@@ -306,11 +306,10 @@
     "AuthProviderVisibility": {
       "type": "string",
       "enum": [
-        "UNSET",
         "VISIBLE",
-        "NOT_VISIBLE"
+        "HIDDEN"
       ],
-      "default": "UNSET",
+      "default": "VISIBLE",
       "description": "EXPERIMENTAL.\nvisibility allows to specify whether the auth provider should show up when listing the auth providers\nduring login."
     },
     "AvailableProviderTypesResponseAuthProviderType": {
