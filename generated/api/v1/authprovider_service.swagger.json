@@ -303,6 +303,16 @@
       },
       "description": "RequiredAttribute allows to specify a set of attributes which ALL are required to be returned\nby the auth provider.\nIf any attribute is missing within the external claims of the token issued by Central, the\nauthentication request to this IdP is considered failed."
     },
+    "AuthProviderVisibility": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "VISIBLE",
+        "NOT_VISIBLE"
+      ],
+      "default": "UNSET",
+      "description": "EXPERIMENTAL.\nvisibility allows to specify whether the auth provider should show up when listing the auth providers\nduring login."
+    },
     "AvailableProviderTypesResponseAuthProviderType": {
       "type": "object",
       "properties": {
@@ -445,13 +455,21 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/AuthProviderRequiredAttribute"
+<<<<<<< HEAD
           }
         },
         "traits": {
           "$ref": "#/definitions/storageTraits"
+=======
+          },
+          "description": "EXPERIMENTAL."
+        },
+        "visibility": {
+          "$ref": "#/definitions/AuthProviderVisibility"
+>>>>>>> a02a6d618 (Add field visibility, set the basic auth provider to not visible in managed service context.)
         }
       },
-      "title": "Next Tag: 9"
+      "title": "Next Tag: 13"
     },
     "storageServiceIdentity": {
       "type": "object",

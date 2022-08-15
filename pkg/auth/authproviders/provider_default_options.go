@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -91,6 +92,16 @@ func DefaultBackend(ctx context.Context, backendFactoryPool map[string]BackendFa
 	}
 }
 
+// DefaultVisible sets the visibility of an auth provider if not already set.
+func DefaultVisible() ProviderOption {
+	return func(pr *providerImpl) error {
+		if pr.storedInfo.GetVisibility() == storage.AuthProvider_UNSET {
+			pr.storedInfo.Visibility = storage.AuthProvider_VISIBLE
+		}
+		return nil
+	}
+}
+
 // Pre-baked default option lists.
 //////////////////////////////////
 
@@ -113,6 +124,7 @@ func DefaultOptionsForNewProvider(ctx context.Context, store Store, backendFacto
 		LogOptionError(DefaultTokenIssuerFromFactory(issuerFactory)), // Its ok to not have a token issuer.
 		DefaultRoleMapperOption(roleMapperFactory.GetRoleMapper),
 		DefaultAddToStore(ctx, store),
+		DefaultVisible(),
 	}
 }
 

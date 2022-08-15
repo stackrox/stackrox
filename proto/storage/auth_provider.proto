@@ -8,7 +8,7 @@ import "storage/traits.proto";
 
 package storage;
 
-// Next Tag: 9
+// Next Tag: 13
 message AuthProvider {
     string id                   = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string name                 = 2 [(gogoproto.moretags) = 'sql:"unique"'];
@@ -37,4 +37,13 @@ message AuthProvider {
     repeated RequiredAttribute required_attributes = 11;
 
     Traits traits = 12;
+    // EXPERIMENTAL.
+    // visibility allows to specify whether the auth provider should show up when listing the auth providers
+    // during login.
+    enum Visibility {
+        UNSET                    = 0;
+        VISIBLE                  = 1;
+        NOT_VISIBLE              = 2;
+    }
+    Visibility visibility = 13;
 }
