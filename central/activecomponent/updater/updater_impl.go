@@ -36,8 +36,6 @@ type updaterImpl struct {
 
 	aggregator      aggregator.ProcessAggregator // Aggregator for incoming process indicators
 	executableCache simplecache.Cache            // Cache for image scan result
-
-	deploymentToUpdates map[string][]*aggregator.ProcessUpdate
 }
 
 type imageExecutable struct {
@@ -99,20 +97,15 @@ func (u *updaterImpl) getExecToComponentsMap(imageScan *storage.ImageScan) map[s
 
 // Update detects active components with most recent process run.
 func (u *updaterImpl) Update() {
-	if len(u.deploymentToUpdates) == 0 {
-		ctx := sac.WithAllAccess(context.Background())
-		ids, err := u.deploymentStore.GetDeploymentIDs(ctx)
-		if err != nil {
-			log.Errorf("failed to fetch deployment ids: %v", err)
-			return
-		}
-		u.deploymentToUpdates = u.aggregator.GetAndPrune(u.imageScanned, set.NewStringSet(ids...))
+	ctx := sac.WithAllAccess(context.Background())
+	ids, err := u.deploymentStore.GetDeploymentIDs(ctx)
+	if err != nil {
+		log.Errorf("failed to fetch deployment ids: %v", err)
+		return
 	}
-
-	if err := u.updateActiveComponents(u.deploymentToUpdates); err != nil {
+	deploymentToUpdates := u.aggregator.GetAndPrune(u.imageScanned, set.NewStringSet(ids...))
+	if err := u.updateActiveComponents(deploymentToUpdates); err != nil {
 		log.Errorf("failed to update active components: %v", err)
-	} else {
-		u.deploymentToUpdates = nil
 	}
 
 	if err := u.pruneExecutableCache(); err != nil {
