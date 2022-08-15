@@ -119,13 +119,13 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, false); err != nil {
+	if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group); err != nil {
 		return err
 	}
 	return ds.storage.Upsert(ctx, group)
 }
 
-func (ds *dataStoreImpl) Mutate(ctx context.Context, force bool, remove, update, add []*storage.Group) error {
+func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group, force bool) error {
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -149,7 +149,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, force bool, remove, update,
 
 	for _, group := range update {
 		// We do not allow updates to groups even with the force flag set, hence explicitly setting force to false here.
-		if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, false); err != nil {
+		if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group); err != nil {
 			return err
 		}
 	}
@@ -179,7 +179,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, force bool, remove, update,
 	return nil
 }
 
-func (ds *dataStoreImpl) Remove(ctx context.Context, force bool, props *storage.GroupProperties) error {
+func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupProperties, force bool) error {
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -198,14 +198,14 @@ func (ds *dataStoreImpl) Remove(ctx context.Context, force bool, props *storage.
 	return ds.storage.Delete(ctx, groupID)
 }
 
-func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, force bool, id string) error {
+func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string, force bool) error {
 	groups, err := ds.GetFiltered(ctx, func(properties *storage.GroupProperties) bool {
-		return id == properties.GetAuthProviderId()
+		return authProviderID == properties.GetAuthProviderId()
 	})
 	if err != nil {
 		return errors.Wrap(err, "collecting associated groups")
 	}
-	return ds.Mutate(ctx, force, groups, nil, nil)
+	return ds.Mutate(ctx, groups, nil, nil, force)
 }
 
 // Helpers
@@ -237,8 +237,7 @@ func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, g
 
 // Validate if the group is allowed to be updated and prep the group before it is updated in db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
-func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context, group *storage.Group,
-	force bool) error {
+func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context, group *storage.Group) error {
 	if err := ValidateGroup(group); err != nil {
 		return errox.InvalidArgs.CausedBy(err)
 	}
@@ -254,7 +253,7 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 		group.GetProps().Id = id
 	}
 
-	err := ds.validateMutableGroupID(ctx, group.GetProps().GetId(), force)
+	err := ds.validateMutableGroupIDNoLock(ctx, group.GetProps().GetId(), false)
 	if err != nil {
 		return err
 	}
@@ -293,7 +292,7 @@ func (ds *dataStoreImpl) validateAndPrepGroupForDeleteNoLock(ctx context.Context
 		propsID = id
 	}
 
-	if err := ds.validateMutableGroupID(ctx, propsID, force); err != nil {
+	if err := ds.validateMutableGroupIDNoLock(ctx, propsID, force); err != nil {
 		return "", err
 	}
 
@@ -395,9 +394,9 @@ func (ds *dataStoreImpl) getDefaultGroupForProps(ctx context.Context, props *sto
 	return ds.getByProps(ctx, &storage.GroupProperties{AuthProviderId: props.GetAuthProviderId()})
 }
 
-// validateMutableGroupID validates whether a group allows changes or not based on the mutability mode set.
+// validateMutableGroupIDNoLock validates whether a group allows changes or not based on the mutability mode set.
 // NOTE: This function assumes that the call to this function is already behind a lock.
-func (ds *dataStoreImpl) validateMutableGroupID(ctx context.Context, id string, force bool) error {
+func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id string, force bool) error {
 	group, exists, err := ds.storage.Get(ctx, id)
 	if err != nil {
 		return err
@@ -406,11 +405,11 @@ func (ds *dataStoreImpl) validateMutableGroupID(ctx context.Context, id string, 
 		return errox.NotFound.Newf("group with id %q was not found", id)
 	}
 
-	if group.GetProps().GetTraits().GetMutabilityMode() == storage.MutabilityMode_ALLOW {
+	if group.GetProps().GetTraits().GetMutabilityMode() == storage.Traits_ALLOW_MUTATE {
 		return nil
 	}
 
-	if group.GetProps().GetTraits().GetMutabilityMode() == storage.MutabilityMode_ALLOW_FORCED && !force {
+	if group.GetProps().GetTraits().GetMutabilityMode() == storage.Traits_ALLOW_MUTATE_FORCED && !force {
 		return errox.InvalidArgs.Newf("group %q is immutable", id)
 	}
 	return nil

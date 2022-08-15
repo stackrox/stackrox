@@ -16,10 +16,10 @@ func GetGroup() *storage.Group {
 }
 
 // GetGroupWithMutability returns a mock storage.Group with all possible properties filled out.
-func GetGroupWithMutability(mode storage.MutabilityMode) *storage.Group {
+func GetGroupWithMutability(mode storage.Traits_MutabilityMode) *storage.Group {
 	group := GetGroup()
 
-	group.GetProps().Traits = &storage.Traits{MutabilityMode: mode}
+	group.Props.Traits = &storage.Traits{MutabilityMode: mode}
 
 	return group
 }

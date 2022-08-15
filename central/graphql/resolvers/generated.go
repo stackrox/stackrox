@@ -802,7 +802,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"name: String!",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.MutabilityMode(0)))
 	utils.Must(builder.AddType("Namespace", []string{
 		"metadata: NamespaceMetadata",
 		"numDeployments: Int!",
@@ -1354,8 +1353,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"disabled: Boolean!",
 	}))
 	utils.Must(builder.AddType("Traits", []string{
-		"mutabilityMode: MutabilityMode!",
+		"mutabilityMode: Traits_MutabilityMode!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_MutabilityMode(0)))
 	utils.Must(builder.AddType("UpgradeProgress", []string{
 		"since: Time",
 		"upgradeState: UpgradeProgress_UpgradeState!",
@@ -7545,24 +7545,6 @@ func (resolver *mitreTechniqueResolver) Name(ctx context.Context) string {
 	return value
 }
 
-func toMutabilityMode(value *string) storage.MutabilityMode {
-	if value != nil {
-		return storage.MutabilityMode(storage.MutabilityMode_value[*value])
-	}
-	return storage.MutabilityMode(0)
-}
-
-func toMutabilityModes(values *[]string) []storage.MutabilityMode {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.MutabilityMode, len(*values))
-	for i, v := range *values {
-		output[i] = toMutabilityMode(&v)
-	}
-	return output
-}
-
 type namespaceResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -11556,6 +11538,24 @@ func (resolver *Resolver) wrapTraitses(values []*storage.Traits, err error) ([]*
 func (resolver *traitsResolver) MutabilityMode(ctx context.Context) string {
 	value := resolver.data.GetMutabilityMode()
 	return value.String()
+}
+
+func toTraits_MutabilityMode(value *string) storage.Traits_MutabilityMode {
+	if value != nil {
+		return storage.Traits_MutabilityMode(storage.Traits_MutabilityMode_value[*value])
+	}
+	return storage.Traits_MutabilityMode(0)
+}
+
+func toTraits_MutabilityModes(values *[]string) []storage.Traits_MutabilityMode {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Traits_MutabilityMode, len(*values))
+	for i, v := range *values {
+		output[i] = toTraits_MutabilityMode(&v)
+	}
+	return output
 }
 
 type upgradeProgressResolver struct {

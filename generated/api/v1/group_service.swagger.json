@@ -42,10 +42,10 @@
             "required": false,
             "type": "string",
             "enum": [
-              "ALLOW",
-              "ALLOW_FORCED"
+              "ALLOW_MUTATE",
+              "ALLOW_MUTATE_FORCED"
             ],
-            "default": "ALLOW"
+            "default": "ALLOW_MUTATE"
           },
           {
             "name": "authProviderId",
@@ -266,6 +266,15 @@
     }
   },
   "definitions": {
+    "TraitsMutabilityMode": {
+      "type": "string",
+      "enum": [
+        "ALLOW_MUTATE",
+        "ALLOW_MUTATE_FORCED"
+      ],
+      "default": "ALLOW_MUTATE",
+      "description": "EXPERIMENTAL.\n\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW to ALLOW_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW."
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -338,20 +347,11 @@
       },
       "description": "GroupProperties defines the properties of a group. Groups apply to users when\ntheir properties match. For instance:\n  * If GroupProperties has only an auth_provider_id, then that group applies\n    to all users logged in with that auth provider.\n  * If GroupProperties in addition has a claim key, then it applies to all\n    users with that auth provider and the claim key, etc.\nNote: Changes to GroupProperties may require changes to v1.DeleteGroupRequest."
     },
-    "storageMutabilityMode": {
-      "type": "string",
-      "enum": [
-        "ALLOW",
-        "ALLOW_FORCED"
-      ],
-      "default": "ALLOW",
-      "description": "EXPERIMENTAL.\n\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW to ALLOW_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW."
-    },
     "storageTraits": {
       "type": "object",
       "properties": {
         "mutabilityMode": {
-          "$ref": "#/definitions/storageMutabilityMode"
+          "$ref": "#/definitions/TraitsMutabilityMode"
         }
       },
       "description": "EXPERIMENTAL."
