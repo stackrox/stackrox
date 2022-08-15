@@ -102,6 +102,7 @@ func (m *Group) Clone() *Group {
 //     to all users logged in with that auth provider.
 //   * If GroupProperties in addition has a claim key, then it applies to all
 //     users with that auth provider and the claim key, etc.
+// Note: Changes to GroupProperties may require changes to v1.DeleteGroupRequest.
 type GroupProperties struct {
 	// Unique identifier for group properties and respectively the group.
 	Id                   string   `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`

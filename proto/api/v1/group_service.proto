@@ -53,6 +53,7 @@ message DeleteGroupRequest {
     string key              = 2;
     string value            = 3;
     string id               = 4;
+
     bool force              = 5;
 }
 

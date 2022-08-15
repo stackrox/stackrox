@@ -336,7 +336,7 @@
           "type": "string"
         }
       },
-      "description": "GroupProperties defines the properties of a group. Groups apply to users when\ntheir properties match. For instance:\n  * If GroupProperties has only an auth_provider_id, then that group applies\n    to all users logged in with that auth provider.\n  * If GroupProperties in addition has a claim key, then it applies to all\n    users with that auth provider and the claim key, etc."
+      "description": "GroupProperties defines the properties of a group. Groups apply to users when\ntheir properties match. For instance:\n  * If GroupProperties has only an auth_provider_id, then that group applies\n    to all users logged in with that auth provider.\n  * If GroupProperties in addition has a claim key, then it applies to all\n    users with that auth provider and the claim key, etc.\nNote: Changes to GroupProperties may require changes to v1.DeleteGroupRequest."
     },
     "storageMutabilityMode": {
       "type": "string",

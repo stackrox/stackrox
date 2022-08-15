@@ -2,7 +2,7 @@ package fixtures
 
 import "github.com/stackrox/rox/generated/storage"
 
-// GetGroup return a mock storage.Group with all possible property filled out
+// GetGroup return a mock storage.Group with all possible properties filled out.
 func GetGroup() *storage.Group {
 	return &storage.Group{
 		Props: &storage.GroupProperties{
@@ -15,7 +15,17 @@ func GetGroup() *storage.Group {
 	}
 }
 
-// GetGroups returns a set of mock storage.Group objects, which in total represents the possible combinations of group properties and roles
+// GetGroupWithMutability returns a mock storage.Group with all possible properties filled out.
+func GetGroupWithMutability(mode storage.MutabilityMode) *storage.Group {
+	group := GetGroup()
+
+	group.GetProps().Traits = &storage.Traits{MutabilityMode: mode}
+
+	return group
+}
+
+// GetGroups returns a set of mock storage.Group objects, which in total represents the possible combinations of group
+// properties and roles.
 func GetGroups() []*storage.Group {
 	return []*storage.Group{
 		{

@@ -119,7 +119,7 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group); err != nil {
+	if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, false); err != nil {
 		return err
 	}
 	return ds.storage.Upsert(ctx, group)
@@ -148,7 +148,8 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, force bool, remove, update,
 	}
 
 	for _, group := range update {
-		if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group); err != nil {
+		// We do not allow updates to groups even with the force flag set, hence explicitly setting force to false here.
+		if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, false); err != nil {
 			return err
 		}
 	}
@@ -163,22 +164,11 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, force bool, remove, update,
 		if err := ValidateGroup(group); err != nil {
 			return errox.InvalidArgs.CausedBy(err)
 		}
-		propsID := group.GetProps().GetId()
-		// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
-		// can be removed and groups shall only be retrievable via their id.
-		if propsID == "" {
-			id, err := ds.findGroupIDByProps(ctx, group.GetProps())
-			if err != nil {
-				return err
-			}
-			// Use the id of the retrieved group to delete
-			propsID = id
-		}
-		err := ds.validateMutableGroupID(ctx, propsID, force)
+		groupID, err := ds.validateAndPrepGroupForDeleteNoLock(ctx, group.GetProps(), force)
 		if err != nil {
 			return err
 		}
-		idsToRemove = append(idsToRemove, propsID)
+		idsToRemove = append(idsToRemove, groupID)
 	}
 	if len(remove) > 0 {
 		if err := ds.storage.DeleteMany(ctx, idsToRemove); err != nil {
@@ -196,43 +186,26 @@ func (ds *dataStoreImpl) Remove(ctx context.Context, force bool, props *storage.
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := ValidateProps(props); err != nil {
-		return errox.InvalidArgs.CausedBy(err)
-	}
-
 	// Lock to ensure synchronization between the get and delete
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	propsID := props.GetId()
-
-	// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
-	// can be removed and groups shall only be retrievable via their id.
-	if propsID == "" {
-		id, err := ds.findGroupIDByProps(ctx, props)
-		if err != nil {
-			return err
-		}
-		// Use the id of the retrieved group to delete
-		propsID = id
-	}
-
-	err := ds.validateMutableGroupID(ctx, propsID, force)
+	groupID, err := ds.validateAndPrepGroupForDeleteNoLock(ctx, props, force)
 	if err != nil {
 		return err
 	}
 
-	return ds.storage.Delete(ctx, propsID)
+	return ds.storage.Delete(ctx, groupID)
 }
 
-func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, deleteReq *storage.DeleteByIDWithForce) error {
+func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, force bool, id string) error {
 	groups, err := ds.GetFiltered(ctx, func(properties *storage.GroupProperties) bool {
-		return deleteReq.GetId() == properties.GetAuthProviderId()
+		return id == properties.GetAuthProviderId()
 	})
 	if err != nil {
 		return errors.Wrap(err, "collecting associated groups")
 	}
-	return ds.Mutate(ctx, deleteReq.GetForce(), groups, nil, nil)
+	return ds.Mutate(ctx, force, groups, nil, nil)
 }
 
 // Helpers
@@ -264,7 +237,8 @@ func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, g
 
 // Validate if the group is allowed to be updated and prep the group before it is updated in db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
-func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context, group *storage.Group) error {
+func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context, group *storage.Group,
+	force bool) error {
 	if err := ValidateGroup(group); err != nil {
 		return errox.InvalidArgs.CausedBy(err)
 	}
@@ -280,7 +254,7 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 		group.GetProps().Id = id
 	}
 
-	err := ds.validateMutableGroupID(ctx, group.GetProps().GetId(), false)
+	err := ds.validateMutableGroupID(ctx, group.GetProps().GetId(), force)
 	if err != nil {
 		return err
 	}
@@ -296,6 +270,34 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 			group.GetProps().GetAuthProviderId())
 	}
 	return nil
+}
+
+// Validate the props, fetch the group and check if it is allowed to be deleted.
+// NOTE: This function assumes that the call to this function is already behind a lock.
+func (ds *dataStoreImpl) validateAndPrepGroupForDeleteNoLock(ctx context.Context, props *storage.GroupProperties,
+	force bool) (string, error) {
+	if err := ValidateProps(props); err != nil {
+		return "", errox.InvalidArgs.CausedBy(err)
+	}
+
+	propsID := props.GetId()
+
+	// TODO(ROX-11592): Once the deprecation of retrieving groups by their properties is fully deprecated, this condition
+	// can be removed and groups shall only be retrievable via their id.
+	if propsID == "" {
+		id, err := ds.findGroupIDByProps(ctx, props)
+		if err != nil {
+			return "", err
+		}
+		// Use the id of the retrieved group to delete
+		propsID = id
+	}
+
+	if err := ds.validateMutableGroupID(ctx, propsID, force); err != nil {
+		return "", err
+	}
+
+	return propsID, nil
 }
 
 func setGroupIDIfEmpty(group *storage.Group) error {
@@ -393,6 +395,8 @@ func (ds *dataStoreImpl) getDefaultGroupForProps(ctx context.Context, props *sto
 	return ds.getByProps(ctx, &storage.GroupProperties{AuthProviderId: props.GetAuthProviderId()})
 }
 
+// validateMutableGroupID validates whether a group allows changes or not based on the mutability mode set.
+// NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateMutableGroupID(ctx context.Context, id string, force bool) error {
 	group, exists, err := ds.storage.Get(ctx, id)
 	if err != nil {
@@ -401,6 +405,11 @@ func (ds *dataStoreImpl) validateMutableGroupID(ctx context.Context, id string, 
 	if !exists {
 		return errox.NotFound.Newf("group with id %q was not found", id)
 	}
+
+	if group.GetProps().GetTraits().GetMutabilityMode() == storage.MutabilityMode_ALLOW {
+		return nil
+	}
+
 	if group.GetProps().GetTraits().GetMutabilityMode() == storage.MutabilityMode_ALLOW_FORCED && !force {
 		return errox.InvalidArgs.Newf("group %q is immutable", id)
 	}
