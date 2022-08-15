@@ -26,7 +26,7 @@ teardown() {
 @test "roxctl-release generate netpol should return error on empty or non-existing directory" {
   run roxctl-release generate netpol "$out_dir"
   assert_failure
-  assert_line --partial "Error synthesizing policies from folder: no deployment objects discovered in the repository"
+  assert_line --regexp "[eE]rror synthesizing policies from folder: no deployment objects discovered in the repository"
 
   run roxctl-release generate netpol
   assert_failure
