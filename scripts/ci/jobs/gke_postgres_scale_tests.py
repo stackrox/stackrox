@@ -19,7 +19,7 @@ os.environ["STORAGE_CLASS"] = "faster"
 os.environ["STORAGE_SIZE"] = "100"
 
 ClusterTestRunner(
-    cluster=GKECluster("scale-test"),
+    cluster=GKECluster("postgres-scale-test", machine_type="e2-standard-8"),
     pre_test=PreSystemTests(),
     test=ScaleTest(),
     post_test=PostClusterTest(
