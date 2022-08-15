@@ -133,7 +133,7 @@ function SearchPage(): ReactElement {
         );
     } else if (searchOptions.length !== 0 && stringifiedSearchFilter.length === 0) {
         content = (
-            <Alert variant="info" isInline title="Filter resources by categories and values">
+            <Alert variant="info" isInline title="Enter a new search filter">
                 <p>
                     Instead of a new search, you can go back in browser history to see previous
                     search results.
