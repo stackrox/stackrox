@@ -972,6 +972,9 @@ openshift_ci_mods() {
     info "Git log:"
     git log --oneline --decorate -n 20 || true
 
+    info "Git reflog:"
+    git reflog --oneline --decorate -n 20 || true
+
     info "Git status:"
     git status || true
 
