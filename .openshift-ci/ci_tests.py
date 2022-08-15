@@ -175,10 +175,10 @@ class ScaleTest(BaseTest):
 
         def set_dirs_after_start():
             # let post test know where results are
-            self.test_output_dirs = [Scale.TEST_OUTPUT_DIR]
+            self.test_output_dirs = [ScaleTest.TEST_OUTPUT_DIR]
 
         self.run_with_graceful_kill(
-            ["tests/e2e/run-scale.sh", Scale.TEST_OUTPUT_DIR],
-            Scale.TEST_TIMEOUT,
+            ["tests/e2e/run-scale.sh", ScaleTest.TEST_OUTPUT_DIR],
+            ScaleTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
