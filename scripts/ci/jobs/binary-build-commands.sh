@@ -5,11 +5,11 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
-make_test_bin() {
-    info "Making test-bin"
+make_bin() {
+    info "Making bin"
 
-    make cli-build upgrader
-    install_built_roxctl_in_gopath
+    go mod download || true
+    
 }
 
 make_test_bin "$*"
