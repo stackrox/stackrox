@@ -30,7 +30,7 @@ teardown() {
 
   run roxctl-release generate netpol
   assert_failure
-  assert_line --partial "missing <folder-path> argument"
+  assert_line --partial "accepts 1 arg(s), received 0"
 }
 
 @test "roxctl-release generate netpol generates network policies" {
