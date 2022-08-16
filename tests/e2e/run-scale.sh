@@ -44,12 +44,15 @@ deploy_stackrox_in_scale_mode() {
 run_scale_test() {
     info "Running scale test"
 
-    mkdir -p /tmp/scale-tests/pprof
-    # 45 min run so that we are confident that the run has completely finished
-    "$ROOT/scale/profiler/pprof.sh" /tmp/scale-tests/pprof "${API_ENDPOINT}" 45
-    zip -r /tmp/scale-tests/pprof.zip /tmp/scale-tests/pprof
+    local pprof_dir="/tmp/scale-tests/pprof"
+    local debug_dump_dir="/tmp/scale-test-debug-dump"
 
-    local debug_dump_dir="./debug-dump-scale-test"
+    mkdir -p $pprof_dir
+    # 45 min run so that we are confident that the run has completely finished.
+    # /tmp/scale-tests is copied to artifacts by post_tests.py.
+    "$ROOT/scale/profiler/pprof.sh" $pprof_dir "${API_ENDPOINT}" 45
+    zip -r /tmp/scale-tests/pprof.zip $pprof_dir
+
     get_central_debug_dump "${debug_dump_dir}"
 
     get_prometheus_metrics_parser
@@ -65,21 +68,23 @@ get_prometheus_metrics_parser() {
 compare_with_stored_metrics() {
     local debug_dump_dir="$1"
     local gs_path="gs://stackrox-ci-metrics/${COMPARISON_METRICS}"
-    local compare_with
-
-    compare_with=$(gsutil ls "${gs_path}"/stackrox_debug\* | sort | tail -1)
-    echo "Using ${compare_with} as metrics for comparison"
-    mkdir /tmp/metrics
-    gsutil cp "${compare_with}" /tmp/metrics
-    compare_with=$(find /tmp/metrics -maxdepth 1 | sort | tail -1)
-
-    local this_run
-    this_run=$(echo "${debug_dump_dir}"/stackrox_debug*.zip)
-    echo "Comparing with ${this_run}"
+    local baseline_source
+    local baseline_dir="/tmp/baseline_metrics"
+    local baseline_metrics
+    local this_run_metrics
     local compare_cmd="${PWD}/scripts/ci/compare-debug-metrics.sh"
 
-    pushd /tmp/metrics
-    "${compare_cmd}" "${compare_with}" "${this_run}" || true
+    baseline_source=$(gsutil ls "${gs_path}"/stackrox_debug\* | sort | tail -1)
+    echo "Using ${baseline_source} as metrics for comparison"
+    mkdir "${baseline_dir}"
+    gsutil cp "${baseline_source}" "${baseline_dir}"
+    baseline_metrics=$(find "${baseline_dir}" -maxdepth 1 | sort | tail -1)
+
+    this_run_metrics=$(echo "${debug_dump_dir}"/stackrox_debug*.zip)
+    echo "Comparing with ${this_run_metrics}"
+
+    pushd /tmp
+    "${compare_cmd}" "${baseline_metrics}" "${this_run_metrics}" || true
     popd
 }
 
