@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -405,12 +406,18 @@ func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id st
 		return errox.NotFound.Newf("group with id %q was not found", id)
 	}
 
-	if group.GetProps().GetTraits().GetMutabilityMode() == storage.Traits_ALLOW_MUTATE {
+	switch group.GetProps().GetTraits().GetMutabilityMode() {
+	case storage.Traits_ALLOW_MUTATE:
 		return nil
+	case storage.Traits_ALLOW_MUTATE_FORCED:
+		if force {
+			return nil
+		}
+		return errox.InvalidArgs.Newf("group %q is immutable and can only be removed"+
+			" via API and specifying the force flag", id)
+	default:
+		utils.Should(errors.Wrapf(errox.InvalidArgs, "unknown mutability mode given: %q",
+			group.GetProps().GetTraits().GetMutabilityMode().String()))
 	}
-
-	if group.GetProps().GetTraits().GetMutabilityMode() == storage.Traits_ALLOW_MUTATE_FORCED && !force {
-		return errox.InvalidArgs.Newf("group %q is immutable", id)
-	}
-	return nil
+	return errox.InvalidArgs.Newf("group %q is immutable", id)
 }
