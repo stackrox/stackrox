@@ -29,7 +29,7 @@ var (
 
 	psPrefix               = []byte("permission_sets")
 	authPluginBucket       = []byte("authzPlugins")
-	AuthPluginResourceName = "AuthPlugin"
+	authPluginResourceName = "AuthPlugin"
 
 	readOpts  = gorocksdb.NewDefaultReadOptions()
 	writeOpts = gorocksdb.NewDefaultWriteOptions()
@@ -45,8 +45,8 @@ func migratePS(db *gorocksdb.DB) error {
 		if err := proto.Unmarshal(it.Value().Data(), ps); err != nil {
 			return errors.Wrap(err, "unable to unmarshal permission set")
 		}
-		if _, ok := ps.ResourceToAccess[AuthPluginResourceName]; ok {
-			delete(ps.ResourceToAccess, AuthPluginResourceName)
+		if _, ok := ps.ResourceToAccess[authPluginResourceName]; ok {
+			delete(ps.ResourceToAccess, authPluginResourceName)
 			data, err := proto.Marshal(ps)
 			if err != nil {
 				return errors.Wrap(err, "unable to marshal permission set")

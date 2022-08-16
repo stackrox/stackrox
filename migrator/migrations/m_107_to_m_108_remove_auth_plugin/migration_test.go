@@ -10,10 +10,9 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils"
-	"go.etcd.io/bbolt"
-
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
+	"go.etcd.io/bbolt"
 )
 
 var (
