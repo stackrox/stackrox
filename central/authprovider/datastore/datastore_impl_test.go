@@ -67,10 +67,10 @@ func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesAdd() {
 func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesUpdate() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.UpdateAuthProvider(s.hasNoneCtx, &storage.AuthProvider{}, false)
+	err := s.dataStore.UpdateAuthProvider(s.hasNoneCtx, &storage.AuthProvider{})
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.UpdateAuthProvider(s.hasReadCtx, &storage.AuthProvider{}, false)
+	err = s.dataStore.UpdateAuthProvider(s.hasReadCtx, &storage.AuthProvider{})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -152,17 +152,17 @@ func (s *authProviderDataStoreTestSuite) TestAllowsUpdate() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{}, true, nil).Times(2)
 
-	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{}, false)
+	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
 	s.NoError(err, "expected no error trying to write with permissions")
 
-	err = s.dataStore.UpdateAuthProvider(s.hasWriteAccessCtx, &storage.AuthProvider{}, false)
+	err = s.dataStore.UpdateAuthProvider(s.hasWriteAccessCtx, &storage.AuthProvider{})
 	s.NoError(err, "expected no error trying to write with Access permission")
 }
 
 func (s *authProviderDataStoreTestSuite) TestErrorOnUpdate() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
 
-	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{}, false)
+	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
 	s.Error(err)
 }
 
@@ -187,7 +187,7 @@ func (s *authProviderDataStoreTestSuite) TestUpdateMutableToImmutable() {
 	}, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{}, false)
+	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
 	s.NoError(err)
 }
 
@@ -200,22 +200,8 @@ func (s *authProviderDataStoreTestSuite) TestUpdateImmutableNoForce() {
 		},
 	}, true, nil).Times(1)
 
-	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{}, false)
+	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
 	s.ErrorIs(err, errox.InvalidArgs)
-}
-
-func (s *authProviderDataStoreTestSuite) TestUpdateImmutableForce() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.AuthProvider{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			MutabilityMode: storage.Traits_ALLOW_MUTATE_FORCED,
-		},
-	}, true, nil).Times(1)
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-
-	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{}, true)
-	s.NoError(err)
 }
 
 func (s *authProviderDataStoreTestSuite) TestDeleteImmutableNoForce() {

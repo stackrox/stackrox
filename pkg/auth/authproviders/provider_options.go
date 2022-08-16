@@ -98,7 +98,7 @@ func WithEnabled(enabled bool) ProviderOption {
 func WithValidateCallback(store Store) ProviderOption {
 	return func(pr *providerImpl) error {
 		pr.validateCallback = func() error {
-			return pr.ApplyOptions(WithActive(true), UpdateStore(internalUpdateProviderCtx, store, true))
+			return pr.ApplyOptions(WithActive(true), UpdateStore(internalUpdateProviderCtx, store))
 		}
 		return nil
 	}

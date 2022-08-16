@@ -410,7 +410,7 @@ func (*tstAuthProviderStore) AddAuthProvider(_ context.Context, _ *storage.AuthP
 	return nil
 }
 
-func (*tstAuthProviderStore) UpdateAuthProvider(_ context.Context, _ *storage.AuthProvider, _ bool) error {
+func (*tstAuthProviderStore) UpdateAuthProvider(_ context.Context, _ *storage.AuthProvider) error {
 	return nil
 }
 

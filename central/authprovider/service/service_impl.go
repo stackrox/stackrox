@@ -181,34 +181,30 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 }
 
 // PutAuthProvider upserts an auth provider into the system.
-func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *v1.PutAuthProviderRequest) (*storage.AuthProvider, error) {
-	if request.GetProvider() == nil {
-		return nil, errox.InvalidArgs.CausedBy("auth provider is empty")
-	}
-
-	if request.GetProvider().GetId() == "" {
+func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.AuthProvider) (*storage.AuthProvider, error) {
+	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
 
-	provider := s.registry.GetProvider(request.GetProvider().GetId())
+	provider := s.registry.GetProvider(request.GetId())
 	if provider == nil {
-		return nil, errox.NotFound.Newf("auth provider with id %q does not exist", request.GetProvider().GetId())
+		return nil, errox.NotFound.Newf("auth provider with id %q does not exist", request.GetId())
 	}
 
 	// Attempt to merge configs.
-	request.GetProvider().Config = provider.MergeConfigInto(request.GetProvider().GetConfig())
+	request.Config = provider.MergeConfigInto(request.GetConfig())
 
-	if err := s.registry.ValidateProvider(ctx, authproviders.WithStorageView(request.GetProvider())); err != nil {
+	if err := s.registry.ValidateProvider(ctx, authproviders.WithStorageView(request)); err != nil {
 		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
 	}
 
-	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it
-	if err := s.registry.DeleteProvider(ctx, request.GetProvider().GetId(), request.GetForce(), false); err != nil {
+	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it.
+	if err := s.registry.DeleteProvider(ctx, request.GetId(), false, false); err != nil {
 		return nil, err
 	}
 
-	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request.GetProvider()),
-		authproviders.WithAttributeVerifier(request.GetProvider()),
+	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request),
+		authproviders.WithAttributeVerifier(request),
 		authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
 		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)
@@ -228,7 +224,7 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 	if enabledOpt, ok := request.GetEnabledOpt().(*v1.UpdateAuthProviderRequest_Enabled); ok {
 		options = append(options, authproviders.WithEnabled(enabledOpt.Enabled))
 	}
-	provider, err := s.registry.UpdateProvider(ctx, request.GetId(), request.GetForce(), options...)
+	provider, err := s.registry.UpdateProvider(ctx, request.GetId(), options...)
 	if err != nil {
 		return nil, errox.InvalidArgs.New("unable to update auth provider").CausedBy(err)
 	}

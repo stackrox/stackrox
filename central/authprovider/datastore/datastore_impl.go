@@ -48,7 +48,7 @@ func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *stora
 }
 
 // UpdateAuthProvider upserts an auth provider into bolt.
-func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *storage.AuthProvider, force bool) error {
+func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error {
 	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -57,7 +57,8 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
-	if err := b.verifyExistsAndMutable(ctx, authProvider.GetId(), force); err != nil {
+	// The API currently does not allow setting the force flag since it would require a non-compatible gRPC change.
+	if err := b.verifyExistsAndMutable(ctx, authProvider.GetId(), false); err != nil {
 		return err
 	}
 	return b.storage.Upsert(ctx, authProvider)
@@ -97,7 +98,7 @@ func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, f
 			" via API and specifying the force flag", id)
 	default:
 		utils.Should(errors.Wrapf(errox.InvalidArgs, "unknown mutability mode given: %q",
-			provider.GetTraits().GetMutabilityMode().String()))
+			provider.GetTraits().GetMutabilityMode()))
 	}
 	return errox.InvalidArgs.Newf("auth provider %q is immutable", id)
 }

@@ -183,7 +183,7 @@ func (r *registryImpl) CreateProvider(ctx context.Context, options ...ProviderOp
 	return newProvider, nil
 }
 
-func (r *registryImpl) UpdateProvider(ctx context.Context, id string, force bool, options ...ProviderOption) (Provider, error) {
+func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ...ProviderOption) (Provider, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -194,7 +194,7 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, force bool
 
 	// Run the updates with an update to the store added.
 	// This will perform name validation since it is a secondary key in the store.
-	if err := provider.ApplyOptions(append(options, UpdateStore(ctx, r.store, force))...); err != nil {
+	if err := provider.ApplyOptions(append(options, UpdateStore(ctx, r.store))...); err != nil {
 		return nil, err
 	}
 	r.updatedNoLock(provider)

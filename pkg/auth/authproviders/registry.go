@@ -24,7 +24,7 @@ type Registry interface {
 
 	ValidateProvider(ctx context.Context, options ...ProviderOption) error
 	CreateProvider(ctx context.Context, options ...ProviderOption) (Provider, error)
-	UpdateProvider(ctx context.Context, id string, force bool, options ...ProviderOption) (Provider, error)
+	UpdateProvider(ctx context.Context, id string, options ...ProviderOption) (Provider, error)
 	DeleteProvider(ctx context.Context, id string, force bool, ignoreActive bool) error
 
 	// RegisterBackendFactory registers the given factory (creator) under the specified type. The creation of the

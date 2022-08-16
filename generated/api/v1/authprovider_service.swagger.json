@@ -172,6 +172,42 @@
           "AuthProviderService"
         ]
       },
+      "put": {
+        "operationId": "AuthProviderService_PutAuthProvider",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storageAuthProvider"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/storageAuthProvider"
+            }
+          }
+        ],
+        "tags": [
+          "AuthProviderService"
+        ]
+      },
       "patch": {
         "operationId": "AuthProviderService_UpdateAuthProvider",
         "responses": {
@@ -202,50 +238,6 @@
             "schema": {
               "$ref": "#/definitions/v1UpdateAuthProviderRequest"
             }
-          }
-        ],
-        "tags": [
-          "AuthProviderService"
-        ]
-      }
-    },
-    "/v1/authProviders/{provider.id}": {
-      "put": {
-        "operationId": "AuthProviderService_PutAuthProvider",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/storageAuthProvider"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "provider.id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/storageAuthProvider"
-            }
-          },
-          {
-            "name": "force",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
           }
         ],
         "tags": [
@@ -652,9 +644,6 @@
           "type": "string"
         },
         "enabled": {
-          "type": "boolean"
-        },
-        "force": {
           "type": "boolean"
         }
       }

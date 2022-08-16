@@ -24,12 +24,12 @@ func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
 }
 
 // UpdateStore updates the stored value for the provider in the input store.
-func UpdateStore(ctx context.Context, store Store, force bool) ProviderOption {
+func UpdateStore(ctx context.Context, store Store) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.doNotStore {
 			return nil
 		}
-		return store.UpdateAuthProvider(ctx, &pr.storedInfo, force)
+		return store.UpdateAuthProvider(ctx, &pr.storedInfo)
 	}
 }
 
