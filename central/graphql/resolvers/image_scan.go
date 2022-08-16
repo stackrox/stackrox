@@ -36,15 +36,7 @@ func (resolver *imageScanResolver) ImageComponents(_ context.Context, args Pagin
 	if err != nil {
 		return nil, err
 	}
-
-	pagination := query.GetPagination()
-	query.Pagination = nil
-	resolvers, err := getImageComponentResolvers(resolver.ctx, resolver.root, resolver.data, query)
-
-	ret, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(resolvers, err)
-	return ret.([]ImageComponentResolver), err
+	return getImageComponentResolvers(resolver.ctx, resolver.root, resolver.data, query)
 }
 
 func (resolver *imageScanResolver) ImageComponentCount(_ context.Context, args RawQuery) (int32, error) {
@@ -52,6 +44,12 @@ func (resolver *imageScanResolver) ImageComponentCount(_ context.Context, args R
 }
 
 func getImageComponentResolvers(ctx context.Context, root *Resolver, imageScan *storage.ImageScan, query *v1.Query) ([]ImageComponentResolver, error) {
+	if query.GetPagination() == nil {
+		query.Pagination = &v1.QueryPagination{}
+	}
+	if len(query.GetPagination().GetSortOptions()) == 0 {
+		query.Pagination.SortOptions = append(query.Pagination.SortOptions, &v1.QuerySortOption{Field: search.ComponentID.String()})
+	}
 	query, _ = search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
 	predicate, err := componentPredicateFactory.GeneratePredicate(query)
 	if err != nil {
@@ -81,5 +79,8 @@ func getImageComponentResolvers(ctx context.Context, root *Resolver, imageScan *
 	for _, component := range idToComponent {
 		resolvers = append(resolvers, component)
 	}
-	return resolvers, nil
+	ret, err := paginationWrapper{
+		pv: query.GetPagination(),
+	}.paginate(resolvers, nil)
+	return ret.([]ImageComponentResolver), err
 }

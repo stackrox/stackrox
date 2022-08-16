@@ -350,15 +350,7 @@ func (resolver *imageComponentResolver) ImageVulnerabilities(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
-
-	pagination := query.GetPagination()
-	query.Pagination = nil
-	resolvers, err := getImageCVEResolvers(resolver.ctx, resolver.root, embeddedobjs.OSFromContext(resolver.ctx), embeddedComponent.GetVulns(), query)
-
-	ret, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(resolvers, err)
-	return ret.([]ImageVulnerabilityResolver), err
+	return getImageCVEResolvers(resolver.ctx, resolver.root, embeddedobjs.OSFromContext(resolver.ctx), embeddedComponent.GetVulns(), query)
 }
 
 func (resolver *imageComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
@@ -511,6 +503,13 @@ func (resolver *imageComponentResolver) FixedIn(_ context.Context) string {
 }
 
 func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns []*storage.EmbeddedVulnerability, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
+	if query.GetPagination() == nil {
+		query.Pagination = &v1.QueryPagination{}
+	}
+	if len(query.GetPagination().GetSortOptions()) == 0 {
+		query.Pagination.SortOptions = append(query.Pagination.SortOptions, &v1.QuerySortOption{Field: search.CVEID.String()})
+	}
+
 	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
 	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
 	if err != nil {
@@ -539,5 +538,8 @@ func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns 
 	for _, component := range idToVals {
 		resolvers = append(resolvers, component)
 	}
-	return resolvers, nil
+	ret, err := paginationWrapper{
+		pv: query.GetPagination(),
+	}.paginate(resolvers, nil)
+	return ret.([]ImageVulnerabilityResolver), err
 }
