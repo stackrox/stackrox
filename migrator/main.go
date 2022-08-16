@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/compact"
@@ -56,26 +57,34 @@ func run() error {
 		return nil
 	}
 
-	// TODO: ROX-9884, ROX-10700 -- turn off replicas and migrations until Postgres updates complete.
-	if !features.PostgresDatastore.Enabled() {
-		dbm, err := replica.Scan(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion)
-		if err != nil {
-			return errors.Wrap(err, "fail to scan replicas")
-		}
+	// TODO: ROX-9884, ROX-10700 -- need to work on replicas and migrations
+	dbm, err := replica.Scan(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion)
+	if err != nil {
+		return errors.Wrap(err, "fail to scan replicas")
+	}
 
-		replicaName, replicaPath, err := dbm.GetReplicaToMigrate()
-		if err != nil {
-			return err
-		}
-		option.MigratorOptions.DBPathBase = replicaPath
-		if err = upgrade(conf); err != nil {
-			return err
-		}
-		if err = dbm.Persist(replicaName); err != nil {
-			return err
-		}
-	} else {
-		gormDB, err := postgreshelper.Load(conf)
+	replicaName, replicaPath, err := dbm.GetReplicaToMigrate()
+	if err != nil {
+		return err
+	}
+
+	option.MigratorOptions.DBPathBase = replicaPath
+
+	// Close when needed
+	if features.PostgresDatastore.Enabled() {
+		defer postgreshelper.Close()
+	}
+	if err = upgrade(conf); err != nil {
+		return err
+	}
+
+	if err = dbm.Persist(replicaName); err != nil {
+		return err
+	}
+
+	// TODO: ROX-9884, ROX-10700 -- turn off replicas and migrations until Postgres updates complete.
+	if features.PostgresDatastore.Enabled() {
+		_, gormDB, err := postgreshelper.Load(conf)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to postgres DB")
 		}
@@ -110,22 +119,25 @@ func upgrade(conf *config.Config) error {
 			log.WriteToStderrf("Error closing DB: %v", err)
 		}
 		if rocksdb != nil {
-			rocksdb.Close()
+			rocksdb.DB.Close()
 		}
 	}()
 
 	var gormDB *gorm.DB
+	var pool *pgxpool.Pool
 	if features.PostgresDatastore.Enabled() {
-		gormDB, err = postgreshelper.Load(conf)
+		pool, gormDB, err = postgreshelper.Load(conf)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to postgres DB")
 		}
 	}
 
 	err = runner.Run(&types.Databases{
-		BoltDB:  boltDB,
-		RocksDB: rocksdb,
-		GormDB:  gormDB,
+		BoltDB:     boltDB,
+		RocksDB:    rocksdb.DB,
+		GormDB:     gormDB,
+		PostgresDB: pool,
+		PkgRocksDB: rocksdb,
 	})
 	if err != nil {
 		return errors.Wrap(err, "migrations failed")
