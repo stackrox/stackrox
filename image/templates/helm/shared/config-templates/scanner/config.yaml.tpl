@@ -44,3 +44,5 @@ scanner:
   # maxELFExecutableFileSizeMB: 800
   # The max size of image file reader buffer. Image file data beyond this limit are overflowed to temporary files on disk.
   # maxImageFileReaderBufferSizeMB: 100
+
+  exposeMonitoring: false
