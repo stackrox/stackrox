@@ -11,7 +11,7 @@ import (
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
-	"github.com/stackrox/rox/central/imagecveedge/datastore/internal/postgres"
+	"github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
 	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	"github.com/stackrox/rox/central/imagecveedge/search"
 	"github.com/stackrox/rox/central/imagecveedge/store"

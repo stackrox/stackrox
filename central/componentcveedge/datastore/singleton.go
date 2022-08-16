@@ -2,7 +2,7 @@ package datastore
 
 import (
 	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
-	"github.com/stackrox/rox/central/componentcveedge/datastore/internal/postgres"
+	"github.com/stackrox/rox/central/componentcveedge/datastore/postgres"
 	"github.com/stackrox/rox/central/componentcveedge/index"
 	"github.com/stackrox/rox/central/componentcveedge/search"
 	"github.com/stackrox/rox/central/componentcveedge/store"

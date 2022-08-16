@@ -52,8 +52,8 @@ type ImageVulnerabilityResolver interface {
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error)
 	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
-	ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error)
 	ImageComponentCount(ctx context.Context, args RawQuery) (int32, error)
+	ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error)
 	ImageCount(ctx context.Context, args RawQuery) (int32, error)
 	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
 	OperatingSystem(ctx context.Context) string
