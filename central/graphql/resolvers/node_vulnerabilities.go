@@ -63,10 +63,7 @@ func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (
 		return nil, err
 	}
 	vuln, err := vulnLoader.FromID(ctx, string(*args.ID))
-	if err != nil {
-		return nil, err
-	}
-	vulnResolver, err := resolver.wrapNodeCVE(vuln, true, nil)
+	vulnResolver, err := resolver.wrapNodeCVE(vuln, true, err)
 	if err != nil {
 		return nil, err
 	}

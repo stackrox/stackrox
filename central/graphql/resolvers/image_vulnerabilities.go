@@ -80,10 +80,12 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
+	vulnResolver, err := resolver.wrapImageCVE(ret, true, err)
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapImageCVE(ret, true, err)
+	vulnResolver.ctx = ctx
+	return vulnResolver, nil
 }
 
 // ImageVulnerabilities resolves a set of image vulnerabilities for the input query
@@ -323,7 +325,7 @@ func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, e
 		return embeddedVuln.GetFixedBy(), nil
 	}
 
-	scope, hasScope := scoped.GetScope(ctx)
+	scope, hasScope := scoped.GetScope(resolver.ctx)
 	if !hasScope {
 		return "", nil
 	}
@@ -357,7 +359,7 @@ func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) 
 	conjuncts := []*v1.Query{query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
 
 	// check scoping, add as conjunction if needed
-	if scope, ok := scoped.GetScope(ctx); !ok || scope.Level != v1.SearchCategory_IMAGE_VULNERABILITIES {
+	if scope, ok := scoped.GetScope(resolver.ctx); !ok || scope.Level != v1.SearchCategory_IMAGE_VULNERABILITIES {
 		conjuncts = append(conjuncts, resolver.getImageCVEQuery())
 	}
 
@@ -564,7 +566,7 @@ func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args Ra
 	}
 
 	var imageID string
-	scope, hasScope := scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES)
+	scope, hasScope := scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES)
 	if hasScope {
 		imageID = scope.ID
 	} else {

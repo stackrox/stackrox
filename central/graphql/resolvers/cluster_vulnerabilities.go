@@ -72,10 +72,12 @@ func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
+	vulnResolver, err := resolver.wrapClusterCVE(ret, true, err)
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapClusterCVE(ret, true, err)
+	vulnResolver.ctx = ctx
+	return vulnResolver, nil
 }
 
 // ClusterVulnerabilities resolves a set of image vulnerabilities for the input query
@@ -386,7 +388,7 @@ func (resolver *clusterCVEResolver) EnvImpact(ctx context.Context) (float64, err
 
 func (resolver *clusterCVEResolver) FixedByVersion(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "FixedByVersion")
-	scope, hasScope := scoped.GetScope(ctx)
+	scope, hasScope := scoped.GetScope(resolver.ctx)
 	if !hasScope {
 		return "", nil
 	}
@@ -414,7 +416,7 @@ func (resolver *clusterCVEResolver) IsFixable(ctx context.Context, args RawQuery
 	conjuncts := []*v1.Query{query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
 
 	// check scoping, add as conjunction if needed
-	if scope, ok := scoped.GetScope(ctx); !ok || scope.Level != v1.SearchCategory_CLUSTER_VULNERABILITIES {
+	if scope, ok := scoped.GetScope(resolver.ctx); !ok || scope.Level != v1.SearchCategory_CLUSTER_VULNERABILITIES {
 		conjuncts = append(conjuncts, resolver.getClusterCVEQuery())
 	}
 
