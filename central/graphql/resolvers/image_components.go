@@ -538,8 +538,12 @@ func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns 
 			return resolvers[i].data.GetId() < resolvers[j].data.GetId()
 		})
 	}
+	resolverI := make([]ImageVulnerabilityResolver, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		resolverI = append(resolverI, resolver)
+	}
 	ret, err := paginationWrapper{
 		pv: query.GetPagination(),
-	}.paginate(resolvers, nil)
+	}.paginate(resolverI, nil)
 	return ret.([]ImageVulnerabilityResolver), err
 }
