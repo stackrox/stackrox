@@ -119,9 +119,9 @@ class ClusterTestSetsRunner:
         marker = "****"
         if test_set is not None and test_set["name"] is not None:
             msg = f"{msg} [{test_set['name']}]"
-        print(marker)
-        print(f"{marker} {time}: {msg}")
-        print(marker)
+        print(marker, flush=True)
+        print(f"{marker} {time}: {msg}", flush=True)
+        print(marker, flush=True)
 
 
 # pylint: disable=too-many-arguments

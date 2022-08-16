@@ -36,7 +36,7 @@ class UpgradeTest(BaseTest):
     TEST_OUTPUT_DIR = "/tmp/upgrade-test-logs"
 
     def run(self):
-        print("Executing the Upgrade Test")
+        print("Executing the Upgrade Test", flush=True)
 
         def set_dirs_after_start():
             # let post test know where logs are
@@ -57,25 +57,25 @@ class OperatorE2eTest(BaseTest):
     SCORECARD_TEST_TIMEOUT_SEC = 20 * 60
 
     def run(self):
-        print("Deploying operator")
+        print("Deploying operator", flush=True)
         self.run_with_graceful_kill(
             ["make", "-C", "operator", "kuttl", "deploy-previous-via-olm"],
             OperatorE2eTest.DEPLOY_TIMEOUT_SEC,
         )
 
-        print("Executing operator upgrade test")
+        print("Executing operator upgrade test", flush=True)
         self.run_with_graceful_kill(
             ["make", "-C", "operator", "test-upgrade"],
             OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
         )
 
-        print("Executing operator e2e tests")
+        print("Executing operator e2e tests", flush=True)
         self.run_with_graceful_kill(
             ["make", "-C", "operator", "test-e2e-deployed"],
             OperatorE2eTest.E2E_TEST_TIMEOUT_SEC,
         )
 
-        print("Executing Operator Bundle Scorecard tests")
+        print("Executing Operator Bundle Scorecard tests", flush=True)
         self.run_with_graceful_kill(
             [
                 "./operator/scripts/retry.sh",
@@ -94,7 +94,7 @@ class QaE2eTestPart1(BaseTest):
     TEST_TIMEOUT = 240 * 60
 
     def run(self):
-        print("Executing qa-tests-backend tests (part I)")
+        print("Executing qa-tests-backend tests (part I)", flush=True)
 
         self.run_with_graceful_kill(
             ["qa-tests-backend/scripts/run-part-1.sh"], QaE2eTestPart1.TEST_TIMEOUT
@@ -105,7 +105,7 @@ class QaE2eTestPart2(BaseTest):
     TEST_TIMEOUT = 30 * 60
 
     def run(self):
-        print("Executing qa-tests-backend tests (part II)")
+        print("Executing qa-tests-backend tests (part II)", flush=True)
 
         self.run_with_graceful_kill(
             ["qa-tests-backend/scripts/run-part-2.sh"], QaE2eTestPart2.TEST_TIMEOUT
@@ -117,7 +117,7 @@ class QaE2eDBBackupRestoreTest(BaseTest):
     TEST_OUTPUT_DIR = "/tmp/db-backup-restore-test"
 
     def run(self):
-        print("Executing DB backup and restore test")
+        print("Executing DB backup and restore test", flush=True)
 
         def set_dirs_after_start():
             # let post test know where logs are
@@ -138,7 +138,7 @@ class UIE2eTest(BaseTest):
     TEST_TIMEOUT = 90 * 60
 
     def run(self):
-        print("Executing UI e2e test")
+        print("Executing UI e2e test", flush=True)
 
         self.run_with_graceful_kill(
             [
@@ -153,7 +153,7 @@ class NonGroovyE2e(BaseTest):
     TEST_OUTPUT_DIR = "/tmp/e2e-test-logs"
 
     def run(self):
-        print("Executing the E2e Test")
+        print("Executing the E2e Test", flush=True)
 
         def set_dirs_after_start():
             # let post test know where logs are

@@ -61,7 +61,7 @@ class GKECluster:
 
     def teardown(self):
         while os.path.exists("/tmp/hold-cluster"):
-            print("Pausing teardown because /tmp/hold-cluster exists")
+            print("Pausing teardown because /tmp/hold-cluster exists", flush=True)
             time.sleep(60)
 
         if self.refresh_token_cmd is not None:
@@ -91,7 +91,7 @@ class AutomationFlavorsCluster:
 
         print(f"Using kubeconfig from {kubeconfig}")
 
-        print("Nodes:")
+        print("Nodes:", flush=True)
         subprocess.run(
             ["kubectl", "get", "nodes", "-o", "wide"],
             check=True,
