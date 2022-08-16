@@ -38,7 +38,7 @@ class GKECluster:
                 GKECluster.GKE_SCRIPT,
                 "provision_gke_cluster",
                 self.cluster_id,
-                self.num_nodes,
+                str(self.num_nodes),
                 self.machine_type,
             ]
         ) as cmd:
