@@ -45,11 +45,10 @@ func New(imageIntegrationStorage store.Store, indexer index.Indexer, searcher se
 		formattedSearcher: searcher,
 	}
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	ctx := sac.WithAllAccess(context.Background())
 
 	if err := ds.buildIndex(ctx); err != nil {
-		log.Error(err.Error())
-		panic("unable to load search index for image integrations")
+		log.Fatal("unable to load search index for image integrations")
 	}
 	return ds
 }

@@ -142,8 +142,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.healthStatuses.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)
 	suite.imageIntegrationDataStore = imageIntegrationDatastoreMocks.NewMockDataStore(suite.mockCtrl)
-	var err error
 
+	var err error
 	suite.clusterDataStore, err = New(
 		suite.clusters,
 		suite.healthStatuses,

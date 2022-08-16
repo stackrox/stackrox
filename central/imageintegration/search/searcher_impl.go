@@ -17,10 +17,6 @@ import (
 )
 
 var (
-	defaultSortOption = &v1.QuerySortOption{
-		Field:    search.ClusterID.String(),
-		Reversed: false,
-	}
 	imageIntegrationSAC = sac.ForResource(resources.ImageIntegration)
 )
 
@@ -44,7 +40,7 @@ func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
 	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, imageIntegrationMapping.OptionsMap)
 	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
-	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	return paginatedSearcher
 }
 
 // Search retrieves SearchResults from the indexer and storage

@@ -68,15 +68,12 @@ var (
 )
 
 type datastoreImpl struct {
-	indexer              index.Indexer
-	clusterStorage       clusterStore.Store
-	clusterHealthStorage clusterHealthStore.Store
-	notifier             notifierProcessor.Processor
-	searcher             search.Searcher
-
+	indexer                   index.Indexer
+	clusterStorage            clusterStore.Store
+	clusterHealthStorage      clusterHealthStore.Store
+	clusterCVEDataStore       clusterCVEDS.DataStore
 	alertDataStore            alertDataStore.DataStore
 	imageIntegrationDataStore imageIntegrationDataStore.DataStore
-	clusterCVEDataStore       clusterCVEDS.DataStore
 	namespaceDataStore        namespaceDataStore.DataStore
 	deploymentDataStore       deploymentDataStore.DataStore
 	nodeDataStore             nodeDataStore.GlobalDataStore
@@ -90,10 +87,13 @@ type datastoreImpl struct {
 	cm                        connection.Manager
 	networkBaselineMgr        networkBaselineManager.Manager
 
+	notifier      notifierProcessor.Processor
 	clusterRanker *ranking.Ranker
 
 	idToNameCache simplecache.Cache
 	nameToIDCache simplecache.Cache
+
+	searcher search.Searcher
 
 	lock sync.Mutex
 }

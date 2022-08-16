@@ -56,11 +56,11 @@ func initialize() {
 	ne = nodeEnricher.New(nodeCVESuppressor, metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
 	cf = fetcher.SingletonManager()
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	initializeManager(ctx)
+	initializeManager()
 }
 
-func initializeManager(ctx context.Context) {
+func initializeManager() {
+	ctx := sac.WithAllAccess(context.Background())
 	manager = newManager(imageintegration.Set(), ne, cf)
 
 	imageIntegrationStore = imageIntegrationDS.Singleton()
