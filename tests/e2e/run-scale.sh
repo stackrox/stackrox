@@ -37,6 +37,8 @@ deploy_stackrox_in_scale_mode() {
     "$ROOT/scale/launch_workload.sh" scale-test
 
     wait_for_api
+
+    touch "${STATE_DEPLOYED}"
 }
 
 run_scale_test() {
