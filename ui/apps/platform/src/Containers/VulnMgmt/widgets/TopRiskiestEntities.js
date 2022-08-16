@@ -354,7 +354,7 @@ const getEntitiesByContext = (entityContext, showVmUpdates) => {
 
 function getCVEListType(entityType, showVmUpdates) {
     if (!showVmUpdates) {
-        return entityType.CVE;
+        return entityTypes.CVE;
     }
     switch (entityType) {
         case entityTypes.NODE:
@@ -389,7 +389,8 @@ const processData = (data, entityType, workflowState, showVmUpdates) => {
             const newState = workflowState.pushRelatedEntity(entityType, id);
 
             const url = newState.toUrl();
-            const cveListState = newState.pushList(getCVEListType(entityType, showVmUpdates));
+            const cveListType = getCVEListType(entityType, showVmUpdates);
+            const cveListState = newState.pushList(cveListType);
             const cvesUrl = cveListState.toUrl();
             const fixableUrl = cveListState.setSearch({ Fixable: true }).toUrl();
 
