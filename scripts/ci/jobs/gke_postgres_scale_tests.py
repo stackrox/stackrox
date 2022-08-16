@@ -12,7 +12,6 @@ from post_tests import PostClusterTest, FinalPost
 
 os.environ["COMPARISON_METRICS"] = "scale-test/gke"
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
-os.environ["OUTPUT_FORMAT"] = "helm"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["STORAGE"] = "pvc"
 os.environ["STORAGE_CLASS"] = "faster"
