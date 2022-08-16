@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
@@ -44,12 +45,6 @@ func (resolver *imageScanResolver) ImageComponentCount(_ context.Context, args R
 }
 
 func getImageComponentResolvers(ctx context.Context, root *Resolver, imageScan *storage.ImageScan, query *v1.Query) ([]ImageComponentResolver, error) {
-	if query.GetPagination() == nil {
-		query.Pagination = &v1.QueryPagination{}
-	}
-	if len(query.GetPagination().GetSortOptions()) == 0 {
-		query.Pagination.SortOptions = append(query.Pagination.SortOptions, &v1.QuerySortOption{Field: search.ComponentID.String()})
-	}
 	query, _ = search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
 	predicate, err := componentPredicateFactory.GeneratePredicate(query)
 	if err != nil {
@@ -75,9 +70,15 @@ func getImageComponentResolvers(ctx context.Context, root *Resolver, imageScan *
 		}
 	}
 
-	resolvers := make([]ImageComponentResolver, 0, len(idToComponent))
+	// For now, sort by IDs.
+	resolvers := make([]*imageComponentResolver, 0, len(idToComponent))
 	for _, component := range idToComponent {
 		resolvers = append(resolvers, component)
+	}
+	if len(query.GetPagination().GetSortOptions()) == 0 {
+		sort.SliceStable(resolvers, func(i, j int) bool {
+			return resolvers[i].data.GetId() < resolvers[j].data.GetId()
+		})
 	}
 	ret, err := paginationWrapper{
 		pv: query.GetPagination(),

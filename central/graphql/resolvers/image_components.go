@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"time"
 
@@ -503,13 +504,6 @@ func (resolver *imageComponentResolver) FixedIn(_ context.Context) string {
 }
 
 func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns []*storage.EmbeddedVulnerability, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
-	if query.GetPagination() == nil {
-		query.Pagination = &v1.QueryPagination{}
-	}
-	if len(query.GetPagination().GetSortOptions()) == 0 {
-		query.Pagination.SortOptions = append(query.Pagination.SortOptions, &v1.QuerySortOption{Field: search.CVEID.String()})
-	}
-
 	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
 	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
 	if err != nil {
@@ -534,9 +528,15 @@ func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns 
 		}
 	}
 
-	resolvers := make([]ImageVulnerabilityResolver, 0, len(idToVals))
-	for _, component := range idToVals {
-		resolvers = append(resolvers, component)
+	// For now, sort by ID.
+	resolvers := make([]*imageCVEResolver, 0, len(idToVals))
+	for _, vuln := range idToVals {
+		resolvers = append(resolvers, vuln)
+	}
+	if len(query.GetPagination().GetSortOptions()) == 0 {
+		sort.SliceStable(resolvers, func(i, j int) bool {
+			return resolvers[i].data.GetId() < resolvers[j].data.GetId()
+		})
 	}
 	ret, err := paginationWrapper{
 		pv: query.GetPagination(),
