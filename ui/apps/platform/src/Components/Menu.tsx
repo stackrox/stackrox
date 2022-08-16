@@ -1,6 +1,6 @@
 import React, { useState, ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown } from 'react-feather';
+import { ChevronDown, ChevronUp } from 'react-feather';
 
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
@@ -129,7 +129,12 @@ const Menu = ({
                     <div className="flex flex-1 justify-center items-center text-left h-full">
                         {buttonIcon}
                         {buttonText && <span className={buttonTextClassName}>{buttonText}</span>}
-                        {!hideCaret && <ChevronDown className="h-4 ml-1 pointer-events-none w-4" />}
+                        {!hideCaret &&
+                            (isMenuOpen ? (
+                                <ChevronUp className="h-4 ml-1 pointer-events-none w-4" />
+                            ) : (
+                                <ChevronDown className="h-4 ml-1 pointer-events-none w-4" />
+                            ))}
                     </div>
                 </button>
                 {isMenuOpen && (
