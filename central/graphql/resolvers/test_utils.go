@@ -139,17 +139,17 @@ func getFixableRawQuery(fixable bool) (string, error) {
 
 func getIDList(ctx context.Context, resolvers interface{}) []string {
 	var list []string
-	switch resolvers.(type) {
+	switch res := resolvers.(type) {
 	case []ImageVulnerabilityResolver:
-		for _, r := range resolvers.([]ImageVulnerabilityResolver) {
+		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
 	case []*imageResolver:
-		for _, r := range resolvers.([]*imageResolver) {
+		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
 	case []ImageComponentResolver:
-		for _, r := range resolvers.([]ImageComponentResolver) {
+		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
 	}
