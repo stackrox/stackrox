@@ -3,7 +3,6 @@ FROM registry.ci.openshift.org/stackrox/apollo-ci:stackrox-build-0.3.44-2-ga2b83
 ARG ROX_PRODUCT_BRANDING
 ENV ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
 
-COPY . /go/src/github.com/stackrox/stackrox
 WORKDIR /go/src/github.com/stackrox/stackrox
 
 RUN ./.openshift-ci/build/build-central-db-bundle.sh

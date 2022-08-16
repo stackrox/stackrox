@@ -5,9 +5,6 @@ ENV ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
 ARG RACE_CONDITION_DEBUG=false
 ENV RACE_CONDITION_DEBUG=${RACE_CONDITION_DEBUG}
 
-RUN ls -l /go/src/github.com/stackrox/stackrox || true
-COPY . /go/src/github.com/stackrox/stackrox
-RUN ls -l /go/src/github.com/stackrox/stackrox || true
 WORKDIR /go/src/github.com/stackrox/stackrox
 
 RUN ./.openshift-ci/build/build-main-and-bundle.sh
