@@ -16,6 +16,8 @@ os.environ["OUTPUT_FORMAT"] = "helm"
 os.environ["STORAGE"] = "pvc"
 os.environ["STORAGE_CLASS"] = "faster"
 os.environ["STORAGE_SIZE"] = "100"
+os.environ["STORE_METRICS"] = os.environ["COMPARISON_METRICS"]
+
 
 ClusterTestRunner(
     cluster=GKECluster("scale-test", machine_type="e2-standard-8"),

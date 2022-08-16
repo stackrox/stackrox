@@ -61,6 +61,10 @@ run_scale_test() {
     get_prometheus_metrics_parser
 
     compare_with_stored_metrics "${debug_dump_dir}"
+
+    if [[ -n "${STORE_METRICS:-}" ]]; then
+        store_metrics "${debug_dump_dir}"
+    fi
 }
 
 get_prometheus_metrics_parser() {
@@ -78,17 +82,31 @@ compare_with_stored_metrics() {
     local compare_cmd="${PWD}/scripts/ci/compare-debug-metrics.sh"
 
     baseline_source=$(gsutil ls "${gs_path}"/stackrox_debug\* | sort | tail -1)
-    echo "Using ${baseline_source} as metrics for comparison"
+    info "Using ${baseline_source} as metrics for comparison"
     mkdir "${baseline_dir}"
     gsutil cp "${baseline_source}" "${baseline_dir}"
     baseline_metrics=$(find "${baseline_dir}" -maxdepth 1 | sort | tail -1)
 
     this_run_metrics=$(echo "${debug_dump_dir}"/stackrox_debug*.zip)
-    echo "Comparing with ${this_run_metrics}"
+    info "Comparing with ${this_run_metrics}"
 
     pushd /tmp
     "${compare_cmd}" "${baseline_metrics}" "${this_run_metrics}" || true
     popd
+}
+
+store_metrics() {
+    local debug_dump_dir="$1"
+    local this_run_metrics
+    local gs_path="gs://stackrox-ci-metrics/${STORE_METRICS}"
+
+    this_run_metrics=$(echo "${debug_dump_dir}"/stackrox_debug*.zip)
+    gsutil cp "${this_run_metrics}" "${gs_path}"
+
+    unzip -d "${debug_dump_dir}"/stackrox_debug "${this_run_metrics}"
+    prometheus-metric-parser single --file="${debug_dump_dir}"/stackrox_debug/metrics-2 \
+        --format=gcp-monitoring --labels='Test=ci-scale-test,ClusterFlavor=gke' \
+        --project-id=stackrox-ci --timestamp="$(date -u +"%s")"
 }
 
 scale_test "$@"
