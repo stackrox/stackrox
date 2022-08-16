@@ -23,8 +23,8 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNum() + 35,
-		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum()) + 36},
+		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres() + 35,
+		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 36},
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.New(rawDackbox.GetGlobalDackBox(), rawDackbox.GetKeyFence(), true)
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
@@ -37,19 +37,6 @@ var (
 	batchSize = 10000
 	log       = loghelper.LogWrapper{}
 )
-
-func convert(node *storage.Node) {
-	scan := node.GetScan()
-	for _, component := range scan.GetComponents() {
-		vulns := component.GetVulns()
-		nodeVulns := make([]*storage.NodeVulnerability, 0, len(vulns))
-		for _, vuln := range vulns {
-			nodeVulns = append(nodeVulns, nodeConverter.EmbeddedVulnerabilityToNodeVulnerability(vuln))
-		}
-		component.Vulnerabilities = nodeVulns
-		component.Vulns = nil
-	}
-}
 
 func move(gormDB *gorm.DB, postgresDB *pgxpool.Pool, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
