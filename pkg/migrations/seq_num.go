@@ -15,9 +15,9 @@ func CurrentDBVersionSeqNum() int {
 	return internal.CurrentDBVersionSeqNum
 }
 
-// CurrentDBVersionSeqNumWithoutPostgres is the current DB version number
-// without Postgres migrations. This function should only be used in testing
-// environment.
+// CurrentDBVersionSeqNumWithoutPostgres is the base of current DB version number
+// without Postgres migrations. This function should only be used in Postgres
+// migrations.
 func CurrentDBVersionSeqNumWithoutPostgres() int {
 	return internal.CurrentDBVersionSeqNum - 1
 }

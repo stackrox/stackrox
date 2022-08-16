@@ -71,7 +71,9 @@ func run() error {
 	option.MigratorOptions.DBPathBase = replicaPath
 
 	// Close when needed
-	defer postgreshelper.Close()
+	if features.PostgresDatastore.Enabled() {
+		defer postgreshelper.Close()
+	}
 	if err = upgrade(conf); err != nil {
 		return err
 	}

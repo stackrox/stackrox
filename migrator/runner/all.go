@@ -54,6 +54,12 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_97_to_98_exclude_oauth_sa_kubeadmin_pol"
 	_ "github.com/stackrox/rox/migrator/migrations/m_98_to_m_99_process_alert_comments"
 	_ "github.com/stackrox/rox/migrator/migrations/m_99_to_m_100_violation_report_branding"
+
+	// The following is the migrations for legacy to Postgres migration. They form a separate sequence.
+	// If you have a migration that 1) will release before Postgres Database or 2) does not depend
+	// on Postgres Database, you need to increment CurrentDBVersionSeqNum and add the migration to the
+	// sequence above (starting with "m_"). Otherwise since your migration depends on the Postgres Database, you need to
+	// increment CurrentDBVersionSeqNumWithoutPostgres and add the migration to the sequence below (starting with "n-").
 	_ "github.com/stackrox/rox/migrator/migrations/n_01_to_n_02_postgres_clusters"
 	_ "github.com/stackrox/rox/migrator/migrations/n_02_to_n_03_postgres_namespaces"
 	_ "github.com/stackrox/rox/migrator/migrations/n_03_to_n_04_postgres_deployments"
