@@ -172,7 +172,7 @@ const TOP_RISKIEST_NODE_COMPONENTS = gql`
             id
             name
             version
-            lastScanned: nodeComponentLastScanned
+            lastScanned
             vulnCounter: nodeVulnerabilityCounter {
                 all {
                     total
