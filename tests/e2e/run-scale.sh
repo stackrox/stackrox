@@ -4,6 +4,7 @@
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
+source "$ROOT/scripts/ci/gcp.sh"
 source "$ROOT/scripts/ci/sensor-wait.sh"
 source "$ROOT/tests/e2e/lib.sh"
 source "$ROOT/tests/scripts/setup-certs.sh"
@@ -21,6 +22,7 @@ scale_test() {
 
     export_test_environment
 
+    setup_gcp
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
