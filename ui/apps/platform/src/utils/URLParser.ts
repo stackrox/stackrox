@@ -161,7 +161,15 @@ function parseURL(location: Location<LocationState>): WorkflowState {
     }
 
     const { pathname, search } = location;
-    const params = getParams(pathname);
+
+    const rawParams = getParams(pathname);
+    const params = {
+        ...rawParams,
+        pageEntityId: rawParams.pageEntityId
+            ? decodeURIComponent(rawParams.pageEntityId)
+            : undefined,
+    };
+
     const queryStr = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
 
     const stateStackFromURLParams = paramsToStateStack(params) || [];

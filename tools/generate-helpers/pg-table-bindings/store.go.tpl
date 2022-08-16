@@ -264,11 +264,13 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 {{- end}}
 
 {{- if not .JoinTable }}
+{{- if not .NoCopyFrom }}
 {{ template "copyObject" .Schema }}
+{{- end }}
 {{- end }}
 
 {{- if not .JoinTable }}
-
+{{- if not .NoCopyFrom }}
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
     conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {
@@ -292,6 +294,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
     }
     return nil
 }
+{{- end}}
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
     conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
@@ -394,6 +397,10 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     {{- end }}
     {{- end }}{{/* if not $inMigration */}}
 
+    {{- if .NoCopyFrom }}
+    return s.upsert(ctx, objs...)
+    {{- else }}
+
     // Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
     // same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
     // violations
@@ -405,6 +412,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     } else {
         return s.copyFrom(ctx, objs...)
     }
+    {{- end }}
 }
 {{- end }}
 

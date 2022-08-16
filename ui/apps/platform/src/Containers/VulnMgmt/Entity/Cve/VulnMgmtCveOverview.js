@@ -128,7 +128,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
         {
             key: 'CVE Type',
-            value: <CveType context="callout" types={legacyTypeList} />,
+            value: <CveType context="bare" types={legacyTypeList} />,
         },
         {
             key: 'CVSS Score',

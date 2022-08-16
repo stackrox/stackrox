@@ -24,7 +24,7 @@ func init() {
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddExtraResolvers("NodeComponent", []string{
 			"fixedIn: String!",
-			"nodeComponentLastScanned: Time",
+			"lastScanned: Time",
 			"license: License",
 			"location(query: String): String!",
 			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
@@ -49,7 +49,7 @@ func init() {
 type NodeComponentResolver interface {
 	FixedIn(ctx context.Context) string
 	Id(ctx context.Context) graphql.ID
-	NodeComponentLastScanned(ctx context.Context) (*graphql.Time, error)
+	LastScanned(ctx context.Context) (*graphql.Time, error)
 	License(ctx context.Context) (*licenseResolver, error)
 	Location(ctx context.Context, args RawQuery) (string, error)
 	Name(ctx context.Context) string
@@ -190,9 +190,9 @@ func (resolver *nodeComponentResolver) FixedIn(ctx context.Context) string {
 	return ""
 }
 
-// NodeComponentLastScanned is the last time the node component was scanned in a node.
-func (resolver *nodeComponentResolver) NodeComponentLastScanned(_ context.Context) (*graphql.Time, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "NodeComponentLastScanned")
+// LastScanned is the last time the node component was scanned in a node.
+func (resolver *nodeComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "LastScanned")
 	nodeLoader, err := loaders.GetNodeLoader(resolver.ctx)
 	if err != nil {
 		return nil, err
