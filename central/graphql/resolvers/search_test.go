@@ -65,6 +65,9 @@ func TestSearchCategories(t *testing.T) {
 	searchFuncs := resolver.getSearchFuncs()
 
 	for globalCategory := range search2.GetGlobalSearchCategories() {
+		if globalCategory == v1.SearchCategory_IMAGE_INTEGRATIONS {
+			continue
+		}
 		assert.True(t, searchCategories[globalCategory] != nil, "global search category %s does not exist in auto complete", globalCategory)
 	}
 	for category := range searchCategories {

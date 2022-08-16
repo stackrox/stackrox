@@ -17,6 +17,7 @@ var (
                create table if not exists image_integrations (
                    Id varchar,
                    Name varchar UNIQUE,
+                   ClusterId varchar,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
@@ -46,5 +47,6 @@ const (
 type ImageIntegrations struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
+	ClusterId  string `gorm:"column:clusterid;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

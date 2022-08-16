@@ -4,6 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/blevesearch/bleve"
+	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/globalindex"
+	index2 "github.com/stackrox/rox/central/imageintegration/index"
+	indexMocks "github.com/stackrox/rox/central/imageintegration/index/mocks"
+	search2 "github.com/stackrox/rox/central/imageintegration/search"
+	searchMocks "github.com/stackrox/rox/central/imageintegration/search/mocks"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	boltStore "github.com/stackrox/rox/central/imageintegration/store/bolt"
 	"github.com/stackrox/rox/central/role/resources"
@@ -11,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -24,6 +32,7 @@ func TestImageIntegrationDataStore(t *testing.T) {
 
 type ImageIntegrationDataStoreTestSuite struct {
 	suite.Suite
+	mockCtrl *gomock.Controller
 
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
@@ -36,6 +45,14 @@ type ImageIntegrationDataStoreTestSuite struct {
 
 	store     store.Store
 	datastore DataStore
+
+	indexer  *indexMocks.MockIndexer
+	searcher *searchMocks.MockSearcher
+
+	indexer2   index2.Indexer
+	bleveIndex bleve.Index
+	searcher2  search2.Searcher
+	datastore2 DataStore
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
@@ -61,14 +78,29 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}
-
+	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.db = db
 	suite.store = boltStore.New(db)
-	suite.datastore = New(suite.store)
+	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
+	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
+
+	// test bleveIndex and search
+	suite.bleveIndex, err = globalindex.MemOnlyIndex()
+	suite.Require().NoError(err)
+	suite.indexer2 = index2.New(suite.bleveIndex)
+	suite.searcher2 = search2.New(suite.store, suite.indexer2)
+
+	// test formattedSearcher
+	suite.datastore = NewForTestOnly(suite.store, suite.indexer, suite.searcher)
+	suite.datastore2 = New(suite.store, suite.indexer2, suite.searcher2)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
+}
+
+func (suite *ImageIntegrationDataStoreTestSuite) TearDownIndexTest() {
+	suite.NoError(suite.bleveIndex.Close())
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsPersistence() {
@@ -100,7 +132,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
 			},
 		},
 	}
-
+	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).AnyTimes().Return(nil)
 	// Test Add
 	for _, r := range integrations {
 		id, err := suite.datastore.AddImageIntegration(suite.hasWriteCtx, r)
@@ -274,10 +306,12 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsAdd() {
+	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
 	id, err := suite.datastore.AddImageIntegration(suite.hasWriteCtx, getIntegration("namenamenamename"))
 	suite.NoError(err, "expected no error trying to write with permissions")
 	suite.NotEmpty(id)
 
+	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
 	id, err = suite.datastore.AddImageIntegration(suite.hasWriteIntegrationsCtx, getIntegration("namenamenamename2"))
 	suite.NoError(err, "expected no error trying to write with permissions")
 	suite.NotEmpty(id)
@@ -297,12 +331,14 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsUpdate() {
+	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
 	integration := suite.storeIntegration("joseph is the best")
 
 	err := suite.datastore.UpdateImageIntegration(suite.hasWriteCtx, integration)
 	suite.NoError(err, "expected no error trying to write with permissions")
 
 	integration = suite.storeIntegration("joseph is the best again")
+	suite.indexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
 
 	err = suite.datastore.UpdateImageIntegration(suite.hasWriteIntegrationsCtx, integration)
 	suite.NoError(err, "expected no error trying to write with permissions")
@@ -320,13 +356,53 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsRemove() {
+	suite.indexer.EXPECT().DeleteImageIntegration(gomock.Any()).Return(nil)
 	integration := suite.storeIntegration("jdgbfdkjh")
 
 	err := suite.datastore.RemoveImageIntegration(suite.hasWriteCtx, integration.GetId())
 	suite.NoError(err, "expected no error trying to write with permissions")
 
+	suite.indexer.EXPECT().DeleteImageIntegration(gomock.Any()).Return(nil)
 	integration = suite.storeIntegration("jdgbfdkjh2")
 
 	err = suite.datastore.RemoveImageIntegration(suite.hasWriteIntegrationsCtx, integration.GetId())
 	suite.NoError(err, "expected no error trying to write with permissions")
+}
+
+func (suite *ImageIntegrationDataStoreTestSuite) TestSearch() {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	suite.searcher.EXPECT().Search(ctx, nil).Return(nil, nil)
+	_, err := suite.datastore.Search(ctx, nil)
+	suite.NoError(err)
+}
+
+func (suite *ImageIntegrationDataStoreTestSuite) TestIndexing() {
+	ii := &storage.ImageIntegration{
+		Id:        "id1",
+		ClusterId: "cluster1",
+		Name:      "imageIntegration1",
+	}
+
+	suite.NoError(suite.indexer2.AddImageIntegration(ii))
+
+	q := search.NewQueryBuilder().AddStrings(search.ClusterID, "cluster1").ProtoQuery()
+	results, err := suite.indexer2.Search(q)
+	suite.NoError(err)
+	suite.Len(results, 1)
+}
+
+func (suite *ImageIntegrationDataStoreTestSuite) TestDataStoreSearch() {
+	ii := &storage.ImageIntegration{
+		Id:        "id1",
+		ClusterId: "cluster1",
+		Name:      "imageIntegration1",
+	}
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	_, err := suite.datastore2.AddImageIntegration(ctx, ii)
+	suite.NoError(err)
+
+	q := search.NewQueryBuilder().AddStrings(search.ClusterID, "cluster1").ProtoQuery()
+	results, err := suite.datastore2.Search(ctx, q)
+	suite.NoError(err)
+	suite.Len(results, 1)
 }

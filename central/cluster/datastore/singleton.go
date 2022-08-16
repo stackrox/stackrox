@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	globalDackBox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
+	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -63,8 +64,9 @@ func initialize() {
 
 	ad, err = New(clusterStorage,
 		clusterHealthStorage,
-		indexer,
+		clusterCVEDataStore,
 		alertDataStore.Singleton(),
+		imageIntegrationDataStore.Singleton(),
 		namespaceDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
 		nodeDataStore.Singleton(),
@@ -79,8 +81,8 @@ func initialize() {
 		notifierProcessor.Singleton(),
 		dackbox,
 		ranking.ClusterRanker(),
-		networkBaselineManager.Singleton(),
-		clusterCVEDataStore)
+		indexer,
+		networkBaselineManager.Singleton())
 
 	utils.CrashOnError(err)
 }

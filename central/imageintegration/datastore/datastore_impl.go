@@ -3,11 +3,15 @@ package datastore
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/imageintegration/index"
+	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -16,7 +20,17 @@ var (
 )
 
 type datastoreImpl struct {
-	storage store.Store
+	storage           store.Store
+	indexer           index.Indexer
+	formattedSearcher search.Searcher
+}
+
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.formattedSearcher.Count(ctx, q)
+}
+
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
+	return ds.formattedSearcher.Search(ctx, q)
 }
 
 // GetImageIntegration is pass-through to the underlying store.
@@ -65,7 +79,11 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 	}
 
 	integration.Id = uuid.NewV4().String()
-	return integration.Id, ds.storage.Upsert(ctx, integration)
+	err := ds.storage.Upsert(ctx, integration)
+	if err != nil {
+		return "", err
+	}
+	return integration.Id, ds.indexer.AddImageIntegration(integration)
 }
 
 // UpdateImageIntegration is pass-through to the underlying store.
@@ -76,7 +94,11 @@ func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Upsert(ctx, integration)
+	err := ds.storage.Upsert(ctx, integration)
+	if err != nil {
+		return err
+	}
+	return ds.indexer.AddImageIntegration(integration)
 }
 
 // RemoveImageIntegration is pass-through to the underlying store.
@@ -86,6 +108,30 @@ func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) 
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+	if err := ds.storage.Delete(ctx, id); err != nil {
+		return err
+	}
+	return ds.indexer.DeleteImageIntegration(id)
+}
 
-	return ds.storage.Delete(ctx, id)
+func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
+	imageIntegrations, err := ds.storage.GetAll(ctx)
+	log.Infof("[STARTUP] Found %d Image Integrations to be indexed", len(imageIntegrations))
+	if err != nil {
+		return err
+	}
+	err = ds.indexer.AddImageIntegrations(imageIntegrations)
+	if err != nil {
+		return err
+	}
+	log.Infof("[STARTUP] Successfully indexed %d Image Integrations", len(imageIntegrations))
+	return nil
+}
+
+// SearchImageIntegrations
+func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	return ds.formattedSearcher.SearchImageIntegrations(ctx, q)
 }

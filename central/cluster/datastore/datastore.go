@@ -18,6 +18,7 @@ import (
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -94,8 +95,9 @@ type DataStore interface {
 func New(
 	clusterStorage clusterStore.Store,
 	clusterHealthStorage clusterHealthStore.Store,
-	indexer index.Indexer,
+	clusterCVEs clusterCVEDS.DataStore,
 	ads alertDataStore.DataStore,
+	imageIntegrationStore imageIntegrationDataStore.DataStore,
 	namespaceDS namespaceDataStore.DataStore,
 	dds deploymentDataStore.DataStore,
 	ns nodeDataStore.GlobalDataStore,
@@ -110,31 +112,32 @@ func New(
 	notifier notifierProcessor.Processor,
 	graphProvider graph.Provider,
 	clusterRanker *ranking.Ranker,
+	indexer index.Indexer,
 	networkBaselineMgr networkBaselineManager.Manager,
-	clusterCVEs clusterCVEDS.DataStore,
 ) (DataStore, error) {
 	ds := &datastoreImpl{
-		clusterStorage:          clusterStorage,
-		clusterHealthStorage:    clusterHealthStorage,
-		indexer:                 indexer,
-		alertDataStore:          ads,
-		namespaceDataStore:      namespaceDS,
-		deploymentDataStore:     dds,
-		nodeDataStore:           ns,
-		podDataStore:            pods,
-		secretsDataStore:        ss,
-		netFlowsDataStore:       flows,
-		netEntityDataStore:      netEntities,
-		serviceAccountDataStore: sads,
-		roleDataStore:           rds,
-		roleBindingDataStore:    rbds,
-		cm:                      cm,
-		notifier:                notifier,
-		clusterRanker:           clusterRanker,
-		networkBaselineMgr:      networkBaselineMgr,
-		clusterCVEDataStore:     clusterCVEs,
-		idToNameCache:           simplecache.New(),
-		nameToIDCache:           simplecache.New(),
+		clusterStorage:            clusterStorage,
+		clusterHealthStorage:      clusterHealthStorage,
+		clusterCVEDataStore:       clusterCVEs,
+		alertDataStore:            ads,
+		imageIntegrationDataStore: imageIntegrationStore,
+		namespaceDataStore:        namespaceDS,
+		deploymentDataStore:       dds,
+		nodeDataStore:             ns,
+		podDataStore:              pods,
+		secretsDataStore:          ss,
+		netFlowsDataStore:         flows,
+		netEntityDataStore:        netEntities,
+		serviceAccountDataStore:   sads,
+		roleDataStore:             rds,
+		roleBindingDataStore:      rbds,
+		cm:                        cm,
+		notifier:                  notifier,
+		clusterRanker:             clusterRanker,
+		indexer:                   indexer,
+		networkBaselineMgr:        networkBaselineMgr,
+		idToNameCache:             simplecache.New(),
+		nameToIDCache:             simplecache.New(),
 	}
 
 	if features.PostgresDatastore.Enabled() {
@@ -212,6 +215,10 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 	if err != nil {
 		return nil, err
 	}
+	iiStore, err := imageIntegrationDataStore.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
 	clusterCVEStore, err := clusterCVEDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -220,11 +227,11 @@ func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, erro
 	sensorCnxMgr := connection.ManagerSingleton()
 	clusterRanker := ranking.ClusterRanker()
 
-	return New(clusterdbstore, clusterhealthdbstore, indexer,
-		alertStore, namespaceStore, deploymentStore,
+	return New(clusterdbstore, clusterhealthdbstore, clusterCVEStore,
+		alertStore, iiStore, namespaceStore, deploymentStore,
 		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
-		nil, clusterRanker, networkBaselineManager, clusterCVEStore)
+		nil, clusterRanker, indexer, networkBaselineManager)
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
@@ -290,13 +297,16 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-
+	iiStore, err := imageIntegrationDataStore.GetTestRocksBleveDataStore(t, boltengine, bleveIndex)
+	if err != nil {
+		return nil, err
+	}
 	sensorCnxMgr := connection.ManagerSingleton()
 	clusterRanker := ranking.ClusterRanker()
 
-	return New(clusterdbstore, clusterhealthdbstore, indexer,
-		alertStore, namespaceStore, deploymentStore,
+	return New(clusterdbstore, clusterhealthdbstore, nil,
+		alertStore, iiStore, namespaceStore, deploymentStore,
 		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
-		dacky, clusterRanker, networkBaselineManager, nil)
+		dacky, clusterRanker, indexer, networkBaselineManager)
 }
