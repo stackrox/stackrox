@@ -114,6 +114,11 @@ cleanup_image() {
 }
 
 build_main_and_bundles() {
+    # avoid a -dirty tag
+    info "Reset to remove Dockerfile modification by OpenShift CI"
+    git restore .
+    git status
+
     export JOB_NAME="build-main-and-bundle"
 
     if [[ "${RACE_CONDITION_DEBUG:-}" == "true" ]]; then

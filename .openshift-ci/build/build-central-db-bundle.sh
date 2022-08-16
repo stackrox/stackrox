@@ -15,6 +15,11 @@ create_central_db_bundle() {
 }
 
 build_central-db-bundle() {
+    # avoid a -dirty tag
+    info "Reset to remove Dockerfile modification by OpenShift CI"
+    git restore .
+    git status
+
     export JOB_NAME="build-central-db-bundle"
 
     openshift_ci_mods
