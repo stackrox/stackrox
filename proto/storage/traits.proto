@@ -10,17 +10,17 @@ message Traits {
   // EXPERIMENTAL.
   //
   // MutabilityMode specifies whether and how an object can be modified. Default
-  // is ALLOW and means there are no modification restrictions; this is equivalent
-  // to the absence of MutabilityMode specification. ALLOW_FORCED forbids all
+  // is ALLOW_MUTATE and means there are no modification restrictions; this is equivalent
+  // to the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all
   // modifying operations except object removal with force bit on.
   //
   // Be careful when changing the state of this field. For example, modifying an
-  // object from ALLOW to ALLOW_FORCED is allowed but will prohibit any further
-  // changes to it, including modifying it back to ALLOW.
+  // object from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further
+  // changes to it, including modifying it back to ALLOW_MUTATE.
   enum MutabilityMode {
     ALLOW_MUTATE        = 0;
     ALLOW_MUTATE_FORCED = 1;
   }
 
-  MutabilityMode mutabilityMode = 1;
+  MutabilityMode mutability_mode = 1;
 }

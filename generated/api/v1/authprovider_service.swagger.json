@@ -172,42 +172,6 @@
           "AuthProviderService"
         ]
       },
-      "put": {
-        "operationId": "AuthProviderService_PutAuthProvider",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/storageAuthProvider"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/storageAuthProvider"
-            }
-          }
-        ],
-        "tags": [
-          "AuthProviderService"
-        ]
-      },
       "patch": {
         "operationId": "AuthProviderService_UpdateAuthProvider",
         "responses": {
@@ -238,6 +202,50 @@
             "schema": {
               "$ref": "#/definitions/v1UpdateAuthProviderRequest"
             }
+          }
+        ],
+        "tags": [
+          "AuthProviderService"
+        ]
+      }
+    },
+    "/v1/authProviders/{provider.id}": {
+      "put": {
+        "operationId": "AuthProviderService_PutAuthProvider",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storageAuthProvider"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "provider.id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/storageAuthProvider"
+            }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -341,7 +349,7 @@
         "ALLOW_MUTATE_FORCED"
       ],
       "default": "ALLOW_MUTATE",
-      "description": "EXPERIMENTAL.\n\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW to ALLOW_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW."
+      "description": "EXPERIMENTAL.\n\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW_MUTATE and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW_MUTATE."
     },
     "UserInfoResourceToAccess": {
       "type": "object",
@@ -644,6 +652,9 @@
           "type": "string"
         },
         "enabled": {
+          "type": "boolean"
+        },
+        "force": {
           "type": "boolean"
         }
       }

@@ -48,6 +48,14 @@ message UpdateAuthProviderRequest {
     oneof enabled_opt {
         bool enabled = 3;
     }
+
+    bool force = 4;
+}
+
+message PutAuthProviderRequest {
+    storage.AuthProvider provider = 1;
+
+    bool force                    = 2;
 }
 
 message ExchangeTokenRequest {
@@ -111,10 +119,10 @@ service AuthProviderService {
         };
     }
 
-    rpc PutAuthProvider (storage.AuthProvider) returns (storage.AuthProvider) {
+    rpc PutAuthProvider (PutAuthProviderRequest) returns (storage.AuthProvider) {
         option (google.api.http) = {
-            put: "/v1/authProviders/{id}"
-            body: "*"
+            put: "/v1/authProviders/{provider.id}"
+            body: "provider"
         };
     }
 

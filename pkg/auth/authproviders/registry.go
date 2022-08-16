@@ -3,8 +3,6 @@ package authproviders
 import (
 	"context"
 	"net/http"
-
-	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 // Registry stores information about registered authentication providers, as well as about the factories to create them.
@@ -26,8 +24,8 @@ type Registry interface {
 
 	ValidateProvider(ctx context.Context, options ...ProviderOption) error
 	CreateProvider(ctx context.Context, options ...ProviderOption) (Provider, error)
-	UpdateProvider(ctx context.Context, id string, options ...ProviderOption) (Provider, error)
-	DeleteProvider(ctx context.Context, deleteReq *v1.DeleteByIDWithForce, ignoreActive bool) error
+	UpdateProvider(ctx context.Context, id string, force bool, options ...ProviderOption) (Provider, error)
+	DeleteProvider(ctx context.Context, id string, force bool, ignoreActive bool) error
 
 	// RegisterBackendFactory registers the given factory (creator) under the specified type. The creation of the
 	// factory is not delayed; the reason this function does not receive a factory instance directly is only to allow

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
@@ -17,7 +16,8 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log          = logging.LoggerForModule()
+	_   Registry = (*registryImpl)(nil)
 )
 
 // NewStoreBackedRegistry creates a new auth provider registry that is backed by a store. It also can handle HTTP requests,
@@ -183,7 +183,7 @@ func (r *registryImpl) CreateProvider(ctx context.Context, options ...ProviderOp
 	return newProvider, nil
 }
 
-func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ...ProviderOption) (Provider, error) {
+func (r *registryImpl) UpdateProvider(ctx context.Context, id string, force bool, options ...ProviderOption) (Provider, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -194,7 +194,7 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 
 	// Run the updates with an update to the store added.
 	// This will perform name validation since it is a secondary key in the store.
-	if err := provider.ApplyOptions(append(options, UpdateStore(ctx, r.store))...); err != nil {
+	if err := provider.ApplyOptions(append(options, UpdateStore(ctx, r.store, force))...); err != nil {
 		return nil, err
 	}
 	r.updatedNoLock(provider)
@@ -202,11 +202,11 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 	return provider, nil
 }
 
-func (r *registryImpl) DeleteProvider(ctx context.Context, deleteReq *v1.DeleteByIDWithForce, ignoreActive bool) error {
+func (r *registryImpl) DeleteProvider(ctx context.Context, providerID string, force bool, ignoreActive bool) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	provider := r.providers[deleteReq.GetId()]
+	provider := r.providers[providerID]
 	if provider == nil {
 		return nil
 	}
@@ -215,10 +215,10 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, deleteReq *v1.DeleteB
 		return errors.New("cannot update an auth provider once it has been used. Please delete and then re-add to modify")
 	}
 
-	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store, deleteReq), UnregisterSource(r.issuerFactory)); err != nil {
+	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store, providerID, force), UnregisterSource(r.issuerFactory)); err != nil {
 		return err
 	}
-	delete(r.providers, deleteReq.GetId())
+	delete(r.providers, providerID)
 	r.deletedNoLock(provider)
 	return nil
 }

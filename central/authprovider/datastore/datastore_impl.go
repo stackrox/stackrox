@@ -3,13 +3,14 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/authprovider/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -21,13 +22,13 @@ type datastoreImpl struct {
 	storage store.Store
 }
 
-// GetAllAuthProviders retrieves authProviders
+// GetAllAuthProviders retrieves authProviders.
 func (b *datastoreImpl) GetAllAuthProviders(ctx context.Context) ([]*storage.AuthProvider, error) {
 	// No SAC checks here because all users need to be able to read auth providers in order to authenticate.
 	return b.storage.GetAll(ctx)
 }
 
-// AddAuthProvider adds an auth provider into bolt
+// AddAuthProvider adds an auth provider into bolt.
 func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error {
 	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -46,8 +47,8 @@ func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *stora
 	return b.storage.Upsert(ctx, authProvider)
 }
 
-// UpdateAuthProvider upserts an auth provider into bolt
-func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error {
+// UpdateAuthProvider upserts an auth provider into bolt.
+func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *storage.AuthProvider, force bool) error {
 	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -56,22 +57,21 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
-	if err := b.verifyExistsAndMutable(ctx, authProvider.GetId(), false); err != nil {
+	if err := b.verifyExistsAndMutable(ctx, authProvider.GetId(), force); err != nil {
 		return err
 	}
 	return b.storage.Upsert(ctx, authProvider)
 }
 
-// RemoveAuthProvider removes an auth provider from bolt
-func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, deleteReq *v1.DeleteByIDWithForce) error {
+// RemoveAuthProvider removes an auth provider from bolt.
+func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, id string, force bool) error {
 	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	id := deleteReq.GetId()
-	if err := b.verifyExistsAndMutable(ctx, id, deleteReq.GetForce()); err != nil {
+	if err := b.verifyExistsAndMutable(ctx, id, force); err != nil {
 		return err
 	}
 	return b.storage.Delete(ctx, id)
@@ -86,12 +86,18 @@ func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, f
 		return errox.NotFound.Newf("auth provider with id %q was not found", id)
 	}
 
-	if provider.GetTraits().GetMutabilityMode() == storage.Traits_ALLOW_MUTATE {
+	switch provider.GetTraits().GetMutabilityMode() {
+	case storage.Traits_ALLOW_MUTATE:
 		return nil
+	case storage.Traits_ALLOW_MUTATE_FORCED:
+		if force {
+			return nil
+		}
+		return errox.InvalidArgs.Newf("auth provider %q is immutable and can only be removed"+
+			" via API and specifying the force flag", id)
+	default:
+		utils.Should(errors.Wrapf(errox.InvalidArgs, "unknown mutability mode given: %q",
+			provider.GetTraits().GetMutabilityMode().String()))
 	}
-
-	if provider.GetTraits().GetMutabilityMode() == storage.Traits_ALLOW_MUTATE_FORCED && !force {
-		return errox.InvalidArgs.Newf("auth provider %q is immutable", id)
-	}
-	return nil
+	return errox.InvalidArgs.Newf("auth provider %q is immutable", id)
 }

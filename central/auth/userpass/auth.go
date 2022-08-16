@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/role"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/mapper"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	basicAuthProvider "github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -71,10 +70,7 @@ func RegisterAuthProviderOrPanic(ctx context.Context, mgr *basicAuthn.Manager, r
 	typ := basicAuthProvider.TypeName
 	existingBasicAuthProviders := registry.GetProviders(nil, &typ)
 	for _, provider := range existingBasicAuthProviders {
-		deleteReq := &v1.DeleteByIDWithForce{
-			Id: provider.ID(),
-		}
-		if err := registry.DeleteProvider(ctx, deleteReq, true); err != nil {
+		if err := registry.DeleteProvider(ctx, provider.ID(), true, true); err != nil {
 			log.Panicf("Could not delete existing basic auth provider %s: %v", provider.Name(), err)
 		}
 	}

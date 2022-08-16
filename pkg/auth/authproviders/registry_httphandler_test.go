@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
@@ -398,6 +397,8 @@ func generateAuthResponse(user string, userAttr map[string][]string) *AuthRespon
 	}
 }
 
+var _ Store = (*tstAuthProviderStore)(nil)
+
 // Authprovider store (needed for NewStoreBackedRegistry)
 type tstAuthProviderStore struct{}
 
@@ -409,11 +410,11 @@ func (*tstAuthProviderStore) AddAuthProvider(_ context.Context, _ *storage.AuthP
 	return nil
 }
 
-func (*tstAuthProviderStore) UpdateAuthProvider(_ context.Context, _ *storage.AuthProvider) error {
+func (*tstAuthProviderStore) UpdateAuthProvider(_ context.Context, _ *storage.AuthProvider, _ bool) error {
 	return nil
 }
 
-func (*tstAuthProviderStore) RemoveAuthProvider(_ context.Context, _ *v1.DeleteByIDWithForce) error {
+func (*tstAuthProviderStore) RemoveAuthProvider(_ context.Context, _ string, _ bool) error {
 	return nil
 }
 
