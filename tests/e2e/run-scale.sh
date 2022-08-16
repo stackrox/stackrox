@@ -13,6 +13,8 @@ set -euo pipefail
 scale_test() {
     info "Starting scale test"
 
+    local pprof_zip_output="$1"
+
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
     require_environment "COMPARISON_METRICS"
@@ -25,7 +27,7 @@ scale_test() {
 
     deploy_stackrox_in_scale_mode
 
-    run_scale_test
+    run_scale_test "$pprof_zip_output"
 }
 
 deploy_stackrox_in_scale_mode() {
@@ -44,15 +46,16 @@ deploy_stackrox_in_scale_mode() {
 run_scale_test() {
     info "Running scale test"
 
-    local pprof_dir="/tmp/scale-tests/pprof"
-    local debug_dump_dir="/tmp/scale-test-debug-dump"
+    local pprof_zip_output="$1"
+    local pprof_dir
+    pprof_dir=$(dirname "${pprof_zip_output}")
 
-    mkdir -p $pprof_dir
+    mkdir -p "${pprof_dir}"
     # 45 min run so that we are confident that the run has completely finished.
-    # /tmp/scale-tests is copied to artifacts by post_tests.py.
-    "$ROOT/scale/profiler/pprof.sh" $pprof_dir "${API_ENDPOINT}" 45
-    zip -r /tmp/scale-tests/pprof.zip $pprof_dir
+    "$ROOT/scale/profiler/pprof.sh" "${pprof_dir}" "${API_ENDPOINT}" 45
+    zip -r "${pprof_zip_output}" "${pprof_dir}"
 
+    local debug_dump_dir="/tmp/scale-test-debug-dump"
     get_central_debug_dump "${debug_dump_dir}"
 
     get_prometheus_metrics_parser
@@ -88,4 +91,4 @@ compare_with_stored_metrics() {
     popd
 }
 
-scale_test
+scale_test "$@"
