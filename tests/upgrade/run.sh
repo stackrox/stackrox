@@ -102,7 +102,7 @@ preamble() {
         require_executable yq
     fi
 
-    export TRUSTED_CA_FILE="$ROOT/tests/bad-ca/untrusted-root-badssl-com.pem"
+    export TRUSTED_CA_FILE="$TEST_ROOT/tests/bad-ca/untrusted-root-badssl-com.pem"
 }
 
 validate_sensor_bundle_via_upgrader() {
