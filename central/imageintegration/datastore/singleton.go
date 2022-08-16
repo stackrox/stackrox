@@ -3,12 +3,13 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/imageintegration/index"
+	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/imageintegration/store/bolt"
 	"github.com/stackrox/rox/central/imageintegration/store/postgres"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
@@ -19,13 +20,14 @@ import (
 var (
 	once sync.Once
 
-	ad DataStore
+	dataStore DataStore
 )
 
-func initializeDefaultIntegrations(ctx context.Context, storage store.Store) {
-	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
+func initializeDefaultIntegrations(storage store.Store) {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	iis, err := storage.GetAll(ctx)
 	utils.CrashOnError(err)
-	if !env.OfflineModeEnv.BooleanSetting() && len(integrations) == 0 {
+	if !env.OfflineModeEnv.BooleanSetting() && len(iis) == 0 {
 		// Add default integrations
 		for _, ii := range store.DefaultImageIntegrations {
 			utils.Must(storage.Upsert(ctx, ii))
@@ -33,37 +35,25 @@ func initializeDefaultIntegrations(ctx context.Context, storage store.Store) {
 	}
 }
 
-func initializeManager(ctx context.Context) {
-	// Initialize the integration set with all present integrations.
-	integrationManager := enrichment.ManagerSingleton()
-	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
-	if err != nil {
-		log.Errorf("unable to use previous integrations: %s", err)
-	}
-	for _, ii := range integrations {
-		if err := integrationManager.Upsert(ii); err != nil {
-			log.Errorf("unable to use previous integration %s: %v", ii.GetName(), err)
-		}
-	}
-}
-
 func initialize() {
 	// Create underlying store and datastore.
 	var storage store.Store
+	var indexer index.Indexer
+
 	if features.PostgresDatastore.Enabled() {
 		storage = postgres.New(globaldb.GetPostgres())
+		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {
 		storage = bolt.New(globaldb.GetGlobalDB())
+		indexer = index.New(globalindex.GetGlobalTmpIndex())
 	}
-	ad = New(storage)
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	initializeDefaultIntegrations(ctx, storage)
-	initializeManager(ctx)
+	initializeDefaultIntegrations(storage)
+	searcher := search.New(storage, indexer)
+	dataStore = New(storage, indexer, searcher)
 }
 
 // Singleton provides the interface for non-service external interaction.
 func Singleton() DataStore {
 	once.Do(initialize)
-	return ad
+	return dataStore
 }

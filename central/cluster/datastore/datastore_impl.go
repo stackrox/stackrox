@@ -15,6 +15,7 @@ import (
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -67,31 +68,32 @@ var (
 )
 
 type datastoreImpl struct {
-	indexer              index.Indexer
-	clusterStorage       clusterStore.Store
-	clusterHealthStorage clusterHealthStore.Store
-	notifier             notifierProcessor.Processor
-	searcher             search.Searcher
+	indexer                   index.Indexer
+	clusterStorage            clusterStore.Store
+	clusterHealthStorage      clusterHealthStore.Store
+	clusterCVEDataStore       clusterCVEDS.DataStore
+	alertDataStore            alertDataStore.DataStore
+	imageIntegrationDataStore imageIntegrationDataStore.DataStore
+	namespaceDataStore        namespaceDataStore.DataStore
+	deploymentDataStore       deploymentDataStore.DataStore
+	nodeDataStore             nodeDataStore.GlobalDataStore
+	podDataStore              podDataStore.DataStore
+	secretsDataStore          secretDataStore.DataStore
+	netFlowsDataStore         netFlowDataStore.ClusterDataStore
+	netEntityDataStore        netEntityDataStore.EntityDataStore
+	serviceAccountDataStore   serviceAccountDataStore.DataStore
+	roleDataStore             roleDataStore.DataStore
+	roleBindingDataStore      roleBindingDataStore.DataStore
+	cm                        connection.Manager
+	networkBaselineMgr        networkBaselineManager.Manager
 
-	alertDataStore          alertDataStore.DataStore
-	clusterCVEDataStore     clusterCVEDS.DataStore
-	namespaceDataStore      namespaceDataStore.DataStore
-	deploymentDataStore     deploymentDataStore.DataStore
-	nodeDataStore           nodeDataStore.GlobalDataStore
-	podDataStore            podDataStore.DataStore
-	secretsDataStore        secretDataStore.DataStore
-	netFlowsDataStore       netFlowDataStore.ClusterDataStore
-	netEntityDataStore      netEntityDataStore.EntityDataStore
-	serviceAccountDataStore serviceAccountDataStore.DataStore
-	roleDataStore           roleDataStore.DataStore
-	roleBindingDataStore    roleBindingDataStore.DataStore
-	cm                      connection.Manager
-	networkBaselineMgr      networkBaselineManager.Manager
-
+	notifier      notifierProcessor.Processor
 	clusterRanker *ranking.Ranker
 
 	idToNameCache simplecache.Cache
 	nameToIDCache simplecache.Cache
+
+	searcher search.Searcher
 
 	lock sync.Mutex
 }
@@ -518,6 +520,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 			}
 		}
 	}
+	ds.removeClusterImageIntegrations(ctx, cluster)
 
 	// Remove ranker record here since removal is not handled in risk store as no entry present for cluster
 	ds.clusterRanker.Remove(cluster.GetId())
@@ -556,6 +559,22 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 
 	if done != nil {
 		done.Signal()
+	}
+}
+
+func (ds *datastoreImpl) removeClusterImageIntegrations(ctx context.Context, cluster *storage.Cluster) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+
+	imageIntegrations, err := ds.imageIntegrationDataStore.Search(ctx, q)
+	if err != nil {
+		log.Errorf("failed to get image integrations for removed cluster %s: %v", cluster.GetId(), err)
+		return
+	}
+	for _, imageIntegration := range imageIntegrations {
+		err = ds.imageIntegrationDataStore.RemoveImageIntegration(ctx, imageIntegration.ID)
+		if err != nil {
+			log.Errorf("failed to remove image integration %s in deleted cluster: %v", imageIntegration.ID, err)
+		}
 	}
 }
 
