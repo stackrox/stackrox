@@ -11,7 +11,7 @@ from common import popen_graceful_kill
 
 class BaseTest:
     def __init__(self):
-        self.test_output_dirs = []
+        self.test_outputs = []
 
     def run_with_graceful_kill(self, args, timeout, post_start_hook=None):
         with subprocess.Popen(args) as cmd:
@@ -40,7 +40,7 @@ class UpgradeTest(BaseTest):
 
         def set_dirs_after_start():
             # let post test know where logs are
-            self.test_output_dirs = [UpgradeTest.TEST_OUTPUT_DIR]
+            self.test_outputs = [UpgradeTest.TEST_OUTPUT_DIR]
 
         self.run_with_graceful_kill(
             ["tests/upgrade/run.sh", UpgradeTest.TEST_OUTPUT_DIR],
@@ -121,7 +121,7 @@ class QaE2eDBBackupRestoreTest(BaseTest):
 
         def set_dirs_after_start():
             # let post test know where logs are
-            self.test_output_dirs = [QaE2eDBBackupRestoreTest.TEST_OUTPUT_DIR]
+            self.test_outputs = [QaE2eDBBackupRestoreTest.TEST_OUTPUT_DIR]
 
         self.run_with_graceful_kill(
             [
@@ -157,7 +157,7 @@ class NonGroovyE2e(BaseTest):
 
         def set_dirs_after_start():
             # let post test know where logs are
-            self.test_output_dirs = [NonGroovyE2e.TEST_OUTPUT_DIR]
+            self.test_outputs = [NonGroovyE2e.TEST_OUTPUT_DIR]
 
         self.run_with_graceful_kill(
             ["tests/e2e/run.sh", NonGroovyE2e.TEST_OUTPUT_DIR],
@@ -168,17 +168,17 @@ class NonGroovyE2e(BaseTest):
 
 class ScaleTest(BaseTest):
     TEST_TIMEOUT = 90 * 60
-    TEST_OUTPUT_DIR = "/tmp/scale-test"
+    PPROF_ZIP_OUTPUT = "/tmp/scale-test/pprof.zip"
 
     def run(self):
         print("Executing the Scale Test")
 
         def set_dirs_after_start():
             # let post test know where results are
-            self.test_output_dirs = [ScaleTest.TEST_OUTPUT_DIR]
+            self.test_outputs = [ScaleTest.PPROF_ZIP_OUTPUT]
 
         self.run_with_graceful_kill(
-            ["tests/e2e/run-scale.sh", ScaleTest.TEST_OUTPUT_DIR],
+            ["tests/e2e/run-scale.sh", ScaleTest.PPROF_ZIP_OUTPUT],
             ScaleTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )

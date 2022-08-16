@@ -24,7 +24,11 @@ class GKECluster:
     PROVISION_TIMEOUT = 20 * 60
     WAIT_TIMEOUT = 20 * 60
     TEARDOWN_TIMEOUT = 5 * 60
-    GKE_SCRIPT = "scripts/ci/gke.sh"
+    # separate script names used for testability - test_clusters.py
+    PROVISION_PATH = "scripts/ci/gke.sh"
+    WAIT_PATH = "scripts/ci/gke.sh"
+    REFRESH_PATH = "scripts/ci/gke.sh"
+    TEARDOWN_PATH = "scripts/ci/gke.sh"
 
     def __init__(self, cluster_id, num_nodes=3, machine_type="e2-standard-4"):
         self.cluster_id = cluster_id
@@ -35,7 +39,7 @@ class GKECluster:
     def provision(self):
         with subprocess.Popen(
             [
-                GKECluster.GKE_SCRIPT,
+                GKECluster.PROVISION_PATH,
                 "provision_gke_cluster",
                 self.cluster_id,
                 str(self.num_nodes),
@@ -55,14 +59,14 @@ class GKECluster:
         signal.signal(signal.SIGINT, self.sigint_handler)
 
         subprocess.run(
-            [GKECluster.GKE_SCRIPT, "wait_for_cluster"],
+            [GKECluster.WAIT_PATH, "wait_for_cluster"],
             check=True,
             timeout=GKECluster.WAIT_TIMEOUT,
         )
 
         # pylint: disable=consider-using-with
         self.refresh_token_cmd = subprocess.Popen(
-            [GKECluster.GKE_SCRIPT, "refresh_gke_token"]
+            [GKECluster.REFRESH_PATH, "refresh_gke_token"]
         )
 
         return self
@@ -79,7 +83,7 @@ class GKECluster:
                 print(f"Could not terminate the token refresh: {err}")
 
         subprocess.run(
-            [GKECluster.GKE_SCRIPT, "teardown_gke_cluster"],
+            [GKECluster.TEARDOWN_PATH, "teardown_gke_cluster"],
             check=True,
             timeout=GKECluster.TEARDOWN_TIMEOUT,
         )

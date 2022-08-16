@@ -36,10 +36,10 @@ class TestClusterTestRunner(unittest.TestCase):
 
     def test_post_gets_output_from_test(self):
         test = Mock()
-        test.test_output_dirs = ["a", "b"]
+        test.test_outputs = ["a", "b"]
         post_test = Mock()
         ClusterTestRunner(test=test, post_test=post_test).run()
-        post_test.run.assert_called_with(test_output_dirs=["a", "b"])
+        post_test.run.assert_called_with(test_outputs=["a", "b"])
 
     def test_provision_failure(self):
         cluster = Mock()
