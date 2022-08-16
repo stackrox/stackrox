@@ -42,7 +42,7 @@ deploy_stackrox_in_scale_mode() {
 run_scale_test() {
     info "Running scale test"
 
-    mkdir /tmp/scale-tests/pprof
+    mkdir -p /tmp/scale-tests/pprof
     # 45 min run so that we are confident that the run has completely finished
     "$ROOT/scale/profiler/pprof.sh" /tmp/scale-tests/pprof "${API_ENDPOINT}" 45
     zip -r /tmp/scale-tests/pprof.zip /tmp/scale-tests/pprof
