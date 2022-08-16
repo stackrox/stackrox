@@ -8,6 +8,7 @@ import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import {
+    VULN_CVE_ONLY_FRAGMENT_LEGACY,
     VULN_CVE_ONLY_FRAGMENT,
     VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT,
     VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT,
@@ -77,7 +78,7 @@ const VulnMgmtImage = ({
                         name
                     }
                     notes
-                    components {
+                    ${showVMUpdates ? 'components: imageComponents' : 'components'} {
                         id
                         priority
                         name
@@ -85,14 +86,14 @@ const VulnMgmtImage = ({
                         version
                         source
                         location
-                        vulns {
+                        ${showVMUpdates ? 'vulns: imageVulnerabilities' : 'vulns'} {
                             ...cveFields
                         }
                     }
                 }
             }
         }
-        ${VULN_CVE_ONLY_FRAGMENT}
+        ${showVMUpdates ? VULN_CVE_ONLY_FRAGMENT : VULN_CVE_ONLY_FRAGMENT_LEGACY}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
