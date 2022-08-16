@@ -27,7 +27,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.2.0
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/couchbase/moss v0.1.0 // indirect
-	github.com/dave/jennifer v1.5.0
+	github.com/dave/jennifer v1.5.1
 	github.com/deckarep/golang-set v1.8.0
 	github.com/dexidp/dex v0.0.0-20220607113954-3836196af2e7
 	github.com/docker/distribution v2.8.1+incompatible
