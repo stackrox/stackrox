@@ -307,6 +307,8 @@ function launch_central {
         helm lint "$unzip_dir/chart" -n stackrox
         helm lint "$unzip_dir/chart" -n stackrox "${helm_args[@]}"
       fi
+			echo "Helm linters were fine."
+			echo "Helm Args -> ${helm_args[@]}"
       helm install -n stackrox stackrox-central-services "$unzip_dir/chart" \
           "${helm_args[@]}"
     else
