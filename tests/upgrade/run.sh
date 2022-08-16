@@ -49,7 +49,7 @@ test_upgrade() {
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
-    "$ROOT/tests/complianceoperator/create.sh"
+    "$TEST_ROOT/tests/complianceoperator/create.sh"
 
     info "Deploying central"
     "$TEST_ROOT/$DEPLOY_DIR/central.sh"
