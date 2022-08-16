@@ -308,7 +308,8 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	// Merge any alerts that have new and old alerts.
 	for _, alert := range incomingAlerts {
 		if pkgAlert.IsDeployTimeAttemptedAlert(alert) {
-			alert.FirstOccurred = ptypes.TimestampNow()
+			// `alert.time` is the latest violation time.
+			alert.FirstOccurred = alert.GetTime()
 			newAlerts = append(newAlerts, alert)
 			continue
 		}
@@ -321,7 +322,8 @@ func (d *alertManagerImpl) mergeManyAlerts(
 			continue
 		}
 
-		alert.FirstOccurred = ptypes.TimestampNow()
+		// `alert.time` is the latest violation time.
+		alert.FirstOccurred = alert.GetTime()
 		newAlerts = append(newAlerts, alert)
 	}
 
