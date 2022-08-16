@@ -84,7 +84,7 @@ func (m *ResourceByID) Clone() *ResourceByID {
 
 // EXPERIMENTAL.
 //
-// Used in combination with MutabilityMode.ALLOW_FORCED to enable forced removal.
+// Used in combination with MutabilityMode.ALLOW_MUTATE_FORCED to enable forced removal.
 type DeleteByIDWithForce struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Force                bool     `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`

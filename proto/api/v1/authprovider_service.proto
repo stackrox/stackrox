@@ -9,7 +9,6 @@ import "api/v1/auth_service.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
 import "storage/auth_provider.proto";
-import "storage/traits.proto";
 
 package v1;
 
