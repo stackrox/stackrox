@@ -57,7 +57,8 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
-	// The API currently does not allow setting the force flag since it would require a non-compatible gRPC change.
+	// Currently, the data store does not support forcing updates.
+	// If we want to add a force flag to the respective API methods, we might need to revisit this.
 	if err := b.verifyExistsAndMutable(ctx, authProvider.GetId(), false); err != nil {
 		return err
 	}
