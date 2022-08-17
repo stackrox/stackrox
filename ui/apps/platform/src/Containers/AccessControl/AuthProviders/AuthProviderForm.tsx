@@ -315,8 +315,9 @@ function AuthProviderForm({
                                             isSmall
                                         >
                                             {selectedAuthProvider.active ||
-                                            selectedAuthProvider.traits?.mutabilityMode !==
-                                                'ALLOW_MUTATE'
+                                            (selectedAuthProvider.traits &&
+                                                selectedAuthProvider.traits?.mutabilityMode !==
+                                                    'ALLOW_MUTATE')
                                                 ? 'Edit minimum role and rules'
                                                 : 'Edit auth provider'}
                                         </Button>
@@ -359,18 +360,19 @@ function AuthProviderForm({
                     }
                 />
             )}
-            {selectedAuthProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE' && (
-                <Alert
-                    isInline
-                    variant="warning"
-                    title={
-                        <span>
-                            This auth provider is immutable. You can only edit the minimum role and
-                            rules.
-                        </span>
-                    }
-                />
-            )}
+            {selectedAuthProvider.traits &&
+                selectedAuthProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE' && (
+                    <Alert
+                        isInline
+                        variant="warning"
+                        title={
+                            <span>
+                                This auth provider is immutable. You can only edit the minimum role
+                                and rules.
+                            </span>
+                        }
+                    />
+                )}
             <FormikProvider value={formik}>
                 <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
                     <Grid hasGutter>
@@ -392,7 +394,8 @@ function AuthProviderForm({
                                     isDisabled={
                                         isViewing ||
                                         values.active ||
-                                        values.traits?.mutabilityMode !== 'ALLOW_MUTATE'
+                                        (values.traits &&
+                                            values.traits?.mutabilityMode !== 'ALLOW_MUTATE')
                                     }
                                     isRequired
                                     onBlur={handleBlur}
@@ -430,7 +433,8 @@ function AuthProviderForm({
                             configErrors={errors.config}
                             configTouched={touched.config}
                             disabled={
-                                values.active || values.traits?.mutabilityMode !== 'ALLOW_MUTATE'
+                                values.active ||
+                                (values.traits && values.traits?.mutabilityMode !== 'ALLOW_MUTATE')
                             }
                         />
                     </Grid>
