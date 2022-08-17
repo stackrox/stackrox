@@ -386,7 +386,7 @@ func (resolver *clusterCVEResolver) EnvImpact(ctx context.Context) (float64, err
 	return float64(scopedCount) / float64(allCount), nil
 }
 
-func (resolver *clusterCVEResolver) FixedByVersion(ctx context.Context) (string, error) {
+func (resolver *clusterCVEResolver) FixedByVersion(_ context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "FixedByVersion")
 	scope, hasScope := scoped.GetScope(resolver.ctx)
 	if !hasScope {
@@ -397,14 +397,14 @@ func (resolver *clusterCVEResolver) FixedByVersion(ctx context.Context) (string,
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
-	edges, err := resolver.root.ClusterCVEEdgeDataStore.SearchRawEdges(ctx, query)
+	edges, err := resolver.root.ClusterCVEEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
 		return "", err
 	}
 	return edges[0].GetFixedBy(), nil
 }
 
-func (resolver *clusterCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
+func (resolver *clusterCVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "IsFixable")
 	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID))
 	if err != nil {
@@ -421,11 +421,11 @@ func (resolver *clusterCVEResolver) IsFixable(ctx context.Context, args RawQuery
 	}
 
 	query = search.ConjunctionQuery(conjuncts...)
-	loader, err := loaders.GetClusterCVELoader(ctx)
+	loader, err := loaders.GetClusterCVELoader(resolver.ctx)
 	if err != nil {
 		return false, err
 	}
-	count, err := loader.CountFromQuery(ctx, query)
+	count, err := loader.CountFromQuery(resolver.ctx, query)
 	if err != nil {
 		return false, err
 	}

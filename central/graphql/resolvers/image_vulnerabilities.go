@@ -317,7 +317,7 @@ func (resolver *imageCVEResolver) EnvImpact(ctx context.Context) (float64, error
 	return float64(scopedCount) / float64(allCount), nil
 }
 
-func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, error) {
+func (resolver *imageCVEResolver) FixedByVersion(_ context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "FixedByVersion")
 
 	// Short path. Full image is embedded when image scan resolver is called.
@@ -334,14 +334,14 @@ func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, e
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
-	edges, err := resolver.root.ComponentCVEEdgeDataStore.SearchRawEdges(ctx, query)
+	edges, err := resolver.root.ComponentCVEEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
 		return "", err
 	}
 	return edges[0].GetFixedBy(), nil
 }
 
-func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
+func (resolver *imageCVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
 
 	// Short path. Full image is embedded when image scan resolver is called.
@@ -364,11 +364,11 @@ func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) 
 	}
 
 	query = search.ConjunctionQuery(conjuncts...)
-	loader, err := loaders.GetImageCVELoader(ctx)
+	loader, err := loaders.GetImageCVELoader(resolver.ctx)
 	if err != nil {
 		return false, err
 	}
-	count, err := loader.CountFromQuery(ctx, query)
+	count, err := loader.CountFromQuery(resolver.ctx, query)
 	if err != nil {
 		return false, err
 	}
@@ -557,7 +557,7 @@ func (resolver *imageCVEResolver) Deployments(ctx context.Context, args Paginate
 	return resolver.root.Deployments(resolver.withImageVulnerabilityScope(ctx), args)
 }
 
-func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error) {
+func (resolver *imageCVEResolver) DiscoveredAtImage(_ context.Context, args RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DiscoveredAtImage")
 
 	// Short path. Full image is embedded when image scan resolver is called.
@@ -571,7 +571,7 @@ func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args Ra
 		imageID = scope.ID
 	} else {
 		var err error
-		imageID, err = getImageIDFromIfImageShaQuery(ctx, resolver.root, args)
+		imageID, err = getImageIDFromIfImageShaQuery(resolver.ctx, resolver.root, args)
 		if err != nil {
 			return nil, errors.Wrap(err, "could not determine vulnerability discovered time in image")
 		}
@@ -582,7 +582,7 @@ func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args Ra
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
-	edges, err := resolver.root.ImageCVEEdgeDataStore.SearchRawEdges(ctx, query)
+	edges, err := resolver.root.ImageCVEEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
 		return nil, err
 	}
