@@ -1,8 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-    Dropdown,
-    DropdownToggle,
     Flex,
     FlexItem,
     Form,
@@ -14,7 +12,6 @@ import {
 
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { PolicySeverity } from 'types/policy.proto';
 
@@ -23,6 +20,7 @@ import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 import NoDataEmptyState from './NoDataEmptyState';
 import ViolationsByPolicyCategoryChart, { Config } from './ViolationsByPolicyCategoryChart';
+import OptionsDropdown from './OptionsDropdown';
 
 const fieldIdPrefix = 'policy-category-violations';
 
@@ -35,7 +33,6 @@ const defaultConfig = {
 } as const;
 
 function ViolationsByPolicyCategory() {
-    const { isOpen: isOptionsOpen, onToggle: toggleOptionsOpen } = useSelectToggle();
     const { pathname } = useLocation();
     const { searchFilter } = useURLSearch();
 
@@ -72,19 +69,7 @@ function ViolationsByPolicyCategory() {
                         <Title headingLevel="h2">Policy violations by category</Title>
                     </FlexItem>
                     <FlexItem>
-                        <Dropdown
-                            toggle={
-                                <DropdownToggle
-                                    id={`${fieldIdPrefix}-options-toggle`}
-                                    toggleVariant="secondary"
-                                    onToggle={toggleOptionsOpen}
-                                >
-                                    Options
-                                </DropdownToggle>
-                            }
-                            position="right"
-                            isOpen={isOptionsOpen}
-                        >
+                        <OptionsDropdown toggleId={`${fieldIdPrefix}-options-toggle`}>
                             <Form className="pf-u-px-md pf-u-py-sm">
                                 <FormGroup fieldId={`${fieldIdPrefix}-sort-by`} label="Sort by">
                                     <ToggleGroup aria-label="Sort data by highest severity counts or highest total violations">
@@ -129,7 +114,7 @@ function ViolationsByPolicyCategory() {
                                     </ToggleGroup>
                                 </FormGroup>
                             </Form>
-                        </Dropdown>
+                        </OptionsDropdown>
                     </FlexItem>
                 </Flex>
             }

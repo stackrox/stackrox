@@ -3,8 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { gql, useQuery } from '@apollo/client';
 import {
     Button,
-    Dropdown,
-    DropdownToggle,
     Flex,
     FlexItem,
     Form,
@@ -17,7 +15,6 @@ import {
 import { vulnManagementImagesPath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLSearch from 'hooks/useURLSearch';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
@@ -28,6 +25,7 @@ import WidgetCard from './WidgetCard';
 import ImagesAtMostRiskTable, { CveStatusOption, ImageData } from './ImagesAtMostRiskTable';
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
+import OptionsDropdown from './OptionsDropdown';
 
 function getTitle(searchFilter: SearchFilter, imageStatusOption: ImageStatusOption) {
     return imageStatusOption === 'Active' || isResourceScoped(searchFilter)
@@ -100,7 +98,6 @@ const defaultConfig: Config = {
 };
 
 function ImagesAtMostRisk() {
-    const { isOpen: isOptionsOpen, onToggle: toggleOptionsOpen } = useSelectToggle();
     const { searchFilter } = useURLSearch();
     const { pathname } = useLocation();
 
@@ -131,20 +128,7 @@ function ImagesAtMostRisk() {
                         <Title headingLevel="h2">{getTitle(searchFilter, imageStatus)}</Title>
                     </FlexItem>
                     <FlexItem>
-                        <Dropdown
-                            className="pf-u-mr-sm"
-                            toggle={
-                                <DropdownToggle
-                                    id={`${fieldIdPrefix}-options-toggle`}
-                                    toggleVariant="secondary"
-                                    onToggle={toggleOptionsOpen}
-                                >
-                                    Options
-                                </DropdownToggle>
-                            }
-                            position="right"
-                            isOpen={isOptionsOpen}
-                        >
+                        <OptionsDropdown toggleId={`${fieldIdPrefix}-options-toggle`}>
                             <Form className="pf-u-px-md pf-u-py-sm" style={{ minWidth: '250px' }}>
                                 <FormGroup
                                     fieldId={`${fieldIdPrefix}-fixable`}
@@ -187,7 +171,7 @@ function ImagesAtMostRisk() {
                                     </ToggleGroup>
                                 </FormGroup>
                             </Form>
-                        </Dropdown>
+                        </OptionsDropdown>
                         <Button
                             variant="secondary"
                             component={LinkShim}

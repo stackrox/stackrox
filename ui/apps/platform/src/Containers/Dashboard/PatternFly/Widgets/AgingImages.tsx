@@ -5,8 +5,6 @@ import {
     FlexItem,
     Title,
     Button,
-    Dropdown,
-    DropdownToggle,
     Form,
     FormGroup,
     Checkbox,
@@ -21,7 +19,6 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { SearchFilter } from 'types/search';
 import { vulnManagementImagesPath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
@@ -35,6 +32,7 @@ import AgingImagesChart, {
 } from './AgingImagesChart';
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
+import OptionsDropdown from './OptionsDropdown';
 
 export const imageCountQuery = gql`
     query agingImagesQuery($query0: String, $query1: String, $query2: String, $query3: String) {
@@ -159,7 +157,6 @@ function getViewAllLink(searchFilter: SearchFilter) {
 }
 
 function AgingImages() {
-    const { isOpen: isOptionsOpen, onToggle: toggleOptionsOpen } = useSelectToggle();
     const { searchFilter } = useURLSearch();
     const { pathname } = useLocation();
 
@@ -208,20 +205,7 @@ function AgingImages() {
                         </Title>
                     </FlexItem>
                     <FlexItem>
-                        <Dropdown
-                            className="pf-u-mr-sm"
-                            toggle={
-                                <DropdownToggle
-                                    id={`${fieldIdPrefix}-options-toggle`}
-                                    toggleVariant="secondary"
-                                    onToggle={toggleOptionsOpen}
-                                >
-                                    Options
-                                </DropdownToggle>
-                            }
-                            position="right"
-                            isOpen={isOptionsOpen}
-                        >
+                        <OptionsDropdown toggleId={`${fieldIdPrefix}-options-dropdown`}>
                             <Form className="pf-u-px-md pf-u-py-sm">
                                 <FormGroup
                                     fieldId={`${fieldIdPrefix}-time-range-0`}
@@ -239,7 +223,7 @@ function AgingImages() {
                                                 label={
                                                     <TextInput
                                                         aria-label="Image age in days"
-                                                        style={{ minWidth: '100px' }}
+                                                        style={{ minWidth: '120px' }}
                                                         onChange={async (val) => {
                                                             const value = parseInt(val, 10);
                                                             if (!(value >= maxTimeRange)) {
@@ -265,7 +249,7 @@ function AgingImages() {
                                     ))}
                                 </FormGroup>
                             </Form>
-                        </Dropdown>
+                        </OptionsDropdown>
                         <Button
                             variant="secondary"
                             component={LinkShim}
