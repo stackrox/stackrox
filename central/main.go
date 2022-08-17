@@ -232,7 +232,7 @@ func main() {
 
 	info, ok := debug.ReadBuildInfo()
 	if ok {
-		log.Infof("Build info: %v", info.String())
+		log.Infof("Build info: %+v", info)
 	}
 
 	conf := config.GetConfig()
