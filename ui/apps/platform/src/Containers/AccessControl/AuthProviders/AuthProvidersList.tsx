@@ -7,7 +7,7 @@ import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-tab
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import { AuthProvider, AuthProviderInfo } from 'services/AuthService';
+import { AuthProvider, AuthProviderInfo, getIsAuthProviderImmutable } from 'services/AuthService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
 
@@ -68,9 +68,9 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                 </Thead>
                 <Tbody>
                     {authProviders.map((authProvider) => {
-                        const { id, name, type, defaultRole, traits, groups = [] } = authProvider;
+                        const { id, name, type, defaultRole, groups = [] } = authProvider;
                         const typeLabel = getAuthProviderTypeLabel(type, availableProviderTypes);
-                        const isImmutable = traits?.mutabilityMode !== 'ALLOW_MUTATE';
+                        const isImmutable = getIsAuthProviderImmutable(authProvider);
 
                         return (
                             <Tr

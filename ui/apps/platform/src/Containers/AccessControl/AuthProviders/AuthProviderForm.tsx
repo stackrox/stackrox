@@ -28,7 +28,7 @@ import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 
-import { AuthProvider } from 'services/AuthService';
+import { AuthProvider, getIsAuthProviderImmutable } from 'services/AuthService';
 import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups, { RuleGroupErrors } from './RuleGroups';
 import {
@@ -315,9 +315,7 @@ function AuthProviderForm({
                                             isSmall
                                         >
                                             {selectedAuthProvider.active ||
-                                            (selectedAuthProvider.traits &&
-                                                selectedAuthProvider.traits?.mutabilityMode !==
-                                                    'ALLOW_MUTATE')
+                                            getIsAuthProviderImmutable(selectedAuthProvider)
                                                 ? 'Edit minimum role and rules'
                                                 : 'Edit auth provider'}
                                         </Button>
@@ -360,19 +358,18 @@ function AuthProviderForm({
                     }
                 />
             )}
-            {selectedAuthProvider.traits &&
-                selectedAuthProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE' && (
-                    <Alert
-                        isInline
-                        variant="warning"
-                        title={
-                            <span>
-                                This auth provider is immutable. You can only edit the minimum role
-                                and rules.
-                            </span>
-                        }
-                    />
-                )}
+            {getIsAuthProviderImmutable(selectedAuthProvider) && (
+                <Alert
+                    isInline
+                    variant="warning"
+                    title={
+                        <span>
+                            This auth provider is immutable. You can only edit the minimum role and
+                            rules.
+                        </span>
+                    }
+                />
+            )}
             <FormikProvider value={formik}>
                 <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
                     <Grid hasGutter>
@@ -394,8 +391,7 @@ function AuthProviderForm({
                                     isDisabled={
                                         isViewing ||
                                         values.active ||
-                                        (values.traits &&
-                                            values.traits?.mutabilityMode !== 'ALLOW_MUTATE')
+                                        getIsAuthProviderImmutable(values)
                                     }
                                     isRequired
                                     onBlur={handleBlur}
@@ -432,10 +428,7 @@ function AuthProviderForm({
                             onBlur={handleBlur}
                             configErrors={errors.config}
                             configTouched={touched.config}
-                            disabled={
-                                values.active ||
-                                (values.traits && values.traits?.mutabilityMode !== 'ALLOW_MUTATE')
-                            }
+                            disabled={values.active || getIsAuthProviderImmutable(values)}
                         />
                     </Grid>
                 </FormSection>

@@ -282,7 +282,8 @@ function* saveAuthProvider(action) {
             yield call(fetchUsersAttributes);
             yield put(actions.selectAuthProvider({ ...remaining, id: savedAuthProvider.data.id }));
         } else {
-            if (!remaining.active && !(remaining.traits?.mutabilityMode !== 'ALLOW_MUTATE')) {
+            const isImmutable = yield call(AuthService.getIsAuthProviderImmutable, remaining);
+            if (!remaining.active && !isImmutable) {
                 yield call(AuthService.saveAuthProvider, remaining);
             }
             yield call(getAuthProviders);
