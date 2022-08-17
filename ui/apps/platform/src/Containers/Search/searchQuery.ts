@@ -48,7 +48,7 @@ export function stringifyQueryObject({ searchFilter, navCategory }: SearchQueryO
         return '';
     }
 
-    const queryObject: SearchQueryParse = { s: searchFilter }; // TODO early return if no keys?
+    const queryObject: SearchQueryParse = { s: searchFilter };
 
     if (navCategory !== 'SEARCH_UNSET') {
         queryObject.category = searchNavMap[navCategory];
