@@ -3,14 +3,12 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -107,31 +105,18 @@ func (ds *sacFilterImpl) filterClusters(ctx context.Context, clusters set.String
 	resourceScopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Compliance)
 
 	// Filter the compliance results by cluster.
-	allowed, maybe := ds.tryFilterClusters(resourceScopeChecker, clusters)
-	if maybe.Cardinality() > 0 {
-		if err := resourceScopeChecker.PerformChecks(ctx); err != nil {
-			return set.StringSet{}, err
-		}
-		extraAllowed, maybe := ds.tryFilterClusters(resourceScopeChecker, maybe)
-		if maybe.Cardinality() > 0 {
-			utils.Should(errors.Errorf("still %d maybe results after PerformChecks", maybe.Cardinality()))
-		}
-		allowed.Union(extraAllowed)
-	}
+	allowed := ds.tryFilterClusters(resourceScopeChecker, clusters)
 	return allowed, nil
 }
 
-func (ds *sacFilterImpl) tryFilterClusters(resourceScopeChecker sac.ScopeChecker, clusters set.StringSet) (set.StringSet, set.StringSet) {
+func (ds *sacFilterImpl) tryFilterClusters(resourceScopeChecker sac.ScopeChecker, clusters set.StringSet) set.StringSet {
 	allowed := set.NewStringSet()
-	maybe := set.NewStringSet()
 	for cluster := range clusters {
 		if res := resourceScopeChecker.TryAllowed(sac.ClusterScopeKey(cluster)); res == sac.Allow {
 			allowed.Add(cluster)
-		} else if res == sac.Unknown {
-			maybe.Add(cluster)
 		}
 	}
-	return allowed, maybe
+	return allowed
 }
 
 func (ds *sacFilterImpl) filterDomain(ctx context.Context, domain *storage.ComplianceDomain) (*storage.ComplianceDomain, bool, error) {
