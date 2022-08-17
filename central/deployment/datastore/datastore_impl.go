@@ -2,12 +2,9 @@ package datastore
 
 import (
 	"context"
-	"sort"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/analystnotes"
-	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	deploymentSearch "github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
@@ -29,8 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 var (
@@ -42,8 +37,6 @@ type datastoreImpl struct {
 	deploymentStore    deploymentStore.Store
 	deploymentIndexer  deploymentIndex.Indexer
 	deploymentSearcher deploymentSearch.Searcher
-
-	processTagsStore processtagsstore.Store
 
 	images                 imageDS.DataStore
 	networkFlows           nfDS.ClusterDataStore
@@ -59,14 +52,10 @@ type datastoreImpl struct {
 	deploymentRanker *ranking.Ranker
 }
 
-func newDatastoreImpl(storage deploymentStore.Store, processTagsStore processtagsstore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher,
-	images imageDS.DataStore, baselines pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
-	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
-	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) *datastoreImpl {
+func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher, images imageDS.DataStore, baselines pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) *datastoreImpl {
 
 	ds := &datastoreImpl{
 		deploymentStore:        storage,
-		processTagsStore:       processTagsStore,
 		deploymentIndexer:      indexer,
 		deploymentSearcher:     searcher,
 		images:                 images,
@@ -227,11 +216,11 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeployment")
 
-	return ds.upsertDeployment(ctx, deployment, true)
+	return ds.upsertDeployment(ctx, deployment)
 }
 
 // upsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
-func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment, populateTagsFromExisting bool) error {
+func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -248,13 +237,6 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 		return nil
 	}
 	return ds.keyedMutex.DoStatusWithLock(deployment.GetId(), func() error {
-		if populateTagsFromExisting {
-			existingDeployment, _, err := ds.deploymentStore.Get(ctx, deployment.GetId())
-			// Best-effort, don't bother checking the error.
-			if err == nil && existingDeployment != nil {
-				deployment.ProcessTags = existingDeployment.GetProcessTags()
-			}
-		}
 		if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
 			return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 		}
@@ -364,92 +346,4 @@ func (ds *datastoreImpl) updateDeploymentPriority(deployments ...*storage.Deploy
 
 func (ds *datastoreImpl) GetDeploymentIDs(ctx context.Context) ([]string, error) {
 	return ds.deploymentStore.GetIDs(ctx)
-}
-
-func checkIndicatorWriteSAC(ctx context.Context) error {
-	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	return nil
-}
-
-// This is a bit ugly -- users can comment on processes, which, as a side-effect, affects tags on deployments.
-// However, the tags being stored in the deployment is an internal indexing consistency mechanism for indexing only, and we do NOT
-// want to not do this just because the user has process indicator SAC but not deployment SAC.
-// Therefore, we use an elevated context for all deployment operations.
-func getElevatedCtxForProcessTagOpts() context.Context {
-	return sac.WithAllAccess(context.Background())
-}
-
-func (ds *datastoreImpl) AddTagsToProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey, tags []string) error {
-	if err := checkIndicatorWriteSAC(ctx); err != nil {
-		return err
-	}
-
-	elevatedCtx := getElevatedCtxForProcessTagOpts()
-	deployment, _, err := ds.GetDeployment(elevatedCtx, key.DeploymentID)
-	// It's possible to comment on tags for deployments that no longer exist.
-	if err == nil && deployment != nil {
-		existingTags := deployment.GetProcessTags()
-		unionTags := sliceutils.StringUnion(existingTags, tags)
-		sort.Strings(unionTags)
-		if !sliceutils.StringEqual(existingTags, unionTags) {
-			deployment.ProcessTags = unionTags
-			if err := ds.upsertDeployment(elevatedCtx, deployment, false); err != nil {
-				return err
-			}
-		}
-	}
-
-	return ds.processTagsStore.UpsertProcessTags(key, tags)
-}
-
-func (ds *datastoreImpl) RemoveTagsFromProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey, tags []string) error {
-	if err := checkIndicatorWriteSAC(ctx); err != nil {
-		return err
-	}
-
-	if err := ds.processTagsStore.RemoveProcessTags(key, tags); err != nil {
-		return errors.Wrap(err, "removing from store")
-	}
-	tagsToRemove := set.NewStringSet(tags...)
-	err := ds.processTagsStore.WalkTagsForDeployment(key.DeploymentID, func(tag string) bool {
-		// This tag still exists, can't remove it from the deployment.
-		tagsToRemove.Remove(tag)
-		return tagsToRemove.Cardinality() > 0
-	})
-	if err != nil {
-		return errors.Wrap(err, "walking store")
-	}
-
-	if tagsToRemove.Cardinality() == 0 {
-		return nil
-	}
-
-	elevatedCtx := getElevatedCtxForProcessTagOpts()
-	deployment, _, err := ds.GetDeployment(elevatedCtx, key.DeploymentID)
-	// It's possible to comment on tags for deployments that no longer exist.
-	if err == nil && deployment != nil {
-		existingTags := deployment.GetProcessTags()
-		diffTags := sliceutils.StringDifference(existingTags, tagsToRemove.AsSlice())
-		sort.Strings(diffTags)
-		if !sliceutils.StringEqual(existingTags, diffTags) {
-			deployment.ProcessTags = diffTags
-			if err := ds.upsertDeployment(elevatedCtx, deployment, false); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (ds *datastoreImpl) GetTagsForProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey) ([]string, error) {
-	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, nil
-	}
-	return ds.processTagsStore.GetTagsForProcessKey(key)
 }

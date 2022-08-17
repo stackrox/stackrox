@@ -545,12 +545,6 @@
         "snoozeTill": {
           "type": "string",
           "format": "date-time"
-        },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },
@@ -830,12 +824,6 @@
         "riskScore": {
           "type": "number",
           "format": "float"
-        },
-        "processTags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "title": "Next available tag: 35"

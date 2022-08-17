@@ -37,21 +37,6 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// AddAlertTags mocks base method.
-func (m *MockDataStore) AddAlertTags(ctx context.Context, alertID string, tags []string) ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddAlertTags", ctx, alertID, tags)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AddAlertTags indicates an expected call of AddAlertTags.
-func (mr *MockDataStoreMockRecorder) AddAlertTags(ctx, alertID, tags interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAlertTags", reflect.TypeOf((*MockDataStore)(nil).AddAlertTags), ctx, alertID, tags)
-}
-
 // Count mocks base method.
 func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
@@ -144,20 +129,6 @@ func (m *MockDataStore) MarkAlertStale(ctx context.Context, id string) error {
 func (mr *MockDataStoreMockRecorder) MarkAlertStale(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAlertStale", reflect.TypeOf((*MockDataStore)(nil).MarkAlertStale), ctx, id)
-}
-
-// RemoveAlertTags mocks base method.
-func (m *MockDataStore) RemoveAlertTags(ctx context.Context, alertID string, tags []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveAlertTags", ctx, alertID, tags)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RemoveAlertTags indicates an expected call of RemoveAlertTags.
-func (mr *MockDataStoreMockRecorder) RemoveAlertTags(ctx, alertID, tags interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAlertTags", reflect.TypeOf((*MockDataStore)(nil).RemoveAlertTags), ctx, alertID, tags)
 }
 
 // Search mocks base method.

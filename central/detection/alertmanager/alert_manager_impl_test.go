@@ -303,11 +303,9 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].Clone()
 	newAlert.Violations[0].Message = "new-violation"
-	newAlert.Tags = []string{"x", "y", "z"}
 
 	expectedMergedAlert := newAlert.Clone()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
-	expectedMergedAlert.Tags = []string{"a", "b"}
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
@@ -333,11 +331,9 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].Clone()
 	newAlert.Violations[0].Message = "new-violation"
-	newAlert.Tags = []string{"x", "y", "z"}
 
 	expectedMergedAlert := newAlert.Clone()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
-	expectedMergedAlert.Tags = []string{"a", "b"}
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
@@ -396,7 +392,6 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	expectedMergedAlert := newAlert.Clone()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
 	expectedMergedAlert.Violations = expectedMergedAlert.Violations[:maxRunTimeViolationsPerAlert]
-	expectedMergedAlert.Tags = []string{"a", "b"}
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
@@ -431,7 +426,6 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	expectedMergedAlert := newAlert.Clone()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
 	expectedMergedAlert.Violations = expectedMergedAlert.Violations[:maxRunTimeViolationsPerAlert]
-	expectedMergedAlert.Tags = []string{"a", "b"}
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
@@ -980,7 +974,6 @@ func getResourceAlerts() []*storage.Alert {
 			Entity:         &storage.Alert_Resource_{Resource: getResources()[0]},
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
 			Time:           &ptypes.Timestamp{Seconds: 100},
-			Tags:           []string{"a", "b"},
 			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-1", Type: storage.Alert_Violation_K8S_EVENT}},
 		},
 		{
@@ -989,7 +982,6 @@ func getResourceAlerts() []*storage.Alert {
 			Entity:         &storage.Alert_Resource_{Resource: getResources()[1]},
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
 			Time:           &ptypes.Timestamp{Seconds: 200},
-			Tags:           []string{"a", "b"},
 			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-2", Type: storage.Alert_Violation_K8S_EVENT}},
 		},
 		{
@@ -998,7 +990,6 @@ func getResourceAlerts() []*storage.Alert {
 			Entity:         &storage.Alert_Resource_{Resource: getResources()[2]},
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
 			Time:           &ptypes.Timestamp{Seconds: 300},
-			Tags:           []string{"a", "b"},
 			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-3", Type: storage.Alert_Violation_K8S_EVENT}},
 		},
 		{
@@ -1007,7 +998,6 @@ func getResourceAlerts() []*storage.Alert {
 			Entity:         &storage.Alert_Resource_{Resource: getResources()[3]},
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
 			Time:           &ptypes.Timestamp{Seconds: 400},
-			Tags:           []string{"a", "b"},
 			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-4", Type: storage.Alert_Violation_K8S_EVENT}},
 		},
 		{
@@ -1016,7 +1006,6 @@ func getResourceAlerts() []*storage.Alert {
 			Entity:         &storage.Alert_Resource_{Resource: getResources()[4]},
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
 			Time:           &ptypes.Timestamp{Seconds: 500},
-			Tags:           []string{"a", "b"},
 			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-5", Type: storage.Alert_Violation_K8S_EVENT}},
 		},
 	}

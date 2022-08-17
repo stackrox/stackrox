@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/analystnotes"
-	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	indexerMocks "github.com/stackrox/rox/central/deployment/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/store/mocks"
@@ -17,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -59,46 +57,12 @@ func getCommentKey(deploymentID string) *analystnotes.ProcessNoteKey {
 	return &analystnotes.ProcessNoteKey{DeploymentID: deploymentID, ExecFilePath: "/bin/sh", ContainerName: "container"}
 }
 
-func (suite *DeploymentDataStoreTestSuite) TestTags() {
-	testDB := testutils.DBForSuite(suite)
-	defer testutils.TearDownDB(testDB)
-
-	processTagsStorage := processtagsstore.New(testDB)
-	datastore := newDatastoreImpl(suite.storage, processTagsStorage, suite.indexer, nil, nil, nil, nil,
-		suite.riskStore, nil, suite.filter, ranking.NewRanker(),
-		ranking.NewRanker(), ranking.NewRanker())
-
-	suite.storage.EXPECT().Get(suite.ctx, "blah").Return(nil, false, nil)
-	suite.NoError(datastore.AddTagsToProcessKey(suite.ctx, getCommentKey("blah"), []string{"new", "tag", "in-both"}))
-
-	suite.storage.EXPECT().Get(suite.ctx, "exists").Return(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing"}}, true, nil)
-	suite.storage.EXPECT().Upsert(suite.ctx, &storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "in-both", "new", "tag"}, Priority: 1}).Return(nil)
-	suite.NoError(datastore.AddTagsToProcessKey(suite.ctx, getCommentKey("exists"), []string{"new", "tag", "in-both"}))
-	mutatedExistsKey := getCommentKey("exists")
-	mutatedExistsKey.ExecFilePath = "MUTATED"
-	suite.storage.EXPECT().Get(suite.ctx, "exists").Return(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "in-both", "new", "tag"}}, true, nil)
-	suite.NoError(datastore.AddTagsToProcessKey(suite.ctx, mutatedExistsKey, []string{"in-both"}))
-
-	tags, err := datastore.GetTagsForProcessKey(suite.ctx, getCommentKey("exists"))
-	suite.Require().NoError(err)
-	suite.Equal([]string{"in-both", "new", "tag"}, tags)
-
-	suite.storage.EXPECT().Get(suite.ctx, "exists").Return(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "new", "tag", "in-both"}}, true, nil)
-	suite.storage.EXPECT().Upsert(suite.ctx, &storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "in-both"}, Priority: 1}).Return(nil)
-	suite.NoError(datastore.RemoveTagsFromProcessKey(suite.ctx, getCommentKey("exists"), []string{"new", "tag", "in-both"}))
-	tags, err = datastore.GetTagsForProcessKey(suite.ctx, getCommentKey("exists"))
-	suite.Require().NoError(err)
-	suite.Empty(tags)
-}
-
 func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	clusterRanker := ranking.NewRanker()
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds := newDatastoreImpl(suite.storage, nil, suite.indexer, suite.searcher, nil, nil, nil,
-		suite.riskStore, nil, suite.filter, clusterRanker,
-		nsRanker, deploymentRanker)
+	ds := newDatastoreImpl(suite.storage, suite.indexer, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker)
 
 	deployments := []*storage.Deployment{
 		{

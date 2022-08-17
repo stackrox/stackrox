@@ -17,7 +17,6 @@ interface ListBaseAlert {
     lifecycleStage: LifecycleStage;
     policy: ListPolicy;
     state: ViolationState;
-    tags: string[];
     time: string;
 }
 
@@ -140,7 +139,6 @@ export type Alert = {
     lifecycleStage: LifecycleStage;
     policy: Policy;
     state: ViolationState;
-    tags: string[];
     time: string;
     violations: Violation[];
     processViolation?: ProcessViolation;

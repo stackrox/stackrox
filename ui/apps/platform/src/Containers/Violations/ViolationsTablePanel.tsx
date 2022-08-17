@@ -23,7 +23,6 @@ import { GetSortParams } from 'hooks/useURLSort';
 import { TableColumn } from 'types/table';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
-import TagConfirmation from './Modals/TagConfirmation';
 import { ListAlert } from './types/violationTypes';
 
 export type ActionItem = {
@@ -84,9 +83,6 @@ function ViolationsTablePanel({
     function showExcludeConfirmationDialog() {
         setModalType('excludeScopes');
     }
-    function showTagConfirmationDialog() {
-        setModalType('tag');
-    }
 
     // Handle closing confirmation modals for bulk actions;
     function cancelModal() {
@@ -120,7 +116,6 @@ function ViolationsTablePanel({
 
     const excludableAlertIds: Set<string> = new Set(excludableAlerts.map((alert) => alert.id));
     const selectedIds = getSelectedIds();
-    const numSelected = selectedIds.length;
     let numResolveable = 0;
     let numScopesToExclude = 0;
 
@@ -153,12 +148,6 @@ function ViolationsTablePanel({
                         onSelect={closeSelect}
                         isDisabled={!hasSelections}
                     >
-                        <SelectOption
-                            key="0"
-                            value={`Add tags for violations (${numSelected})`}
-                            onClick={showTagConfirmationDialog}
-                            data-testid="bulk-add-tags-btn"
-                        />
                         <SelectOption
                             key="1"
                             value={`Mark as resolved (${numResolveable})`}
@@ -282,12 +271,6 @@ function ViolationsTablePanel({
                 isOpen={modalType === 'resolve'}
                 selectedAlertIds={selectedIds}
                 resolvableAlerts={resolvableAlerts}
-                closeModal={closeModal}
-                cancelModal={cancelModal}
-            />
-            <TagConfirmation
-                isOpen={modalType === 'tag'}
-                selectedAlertIds={selectedIds}
                 closeModal={closeModal}
                 cancelModal={cancelModal}
             />

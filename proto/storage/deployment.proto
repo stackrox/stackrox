@@ -50,7 +50,7 @@ message Deployment {
     int64 state_timestamp                      = 27 [(gogoproto.moretags) = 'hash:"ignore" sensorhash:"ignore"']; // Internal use only
     float risk_score                           = 29 [(gogoproto.moretags) = 'search:"Deployment Risk Score,hidden" policy:",ignore"'];
 
-    repeated string process_tags               = 30 [(gogoproto.moretags) = 'search:"Process Tag,store"'];
+    reserved 30; // was tags
 }
 
 // Next tag: 12

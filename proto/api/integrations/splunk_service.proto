@@ -72,7 +72,7 @@ message SplunkViolation {
   message AlertInfo {
     string alert_id = 1;
     storage.LifecycleStage lifecycle_stage = 2;
-    repeated string alert_tags = 3;
+    reserved 3; // was alert_tags
     google.protobuf.Timestamp alert_first_occurred = 4;
   }
 

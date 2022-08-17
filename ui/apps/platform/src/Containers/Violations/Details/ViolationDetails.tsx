@@ -1,7 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 
-import ViolationTags from './AnalystNotes/ViolationTags';
 import DeploytimeMessages from './DeploytimeMessages';
 import RuntimeMessages from './RuntimeMessages';
 import { ProcessViolation, LifecycleStage, Violation } from '../types/violationTypes';
@@ -9,14 +8,12 @@ import { ProcessViolation, LifecycleStage, Violation } from '../types/violationT
 type ViolationDetailsProps = {
     processViolation?: ProcessViolation;
     lifecycleStage: LifecycleStage;
-    violationId: string;
     violations: Violation[];
 };
 
 function ViolationDetails({
     processViolation,
     lifecycleStage,
-    violationId,
     violations,
 }: ViolationDetailsProps): ReactElement {
     const showRuntimeMessages = processViolation?.processes?.length || lifecycleStage === 'RUNTIME';
@@ -43,21 +40,6 @@ function ViolationDetails({
                         <DeploytimeMessages violations={violations} />
                     </FlexItem>
                 )}
-            </Flex>
-            <Flex
-                direction={{ default: 'column' }}
-                data-testid="violation-tags"
-                flex={{ default: 'flex_1' }}
-            >
-                <FlexItem>
-                    <Title headingLevel="h3" className="pf-u-mb-md">
-                        Add violation metadata
-                    </Title>
-                    <Divider component="div" />
-                </FlexItem>
-                <FlexItem data-testid="violation-tags">
-                    <ViolationTags resourceId={violationId} />
-                </FlexItem>
             </Flex>
         </Flex>
     );

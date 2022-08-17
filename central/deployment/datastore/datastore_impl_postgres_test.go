@@ -80,7 +80,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
 
 	s.deploymentDatastore, err = newDataStore(
 		deploymentPostgres.NewFullTestStore(s.T(), deploymentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)),
-		nil, s.db, nil, nil, nil, s.imageDatastore, nil, nil, s.riskDataStore,
+		nil, s.db, nil, nil, s.imageDatastore, nil, nil, s.riskDataStore,
 		nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
 	s.Require().NoError(err)
 

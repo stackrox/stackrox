@@ -37,7 +37,6 @@ var (
                    ServiceAccount varchar,
                    ServiceAccountPermissionLevel integer,
                    RiskScore numeric,
-                   ProcessTags text[],
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
@@ -237,7 +236,6 @@ type Deployments struct {
 	ServiceAccount                string                  `gorm:"column:serviceaccount;type:varchar"`
 	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
 	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric"`
-	ProcessTags                   *pq.StringArray         `gorm:"column:processtags;type:text[]"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
 }
 
