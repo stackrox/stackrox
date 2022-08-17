@@ -12,7 +12,7 @@ build_cli() {
     info "Building roxctl"
 
     make cli
-    validate_expected_go_version
+#    validate_expected_go_version
 }
 
 build_go_binaries() {
