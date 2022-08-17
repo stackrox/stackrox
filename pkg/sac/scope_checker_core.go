@@ -13,10 +13,8 @@ import (
 type TryAllowedResult int32
 
 const (
-	// Unknown indicates that the value is not known and must be resolved via a call to `PerformChecks`.
-	Unknown TryAllowedResult = iota
 	// Deny indicates that access to the given scope is not allowed.
-	Deny
+	Deny TryAllowedResult = iota
 	// Allow indicates that access to the given scope is allowed.
 	Allow
 )
