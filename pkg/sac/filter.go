@@ -8,11 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/reflectutils"
 )
 
-type objPredPair struct {
-	obj  interface{}
-	pred ScopePredicate
-}
-
 // ObjectFilter allows efficiently filtering (wrt. SAC constraints) objects.
 type ObjectFilter struct {
 	checker ScopeChecker
