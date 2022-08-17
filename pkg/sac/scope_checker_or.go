@@ -47,8 +47,6 @@ func (s orScopeChecker) TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult {
 	for _, checker := range s.scopeCheckers {
 		if res := checker.TryAllowed(subScopeKeys...); res == Allow {
 			return res
-		} else if res == Unknown {
-			result = Unknown
 		}
 	}
 	return result
@@ -73,8 +71,6 @@ func (s orScopeChecker) TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResu
 	for _, checker := range s.scopeCheckers {
 		if res := checker.TryAnyAllowed(subScopeKeyss); res == Allow {
 			return res
-		} else if res == Unknown {
-			result = Unknown
 		}
 	}
 	return result
@@ -99,8 +95,6 @@ func (s orScopeChecker) TryAllAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResu
 	for _, checker := range s.scopeCheckers {
 		if res := checker.TryAllAllowed(subScopeKeyss); res == Allow {
 			return res
-		} else if res == Unknown {
-			result = Unknown
 		}
 	}
 	return result
