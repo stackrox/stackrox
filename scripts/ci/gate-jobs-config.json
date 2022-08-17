@@ -86,5 +86,21 @@
         "changed_path_to_ignore": "",
         "run_on_master": "true",
         "run_on_tags": "true"
+    },
+    "gke-scale-tests": {
+        "run_with_labels": ["ci-scale-tests"],
+        "skip_with_label": "",
+        "run_with_changed_path": "",
+        "changed_path_to_ignore": "",
+        "run_on_master": "false",
+        "run_on_tags": "true"
+    },
+    "gke-postgres-scale-tests": {
+        "run_with_labels": ["ci-postgres-scale-tests"],
+        "skip_with_label": "",
+        "run_with_changed_path": "",
+        "changed_path_to_ignore": "",
+        "run_on_master": "false",
+        "run_on_tags": "false"
     }
 }

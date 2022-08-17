@@ -30,7 +30,7 @@ class PostTestsConstants:
 
 
 class NullPostTest:
-    def run(self, test_output_dirs=None):
+    def run(self, test_outputs=None):
         pass
 
 
@@ -75,13 +75,13 @@ class StoreArtifacts(RunWithBestEffortMixin):
         self.artifact_destination_prefix = artifact_destination_prefix
         self.data_to_store = []
 
-    def run(self, test_output_dirs=None):
-        self.store_artifacts(test_output_dirs)
+    def run(self, test_outputs=None):
+        self.store_artifacts(test_outputs)
         self.handle_run_failure()
 
-    def store_artifacts(self, test_output_dirs=None):
-        if test_output_dirs is not None:
-            self.data_to_store = test_output_dirs + self.data_to_store
+    def store_artifacts(self, test_outputs=None):
+        if test_outputs is not None:
+            self.data_to_store = test_outputs + self.data_to_store
         for source in self.data_to_store:
             args = ["scripts/ci/store-artifacts.sh", "store_artifacts", source]
             if self.artifact_destination_prefix:
@@ -117,7 +117,7 @@ class PostClusterTest(StoreArtifacts):
         ]
         self.central_is_responsive = False
 
-    def run(self, test_output_dirs=None):
+    def run(self, test_outputs=None):
         self.central_is_responsive = self.wait_for_central_api()
         self.collect_service_logs()
         self.collect_collector_metrics()
@@ -127,7 +127,7 @@ class PostClusterTest(StoreArtifacts):
             self.grab_central_data()
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
-        self.store_artifacts(test_output_dirs)
+        self.store_artifacts(test_outputs)
         self.handle_run_failure()
 
     def wait_for_central_api(self):
@@ -219,7 +219,7 @@ class CheckStackroxLogs(StoreArtifacts):
         self._check_for_errors_in_stackrox_logs = check_for_errors_in_stackrox_logs
         self.central_is_responsive = False
 
-    def run(self, test_output_dirs=None):
+    def run(self, test_outputs=None):
         self.central_is_responsive = self.wait_for_central_api()
         if self.central_is_responsive:
             self.collect_stackrox_logs()
@@ -227,7 +227,7 @@ class CheckStackroxLogs(StoreArtifacts):
                 self.check_for_stackrox_restarts()
             if self._check_for_errors_in_stackrox_logs:
                 self.check_for_errors_in_stackrox_logs()
-        self.store_artifacts(test_output_dirs)
+        self.store_artifacts(test_outputs)
         self.handle_run_failure()
 
     def wait_for_central_api(self):
@@ -285,7 +285,7 @@ class FinalPost(StoreArtifacts):
         if self._store_qa_spock_results:
             self.data_to_store.append(PostTestsConstants.QA_SPOCK_RESULTS)
 
-    def run(self, test_output_dirs=None):
+    def run(self, test_outputs=None):
         self.store_artifacts()
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()

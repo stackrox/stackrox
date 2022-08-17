@@ -8,7 +8,4 @@ from ci_tests import OperatorE2eTest
 from pre_tests import PreSystemTests
 
 
-ClusterTestRunner(
-    pre_test=PreSystemTests(),
-    test=OperatorE2eTest()
-).run()
+ClusterTestRunner(pre_test=PreSystemTests(), test=OperatorE2eTest()).run()
