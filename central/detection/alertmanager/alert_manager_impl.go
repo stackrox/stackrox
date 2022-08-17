@@ -282,7 +282,6 @@ func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 	}
 
 	newAlert.FirstOccurred = old.GetFirstOccurred()
-	newAlert.Tags = old.GetTags()
 	return newAlert
 }
 

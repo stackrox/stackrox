@@ -59,7 +59,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"resource: Alert_Resource",
 		"snoozeTill: Time",
 		"state: ViolationState!",
-		"tags: [String!]!",
 		"time: Time",
 		"violations: [Alert_Violation]!",
 		"entity: AlertEntity",
@@ -543,7 +542,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"podLabels: [Label!]!",
 		"ports: [PortConfig]!",
 		"priority: Int!",
-		"processTags: [String!]!",
 		"replicas: Int!",
 		"riskScore: Float!",
 		"runtimeClass: String!",
@@ -1792,14 +1790,6 @@ func (resolver *alertResolver) State(ctx context.Context) string {
 		value = resolver.list.GetState()
 	}
 	return value.String()
-}
-
-func (resolver *alertResolver) Tags(ctx context.Context) []string {
-	value := resolver.data.GetTags()
-	if resolver.data == nil {
-		value = resolver.list.GetTags()
-	}
-	return value
 }
 
 func (resolver *alertResolver) Time(ctx context.Context) (*graphql.Time, error) {
@@ -5493,12 +5483,6 @@ func (resolver *deploymentResolver) Priority(ctx context.Context) int32 {
 		value = resolver.list.GetPriority()
 	}
 	return int32(value)
-}
-
-func (resolver *deploymentResolver) ProcessTags(ctx context.Context) []string {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetProcessTags()
-	return value
 }
 
 func (resolver *deploymentResolver) Replicas(ctx context.Context) int32 {

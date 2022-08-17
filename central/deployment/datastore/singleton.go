@@ -4,7 +4,6 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/deployment/cache"
-	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	"github.com/stackrox/rox/central/globaldb"
 	globalDackBox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
@@ -46,8 +45,6 @@ func initialize() {
 	ad, err = New(dackBox,
 		keyFence,
 		pool,
-		// Process Tag store will be removed in 72.0
-		processtagsstore.New(globaldb.GetGlobalDB()),
 		bleveIndex,
 		processIndex,
 		imageDatastore.Singleton(),

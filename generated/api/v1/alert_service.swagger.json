@@ -901,12 +901,6 @@
         "snoozeTill": {
           "type": "string",
           "format": "date-time"
-        },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },
@@ -1105,12 +1099,6 @@
         "enforcementCount": {
           "type": "integer",
           "format": "int32"
-        },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         },
         "enforcementAction": {
           "$ref": "#/definitions/storageEnforcementAction"

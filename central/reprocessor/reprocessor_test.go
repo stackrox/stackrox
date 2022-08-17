@@ -64,7 +64,7 @@ func TestGetActiveImageIDs(t *testing.T) {
 	if features.PostgresDatastore.Enabled() {
 		pool = globaldb.GetPostgres()
 	}
-	deploymentsDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, nil, bleveIndex, bleveIndex, nil, nil, nil, nil,
+	deploymentsDS, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), pool, bleveIndex, bleveIndex, nil, nil, nil, nil,
 		nil, filter.NewFilter(5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 

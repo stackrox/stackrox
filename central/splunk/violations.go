@@ -470,7 +470,6 @@ func extractAlertInfo(from *storage.Alert, violationInfo *integrations.SplunkVio
 	return &integrations.SplunkViolation_AlertInfo{
 		AlertId:            from.GetId(),
 		LifecycleStage:     from.GetLifecycleStage(),
-		AlertTags:          from.GetTags(),
 		AlertFirstOccurred: firstOccurred,
 	}
 	// from.State and from.SnoozeTill are ignored because they might change over time.
