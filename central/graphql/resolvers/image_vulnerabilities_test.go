@@ -12,7 +12,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
-	componentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/postgres"
+	componentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
 	componentCVEEdgeSearch "github.com/stackrox/rox/central/componentcveedge/search"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
@@ -30,7 +30,7 @@ import (
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -105,7 +105,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	imageCVEStore := imageCVEPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	imageCVEIndexer := imageCVEPostgres.NewIndexer(s.db)
 	imageCVESearcher := imageCVESearch.New(imageCVEStore, imageCVEIndexer)
-	imageCVEDatastore, err := imageCVEDataStore.New(imageCVEStore, imageCVEIndexer, imageCVESearcher, concurrency.NewKeyFence())
+	imageCVEDatastore, err := imageCVEDataStore.New(imageCVEStore, imageCVEIndexer, imageCVESearcher, dackboxConcurrency.NewKeyFence())
 	s.NoError(err, "Failed to create ImageCVEDatastore")
 	s.resolver.ImageCVEDataStore = imageCVEDatastore
 
@@ -130,8 +130,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	componentCveEdgeStore := componentCVEEdgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	componentCveEdgeIndexer := componentCVEEdgePostgres.NewIndexer(s.db)
 	componentCveEdgeSearcher := componentCVEEdgeSearch.NewV2(componentCveEdgeStore, componentCveEdgeIndexer)
-	componentCveEdgeDatastore, err := componentCVEEdgeDataStore.New(nil, componentCveEdgeStore, componentCveEdgeIndexer, componentCveEdgeSearcher)
-	s.NoError(err)
+	componentCveEdgeDatastore := componentCVEEdgeDataStore.New(nil, componentCveEdgeStore, componentCveEdgeIndexer, componentCveEdgeSearcher)
 	s.resolver.ComponentCVEEdgeDataStore = componentCveEdgeDatastore
 
 	// Sac permissions

@@ -31,7 +31,7 @@ func splitComponents(parts ImageParts) []ComponentParts {
 	ret := make([]ComponentParts, 0, len(parts.Image.GetScan().GetComponents()))
 	addedComponents := set.NewStringSet()
 	for _, component := range parts.Image.GetScan().GetComponents() {
-		generatedComponent := generateImageComponent(parts.Image.GetScan().GetOperatingSystem(), component)
+		generatedComponent := GenerateImageComponent(parts.Image.GetScan().GetOperatingSystem(), component)
 		if !addedComponents.Add(generatedComponent.GetId()) {
 			continue
 		}
@@ -51,12 +51,12 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
 	addedCVEs := set.NewStringSet()
 	for _, cve := range embedded.GetVulns() {
-		convertedCVE := utils.EmbeddedCVEToProtoCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
+		convertedCVE := utils.EmbeddedVulnerabilityToImageCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
 		if !addedCVEs.Add(convertedCVE.GetId()) {
 			continue
 		}
 		cp := CVEParts{}
-		cp.CVE = utils.EmbeddedVulnerabilityToImageCVE(parts.Image.GetScan().GetOperatingSystem(), cve)
+		cp.CVE = convertedCVE
 		cp.Edge = generateComponentCVEEdge(component.Component, cp.CVE, cve)
 		if _, ok := parts.ImageCVEEdges[cp.CVE.GetId()]; !ok {
 			parts.ImageCVEEdges[cp.CVE.GetId()] = generateImageCVEEdge(parts.Image.GetId(), cp.CVE, cve)
@@ -83,7 +83,8 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 	return ret
 }
 
-func generateImageComponent(os string, from *storage.EmbeddedImageScanComponent) *storage.ImageComponent {
+// GenerateImageComponent returns top-level image component from embedded component.
+func GenerateImageComponent(os string, from *storage.EmbeddedImageScanComponent) *storage.ImageComponent {
 	ret := &storage.ImageComponent{
 		Id:              scancomponent.ComponentID(from.GetName(), from.GetVersion(), os),
 		Name:            from.GetName(),

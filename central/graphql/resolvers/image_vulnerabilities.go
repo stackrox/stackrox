@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/common"
@@ -316,6 +317,12 @@ func (resolver *imageCVEResolver) EnvImpact(ctx context.Context) (float64, error
 
 func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "FixedByVersion")
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
+		return embeddedVuln.GetFixedBy(), nil
+	}
+
 	scope, hasScope := scoped.GetScope(ctx)
 	if !hasScope {
 		return "", nil
@@ -334,6 +341,12 @@ func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, e
 
 func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
+		return embeddedVuln.GetFixedBy() != "", nil
+	}
+
 	query, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVEID))
 	if err != nil {
 		return false, err
@@ -362,6 +375,12 @@ func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) 
 
 func (resolver *imageCVEResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "LastScanned")
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	if scanTime := embeddedobjs.LastScannedFromContext(resolver.ctx); scanTime != nil {
+		return timestamp(scanTime)
+	}
+
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return nil, err
@@ -406,6 +425,12 @@ func (resolver *imageCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolve
 
 func (resolver *imageCVEResolver) VulnerabilityState(ctx context.Context) string {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "VulnerabilityState")
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
+		return embeddedVuln.GetState().String()
+	}
+
 	if resolver.data.GetSnoozed() {
 		return storage.VulnerabilityState_DEFERRED.String()
 	}
@@ -532,6 +557,12 @@ func (resolver *imageCVEResolver) Deployments(ctx context.Context, args Paginate
 
 func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DiscoveredAtImage")
+
+	// Short path. Full image is embedded when image scan resolver is called.
+	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
+		return timestamp(embeddedVuln.GetFirstImageOccurrence())
+	}
+
 	var imageID string
 	scope, hasScope := scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES)
 	if hasScope {
