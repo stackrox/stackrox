@@ -25,12 +25,12 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:       storage,
 		indexer:       indexer,
 		searcher:      searcher,
 		graphProvider: graphProvider,
 	}
-	return ds, nil
+	return ds
 }

@@ -43,6 +43,7 @@ type ImageLoader interface {
 	FromIDs(ctx context.Context, ids []string) ([]*storage.Image, error)
 	FromID(ctx context.Context, id string) (*storage.Image, error)
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.Image, error)
+	FullImageWithID(ctx context.Context, id string) (*storage.Image, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
 	CountAll(ctx context.Context) (int32, error)
@@ -58,16 +59,41 @@ type imageLoaderImpl struct {
 
 // FromIDs loads a set of images from a set of ids.
 func (idl *imageLoaderImpl) FromIDs(ctx context.Context, ids []string) ([]*storage.Image, error) {
-	images, err := idl.load(ctx, ids)
+	images, err := idl.load(ctx, ids, false)
 	if err != nil {
 		return nil, err
 	}
 	return images, nil
 }
 
-// FromID loads an image from an ID.
+// FromID loads an image from an ID, without scan components and vulns.
 func (idl *imageLoaderImpl) FromID(ctx context.Context, id string) (*storage.Image, error) {
-	images, err := idl.load(ctx, []string{id})
+	images, err := idl.load(ctx, []string{id}, false)
+	if err != nil {
+		return nil, err
+	}
+	if len(images) == 0 {
+		return nil, errors.Errorf("could not find image for id %q:", id)
+	}
+	return images[0], nil
+}
+
+// FullImageWithID loads full image from an ID.
+func (idl *imageLoaderImpl) FullImageWithID(ctx context.Context, id string) (*storage.Image, error) {
+	image, err := idl.FromID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	// Load the full image if full scan is not available.
+	if image.GetComponents() == 0 || len(image.GetScan().GetComponents()) > 0 {
+		return image, nil
+	}
+
+	idl.lock.Lock()
+	delete(idl.loaded, id)
+	idl.lock.Unlock()
+
+	images, err := idl.load(ctx, []string{id}, true)
 	if err != nil {
 		return nil, err
 	}
@@ -99,14 +125,15 @@ func (idl *imageLoaderImpl) CountAll(ctx context.Context) (int32, error) {
 	return int32(count), err
 }
 
-func (idl *imageLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.Image, error) {
+func (idl *imageLoaderImpl) load(ctx context.Context, ids []string, pullFullObject bool) ([]*storage.Image, error) {
 	images, missing := idl.readAll(ids)
 	if len(missing) > 0 {
 		var err error
-		if features.PostgresDatastore.Enabled() {
-			images, err = idl.ds.GetManyImageMetadata(ctx, collectMissing(ids, missing))
-		} else {
+		// `pullFullObject` is only supported on Postgres.
+		if !features.PostgresDatastore.Enabled() || pullFullObject {
 			images, err = idl.ds.GetImagesBatch(ctx, collectMissing(ids, missing))
+		} else {
+			images, err = idl.ds.GetManyImageMetadata(ctx, collectMissing(ids, missing))
 		}
 		if err != nil {
 			return nil, err

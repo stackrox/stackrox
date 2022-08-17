@@ -53,7 +53,7 @@ func BenchmarkImageGetMany(b *testing.B) {
 	ids := make([]string, 0, 100)
 	images := make([]*storage.Image, 0, 100)
 	for i := 0; i < 100; i++ {
-		img := fixtures.GetImageWithUniqueComponents()
+		img := fixtures.GetImageWithUniqueComponents(5)
 		id := fmt.Sprintf("%d", i)
 		ids = append(ids, id)
 		img.Id = id
