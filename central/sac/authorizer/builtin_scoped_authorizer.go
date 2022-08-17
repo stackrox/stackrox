@@ -85,10 +85,6 @@ func (a *globalScopeChecker) TryAllowed() sac.TryAllowedResult {
 	return sac.Deny
 }
 
-func (a *globalScopeChecker) PerformChecks(_ context.Context) error {
-	return nil
-}
-
 func (a *globalScopeChecker) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	return a.
 		SubScopeChecker(sac.AccessModeScopeKey(resource.Access)).

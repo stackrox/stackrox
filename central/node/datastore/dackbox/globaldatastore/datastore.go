@@ -66,9 +66,6 @@ func (s *globalDataStore) GetAllClusterNodeStores(ctx context.Context, writeAcce
 		for clusterID := range clusterIDs {
 			scopeChecker.TryAllowed(sac.ClusterScopeKey(clusterID))
 		}
-		if err := scopeChecker.PerformChecks(ctx); err != nil {
-			return nil, err
-		}
 		// Pass 2: Filter out clusters for which we have no access.
 		for clusterID := range clusterIDs {
 			if scopeChecker.TryAllowed(sac.ClusterScopeKey(clusterID)) != sac.Allow {
