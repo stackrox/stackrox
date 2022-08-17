@@ -16,4 +16,4 @@ make_bin() {
     mv "$go_mod_cache" /cache-saved/GOMODCACHE
 }
 
-make_test_bin "$*"
+make_bin "$*"
