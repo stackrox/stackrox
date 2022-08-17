@@ -35,4 +35,10 @@ setup_gcp() {
     gcloud config set compute/region us-central1
     gcloud config unset compute/zone
     gcloud config set core/disable_prompts True
+
+    # For API calls e.g. prometheus-metric-parser
+    touch /tmp/gcp.json
+    chmod 0600 /tmp/gcp.json
+    echo "$service_account" >/tmp/gcp.json
+    ci_export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
 }
