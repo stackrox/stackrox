@@ -8,8 +8,12 @@ set -euo pipefail
 make_bin() {
     info "Making bin"
 
-    go mod download || true
-    
+    go mod download
+
+    mkdir -p /cache-saved
+    local go_mod_cache
+    go_mod_cache=$(go env GOMODCACHE)
+    mv "$go_mod_cache" /cache-saved/GOMODCACHE
 }
 
 make_test_bin "$*"
