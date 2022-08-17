@@ -115,7 +115,12 @@ func (q *query) getPortionBeforeFromClause() string {
 		for _, pk := range q.Schema.PrimaryKeys() {
 			primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName))
 		}
-		return fmt.Sprintf("select count(distinct(%s))", strings.Join(primaryKeyPaths, ", "))
+		primaryKeyPortion := strings.Join(primaryKeyPaths, ", ")
+
+		if q.DistinctAppliedOnPrimaryKeySelect() {
+			primaryKeyPortion = fmt.Sprintf("distinct(%s)", primaryKeyPortion)
+		}
+		return fmt.Sprintf("select count(%s)", primaryKeyPortion)
 	case GET:
 		return fmt.Sprintf("select %q.serialized", q.From)
 	case SEARCH:
