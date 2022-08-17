@@ -9,7 +9,11 @@ export function getFilteredCVEColumns(columns, workflowState) {
 
     const shouldKeepFixedByColumn =
         workflowState.isPreceding(entityTypes.COMPONENT) ||
-        workflowState.isCurrentSingle(entityTypes.COMPONENT);
+        workflowState.isCurrentSingle(entityTypes.COMPONENT) ||
+        workflowState.isPreceding(entityTypes.IMAGE_COMPONENT) ||
+        workflowState.isCurrentSingle(entityTypes.IMAGE_COMPONENT) ||
+        workflowState.isPreceding(entityTypes.NODE_COMPONENT) ||
+        workflowState.isCurrentSingle(entityTypes.NODE_COMPONENT);
 
     const shouldKeepDiscoveredAtImageColumn =
         workflowState.isPreceding(entityTypes.IMAGE) ||
