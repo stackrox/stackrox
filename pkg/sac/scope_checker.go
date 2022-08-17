@@ -97,8 +97,6 @@ func (c scopeChecker) TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult
 	for _, subScopeKeys := range subScopeKeyss {
 		if subScopeRes := c.TryAllowed(subScopeKeys...); subScopeRes == Allow {
 			return Allow
-		} else if subScopeRes == Unknown {
-			result = Unknown
 		}
 	}
 	return result
@@ -123,8 +121,6 @@ func (c scopeChecker) TryAllAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult
 	for _, subScopeKeys := range subScopeKeyss {
 		if subScopeRes := c.TryAllowed(subScopeKeys...); subScopeRes == Deny {
 			return Deny
-		} else if subScopeRes == Unknown {
-			result = Unknown
 		}
 	}
 	return result
