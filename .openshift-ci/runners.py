@@ -101,9 +101,7 @@ class ClusterTestSetsRunner:
                 hold = err
             try:
                 self.log_event("About to run post test", test_set)
-                test_set["post_test"].run(
-                    test_output_dirs=test_set["test"].test_output_dirs
-                )
+                test_set["post_test"].run(test_outputs=test_set["test"].test_outputs)
                 self.log_event("post test completed", test_set)
             except Exception as err:
                 self.log_event("ERROR: post test failed", test_set)
