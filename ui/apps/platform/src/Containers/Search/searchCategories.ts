@@ -2,7 +2,9 @@ import { SearchResultCategory } from 'services/SearchService';
 import { ResourceName } from 'types/roleResources';
 import {
     clustersBasePath,
-    configManagementPath,
+    configManagementRolesPath,
+    configManagementSecretsPath,
+    configManagementServiceAccountsPath,
     policiesBasePath,
     riskBasePath,
     violationsBasePath,
@@ -130,7 +132,7 @@ export const searchResultCategoryMap: Record<
         filterOn: null,
         viewLinks: [
             {
-                basePath: `${configManagementPath}/roles`,
+                basePath: configManagementRolesPath,
                 linkText: 'Configuration Management',
             },
         ],
@@ -148,7 +150,7 @@ export const searchResultCategoryMap: Record<
         },
         viewLinks: [
             {
-                basePath: `${configManagementPath}/secrets`,
+                basePath: configManagementSecretsPath,
                 linkText: 'Configuration Management',
             },
         ],
@@ -158,7 +160,7 @@ export const searchResultCategoryMap: Record<
         filterOn: null,
         viewLinks: [
             {
-                basePath: `${configManagementPath}/serviceaccounts`,
+                basePath: configManagementServiceAccountsPath,
                 linkText: 'Configuration Management',
             },
         ],

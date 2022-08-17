@@ -41,11 +41,25 @@ export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
 export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
-export const configManagementPath = `${mainPath}/configmanagement`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
 export const systemHealthPathPF = `${mainPath}/system-health-pf`;
 export const productDocsPath = '/docs/product';
+
+// Configuration Management
+
+export const configManagementPath = `${mainPath}/configmanagement`;
+export const configManagementClustersPath = `${configManagementPath}/clusters`;
+export const configManagementControlsPath = `${configManagementPath}/controls`;
+export const configManagementDeploymentsPath = `${configManagementPath}/deployments`;
+export const configManagementImagesPath = `${configManagementPath}/images`;
+export const configManagementNamespacesPath = `${configManagementPath}/namespaces`;
+export const configManagementNodesPath = `${configManagementPath}/nodes`;
+export const configManagementPoliciesPath = `${configManagementPath}/policies`;
+export const configManagementRolesPath = `${configManagementPath}/roles`;
+export const configManagementSecretsPath = `${configManagementPath}/secrets`;
+export const configManagementServiceAccountsPath = `${configManagementPath}/serviceaccounts`;
+export const configManagementSubjectsPath = `${configManagementPath}/subjects`;
 
 // Vuln Management Paths
 
