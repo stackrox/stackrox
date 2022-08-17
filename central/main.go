@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -228,6 +229,11 @@ func runSafeMode() {
 
 func main() {
 	premain.StartMain()
+
+	info, ok := debug.ReadBuildInfo()
+	if ok {
+		log.Infof("Build info: %v", info.String())
+	}
 
 	conf := config.GetConfig()
 	if conf == nil || conf.Maintenance.SafeMode {

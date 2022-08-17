@@ -92,6 +92,14 @@ spec:
             drop: ["NET_RAW"]
           readOnlyRootFilesystem: true
         env:
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: requests.cpu
         - name: ROX_NAMESPACE
           valueFrom:
             fieldRef:
