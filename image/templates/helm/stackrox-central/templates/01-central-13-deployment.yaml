@@ -99,7 +99,7 @@ spec:
         - name: GOMAXPROCS
           valueFrom:
             resourceFieldRef:
-              resource: requests.cpu
+              resource: limits.cpu
         - name: ROX_NAMESPACE
           valueFrom:
             fieldRef:
