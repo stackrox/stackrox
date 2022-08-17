@@ -21,10 +21,10 @@ var (
 )
 
 type datastoreImpl struct {
-	storage             store.Store
-	indexer             index.Indexer
-	searcher            search.Searcher
-	subjectTypeToRanker map[string]*ranking.Ranker
+	storage            store.Store
+	indexer            index.Indexer
+	searcher           search.Searcher
+	entityTypeToRanker map[string]*ranking.Ranker
 }
 
 func (d *datastoreImpl) buildIndex(ctx context.Context) error {
@@ -166,7 +166,7 @@ func (d *datastoreImpl) getRisk(ctx context.Context, id string) (*storage.Risk, 
 }
 
 func (d *datastoreImpl) getRanker(subjectType storage.RiskSubjectType) *ranking.Ranker {
-	ranker, found := d.subjectTypeToRanker[subjectType.String()]
+	ranker, found := d.entityTypeToRanker[subjectType.String()]
 	if !found {
 		logging.Panicf("ranker not implemented for type %v", subjectType.String())
 	}
