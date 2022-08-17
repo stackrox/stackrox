@@ -11,14 +11,12 @@ type errScopeCheckerCore struct {
 	err error
 }
 
-func (s errScopeCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerCore {
+func (s errScopeCheckerCore) SubScopeChecker(_ ScopeKey) ScopeCheckerCore {
 	return s
 }
 
 func (s errScopeCheckerCore) TryAllowed() TryAllowedResult {
-	// Return `Unknown` to indicate to the caller that `PerformChecks` must be called,
-	// which will yield an error.
-	return Unknown
+	return Deny
 }
 
 func (s errScopeCheckerCore) PerformChecks(ctx context.Context) error {
@@ -32,6 +30,6 @@ func ErrorAccessScopeCheckerCore(err error) ScopeCheckerCore {
 	}
 }
 
-func (s errScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+func (s errScopeCheckerCore) EffectiveAccessScope(_ permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	return effectiveaccessscope.DenyAllEffectiveAccessScope(), s.err
 }
