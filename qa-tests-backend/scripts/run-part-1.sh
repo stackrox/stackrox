@@ -48,7 +48,7 @@ run_tests_part_1() {
     do
       info "SAC test count: ${i}"
       make -C qa-tests-backend sac-test || touch FAIL
-      [[ ! f FAIL ]] || store_qa_test_results "part-1-tests" || die "SAC test failed"
+      [[ ! f FAIL ]] || store_qa_test_results "part-1-tests" && die "SAC test failed"
     done
     store_qa_test_results "part-1-tests"
 }
