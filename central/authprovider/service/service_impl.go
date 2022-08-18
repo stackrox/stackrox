@@ -83,8 +83,8 @@ func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1
 	authProviders := s.registry.GetProviders(nil, nil)
 	result := make([]*v1.GetLoginAuthProvidersResponse_LoginAuthProvider, 0, len(authProviders))
 	for _, provider := range authProviders {
-		// Providers without a backend factory are useless for login purposes.
-		if view := provider.StorageView(); view.GetEnabled() && provider.BackendFactory() != nil {
+		if isLoginAuthProvider(provider) {
+			view := provider.StorageView()
 			result = append(result, &v1.GetLoginAuthProvidersResponse_LoginAuthProvider{
 				Id:       view.GetId(),
 				Name:     view.GetName(),
@@ -103,6 +103,25 @@ func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1
 		return result[i].GetName() < result[j].GetName()
 	})
 	return &v1.GetLoginAuthProvidersResponse{AuthProviders: result}, nil
+}
+
+// isLoginAuthProvider is a helper that determines whether an authproviders.Provider can be used for
+// login purposes.
+func isLoginAuthProvider(provider authproviders.Provider) bool {
+	view := provider.StorageView()
+	// Only enabled auth providers can be used for login purposes.
+	if !view.GetEnabled() {
+		return false
+	}
+	// Providers without a backend factory are useless for login purposes.
+	if provider.BackendFactory() == nil {
+		return false
+	}
+	// Only auth providers that are visible should be used for login purposes.
+	if view.GetTraits().GetVisibility() != storage.Traits_VISIBLE {
+		return false
+	}
+	return true
 }
 
 // ListAvailableProviderTypes returns auth provider types which can be created.
@@ -171,6 +190,10 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	if providerReq.GetLoginUrl() != "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider loginUrl field is not empty")
 	}
+	if providerReq.GetType() == basic.TypeName {
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be created",
+			basic.TypeName)
+	}
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq),
 		authproviders.WithValidateCallback(datastore.Singleton()), authproviders.WithAttributeVerifier(providerReq))
@@ -184,6 +207,10 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.AuthProvider) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
+	}
+	if request.GetType() == basic.TypeName {
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be modified",
+			basic.TypeName)
 	}
 
 	provider := s.registry.GetProvider(request.GetId())
@@ -217,6 +244,19 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
+
+	// Get auth provider.
+	authProvider := s.registry.GetProvider(request.GetId())
+	if authProvider == nil {
+		return nil, errox.NotFound.CausedByf("auth provider %q not found", request.GetId())
+	}
+
+	// Do not attempt to update auth provider of type "basic" and instead return an invalid args error.
+	if authProvider.StorageView().GetType() == basic.TypeName {
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be modified",
+			basic.TypeName)
+	}
+
 	var options []authproviders.ProviderOption
 	if nameOpt, ok := request.GetNameOpt().(*v1.UpdateAuthProviderRequest_Name); ok {
 		options = append(options, authproviders.WithName(nameOpt.Name))
@@ -236,12 +276,18 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Delete
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
-
 	// Get auth provider.
 	authProvider := s.registry.GetProvider(request.GetId())
 	if authProvider == nil {
 		return nil, errors.Wrapf(errox.NotFound, "auth provider %q not found", request.GetId())
 	}
+
+	// Do not attempt to delete auth provider of type "basic" and instead return an invalid args error.
+	if authProvider.StorageView().GetType() == basic.TypeName {
+		return nil, errox.InvalidArgs.CausedByf("auth provider of type %s cannot be deleted",
+			basic.TypeName)
+	}
+
 	// Delete auth provider.
 	if err := s.registry.DeleteProvider(ctx, request.GetId(), request.GetForce(), true); err != nil {
 		return nil, err

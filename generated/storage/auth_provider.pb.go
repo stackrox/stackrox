@@ -23,7 +23,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Next Tag: 9
+// Next Tag: 13
 type AuthProvider struct {
 	Id         string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`
 	Name       string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"`

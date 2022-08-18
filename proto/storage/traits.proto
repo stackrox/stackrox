@@ -23,4 +23,12 @@ message Traits {
   }
 
   MutabilityMode mutability_mode = 1;
+
+  // EXPERIMENTAL.
+  // visibility allows to specify whether the object should be visible for certain APIs.
+  enum Visibility {
+    VISIBLE = 0;
+    HIDDEN  = 1;
+  }
+  Visibility visibility = 2;
 }
