@@ -117,7 +117,7 @@ store_metrics() {
 store_as_spyglass_artifact() {
     local comparison_output="$1"
 
-    artifact_file="$ARTIFACT_DIR/scale-comparison-with-baseline.html"
+    artifact_file="$ARTIFACT_DIR/scale-comparison-with-baseline-summary.html"
 
     cat > "$artifact_file" <<- HEAD
 <html>
