@@ -41,6 +41,10 @@ func ValidateProps(props *storage.GroupProperties) error {
 	if props.GetKey() == "" && props.GetValue() != "" {
 		return errors.Errorf("cannot have a value without a key in {%s}", proto.MarshalTextString(props))
 	}
+	if props.GetKey() == "" && props.GetValue() == "" &&
+		props.GetTraits().GetMutabilityMode() == storage.Traits_ALLOW_MUTATE_FORCED {
+		return errors.New("default group cannot be immutable")
+	}
 	return nil
 }
 

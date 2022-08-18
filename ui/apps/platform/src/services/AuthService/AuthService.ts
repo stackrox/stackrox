@@ -57,6 +57,7 @@ export type Group = {
         key?: string;
         value?: string;
         id?: string;
+        traits?: Traits;
     };
 };
 

@@ -293,7 +293,7 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Delete
 		return nil, err
 	}
 	// Delete groups for auth provider.
-	if err := s.groupStore.RemoveAllWithAuthProviderID(ctx, request.GetId()); err != nil {
+	if err := s.groupStore.RemoveAllWithAuthProviderID(ctx, request.GetId(), request.GetForce()); err != nil {
 		return nil, errors.Wrapf(err, "failed to delete groups associated with auth provider %q", request.GetId())
 	}
 	return &v1.Empty{}, nil

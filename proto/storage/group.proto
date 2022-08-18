@@ -4,6 +4,7 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "gogoproto/gogo.proto";
+import "storage/traits.proto";
 
 package storage;
 
@@ -23,9 +24,11 @@ message Group {
 //     to all users logged in with that auth provider.
 //   * If GroupProperties in addition has a claim key, then it applies to all
 //     users with that auth provider and the claim key, etc.
+// Note: Changes to GroupProperties may require changes to v1.DeleteGroupRequest.
 message GroupProperties {
     // Unique identifier for group properties and respectively the group.
     string id               = 4 [(gogoproto.moretags) = 'sql:"pk"'];
+    Traits traits           = 5;
 
     string auth_provider_id = 1;
     string key              = 2;

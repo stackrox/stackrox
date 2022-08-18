@@ -2,6 +2,7 @@ package services
 
 import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.GroupServiceGrpc
+import io.stackrox.proto.api.v1.GroupServiceOuterClass
 import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
 import io.stackrox.proto.storage.GroupOuterClass.Group
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
@@ -41,7 +42,13 @@ class GroupService extends BaseService {
 
     static deleteGroup(GroupProperties props) {
         try {
-            return getGroupService().deleteGroup(props)
+            return getGroupService().deleteGroup(GroupServiceOuterClass.DeleteGroupRequest.newBuilder()
+                    .setAuthProviderId(props.authProviderId)
+                    .setId(props.id)
+                    .setKey(props.key)
+                    .setValue(props.value)
+                    .build()
+            )
         } catch (Exception e) {
             log.error("Error deleting group", e)
         }
