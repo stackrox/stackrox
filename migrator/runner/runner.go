@@ -37,15 +37,15 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 	for seqNum := startingSeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum(); seqNum++ {
 		migration, ok := migrations.Get(seqNum)
 		if !ok {
-			return fmt.Errorf("no migration found starting at %d", startingSeqNum)
+			return fmt.Errorf("no migration found starting at %d", seqNum)
 		}
 		err := migration.Run(databases)
 		if err != nil {
-			return errors.Wrapf(err, "error running migration starting at %d", startingSeqNum)
+			return errors.Wrapf(err, "error running migration starting at %d", seqNum)
 		}
 		err = updateVersion(databases, &migration.VersionAfter)
 		if err != nil {
-			return errors.Wrapf(err, "failed to update version after migration %d", startingSeqNum)
+			return errors.Wrapf(err, "failed to update version after migration %d", seqNum)
 		}
 		log.WriteToStderrf("Successfully updated DB from version %d to %d", seqNum, migration.VersionAfter.GetSeqNum())
 	}
