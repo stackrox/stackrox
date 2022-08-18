@@ -1,4 +1,4 @@
-FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.35
+FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.45-3-gaa456c65e1
 # note the above FROM line is ignored and OpenShift CI uses build_root image instead
 
 ARG ROX_PRODUCT_BRANDING
