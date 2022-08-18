@@ -53,6 +53,12 @@ func init() {
 // NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
 func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
 	registry registryTypes.Registry) ([]*storage.Signature, error) {
+	// Short-circuit for images that do not have V2 metadata associated with them. These would be older images manifest
+	// schemes that are not supported by cosign, like the docker v1 manifest.
+	if image.GetMetadata().GetV2() == nil {
+		return nil, nil
+	}
+
 	// Since cosign makes heavy use of google/go-containerregistry, we need to parse the image's full name as a
 	// name.Reference.
 	imgFullName := image.GetName().GetFullName()

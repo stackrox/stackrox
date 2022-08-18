@@ -124,6 +124,7 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 	cimg, err := imgUtils.GenerateImageFromString(imgRef)
 	require.NoError(t, err, "creating test image")
 	img := types.ToImage(cimg)
+	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
 
 	rawSig1, err := base64.StdEncoding.DecodeString(sig1)
 	require.NoError(t, err, "decoding signature")
@@ -182,6 +183,7 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 	// Fail with a non-retryable error when an image is given with a wrong reference.
 	cimg.Name.FullName = "fa@wrongreference"
 	img := types.ToImage(cimg)
+	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
 	res, err := f.FetchSignatures(context.Background(), img, nil)
 	assert.Nil(t, res)
 	require.Error(t, err)
