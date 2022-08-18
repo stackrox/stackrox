@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type errScopeCheckerCore struct {
@@ -16,6 +17,7 @@ func (s errScopeCheckerCore) SubScopeChecker(_ ScopeKey) ScopeCheckerCore {
 }
 
 func (s errScopeCheckerCore) TryAllowed() TryAllowedResult {
+	utils.Must(s.err)
 	return Deny
 }
 
