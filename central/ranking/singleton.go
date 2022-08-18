@@ -22,6 +22,9 @@ var (
 
 	componentOnce   sync.Once
 	componentRanker *Ranker
+
+	nodeComponentOnce   sync.Once
+	nodeComponentRanker *Ranker
 )
 
 // ClusterRanker returns the instance of ranker that ranks clusters.
@@ -74,8 +77,8 @@ func ComponentRanker() *Ranker {
 
 // NodeComponentRanker returns the instance of ranker that ranks node components.
 func NodeComponentRanker() *Ranker {
-	componentOnce.Do(func() {
-		componentRanker = NewRanker()
+	nodeComponentOnce.Do(func() {
+		nodeComponentRanker = NewRanker()
 	})
-	return componentRanker
+	return nodeComponentRanker
 }

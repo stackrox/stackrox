@@ -412,6 +412,7 @@ func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, 
 
 func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
 	resolver.ensureData(ctx)
+	scan := resolver.data.GetScan()
 	if features.PostgresDatastore.Enabled() {
 		// If scan is pulled, it is most likely to fetch all components and vulns contained in image.
 		// Therefore, load the image again with full scan.
@@ -425,10 +426,10 @@ func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, er
 		if err != nil {
 			return nil, err
 		}
-		resolver.data = image
+		scan = image.GetScan()
 	}
 
-	res, err := resolver.root.wrapImageScan(resolver.data.GetScan(), true, nil)
+	res, err := resolver.root.wrapImageScan(scan, true, nil)
 	if err != nil || res == nil {
 		return nil, err
 	}
