@@ -83,11 +83,12 @@ func generateComponentCVEEdge(convertedComponent *storage.NodeComponent, convert
 
 func generateNodeComponent(os string, from *storage.EmbeddedNodeScanComponent) *storage.NodeComponent {
 	ret := &storage.NodeComponent{
-		Id:        scancomponent.ComponentID(from.GetName(), from.GetVersion(), os),
-		Name:      from.GetName(),
-		Version:   from.GetVersion(),
-		RiskScore: from.GetRiskScore(),
-		Priority:  from.GetPriority(),
+		Id:              scancomponent.ComponentID(from.GetName(), from.GetVersion(), os),
+		OperatingSystem: os,
+		Name:            from.GetName(),
+		Version:         from.GetVersion(),
+		RiskScore:       from.GetRiskScore(),
+		Priority:        from.GetPriority(),
 	}
 
 	if from.GetSetTopCvss() != nil {
